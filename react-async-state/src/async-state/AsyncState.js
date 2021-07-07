@@ -1,4 +1,4 @@
-import { ASYNC_STATUS, EMPTY_OBJECT } from "../utils";
+import { ASYNC_STATUS, EMPTY_OBJECT, invokeIfPresent } from "../utils";
 import { wrapPromise } from "./wrappers/wrap-promise";
 
 const defaultConfig = Object.freeze({ lazy: true, forkable: true });
@@ -20,11 +20,44 @@ function AsyncState({ key, promise, config }) {
 
   this.subscriptions = {};
   this.promise = wrapPromise(this);
+
+  this.__IS_FORK__ = false;
+
+  this.renderCtx = null;
+  this.providerCtx = null;
+  this.currentAborter = null;
+
+  Object.preventExtensions(this);
 }
 
-AsyncState.prototype.run = function(...args) {
-  console.log('running async state with args', args);
-  return this.promise(...args);
+AsyncState.prototype.run = function(...runnerArgs) {
+  if (this.currentState.status === ASYNC_STATUS.loading ) { // todo: make this configurable with another attr from config
+    invokeIfPresent(this.currentAborter);
+    this.currentAborter = null;
+  }
+
+  let cancelled = false;
+  function abort() {
+    cancelled = true;
+  }
+
+  const mergedArgs = { ...runnerArgs, cancelled };
+  const argsObject = inferAsyncStateRunArgsObject(this, mergedArgs);
+
+  this.promise(argsObject);
+  this.currentAborter = abort;
+  return abort;
+}
+
+function inferAsyncStateRunArgsObject(asyncState, argsObject) {
+  const { cancelled, ...runnerArgs } = argsObject;
+  return {
+    cancelled,
+    executionArgs: runnerArgs,
+    lastState: asyncState.oldState,
+    renderCtx: asyncState.renderCtx,
+    providerCtx: asyncState.providerCtx,
+  };
 }
 
 AsyncState.prototype.subscribe = function(cb) {
@@ -49,8 +82,8 @@ AsyncState.prototype.fork = function(forkConfig = defaultForkConfig) {
 
   const clone = new AsyncState({
     key: forkKey(this),
+    config: this.config,
     promise: this.originalPromise,
-    config: this.config
   });
 
   this.forkCount += 1;
@@ -64,12 +97,14 @@ AsyncState.prototype.fork = function(forkConfig = defaultForkConfig) {
     clone.subscriptions = { ...this.subscriptions };
   }
 
+  clone.__IS_FORK__ = true;
+
   return clone;
 }
 
 function forkKey(asyncState) {
   if (typeof asyncState.key === 'string') {
-    return `${asyncState.key}-${asyncState.forkCount + 1}`;
+    return `${asyncState.key}-fork-${asyncState.forkCount + 1}`;
   }
   throw new Error("only string allowed");
 }

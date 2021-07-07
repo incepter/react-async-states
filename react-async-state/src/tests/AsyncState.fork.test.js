@@ -1,3 +1,4 @@
+import { act } from "@testing-library/react-hooks";
 import { timeout } from "./test-utils";
 import AsyncState from "../async-state/AsyncState";
 import { ASYNC_STATUS } from "../utils";
@@ -18,6 +19,7 @@ describe('AsyncState - fork', () => {
     expect(myAsyncState.key).toBe(key);
     expect(myAsyncState.forkCount).toBe(0);
     expect(myAsyncState.config).toBe(myConfig);
+    expect(myAsyncState.__IS_FORK__).toBeFalsy();
     expect(myAsyncState.oldState).toBe(undefined);
     expect(myAsyncState.subscriptions).toEqual({});
     expect(typeof myAsyncState.run).toBe("function");
@@ -26,6 +28,7 @@ describe('AsyncState - fork', () => {
     let forkedAsyncState = myAsyncState.fork();
     expect(myAsyncState.forkCount).toBe(1);
     expect(forkedAsyncState.forkCount).toBe(0);
+    expect(forkedAsyncState.__IS_FORK__).toBeTruthy();
     expect(forkedAsyncState.config).toBe(myAsyncState.config);
     expect(forkedAsyncState.oldState).toBe(myAsyncState.oldState); // undefined
     expect(forkedAsyncState.originalPromise).toBe(myAsyncState.originalPromise);
@@ -35,5 +38,33 @@ describe('AsyncState - fork', () => {
     expect(forkedAsyncState.promise).not.toBe(myAsyncState.promise);
     expect(forkedAsyncState.currentState).not.toBe(myAsyncState.currentState);// not same reference even if retrieved
     expect(forkedAsyncState.subscriptions).not.toBe(myAsyncState.subscriptions);// not same reference even if retrieved
+  });
+  it('should fork and keep state and subscriptions', async () => {
+    // given
+    let key = "simulated";
+    let promise = timeout(100, [{ id: 1, description: "value" }]);
+    let myConfig = {};
+    let subscriptionFn = jest.fn();
+
+    // when
+    let myAsyncState = new AsyncState({ key, promise, config: myConfig });
+    myAsyncState.subscribe(myAsyncState);
+    myAsyncState.run();
+
+    await act(async () => {
+      await jest.advanceTimersByTime(100);
+    });
+
+    expect(myAsyncState.currentState.status).toBe(ASYNC_STATUS.success); // make sure it resolved
+
+    let forkedAsyncState = myAsyncState.fork({ keepSubscriptions: true, keepState: true });
+    // then
+    // make sure they are deeply equal, but not with same reference ;)
+    expect(myAsyncState.oldState).toEqual(forkedAsyncState.oldState);
+    expect(myAsyncState.oldState).not.toBe(forkedAsyncState.oldState);
+    expect(myAsyncState.currentState).toEqual(forkedAsyncState.currentState);
+    expect(myAsyncState.currentState).not.toBe(forkedAsyncState.currentState);
+    expect(myAsyncState.subscriptions).toEqual(forkedAsyncState.subscriptions);
+    expect(myAsyncState.subscriptions).not.toBe(forkedAsyncState.subscriptions);
   });
 });

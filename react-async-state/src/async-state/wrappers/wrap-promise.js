@@ -6,7 +6,6 @@ export function wrapPromise(asyncState) {
     return IRP;
   }
   return function promiseFuncImpl(...args) {
-    console.log('promise func impl', args);
     asyncState.oldState = { ...(asyncState.currentState ?? EMPTY_OBJECT) };
     asyncState.currentState = {
       args,
@@ -34,7 +33,6 @@ export function wrapPromise(asyncState) {
           status: ASYNC_STATUS.success,
         };
         notifySubscribers(asyncState);
-        console.log('resolved with', res);
         return Promise.resolve(res);
       })
       .catch(e => {

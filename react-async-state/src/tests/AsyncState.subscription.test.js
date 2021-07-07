@@ -5,7 +5,7 @@ import { ASYNC_STATUS } from "../utils";
 
 jest.useFakeTimers();
 
-describe('AsyncState', () => {
+describe('AsyncState - subscriptions', () => {
   it('should subscribe to async-state and get notified', async () => {
     // given
     let myConfig = {};
@@ -29,13 +29,28 @@ describe('AsyncState', () => {
 
     expect(subscriptionFn.mock.calls).toEqual(
       [
-        [{args: [], data: null, status: ASYNC_STATUS.loading}],
-        [{args: [], data: "Some Value", status: ASYNC_STATUS.success}]
+        [{args: [{
+        cancelled: false,
+        executionArgs: {},
+        providerCtx: null,
+        renderCtx: null
+      }], data: null, status: ASYNC_STATUS.loading}],
+        [{args: [{
+        cancelled: false,
+        executionArgs: {},
+        providerCtx: null,
+        renderCtx: null
+      }], data: "Some Value", status: ASYNC_STATUS.success}]
       ]
     );
     expect(subscriptionFn).toHaveBeenCalledTimes(2);
     expect(myAsyncState.currentState).toEqual({
-      args: [],
+      args: [{
+        cancelled: false,
+        executionArgs: {},
+        providerCtx: null,
+        renderCtx: null
+      }],
       status: ASYNC_STATUS.success,
       data: "Some Value",
     });
@@ -64,12 +79,22 @@ describe('AsyncState', () => {
 
     expect(subscriptionFn.mock.calls).toEqual(
       [
-        [{args: [], data: null, status: ASYNC_STATUS.loading}],
+        [{args: [{
+        cancelled: false,
+        executionArgs: {},
+        providerCtx: null,
+        renderCtx: null
+      }], data: null, status: ASYNC_STATUS.loading}],
       ]
     );
     expect(subscriptionFn).toHaveBeenCalledTimes(1);
     expect(myAsyncState.currentState).toEqual({
-      args: [],
+      args: [{
+        cancelled: false,
+        executionArgs: {},
+        providerCtx: null,
+        renderCtx: null
+      }],
       status: ASYNC_STATUS.success,
       data: "Some Value",
     });
@@ -96,7 +121,12 @@ describe('AsyncState', () => {
     expect(subscriptionFn.mock.calls).toEqual([]);
     expect(subscriptionFn).toHaveBeenCalledTimes(0);
     expect(myAsyncState.currentState).toEqual({ // original async state resolved, but we got notified neither by loading nor success
-      args: [],
+      args: [{
+        cancelled: false,
+        executionArgs: {},
+        providerCtx: null,
+        renderCtx: null
+      }],
       status: ASYNC_STATUS.success,
       data: "Some Value",
     });

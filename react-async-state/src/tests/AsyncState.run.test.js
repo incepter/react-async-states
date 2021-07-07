@@ -5,7 +5,7 @@ import { ASYNC_STATUS } from "../utils";
 
 jest.useFakeTimers();
 
-describe('AsyncState', () => {
+describe('AsyncState - run', () => {
 
   it('should run an async state successfully with no subscribers', async () => {
     // given
@@ -27,7 +27,12 @@ describe('AsyncState', () => {
     myAsyncState.run();
     // should transition synchronously to loading state
     expect(myAsyncState.currentState).toEqual({
-      args: [],
+      args: [{
+        cancelled: false,
+        executionArgs: {},
+        providerCtx: null,
+        renderCtx: null
+      }],
       data: null,
       status: ASYNC_STATUS.loading,
     });
@@ -36,7 +41,12 @@ describe('AsyncState', () => {
     });
     // should be still in loading state while promise did not resolve yet
     expect(myAsyncState.currentState).toEqual({
-      args: [],
+      args: [{
+        cancelled: false,
+        executionArgs: {},
+        providerCtx: null,
+        renderCtx: null
+      }],
       data: null,
       status: ASYNC_STATUS.loading,
     });
@@ -47,7 +57,12 @@ describe('AsyncState', () => {
 
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
-      args: [],
+      args: [{
+        cancelled: false,
+        executionArgs: {},
+        providerCtx: null,
+        renderCtx: null
+      }],
       status: ASYNC_STATUS.success,
       data: [{ id: 1, description: "value" }],
     });
@@ -68,7 +83,12 @@ describe('AsyncState', () => {
     });
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
-      args: [],
+      args: [{
+        cancelled: false,
+        executionArgs: {},
+        providerCtx: null,
+        renderCtx: null
+      }],
       status: ASYNC_STATUS.error,
       data: "Some Error",
     });
