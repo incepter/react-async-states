@@ -16,6 +16,7 @@ function AsyncState({ key, promise, config }) {
   }
 
   this.forkCount = 0;
+  this.subscriptionsMeter = 0;
 
   this.promise = wrapPromise(this);
   this.subscriptions = {};
@@ -26,7 +27,20 @@ AsyncState.prototype.run = function(...args) {
   return this.promise(...args);
 }
 
-
+AsyncState.prototype.subscribe = function(cb) {
+  let that = this;
+  this.subscriptionsMeter += 1;
+  let subscriptionKey = `${this.key}-sub-${this.subscriptionsMeter}`;
+  function cleanup() {
+    delete that.subscriptions[subscriptionKey];
+  }
+  this.subscriptions[subscriptionKey] = {
+    cleanup,
+    callback: cb,
+    key: subscriptionKey,
+  };
+  return cleanup;
+}
 
 const defaultForkConfig = Object.freeze({ keepState: false, keepSubscriptions: false });
 
