@@ -18,8 +18,8 @@ function AsyncState({ key, promise, config }) {
   this.forkCount = 0;
   this.subscriptionsMeter = 0;
 
-  this.promise = wrapPromise(this);
   this.subscriptions = {};
+  this.promise = wrapPromise(this);
 }
 
 AsyncState.prototype.run = function(...args) {
