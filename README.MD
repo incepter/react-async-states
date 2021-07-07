@@ -83,7 +83,6 @@ let transactionsPromiseDefinition = Object.freeze({
       yield result;
       console.log("retrieved successfully the list of transactions", result);
     } catch (e) {
-      console.log('inside catch block');
       onFail(e);
       console.log("cannot retrived list of transactions", e);
       yield Promise.reject(e);

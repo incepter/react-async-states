@@ -38,7 +38,7 @@ describe('AsyncState', () => {
     expect(forkedAsyncState.subscriptions).not.toBe(myAsyncState.subscriptions);// not same reference even if retrieved
   });
 
-  it('should run an async state', () => {
+  it('should run an async state', async () => {
     // given
     let key = "simulated";
     let promise = timeout(1000, [{ id: 1, description: "value" }]);
@@ -47,15 +47,13 @@ describe('AsyncState', () => {
     // when
     let myAsyncState = new AsyncState({ key, promise, config: myConfig });
 
-    console.log('new date', new Date());
     myAsyncState.run();
 
-    act(() => {
-      jest.advanceTimersByTime(1200);
+    await act(() => {
+      jest.advanceTimersByTime(1000);
     });
 
 
-    console.log('new date', new Date());
     expect(myAsyncState.currentState).toEqual({
       args: [],
       status: ASYNC_STATUS.success,
