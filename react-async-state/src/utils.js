@@ -2,6 +2,7 @@ export const ASYNC_STATUS = {
   error: "error",
   loading: "loading",
   success: "success",
+  aborted: "aborted",
   initial: "initial",
 };
 

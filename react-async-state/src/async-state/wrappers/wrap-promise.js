@@ -1,19 +1,15 @@
-import { ASYNC_STATUS, EMPTY_OBJECT, IRP } from "../../utils";
-import { notifySubscribers } from "../notify-subscribers";
+import { ASYNC_STATUS, IRP } from "../../utils";
 
 export function wrapPromise(asyncState) {
   if (!asyncState || !asyncState?.originalPromise) {
     return IRP;
   }
   return function promiseFuncImpl(...args) {
-    asyncState.oldState = { ...(asyncState.currentState ?? EMPTY_OBJECT) };
-    asyncState.currentState = {
+    asyncState.setState({
       args,
       data: null,
       status: ASYNC_STATUS.loading,
-    };
-    notifySubscribers(asyncState);
-
+    });
     // todo: differentiate between promises and generator to apply properly runner logic
     // todo: add promiseRunner and genRunner
 
@@ -24,27 +20,24 @@ export function wrapPromise(asyncState) {
 
     return executionPrimaryResult
       .then(res => {
-        asyncState.oldState = {
-          ...(asyncState.currentState ?? EMPTY_OBJECT),
-        };
-        asyncState.currentState = {
-          args,
-          data: res,
-          status: ASYNC_STATUS.success,
-        };
-        notifySubscribers(asyncState);
-        return Promise.resolve(res);
+        let cancelled = args?.[0]?.cancelled;
+        if (!cancelled) {
+          asyncState.setState({
+            args,
+            data: res,
+            status: ASYNC_STATUS.success,
+          });
+        }
       })
       .catch(e => {
-        asyncState.oldState = {
-          ...(asyncState.currentState ?? EMPTY_OBJECT),
-        };
-        asyncState.currentState = {
-          args,
-          data: e,
-          status: ASYNC_STATUS.error,
-        };
-        notifySubscribers(asyncState);
+        let cancelled = args?.[0]?.cancelled;
+        if (!cancelled) {
+          asyncState.setState({
+            args,
+            data: e,
+            status: ASYNC_STATUS.error,
+          });
+        }
         // return Promise.reject(e);
       });
   };

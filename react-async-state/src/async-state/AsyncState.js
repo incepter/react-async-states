@@ -1,7 +1,8 @@
 import { ASYNC_STATUS, EMPTY_OBJECT, invokeIfPresent } from "../utils";
 import { wrapPromise } from "./wrappers/wrap-promise";
+import { notifySubscribers } from "./notify-subscribers";
 
-const defaultConfig = Object.freeze({ lazy: true, forkable: true });
+const defaultConfig = Object.freeze({ lazy: true });
 
 function AsyncState({ key, promise, config }) {
   this.key = key; // todo: check key
@@ -30,6 +31,20 @@ function AsyncState({ key, promise, config }) {
   Object.preventExtensions(this);
 }
 
+AsyncState.prototype.setState = function(newState, replaceOldState = true, notify = true) {
+  if (replaceOldState) {
+    this.oldState = { ...this.currentState };
+  }
+  if (typeof newState === "function") {
+    this.currentState = newState(this.currentState);
+  } else {
+    this.currentState = newState;
+  }
+  if (notify) {
+    notifySubscribers(this);
+  }
+}
+
 AsyncState.prototype.run = function(...runnerArgs) {
   if (this.currentState.status === ASYNC_STATUS.loading ) { // todo: make this configurable with another attr from config
     invokeIfPresent(this.currentAborter);
@@ -37,12 +52,19 @@ AsyncState.prototype.run = function(...runnerArgs) {
   }
 
   let cancelled = false;
-  function abort() {
-    cancelled = true;
-  }
+  const that = this;
 
   const mergedArgs = { ...runnerArgs, cancelled };
   const argsObject = inferAsyncStateRunArgsObject(this, mergedArgs);
+
+  function abort(reason) {
+    argsObject.cancelled = true;
+    that.setState({
+      data: reason,
+      args: argsObject,
+      status: ASYNC_STATUS.aborted,
+    });
+  }
 
   this.promise(argsObject);
   this.currentAborter = abort;
