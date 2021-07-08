@@ -1,7 +1,7 @@
 import { act } from "@testing-library/react-hooks";
 import { timeout } from "./test-utils";
-import AsyncState from "../async-state/AsyncState";
-import { ASYNC_STATUS } from "../utils";
+import AsyncState from "../AsyncState";
+import { ASYNC_STATUS } from "../../utils";
 
 jest.useFakeTimers();
 

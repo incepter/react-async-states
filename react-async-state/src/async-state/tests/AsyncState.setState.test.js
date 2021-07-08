@@ -1,7 +1,7 @@
 import { timeout } from "./test-utils";
-import AsyncState from "../async-state/AsyncState";
-import { ASYNC_STATUS } from "../utils";
-import { AsyncStateBuilder } from "../async-state/StateBuilder";
+import AsyncState from "../AsyncState";
+import { ASYNC_STATUS } from "../../utils";
+import { AsyncStateBuilder } from "../StateBuilder";
 
 jest.useFakeTimers();
 
