@@ -39,16 +39,14 @@ describe('AsyncState - fork', () => {
     expect(forkedAsyncState.currentState).not.toBe(myAsyncState.currentState);// not same reference even if retrieved
     expect(forkedAsyncState.subscriptions).not.toBe(myAsyncState.subscriptions);// not same reference even if retrieved
   });
-  it('should fork and keep state and subscriptions', async () => {
+  it('should fork and keep state and subscriptions after run', async () => {
     // given
     let key = "simulated";
     let promise = timeout(100, [{ id: 1, description: "value" }]);
     let myConfig = {};
-    let subscriptionFn = jest.fn();
 
     // when
     let myAsyncState = new AsyncState({ key, promise, config: myConfig });
-    myAsyncState.subscribe(myAsyncState);
     myAsyncState.run();
 
     await act(async () => {
@@ -64,7 +62,28 @@ describe('AsyncState - fork', () => {
     expect(myAsyncState.oldState).not.toBe(forkedAsyncState.oldState);
     expect(myAsyncState.currentState).toEqual(forkedAsyncState.currentState);
     expect(myAsyncState.currentState).not.toBe(forkedAsyncState.currentState);
-    expect(myAsyncState.subscriptions).toEqual(forkedAsyncState.subscriptions);
-    expect(myAsyncState.subscriptions).not.toBe(forkedAsyncState.subscriptions);
+  });
+  it('should fork and keep state and subscriptions before run', async () => {
+    // given
+    let key = "simulated";
+    let promise = timeout(100, [{ id: 1, description: "value" }]);
+    let myConfig = {};
+
+    // when
+    let myAsyncState = new AsyncState({ key, promise, config: myConfig });
+
+    let forkedAsyncState = myAsyncState.fork({ keepSubscriptions: true, keepState: true });
+
+    forkedAsyncState.run();
+
+    await act(async () => {
+      await jest.advanceTimersByTime(100);
+    });
+
+    expect(forkedAsyncState.currentState.status).toBe(ASYNC_STATUS.success); // make sure it resolved
+
+    // then
+    expect(myAsyncState.oldState).not.toEqual(forkedAsyncState.oldState);// forked async state moved independently
+    expect(myAsyncState.currentState).not.toBe(forkedAsyncState.currentState);
   });
 });

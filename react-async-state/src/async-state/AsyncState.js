@@ -1,6 +1,7 @@
 import { ASYNC_STATUS, EMPTY_OBJECT, invokeIfPresent } from "../utils";
 import { wrapPromise } from "./wrappers/wrap-promise";
 import { notifySubscribers } from "./notify-subscribers";
+import { AsyncStateBuilder } from "./StateBuilder";
 
 const defaultConfig = Object.freeze({ lazy: true });
 
@@ -58,12 +59,12 @@ AsyncState.prototype.run = function(...runnerArgs) {
   const argsObject = inferAsyncStateRunArgsObject(this, mergedArgs);
 
   function abort(reason) {
+    if (argsObject.cancelled) {
+      // already aborted!
+      return;
+    }
     argsObject.cancelled = true;
-    that.setState({
-      data: reason,
-      args: argsObject,
-      status: ASYNC_STATUS.aborted,
-    });
+    that.setState(AsyncStateBuilder.aborted(reason, argsObject));
   }
 
   this.promise(argsObject);
@@ -97,7 +98,7 @@ AsyncState.prototype.subscribe = function(cb) {
   return cleanup;
 }
 
-const defaultForkConfig = Object.freeze({ keepState: false, keepSubscriptions: false });
+const defaultForkConfig = Object.freeze({ keepState: false });
 
 AsyncState.prototype.fork = function(forkConfig = defaultForkConfig) {
   const mergedConfig = { ...defaultConfig, ...forkConfig };
@@ -115,20 +116,13 @@ AsyncState.prototype.fork = function(forkConfig = defaultForkConfig) {
     clone.oldState = { ...(this.oldState ?? EMPTY_OBJECT)};
   }
 
-  if (mergedConfig.keepSubscriptions) {
-    clone.subscriptions = { ...this.subscriptions };
-  }
-
   clone.__IS_FORK__ = true;
 
   return clone;
 }
 
 function forkKey(asyncState) {
-  if (typeof asyncState.key === 'string') {
-    return `${asyncState.key}-fork-${asyncState.forkCount + 1}`;
-  }
-  throw new Error("only string allowed");
+  return `${asyncState.key}-fork-${asyncState.forkCount + 1}`;
 }
 
 export default AsyncState;

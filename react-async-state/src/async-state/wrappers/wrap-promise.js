@@ -1,15 +1,8 @@
-import { ASYNC_STATUS, IRP } from "../../utils";
+import { AsyncStateBuilder } from "../StateBuilder";
 
 export function wrapPromise(asyncState) {
-  if (!asyncState || !asyncState?.originalPromise) {
-    return IRP;
-  }
   return function promiseFuncImpl(...args) {
-    asyncState.setState({
-      args,
-      data: null,
-      status: ASYNC_STATUS.loading,
-    });
+    asyncState.setState(AsyncStateBuilder.loading(args));
     // todo: differentiate between promises and generator to apply properly runner logic
     // todo: add promiseRunner and genRunner
 
@@ -22,21 +15,13 @@ export function wrapPromise(asyncState) {
       .then(res => {
         let cancelled = args?.[0]?.cancelled;
         if (!cancelled) {
-          asyncState.setState({
-            args,
-            data: res,
-            status: ASYNC_STATUS.success,
-          });
+          asyncState.setState(AsyncStateBuilder.success(res, args));
         }
       })
       .catch(e => {
         let cancelled = args?.[0]?.cancelled;
         if (!cancelled) {
-          asyncState.setState({
-            args,
-            data: e,
-            status: ASYNC_STATUS.error,
-          });
+          asyncState.setState(AsyncStateBuilder.error(e, args));
         }
         // return Promise.reject(e);
       });
