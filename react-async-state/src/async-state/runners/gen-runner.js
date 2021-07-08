@@ -1,3 +1,5 @@
+/* not used, yet! */
+/* istanbul ignore next */
 export function generatorRunner(generator, ...genArgs) {
   let done = false;
   let aborted = false;
