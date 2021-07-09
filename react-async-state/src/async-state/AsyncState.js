@@ -52,10 +52,9 @@ AsyncState.prototype.run = function(...runnerArgs) {
     this.currentAborter = null;
   }
 
-  let cancelled = false;
   const that = this;
 
-  const mergedArgs = { ...runnerArgs, cancelled };
+  const mergedArgs = { ...runnerArgs, cancelled: false };
   const argsObject = inferAsyncStateRunArgsObject(this, mergedArgs);
 
   function abort(reason) {
