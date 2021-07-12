@@ -10,7 +10,7 @@ function AsyncState({ key, promise, config }) {
   this.config = config;
   this.originalPromise = promise;
 
-  this.oldState = undefined;
+  this.previousState = undefined;
   this.currentState = {
     args: null,
     data: null, // null if initial and loading, full of data if success, full of error if error
@@ -25,16 +25,15 @@ function AsyncState({ key, promise, config }) {
 
   this.__IS_FORK__ = false;
 
-  this.renderCtx = null;
-  this.providerCtx = null;
+  this.payload = null;
   this.currentAborter = null;
 
   Object.preventExtensions(this);
 }
 
-AsyncState.prototype.setState = function(newState, replaceOldState = true, notify = true) {
-  if (replaceOldState) {
-    this.oldState = { ...this.currentState };
+AsyncState.prototype.setState = function(newState, replacepreviousState = true, notify = true) {
+  if (replacepreviousState) {
+    this.previousState = { ...this.currentState };
   }
   if (typeof newState === "function") {
     this.currentState = newState(this.currentState);
@@ -46,24 +45,44 @@ AsyncState.prototype.setState = function(newState, replaceOldState = true, notif
   }
 }
 
-AsyncState.prototype.run = function(...runnerArgs) {
+AsyncState.prototype.abort = function abortImpl(reason) {
+  invokeIfPresent(this.currentAborter, reason);
+}
+AsyncState.prototype.dispose = function disposeImpl() {
+  this.abort();
+  this.subscriptions = {};
+}
+
+AsyncState.prototype.run = function(...execArgs) {
   if (this.currentState.status === ASYNC_STATUS.loading ) { // todo: make this configurable with another attr from config
-    invokeIfPresent(this.currentAborter);
+    this.abort();
     this.currentAborter = null;
   }
 
   const that = this;
 
-  const mergedArgs = { ...runnerArgs, cancelled: false };
-  const argsObject = inferAsyncStateRunArgsObject(this, mergedArgs);
+  const mergedArgs = { ...execArgs, aborted: false };
+
+  let userAborter = null;
+
+  const argsObject =  {
+      payload: this.payload,
+      executionArgs: execArgs,
+      aborted: mergedArgs.aborted,
+      previousState: this.previousState,
+      onAbort (cb) {
+        userAborter = cb;
+      }
+  };
 
   function abort(reason) {
-    if (argsObject.cancelled) {
+    if (argsObject.aborted) {
       // already aborted!
       return;
     }
-    argsObject.cancelled = true;
+    argsObject.aborted = true;
     that.setState(AsyncStateBuilder.aborted(reason, argsObject));
+    invokeIfPresent(userAborter);
   }
 
   this.promise(argsObject);
@@ -71,16 +90,6 @@ AsyncState.prototype.run = function(...runnerArgs) {
   return abort;
 }
 
-function inferAsyncStateRunArgsObject(asyncState, argsObject) {
-  const { cancelled, ...runnerArgs } = argsObject;
-  return {
-    cancelled,
-    executionArgs: runnerArgs,
-    lastState: asyncState.oldState,
-    renderCtx: asyncState.renderCtx,
-    providerCtx: asyncState.providerCtx,
-  };
-}
 
 AsyncState.prototype.subscribe = function(cb) {
   let that = this;
@@ -112,7 +121,7 @@ AsyncState.prototype.fork = function(forkConfig = defaultForkConfig) {
 
   if (mergedConfig.keepState) {
     clone.currentState = { ...this.currentState };
-    clone.oldState = { ...(this.oldState ?? EMPTY_OBJECT)};
+    clone.previousState = { ...(this.previousState ?? EMPTY_OBJECT)};
   }
 
   clone.__IS_FORK__ = true;

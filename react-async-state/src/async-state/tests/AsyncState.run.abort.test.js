@@ -35,10 +35,9 @@ describe('AsyncState - run - abort', () => {
     expect(subscription).toHaveBeenCalledTimes(1);
     expect(subscription).toHaveBeenCalledWith({
       args: [{
-        cancelled: false,
+        aborted: false,
         executionArgs: {},
-        providerCtx: null,
-        renderCtx: null
+        payload: null
       }],
       data: null,
       status: ASYNC_STATUS.loading,
@@ -50,10 +49,9 @@ describe('AsyncState - run - abort', () => {
     expect(subscription).toHaveBeenCalledTimes(1);
     expect(subscription).toHaveBeenCalledWith({
       args: {
-        cancelled: true,
+        aborted: true,
         executionArgs: {},
-        providerCtx: null,
-        renderCtx: null
+        payload: null
       },
       data: "reason",
       status: ASYNC_STATUS.aborted,
@@ -61,10 +59,9 @@ describe('AsyncState - run - abort', () => {
 
     expect(myAsyncState.currentState).toEqual({
       args: {
-        cancelled: true,
+        aborted: true,
         executionArgs: {},
-        providerCtx: null,
-        renderCtx: null
+        payload: null
       },
       data: "reason",
       status: ASYNC_STATUS.aborted,
@@ -77,10 +74,9 @@ describe('AsyncState - run - abort', () => {
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
       args: {
-        cancelled: true,
+        aborted: true,
         executionArgs: {},
-        providerCtx: null,
-        renderCtx: null
+        payload: null
       },
       status: ASYNC_STATUS.aborted,
       data: "reason",
@@ -124,10 +120,9 @@ describe('AsyncState - run - abort', () => {
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
       args: {
-        cancelled: true,
+        aborted: true,
         executionArgs: {},
-        providerCtx: null,
-        renderCtx: null
+        payload: null
       },
       status: ASYNC_STATUS.aborted,
       data: "reason",
@@ -170,17 +165,15 @@ describe('AsyncState - run - abort', () => {
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
       args: [{
-        cancelled: false,
+        aborted: false,
         executionArgs: {},
-        providerCtx: null,
-        renderCtx: null,
-        lastState: {
+        payload: null,
+        previousState: {
           args: [
             {
-              cancelled: true,
+              aborted: true,
               executionArgs: {},
-              providerCtx: null,
-              renderCtx: null
+              payload: null
             }
           ],
           data: null,

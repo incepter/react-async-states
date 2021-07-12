@@ -20,7 +20,7 @@ describe('AsyncState - fork', () => {
     expect(myAsyncState.forkCount).toBe(0);
     expect(myAsyncState.config).toBe(myConfig);
     expect(myAsyncState.__IS_FORK__).toBeFalsy();
-    expect(myAsyncState.oldState).toBe(undefined);
+    expect(myAsyncState.previousState).toBe(undefined);
     expect(myAsyncState.subscriptions).toEqual({});
     expect(typeof myAsyncState.run).toBe("function");
     expect(myAsyncState.currentState).toEqual({ data: null, status: ASYNC_STATUS.initial, args: null });
@@ -30,7 +30,7 @@ describe('AsyncState - fork', () => {
     expect(forkedAsyncState.forkCount).toBe(0);
     expect(forkedAsyncState.__IS_FORK__).toBeTruthy();
     expect(forkedAsyncState.config).toBe(myAsyncState.config);
-    expect(forkedAsyncState.oldState).toBe(myAsyncState.oldState); // undefined
+    expect(forkedAsyncState.previousState).toBe(myAsyncState.previousState); // undefined
     expect(forkedAsyncState.originalPromise).toBe(myAsyncState.originalPromise);
 
 
@@ -58,8 +58,8 @@ describe('AsyncState - fork', () => {
     let forkedAsyncState = myAsyncState.fork({ keepSubscriptions: true, keepState: true });
     // then
     // make sure they are deeply equal, but not with same reference ;)
-    expect(myAsyncState.oldState).toEqual(forkedAsyncState.oldState);
-    expect(myAsyncState.oldState).not.toBe(forkedAsyncState.oldState);
+    expect(myAsyncState.previousState).toEqual(forkedAsyncState.previousState);
+    expect(myAsyncState.previousState).not.toBe(forkedAsyncState.previousState);
     expect(myAsyncState.currentState).toEqual(forkedAsyncState.currentState);
     expect(myAsyncState.currentState).not.toBe(forkedAsyncState.currentState);
   });
@@ -83,7 +83,7 @@ describe('AsyncState - fork', () => {
     expect(forkedAsyncState.currentState.status).toBe(ASYNC_STATUS.success); // make sure it resolved
 
     // then
-    expect(myAsyncState.oldState).not.toEqual(forkedAsyncState.oldState);// forked async state moved independently
+    expect(myAsyncState.previousState).not.toEqual(forkedAsyncState.previousState);// forked async state moved independently
     expect(myAsyncState.currentState).not.toBe(forkedAsyncState.currentState);
   });
 });

@@ -13,7 +13,7 @@
  * {
  *   renderCtx: anything passed from the render via usePromiseState
  *   providerCtx: anything that the provider received from props (can be: {dispatch, store} from redux ;))
- *   cancelled: whether the trigger of the promise state unmounted or cleaned it
+ *   aborted: whether the trigger of the promise state unmounted or cleaned it
  *   executionArgs: if not lazy and execution is manual, it may provide some args
  *   lastState: the last resolved state (may be success or error)
  * }
@@ -68,7 +68,7 @@ function getTransactions(...args) {
 let transactionsPromiseDefinition = Object.freeze({
   key: PS_TRANSACTIONS_KEY,
   promise: function*({
-    cancelled,
+    aborted,
     lastState: { status, data } = {},
     renderCtx: { storeCode, onSuccess, onFail },
     providerCtx: {
@@ -77,7 +77,7 @@ let transactionsPromiseDefinition = Object.freeze({
   }) {
     try {
       const result = yield getTransactions(storeCode, query);
-      if (!cancelled) {
+      if (!aborted) {
         onSuccess(result);
       }
       yield result;

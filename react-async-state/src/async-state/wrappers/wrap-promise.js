@@ -13,14 +13,14 @@ export function wrapPromise(asyncState) {
 
     return executionPrimaryResult
       .then(res => {
-        let cancelled = args?.[0]?.cancelled;
-        if (!cancelled) {
+        let aborted = args?.[0]?.aborted;
+        if (!aborted) {
           asyncState.setState(AsyncStateBuilder.success(res, args));
         }
       })
       .catch(e => {
-        let cancelled = args?.[0]?.cancelled;
-        if (!cancelled) {
+        let aborted = args?.[0]?.aborted;
+        if (!aborted) {
           asyncState.setState(AsyncStateBuilder.error(e, args));
         }
         // return Promise.reject(e);

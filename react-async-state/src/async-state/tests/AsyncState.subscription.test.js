@@ -30,26 +30,23 @@ describe('AsyncState - subscriptions', () => {
     expect(subscriptionFn.mock.calls).toEqual(
       [
         [{args: [{
-        cancelled: false,
+        aborted: false,
         executionArgs: {},
-        providerCtx: null,
-        renderCtx: null
+        payload: null,
       }], data: null, status: ASYNC_STATUS.loading}],
         [{args: [{
-        cancelled: false,
+        aborted: false,
         executionArgs: {},
-        providerCtx: null,
-        renderCtx: null
+        payload: null
       }], data: "Some Value", status: ASYNC_STATUS.success}]
       ]
     );
     expect(subscriptionFn).toHaveBeenCalledTimes(2);
     expect(myAsyncState.currentState).toEqual({
       args: [{
-        cancelled: false,
+        aborted: false,
         executionArgs: {},
-        providerCtx: null,
-        renderCtx: null
+        payload: null
       }],
       status: ASYNC_STATUS.success,
       data: "Some Value",
@@ -80,20 +77,18 @@ describe('AsyncState - subscriptions', () => {
     expect(subscriptionFn.mock.calls).toEqual(
       [
         [{args: [{
-        cancelled: false,
+        aborted: false,
         executionArgs: {},
-        providerCtx: null,
-        renderCtx: null
+        payload: null
       }], data: null, status: ASYNC_STATUS.loading}],
       ]
     );
     expect(subscriptionFn).toHaveBeenCalledTimes(1);
     expect(myAsyncState.currentState).toEqual({
       args: [{
-        cancelled: false,
+        aborted: false,
         executionArgs: {},
-        providerCtx: null,
-        renderCtx: null
+        payload: null
       }],
       status: ASYNC_STATUS.success,
       data: "Some Value",
@@ -122,10 +117,9 @@ describe('AsyncState - subscriptions', () => {
     expect(subscriptionFn).toHaveBeenCalledTimes(0);
     expect(myAsyncState.currentState).toEqual({ // original async state resolved, but we got notified neither by loading nor success
       args: [{
-        cancelled: false,
+        aborted: false,
         executionArgs: {},
-        providerCtx: null,
-        renderCtx: null
+        payload: null
       }],
       status: ASYNC_STATUS.success,
       data: "Some Value",

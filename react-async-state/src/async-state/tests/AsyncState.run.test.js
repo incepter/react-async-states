@@ -28,10 +28,9 @@ describe('AsyncState - run', () => {
     // should transition synchronously to loading state
     expect(myAsyncState.currentState).toEqual({
       args: [{
-        cancelled: false,
+        aborted: false,
         executionArgs: {},
-        providerCtx: null,
-        renderCtx: null
+        payload: null
       }],
       data: null,
       status: ASYNC_STATUS.loading,
@@ -42,10 +41,9 @@ describe('AsyncState - run', () => {
     // should be still in loading state while promise did not resolve yet
     expect(myAsyncState.currentState).toEqual({
       args: [{
-        cancelled: false,
+        aborted: false,
         executionArgs: {},
-        providerCtx: null,
-        renderCtx: null
+        payload: null
       }],
       data: null,
       status: ASYNC_STATUS.loading,
@@ -58,10 +56,9 @@ describe('AsyncState - run', () => {
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
       args: [{
-        cancelled: false,
+        aborted: false,
         executionArgs: {},
-        providerCtx: null,
-        renderCtx: null
+        payload: null
       }],
       status: ASYNC_STATUS.success,
       data: [{ id: 1, description: "value" }],
@@ -84,10 +81,9 @@ describe('AsyncState - run', () => {
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
       args: [{
-        cancelled: false,
+        aborted: false,
         executionArgs: {},
-        providerCtx: null,
-        renderCtx: null
+        payload: null
       }],
       status: ASYNC_STATUS.error,
       data: "Some Error",
