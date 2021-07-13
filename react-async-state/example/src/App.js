@@ -37,14 +37,17 @@ const App = () => {
 }
 
 function Wrapper() {
+  const [shouldDisplay, setShouldDisplay] = React.useState(true);
   return (
     <DemoProvider>
-      <div style={{display: 'flex', padding: 32, width: "100wh"}}>
+      <button onClick={() => setShouldDisplay(old => !old)}>Toggle</button>
+
+      {shouldDisplay && (<div style={{display: 'flex', padding: 32, minWidth: '800px'}}>
         <App/>
         <App/>
         <App/>
         <App/>
-      </div>
+      </div>)}
     </DemoProvider>
   );
 }

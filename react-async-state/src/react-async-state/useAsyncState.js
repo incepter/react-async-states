@@ -88,7 +88,7 @@ export function useAsyncState(subscriptionConfig = defaultConfig, dependencies) 
 
 
   // subscribe early to current value of asyncState
-  React.useEffect(function onAsyncStateRefChange() {
+  React.useLayoutEffect(function onAsyncStateRefChange() {
     if (!asyncState.current) {
       return; // that's a problem!
     }
@@ -96,9 +96,8 @@ export function useAsyncState(subscriptionConfig = defaultConfig, dependencies) 
      * the thing is, this hook serve as a subscription and at the same time can work standalone
      * if it is a subscription that add values to payload and hoist it, other subscriptions may occur and override the payload
      * todo: figure out how to deal the comment above
-     * todo: add else block when asyncState.current.payload !== null
      */
-    if (asyncState.current.payload === null && !Object.is(payload, EMPTY_OBJECT)) { // payload was not set by developer
+    if (!Object.is(payload, EMPTY_OBJECT)) { // payload was not set by developer
       asyncState.current.payload = {
         ...asyncState.current.payload,
         ...(isInsideProvider ? contextValue.payload : EMPTY_OBJECT),
@@ -114,9 +113,13 @@ export function useAsyncState(subscriptionConfig = defaultConfig, dependencies) 
   }, [asyncState.current]);
 
   function run() {
-    if (asyncState.current && condition && !asyncState.current.config?.lazy) {
-      return asyncState.current.run(); // cleanup if still loading
+    const shouldRun = asyncState.current && condition && !asyncState.current.config?.lazy;
+    if (!isInsideProvider && shouldRun) {
+      return asyncState.current.run();
+    } else if (isInsideProvider && shouldRun) {
+      return contextValue.run(asyncState.current);
     }
+
     return undefined; // nothing to clean
   }
 

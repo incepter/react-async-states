@@ -1,6 +1,12 @@
 import React from "react";
 import { AsyncContextProvider } from 'react-async-state';
 
+function curriedTimeout(delay) {
+  return function curryImpl(...args) {
+    return timeout(delay, ...args);
+  }
+}
+
 function timeout(delay, ...resolveValues) {
   return new Promise(resolve => setTimeout(() => resolve(...resolveValues), delay));
 }
@@ -14,8 +20,8 @@ const asyncStatesDemo = [
       argv.onAbort(function abortSignal() {
         controller.abort();
       });
-      return timeout(1000)
-        .then(() => fetch('https://jsonplaceholder.typicode.com/users', {signal}))
+      return fetch('https://jsonplaceholder.typicode.com/users', {signal})
+        .then(curriedTimeout(1000))
         .then(res => res.json());
     }
   },
