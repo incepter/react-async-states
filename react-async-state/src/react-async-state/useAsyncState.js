@@ -10,7 +10,15 @@ const defaultRerenderStatusConfig = Object.freeze({
   error: true,
   success: true,
   aborted: true,
+  loading: true,
 });
+
+function createSubscriptionConfigFromString(key) {
+  return {
+    key,
+    hoistToProvider: false,
+  };
+}
 
 export function useAsyncState(subscriptionConfig = defaultConfig, dependencies) {
   const asyncState = React.useRef();
@@ -18,6 +26,9 @@ export function useAsyncState(subscriptionConfig = defaultConfig, dependencies) 
   const [, rerender] = React.useState();
 
   const providedConfig = React.useMemo(function getConfig() {
+    if (typeof subscriptionConfig === "string") {
+      return createSubscriptionConfigFromString(subscriptionConfig);
+    }
     return typeof subscriptionConfig === "function" ? subscriptionConfig() : subscriptionConfig;
   }, dependencies);
 
@@ -40,7 +51,7 @@ export function useAsyncState(subscriptionConfig = defaultConfig, dependencies) 
 
   React.useMemo(function getAS() { // this useMemo acts like a construction for now
     if (isInsideProvider && asyncState.current) {
-      contextValue.dispose(asyncState.current, providedConfig);
+      contextValue.dispose(asyncState.current);
       asyncState.current = null;
     } else if (asyncState.current) {
       asyncState.current.dispose();
@@ -49,24 +60,24 @@ export function useAsyncState(subscriptionConfig = defaultConfig, dependencies) 
 
     let output;
     if (isInsideProvider) {
-      output = contextValue.get(key); // todo: get not defined
+      output = contextValue.get(key);
 
       if (asyncState.current) {
         if (fork) {
           if (hoistToProvider) {
-            output = contextValue.fork(key, forkConfig); // todo: fork not defined
+            output = contextValue.fork(key, forkConfig);
           } else {
             output = output.fork(forkConfig);
           }
         }
       } else if (hoistToProvider) {
-        output = contextValue.hoist(providedConfig); // todo: hoist not defined
-      } else {
-        output = new AsyncState({ key, ...promiseConfig });
+        output = contextValue.hoist(providedConfig);
+      } else if (promiseConfig) {
+        output = new AsyncState({key, ...promiseConfig});
       }
 
-    } else {
-      output = new AsyncState({ key, ...promiseConfig });
+    } else if (promiseConfig) {
+      output = new AsyncState({key, ...promiseConfig});
     }
 
     if (asyncState.current) {
@@ -74,7 +85,6 @@ export function useAsyncState(subscriptionConfig = defaultConfig, dependencies) 
     }
     asyncState.current = output;
   }, [providedConfig]);
-
 
 
   // subscribe early to current value of asyncState
@@ -95,16 +105,16 @@ export function useAsyncState(subscriptionConfig = defaultConfig, dependencies) 
         ...payload,
       };
     }
-
+    const rerenderConfig = {...defaultRerenderStatusConfig, ...rerenderStatus};
     return asyncState.current.subscribe(function onUpdate(newState) {
-      if (rerenderStatus[newState.status]) {
+      if (rerenderConfig[newState.status]) {
         rerender({});
       }
     });
   }, [asyncState.current]);
 
   function run() {
-    if (condition && !asyncState.current.config?.lazy) {
+    if (asyncState.current && condition && !asyncState.current.config?.lazy) {
       return asyncState.current.run(); // cleanup if still loading
     }
     return undefined; // nothing to clean
@@ -113,13 +123,13 @@ export function useAsyncState(subscriptionConfig = defaultConfig, dependencies) 
   React.useEffect(run, dependencies); // dependencies should contain condition if controlled + asyncState is a ref
 
   return {
-    key: asyncState.current.key,
+    key: asyncState.current?.key,
 
-    run: asyncState.current.run.bind(asyncState.current),
-    abort: asyncState.current.abort.bind(asyncState.current),
-    replaceState: asyncState.current.setState.bind(asyncState.current),
+    run: asyncState.current?.run.bind(asyncState.current),
+    abort: asyncState.current?.abort.bind(asyncState.current),
+    replaceState: asyncState.current?.setState.bind(asyncState.current),
 
-    state: Object.freeze({ ...asyncState.current.currentState }),
-    previousState: asyncState.current.previousState ? Object.freeze({ ...asyncState.current.previousState }) : undefined,
+    state: Object.freeze({...asyncState.current?.currentState}),
+    previousState: asyncState.current?.previousState ? Object.freeze({...asyncState.current?.previousState}) : undefined,
   };
 }
