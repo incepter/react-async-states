@@ -15,6 +15,7 @@ const asyncStatesDemo = [
   {
     key: "users",
     promise(argv) {
+      console.log('running promise with', argv)
       const controller = new AbortController();
       const {signal} = controller;
       argv.onAbort(function abortSignal() {
@@ -23,6 +24,9 @@ const asyncStatesDemo = [
       return fetch('https://jsonplaceholder.typicode.com/users', {signal})
         .then(curriedTimeout(1000))
         .then(res => res.json());
+    },
+    config: {
+      lazy: false,
     }
   },
 ];

@@ -61,8 +61,7 @@ export function useAsyncState(subscriptionConfig = defaultConfig, dependencies) 
     let output;
     if (isInsideProvider) {
       output = contextValue.get(key);
-
-      if (asyncState.current) {
+      if (output) {
         if (fork) {
           if (hoistToProvider) {
             output = contextValue.fork(key, forkConfig);
@@ -114,9 +113,14 @@ export function useAsyncState(subscriptionConfig = defaultConfig, dependencies) 
 
   function run() {
     const shouldRun = asyncState.current && condition && !asyncState.current.config?.lazy;
-    if (!isInsideProvider && shouldRun) {
+    if (shouldRun && !isInsideProvider) {
       return asyncState.current.run();
-    } else if (isInsideProvider && shouldRun) {
+    }
+
+    if (shouldRun && isInsideProvider) {
+      if (fork && !hoistToProvider) {
+        return asyncState.current.run();
+      }
       return contextValue.run(asyncState.current);
     }
 

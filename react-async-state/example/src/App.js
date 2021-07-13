@@ -3,11 +3,11 @@ import { useAsyncState } from 'react-async-state';
 import DemoProvider from "./Provider";
 
 
-const App = () => {
+const App = ({fork = false, payload}) => {
 
-  const {key, run, state, abort} = useAsyncState("users", []);
+  const {key, run, state, abort} = useAsyncState({key: "users", fork, payload}, []);
 
-  console.log({state});
+  // console.log({state});
 
   return (
     <div>
@@ -42,8 +42,8 @@ function Wrapper() {
     <DemoProvider>
       <button onClick={() => setShouldDisplay(old => !old)}>Toggle</button>
 
-      {shouldDisplay && (<div style={{display: 'flex', padding: 32, minWidth: '800px'}}>
-        <App/>
+      {shouldDisplay && (<div style={{display: 'flex', padding: 32, maxWidth: '1200px', justifyContent: 'space-around'}}>
+        <App fork={false} payload={{fork: "haha"}}/>
         <App/>
         <App/>
         <App/>
