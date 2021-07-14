@@ -1,5 +1,5 @@
 import React from "react";
-import { AsyncContextProvider } from 'react-async-state';
+import { AsyncStateProvider } from 'react-async-state';
 
 function curriedTimeout(delay) {
   return function curryImpl(...args) {
@@ -32,5 +32,5 @@ const asyncStatesDemo = [
 ];
 
 export default function DemoProvider({children}) {
-  return <AsyncContextProvider initialAsyncStates={asyncStatesDemo}>{children}</AsyncContextProvider>;
+  return <AsyncStateProvider initialAsyncStates={asyncStatesDemo}>{children}</AsyncStateProvider>;
 }
