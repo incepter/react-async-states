@@ -43,7 +43,7 @@ function Wrapper() {
       <button onClick={() => setShouldDisplay(old => !old)}>Toggle</button>
 
       {shouldDisplay && (<div style={{display: 'flex', padding: 32, maxWidth: '1200px', justifyContent: 'space-around'}}>
-        <App fork={false} payload={{fork: "haha"}}/>
+        <App fork payload={{fork: "haha"}}/>
         <App/>
         <App/>
         <App/>

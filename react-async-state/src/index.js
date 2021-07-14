@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 export { useAsyncState } from "./react-async-state/useAsyncState";
-export { AsyncContextProvider } from "./react-async-state/AsyncContextProvider";
+export { AsyncStateProvider } from "./react-async-state/AsyncStateProvider";
 
 export const useMyHook = () => {
   let [{

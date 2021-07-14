@@ -28,9 +28,11 @@ describe('AsyncState - run', () => {
     // should transition synchronously to loading state
     expect(myAsyncState.currentState).toEqual({
       args: [{
+        payload: null,
         aborted: false,
-        executionArgs: {},
-        payload: null
+        executionArgs: [],
+        previousState: undefined,
+        onAbort: expect.any(Function),
       }],
       data: null,
       status: ASYNC_STATUS.loading,
@@ -41,8 +43,10 @@ describe('AsyncState - run', () => {
     // should be still in loading state while promise did not resolve yet
     expect(myAsyncState.currentState).toEqual({
       args: [{
+        executionArgs: [],
+        previousState: undefined,
+        onAbort: expect.any(Function),
         aborted: false,
-        executionArgs: {},
         payload: null
       }],
       data: null,
@@ -56,8 +60,10 @@ describe('AsyncState - run', () => {
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
       args: [{
+        executionArgs: [],
+        previousState: undefined,
+        onAbort: expect.any(Function),
         aborted: false,
-        executionArgs: {},
         payload: null
       }],
       status: ASYNC_STATUS.success,
@@ -81,8 +87,10 @@ describe('AsyncState - run', () => {
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
       args: [{
+        executionArgs: [],
+        previousState: undefined,
+        onAbort: expect.any(Function),
         aborted: false,
-        executionArgs: {},
         payload: null
       }],
       status: ASYNC_STATUS.error,

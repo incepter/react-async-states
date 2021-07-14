@@ -61,14 +61,12 @@ AsyncState.prototype.run = function(...execArgs) {
 
   const that = this;
 
-  const mergedArgs = { ...execArgs, aborted: false };
-
   let userAborter = null;
 
   const argsObject =  {
+      aborted: false,
       payload: this.payload,
       executionArgs: execArgs,
-      aborted: mergedArgs.aborted,
       previousState: this.previousState,
       onAbort (cb) {
         userAborter = cb;

@@ -14,7 +14,7 @@ describe('AsyncState - subscriptions', () => {
     let promise = timeout(50, "Some Value");
 
     // when
-    let myAsyncState = new AsyncState({ key, promise, config: myConfig });
+    let myAsyncState = new AsyncState({key, promise, config: myConfig});
 
     // then
     expect(myAsyncState.subscriptionsMeter).toBe(0);
@@ -29,23 +29,33 @@ describe('AsyncState - subscriptions', () => {
 
     expect(subscriptionFn.mock.calls).toEqual(
       [
-        [{args: [{
-        aborted: false,
-        executionArgs: {},
-        payload: null,
-      }], data: null, status: ASYNC_STATUS.loading}],
-        [{args: [{
-        aborted: false,
-        executionArgs: {},
-        payload: null
-      }], data: "Some Value", status: ASYNC_STATUS.success}]
+        [{
+          args: [{
+            executionArgs: [],
+            previousState: undefined,
+            onAbort: expect.any(Function),
+            aborted: false,
+            payload: null,
+          }], data: null, status: ASYNC_STATUS.loading
+        }],
+        [{
+          args: [{
+            executionArgs: [],
+            previousState: undefined,
+            onAbort: expect.any(Function),
+            aborted: false,
+            payload: null
+          }], data: "Some Value", status: ASYNC_STATUS.success
+        }]
       ]
     );
     expect(subscriptionFn).toHaveBeenCalledTimes(2);
     expect(myAsyncState.currentState).toEqual({
       args: [{
+        executionArgs: [],
+        previousState: undefined,
+        onAbort: expect.any(Function),
         aborted: false,
-        executionArgs: {},
         payload: null
       }],
       status: ASYNC_STATUS.success,
@@ -60,7 +70,7 @@ describe('AsyncState - subscriptions', () => {
     let promise = timeout(50, "Some Value");
 
     // when
-    let myAsyncState = new AsyncState({ key, promise, config: myConfig });
+    let myAsyncState = new AsyncState({key, promise, config: myConfig});
     let unsubscribe = myAsyncState.subscribe(subscriptionFn);
 
     // then
@@ -76,18 +86,24 @@ describe('AsyncState - subscriptions', () => {
 
     expect(subscriptionFn.mock.calls).toEqual(
       [
-        [{args: [{
-        aborted: false,
-        executionArgs: {},
-        payload: null
-      }], data: null, status: ASYNC_STATUS.loading}],
+        [{
+          args: [{
+            executionArgs: [],
+            previousState: undefined,
+            onAbort: expect.any(Function),
+            aborted: false,
+            payload: null
+          }], data: null, status: ASYNC_STATUS.loading
+        }],
       ]
     );
     expect(subscriptionFn).toHaveBeenCalledTimes(1);
     expect(myAsyncState.currentState).toEqual({
       args: [{
+        executionArgs: [],
+        previousState: undefined,
+        onAbort: expect.any(Function),
         aborted: false,
-        executionArgs: {},
         payload: null
       }],
       status: ASYNC_STATUS.success,
@@ -102,7 +118,7 @@ describe('AsyncState - subscriptions', () => {
     let promise = timeout(50, "Some Value");
 
     // when
-    let myAsyncState = new AsyncState({ key, promise, config: myConfig });
+    let myAsyncState = new AsyncState({key, promise, config: myConfig});
     let unsubscribe = myAsyncState.subscribe(subscriptionFn);
     unsubscribe();
 
@@ -117,8 +133,10 @@ describe('AsyncState - subscriptions', () => {
     expect(subscriptionFn).toHaveBeenCalledTimes(0);
     expect(myAsyncState.currentState).toEqual({ // original async state resolved, but we got notified neither by loading nor success
       args: [{
+        executionArgs: [],
+        previousState: undefined,
+        onAbort: expect.any(Function),
         aborted: false,
-        executionArgs: {},
         payload: null
       }],
       status: ASYNC_STATUS.success,

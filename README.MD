@@ -90,3 +90,19 @@ let transactionsPromiseDefinition = Object.freeze({
   },
 });
 ```
+
+The previous comments were the first draft of ideas came to my mind.
+
+## Project setup
+
+```shell script
+# from root dir
+# this will start the react-async-state package and watch for changes
+cd react-async-state
+yarn start
+
+# in another terminal tab and from root dir
+# this project uses the linked react-async-state
+cd react-async-state/example
+yarn start
+```

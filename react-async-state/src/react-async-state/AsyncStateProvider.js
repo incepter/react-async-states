@@ -10,7 +10,7 @@ function createAsyncStateEntry(asyncState) {
   };
 }
 
-export function AsyncContextProvider({payload = EMPTY_OBJECT, children, initialAsyncStates = EMPTY_ARRAY}) {
+export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsyncStates = EMPTY_ARRAY}) {
   const asyncStates = React.useRef();
 
   if (!asyncStates.current) {

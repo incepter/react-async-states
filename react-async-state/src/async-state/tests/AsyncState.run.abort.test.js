@@ -35,8 +35,10 @@ describe('AsyncState - run - abort', () => {
     expect(subscription).toHaveBeenCalledTimes(1);
     expect(subscription).toHaveBeenCalledWith({
       args: [{
+        executionArgs: [],
+        previousState: undefined,
+        onAbort: expect.any(Function),
         aborted: false,
-        executionArgs: {},
         payload: null
       }],
       data: null,
@@ -49,8 +51,10 @@ describe('AsyncState - run - abort', () => {
     expect(subscription).toHaveBeenCalledTimes(1);
     expect(subscription).toHaveBeenCalledWith({
       args: {
+        executionArgs: [],
+        previousState: undefined,
+        onAbort: expect.any(Function),
         aborted: true,
-        executionArgs: {},
         payload: null
       },
       data: "reason",
@@ -59,8 +63,10 @@ describe('AsyncState - run - abort', () => {
 
     expect(myAsyncState.currentState).toEqual({
       args: {
+        executionArgs: [],
+        previousState: undefined,
+        onAbort: expect.any(Function),
         aborted: true,
-        executionArgs: {},
         payload: null
       },
       data: "reason",
@@ -74,8 +80,10 @@ describe('AsyncState - run - abort', () => {
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
       args: {
+        executionArgs: [],
+        previousState: undefined,
+        onAbort: expect.any(Function),
         aborted: true,
-        executionArgs: {},
         payload: null
       },
       status: ASYNC_STATUS.aborted,
@@ -120,8 +128,10 @@ describe('AsyncState - run - abort', () => {
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
       args: {
+        executionArgs: [],
+        previousState: undefined,
+        onAbort: expect.any(Function),
         aborted: true,
-        executionArgs: {},
         payload: null
       },
       status: ASYNC_STATUS.aborted,
@@ -165,14 +175,17 @@ describe('AsyncState - run - abort', () => {
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
       args: [{
+        executionArgs: [],
+        onAbort: expect.any(Function),
         aborted: false,
-        executionArgs: {},
         payload: null,
         previousState: {
           args: [
             {
+              executionArgs: [],
+              previousState: undefined,
+              onAbort: expect.any(Function),
               aborted: true,
-              executionArgs: {},
               payload: null
             }
           ],
