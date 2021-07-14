@@ -65,5 +65,16 @@ even if some appear to be impossible:
 
 ## AsyncStateProvider
 
+The provider wires a `AsyncStateContext` in your tree, it accepts the following props:
+
+|Prop                | PropType                  | Default value         | Usage                                     |
+|--------------------|---------------------------|-----------------------|-------------------------------------------|
+|`intialAsyncStates` | `ArrayOf AsyncStateProps` | `empty array`         | Asynchronous states hoisted at provider level
+|`payload`           | `number`                  | `empty object`        | Whatever payload you want to pass at provider level
+|`children`          | `any`                     | N/A                   | The react tree
+
 ## useAsyncState
+
+Subscriptions to asynchronous states goes through this hook: `useAsyncState`
+
 
