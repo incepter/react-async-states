@@ -15,13 +15,28 @@ const asyncStatesDemo = [
   {
     key: "users",
     promise(argv) {
-      console.log('running promise with', argv)
       const controller = new AbortController();
       const {signal} = controller;
       argv.onAbort(function abortSignal() {
         controller.abort();
       });
       return fetch('https://jsonplaceholder.typicode.com/users', {signal})
+        .then(curriedTimeout(1000))
+        .then(res => res.json());
+    },
+    config: {
+      lazy: false,
+    }
+  },
+  {
+    key: "posts",
+    promise(argv) {
+      const controller = new AbortController();
+      const {signal} = controller;
+      argv.onAbort(function abortSignal() {
+        controller.abort();
+      });
+      return fetch('https://jsonplaceholder.typicode.com/posts', {signal})
         .then(curriedTimeout(1000))
         .then(res => res.json());
     },

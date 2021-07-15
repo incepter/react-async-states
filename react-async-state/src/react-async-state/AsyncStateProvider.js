@@ -1,6 +1,6 @@
 import React from "react";
 import { AsyncStateContext } from "./context";
-import { EMPTY_ARRAY, EMPTY_OBJECT } from "../utils";
+import { EMPTY_ARRAY, EMPTY_OBJECT, invokeIfPresent } from "../utils";
 import AsyncState from "../async-state/AsyncState";
 
 function createAsyncStateEntry(asyncState) {
@@ -88,6 +88,22 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
     payload,
     dispose,
   }), []);
+
+  React.useEffect(function runNonLazyAsyncStates() {
+    const cleanups = [];
+    initialAsyncStates.forEach(function runAndGetCleanup(as) {
+      const entry = asyncStates.current[as.key];
+      if (!entry) {
+        return;
+      }
+      cleanups.push(run(entry.value));
+    });
+    return function cleanup() {
+      cleanups.forEach(function cleanupRun(cb) {
+        invokeIfPresent(cb);
+      })
+    }
+  }, [initialAsyncStates]);
 
   React.useEffect(function printStates() {
     const intervalId = setInterval(function doIt() {

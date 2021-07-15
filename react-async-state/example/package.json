@@ -5,11 +5,12 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
+    "lodash": "^4.17.21",
     "prop-types": "^15.6.2",
     "react": "link:../node_modules/react",
+    "react-async-state": "link:..",
     "react-dom": "^16.9.0",
-    "react-scripts": "^3.0.1",
-    "react-async-state": "link:.."
+    "react-scripts": "^3.0.1"
   },
   "scripts": {
     "start": "react-scripts start",
