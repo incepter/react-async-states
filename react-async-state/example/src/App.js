@@ -2,10 +2,30 @@ import React from 'react';
 import { useAsyncState } from 'react-async-state';
 import DemoProvider from "./Provider";
 
+function WrapToggle({children}) {
+  const [shouldDisplay, setShouldDisplay] = React.useState(true);
+
+
+  return (
+    <>
+      <button onClick={() => setShouldDisplay(old => !old)}>Toggle</button>
+      <br/>
+      {shouldDisplay && typeof children === "function" && children()}
+      {shouldDisplay && typeof children !== "function" && children}
+    </>
+  );
+
+}
+
+function ForkSubscription({forkKey}) {
+  let value = useAsyncState(forkKey, [])?.state;
+  return JSON.stringify(value);
+}
+
 
 const App = ({fork = false, payload}) => {
 
-  const {key, run, state, abort} = useAsyncState({key: "users", fork, payload}, []);
+  const {key, run, state, abort} = useAsyncState({key: "users", fork, hoistToProvider: true, payload}, []);
 
   // console.log({state});
 
@@ -32,6 +52,7 @@ const App = ({fork = false, payload}) => {
           <button onClick={abort}>abort</button>
         </>
       )}
+      {fork && <ForkSubscription forkKey={key}/>}
     </div>
   )
 }
@@ -42,12 +63,14 @@ function Wrapper() {
     <DemoProvider>
       <button onClick={() => setShouldDisplay(old => !old)}>Toggle</button>
 
-      {shouldDisplay && (<div style={{display: 'flex', padding: 32, maxWidth: '1200px', justifyContent: 'space-around'}}>
-        <App fork payload={{fork: "haha"}}/>
-        <App/>
-        <App/>
-        <App/>
-      </div>)}
+      {shouldDisplay && (
+        <div style={{display: 'flex', padding: 32, maxWidth: '1200px', justifyContent: 'space-around'}}>
+          <WrapToggle>
+            {() => <App fork payload={{fork: "haha"}}/>}
+          </WrapToggle>
+          <App/>
+          <App/>
+        </div>)}
     </DemoProvider>
   );
 }

@@ -1,5 +1,5 @@
 import React from "react";
-import { EMPTY_OBJECT } from "../utils";
+import { EMPTY_OBJECT, invokeIfPresent } from "../utils";
 import { AsyncStateContext } from "./context";
 import AsyncState from "../async-state/AsyncState";
 
@@ -49,15 +49,7 @@ export function useAsyncState(subscriptionConfig = defaultConfig, dependencies) 
     forkConfig = EMPTY_OBJECT,
   } = providedConfig;
 
-  React.useMemo(function getAS() { // this useMemo acts like a construction for now
-    if (isInsideProvider && asyncState.current) {
-      contextValue.dispose(asyncState.current);
-      asyncState.current = null;
-    } else if (asyncState.current) {
-      asyncState.current.dispose();
-      asyncState.current = null;
-    }
-
+  const registrationConfig = React.useMemo(function getAS() { // this useMemo acts like a construction for now
     let output;
     if (isInsideProvider) {
       output = contextValue.get(key);
@@ -70,7 +62,11 @@ export function useAsyncState(subscriptionConfig = defaultConfig, dependencies) 
           }
         }
       } else if (hoistToProvider) {
-        output = contextValue.hoist(providedConfig);
+        if (fork) {
+          output = contextValue.fork(key, forkConfig);
+        } else {
+          output = contextValue.hoist(providedConfig);
+        }
       } else if (promiseConfig) {
         output = new AsyncState({key, ...promiseConfig});
       }
@@ -83,8 +79,8 @@ export function useAsyncState(subscriptionConfig = defaultConfig, dependencies) 
       asyncState.current.dispose();
     }
     asyncState.current = output;
+    return providedConfig;
   }, [providedConfig]);
-
 
   // subscribe early to current value of asyncState
   React.useLayoutEffect(function onAsyncStateRefChange() {
@@ -104,11 +100,21 @@ export function useAsyncState(subscriptionConfig = defaultConfig, dependencies) 
       };
     }
     const rerenderConfig = {...defaultRerenderStatusConfig, ...rerenderStatus};
-    return asyncState.current.subscribe(function onUpdate(newState) {
+    const unsubscribe = asyncState.current.subscribe(function onUpdate(newState) {
       if (rerenderConfig[newState.status]) {
         rerender({});
       }
     });
+
+    function cleanup() {
+      invokeIfPresent(unsubscribe);
+      if (isInsideProvider) {
+        contextValue.dispose(asyncState.current);
+      } else if (asyncState.current) {
+        asyncState.current.dispose();
+      }
+    }
+    return cleanup;
   }, [asyncState.current]);
 
   function run() {

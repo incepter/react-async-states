@@ -23,14 +23,21 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
     asyncStates.current = initialAsyncStates.reduce(function createInitialAsyncStates(result, current) {
       const {key, promise, config} = current;
       result[current.key] = createAsyncStateEntry(new AsyncState({key, promise, config}));
+      result[current.key].initiallyHoisted = true;
       return result;
     }, {});
   }, [initialAsyncStates]);
 
   function dispose(asyncState) {
     const {key} = asyncState;
-    asyncState.dispose();
-    delete asyncStates.current[key];
+    const asyncStateEntry = asyncStates.current[key];
+    if (!asyncStateEntry || asyncStateEntry?.initiallyHoisted) {
+      return;
+    }
+    const didDispose = asyncState.dispose();
+    if (didDispose) {
+      delete asyncStates.current[key];
+    }
   }
 
   function fork(key, forkConfig) {
@@ -41,7 +48,7 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
     }
 
     const forkedAsyncState = asyncState.fork(forkConfig);
-    asyncStates.current[key] = createAsyncStateEntry(forkedAsyncState);
+    asyncStates.current[forkedAsyncState.key] = createAsyncStateEntry(forkedAsyncState);
 
     return forkedAsyncState;
   }
@@ -55,11 +62,13 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
     }
 
     if (existing) {
-      dispose(existing);
+      let didDispose = dispose(existing);
+      if (didDispose) {
+        asyncStates.current[key] = createAsyncStateEntry(new AsyncState({key, ...promiseConfig}));
+      }
     }
-
-    asyncStates.current[key] = createAsyncStateEntry(new AsyncState({key, ...promiseConfig}));
     return get(key);
+
   }
 
   function get(key) {
@@ -68,11 +77,6 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
 
   function run(asyncState) {
     const asyncStateEntry = asyncStates.current[asyncState.key];
-    if (asyncStateEntry.scheduledRunsCount === -1) {
-      asyncStateEntry.scheduledRunsCount = 1;
-    } else {
-      asyncStateEntry.scheduledRunsCount += 1;
-    }
     return runScheduledAsyncState(asyncStateEntry);
   }
 
@@ -85,6 +89,13 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
     dispose,
   }), []);
 
+  React.useEffect(function printStates() {
+    const intervalId = setInterval(function doIt() {
+      console.log(asyncStates.current);
+    }, 5000);
+    return () => clearInterval(intervalId);
+  });
+
   return (
     <AsyncStateContext.Provider value={contextValue}>
       {children}
@@ -93,6 +104,12 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
 }
 
 function runScheduledAsyncState(asyncStateEntry) {
+  if (asyncStateEntry.scheduledRunsCount === -1) {
+    asyncStateEntry.scheduledRunsCount = 1;
+  } else {
+    asyncStateEntry.scheduledRunsCount += 1;
+  }
+
   let isCancelled = false;
 
   function cancel() {

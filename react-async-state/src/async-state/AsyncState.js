@@ -3,9 +3,9 @@ import { wrapPromise } from "./wrappers/wrap-promise";
 import { notifySubscribers } from "./notify-subscribers";
 import { AsyncStateBuilder } from "./StateBuilder";
 
-const defaultConfig = Object.freeze({ lazy: true });
+const defaultConfig = Object.freeze({lazy: true});
 
-function AsyncState({ key, promise, config }) {
+function AsyncState({key, promise, config}) {
   this.key = key; // todo: check key
   this.config = config;
   this.originalPromise = promise;
@@ -28,12 +28,14 @@ function AsyncState({ key, promise, config }) {
   this.payload = null;
   this.currentAborter = null;
 
+  this.locks = 0;
+
   Object.preventExtensions(this);
 }
 
-AsyncState.prototype.setState = function(newState, replacepreviousState = true, notify = true) {
+AsyncState.prototype.setState = function (newState, replacepreviousState = true, notify = true) {
   if (replacepreviousState) {
-    this.previousState = { ...this.currentState };
+    this.previousState = {...this.currentState};
   }
   if (typeof newState === "function") {
     this.currentState = newState(this.currentState);
@@ -49,12 +51,17 @@ AsyncState.prototype.abort = function abortImpl(reason) {
   invokeIfPresent(this.currentAborter, reason);
 }
 AsyncState.prototype.dispose = function disposeImpl() {
+  console.log('this', this.locks, this.subscriptions)
+  if (this.locks > 0) {
+    return false;
+  }
   this.abort();
   this.subscriptions = {};
+  return true;
 }
 
-AsyncState.prototype.run = function(...execArgs) {
-  if (this.currentState.status === ASYNC_STATUS.loading ) { // todo: make this configurable with another attr from config
+AsyncState.prototype.run = function (...execArgs) {
+  if (this.currentState.status === ASYNC_STATUS.loading) { // todo: make this configurable with another attr from config
     this.abort();
     this.currentAborter = null;
   }
@@ -63,14 +70,14 @@ AsyncState.prototype.run = function(...execArgs) {
 
   let userAborter = null;
 
-  const argsObject =  {
-      aborted: false,
-      payload: this.payload,
-      executionArgs: execArgs,
-      previousState: this.previousState,
-      onAbort (cb) {
-        userAborter = cb;
-      }
+  const argsObject = {
+    aborted: false,
+    payload: this.payload,
+    executionArgs: execArgs,
+    previousState: this.previousState,
+    onAbort(cb) {
+      userAborter = cb;
+    }
   };
 
   function abort(reason) {
@@ -89,25 +96,29 @@ AsyncState.prototype.run = function(...execArgs) {
 }
 
 
-AsyncState.prototype.subscribe = function(cb) {
+AsyncState.prototype.subscribe = function (cb) {
   let that = this;
   this.subscriptionsMeter += 1;
   let subscriptionKey = `${this.key}-sub-${this.subscriptionsMeter}`;
+
   function cleanup() {
+    that.locks -= 1;
     delete that.subscriptions[subscriptionKey];
   }
+
   this.subscriptions[subscriptionKey] = {
     cleanup,
     callback: cb,
     key: subscriptionKey,
   };
+  this.locks += 1;
   return cleanup;
 }
 
-const defaultForkConfig = Object.freeze({ keepState: false });
+const defaultForkConfig = Object.freeze({keepState: false});
 
-AsyncState.prototype.fork = function(forkConfig = defaultForkConfig) {
-  const mergedConfig = { ...defaultConfig, ...forkConfig };
+AsyncState.prototype.fork = function (forkConfig = defaultForkConfig) {
+  const mergedConfig = {...defaultConfig, ...forkConfig};
 
   const clone = new AsyncState({
     key: forkKey(this),
@@ -118,8 +129,8 @@ AsyncState.prototype.fork = function(forkConfig = defaultForkConfig) {
   this.forkCount += 1;
 
   if (mergedConfig.keepState) {
-    clone.currentState = { ...this.currentState };
-    clone.previousState = { ...(this.previousState ?? EMPTY_OBJECT)};
+    clone.currentState = {...this.currentState};
+    clone.previousState = {...(this.previousState ?? EMPTY_OBJECT)};
   }
 
   clone.__IS_FORK__ = true;
