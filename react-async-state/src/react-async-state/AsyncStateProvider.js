@@ -105,13 +105,6 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
     }
   }, [initialAsyncStates]);
 
-  React.useEffect(function printStates() {
-    const intervalId = setInterval(function doIt() {
-      console.log(asyncStates.current);
-    }, 5000);
-    return () => clearInterval(intervalId);
-  });
-
   return (
     <AsyncStateContext.Provider value={contextValue}>
       {children}

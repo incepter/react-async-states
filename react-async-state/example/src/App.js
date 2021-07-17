@@ -14,7 +14,6 @@ function SelectorDemo({asyncStateKey, selector, areEqual}) {
 function WrapToggle({children}) {
   const [shouldDisplay, setShouldDisplay] = React.useState(true);
 
-
   return (
     <>
       <button onClick={() => setShouldDisplay(old => !old)}>Toggle</button>
@@ -88,7 +87,7 @@ function usersPostsSelector(usersState, postsState) {
   if (!usersState || !postsState || usersState.status === "loading" || postsState.status === "loading") {
     return undefined;
   }
-  return {users: usersState.data.map(user => ({ ...user, posts: postsState.data.find(t => t.userId === user.id) }))};
+  return {users: usersState.data?.map?.(user => ({ ...user, posts: postsState?.data?.find?.(t => t.userId === user.id) }))};
 }
 
 export default Wrapper;

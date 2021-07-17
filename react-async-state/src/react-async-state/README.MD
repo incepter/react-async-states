@@ -54,7 +54,10 @@ This package isn't
 The following features are intended to be implemented in the future. We try to keep code extensible to these features,
 even if some appear to be impossible:
 
-- useAsyncStateSelector: a selector from one or multiple states (selector should support memoization function, and only renders if necessary to optimize perf)
+- useAsyncStateSelector: [HALF DONE] a selector from one or multiple states (selector should support memoization function, and only renders if necessary to optimize perf)
+- support multiple runners: for generators
+- enhance the developer experience
+- forge the replace state API
 - Docs: we need a provide proper and detailed docs with several examples
 - support transitions
 - support effects: debounce, throttle...

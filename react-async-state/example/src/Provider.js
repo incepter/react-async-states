@@ -20,7 +20,11 @@ const asyncStatesDemo = [
       argv.onAbort(function abortSignal() {
         controller.abort();
       });
-      return fetch('https://jsonplaceholder.typicode.com/users', {signal})
+      let url = 'https://jsonplaceholder.typicode.com/users';
+      if (argv.payload?.userId) {
+        url += `/${argv.payload.userId}`;
+      }
+      return fetch(url, {signal})
         .then(curriedTimeout(1000))
         .then(res => res.json());
     },
@@ -48,4 +52,11 @@ const asyncStatesDemo = [
 
 export default function DemoProvider({children}) {
   return <AsyncStateProvider initialAsyncStates={asyncStatesDemo}>{children}</AsyncStateProvider>;
+}
+function toto({ children }) {
+  return (
+    <AsyncStateProvider initialAsyncStates={ /* array of  {key, config, promise}*/ } payload={/* any */}>
+      {children}
+    </AsyncStateProvider>
+  );
 }

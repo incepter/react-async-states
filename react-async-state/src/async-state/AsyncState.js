@@ -33,8 +33,8 @@ function AsyncState({key, promise, config}) {
   Object.preventExtensions(this);
 }
 
-AsyncState.prototype.setState = function (newState, replacepreviousState = true, notify = true) {
-  if (replacepreviousState) {
+AsyncState.prototype.setState = function (newState, replacePreviousState = true, notify = true) {
+  if (replacePreviousState) {
     this.previousState = {...this.currentState};
   }
   if (typeof newState === "function") {
@@ -51,7 +51,6 @@ AsyncState.prototype.abort = function abortImpl(reason) {
   invokeIfPresent(this.currentAborter, reason);
 }
 AsyncState.prototype.dispose = function disposeImpl() {
-  console.log('this', this.locks, this.subscriptions)
   if (this.locks > 0) {
     return false;
   }

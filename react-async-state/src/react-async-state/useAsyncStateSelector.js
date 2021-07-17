@@ -2,10 +2,16 @@ import React from "react";
 import { AsyncStateContext } from "./context";
 import { invokeIfPresent } from "../utils";
 
-export function useAsyncStateSelector(keys, selector, areEqual, defaultValue) {
+function shallowEqual(prev, next) {
+  return prev === next;
+}
+
+export function useAsyncStateSelector(keys, selector, areEqual = shallowEqual, defaultValue = undefined) {
   const currentValue = React.useRef(defaultValue);
   const [, rerender] = React.useState();
   const {get} = React.useContext(AsyncStateContext);
+
+  // todo: invoke cleanups in a better way
 
   const effectiveKeys = typeof keys === "string" ? [keys] : keys; // assumes keys is an array of string, check to add
   const oldCleanups = React.useMemo(function selectorImplementation() {
