@@ -53,10 +53,3 @@ const asyncStatesDemo = [
 export default function DemoProvider({children}) {
   return <AsyncStateProvider initialAsyncStates={asyncStatesDemo}>{children}</AsyncStateProvider>;
 }
-function toto({ children }) {
-  return (
-    <AsyncStateProvider initialAsyncStates={ /* array of  {key, config, promise}*/ } payload={/* any */}>
-      {children}
-    </AsyncStateProvider>
-  );
-}

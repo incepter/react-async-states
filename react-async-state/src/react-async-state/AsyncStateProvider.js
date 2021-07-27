@@ -1,109 +1,58 @@
 import React from "react";
 import { AsyncStateContext } from "./context";
 import { EMPTY_ARRAY, EMPTY_OBJECT, invokeIfPresent } from "../utils";
-import AsyncState from "../async-state/AsyncState";
+import {
+  createInitialAsyncStatesReducer,
+  providerDispose,
+  providerFork,
+  providerGet,
+  providerHoist,
+  providerRun
+} from "./utils/providerUtils";
 
-function createAsyncStateEntry(asyncState) {
-  return {
-    value: asyncState,
-    scheduledRunsCount: -1,
-  };
+function extractValue(entry) {
+  return entry.value;
 }
 
+function nonLazyEntries(entry) {
+  return !entry.value.config.lazy;
+}
+
+
 export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsyncStates = EMPTY_ARRAY}) {
-  const asyncStates = React.useRef();
-
-  if (!asyncStates.current) {
-    asyncStates.current = {};
-  }
-
-  React.useMemo(function constructAsyncStates() {
-    // dispose old async states
-    Object.values(asyncStates.current).forEach(dispose);
-    asyncStates.current = initialAsyncStates.reduce(function createInitialAsyncStates(result, current) {
-      const {key, promise, config} = current;
-      result[current.key] = createAsyncStateEntry(new AsyncState({key, promise, config}));
-      result[current.key].initiallyHoisted = true;
-      return result;
-    }, {});
+  // mutable, and will be mutated!
+  const asyncStateEntries = React.useMemo(function constructAsyncStates() {
+    return initialAsyncStates.reduce(createInitialAsyncStatesReducer, {});
   }, [initialAsyncStates]);
 
-  function dispose(asyncState) {
-    const {key} = asyncState;
-    const asyncStateEntry = asyncStates.current[key];
-    if (!asyncStateEntry || asyncStateEntry?.initiallyHoisted) {
-      return;
-    }
-    const didDispose = asyncState.dispose();
-    if (didDispose) {
-      delete asyncStates.current[key];
-    }
-  }
-
-  function fork(key, forkConfig) {
-    const asyncState = get(key);
-
-    if (!asyncState) {
-      return;
+  React.useEffect(function disposeOldEntries() {
+    console.log('PROVIDER EFFECT')
+    if (!asyncStateEntries || !asyncStateEntries.length) {
+      return undefined;
     }
 
-    const forkedAsyncState = asyncState.fork(forkConfig);
-    asyncStates.current[forkedAsyncState.key] = createAsyncStateEntry(forkedAsyncState);
+    const cleanups = asyncStateEntries
+      .filter(nonLazyEntries) // get only non lazy!
+      .map(contextValue.run) // this produces a side effect! it runs the async state entry, but collects the cleanup (which aborts and unsubscribes)
 
-    return forkedAsyncState;
-  }
-
-  function hoist(config) {
-    const {key, hoistToProviderConfig = EMPTY_OBJECT, promiseConfig} = config;
-
-    const existing = get(key);
-    if (existing && !hoistToProviderConfig.override) {
-      return;
-    }
-
-    if (existing) {
-      let didDispose = dispose(existing);
-      if (didDispose) {
-        asyncStates.current[key] = createAsyncStateEntry(new AsyncState({key, ...promiseConfig}));
-      }
-    }
-    return get(key);
-
-  }
-
-  function get(key) {
-    return asyncStates.current[key]?.value;
-  }
-
-  function run(asyncState) {
-    const asyncStateEntry = asyncStates.current[asyncState.key];
-    return runScheduledAsyncState(asyncStateEntry);
-  }
-
-  const contextValue = React.useMemo(() => ({
-    get,
-    run,
-    fork,
-    hoist,
-    payload,
-    dispose,
-  }), []);
-
-  React.useEffect(function runNonLazyAsyncStates() {
-    const cleanups = [];
-    initialAsyncStates.forEach(function runAndGetCleanup(as) {
-      const entry = asyncStates.current[as.key];
-      if (!entry) {
-        return;
-      }
-      cleanups.push(run(entry.value));
-    });
     return function cleanup() {
+      if (asyncStateEntries) {
+        Object.values(asyncStateEntries).map(extractValue).forEach(contextValue.dispose);
+      }
       cleanups.forEach(function cleanupRun(cb) {
         invokeIfPresent(cb);
       })
     }
-  }, [initialAsyncStates]);
+  }, [asyncStateEntries]);
+
+  const contextValue = React.useMemo(() => ({
+    payload,
+    get: providerGet(asyncStateEntries),
+    run: providerRun(asyncStateEntries),
+    fork: providerFork(asyncStateEntries),
+    hoist: providerHoist(asyncStateEntries),
+    dispose: providerDispose(asyncStateEntries),
+  }), [asyncStateEntries]);
 
   return (
     <AsyncStateContext.Provider value={contextValue}>
@@ -112,36 +61,3 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
   );
 }
 
-function runScheduledAsyncState(asyncStateEntry) {
-  if (asyncStateEntry.scheduledRunsCount === -1) {
-    asyncStateEntry.scheduledRunsCount = 1;
-  } else {
-    asyncStateEntry.scheduledRunsCount += 1;
-  }
-
-  let isCancelled = false;
-
-  function cancel() {
-    isCancelled = true;
-    if (asyncStateEntry.scheduledRunsCount === 1) {
-      asyncStateEntry.scheduledRunsCount = -1;
-    } else if (asyncStateEntry.scheduledRunsCount > 1) {
-      asyncStateEntry.scheduledRunsCount -= 1;
-    }
-  }
-
-  function runner() {
-    if (!isCancelled) {
-      if (asyncStateEntry.scheduledRunsCount === 1) {
-        asyncStateEntry.value.run();
-        asyncStateEntry.scheduledRunsCount = -1;
-      } else {
-        asyncStateEntry.scheduledRunsCount -= 1;
-      }
-    }
-  }
-
-  Promise.resolve().then(runner);
-
-  return cancel;
-}

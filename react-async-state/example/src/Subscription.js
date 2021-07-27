@@ -14,30 +14,6 @@ function curriedTimeout(delay) {
   }
 }
 
-function fake() {
-  const {state: {data: currentUser}, run: reload} = useAsyncState("current-user", []);
-
-
-  const {state, run, abort} = useAsyncState("users", []);
-
-  // const {key, state, run, abort, previousState, replaceState} = useAsyncState({
-  //   key: "posts",
-  //   rerenderStatus: {loading: false, success: true, aborted: true, error: true},
-  //   fork: true, // false
-  //   forkConfig: {},
-  //   hoistToProvider: true, // false
-  //   promiseConfig: {
-  //     config: {lazy: false}, promise() {
-  //       return new Promise(function promiseImpl(resolve) {
-  //         setTimeout(resolve, 1000); // resolve with undefined after one second
-  //       })
-  //     }
-  //   }
-  // }, []);
-
-
-}
-
 export function Subscription({asyncStateConfig}) {
 
   const {state, run, abort} = useAsyncState(asyncStateConfig, []);
@@ -68,9 +44,6 @@ function usersSelector(usersState, postsState) {
 }
 
 function SelectorDemo() {
-  const currentUserProfilePicture = useAsyncStateSelector("currentUser", getProfilePicture, isEqual, avatarUrl);
-  const currentUserCategoriesDetails = useAsyncStateSelector(["currentUser", "categories"], getUserCategories);
-
   const selectedValue = useAsyncStateSelector(["users", "posts"], usersSelector, isEqual);
 
   console.log('SELECTED RENDER', selectedValue);

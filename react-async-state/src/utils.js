@@ -12,6 +12,7 @@ export const EMPTY_OBJECT = Object.freeze({});
 /* istanbul ignore next */
 export function invokeIfPresent(fn, ...args) {
   if (typeof fn === "function") {
-    fn(...args);
+    return fn(...args);
   }
+  return undefined;
 }
