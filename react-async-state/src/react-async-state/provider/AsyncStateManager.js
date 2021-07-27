@@ -1,24 +1,9 @@
-import AsyncState from "../../async-state/AsyncState";
 import { EMPTY_OBJECT } from "../../utils";
-import runScheduledAsyncState from "../runScheduledAsyncState";
+import AsyncState from "../../async-state/AsyncState";
+import { createAsyncStateEntry, runScheduledAsyncState } from "./providerUtils";
 
-export function createAsyncStateEntry(asyncState) {
-  return {
-    value: asyncState,
-    scheduledRunsCount: -1,
-  };
-}
-
-export function createInitialAsyncStatesReducer(result, current) {
-  const {key, promise, config} = current;
-  result[current.key] = createAsyncStateEntry(new AsyncState({key, promise, config}));
-  result[current.key].initiallyHoisted = true;
-  return result;
-}
-
-export function providerDispose(asyncStateEntries) {
-
-  return function sharedDispose(asyncState) {
+export function AsyncStateManager(asyncStateEntries) {
+  function dispose(asyncState) {
     const {key} = asyncState;
     const asyncStateEntry = asyncStateEntries[key];
     if (!asyncStateEntry || asyncStateEntry?.initiallyHoisted) {
@@ -34,10 +19,8 @@ export function providerDispose(asyncStateEntries) {
     return didDispose;
   }
 
-}
+  function fork(key, forkConfig) {
 
-export function providerFork(asyncStateEntries) {
-  return function sharedFork(key, forkConfig) {
     const asyncState = get(key);
 
     if (!asyncState) {
@@ -49,10 +32,8 @@ export function providerFork(asyncStateEntries) {
 
     return forkedAsyncState;
   }
-}
 
-export function providerHoist(asyncStateEntries, dispose) {
-  return function sharedHoist(config) {
+  function hoist(config) {
     const {key, hoistToProviderConfig = EMPTY_OBJECT, promiseConfig} = config;
 
     const existing = get(key);
@@ -68,17 +49,15 @@ export function providerHoist(asyncStateEntries, dispose) {
     }
     return get(key);
   }
-}
 
-export function providerGet(asyncStateEntries) {
-  return function sharedGet(key) {
+  function get(key) {
     return asyncStateEntries[key]?.value;
   }
-}
 
-export function providerRun(asyncStateEntries) {
-  return function sharedRun(asyncState) {
+  function run(asyncState) {
     const asyncStateEntry = asyncStateEntries[asyncState.key];
     return runScheduledAsyncState(asyncStateEntry);
   }
+
+  return {run, get, fork, hoist, dispose};
 }

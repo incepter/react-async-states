@@ -1,6 +1,21 @@
-import { callAsync } from "./utils/async";
+import AsyncState from "../../async-state/AsyncState";
+import { callAsync } from "../utils/async";
 
-export default function runScheduledAsyncState(asyncStateEntry) {
+export function createAsyncStateEntry(asyncState) {
+  return {
+    value: asyncState,
+    scheduledRunsCount: -1,
+  };
+}
+
+export function createInitialAsyncStatesReducer(result, current) {
+  const {key, promise, config} = current;
+  result[current.key] = createAsyncStateEntry(new AsyncState({key, promise, config}));
+  result[current.key].initiallyHoisted = true;
+  return result;
+}
+
+export function runScheduledAsyncState(asyncStateEntry) {
   if (asyncStateEntry.scheduledRunsCount === -1) {
     asyncStateEntry.scheduledRunsCount = 1; // first schedule
   } else {
