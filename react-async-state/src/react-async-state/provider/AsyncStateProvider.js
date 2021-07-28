@@ -39,7 +39,9 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
       run: manager.run,
       fork: manager.fork,
       hoist: manager.hoist,
+      waitFor: manager.waitFor,
       dispose: manager.dispose,
+      runAsyncState: manager.runAsyncState,
     };
   }, [asyncStateEntries, payload]);
 

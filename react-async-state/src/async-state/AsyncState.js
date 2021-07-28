@@ -61,7 +61,7 @@ AsyncState.prototype.dispose = function disposeImpl() {
 }
 
 AsyncState.prototype.run = function run(...execArgs) {
-  if (this.currentState.status === ASYNC_STATUS.loading) { // todo: make this configurable with another attr from config
+  if (this.currentState.status === ASYNC_STATUS.loading) {
     this.abort();
     this.currentAborter = null;
   }
@@ -142,10 +142,16 @@ function forkKey(asyncState) {
 }
 
 AsyncState.prototype.replaceState = function replaceState(newValue) {
+  if (this.currentState.status === ASYNC_STATUS.loading) {
+    this.abort();
+    this.currentAborter = null;
+  }
+
   let effectiveValue = newValue;
   if (typeof newValue === "function") {
     effectiveValue = newValue(this.currentState);
   }
+
   this.setState(AsyncStateBuilder.success(effectiveValue));
 }
 

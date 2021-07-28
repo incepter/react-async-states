@@ -91,11 +91,9 @@ function ReplaceStateOriginal() {
   return (
     <>
       <h3>{status}-{data}</h3>
-      {status === "success" && (
-        <input
-          style={{minWidth: 200, backgroundColor: "red", color: "white", border: "5px solid red"}} value={data}
-          onChange={e => replaceState(e.target.value)}/>
-      )}
+      <input
+        style={{minWidth: 200, backgroundColor: "red", color: "white", border: "5px solid red"}} value={data}
+        onChange={e => replaceState(e.target.value)}/>
     </>
   );
 }

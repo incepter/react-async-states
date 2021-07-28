@@ -20,11 +20,9 @@ export function AsyncStateManager(asyncStateEntries) {
   }
 
   function fork(key, forkConfig) {
-
     const asyncState = get(key);
-
     if (!asyncState) {
-      return;
+      return undefined;
     }
 
     const forkedAsyncState = asyncState.fork(forkConfig);
@@ -33,35 +31,66 @@ export function AsyncStateManager(asyncStateEntries) {
     return forkedAsyncState;
   }
 
+  let listeners = {};
+  function waitFor(key, notify) {
+    if (!listeners[key]) {
+      listeners[key] = { meter: 0 };
+    }
+
+    let keyListeners = listeners[key];
+    const index = ++keyListeners.meter;
+
+    function cleanup() {
+      delete keyListeners[index];
+    }
+
+    keyListeners[index] = {notify, cleanup};
+    return cleanup;
+  }
+
   function hoist(config) {
     const {key, hoistToProviderConfig = EMPTY_OBJECT, promiseConfig} = config;
 
     const existing = get(key);
     if (existing && !hoistToProviderConfig.override) {
-      return;
+      return existing;
     }
 
     if (existing) {
-
       let didDispose = dispose(existing);
-      if (didDispose) {
-        asyncStateEntries[key] = createAsyncStateEntry(new AsyncState({key, ...promiseConfig}));
+      if (!didDispose) {
+        return existing;
       }
     }
 
     asyncStateEntries[key] = createAsyncStateEntry(new AsyncState({key, ...promiseConfig}));
+    const returnValue = get(key);
 
-    return get(key);
+    if (listeners[key]) {
+      Object.values(listeners).forEach(function notifyListeners(listener) {
+        listener.notify(returnValue);
+      });
+    }
+
+    return returnValue;
   }
 
   function get(key) {
     return asyncStateEntries[key]?.value;
   }
 
-  function run(asyncState) {
+  function run(asyncState, ...args) {
     const asyncStateEntry = asyncStateEntries[asyncState.key];
-    return runScheduledAsyncState(asyncStateEntry);
+    return runScheduledAsyncState(asyncStateEntry, ...args);
   }
 
-  return {run, get, fork, hoist, dispose};
+  function runAsyncState(key, ...args) {
+    const asyncState = get(key);
+    if (!asyncState) {
+      return undefined;
+    }
+    return run(asyncState, ...args);
+  }
+
+  return {run, get, fork, hoist, dispose, waitFor, runAsyncState};
 }
