@@ -18,7 +18,6 @@ export function Subscription({asyncStateConfig}) {
 
   const {state, run, abort} = useAsyncState(asyncStateConfig, []);
 
-
   return (
     <span style={{maxWidth: 400}}>
       <button onClick={() => run()}>RUN</button><br/>

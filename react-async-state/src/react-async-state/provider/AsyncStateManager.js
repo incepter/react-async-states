@@ -47,7 +47,8 @@ export function AsyncStateManager(asyncStateEntries) {
         asyncStateEntries[key] = createAsyncStateEntry(new AsyncState({key, ...promiseConfig}));
       }
     }
-    return get(key);
+
+    return existing;
   }
 
   function get(key) {

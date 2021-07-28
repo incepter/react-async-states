@@ -16,23 +16,23 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
       return undefined;
     }
 
-    const cleanups = asyncStateEntries
+    const aborts = asyncStateEntries
       .filter(nonLazyEntry) // get only non lazy!
       .map(contextValue.run) // this produces a side effect! it runs the async state entry, but collects the cleanup (which aborts and unsubscribes)
 
     return function cleanup() {
+      aborts.forEach(function cleanupRun(cb) {
+        invokeIfPresent(cb);
+      });
       if (asyncStateEntries) {
         Object.values(asyncStateEntries).map(extractValue).forEach(contextValue.dispose);
       }
-      cleanups.forEach(function cleanupRun(cb) {
-        invokeIfPresent(cb);
-      })
     }
   }, [asyncStateEntries]);
 
   const contextValue = React.useMemo(function getProviderValue() {
-
     const manager = AsyncStateManager(asyncStateEntries);
+
     return {
       payload,
       get: manager.get,
