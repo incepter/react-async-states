@@ -67,7 +67,8 @@ export default function Wrapper() {
       </div>
       {/*<div><SelectorDemo/></div>*/}
       <ReplaceStateOriginal/>
-      <ReplaceStateListener />
+      <ReplaceStateListener/>
+      <ReducerDemo/>
     </DemoProvider>
   );
 }
@@ -106,5 +107,37 @@ function ReplaceStateListener() {
     <>
       <h3>{status}-{data}</h3>
     </>
+  );
+}
+
+
+const reducerPromise = {
+  key: "reducer_promise",
+  hoistToProvider: false,
+  promiseConfig: {
+    promise(argv) {
+      const {executionArgs: [userInput]} = argv;
+      if (userInput > 10) {
+        return "OK good!";
+      }
+      return "KO !!"
+    },
+    config: {lazy: false}
+  },
+};
+
+function ReducerDemo() {
+  const inputRef = React.useRef();
+  const {state: {status, data}, run} = useAsyncState(reducerPromise, []);
+
+  return (
+    <div>
+      <span>{status}-{data}</span>
+      <input placeholder="type here" ref={inputRef}/>
+      <button onClick={() => {
+        run(Number(inputRef.current.value));
+      }}>ClickME!
+      </button>
+    </div>
   );
 }
