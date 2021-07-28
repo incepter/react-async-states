@@ -1,6 +1,6 @@
 import { ASYNC_STATUS, EMPTY_OBJECT, invokeIfPresent } from "../utils";
 import { wrapPromise } from "./wrappers/wrap-promise";
-import { notifySubscribers } from "./notify-subscribers";
+import { clearSubscribers, notifySubscribers } from "./notify-subscribers";
 import { AsyncStateBuilder } from "./StateBuilder";
 
 const defaultConfig = Object.freeze({lazy: true});
@@ -33,7 +33,7 @@ function AsyncState({key, promise, config}) {
   Object.preventExtensions(this);
 }
 
-AsyncState.prototype.setState = function (newState, replacePreviousState = true, notify = true) {
+AsyncState.prototype.setState = function setState(newState, replacePreviousState = true, notify = true) {
   if (replacePreviousState) {
     this.previousState = {...this.currentState};
   }
@@ -54,12 +54,13 @@ AsyncState.prototype.dispose = function disposeImpl() {
   if (this.locks > 0) {
     return false;
   }
-  this.abort();
+  invokeIfPresent(this.abort);
+  clearSubscribers(this);
   this.subscriptions = {};
   return true;
 }
 
-AsyncState.prototype.run = function (...execArgs) {
+AsyncState.prototype.run = function run(...execArgs) {
   if (this.currentState.status === ASYNC_STATUS.loading) { // todo: make this configurable with another attr from config
     this.abort();
     this.currentAborter = null;
@@ -94,7 +95,7 @@ AsyncState.prototype.run = function (...execArgs) {
   return abort;
 }
 
-AsyncState.prototype.subscribe = function (cb) {
+AsyncState.prototype.subscribe = function subscribe(cb) {
   let that = this;
   this.subscriptionsMeter += 1;
   let subscriptionKey = `${this.key}-sub-${this.subscriptionsMeter}`;
@@ -115,7 +116,7 @@ AsyncState.prototype.subscribe = function (cb) {
 
 const defaultForkConfig = Object.freeze({keepState: false});
 
-AsyncState.prototype.fork = function (forkConfig = defaultForkConfig) {
+AsyncState.prototype.fork = function fork(forkConfig = defaultForkConfig) {
   const mergedConfig = {...defaultConfig, ...forkConfig};
 
   const clone = new AsyncState({

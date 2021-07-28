@@ -5,3 +5,9 @@ export function notifySubscribers(promiseState) {
     invokeIfPresent(t.callback, promiseState.currentState);
   });
 }
+
+export function clearSubscribers(promiseState) {
+  Object.values(promiseState.subscriptions).forEach(t => {
+    invokeIfPresent(t.cleanup);
+  });
+}
