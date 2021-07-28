@@ -94,7 +94,6 @@ AsyncState.prototype.run = function (...execArgs) {
   return abort;
 }
 
-
 AsyncState.prototype.subscribe = function (cb) {
   let that = this;
   this.subscriptionsMeter += 1;
@@ -139,6 +138,14 @@ AsyncState.prototype.fork = function (forkConfig = defaultForkConfig) {
 
 function forkKey(asyncState) {
   return `${asyncState.key}-fork-${asyncState.forkCount + 1}`;
+}
+
+AsyncState.prototype.replaceState = function replaceState(newValue) {
+  let effectiveValue = newValue;
+  if (typeof newValue === "function") {
+    effectiveValue = newValue(this.currentState);
+  }
+  this.setState(AsyncStateBuilder.success(effectiveValue));
 }
 
 export default AsyncState;

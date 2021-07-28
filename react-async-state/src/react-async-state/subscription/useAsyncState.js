@@ -225,7 +225,7 @@ function makeReturnValueFromAsyncState(asyncState) {
 
     run: asyncState.run.bind(asyncState),
     abort: asyncState.abort.bind(asyncState),
-    replaceState: asyncState.setState.bind(asyncState),
+    replaceState: asyncState.replaceState.bind(asyncState),
 
     state: Object.freeze({...asyncState.currentState}),
     previousState: asyncState.previousState ? Object.freeze({...asyncState.previousState}) : undefined,
