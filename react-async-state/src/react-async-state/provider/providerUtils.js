@@ -16,6 +16,9 @@ export function createInitialAsyncStatesReducer(result, current) {
 }
 
 export function runScheduledAsyncState(asyncStateEntry, ...executionArgs) {
+  if (!asyncStateEntry) {
+    return;
+  }
   if (asyncStateEntry.scheduledRunsCount === -1) {
     asyncStateEntry.scheduledRunsCount = 1; // first schedule
   } else {

@@ -21,9 +21,7 @@ export default function useProviderAsyncState(configuration, dependencies) {
         }
       } else {
         if (hoistToProvider) {
-          // console.log('before hoist', candidate);
           candidate = contextValue.hoist(configuration);
-          // console.log('after', key, candidate);
         }
       }
     } else {
@@ -50,7 +48,12 @@ export default function useProviderAsyncState(configuration, dependencies) {
   }, [asyncState]);
 
 
-  return useRawAsyncState(asyncState, dependencies, configuration);
+  return useRawAsyncState(asyncState, dependencies, configuration, function run() {
+    if (hoistToProvider) {
+      return contextValue.run(asyncState);
+    }
+    return asyncState.run();
+  });
 }
 
 function NoOp() {
