@@ -42,13 +42,16 @@ export function AsyncStateManager(asyncStateEntries) {
     }
 
     if (existing) {
+
       let didDispose = dispose(existing);
       if (didDispose) {
         asyncStateEntries[key] = createAsyncStateEntry(new AsyncState({key, ...promiseConfig}));
       }
     }
 
-    return existing;
+    asyncStateEntries[key] = createAsyncStateEntry(new AsyncState({key, ...promiseConfig}));
+
+    return get(key);
   }
 
   function get(key) {

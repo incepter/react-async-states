@@ -54,8 +54,8 @@ export default function Wrapper() {
   return (
     <DemoProvider>
       <div style={{display: "flex", justifyContent: "space-between"}}>
-        <Subscription asyncStateConfig="users"/>
-        <Subscription asyncStateConfig="posts"/>
+        {/*<Subscription asyncStateConfig="users"/>*/}
+        {/*<Subscription asyncStateConfig="posts"/>*/}
         {/*<Subscription asyncStateConfig={{*/}
         {/*  key: "users",*/}
         {/*  fork: true,*/}
@@ -65,7 +65,46 @@ export default function Wrapper() {
         {/*  },*/}
         {/*}}/>*/}
       </div>
-      <div><SelectorDemo/></div>
+      {/*<div><SelectorDemo/></div>*/}
+      <ReplaceStateOriginal/>
+      <ReplaceStateListener />
     </DemoProvider>
+  );
+}
+
+
+const undefinedPromise = {
+  key: "undefined_promise",
+  hoistToProvider: true,
+  promiseConfig: {
+    promise() {
+      return "";
+    },
+    config: {lazy: false}
+  },
+};
+
+function ReplaceStateOriginal() {
+  const {state: {status, data}, replaceState} = useAsyncState(undefinedPromise, []);
+
+  return (
+    <>
+      <h3>{status}-{data}</h3>
+      {status === "success" && (
+        <input
+          style={{minWidth: 200, backgroundColor: "red", color: "white", border: "5px solid red"}} value={data}
+          onChange={e => replaceState(e.target.value)}/>
+      )}
+    </>
+  );
+}
+
+function ReplaceStateListener() {
+  const {state: {status, data}} = useAsyncState(undefinedPromise.key, []);
+
+  return (
+    <>
+      <h3>{status}-{data}</h3>
+    </>
   );
 }

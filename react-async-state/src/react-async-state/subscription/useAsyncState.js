@@ -1,8 +1,8 @@
 import React from "react";
-import { EMPTY_OBJECT, invokeIfPresent } from "../utils";
-import { AsyncStateContext } from "./context";
-import AsyncState from "../async-state/AsyncState";
-import useRerender from "./utils/useRerender";
+import { EMPTY_OBJECT, invokeIfPresent } from "../../utils";
+import { AsyncStateContext } from "../context";
+import AsyncState from "../../async-state/AsyncState";
+import useRerender from "../utils/useRerender";
 
 export function useAsyncState(subscriptionConfig, dependencies) {
   const rerender = useRerender();
@@ -137,10 +137,11 @@ export function useAsyncState(subscriptionConfig, dependencies) {
       if (!isInsideProvider) {
         return asyncState.current.run();
       } else {
-        if (fork && !hoistToProvider) {
+        if (hoistToProvider) {
+          return contextValue.run(asyncState.current);
+        } else {
           return asyncState.current.run();
         }
-        return contextValue.run(asyncState.current);
       }
     }
 
