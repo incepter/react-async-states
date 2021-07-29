@@ -25,26 +25,3 @@ export function makeReturnValueFromAsyncState(asyncState, contextValue) {
     previousState: asyncState.previousState ? Object.freeze({...asyncState.previousState}) : undefined,
   });
 }
-
-export function subscribeToAsyncState(asyncState, rerenderConfig, onValue, onCleanup) {
-  if (!asyncState) {
-    return undefined;
-  }
-
-  const unsubscribe = asyncState.subscribe(function onUpdate(newState) {
-    if (rerenderConfig[newState.status]) {
-      onValue(makeReturnValueFromAsyncState(asyncState));
-    }
-  });
-
-  function cleanup() {
-    invokeIfPresent(unsubscribe);
-    invokeIfPresent(onCleanup)
-  }
-
-  return cleanup;
-}
-
-export function mergeAsyncStatePayload(payload1, payload2) {
-  return { ...(payload1 ?? EMPTY_OBJECT), ...(payload2 ?? EMPTY_OBJECT)};
-}

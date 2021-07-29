@@ -1,50 +1,56 @@
 import React from "react";
 import { AsyncStateContext } from "../context";
 import { invokeIfPresent } from "../../utils";
-import useRerender from "../utils/useRerender";
 
 function shallowEqual(prev, next) {
   return prev === next;
 }
 
-function extractCurrentState(asyncState) {
-  return asyncState?.currentState;
-}
+export function useAsyncStateSelector(keys, selector, areEqual = shallowEqual, initialValue = undefined) {
 
-export function useAsyncStateSelector(keys, selector, areEqual = shallowEqual, defaultValue = undefined) {
-  const rerender = useRerender();
-  const selectorValue = React.useRef(defaultValue);
-
-  const {get} = React.useContext(AsyncStateContext);
+  const {get, waitFor} = React.useContext(AsyncStateContext);
   const effectiveKeys = typeof keys === "string" ? [keys] : keys; // assumes keys is an array of string, check to add
 
-  const unsubscriptions = React.useMemo(function selectorImplementation() {
-    const asyncStates = effectiveKeys.map(get);
+  const [returnValue, setReturnValue] = React.useState(function getInitialState() {
+    return selectValues() || initialValue;
+  });
 
-    function rerunSelector() {
-      const selectedValue = selector(...asyncStates.map(extractCurrentState));
 
-      if (!areEqual(selectorValue.current, selectedValue)) {
-        selectorValue.current = selectedValue;
-        rerender({});
+  function selectValues() {
+    const selectedValue = selector(...effectiveKeys.map(function extractCurrentState(key) {
+      const candidate = get(key);
+      if (!candidate) {
+        return undefined;
       }
-    }
+      return candidate.currentState;
+    }));
 
-    function subscribe(asyncState) {
-      return asyncState.subscribe(rerunSelector);
+    if (!areEqual(returnValue, selectedValue)) {
+      return selectedValue;
     }
-
-    return asyncStates.map(subscribe);
-  }, [...effectiveKeys, selector]);
+    return returnValue;
+  }
 
   React.useEffect(function cleanOldSubscriptions() {
-    if (!unsubscriptions || !unsubscriptions.length) {
-      return undefined;
-    }
-    return function invokeOldCleanups() {
-      unsubscriptions.forEach(invokeIfPresent);
-    };
-  }, [unsubscriptions]);
+    let cleanups = [];
 
-  return selectorValue.current;
+    function subscription() {
+      setReturnValue(selectValues);
+    }
+
+    effectiveKeys.forEach(function subscribeOrWaitFor(key) {
+      const asyncState = get(key);
+      if (!asyncState) {
+        cleanups.push(waitFor(key, subscription));
+      } else {
+        cleanups.push(asyncState.subscribe(subscription));
+      }
+    });
+
+    return function invokeOldCleanups() {
+      cleanups.forEach(invokeIfPresent);
+    };
+  }, [...effectiveKeys, selector]);
+
+  return returnValue;
 }

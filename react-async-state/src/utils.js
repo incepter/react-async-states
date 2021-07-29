@@ -16,3 +16,7 @@ export function invokeIfPresent(fn, ...args) {
   }
   return undefined;
 }
+
+export function mergeObjects(obj1, obj2) {
+  return {...(obj1 ?? EMPTY_OBJECT), ...(obj2 ?? EMPTY_OBJECT)};
+}

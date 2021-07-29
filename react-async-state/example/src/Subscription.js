@@ -54,7 +54,7 @@ export default function Wrapper() {
   return (
     <DemoProvider>
       <div style={{display: "flex", justifyContent: "space-between"}}>
-        {/*<Subscription asyncStateConfig="users"/>*/}
+        <Subscription asyncStateConfig="users"/>
         {/*<Subscription asyncStateConfig="posts"/>*/}
         {/*<Subscription asyncStateConfig={{*/}
         {/*  key: "users",*/}
@@ -65,7 +65,7 @@ export default function Wrapper() {
         {/*  },*/}
         {/*}}/>*/}
       </div>
-      {/*<div><SelectorDemo/></div>*/}
+      <div style={{ backgroundColor: "gray"}}><SelectorDemo/></div>
       <ReplaceStateOriginal/>
       <ReplaceStateListener/>
       <ReducerDemo/>

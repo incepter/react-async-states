@@ -1,16 +1,9 @@
 import React from "react";
 import useRerender from "../utils/useRerender";
 import { defaultRerenderStatusConfig, makeReturnValueFromAsyncState } from "./subscriptionUtils";
-import { EMPTY_OBJECT, invokeIfPresent } from "../../utils";
+import { EMPTY_OBJECT, invokeIfPresent, mergeObjects } from "../../utils";
 
-const defaultConfiguration = Object.freeze({
-  lazy: false,
-  condition: true,
-  payload: EMPTY_OBJECT,
-  rerenderStatus: defaultRerenderStatusConfig,
-});
-
-export default function useRawAsyncState(asyncState, dependencies, configuration = defaultConfiguration, run) {
+export default function useRawAsyncState(asyncState, dependencies, configuration, run) {
   const rerender = useRerender();
   const returnValue = React.useRef();
   const previousAsyncState = React.useRef();
@@ -21,6 +14,7 @@ export default function useRawAsyncState(asyncState, dependencies, configuration
     const {rerenderStatus, condition} = configuration;
 
     function runCurrentAsyncState() {
+      asyncState.payload = mergeObjects(asyncState.payload, configuration.payload);
       if (typeof run === "function") {
         return run();
       }

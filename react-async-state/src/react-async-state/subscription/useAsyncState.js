@@ -2,12 +2,14 @@ import React from "react";
 import { AsyncStateContext } from "../context";
 import useProviderAsyncState from "./useProviderAsyncState";
 import { useStandaloneAsyncState } from "./useStandaloneAsyncState";
+import { defaultRerenderStatusConfig } from "./subscriptionUtils";
+import { EMPTY_OBJECT, mergeObjects } from "../../utils";
 
 export function useAsyncState(subscriptionConfig, dependencies) {
   const contextValue = React.useContext(AsyncStateContext);
 
   const configuration = React.useMemo(function readConfiguration() {
-    return readConfig(subscriptionConfig || defaultConfig);
+    return readConfig(subscriptionConfig);
   }, dependencies);
 
   // this will never change, because if suddenly you are no longer in this context
@@ -22,15 +24,20 @@ export function useAsyncState(subscriptionConfig, dependencies) {
 }
 
 const defaultConfig = Object.freeze({
+  fork: false,
+  condition: true,
   hoistToProvider: false,
-});
+  forkConfig: EMPTY_OBJECT,
+  hoistToProviderConfig: EMPTY_OBJECT,
+  rerenderStatus: defaultRerenderStatusConfig,
 
-function createSubscriptionConfigFromString(key) {
-  return {
-    key,
-    hoistToProvider: false,
-  };
-}
+  promiseConfig: {
+    promise() {
+      return undefined;
+    },
+    config: {lazy: false}
+  },
+});
 
 // userConfig is the config the developer wrote
 function readConfig(userConfig) {
@@ -39,7 +46,7 @@ function readConfig(userConfig) {
     return readConfig(userConfig());
   }
   if (typeof userConfig === "string") {
-    return createSubscriptionConfigFromString(userConfig);
+    return mergeObjects(defaultConfig, {key: userConfig});
   }
-  return userConfig;
+  return mergeObjects(defaultConfig, userConfig);
 }
