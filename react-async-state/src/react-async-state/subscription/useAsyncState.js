@@ -3,9 +3,9 @@ import { AsyncStateContext } from "../context";
 import useProviderAsyncState from "./useProviderAsyncState";
 import { useStandaloneAsyncState } from "./useStandaloneAsyncState";
 import { defaultRerenderStatusConfig } from "./subscriptionUtils";
-import { EMPTY_OBJECT, mergeObjects } from "../../utils";
+import { EMPTY_ARRAY, EMPTY_OBJECT, mergeObjects } from "../../utils";
 
-export function useAsyncState(subscriptionConfig, dependencies) {
+export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
   const contextValue = React.useContext(AsyncStateContext);
 
   const configuration = React.useMemo(function readConfiguration() {

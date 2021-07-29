@@ -1,13 +1,10 @@
 import React from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { AsyncStateProvider } from 'react-async-state';
-
-const asyncStatesDemo = [
-  {
+export const demoAsyncStates = {
+  users: {
     key: "users",
     promise(argv) {
-
-      console.log('AZRGV', argv)
 
       const controller = new AbortController();
       const {signal} = controller;
@@ -17,9 +14,9 @@ const asyncStatesDemo = [
 
       return fetch('https://jsonplaceholder.typicode.com/users', {signal})
         .then(res => res.json());
-    }
+    },
   },
-  {
+  posts: {
     key: "posts",
     promise(argv) {
       const controller = new AbortController();
@@ -32,7 +29,8 @@ const asyncStatesDemo = [
         .then(res => res.json());
     }
   },
-];
+}
+const asyncStatesDemo = Object.values(demoAsyncStates);
 
 export default function DemoProvider({children}) {
   const location = useLocation();
