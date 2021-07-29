@@ -1,6 +1,6 @@
 import React from "react";
 import { AsyncStateContext } from "../context";
-import { EMPTY_ARRAY, EMPTY_OBJECT, invokeIfPresent } from "../../utils";
+import { EMPTY_ARRAY, EMPTY_OBJECT, invokeIfPresent, mergeObjects } from "../../utils";
 import { createInitialAsyncStatesReducer } from "./providerUtils";
 import { AsyncStateManager } from "./AsyncStateManager";
 
@@ -10,6 +10,12 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
   const asyncStateEntries = React.useMemo(function constructAsyncStates() {
     return initialAsyncStates.reduce(createInitialAsyncStatesReducer, {});
   }, [initialAsyncStates]);
+
+  React.useLayoutEffect(function onPayloadChange() {
+    Object.values(asyncStateEntries).forEach(function onPayload(entry) {
+      entry.value.payload = mergeObjects(entry.value.payload, payload);
+    })
+  }, [payload]);
 
   React.useEffect(function disposeOldEntriesAndRunNonLazy() {
     if (!asyncStateEntries) {

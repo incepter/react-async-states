@@ -7,7 +7,7 @@ const defaultConfig = Object.freeze({lazy: true});
 
 function AsyncState({key, promise, config}) {
   this.key = key; // todo: check key
-  this.config = config;
+  this.config = config || EMPTY_OBJECT;
   this.originalPromise = promise;
 
   this.previousState = undefined;
