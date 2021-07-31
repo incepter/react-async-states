@@ -5,6 +5,7 @@
   "description": "",
   "author": "incepter",
   "license": "MIT",
+  "main": "dist/main.js",
   "repository": "incepter/react-async-state",
   "engines": {
     "node": ">=8",
@@ -14,7 +15,7 @@
     "test": "cross-env CI=1 react-scripts test --env=jsdom",
     "test:watch": "react-scripts test --env=jsdom",
     "build": "cross-env NODE_ENV=production webpack --config ./webpack/webpack.prod.config.js --color --progress --mode production",
-    "start": "cross-env NODE_ENV=development webpack --config ./webpack/webpack.prod.config.js --stats-error-details --color -p --progress --hide-modules --display-optimization-bailout --mode production",
+    "start": "cross-env NODE_ENV=development webpack --watch --config ./webpack/webpack.dev.config.js --color --progress --mode development",
     "prepare": "yarn run build",
     "predeploy": "cd example && yarn install && yarn run build",
     "deploy": "gh-pages -d example/build"

@@ -13,8 +13,7 @@ module.exports = require("./webpack.base.config")({
 
   // Utilize long-term caching by adding content hashes (not compilation hashes) to compiled assets
   output: {
-    filename: "[name].[chunkhash].js",
-    chunkFilename: "[name].[chunkhash].chunk.js",
+    filename: "main.js"
   },
 
   optimization: {
@@ -38,23 +37,7 @@ module.exports = require("./webpack.base.config")({
     nodeEnv: "production",
     sideEffects: true,
     concatenateModules: true,
-    runtimeChunk: "single",
-    splitChunks: {
-      chunks: "all",
-      maxInitialRequests: 10,
-      minSize: 0,
-      cacheGroups: {
-        vendor: {
-          test: /[\\/]node_modules[\\/]/,
-          name(module) {
-            const packageName = module.context.match(
-              /[\\/]node_modules[\\/](.*?)([\\/]|$)/,
-            )[1];
-            return `npm.${packageName.replace("@", "")}`;
-          },
-        },
-      },
-    },
+    runtimeChunk: "single"
   },
 
   plugins: [

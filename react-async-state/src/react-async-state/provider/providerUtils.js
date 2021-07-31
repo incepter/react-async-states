@@ -4,7 +4,7 @@ import { callAsync } from "../utils/async";
 export function createAsyncStateEntry(asyncState) {
   return {
     value: asyncState,
-    scheduledRunsCount: -1,
+    scheduledRunsCount: 0,
   };
 }
 
@@ -19,29 +19,24 @@ export function runScheduledAsyncState(asyncStateEntry, ...executionArgs) {
   if (!asyncStateEntry) {
     return;
   }
-  if (asyncStateEntry.scheduledRunsCount === -1) {
-    asyncStateEntry.scheduledRunsCount = 1; // first schedule
-  } else {
-    asyncStateEntry.scheduledRunsCount += 1; // increment schedules
-  }
+  asyncStateEntry.scheduledRunsCount += 1; // increment schedules
 
   let isCancelled = false;
 
   // unlock on cancel
   function cancel() {
-    isCancelled = true;
-    if (asyncStateEntry.scheduledRunsCount > 1) {
-      asyncStateEntry.scheduledRunsCount -= 1;
-    } else if (asyncStateEntry.scheduledRunsCount === 1) {
-      asyncStateEntry.scheduledRunsCount = -1;
+    if (isCancelled) {
+      return;
     }
+    isCancelled = true;
+    asyncStateEntry.scheduledRunsCount -= 1;
   }
 
   function runner() {
     if (!isCancelled) {
       if (asyncStateEntry.scheduledRunsCount === 1) {
         asyncStateEntry.value.run(...executionArgs);
-        asyncStateEntry.scheduledRunsCount = -1;
+        asyncStateEntry.scheduledRunsCount = 0;
       } else {
         asyncStateEntry.scheduledRunsCount -= 1;
       }

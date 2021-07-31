@@ -5,7 +5,10 @@ module.exports = options => ({
   mode: options.mode,
   entry: options.entry,
   output: {
-    path: path.resolve(process.cwd(), "build"),
+    path: path.resolve(process.cwd(), "dist"),
+
+    library: "react-async-state",
+    libraryTarget: "umd",
     // Merge with env dependent settings
     ...options.output,
   },
@@ -36,6 +39,11 @@ module.exports = options => ({
   devtool: options.devtool,
   performance: options.performance || {},
   externals: {
-    react: "react"
-  }
+    react: {
+      commonjs: 'react',
+      commonjs2: 'react',
+      amd: 'react',
+      root: 'react',
+    },
+  },
 });

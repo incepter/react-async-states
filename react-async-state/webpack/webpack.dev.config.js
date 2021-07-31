@@ -13,14 +13,7 @@ module.exports = require("./webpack.base.config")({
 
   // Don't use hashes in dev mode for better performance
   output: {
-    filename: "[name].js",
-    chunkFilename: "[name].chunk.js",
-  },
-
-  optimization: {
-    splitChunks: {
-      chunks: "all",
-    },
+    filename: "main.js"
   },
 
   // Add development plugins
@@ -40,4 +33,6 @@ module.exports = require("./webpack.base.config")({
   performance: {
     hints: false,
   },
+
+  watch: true
 });
