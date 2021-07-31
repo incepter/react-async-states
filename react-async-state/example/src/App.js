@@ -21,7 +21,7 @@ export default function App() {
             <Route exact path="/">
               <BasicUsageDemo/>
             </Route>
-            <Route path="/routing">
+            <Route path="/users/:userId">
               <RoutingDemo/>
             </Route>
             <Route path="/reducers">

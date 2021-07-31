@@ -45,8 +45,6 @@ function usersSelector(usersState, postsState) {
 function SelectorDemo() {
   const selectedValue = useAsyncStateSelector(["users", "posts"], usersSelector, isEqual);
 
-  console.log('SELECTED RENDER', selectedValue);
-
   return <div>SELECTOR VALUE: <pre>{JSON.stringify(selectedValue ?? {}, null, "  ")}</pre></div>
 }
 
@@ -65,7 +63,7 @@ export default function Wrapper() {
         {/*  },*/}
         {/*}}/>*/}
       </div>
-      <div style={{ backgroundColor: "gray"}}><SelectorDemo/></div>
+      <div style={{backgroundColor: "gray"}}><SelectorDemo/></div>
       <ReplaceStateOriginal/>
       <ReplaceStateListener/>
       <ReducerDemo/>
@@ -77,12 +75,7 @@ export default function Wrapper() {
 const undefinedPromise = {
   key: "undefined_promise",
   hoistToProvider: true,
-  promiseConfig: {
-    promise() {
-      return "";
-    },
-    config: {lazy: false}
-  },
+  promiseConfig: {lazy: false}
 };
 
 function ReplaceStateOriginal() {
@@ -112,16 +105,14 @@ function ReplaceStateListener() {
 const reducerPromise = {
   key: "reducer_promise",
   hoistToProvider: false,
-  promiseConfig: {
-    promise(argv) {
-      const {executionArgs: [userInput]} = argv;
-      if (userInput > 10) {
-        return "OK good!";
-      }
-      return "KO !!"
-    },
-    config: {lazy: false}
+  promise(argv) {
+    const {executionArgs: [userInput]} = argv;
+    if (userInput > 10) {
+      return "OK good!";
+    }
+    return "KO !!"
   },
+  promiseConfig: {lazy: false}
 };
 
 function ReducerDemo() {

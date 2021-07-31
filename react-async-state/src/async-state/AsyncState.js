@@ -1,13 +1,13 @@
-import { ASYNC_STATUS, EMPTY_OBJECT, invokeIfPresent } from "../utils";
+import { ASYNC_STATUS, EMPTY_OBJECT, invokeIfPresent, mergeObjects } from "../utils";
 import { wrapPromise } from "./wrappers/wrap-promise";
 import { clearSubscribers, notifySubscribers } from "./notify-subscribers";
 import { AsyncStateBuilder } from "./StateBuilder";
 
 const defaultConfig = Object.freeze({lazy: true});
 
-function AsyncState({key, promise, config}) {
+function AsyncState(key, promise, config) {
   this.key = key; // todo: check key
-  this.config = config || EMPTY_OBJECT;
+  this.config = mergeObjects(EMPTY_OBJECT, config);
   this.originalPromise = promise;
 
   this.previousState = undefined;
@@ -51,10 +51,10 @@ AsyncState.prototype.abort = function abortImpl(reason) {
   invokeIfPresent(this.currentAborter, reason);
 }
 AsyncState.prototype.dispose = function disposeImpl() {
-  if (this.locks > 0) {
+  if (this.locks > 1) {
     return false;
   }
-  invokeIfPresent(this.abort);
+  invokeIfPresent(this.abort.bind(this));
   clearSubscribers(this);
   this.subscriptions = {};
   return true;
@@ -119,11 +119,7 @@ const defaultForkConfig = Object.freeze({keepState: false});
 AsyncState.prototype.fork = function fork(forkConfig = defaultForkConfig) {
   const mergedConfig = {...defaultConfig, ...forkConfig};
 
-  const clone = new AsyncState({
-    key: forkKey(this),
-    config: this.config,
-    promise: this.originalPromise,
-  });
+  const clone = new AsyncState(forkKey(this), this.originalPromise, this.config);
 
   this.forkCount += 1;
 

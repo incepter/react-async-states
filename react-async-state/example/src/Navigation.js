@@ -8,7 +8,7 @@ export default function Navigation() {
         <Link to="/">Basique usage</Link>
       </li>
       <li>
-        <Link to="/routing">Routing</Link>
+        <Link to="/users/1">Routing</Link>
       </li>
       <li>
         <Link to="/reducers">Reducers</Link>

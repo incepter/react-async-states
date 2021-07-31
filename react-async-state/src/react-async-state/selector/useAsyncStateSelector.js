@@ -35,7 +35,7 @@ export function useAsyncStateSelector(keys, selector, areEqual = shallowEqual, i
     let cleanups = [];
 
     function subscription() {
-      setReturnValue(selectValues);
+      setReturnValue(selectValues());
     }
 
     effectiveKeys.forEach(function subscribeOrWaitFor(key) {

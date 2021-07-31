@@ -49,7 +49,7 @@ export function AsyncStateManager(asyncStateEntries) {
   }
 
   function hoist(config) {
-    const {key, hoistToProviderConfig = EMPTY_OBJECT, promiseConfig} = config;
+    const {key, hoistToProviderConfig = EMPTY_OBJECT, promise, promiseConfig} = config;
 
     const existing = get(key);
     if (existing && !hoistToProviderConfig.override) {
@@ -63,7 +63,7 @@ export function AsyncStateManager(asyncStateEntries) {
       }
     }
 
-    asyncStateEntries[key] = createAsyncStateEntry(new AsyncState({key, ...promiseConfig}));
+    asyncStateEntries[key] = createAsyncStateEntry(new AsyncState(key, promise, promiseConfig));
     const returnValue = get(key);
 
     if (listeners[key]) {

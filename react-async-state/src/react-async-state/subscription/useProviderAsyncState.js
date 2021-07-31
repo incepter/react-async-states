@@ -1,7 +1,7 @@
 import React from "react";
 import { AsyncStateContext } from "../context";
 import useRawAsyncState from "./useRawAsyncState";
-import { EMPTY_OBJECT } from "../../utils";
+import { EMPTY_OBJECT, invokeIfPresent } from "../../utils";
 import AsyncState from "../../async-state/AsyncState";
 
 const AsyncStateSubscriptionMode = Object.freeze({
@@ -15,7 +15,7 @@ const AsyncStateSubscriptionMode = Object.freeze({
 });
 
 function inferSubscriptionMode(existsInProvider, configuration) {
-  const {fork, hoistToProvider, promiseConfig} = configuration;
+  const {fork, hoistToProvider} = configuration;
 
   // early decide that this is a listener and return it immediately
   // because this is the most common use case that it will be, we'll be optimizing this path first
@@ -23,7 +23,7 @@ function inferSubscriptionMode(existsInProvider, configuration) {
     return AsyncStateSubscriptionMode.LISTEN;
   }
 
-  if (promiseConfig && !hoistToProvider && !fork) { // we have a promiseConfig and we dont want to hoist or fork
+  if (!hoistToProvider && !fork) { // we dont want to hoist or fork
     return AsyncStateSubscriptionMode.STANDALONE;
   }
 
@@ -44,9 +44,9 @@ function inferSubscriptionMode(existsInProvider, configuration) {
 }
 
 export default function useProviderAsyncState(configuration, dependencies) {
-  const [guard, setGuard] = React.useState(EMPTY_OBJECT);
-  const contextValue = React.useContext(AsyncStateContext);
   const {key} = configuration;
+  const [guard, setGuard] = React.useState(EMPTY_OBJECT); // used to trigger the recalculation of the memo
+  const contextValue = React.useContext(AsyncStateContext);
 
   const dependenciesArray = [guard, ...dependencies];
 
@@ -68,7 +68,7 @@ export default function useProviderAsyncState(configuration, dependencies) {
       case AsyncStateSubscriptionMode.WAITING:
         return waitingAsyncState;
       case AsyncStateSubscriptionMode.STANDALONE:
-        return new AsyncState({ key, ...configuration.promiseConfig});
+        return new AsyncState(key, configuration.promise, configuration.promiseConfig);
       case AsyncStateSubscriptionMode.NOOP:
         return null;
       default:
@@ -77,13 +77,17 @@ export default function useProviderAsyncState(configuration, dependencies) {
   }, dependenciesArray);
 
   // wait early
-  React.useLayoutEffect(function waitForIfUndefined() {
+  React.useLayoutEffect(function waitForIfWaitingMode() {
+    let waitingCleanup;
     if (AsyncStateSubscriptionMode.WAITING === subscriptionMode) {
-      return contextValue.waitFor(key, function notify() {
+      waitingCleanup = contextValue.waitFor(key, function notify() {
         setGuard({});
       });
     }
-    return undefined;
+
+    return function cleanup() {
+      invokeIfPresent(waitingCleanup);
+    };
   }, [asyncState]);
 
 
@@ -93,26 +97,41 @@ export default function useProviderAsyncState(configuration, dependencies) {
         return asyncState.run();
       case AsyncStateSubscriptionMode.FORK:
       case AsyncStateSubscriptionMode.HOIST:
+      case AsyncStateSubscriptionMode.LISTEN:
         return contextValue.run(asyncState);
       // NoOp
       case AsyncStateSubscriptionMode.NOOP:
       case AsyncStateSubscriptionMode.WAITING:
+      default:
+        return undefined;
+    }
+  }
+  function dispose() {
+    switch (subscriptionMode) {
+      case AsyncStateSubscriptionMode.STANDALONE:
+        return asyncState.dispose();
+      case AsyncStateSubscriptionMode.FORK:
+      case AsyncStateSubscriptionMode.HOIST:
       case AsyncStateSubscriptionMode.LISTEN:
+        return contextValue.dispose(asyncState);
+      // NoOp
+      case AsyncStateSubscriptionMode.NOOP:
+      case AsyncStateSubscriptionMode.WAITING:
       default:
         return undefined;
     }
   }
 
-
-  return useRawAsyncState(asyncState, dependencies, configuration, run);
+  return useRawAsyncState(asyncState, dependencies, configuration, run, dispose);
 }
 
 function NoOp() {
 }
 
-const waitingAsyncState = new AsyncState({
-  key: Symbol("waiting_async_state"),
-  promise() {
+const waitingAsyncState = new AsyncState(
+  Symbol("waiting_async_state"),
+  function promise() {
     return new Promise(NoOp);
-  }
-});
+  },
+  {}
+);

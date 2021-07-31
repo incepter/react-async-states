@@ -17,20 +17,11 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
     })
   }, [payload]);
 
-  React.useEffect(function disposeOldEntriesAndRunNonLazy() {
+  React.useEffect(function disposeOldEntries() {
     if (!asyncStateEntries) {
       return undefined;
     }
-
-    const aborts = Object.values(asyncStateEntries)
-      .map(function runEntry(entry) {
-        return entry.value.config.lazy ? undefined : contextValue.run(entry.value)
-      }) // this produces a side effect! it runs the async state entry, but collects the cleanup (which aborts and unsubscribes)
-
     return function cleanup() {
-      aborts.forEach(function cleanupRun(cb) {
-        invokeIfPresent(cb);
-      });
       if (asyncStateEntries) {
         Object.values(asyncStateEntries).forEach(function disposeAsyncState(entry) {
           contextValue.dispose(entry);
@@ -53,6 +44,11 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
       runAsyncState: manager.runAsyncState,
     };
   }, [asyncStateEntries, payload]);
+
+  // React.useEffect(() => {
+  //   const id = setInterval(() => console.log(asyncStateEntries), 2000);
+  //   return () => clearInterval(id);
+  // }, []);
 
   return (
     <AsyncStateContext.Provider value={contextValue}>

@@ -10,7 +10,7 @@ describe('AsyncState - setState', () => {
   let key = "simulated";
   let promise = timeout(100, [{ id: 1, description: "value" }]);
   let myConfig = {};
-  let myAsyncState = new AsyncState({ key, promise, config: myConfig });
+  let myAsyncState = new AsyncState(key, promise, myConfig);
   let subscription = jest.fn();
   myAsyncState.subscribe(subscription);
 

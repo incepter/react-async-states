@@ -14,7 +14,7 @@ describe('AsyncState - subscriptions', () => {
     let promise = timeout(50, "Some Value");
 
     // when
-    let myAsyncState = new AsyncState({key, promise, config: myConfig});
+    let myAsyncState = new AsyncState(key, promise, myConfig);
 
     // then
     expect(myAsyncState.subscriptionsMeter).toBe(0);
@@ -70,7 +70,7 @@ describe('AsyncState - subscriptions', () => {
     let promise = timeout(50, "Some Value");
 
     // when
-    let myAsyncState = new AsyncState({key, promise, config: myConfig});
+    let myAsyncState = new AsyncState(key, promise, myConfig);
     let unsubscribe = myAsyncState.subscribe(subscriptionFn);
 
     // then
@@ -118,7 +118,7 @@ describe('AsyncState - subscriptions', () => {
     let promise = timeout(50, "Some Value");
 
     // when
-    let myAsyncState = new AsyncState({key, promise, config: myConfig});
+    let myAsyncState = new AsyncState(key, promise, myConfig);
     let unsubscribe = myAsyncState.subscribe(subscriptionFn);
     unsubscribe();
 

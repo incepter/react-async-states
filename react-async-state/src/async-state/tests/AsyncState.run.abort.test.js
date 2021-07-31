@@ -15,7 +15,7 @@ describe('AsyncState - run - abort', () => {
     let subscription = jest.fn();
 
     // when
-    let myAsyncState = new AsyncState({ key, promise, config: myConfig });
+    let myAsyncState = new AsyncState(key, promise, myConfig);
     myAsyncState.subscribe(subscription);
     // then
     // should have initial status
@@ -99,7 +99,7 @@ describe('AsyncState - run - abort', () => {
     let subscription = jest.fn();
 
     // when
-    let myAsyncState = new AsyncState({ key, promise, config: myConfig });
+    let myAsyncState = new AsyncState(key, promise, myConfig);
     myAsyncState.subscribe(subscription);
     // then
 
@@ -146,7 +146,7 @@ describe('AsyncState - run - abort', () => {
     let subscription = jest.fn();
 
     // when
-    let myAsyncState = new AsyncState({ key, promise, config: myConfig });
+    let myAsyncState = new AsyncState(key, promise, myConfig);
 
     myAsyncState.subscribe(subscription);
     // then

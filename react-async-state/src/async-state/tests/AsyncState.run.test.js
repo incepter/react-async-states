@@ -14,7 +14,7 @@ describe('AsyncState - run', () => {
     let myConfig = {};
 
     // when
-    let myAsyncState = new AsyncState({ key, promise, config: myConfig });
+    let myAsyncState = new AsyncState(key, promise, myConfig);
 
     // then
     // should have initial status
@@ -77,7 +77,7 @@ describe('AsyncState - run', () => {
     let myConfig = {};
 
     // when
-    let myAsyncState = new AsyncState({ key, promise, config: myConfig });
+    let myAsyncState = new AsyncState(key, promise, myConfig);
 
     // then
     myAsyncState.run();

@@ -31,12 +31,10 @@ const defaultConfig = Object.freeze({
   hoistToProviderConfig: EMPTY_OBJECT,
   rerenderStatus: defaultRerenderStatusConfig,
 
-  promiseConfig: {
-    promise() {
-      return undefined;
-    },
-    config: {lazy: false}
+  promise() {
+    return undefined;
   },
+  promiseConfig: {lazy: true},
 });
 
 // userConfig is the config the developer wrote

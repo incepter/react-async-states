@@ -59,7 +59,6 @@ function getTransactions(...args) {
       if (Math.random() < 0.5) {
         rej("toto");
       }
-      console.log("get transactions with args", args);
       return res([{ id: 1, description: "toto" }]);
     }, 2000);
   });
@@ -81,10 +80,8 @@ let transactionsPromiseDefinition = Object.freeze({
         onSuccess(result);
       }
       yield result;
-      console.log("retrieved successfully the list of transactions", result);
     } catch (e) {
       onFail(e);
-      console.log("cannot retrived list of transactions", e);
       yield Promise.reject(e);
     }
   },

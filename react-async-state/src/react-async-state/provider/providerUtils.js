@@ -9,8 +9,8 @@ export function createAsyncStateEntry(asyncState) {
 }
 
 export function createInitialAsyncStatesReducer(result, current) {
-  const {key, promise, config} = current;
-  result[current.key] = createAsyncStateEntry(new AsyncState({key, promise, config}));
+  const {key, promise, promiseConfig} = current;
+  result[current.key] = createAsyncStateEntry(new AsyncState(key, promise, promiseConfig));
   result[current.key].initiallyHoisted = true;
   return result;
 }

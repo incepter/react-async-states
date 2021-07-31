@@ -13,7 +13,7 @@ describe('AsyncState - fork', () => {
     let myConfig = {};
 
     // when
-    let myAsyncState = new AsyncState({ key, promise, config: myConfig });
+    let myAsyncState = new AsyncState(key, promise, myConfig);
 
     // then
     expect(myAsyncState.key).toBe(key);
@@ -46,7 +46,7 @@ describe('AsyncState - fork', () => {
     let myConfig = {};
 
     // when
-    let myAsyncState = new AsyncState({ key, promise, config: myConfig });
+    let myAsyncState = new AsyncState(key, promise, myConfig);
     myAsyncState.run();
 
     await act(async () => {
@@ -70,7 +70,7 @@ describe('AsyncState - fork', () => {
     let myConfig = {};
 
     // when
-    let myAsyncState = new AsyncState({ key, promise, config: myConfig });
+    let myAsyncState = new AsyncState(key, promise, myConfig);
 
     let forkedAsyncState = myAsyncState.fork({ keepSubscriptions: true, keepState: true });
 
