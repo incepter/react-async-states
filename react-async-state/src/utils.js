@@ -6,6 +6,8 @@ export const ASYNC_STATUS = {
   initial: "initial",
 };
 
+export const __DEV__ = process.env.NODE_ENV !== "production";
+
 export const EMPTY_ARRAY = Object.freeze([]);
 export const EMPTY_OBJECT = Object.freeze({});
 

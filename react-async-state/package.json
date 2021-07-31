@@ -1,13 +1,11 @@
 {
+  "private": true,
   "name": "react-async-state",
   "version": "1.0.0",
   "description": "",
   "author": "incepter",
   "license": "MIT",
   "repository": "incepter/react-async-state",
-  "main": "dist/index.js",
-  "module": "dist/index.es.js",
-  "jsnext:main": "dist/index.es.js",
   "engines": {
     "node": ">=8",
     "npm": ">=5"
@@ -15,8 +13,8 @@
   "scripts": {
     "test": "cross-env CI=1 react-scripts test --env=jsdom",
     "test:watch": "react-scripts test --env=jsdom",
-    "build": "rollup -c",
-    "start": "rollup -c -w",
+    "build": "cross-env NODE_ENV=production webpack --config ./webpack/webpack.prod.config.js --color --progress --mode production",
+    "start": "cross-env NODE_ENV=development webpack --config ./webpack/webpack.prod.config.js --stats-error-details --color -p --progress --hide-modules --display-optimization-bailout --mode production",
     "prepare": "yarn run build",
     "predeploy": "cd example && yarn install && yarn run build",
     "deploy": "gh-pages -d example/build"
@@ -47,6 +45,9 @@
     "@babel/preset-react": "^7.0.0",
     "@testing-library/react-hooks": "^3.2.1",
     "babel-eslint": "^10.0.1",
+    "babel-loader": "^8.2.2",
+    "circular-dependency-plugin": "^5.2.2",
+    "compression-webpack-plugin": "^8.0.1",
     "cross-env": "^5.2.0",
     "eslint-config-standard": "^11.0.0",
     "eslint-config-standard-react": "^6.0.0",
@@ -59,11 +60,9 @@
     "react": "^16.9.0",
     "react-scripts": "^3.4.0",
     "react-test-renderer": "^16.9.0",
-    "rollup": "^1.1.2",
-    "rollup-plugin-babel": "^4.3.2",
-    "rollup-plugin-commonjs": "^9.2.0",
-    "rollup-plugin-node-resolve": "^4.0.0",
-    "rollup-plugin-peer-deps-external": "^2.2.0",
-    "rollup-plugin-url": "^2.1.0"
+    "terser-webpack-plugin": "^5.1.4",
+    "webpack": "^5.47.1",
+    "webpack-cli": "^4.7.2",
+    "webpack-hot-middleware": "^2.25.0"
   }
 }

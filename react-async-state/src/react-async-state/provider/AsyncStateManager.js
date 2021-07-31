@@ -1,8 +1,24 @@
-import { EMPTY_OBJECT } from "../../utils";
 import AsyncState from "../../async-state/AsyncState";
 import { createAsyncStateEntry, runScheduledAsyncState } from "./providerUtils";
 
 export function AsyncStateManager(asyncStateEntries) {
+  function get(key) {
+    return asyncStateEntries[key]?.value;
+  }
+
+  function run(asyncState, ...args) {
+    const asyncStateEntry = asyncStateEntries[asyncState.key];
+    return runScheduledAsyncState(asyncStateEntry, ...args);
+  }
+
+  function runAsyncState(key, ...args) {
+    const asyncState = get(key);
+    if (!asyncState) {
+      return undefined;
+    }
+    return run(asyncState, ...args);
+  }
+
   function dispose(asyncState) {
     const {key} = asyncState;
     const asyncStateEntry = asyncStateEntries[key];
@@ -49,7 +65,7 @@ export function AsyncStateManager(asyncStateEntries) {
   }
 
   function hoist(config) {
-    const {key, hoistToProviderConfig = EMPTY_OBJECT, promise, promiseConfig} = config;
+    const {key, hoistToProviderConfig = {override: false}, promise, promiseConfig} = config;
 
     const existing = get(key);
     if (existing && !hoistToProviderConfig.override) {
@@ -73,23 +89,6 @@ export function AsyncStateManager(asyncStateEntries) {
     }
 
     return returnValue;
-  }
-
-  function get(key) {
-    return asyncStateEntries[key]?.value;
-  }
-
-  function run(asyncState, ...args) {
-    const asyncStateEntry = asyncStateEntries[asyncState.key];
-    return runScheduledAsyncState(asyncStateEntry, ...args);
-  }
-
-  function runAsyncState(key, ...args) {
-    const asyncState = get(key);
-    if (!asyncState) {
-      return undefined;
-    }
-    return run(asyncState, ...args);
   }
 
   return {run, get, fork, hoist, dispose, waitFor, runAsyncState};
