@@ -32,7 +32,18 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
   }, [asyncStateEntries]);
 
   const contextValue = React.useMemo(function getProviderValue() {
-    return mergeObjects({payload}, AsyncStateManager(asyncStateEntries));
+    const manager = AsyncStateManager(asyncStateEntries);
+
+    return {
+      payload,
+      get: manager.get,
+      run: manager.run,
+      fork: manager.fork,
+      hoist: manager.hoist,
+      waitFor: manager.waitFor,
+      dispose: manager.dispose,
+      runAsyncState: manager.runAsyncState,
+    };
   }, [asyncStateEntries, payload]);
 
   // React.useEffect(() => {
