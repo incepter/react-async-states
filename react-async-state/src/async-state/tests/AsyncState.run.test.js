@@ -1,7 +1,7 @@
 import { act } from "@testing-library/react-hooks";
 import { rejectionTimeout, timeout } from "./test-utils";
 import AsyncState from "../AsyncState";
-import { ASYNC_STATUS } from "../../utils";
+import { AsyncStateStatus } from "../../shared";
 
 jest.useFakeTimers();
 
@@ -21,7 +21,7 @@ describe('AsyncState - run', () => {
     expect(myAsyncState.currentState).toEqual({
       args: null,
       data: null,
-      status: ASYNC_STATUS.initial,
+      status: AsyncStateStatus.initial,
     });
 
     myAsyncState.run();
@@ -35,7 +35,7 @@ describe('AsyncState - run', () => {
         onAbort: expect.any(Function),
       }],
       data: null,
-      status: ASYNC_STATUS.loading,
+      status: AsyncStateStatus.loading,
     });
     await act(async () => {
       await jest.advanceTimersByTime(50);
@@ -50,7 +50,7 @@ describe('AsyncState - run', () => {
         payload: null
       }],
       data: null,
-      status: ASYNC_STATUS.loading,
+      status: AsyncStateStatus.loading,
     });
 
     await act(async () => {
@@ -66,7 +66,7 @@ describe('AsyncState - run', () => {
         aborted: false,
         payload: null
       }],
-      status: ASYNC_STATUS.success,
+      status: AsyncStateStatus.success,
       data: [{ id: 1, description: "value" }],
     });
   });
@@ -93,7 +93,7 @@ describe('AsyncState - run', () => {
         aborted: false,
         payload: null
       }],
-      status: ASYNC_STATUS.error,
+      status: AsyncStateStatus.error,
       data: "Some Error",
     });
   });

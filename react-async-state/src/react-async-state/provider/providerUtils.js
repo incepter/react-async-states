@@ -1,5 +1,5 @@
 import AsyncState from "../../async-state/AsyncState";
-import { callAsync } from "../utils/async";
+import { callAsync } from "../../shared";
 
 export function createAsyncStateEntry(asyncState) {
   return {

@@ -1,7 +1,7 @@
 import { act } from "@testing-library/react-hooks";
 import { timeout } from "./test-utils";
 import AsyncState from "../AsyncState";
-import { ASYNC_STATUS } from "../../utils";
+import { AsyncStateStatus } from "../../shared";
 
 jest.useFakeTimers();
 
@@ -23,7 +23,7 @@ describe('AsyncState - fork', () => {
     expect(myAsyncState.previousState).toBe(undefined);
     expect(myAsyncState.subscriptions).toEqual({});
     expect(typeof myAsyncState.run).toBe("function");
-    expect(myAsyncState.currentState).toEqual({ data: null, status: ASYNC_STATUS.initial, args: null });
+    expect(myAsyncState.currentState).toEqual({ data: null, status: AsyncStateStatus.initial, args: null });
 
     let forkedAsyncState = myAsyncState.fork();
     expect(myAsyncState.forkCount).toBe(1);
@@ -53,7 +53,7 @@ describe('AsyncState - fork', () => {
       await jest.advanceTimersByTime(100);
     });
 
-    expect(myAsyncState.currentState.status).toBe(ASYNC_STATUS.success); // make sure it resolved
+    expect(myAsyncState.currentState.status).toBe(AsyncStateStatus.success); // make sure it resolved
 
     let forkedAsyncState = myAsyncState.fork({ keepSubscriptions: true, keepState: true });
     // then
@@ -80,7 +80,7 @@ describe('AsyncState - fork', () => {
       await jest.advanceTimersByTime(100);
     });
 
-    expect(forkedAsyncState.currentState.status).toBe(ASYNC_STATUS.success); // make sure it resolved
+    expect(forkedAsyncState.currentState.status).toBe(AsyncStateStatus.success); // make sure it resolved
 
     // then
     expect(myAsyncState.previousState).not.toEqual(forkedAsyncState.previousState);// forked async state moved independently

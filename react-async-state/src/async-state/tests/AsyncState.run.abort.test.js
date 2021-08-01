@@ -1,7 +1,7 @@
 import { act } from "@testing-library/react-hooks";
 import { rejectionTimeout, timeout } from "./test-utils";
 import AsyncState from "../AsyncState";
-import { ASYNC_STATUS } from "../../utils";
+import { AsyncStateStatus } from "../../shared";
 
 jest.useFakeTimers();
 
@@ -22,7 +22,7 @@ describe('AsyncState - run - abort', () => {
     expect(myAsyncState.currentState).toEqual({
       args: null,
       data: null,
-      status: ASYNC_STATUS.initial,
+      status: AsyncStateStatus.initial,
     });
 
     const abort = myAsyncState.run();
@@ -42,7 +42,7 @@ describe('AsyncState - run - abort', () => {
         payload: null
       }],
       data: null,
-      status: ASYNC_STATUS.loading,
+      status: AsyncStateStatus.loading,
     });
 
     subscription.mockClear();
@@ -58,7 +58,7 @@ describe('AsyncState - run - abort', () => {
         payload: null
       },
       data: "reason",
-      status: ASYNC_STATUS.aborted,
+      status: AsyncStateStatus.aborted,
     });
 
     expect(myAsyncState.currentState).toEqual({
@@ -70,7 +70,7 @@ describe('AsyncState - run - abort', () => {
         payload: null
       },
       data: "reason",
-      status: ASYNC_STATUS.aborted,
+      status: AsyncStateStatus.aborted,
     });
 
     await act(async () => {
@@ -86,7 +86,7 @@ describe('AsyncState - run - abort', () => {
         aborted: true,
         payload: null
       },
-      status: ASYNC_STATUS.aborted,
+      status: AsyncStateStatus.aborted,
       data: "reason",
     });
   });
@@ -111,7 +111,7 @@ describe('AsyncState - run - abort', () => {
 
     subscription.mockClear();
     abort("reason");
-    expect(subscription.mock.calls[0][0].status).toBe(ASYNC_STATUS.aborted);
+    expect(subscription.mock.calls[0][0].status).toBe(AsyncStateStatus.aborted);
 
     // now, let's check that a second call to the abort function does not update state or subscribers
     subscription.mockClear();
@@ -134,7 +134,7 @@ describe('AsyncState - run - abort', () => {
         aborted: true,
         payload: null
       },
-      status: ASYNC_STATUS.aborted,
+      status: AsyncStateStatus.aborted,
       data: "reason",
     });
   });
@@ -157,14 +157,14 @@ describe('AsyncState - run - abort', () => {
       await jest.advanceTimersByTime(50);
     });
 
-    expect(myAsyncState.currentState.status).toBe(ASYNC_STATUS.loading);
+    expect(myAsyncState.currentState.status).toBe(AsyncStateStatus.loading);
 
     // rerun while loading should interrupt previous
     subscription.mockClear();
     myAsyncState.run();
 
-    expect(subscription.mock.calls[0][0].status).toBe(ASYNC_STATUS.aborted);
-    expect(subscription.mock.calls[1][0].status).toBe(ASYNC_STATUS.loading);
+    expect(subscription.mock.calls[0][0].status).toBe(AsyncStateStatus.aborted);
+    expect(subscription.mock.calls[1][0].status).toBe(AsyncStateStatus.loading);
 
     expect(subscription).toHaveBeenCalledTimes(2);
 
@@ -190,10 +190,10 @@ describe('AsyncState - run - abort', () => {
             }
           ],
           data: null,
-          status: ASYNC_STATUS.loading,
+          status: AsyncStateStatus.loading,
         },
       }],
-      status: ASYNC_STATUS.success,
+      status: AsyncStateStatus.success,
       data: "value",
     });
   });

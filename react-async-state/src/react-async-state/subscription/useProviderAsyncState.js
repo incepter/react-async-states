@@ -1,9 +1,9 @@
 import React from "react";
 import { AsyncStateContext } from "../context";
 import useRawAsyncState from "./useRawAsyncState";
-import { EMPTY_OBJECT, invokeIfPresent } from "../../utils";
+import { EMPTY_OBJECT, invokeIfPresent } from "../../shared";
 import { AsyncStateSubscriptionMode } from "./subscriptionUtils";
-import { AsyncStateProviderSubscription } from "./AsyncStateProviderSubscription";
+import { AsyncStateProviderSubscription } from "../../orchestration/AsyncStateProviderSubscription";
 
 export default function useProviderAsyncState(configuration, dependencies) {
   const {key} = configuration;
@@ -32,8 +32,8 @@ export default function useProviderAsyncState(configuration, dependencies) {
 
   return useRawAsyncState(
     subscription.asyncState,
-    subscription.dependencies,
-    subscription.configuration,
+    dependencies,
+    configuration,
     subscription.run,
     subscription.dispose
   );

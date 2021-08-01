@@ -1,7 +1,7 @@
 import { act } from "@testing-library/react-hooks";
 import { timeout } from "./test-utils";
 import AsyncState from "../AsyncState";
-import { ASYNC_STATUS } from "../../utils";
+import { AsyncStateStatus } from "../../shared";
 
 jest.useFakeTimers();
 
@@ -36,7 +36,7 @@ describe('AsyncState - subscriptions', () => {
             onAbort: expect.any(Function),
             aborted: false,
             payload: null,
-          }], data: null, status: ASYNC_STATUS.loading
+          }], data: null, status: AsyncStateStatus.loading
         }],
         [{
           args: [{
@@ -45,7 +45,7 @@ describe('AsyncState - subscriptions', () => {
             onAbort: expect.any(Function),
             aborted: false,
             payload: null
-          }], data: "Some Value", status: ASYNC_STATUS.success
+          }], data: "Some Value", status: AsyncStateStatus.success
         }]
       ]
     );
@@ -58,7 +58,7 @@ describe('AsyncState - subscriptions', () => {
         aborted: false,
         payload: null
       }],
-      status: ASYNC_STATUS.success,
+      status: AsyncStateStatus.success,
       data: "Some Value",
     });
   });
@@ -93,7 +93,7 @@ describe('AsyncState - subscriptions', () => {
             onAbort: expect.any(Function),
             aborted: false,
             payload: null
-          }], data: null, status: ASYNC_STATUS.loading
+          }], data: null, status: AsyncStateStatus.loading
         }],
       ]
     );
@@ -106,7 +106,7 @@ describe('AsyncState - subscriptions', () => {
         aborted: false,
         payload: null
       }],
-      status: ASYNC_STATUS.success,
+      status: AsyncStateStatus.success,
       data: "Some Value",
     });
   });
@@ -139,7 +139,7 @@ describe('AsyncState - subscriptions', () => {
         aborted: false,
         payload: null
       }],
-      status: ASYNC_STATUS.success,
+      status: AsyncStateStatus.success,
       data: "Some Value",
     });
   });

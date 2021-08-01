@@ -1,6 +1,6 @@
 import { timeout } from "./test-utils";
 import AsyncState from "../AsyncState";
-import { ASYNC_STATUS } from "../../utils";
+import { AsyncStateStatus } from "../../shared";
 import { AsyncStateBuilder } from "../StateBuilder";
 
 jest.useFakeTimers();
@@ -25,7 +25,7 @@ describe('AsyncState - setState', () => {
     let expectedState = {
       args: {},
       data: null,
-      status: ASYNC_STATUS.loading,
+      status: AsyncStateStatus.loading,
     };
     expect(myAsyncState.currentState).toEqual(expectedState);
 
@@ -46,7 +46,7 @@ describe('AsyncState - setState', () => {
     expect(myAsyncState.currentState).toEqual({
       args: {},
       data: {},
-      status: ASYNC_STATUS.success,
+      status: AsyncStateStatus.success,
     });
 
   });

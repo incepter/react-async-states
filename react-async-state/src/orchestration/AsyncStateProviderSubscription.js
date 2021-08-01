@@ -1,5 +1,5 @@
-import AsyncState from "../../async-state/AsyncState";
-import { AsyncStateSubscriptionMode, inferSubscriptionMode } from "./subscriptionUtils";
+import AsyncState from "../async-state/AsyncState";
+import { AsyncStateSubscriptionMode, inferSubscriptionMode } from "../react-async-state/subscription/subscriptionUtils";
 
 export function AsyncStateProviderSubscription(contextValue, configuration) {
   const mode = inferSubscriptionMode(contextValue, configuration);

@@ -1,7 +1,7 @@
 import React from "react";
 import useRerender from "../utils/useRerender";
 import { defaultRerenderStatusConfig, makeReturnValueFromAsyncState } from "./subscriptionUtils";
-import { EMPTY_OBJECT, invokeIfPresent, mergeObjects } from "../../utils";
+import { EMPTY_OBJECT, invokeIfPresent, mergeObjects } from "../../shared";
 
 export default function useRawAsyncState(asyncState, dependencies, configuration, run, dispose) {
   const rerender = useRerender();

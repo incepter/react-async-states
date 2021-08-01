@@ -1,4 +1,4 @@
-import { ASYNC_STATUS, EMPTY_OBJECT, invokeIfPresent, mergeObjects } from "../utils";
+import { AsyncStateStatus, EMPTY_OBJECT, invokeIfPresent, mergeObjects } from "../shared";
 import { wrapPromise } from "./wrappers/wrap-promise";
 import { clearSubscribers, notifySubscribers } from "./notify-subscribers";
 import { AsyncStateBuilder } from "./StateBuilder";
@@ -14,7 +14,7 @@ function AsyncState(key, promise, config) {
   this.currentState = {
     args: null,
     data: null, // null if initial and loading, full of data if success, full of error if error
-    status: ASYNC_STATUS.initial,
+    status: AsyncStateStatus.initial,
   }
 
   this.forkCount = 0;
@@ -61,7 +61,7 @@ AsyncState.prototype.dispose = function disposeImpl() {
 }
 
 AsyncState.prototype.run = function run(...execArgs) {
-  if (this.currentState.status === ASYNC_STATUS.loading) {
+  if (this.currentState.status === AsyncStateStatus.loading) {
     this.abort();
     this.currentAborter = null;
   }
@@ -138,7 +138,7 @@ function forkKey(asyncState) {
 }
 
 AsyncState.prototype.replaceState = function replaceState(newValue) {
-  if (this.currentState.status === ASYNC_STATUS.loading) {
+  if (this.currentState.status === AsyncStateStatus.loading) {
     this.abort();
     this.currentAborter = null;
   }

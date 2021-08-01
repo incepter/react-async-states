@@ -1,6 +1,6 @@
 import React from "react";
 import { AsyncStateContext } from "../context";
-import { invokeIfPresent } from "../../utils";
+import { invokeIfPresent } from "../../shared";
 
 function shallowEqual(prev, next) {
   return prev === next;
