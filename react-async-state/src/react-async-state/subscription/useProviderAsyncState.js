@@ -18,12 +18,13 @@ export default function useProviderAsyncState(configuration, dependencies) {
 
   // wait early
   React.useLayoutEffect(function waitForIfWaitingMode() {
-    let waitingCleanup;
-    if (AsyncStateSubscriptionMode.WAITING === subscription.mode) {
-      waitingCleanup = contextValue.waitFor(key, function notify() {
-        setGuard({});
-      });
+    if (subscription.mode !== AsyncStateSubscriptionMode.WAITING) {
+      return undefined;
     }
+
+    const waitingCleanup = contextValue.waitFor(key, function notify() {
+      setGuard({});
+    });
 
     return function cleanup() {
       invokeIfPresent(waitingCleanup);

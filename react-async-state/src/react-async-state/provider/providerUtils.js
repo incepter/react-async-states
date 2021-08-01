@@ -1,5 +1,5 @@
 import AsyncState from "../../async-state/AsyncState";
-import { callAsync } from "../../shared";
+import { asyncify } from "../../shared";
 
 export function createAsyncStateEntry(asyncState) {
   return {
@@ -52,7 +52,7 @@ export function runScheduledAsyncState(asyncStateEntry, ...executionArgs) {
     }
   }
 
-  callAsync(runner)();
+  asyncify(runner)();
 
   return cancel;
 }

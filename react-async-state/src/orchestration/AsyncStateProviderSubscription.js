@@ -1,5 +1,9 @@
 import AsyncState from "../async-state/AsyncState";
-import { AsyncStateSubscriptionMode, inferSubscriptionMode } from "../react-async-state/subscription/subscriptionUtils";
+import {
+  AsyncStateSubscriptionMode,
+  deduceAsyncState,
+  inferSubscriptionMode
+} from "../react-async-state/subscription/subscriptionUtils";
 
 export function AsyncStateProviderSubscription(contextValue, configuration) {
   const mode = inferSubscriptionMode(contextValue, configuration);
@@ -39,26 +43,6 @@ export function AsyncStateProviderSubscription(contextValue, configuration) {
       }
     },
   };
-}
-
-function deduceAsyncState(mode, configuration, contextValue) {
-  const candidate = contextValue.get(configuration.key);
-  switch (mode) {
-    case AsyncStateSubscriptionMode.FORK:
-      return contextValue.fork(configuration.key, configuration.forkConfig);
-    case AsyncStateSubscriptionMode.HOIST:
-      return contextValue.hoist(configuration);
-    case AsyncStateSubscriptionMode.LISTEN:
-      return candidate;
-    case AsyncStateSubscriptionMode.WAITING:
-      return waitingAsyncState;
-    case AsyncStateSubscriptionMode.STANDALONE:
-      return new AsyncState(configuration.key, configuration.promise, configuration.promiseConfig);
-    case AsyncStateSubscriptionMode.NOOP:
-      return null;
-    default:
-      return candidate;
-  }
 }
 
 function NoOp() {
