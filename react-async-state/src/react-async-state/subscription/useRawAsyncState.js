@@ -24,8 +24,9 @@ export default function useRawAsyncState(asyncState, dependencies, configuration
       invokeIfPresent(unsubscribe);
       if (typeof dispose === "function") {
         dispose(asyncState);
+      } else {
+        asyncState.dispose();
       }
-      asyncState.dispose();
     };
   }, [asyncState]);
 

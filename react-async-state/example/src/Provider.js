@@ -3,6 +3,21 @@ import { useLocation } from "react-router-dom";
 import { AsyncStateProvider } from 'react-async-state';
 
 export const demoAsyncStates = {
+  timeout: {
+    key: "timeout",
+    promise(argv) {
+      let timeoutId;
+      argv.onAbort(function cancelTimeout() {
+        clearTimeout(timeoutId);
+      });
+
+      return new Promise(function delayed(resolve) {
+        timeoutId  = setTimeout(function timeouted() {
+          return resolve();
+        }, 2000);
+      });
+    }
+  },
   users: {
     key: "users",
     promise(argv) {

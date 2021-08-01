@@ -21,6 +21,7 @@ export function runScheduledAsyncState(asyncStateEntry, ...executionArgs) {
   }
   asyncStateEntry.scheduledRunsCount += 1; // increment schedules
 
+  let isRunning = false;
   let isCancelled = false;
 
   // unlock on cancel
@@ -28,13 +29,21 @@ export function runScheduledAsyncState(asyncStateEntry, ...executionArgs) {
     if (isCancelled) {
       return;
     }
+
     isCancelled = true;
+
+    let asyncState = asyncStateEntry?.value;
+    if (isRunning && !hasMultipleSubscriptions(asyncState)) {
+      asyncState.abort();
+    }
+
     asyncStateEntry.scheduledRunsCount -= 1;
   }
 
   function runner() {
     if (!isCancelled) {
       if (asyncStateEntry.scheduledRunsCount === 1) {
+        isRunning = true;
         asyncStateEntry.value.run(...executionArgs);
         asyncStateEntry.scheduledRunsCount = 0;
       } else {
@@ -46,4 +55,8 @@ export function runScheduledAsyncState(asyncStateEntry, ...executionArgs) {
   callAsync(runner)();
 
   return cancel;
+}
+
+function hasMultipleSubscriptions(asyncState) {
+  return Object.keys(asyncState.subscriptions).length > 0;
 }

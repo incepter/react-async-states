@@ -1,6 +1,6 @@
 import React from "react";
 import { AsyncStateContext } from "../context";
-import { EMPTY_ARRAY, EMPTY_OBJECT, invokeIfPresent, mergeObjects } from "../../utils";
+import { EMPTY_ARRAY, EMPTY_OBJECT, mergeObjects } from "../../utils";
 import { createInitialAsyncStatesReducer } from "./providerUtils";
 import { AsyncStateManager } from "./AsyncStateManager";
 

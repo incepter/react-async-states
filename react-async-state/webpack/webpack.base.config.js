@@ -39,11 +39,6 @@ module.exports = options => ({
   devtool: options.devtool,
   performance: options.performance || {},
   externals: {
-    react: {
-      commonjs: 'react',
-      commonjs2: 'react',
-      amd: 'react',
-      root: 'react',
-    },
-  },
+    react: "react"
+  }
 });
