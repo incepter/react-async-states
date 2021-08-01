@@ -37,7 +37,7 @@ export default function useRawAsyncState(asyncState, dependencies, configuration
 
     asyncState.payload = mergeObjects(asyncState.payload, configuration.payload);
     if (typeof run === "function") {
-      return run();
+      return run(asyncState);
     }
     return asyncState.run();
   }, dependencies);

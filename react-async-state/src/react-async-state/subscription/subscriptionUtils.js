@@ -1,5 +1,3 @@
-import { EMPTY_OBJECT, invokeIfPresent } from "../../utils";
-
 export const defaultRerenderStatusConfig = Object.freeze({
   error: true,
   success: true,
@@ -7,9 +5,43 @@ export const defaultRerenderStatusConfig = Object.freeze({
   loading: true,
 });
 
-export function makeEmptyReturnValueForKey(key, contextValue) {
-  const runAsyncState = contextValue ? contextValue.runAsyncState : undefined;
-  return Object.freeze({key, state: Object.freeze({}), empty: true, runAsyncState});
+export const AsyncStateSubscriptionMode = Object.freeze({
+  LISTEN: 0, // simple listener
+  HOIST: 1, // hoisting a promise, for first time and intended to be shared, more like of an injection
+  STANDALONE: 2, // working standalone even if inside provider
+  WAITING: 3, // waits for the original to be hoisted
+
+  FORK: 4, // forking an existing one in the provider
+  NOOP: 5, // a weird case that should not happen
+});
+
+export function inferSubscriptionMode(contextValue, configuration) {
+  const {fork, hoistToProvider} = configuration;
+  const existsInProvider = !!contextValue.get(configuration.key);
+
+  // early decide that this is a listener and return it immediately
+  // because this is the most common use case that it will be, we'll be optimizing this path first
+  if (existsInProvider && !hoistToProvider && !fork) {
+    return AsyncStateSubscriptionMode.LISTEN;
+  }
+
+  if (!hoistToProvider && !fork) { // we dont want to hoist or fork
+    return AsyncStateSubscriptionMode.STANDALONE;
+  }
+
+  if (hoistToProvider && (!existsInProvider || !fork)) { // we want to hoist while (not in provider or we dont want to fork)
+    return AsyncStateSubscriptionMode.HOIST;
+  }
+
+  if (fork && existsInProvider) { // fork a hoisted
+    return AsyncStateSubscriptionMode.FORK;
+  }
+
+  if (!existsInProvider) { // not found in provider; so either a mistake, or still not hoisted from
+    return AsyncStateSubscriptionMode.WAITING; // waiting, or may be we should throw ?
+  }
+
+  return AsyncStateSubscriptionMode.NOOP; // we should not be here
 }
 
 export function makeReturnValueFromAsyncState(asyncState, contextValue) {
