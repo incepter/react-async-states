@@ -21,7 +21,7 @@ export const demoAsyncStates = {
     .promise(postsPromise)
     .build(),
 
-  getUser: AsyncStateBuilder()
+  getUser: AsyncStateBuilder() // {key, promise, lazy=true, initialValue=null}
     .key("get-user")
     .lazy(false)
     .promise(getUserPromise)

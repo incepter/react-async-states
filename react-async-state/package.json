@@ -1,7 +1,7 @@
 {
   "private": true,
-  "name": "react-async-state",
-  "version": "1.0.0",
+  "name": "@x-hub/ras",
+  "version": "0.0.1-beta-1",
   "description": "",
   "author": "incepter",
   "license": "MIT",

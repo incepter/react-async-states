@@ -11,6 +11,7 @@ export default function Demo() {
   const {state: {status, data}} = useAsyncState({
     key: demoAsyncStates.getUser.key,
     payload: {matchParams: params},
+    rerenderStatus: {loading: true}
   }, [params]);
 
   function navigate(e) {

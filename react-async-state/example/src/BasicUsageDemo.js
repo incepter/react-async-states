@@ -79,7 +79,7 @@ function UndefinedPromiseDemoHoister() {
 }
 
 function UndefinedPromiseDemoConsumer() {
-  const {state: {data}, replaceState} = useAsyncState();
+  const {state: {data}, replaceState} = useAsyncState("user_input");
   return (
     <input style={{backgroundColor: "gray", border: "2px solid red"}} onChange={e => replaceState(e.target.value)}
            value={data} placeholder="type something"/>

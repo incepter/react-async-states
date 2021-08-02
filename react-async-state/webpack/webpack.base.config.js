@@ -5,6 +5,7 @@ module.exports = options => ({
   mode: options.mode,
   entry: options.entry,
   output: {
+    clean: true,
     path: path.resolve(process.cwd(), "dist"),
 
     library: "react-async-state",
