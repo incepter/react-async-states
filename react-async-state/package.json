@@ -1,11 +1,12 @@
 {
-  "private": true,
-  "name": "@x-hub/ras",
-  "version": "0.0.1-beta-1",
+  "private": false,
+  "name": "react-async-states",
+  "version": "0.0.1-beta-2",
   "description": "",
   "author": "incepter",
   "license": "MIT",
   "main": "dist/main.js",
+  "module": "src/index.js",
   "repository": "incepter/react-async-state",
   "engines": {
     "node": ">=8",
@@ -65,5 +66,9 @@
     "webpack": "^5.47.1",
     "webpack-cli": "^4.7.2",
     "webpack-hot-middleware": "^2.25.0"
-  }
+  },
+  "files": [
+    "src/index.js",
+    "dist"
+  ]
 }

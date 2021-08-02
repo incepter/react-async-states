@@ -8,7 +8,7 @@ module.exports = options => ({
     clean: true,
     path: path.resolve(process.cwd(), "dist"),
 
-    library: "react-async-state",
+    library: "ReactAsyncStates",
     libraryTarget: "umd",
     // Merge with env dependent settings
     ...options.output,
@@ -17,7 +17,7 @@ module.exports = options => ({
   module: {
     rules: [
       {
-        test: /\.js?$/, // Transform all .js and .jsx files required somewhere with Babel
+        test: /\.js?$/,
         exclude: /node_modules/,
         use: {
           loader: "babel-loader",
