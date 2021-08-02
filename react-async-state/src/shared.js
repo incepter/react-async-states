@@ -3,8 +3,9 @@ export const __DEV__ = process.env.NODE_ENV !== "production";
 export const EMPTY_ARRAY = Object.freeze([]);
 export const EMPTY_OBJECT = Object.freeze({});
 
-export function mergeObjects(obj1, obj2) {
-  return {...(obj1 ?? EMPTY_OBJECT), ...(obj2 ?? EMPTY_OBJECT)};
+// avoid spreading penalty!
+export function shallowClone(source1, source2) {
+  return Object.assign({}, source1, source2);
 }
 
 export const AsyncStateStatus = {

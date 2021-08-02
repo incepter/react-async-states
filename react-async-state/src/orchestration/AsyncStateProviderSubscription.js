@@ -1,4 +1,3 @@
-import AsyncState from "../async-state/AsyncState";
 import {
   AsyncStateSubscriptionMode,
   deduceAsyncState,
@@ -44,14 +43,3 @@ export function AsyncStateProviderSubscription(contextValue, configuration) {
     },
   };
 }
-
-function NoOp() {
-}
-
-const waitingAsyncState = new AsyncState(
-  Symbol("waiting_async_state"),
-  function promise() {
-    return new Promise(NoOp);
-  },
-  {}
-);

@@ -14,7 +14,7 @@
  * @property {boolean} aborted
  * @property {any} payload
  * @property {any} executionArgs
- * @property {AsyncStateState} previousState
+ * @property {AsyncStateState} lastSuccess
  * @property {function} onAbort
  *
  * @typedef {Object} UseAsyncStateValue
@@ -24,7 +24,7 @@
  * @property {function} replaceState
  * @property {function} runAsyncState
  * @property {AsyncStateState} state
- * @property {AsyncStateState | undefined} previousState
+ * @property {AsyncStateState | undefined} lastSuccess
  *
  * @callback AsyncStatePromise
  * @param {AsyncStateParameterObject} argv

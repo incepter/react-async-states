@@ -32,7 +32,7 @@ describe('AsyncState - subscriptions', () => {
         [{
           args: [{
             executionArgs: [],
-            previousState: undefined,
+            lastSuccess: undefined,
             onAbort: expect.any(Function),
             aborted: false,
             payload: null,
@@ -41,7 +41,7 @@ describe('AsyncState - subscriptions', () => {
         [{
           args: [{
             executionArgs: [],
-            previousState: undefined,
+            lastSuccess: undefined,
             onAbort: expect.any(Function),
             aborted: false,
             payload: null
@@ -53,7 +53,7 @@ describe('AsyncState - subscriptions', () => {
     expect(myAsyncState.currentState).toEqual({
       args: [{
         executionArgs: [],
-        previousState: undefined,
+        lastSuccess: undefined,
         onAbort: expect.any(Function),
         aborted: false,
         payload: null
@@ -89,7 +89,7 @@ describe('AsyncState - subscriptions', () => {
         [{
           args: [{
             executionArgs: [],
-            previousState: undefined,
+            lastSuccess: undefined,
             onAbort: expect.any(Function),
             aborted: false,
             payload: null
@@ -101,7 +101,7 @@ describe('AsyncState - subscriptions', () => {
     expect(myAsyncState.currentState).toEqual({
       args: [{
         executionArgs: [],
-        previousState: undefined,
+        lastSuccess: undefined,
         onAbort: expect.any(Function),
         aborted: false,
         payload: null
@@ -134,7 +134,7 @@ describe('AsyncState - subscriptions', () => {
     expect(myAsyncState.currentState).toEqual({ // original async state resolved, but we got notified neither by loading nor success
       args: [{
         executionArgs: [],
-        previousState: undefined,
+        lastSuccess: undefined,
         onAbort: expect.any(Function),
         aborted: false,
         payload: null

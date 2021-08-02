@@ -31,7 +31,7 @@ describe('AsyncState - run', () => {
         payload: null,
         aborted: false,
         executionArgs: [],
-        previousState: undefined,
+        lastSuccess: undefined,
         onAbort: expect.any(Function),
       }],
       data: null,
@@ -44,7 +44,7 @@ describe('AsyncState - run', () => {
     expect(myAsyncState.currentState).toEqual({
       args: [{
         executionArgs: [],
-        previousState: undefined,
+        lastSuccess: undefined,
         onAbort: expect.any(Function),
         aborted: false,
         payload: null
@@ -61,7 +61,7 @@ describe('AsyncState - run', () => {
     expect(myAsyncState.currentState).toEqual({
       args: [{
         executionArgs: [],
-        previousState: undefined,
+        lastSuccess: undefined,
         onAbort: expect.any(Function),
         aborted: false,
         payload: null
@@ -88,7 +88,7 @@ describe('AsyncState - run', () => {
     expect(myAsyncState.currentState).toEqual({
       args: [{
         executionArgs: [],
-        previousState: undefined,
+        lastSuccess: undefined,
         onAbort: expect.any(Function),
         aborted: false,
         payload: null

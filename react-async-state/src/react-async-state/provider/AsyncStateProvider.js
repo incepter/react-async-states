@@ -1,6 +1,6 @@
 import React from "react";
 import { AsyncStateContext } from "../context";
-import { EMPTY_ARRAY, EMPTY_OBJECT, mergeObjects } from "../../shared";
+import { EMPTY_ARRAY, EMPTY_OBJECT, shallowClone } from "../../shared";
 import { createInitialAsyncStatesReducer } from "./providerUtils";
 import { AsyncStateManager } from "../../orchestration/AsyncStateManager";
 
@@ -16,7 +16,7 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
       return;
     }
     Object.values(asyncStateEntries).forEach(function mergePayload(entry) {
-      entry.value.payload = mergeObjects(entry.value.payload, payload);
+      entry.value.payload = shallowClone(entry.value.payload, payload);
     });
   }, [payload]);
 

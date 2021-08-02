@@ -36,7 +36,7 @@ describe('AsyncState - run - abort', () => {
     expect(subscription).toHaveBeenCalledWith({
       args: [{
         executionArgs: [],
-        previousState: undefined,
+        lastSuccess: undefined,
         onAbort: expect.any(Function),
         aborted: false,
         payload: null
@@ -52,7 +52,7 @@ describe('AsyncState - run - abort', () => {
     expect(subscription).toHaveBeenCalledWith({
       args: {
         executionArgs: [],
-        previousState: undefined,
+        lastSuccess: undefined,
         onAbort: expect.any(Function),
         aborted: true,
         payload: null
@@ -64,7 +64,7 @@ describe('AsyncState - run - abort', () => {
     expect(myAsyncState.currentState).toEqual({
       args: {
         executionArgs: [],
-        previousState: undefined,
+        lastSuccess: undefined,
         onAbort: expect.any(Function),
         aborted: true,
         payload: null
@@ -81,7 +81,7 @@ describe('AsyncState - run - abort', () => {
     expect(myAsyncState.currentState).toEqual({
       args: {
         executionArgs: [],
-        previousState: undefined,
+        lastSuccess: undefined,
         onAbort: expect.any(Function),
         aborted: true,
         payload: null
@@ -129,7 +129,7 @@ describe('AsyncState - run - abort', () => {
     expect(myAsyncState.currentState).toEqual({
       args: {
         executionArgs: [],
-        previousState: undefined,
+        lastSuccess: undefined,
         onAbort: expect.any(Function),
         aborted: true,
         payload: null
@@ -179,11 +179,11 @@ describe('AsyncState - run - abort', () => {
         onAbort: expect.any(Function),
         aborted: false,
         payload: null,
-        previousState: {
+        lastSuccess: {
           args: [
             {
               executionArgs: [],
-              previousState: undefined,
+              lastSuccess: undefined,
               onAbort: expect.any(Function),
               aborted: true,
               payload: null

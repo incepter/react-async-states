@@ -1,7 +1,7 @@
 import React from "react";
 import useRerender from "../utils/useRerender";
 import { defaultRerenderStatusConfig, makeReturnValueFromAsyncState } from "./subscriptionUtils";
-import { EMPTY_OBJECT, invokeIfPresent, mergeObjects } from "../../shared";
+import { EMPTY_OBJECT, invokeIfPresent, shallowClone } from "../../shared";
 
 export default function useRawAsyncState(asyncState, dependencies, configuration, run, dispose) {
   const rerender = useRerender();
@@ -35,7 +35,7 @@ export default function useRawAsyncState(asyncState, dependencies, configuration
       return undefined;
     }
 
-    asyncState.payload = mergeObjects(asyncState.payload, configuration.payload);
+    asyncState.payload = shallowClone(asyncState.payload, configuration.payload);
     if (typeof run === "function") {
       return run(asyncState);
     }

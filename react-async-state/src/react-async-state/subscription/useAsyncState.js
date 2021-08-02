@@ -3,7 +3,7 @@ import { AsyncStateContext } from "../context";
 import useProviderAsyncState from "./useProviderAsyncState";
 import { useStandaloneAsyncState } from "./useStandaloneAsyncState";
 import { defaultRerenderStatusConfig } from "./subscriptionUtils";
-import { EMPTY_ARRAY, EMPTY_OBJECT, mergeObjects } from "../../shared";
+import { EMPTY_ARRAY, EMPTY_OBJECT, shallowClone } from "../../shared";
 
 export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
   const contextValue = React.useContext(AsyncStateContext);
@@ -24,6 +24,7 @@ export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
 }
 
 const defaultConfig = Object.freeze({
+  lazy: true,
   fork: false,
   condition: true,
   hoistToProvider: false,
@@ -34,7 +35,6 @@ const defaultConfig = Object.freeze({
   promise() {
     return undefined;
   },
-  promiseConfig: {lazy: true},
 });
 
 // userConfig is the config the developer wrote
@@ -44,7 +44,7 @@ function readConfig(userConfig) {
     return readConfig(userConfig());
   }
   if (typeof userConfig === "string") {
-    return mergeObjects(defaultConfig, {key: userConfig});
+    return shallowClone(defaultConfig, {key: userConfig});
   }
-  return mergeObjects(defaultConfig, userConfig);
+  return shallowClone(defaultConfig, userConfig);
 }

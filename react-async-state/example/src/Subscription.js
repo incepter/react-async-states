@@ -75,7 +75,7 @@ export default function Wrapper() {
 const undefinedPromise = {
   key: "undefined_promise",
   hoistToProvider: true,
-  promiseConfig: {lazy: false}
+  lazy: false
 };
 
 function ReplaceStateOriginal() {
@@ -112,7 +112,7 @@ const reducerPromise = {
     }
     return "KO !!"
   },
-  promiseConfig: {lazy: false}
+  lazy: false
 };
 
 function ReducerDemo() {

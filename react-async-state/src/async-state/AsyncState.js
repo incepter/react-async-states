@@ -1,21 +1,17 @@
-import { AsyncStateStatus, EMPTY_OBJECT, invokeIfPresent, mergeObjects } from "../shared";
+import { AsyncStateStatus, invokeIfPresent, shallowClone } from "../shared";
 import { wrapPromise } from "./wrappers/wrap-promise";
 import { clearSubscribers, notifySubscribers } from "./notify-subscribers";
-import { AsyncStateBuilder } from "./StateBuilder";
+import { AsyncStateStateBuilder } from "./StateBuilder";
 
-const defaultConfig = Object.freeze({lazy: true});
+const defaultConfig = Object.freeze({lazy: true, initialValue: null});
 
 function AsyncState(key, promise, config) {
   this.key = key; // todo: check key
-  this.config = mergeObjects(EMPTY_OBJECT, config);
+  this.config = shallowClone(defaultConfig, config);
   this.originalPromise = promise;
 
-  this.previousState = undefined;
-  this.currentState = {
-    args: null,
-    data: null, // null if initial and loading, full of data if success, full of error if error
-    status: AsyncStateStatus.initial,
-  }
+  this.lastSuccess = undefined;
+  this.currentState = AsyncStateStateBuilder.initial(this.config.initialValue);
 
   this.forkCount = 0;
   this.subscriptionsMeter = 0;
@@ -33,15 +29,17 @@ function AsyncState(key, promise, config) {
   Object.preventExtensions(this);
 }
 
-AsyncState.prototype.setState = function setState(newState, replacePreviousState = true, notify = true) {
-  if (replacePreviousState) {
-    this.previousState = {...this.currentState};
-  }
+AsyncState.prototype.setState = function setState(newState, notify = true) {
   if (typeof newState === "function") {
     this.currentState = newState(this.currentState);
   } else {
     this.currentState = newState;
   }
+
+  if (this.currentState.status === AsyncStateStatus.success) {
+    this.lastSuccess = shallowClone(this.currentState);
+  }
+
   if (notify) {
     notifySubscribers(this);
   }
@@ -50,13 +48,15 @@ AsyncState.prototype.setState = function setState(newState, replacePreviousState
 AsyncState.prototype.abort = function abortImpl(reason) {
   invokeIfPresent(this.currentAborter, reason);
 }
+
 AsyncState.prototype.dispose = function disposeImpl() {
-  if (this.locks > 1) {
+  if (this.locks > 0) {
     return false;
   }
-  invokeIfPresent(this.abort.bind(this));
+  this.locks = 0;
   clearSubscribers(this);
   this.subscriptions = {};
+  this.setState(AsyncStateStateBuilder.initial(this.config.initialValue));
   return true;
 }
 
@@ -71,10 +71,11 @@ AsyncState.prototype.run = function run(...execArgs) {
   let userAborter = null;
 
   const argsObject = {
+    abort,
     aborted: false,
     payload: this.payload,
     executionArgs: execArgs,
-    previousState: this.previousState,
+    lastSuccess: shallowClone(this.lastSuccess),
     onAbort(cb) {
       userAborter = cb;
     }
@@ -86,7 +87,7 @@ AsyncState.prototype.run = function run(...execArgs) {
       return;
     }
     argsObject.aborted = true;
-    that.setState(AsyncStateBuilder.aborted(reason, argsObject));
+    that.setState(AsyncStateStateBuilder.aborted(reason, argsObject));
     invokeIfPresent(userAborter);
   }
 
@@ -116,16 +117,16 @@ AsyncState.prototype.subscribe = function subscribe(cb) {
 
 const defaultForkConfig = Object.freeze({keepState: false});
 
-AsyncState.prototype.fork = function fork(forkConfig = defaultForkConfig) {
-  const mergedConfig = {...defaultConfig, ...forkConfig};
+AsyncState.prototype.fork = function fork(forkConfig) {
+  const mergedConfig = shallowClone(defaultForkConfig, forkConfig);
 
   const clone = new AsyncState(forkKey(this), this.originalPromise, this.config);
 
   this.forkCount += 1;
 
   if (mergedConfig.keepState) {
-    clone.currentState = {...this.currentState};
-    clone.previousState = {...(this.previousState ?? EMPTY_OBJECT)};
+    clone.currentState = shallowClone(this.currentState);
+    clone.lastSuccess = shallowClone(this.lastSuccess);
   }
 
   clone.__IS_FORK__ = true;
@@ -148,7 +149,7 @@ AsyncState.prototype.replaceState = function replaceState(newValue) {
     effectiveValue = newValue(this.currentState);
   }
 
-  this.setState(AsyncStateBuilder.success(effectiveValue));
+  this.setState(AsyncStateStateBuilder.success(effectiveValue));
 }
 
 export default AsyncState;

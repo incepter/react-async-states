@@ -22,13 +22,14 @@ export function AsyncStateManager(asyncStateEntries) {
   function dispose(asyncState) {
     const {key} = asyncState;
     const asyncStateEntry = asyncStateEntries[key];
-    if (!asyncStateEntry || asyncStateEntry?.initiallyHoisted) {
-      return;
+
+    if (!asyncStateEntry) {
+      return false;
     }
 
     const didDispose = asyncStateEntry.value.dispose();
 
-    if (didDispose) {
+    if (!asyncStateEntry.initiallyHoisted && didDispose) {
       delete asyncStateEntries[key];
     }
 
@@ -48,9 +49,10 @@ export function AsyncStateManager(asyncStateEntries) {
   }
 
   let listeners = {};
+
   function waitFor(key, notify) {
     if (!listeners[key]) {
-      listeners[key] = { meter: 0 };
+      listeners[key] = {meter: 0};
     }
 
     let keyListeners = listeners[key];
@@ -65,7 +67,7 @@ export function AsyncStateManager(asyncStateEntries) {
   }
 
   function hoist(config) {
-    const {key, hoistToProviderConfig = {override: false}, promise, promiseConfig} = config;
+    const {key, hoistToProviderConfig = {override: false}, promise, lazy, initialValue} = config;
 
     const existing = get(key);
     if (existing && !hoistToProviderConfig.override) {
@@ -79,7 +81,7 @@ export function AsyncStateManager(asyncStateEntries) {
       }
     }
 
-    asyncStateEntries[key] = createAsyncStateEntry(new AsyncState(key, promise, promiseConfig));
+    asyncStateEntries[key] = createAsyncStateEntry(new AsyncState(key, promise, {lazy, initialValue}));
     const returnValue = get(key);
 
     if (listeners[key]) {

@@ -1,4 +1,5 @@
 import AsyncState from "../../async-state/AsyncState";
+import { shallowClone } from "../../shared";
 
 export const defaultRerenderStatusConfig = Object.freeze({
   error: true,
@@ -46,6 +47,10 @@ export function inferSubscriptionMode(contextValue, configuration) {
   return AsyncStateSubscriptionMode.NOOP; // we should not be here
 }
 
+export function promiseConfigFromConfiguration(configuration) {
+  return {lazy: configuration.lazy, initialValue: configuration.initialValue};
+}
+
 export function deduceAsyncState(mode, configuration, contextValue) {
   const candidate = contextValue.get(configuration.key);
   switch (mode) {
@@ -58,7 +63,7 @@ export function deduceAsyncState(mode, configuration, contextValue) {
     case AsyncStateSubscriptionMode.WAITING:
       return waitingAsyncState;
     case AsyncStateSubscriptionMode.STANDALONE:
-      return new AsyncState(configuration.key, configuration.promise, configuration.promiseConfig);
+      return new AsyncState(configuration.key, configuration.promise, promiseConfigFromConfiguration(configuration));
     case AsyncStateSubscriptionMode.NOOP:
       return null;
     default:
@@ -75,7 +80,18 @@ export function makeReturnValueFromAsyncState(asyncState, contextValue) {
     replaceState: asyncState.replaceState.bind(asyncState),
     runAsyncState: contextValue ? contextValue.runAsyncState : undefined,
 
-    state: Object.freeze({...asyncState.currentState}),
-    previousState: asyncState.previousState ? Object.freeze({...asyncState.previousState}) : undefined,
+    state: Object.freeze(shallowClone(asyncState.currentState)),
+    lastSuccess: Object.freeze(shallowClone(asyncState.lastSuccess)),
   });
 }
+
+function NoOp() {
+}
+
+const waitingAsyncState = new AsyncState(
+  Symbol("waiting_async_state"),
+  function promise() {
+    return new Promise(NoOp);
+  },
+  {}
+);

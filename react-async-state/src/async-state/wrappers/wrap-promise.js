@@ -1,8 +1,8 @@
-import { AsyncStateBuilder } from "../StateBuilder";
+import { AsyncStateStateBuilder } from "../StateBuilder";
 
 export function wrapPromise(asyncState) {
   return function promiseFuncImpl(...args) {
-    asyncState.setState(AsyncStateBuilder.loading(args));
+    asyncState.setState(AsyncStateStateBuilder.loading(args));
     // todo: differentiate between promises and generator to apply properly runner logic
     // todo: add promiseRunner and genRunner
 
@@ -12,18 +12,18 @@ export function wrapPromise(asyncState) {
     );
 
     return executionPrimaryResult
-      .then(res => {
-        let aborted = args?.[0]?.aborted;
+      .then(stateData => {
+        let aborted = args[0].aborted;
         if (!aborted) {
-          asyncState.setState(AsyncStateBuilder.success(res, args));
+          asyncState.setState(AsyncStateStateBuilder.success(stateData, args));
         }
       })
-      .catch(e => {
-        let aborted = args?.[0]?.aborted;
+      .catch(stateError => {
+        let aborted = args[0].aborted;
         if (!aborted) {
-          asyncState.setState(AsyncStateBuilder.error(e, args));
+          asyncState.setState(AsyncStateStateBuilder.error(stateError, args));
         }
-        // return Promise.reject(e);
+        // return Promise.reject(stateError);
       });
   };
 }

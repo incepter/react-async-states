@@ -9,35 +9,35 @@ export function createAsyncStateEntry(asyncState) {
 }
 
 export function createInitialAsyncStatesReducer(result, current) {
-  const {key, promise, promiseConfig} = current;
-  result[current.key] = createAsyncStateEntry(new AsyncState(key, promise, promiseConfig));
+  const {key, promise, lazy, initialValue} = current;
+  result[current.key] = createAsyncStateEntry(new AsyncState(key, promise, {lazy, initialValue}));
   result[current.key].initiallyHoisted = true;
   return result;
 }
 
 export function runScheduledAsyncState(asyncStateEntry, ...executionArgs) {
+
   if (!asyncStateEntry) {
     return;
   }
   asyncStateEntry.scheduledRunsCount += 1; // increment schedules
-
   let isRunning = false;
   let isCancelled = false;
 
-  // unlock on cancel
   function cancel() {
     if (isCancelled) {
       return;
     }
-
     isCancelled = true;
+    let asyncState = asyncStateEntry.value;
 
-    let asyncState = asyncStateEntry?.value;
     if (isRunning && !hasMultipleSubscriptions(asyncState)) {
       asyncState.abort();
     }
 
-    asyncStateEntry.scheduledRunsCount -= 1;
+    if (asyncStateEntry.scheduledRunsCount >= 1) {
+      asyncStateEntry.scheduledRunsCount -= 1;
+    }
   }
 
   function runner() {

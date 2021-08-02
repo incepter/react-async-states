@@ -1,7 +1,7 @@
 import { timeout } from "./test-utils";
 import AsyncState from "../AsyncState";
 import { AsyncStateStatus } from "../../shared";
-import { AsyncStateBuilder } from "../StateBuilder";
+import { AsyncStateStateBuilder } from "../StateBuilder";
 
 jest.useFakeTimers();
 
@@ -20,7 +20,7 @@ describe('AsyncState - setState', () => {
 
   it('should synchronously mutate the state after setState call and notify subscribers', () => {
     // when
-    myAsyncState.setState(AsyncStateBuilder.loading({}));
+    myAsyncState.setState(AsyncStateStateBuilder.loading({}));
     // then
     let expectedState = {
       args: {},
@@ -36,13 +36,13 @@ describe('AsyncState - setState', () => {
     // given: updater
     let updater = jest.fn().mockImplementation((...args) => {
       expect(args[0]).toEqual(myAsyncState.currentState);
-      return AsyncStateBuilder.success({}, {});
+      return AsyncStateStateBuilder.success({}, {});
     });
     // when
     myAsyncState.setState(updater);
     // then
     expect(updater).toHaveBeenCalledTimes(1);
-    expect(updater).toHaveBeenCalledWith(myAsyncState.previousState);
+    expect(updater).toHaveBeenCalledWith(myAsyncState.lastSuccess);
     expect(myAsyncState.currentState).toEqual({
       args: {},
       data: {},
@@ -51,11 +51,11 @@ describe('AsyncState - setState', () => {
 
   });
   it('should update state and do not update state nor notify subscribers', async () => {
-    let previousState = myAsyncState.previousState;
+    let lastSuccess = myAsyncState.lastSuccess;
 
-    myAsyncState.setState(AsyncStateBuilder.success({}), false, false);
+    myAsyncState.setState(AsyncStateStateBuilder.success({}), false);
     // then
     expect(subscription).not.toHaveBeenCalled();
-    expect(previousState).toEqual(myAsyncState.previousState);
+    expect(lastSuccess).toEqual(myAsyncState.lastSuccess);
   });
 });

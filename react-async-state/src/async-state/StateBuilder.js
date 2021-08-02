@@ -1,9 +1,13 @@
 import { AsyncStateStatus } from "../shared";
 
-export const AsyncStateBuilder = Object.freeze({
-  initial: Object.freeze({ status: AsyncStateStatus.initial, data: null, args: null }),
-  error: (data, args) => Object.freeze({ status: AsyncStateStatus.error, data, args }),
-  success: (data, args) => Object.freeze({ status: AsyncStateStatus.success, data, args }),
-  loading: args => Object.freeze({ status: AsyncStateStatus.loading, data: null, args }),
-  aborted: (reason, args) => Object.freeze({ status: AsyncStateStatus.aborted, data: reason, args }),
+function state(status, data, args) {
+  return Object.freeze({status, data, args});
+}
+
+export const AsyncStateStateBuilder = Object.freeze({
+  initial: initialValue => state(AsyncStateStatus.initial, initialValue, null),
+  error: (data, args) => state(AsyncStateStatus.error, data, args),
+  success: (data, args) => state(AsyncStateStatus.success, data, args),
+  loading: args => state(AsyncStateStatus.loading, null, args),
+  aborted: (reason, args) => state(AsyncStateStatus.aborted, reason, args),
 });

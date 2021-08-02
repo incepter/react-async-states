@@ -24,15 +24,13 @@ export default function Demo() {
         <input defaultValue={params.userId} ref={ref} style={{backgroundColor: "red"}} placeholder="user id"/>
       </form>
       {status === "loading" && <span>Loading...</span>}
-      {status === "success" && (
-        <span>
+      <span>
           <pre>
             <details>
               {JSON.stringify(data, null, "  ")}
             </details>
           </pre>
         </span>
-      )}
     </div>
   );
 }
