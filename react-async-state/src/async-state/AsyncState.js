@@ -2,11 +2,24 @@ import { AsyncStateStatus, invokeIfPresent, shallowClone } from "../shared";
 import { wrapPromise } from "./wrappers/wrap-promise";
 import { clearSubscribers, notifySubscribers } from "./notify-subscribers";
 import { AsyncStateStateBuilder } from "./StateBuilder";
+import {
+  logInDevAbort,
+  logInDevDispose,
+  logInDevPromiseRun,
+  logInDevReplaceState,
+  logInDevStateChange,
+  warnDevAboutAsyncStateKey,
+  warnDevAboutUndefinedPromise,
+  warnInDevAboutRunWhileLoading
+} from "../utils";
 
 const defaultConfig = Object.freeze({lazy: true, initialValue: null});
 
 function AsyncState(key, promise, config) {
-  this.key = key; // todo: check key
+  warnDevAboutAsyncStateKey(key);
+  warnDevAboutUndefinedPromise(key, promise);
+
+  this.key = key;
   this.config = shallowClone(defaultConfig, config);
   this.originalPromise = promise;
 
@@ -35,6 +48,7 @@ AsyncState.prototype.setState = function setState(newState, notify = true) {
   } else {
     this.currentState = newState;
   }
+  logInDevStateChange(this.key, this.currentState);
 
   if (this.currentState.status === AsyncStateStatus.success) {
     this.lastSuccess = shallowClone(this.currentState);
@@ -50,6 +64,7 @@ AsyncState.prototype.abort = function abortImpl(reason) {
 }
 
 AsyncState.prototype.dispose = function disposeImpl() {
+  logInDevDispose(this.key, this.locks);
   if (this.locks > 0) {
     return false;
   }
@@ -62,6 +77,7 @@ AsyncState.prototype.dispose = function disposeImpl() {
 
 AsyncState.prototype.run = function run(...execArgs) {
   if (this.currentState.status === AsyncStateStatus.loading) {
+    warnInDevAboutRunWhileLoading(this.key);
     this.abort();
     this.currentAborter = null;
   }
@@ -87,10 +103,12 @@ AsyncState.prototype.run = function run(...execArgs) {
       return;
     }
     argsObject.aborted = true;
+    logInDevAbort(that.key, reason);
     that.setState(AsyncStateStateBuilder.aborted(reason, argsObject));
     invokeIfPresent(userAborter);
   }
 
+  logInDevPromiseRun(this.key, argsObject);
   this.promise(argsObject);
   this.currentAborter = abort;
   return abort;
@@ -148,6 +166,8 @@ AsyncState.prototype.replaceState = function replaceState(newValue) {
   if (typeof newValue === "function") {
     effectiveValue = newValue(this.currentState);
   }
+
+  logInDevReplaceState(this.key, effectiveValue);
 
   this.setState(AsyncStateStateBuilder.success(effectiveValue));
 }

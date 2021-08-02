@@ -24,10 +24,11 @@ export function asyncify(fn) {
   }
 }
 
+export function noop() {}
+
 export function invokeIfPresent(fn, ...args) {
   if (typeof fn === "function") {
     return fn(...args);
   }
   return undefined;
 }
-

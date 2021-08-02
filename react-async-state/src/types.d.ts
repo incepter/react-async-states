@@ -32,6 +32,7 @@
  *
  * @typedef {Object} AsyncStatePromiseConfig
  * @property {boolean} lazy
+ * @property {any} initialValue
  *
  * @typedef {Object} UseAsyncStateConfiguration
  * @property {string} key

@@ -89,7 +89,7 @@ function NoOp() {
 }
 
 const waitingAsyncState = new AsyncState(
-  Symbol("waiting_async_state"),
+  "waiting_async_state",
   function promise() {
     return new Promise(NoOp);
   },

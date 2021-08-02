@@ -7,7 +7,7 @@ export const demoAsyncStates = {
   timeout: AsyncStateBuilder()
     .key("timeout")
     .lazy(false)
-    .promise(timeoutPromise())
+    .promise(timeoutPromise(4000))
     .build(),
 
   users: AsyncStateBuilder()

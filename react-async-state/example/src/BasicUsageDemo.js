@@ -32,10 +32,10 @@ export default function Demo() {
   return (
     <div>
       <div>
-        <p>
+        <section>
           <UndefinedPromiseDemo/>
-        </p>
-        <p>
+        </section>
+        <section>
           <h3>Subscribe to global async state - {demoAsyncStates.users.key}</h3>
           <div style={{display: "flex"}}>
             <SimpleSub
@@ -51,7 +51,7 @@ export default function Demo() {
             />
             <br/>
           </div>
-        </p>
+        </section>
       </div>
     </div>
   );
@@ -61,14 +61,14 @@ function UndefinedPromiseDemo() {
 
   return (
     <>
-      <UndefinedPromiseDemo_Hoister/>
-      <UndefinedPromiseDemo_Consumer/>
-      <UndefinedPromiseDemo_Selector/>
+      <UndefinedPromiseDemoHoister/>
+      <UndefinedPromiseDemoConsumer/>
+      <UndefinedPromiseDemoSelector/>
     </>
   );
 }
 
-function UndefinedPromiseDemo_Hoister() {
+function UndefinedPromiseDemoHoister() {
   const {state: {data}} = useAsyncState({key: "user_input", hoistToProvider: true});
 
   return (
@@ -78,7 +78,7 @@ function UndefinedPromiseDemo_Hoister() {
   );
 }
 
-function UndefinedPromiseDemo_Consumer() {
+function UndefinedPromiseDemoConsumer() {
   const {state: {data}, replaceState} = useAsyncState("user_input");
   return (
     <input style={{backgroundColor: "gray", border: "2px solid red"}} onChange={e => replaceState(e.target.value)}
@@ -90,7 +90,7 @@ function selectCurrentValue(state) {
   return state?.data;
 }
 
-function UndefinedPromiseDemo_Selector() {
+function UndefinedPromiseDemoSelector() {
   const data = useAsyncStateSelector("user_input", selectCurrentValue);
   return (
 
