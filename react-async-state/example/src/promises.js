@@ -7,6 +7,7 @@ export function timeoutPromise(delay = 2000) {
 
     return new Promise(function delayed(resolve) {
       timeoutId = setTimeout(function timeouted() {
+        console.log(`timeout of delay '${delay}' has collapsed!`)
         return resolve();
       }, delay);
     });

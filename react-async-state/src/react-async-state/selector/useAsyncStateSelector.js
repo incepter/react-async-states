@@ -8,7 +8,7 @@ function shallowEqual(prev, next) {
 
 export function useAsyncStateSelector(keys, selector, areEqual = shallowEqual, initialValue = undefined) {
 
-  const {get, waitFor} = React.useContext(AsyncStateContext);
+  const {get, waitFor, dispose} = React.useContext(AsyncStateContext);
   const effectiveKeys = typeof keys === "string" ? [keys] : keys; // assumes keys is an array of string, check to add
 
   const [returnValue, setReturnValue] = React.useState(function getInitialState() {
@@ -44,6 +44,7 @@ export function useAsyncStateSelector(keys, selector, areEqual = shallowEqual, i
         cleanups.push(waitFor(key, subscription));
       } else {
         cleanups.push(asyncState.subscribe(subscription));
+        cleanups.push(function disposeAs() {dispose(asyncState)});
       }
     });
 

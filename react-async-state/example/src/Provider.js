@@ -12,6 +12,7 @@ export const demoAsyncStates = {
 
   users: AsyncStateBuilder()
     .key("users")
+    .lazy(false)
     .promise(usersPromise)
     .build(),
 
