@@ -1,12 +1,11 @@
 {
   "private": false,
   "name": "react-async-states",
-  "version": "0.0.1-beta-2",
+  "version": "0.0.1-beta-4",
   "description": "",
   "author": "incepter",
   "license": "MIT",
-  "main": "dist/main.js",
-  "module": "src/index.js",
+  "main": "dist/umd/index.js",
   "repository": "incepter/react-async-state",
   "engines": {
     "node": ">=8",
@@ -62,13 +61,13 @@
     "react": "^16.9.0",
     "react-scripts": "^3.4.0",
     "react-test-renderer": "^16.9.0",
-    "terser-webpack-plugin": "^5.1.4",
+    "terser-webpack-plugin": "^4.2.3",
     "webpack": "^5.47.1",
     "webpack-cli": "^4.7.2",
     "webpack-hot-middleware": "^2.25.0"
   },
   "files": [
     "src/index.js",
-    "dist"
+    "dist/*"
   ]
 }

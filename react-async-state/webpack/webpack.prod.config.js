@@ -13,7 +13,7 @@ module.exports = require("./webpack.base.config")({
 
   // Utilize long-term caching by adding content hashes (not compilation hashes) to compiled assets
   output: {
-    filename: "[name].js"
+    filename: "index.js"
   },
 
   optimization: {
@@ -36,8 +36,7 @@ module.exports = require("./webpack.base.config")({
     ],
     nodeEnv: "production",
     sideEffects: true,
-    concatenateModules: true,
-    runtimeChunk: "single"
+    concatenateModules: true
   },
 
   plugins: [
@@ -49,10 +48,5 @@ module.exports = require("./webpack.base.config")({
       minRatio: 0.8,
     }),
     // new BundleAnalyzerPlugin(),
-  ],
-
-  performance: {
-    assetFilter: assetFilename =>
-      !/(\.map$)|(^(main\.|favicon\.))/.test(assetFilename),
-  },
+  ]
 });

@@ -5,6 +5,18 @@ import { useStandaloneAsyncState } from "./useStandaloneAsyncState";
 import { defaultRerenderStatusConfig } from "./subscriptionUtils";
 import { EMPTY_ARRAY, EMPTY_OBJECT, shallowClone } from "../../shared";
 
+/**
+ * @typedef {Object} UseAsyncStateConfig
+ * @property {string} key
+ * @property {function} promise
+ * @property {boolean} [fork=false]
+ * @property {boolean} [condition=true]
+ * @property {boolean} [hoistToProvider=false]
+ *
+ * @param {string | function | UseAsyncStateConfig} subscriptionConfig
+ * @param dependencies
+ * @returns {{ key, run, abort, runAsyncState, state: {status, data}}}
+ */
 export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
   const contextValue = React.useContext(AsyncStateContext);
 
