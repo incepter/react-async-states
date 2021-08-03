@@ -1,0 +1,28 @@
+{
+  "name": "react-async-state-example",
+  "homepage": "https://incepter.github.io/react-async-state",
+  "version": "0.0.0",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "prop-types": "^15.6.2",
+    "react": "link:../node_modules/react",
+    "react-async-states": "link:..",
+    "react-dom": "^16.9.0",
+    "react-router-dom": "^5.2.0",
+    "react-scripts": "^3.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
+}
