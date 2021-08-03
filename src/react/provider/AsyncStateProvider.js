@@ -8,7 +8,7 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
   // mutable, and will be mutated!
   // this asyncStateEntries may receive other entries at runtime if you hoist
   const asyncStateEntries = React.useMemo(function constructAsyncStates() {
-    return initialAsyncStates.reduce(createInitialAsyncStatesReducer, {});
+    return Object.valyes(initialAsyncStates).reduce(createInitialAsyncStatesReducer, {});
   }, [initialAsyncStates]);
 
   React.useLayoutEffect(function onPayloadChange() {
