@@ -33,7 +33,7 @@ function makeConfigFromOutput(options, output) {
     devtool: options.devtool,
     performance: options.performance || {},
     externals: {
-      react: "React"
+      react: "react"
     }
   };
 }
