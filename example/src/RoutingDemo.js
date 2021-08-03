@@ -1,6 +1,6 @@
 import React from "react";
 import { useHistory, useParams } from "react-router-dom";
-import { useAsyncState } from "react-async-state";
+import { useAsyncState } from "react-async-states";
 import { demoAsyncStates } from "./Provider";
 
 export default function Demo() {

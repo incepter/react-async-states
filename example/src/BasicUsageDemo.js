@@ -1,6 +1,6 @@
 import React from "react";
 import { demoAsyncStates } from "./Provider";
-import { useAsyncState, useAsyncStateSelector } from "react-async-state";
+import { useAsyncState, useAsyncStateSelector } from "react-async-states";
 
 function SimpleSub({asyncStateKey, displayValue}) {
   const {key, state: {status, data}, run, abort} = useAsyncState(asyncStateKey);

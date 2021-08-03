@@ -1,5 +1,5 @@
 import React from "react";
-import { useAsyncState } from "react-async-state";
+import { useAsyncState } from "react-async-states";
 import { demoAsyncStates } from "./Provider";
 
 function Wrapper({children}) {

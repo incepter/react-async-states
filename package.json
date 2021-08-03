@@ -6,7 +6,7 @@
   "author": "incepter",
   "license": "MIT",
   "main": "dist/umd/index.js",
-  "repository": "incepter/react-async-state",
+  "repository": "incepter/react-async-states",
   "engines": {
     "node": ">=8",
     "npm": ">=5"

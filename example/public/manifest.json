@@ -1,6 +1,6 @@
 {
-  "short_name": "react-async-state",
-  "name": "react-async-state",
+  "short_name": "react-async-states",
+  "name": "react-async-states",
   "start_url": "./index.html",
   "display": "standalone",
   "theme_color": "#000000",

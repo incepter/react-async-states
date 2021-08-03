@@ -2,7 +2,7 @@ import {
   AsyncStateSubscriptionMode,
   deduceAsyncState,
   inferSubscriptionMode
-} from "../react-async-state/subscription/subscriptionUtils";
+} from "../subscription/subscriptionUtils";
 
 export function AsyncStateProviderSubscription(contextValue, configuration) {
   const mode = inferSubscriptionMode(contextValue, configuration);

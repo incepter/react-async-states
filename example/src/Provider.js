@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
-import { AsyncStateBuilder, AsyncStateProvider } from 'react-async-state';
+import { AsyncStateBuilder, AsyncStateProvider } from 'react-async-states';
 import { getUserPromise, postsPromise, timeoutPromise, usersPromise } from "./promises";
 
 export const demoAsyncStates = {

@@ -1,6 +1,6 @@
 import React from "react";
 import { isEqual } from "lodash";
-import { useAsyncState, useAsyncStateSelector } from 'react-async-state';
+import { useAsyncState, useAsyncStateSelector } from 'react-async-states';
 import DemoProvider from "./Provider";
 
 

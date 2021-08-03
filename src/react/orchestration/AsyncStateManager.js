@@ -1,5 +1,5 @@
-import AsyncState from "../async-state/AsyncState";
-import { createAsyncStateEntry, runScheduledAsyncState } from "../react-async-state/provider/providerUtils";
+import AsyncState from "../../async-state/AsyncState";
+import { createAsyncStateEntry, runScheduledAsyncState } from "../provider/providerUtils";
 
 export function AsyncStateManager(asyncStateEntries) {
   function get(key) {

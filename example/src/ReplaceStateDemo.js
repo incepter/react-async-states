@@ -1,5 +1,5 @@
 import React from "react";
-import { useAsyncState } from "react-async-state";
+import { useAsyncState } from "react-async-states";
 
 export default function Demo() {
   const {state} = useAsyncState();

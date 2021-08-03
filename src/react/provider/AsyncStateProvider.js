@@ -2,7 +2,7 @@ import React from "react";
 import { AsyncStateContext } from "../context";
 import { EMPTY_ARRAY, EMPTY_OBJECT, shallowClone } from "../../shared";
 import { createInitialAsyncStatesReducer } from "./providerUtils";
-import { AsyncStateManager } from "../../orchestration/AsyncStateManager";
+import { AsyncStateManager } from "../orchestration/AsyncStateManager";
 
 export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsyncStates = EMPTY_ARRAY}) {
   // mutable, and will be mutated!
