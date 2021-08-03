@@ -159,7 +159,7 @@ const initialAsyncState = Object.values(demoAsyncStates); // pass this to provid
 PS: You can use `AsyncStateBuilder` to create these objects this way:
 
 ```javascript
-import {AsyncStateBuilder, createAsyncState} from "react-async-states";
+import {AsyncStateBuilder, createAsyncState} from "react-async-state/src/index";
 let usersAS = AsyncStateBuilder()
     .key("users")
     .lazy(false)
