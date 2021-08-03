@@ -54,9 +54,7 @@ function makeOutputFor(type) {
 
 
 const umdOutput = makeOutputFor("umd");
-const commonJsOutput = makeOutputFor("commonjs");
 
 module.exports = options => [
-  makeConfigFromOutput(options, umdOutput(options)),
-  makeConfigFromOutput(options, commonJsOutput(options))
+  makeConfigFromOutput(options, umdOutput(options))
 ];

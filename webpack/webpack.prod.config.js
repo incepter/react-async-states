@@ -3,7 +3,7 @@ const path = require("path");
 // const OfflinePlugin = require("offline-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const CompressionPlugin = require("compression-webpack-plugin");
-// const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
+const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 
 module.exports = require("./webpack.base.config")({
   mode: "production",
@@ -47,6 +47,10 @@ module.exports = require("./webpack.base.config")({
       threshold: 10240,
       minRatio: 0.8,
     }),
-    // new BundleAnalyzerPlugin(),
+    new BundleAnalyzerPlugin({
+      openAnalyzer: false,
+      analyzerMode: "static",
+      reportFilename: "report.html"
+    }),
   ]
 });
