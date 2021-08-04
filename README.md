@@ -1,7 +1,8 @@
-## What is this
+# React async states
+> A naive lightweight React library for managing shared abortable and forkable asynchronous state.
 
-This library provides shared forkable and abortable asynchronous state management. It is a tiny and naive implementation
-that answers most of enterprise applications needs.
+
+## What is this
 
 An asynchronous state is a state issued from a promise (may be other than the Promise object) that occur (or not) in
 a later point of time. An async state instance holds three properties: `status(initial|loading|aborted|success|error)`,
@@ -14,12 +15,13 @@ You may use `useAsyncState` hook in a tree without provider, and it works almost
 
 ## Motivations
 
-Dealing with asynchronous state in general isn't easy, and bad patterns emerge easily especially in large scale applications
-where multiple developers with different seniority levels write code. The common and repetitive issues we were suffering from are:
-- How to cancel an ongoing fetch automatically when component unmounts ?
+Dealing with asynchronous state in general isn't easy, bad patterns emerge easily especially in large scale applications
+where multiple developers with different seniority levels write code. Some of the common and repetitive issues we were suffering from are:
+
+- How to cancel an ongoing fetch automatically when component unmounts ? Or when the user chooses to ?
 - How to prevent a callback from being called when the dependencies used to trigger a fetch change ?
-- Cannot update state of unmounted component...
-- The fetch status is by far different from a boolean representation, and the most used in codebases
+- The: Cannot update state of unmounted component...
+- The fetch status is by far different from a boolean representation, and the most used in code-bases...
 - How to share state between multiple subscriptions ?
 - How to select from multiple changing states while re-rendering only if the selected value change given a memoization function
 - ...and many more repetitive bottle necks that we found ourselves re-writing each time
@@ -31,6 +33,7 @@ deduce a pattern that will allow us to:
 
 - Have dynamic async states at runtime
 - Run any async state anytime
+- Give the running promise powerful arguments
 - Share dynamic state between subscribers
 - Choose whether to re-render after a state update by status
 - Abort running
@@ -41,30 +44,32 @@ deduce a pattern that will allow us to:
 - Select a portion from a state along with memoization function
 - Select from multiple states with the same api
 - Wait for non existent states
-- Give the running promise powerful arguments
 - Allow usage of other libraries (like redux) while executing promises
 
 ## Main concepts and keywords
-An `AsyncState` is constructed using the following:
+An `AsyncState` instance is constructed using the following:
 - Its unique key
 - The promise that yields the state data (may be an async function, a function returning a promise or a regular value or even a generator)
 - lazy: (true by default) if false, your promise is ran whenever dependencies or payload change
 - initialValue: self explanatory (when status is initial)
 
+### The promise
+The promise concept used in this text doesn't refer technically to the `Promise` object in Javascript, but rather to a
+value that we will receive in the future, but the starting point is a function call.
 
 ### Standalone vs provider
 The main API that you will be using often is the `useAsyncState` hook.
-It has a similar declaration to react hooks (useHook(config,dependencies),
-dependencies defaults to empty array for convenience, because we've found no real use case when you get to re-run a
-promise function each render. So, to avoid unwanted errors, it was set to empty array. If we find a real use case,
+It has a similar declaration to react hooks (`useHook(config,dependencies)`). Except that dependencies defaults
+to empty array, because we've found no real use case when you get to re-run a promise function each render.
+So, to avoid unwanted errors, it was set to empty array for convenience. If we find a real use case,
 we may allow null to act like undefined in this case)
 
 It works in two modes:
 - standalone mode (you are outside of a tree where a provider wires async states)
 - inside a provider, when you get to listen to, share and fork hoisted states
 
-The standalone mode simply reacts to your dependencies and constructs a new AsyncState instance, and subscribes to it.
-The provider mode is a bit different, the first thing it does is to infer the `subscription mode` from the developer
+The standalone mode simply reacts to your dependencies and runs the promise.
+The provider mode is a bit different, the first thing it does is to infer the `subscription mode` from the given
 configuration and the existing value in the provider.
 
 ### Subscription mode
@@ -81,9 +86,10 @@ The possible subscription mode are:
 Don't worry, we'll get back to all of these modes in a while, because you should know when each one is picked.
 
 ### Sharing and forking
-You can subscribe to each async states and get notified when the state updates.
+You can subscribe to each async states and get notified when the state updates, while configuring what status triggers a re-render.
+
 Sometimes, you need the same promise declared in an async state, but without changing the its state; this is supported via fork
-where you take the same promise from the async state you are subscribed to, but without impacting state and subscribers.
+where you take the same promise from the async state you are subscribed to, but without impacting its state and subscribers.
 
 ### Hoisting
 Sometimes, you need to use an async state on-demand and share it in your whole application (aka inject?), this is possible
@@ -92,15 +98,19 @@ accepting currently only a boolean `override` property, that indicates whether t
 
 ## Usage
 ### The promise
-The promise concept used in this text doesn't refer technically to the Promise object in Javascript, but rather to a
-value that we will receive in the future.
+So, we run a promise (or function if you prefer) given an arguments object (that we will explore in a minute).
+This function can be a regular function returning a value (a reducer maybe ?), an async function using async-await syntax,
+or even a generator. The most important thing is that your function (promise) returns a value.
+The returned value is what you receive as state data. We will explore the returned data more in depth later.
 
-So, we run a promise (or function if you prefer) given an arguments object
-(that we will explore in a minute). This function can be a regular function returning a value (a reducer maybe ?),
-an async function using async-await syntax, or even a generator. The most important thing is that your function (promise)
-returns a value. The returned value is what you receive as state data. We will explore the returned data more in depth later.
+For now, let's explore the object argument's properties that your promise will receive:
 
-For now, let's explore the arguments object's properties that your promise will receive:
+```javascript
+function myPromise(argv) {
+    const { payload, lastSuccess, executionArgs, aborted, abort, onAbort } = argv;
+    // ...
+}
+```
 
 |Property            |Description              |
 |--------------------|-------------------------|
@@ -115,14 +125,14 @@ The payload may contain in the future utilities to connect your promise to other
 
 We bet on this structure to handle our use cases, in fact, it allows to:
 - have a snapshot of the last success
-- send anything to your promise imperatively via `executionArgs`
-- combining the two previous benefits, your reducer signature may be like `myReducer(currentSuccess, executionArgs)`.
+- send anything at the `run`-time to your promise `executionArgs`
+- combining the two previous benefits, a reducer signature may be like `myReducer(currentSuccess, executionArgs)`.
 There is a special export `createReducerPromise` that does exactly this. It allows you to write reducers and accept
-two arguments based on the arguments object.
-- dynamic declarative arguments goes inside payload, and may be added as dependency to the subscription
+two arguments based on the arguments object. The reducer may be decorated with `immer`.
+- dynamic declarative arguments go inside payload, and should be added dependencies to the subscription
 - bi-directional abort binding: you can abort from your promise and/or register a callback to be fired if the abort is
 by user action, or some unmount or dependency change.
-- `aborted` alerted, you can decide not to call a second fetch after the first resolves using this property.
+- `aborted` alerted, you can then decide not to call a second fetch after the first resolves using this property.
 - easy to remember state for incremental states (combined states, infinite lists...) via the `lastSuccess`
 
 So far, so good.
@@ -130,6 +140,8 @@ So far, so good.
 Moreover, the state can be instantly and imperatively set to success status using a value
 (or of course a function accepting the old value as parameter) via the `replaceState` utility.
 
+Calling promises this way will encourage a separation of concerns, in fact, it will receive the whole outside world
+as the first argument. This will make the promise easier to test/mock independently.
 
 ### AsyncStateProvider
 The provider in a nutshell does the following:
@@ -139,15 +151,15 @@ The provider in a nutshell does the following:
 It accepts the `initialAsyncStates` as prop, which is an array of `{key, promise, lazy, initialValue}`, and
 a `payload` object, that will be merged to every hoisted async state.
 
-[The provider will(not confirmed) add special entries at a payload level (eg: `selectState(key)` will select asyncState state, `run(key, ...args)`
+[The provider will (not confirmed) add special entries at a payload level (eg: `selectState(key)` will select asyncState state, `run(key, ...args)`
 which will run another async state).]
 
 This illustrates the power of the payload at the provider level: you may want to include the `{store, dispatch}`
-from redux (or even `{put, select}` from redux-saga/effects and make them accessible at the provider level,
-and of course, you will be using generators to write your the promise using these effects).
+from redux.
 
-A direct use case of this `payload` is to hold the `matchParams`, the `location`, the `QueryString` and the `hash`,
-these values will be then accessible to all promises like this if you like object destructuring:
+A direct use case of this `payload` is to contain the `matchParams`, the `location`, the `QueryString`, the `hash`
+or even information about the current user and his permissions. These values will be then accessible to all promises.
+ You may use them like this:
 
 ```javascript
 function* getUser(argv) {
@@ -157,8 +169,9 @@ function* getUser(argv) {
 }
 ```
 
-The initialAsyncStates, like stated, is an array of objects; let's create some
+The initialAsyncStates, like stated, is an array of objects or a map; let's create some
 ```javascript
+// pass this to provider
 let demoAsyncStates = {
   users: {
     key: "users",
@@ -193,7 +206,7 @@ let demoAsyncStates = {
     }
   },
 }
-const initialAsyncState = Object.values(demoAsyncStates); // pass this to provider
+const initialAsyncState = Object.values(demoAsyncStates); // or pass this to provider
 ```
 
 PS: You can use `AsyncStateBuilder` to create these objects this way:
@@ -207,7 +220,7 @@ let usersAS = AsyncStateBuilder()
     .promise(fetchUsersPromise)
     .build();
 // or this way
-let usersAs = createAsyncState(/* key */"users", /* promise */fetchUsersPromise, /* initialValue */ [], /** lazy **/ false);
+let usersAs = createAsyncState(/*key*/"users", /*promise*/fetchUsersPromise, /*initialValue*/ [], /**lazy**/ false);
 ```
 
 Now that you know how to create an AsyncState's promise, let create explore the provider.
@@ -220,9 +233,99 @@ Now that you know how to create an AsyncState's promise, let create explore the 
 |`initialAsyncStates`| `AsyncStateDefinition[] or Map<string, AsyncStateDefinition>`| `[]`         | The initial Map or array of definitions of async promises |
 |`children`          | `ReactElement`                                               | `undefined`  | The React tree inside this provider |
 
-Setting a provider is easy.
+The first thing it does, it reacts to the both `initialAsyncState`, if changed, a new map is reconstructed,
+and the old is thrown to garbage collector (we may include optimizations to keep unchanged references).
+
+When the async states Map change, the provider dispose of non-initially hoisted async states, and then constructs
+the context value.
 
 ### useAsyncState
+This hook allows subscription to async state, and represents the API that you will be interacting with the most.
+its signature is one of the following:
+
+```javascript
+function useAsyncState(configuration, dependencies) {}
+```
+The configuration may be a string, an object with supported properties, or even a function returning one of them
+(under discussion, what about: if configuration is a function, consider it an anonymous promise, because anyways,
+a function returning a string or an object isn't interesting).
+
+It returns an object that contains few properties, we'll explore them in a moment.
+
+These are basic usages:
+```javascript
+// subscribes to users
+const value = useAsyncState("users");
+// creates a hoisted non-lazy async state with key and payload
+const value = useAsyncState({
+  lazy: false,
+  hoistToProvider: true,
+  key: "transactions-1-2",
+  payload: { stores: [store1, store2]},
+  hoistToProviderConfig: {override: true}
+}, [store1, store2]);
+// forks the weather promise
+const value = useAsyncState({
+  fork: true,
+  key: "weather",
+  forkConfig: {keepState: false},
+  payload: {latitude, longitude}
+});
+// + replaceState
+const value = useAsyncState("input_name");
+// define promise
+const value = useAsyncState({
+  key: "not_in_provider",
+  payload: {
+    delay: 2000,
+    onSuccess() {
+      showNotification();
+    }
+  },
+  promise(argv) {
+    timeout(argv.payload.delay)
+    .then(function callSuccess() {
+      if (!argv.aborted) {
+        // notice that we are taking onSuccess from payload, not from component's closure
+        // that's the way to go, this creates a separation of concerns
+        // and your promise may be extracted outisde this file, and will be easier to test
+        // but in general, please avoid code like this, and make it like an effect reacting to a value
+        // (the state data for example)
+        argv.payload.onSuccess();
+      }
+    })
+  }
+});
+```
+
+The `useAsyncState` hook's supported configuration is:
+
+|Property               |Type       |Default Value     |Standalone|Provider|Description
+|-----------------------|-----------|------------------|----------|--------|------------------------------------------------|
+|`key`                  |string     |sting             |     x    |   x    | The unique key, either for definition or subscription |
+|`lazy`                 |boolean    |true              |     x    |   x    | If false, the subscription will re-run every dependency change |
+|`fork`                 |boolean    |false             |          |   x    | If true, subscription will fork own async state |
+|`promise`              |function   |undefined         |     x    |   x    | Our promise function |
+|`condition`            |boolean    |true              |     x    |   x    | If this condition is falsy, run will not be granted |
+|`forkConfig`           |ForkConfig |{keepState: false}|          |   x    | defines whether to keep state when forking or not |
+|`initialValue`         |any        |null              |     x    |        | The initial promise value, useful only if working as standalone(ie defining own promise) |
+|`hoistToProvider`      |boolean    |false             |          |   x    | Defines whether to register in the provider or not |
+|`hoistToProviderConfig`|HoistConfig|{override: false} |          |   x    | Defines whether to override an existing async state in provider while hoisting |
+
+The returned object from useAsyncState contains the following properties:
+
+
+|Property            |Description              |
+|--------------------|-------------------------|
+|`key`               | |
+|`run`               | |
+|`state`             | |
+|`abort`             | |
+|`lastSuccess`       | |
+|`replaceState`      | |
+|`runAsyncState`     | |
+
+
 ### useAsyncStateSelector
 
 
@@ -231,3 +334,6 @@ Setting a provider is easy.
 - support the standalone/anonymous `useAsyncState(promise, dependencies)` ? [not confirmed][under discussion]
 - support config at provider level for all async states to inherit it
 - support default provider payload (select, run other async states)
+- subscription to be aware of provider async states change, to re-connect and re-run lazy...
+- support anonymous async states that acts as standalone
+- tests
