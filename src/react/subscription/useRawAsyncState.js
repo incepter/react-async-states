@@ -15,8 +15,8 @@ export default function useRawAsyncState(asyncState, dependencies, configuration
     const rerenderStatusConfig = {...defaultRerenderStatusConfig, ...(rerenderStatus ?? EMPTY_OBJECT)};
 
     const unsubscribe = asyncState.subscribe(function onUpdate(newState) {
+      returnValue.current = makeReturnValueFromAsyncState(asyncState);
       if (rerenderStatusConfig[newState.status]) {
-        returnValue.current = makeReturnValueFromAsyncState(asyncState);
         rerender({});
       }
     });

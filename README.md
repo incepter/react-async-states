@@ -310,23 +310,92 @@ The `useAsyncState` hook's supported configuration is:
 |`forkConfig`           |ForkConfig |{keepState: false}|          |   x    | defines whether to keep state when forking or not |
 |`initialValue`         |any        |null              |     x    |        | The initial promise value, useful only if working as standalone(ie defining own promise) |
 |`hoistToProvider`      |boolean    |false             |          |   x    | Defines whether to register in the provider or not |
+|`rerenderStats`        |object     |{<status>: true}  |     x    |   x    | Defines whether to register in the provider or not |
 |`hoistToProviderConfig`|HoistConfig|{override: false} |          |   x    | Defines whether to override an existing async state in provider while hoisting |
 
 The returned object from useAsyncState contains the following properties:
 
-
 |Property            |Description              |
 |--------------------|-------------------------|
-|`key`               | |
-|`run`               | |
-|`state`             | |
-|`abort`             | |
-|`lastSuccess`       | |
-|`replaceState`      | |
-|`runAsyncState`     | |
+|`key`               | The key of the async state instance, if forked, it is different from the given one |
+|`run`               | Imperatively trigger the run, arguments to this function are received as array in the executionArgs |
+|`state`             | The current state, of shape {status, data, args} |
+|`abort`             | Imperatively abort the current run if running |
+|`lastSuccess`       | The last registered success |
+|`replaceState`      | Imperatively and instantly replace state as success with the given value (accepts a callback receiving the old state) |
+|`runAsyncState`     | If inside provider, `runAsyncState(key, ...args)` runs the given async state by key with the later arguments |
 
+We bet in this shape because it provides the key for further subscriptions, the current state with status, data and the
+arguments that produced it. `run` runs the subscribed async state, to abort it invoke `abort`. The `lastSuccess`
+holds for you the last succeeded value.
+`replaceState` instantly gives a new value to the state with success status.
+`runAsyncState` works only in provider, and was added as convenience to trigger some side effect after
+the current async promise did something, for example, reload users list after updating a user successfully.
+
+Notes:
+1. Calling the `run` function, if it is still `loading` the previous run, it aborts it instantly, and start a new cycle.
+2. The provider doesn't run promises, it is the `useAsyncState` that does it. But then, if you have multiple subscriptions
+to the same async state, will it run multiple times ? Yes, and No. Yes because technically you register a run, but the run
+is locked via sempahore lock on the event loop: This means that each time you call the run function automatically via
+dependency change of first subscription, the only done thing synchronously is to lock by incrementing, and effectively
+run using `Promise.resolve().then(runner)`; Let's put this simplified:
+```javascript
+// deep inside
+
+function theRunYouCall(id) {
+  const as = get(id);
+  asyncSempahoreLockedRun(as);
+}
+function asyncSempahoreLockedRun(as) {
+  // ...
+  lock(); // ++
+  // ...
+  function cleanup() {}
+  // ...
+  function runner() {
+    if (locked) unlock(); // --
+    if (!locked) as.run();
+  }
+  // ...
+  Promise.resolve().then(runner);
+  return cleanup();
+}
+```
+This allows all runs issued from the same render to be batched together. This won't work if one subscription if deferred,
+if it runs while running, the natural implemented behavior is to cancel the previous. To solve this, you may fork the
+previous async state, or even, we could introduce some new mode to passively listen (do not trigger any run).
 
 ### useAsyncStateSelector
+
+Probably this is the most exciting API about this library, let's explore its signature first:
+
+```javascript
+function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual, initialValue = undefined) {}
+// where
+function shallowEqual(prev, next) {
+  return prev === next;
+}
+function identity(...args) {
+  if (!args || !args.length) {
+    return undefined;
+  }
+  return args.length === 1 ? args[0] : args;
+}
+```
+
+So, you may have deduced how this selector works:
+
+It takes a key or multiple keys, subscribes to them (or wait for them), selects value using the selector function,
+that receives as many arguments as many passed keys. If found, it gives the current `state`, else `undefined`.
+Then, when a change occur to any state, the selector function is re-ran, and new selected value is deduced.
+If it is different from the previous one given the `areEqual` function, your component re-renders.
+
+This gives full control about selecting derived data from one or multiple states at once.
+
+## Debugging
+
+We are currently adding some configurable logging, and planning to add a small dev tools
+extension with a UI representation for better developer experience.
 
 
 ## todo and roadmap

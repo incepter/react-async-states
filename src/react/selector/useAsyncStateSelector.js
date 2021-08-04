@@ -5,8 +5,14 @@ import { invokeIfPresent } from "../../shared";
 function shallowEqual(prev, next) {
   return prev === next;
 }
+function identity(...args) {
+  if (!args || !args.length) {
+    return undefined;
+  }
+  return args.length === 1 ? args[0] : args;
+}
 
-export function useAsyncStateSelector(keys, selector, areEqual = shallowEqual, initialValue = undefined) {
+export function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual, initialValue = undefined) {
 
   const {get, waitFor, dispose} = React.useContext(AsyncStateContext);
   const effectiveKeys = typeof keys === "string" ? [keys] : keys; // assumes keys is an array of string, check to add
