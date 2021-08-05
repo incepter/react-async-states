@@ -26,12 +26,14 @@ describe('AsyncState - run', () => {
 
     myAsyncState.run();
     // should transition synchronously to loading state
+    console.log("_____________", myAsyncState.currentState)
     expect(myAsyncState.currentState).toEqual({
       args: [{
         payload: null,
         aborted: false,
+        lastSuccess: {},
         executionArgs: [],
-        lastSuccess: undefined,
+        abort: expect.any(Function),
         onAbort: expect.any(Function),
       }],
       data: null,
@@ -44,10 +46,11 @@ describe('AsyncState - run', () => {
     expect(myAsyncState.currentState).toEqual({
       args: [{
         executionArgs: [],
-        lastSuccess: undefined,
-        onAbort: expect.any(Function),
+        payload: null,
         aborted: false,
-        payload: null
+        lastSuccess: {},
+        abort: expect.any(Function),
+        onAbort: expect.any(Function),
       }],
       data: null,
       status: AsyncStateStatus.loading,
@@ -61,10 +64,11 @@ describe('AsyncState - run', () => {
     expect(myAsyncState.currentState).toEqual({
       args: [{
         executionArgs: [],
-        lastSuccess: undefined,
-        onAbort: expect.any(Function),
+        payload: null,
         aborted: false,
-        payload: null
+        lastSuccess: {},
+        abort: expect.any(Function),
+        onAbort: expect.any(Function),
       }],
       status: AsyncStateStatus.success,
       data: [{ id: 1, description: "value" }],
@@ -87,11 +91,12 @@ describe('AsyncState - run', () => {
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
       args: [{
-        executionArgs: [],
-        lastSuccess: undefined,
-        onAbort: expect.any(Function),
+        payload: null,
         aborted: false,
-        payload: null
+        lastSuccess: {},
+        executionArgs: [],
+        abort: expect.any(Function),
+        onAbort: expect.any(Function),
       }],
       status: AsyncStateStatus.error,
       data: "Some Error",

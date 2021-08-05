@@ -1,7 +1,7 @@
 import { act } from "@testing-library/react-hooks";
 import { timeout } from "./test-utils";
-import AsyncState from "../AsyncState";
-import { AsyncStateStatus } from "../../shared";
+import AsyncState, { defaultASConfig } from "../AsyncState";
+import { AsyncStateStatus, shallowClone } from "../../shared";
 
 jest.useFakeTimers();
 
@@ -18,19 +18,19 @@ describe('AsyncState - fork', () => {
     // then
     expect(myAsyncState.key).toBe(key);
     expect(myAsyncState.forkCount).toBe(0);
-    expect(myAsyncState.config).toBe(myConfig);
     expect(myAsyncState.__IS_FORK__).toBeFalsy();
     expect(myAsyncState.lastSuccess).toBe(undefined);
     expect(myAsyncState.subscriptions).toEqual({});
     expect(typeof myAsyncState.run).toBe("function");
+    expect(myAsyncState.config).toEqual(shallowClone(defaultASConfig, myConfig));
     expect(myAsyncState.currentState).toEqual({ data: null, status: AsyncStateStatus.initial, args: null });
 
     let forkedAsyncState = myAsyncState.fork();
     expect(myAsyncState.forkCount).toBe(1);
     expect(forkedAsyncState.forkCount).toBe(0);
     expect(forkedAsyncState.__IS_FORK__).toBeTruthy();
-    expect(forkedAsyncState.config).toBe(myAsyncState.config);
-    expect(forkedAsyncState.lastSuccess).toBe(myAsyncState.lastSuccess); // undefined
+    expect(forkedAsyncState.config).toEqual(myAsyncState.config);
+    expect(forkedAsyncState.lastSuccess).toEqual(myAsyncState.lastSuccess);
     expect(forkedAsyncState.originalPromise).toBe(myAsyncState.originalPromise);
 
 

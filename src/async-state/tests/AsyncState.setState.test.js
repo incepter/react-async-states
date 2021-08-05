@@ -42,7 +42,6 @@ describe('AsyncState - setState', () => {
     myAsyncState.setState(updater);
     // then
     expect(updater).toHaveBeenCalledTimes(1);
-    expect(updater).toHaveBeenCalledWith(myAsyncState.lastSuccess);
     expect(myAsyncState.currentState).toEqual({
       args: {},
       data: {},
@@ -50,12 +49,11 @@ describe('AsyncState - setState', () => {
     });
 
   });
-  it('should update state and do not update state nor notify subscribers', async () => {
+  it('should update state and do not notify subscribers', async () => {
     let lastSuccess = myAsyncState.lastSuccess;
 
     myAsyncState.setState(AsyncStateStateBuilder.success({}), false);
     // then
     expect(subscription).not.toHaveBeenCalled();
-    expect(lastSuccess).toEqual(myAsyncState.lastSuccess);
   });
 });

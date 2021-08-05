@@ -13,14 +13,14 @@ import {
   warnInDevAboutRunWhileLoading
 } from "../utils";
 
-const defaultConfig = Object.freeze({lazy: true, initialValue: null});
+export const defaultASConfig = Object.freeze({lazy: true, initialValue: null});
 
 function AsyncState(key, promise, config) {
   warnDevAboutAsyncStateKey(key);
   warnDevAboutUndefinedPromise(key, promise);
 
   this.key = key;
-  this.config = shallowClone(defaultConfig, config);
+  this.config = shallowClone(defaultASConfig, config);
   this.originalPromise = promise;
 
   this.lastSuccess = undefined;

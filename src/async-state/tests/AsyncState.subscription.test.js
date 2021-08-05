@@ -31,20 +31,22 @@ describe('AsyncState - subscriptions', () => {
       [
         [{
           args: [{
-            executionArgs: [],
-            lastSuccess: undefined,
-            onAbort: expect.any(Function),
-            aborted: false,
             payload: null,
+            aborted: false,
+            lastSuccess: {},
+            executionArgs: [],
+            abort: expect.any(Function),
+            onAbort: expect.any(Function),
           }], data: null, status: AsyncStateStatus.loading
         }],
         [{
           args: [{
-            executionArgs: [],
-            lastSuccess: undefined,
-            onAbort: expect.any(Function),
+            payload: null,
+            lastSuccess: {},
             aborted: false,
-            payload: null
+            executionArgs: [],
+            abort: expect.any(Function),
+            onAbort: expect.any(Function),
           }], data: "Some Value", status: AsyncStateStatus.success
         }]
       ]
@@ -52,11 +54,12 @@ describe('AsyncState - subscriptions', () => {
     expect(subscriptionFn).toHaveBeenCalledTimes(2);
     expect(myAsyncState.currentState).toEqual({
       args: [{
-        executionArgs: [],
-        lastSuccess: undefined,
-        onAbort: expect.any(Function),
+        payload: null,
         aborted: false,
-        payload: null
+        lastSuccess: {},
+        executionArgs: [],
+        abort: expect.any(Function),
+        onAbort: expect.any(Function),
       }],
       status: AsyncStateStatus.success,
       data: "Some Value",
@@ -88,11 +91,12 @@ describe('AsyncState - subscriptions', () => {
       [
         [{
           args: [{
-            executionArgs: [],
-            lastSuccess: undefined,
-            onAbort: expect.any(Function),
+            payload: null,
             aborted: false,
-            payload: null
+            lastSuccess: {},
+            executionArgs: [],
+            abort: expect.any(Function),
+            onAbort: expect.any(Function),
           }], data: null, status: AsyncStateStatus.loading
         }],
       ]
@@ -100,11 +104,12 @@ describe('AsyncState - subscriptions', () => {
     expect(subscriptionFn).toHaveBeenCalledTimes(1);
     expect(myAsyncState.currentState).toEqual({
       args: [{
-        executionArgs: [],
-        lastSuccess: undefined,
-        onAbort: expect.any(Function),
+        payload: null,
         aborted: false,
-        payload: null
+        executionArgs: [],
+        lastSuccess: {},
+        abort: expect.any(Function),
+        onAbort: expect.any(Function),
       }],
       status: AsyncStateStatus.success,
       data: "Some Value",
@@ -133,11 +138,12 @@ describe('AsyncState - subscriptions', () => {
     expect(subscriptionFn).toHaveBeenCalledTimes(0);
     expect(myAsyncState.currentState).toEqual({ // original async state resolved, but we got notified neither by loading nor success
       args: [{
-        executionArgs: [],
-        lastSuccess: undefined,
-        onAbort: expect.any(Function),
+        payload: null,
         aborted: false,
-        payload: null
+        lastSuccess: {},
+        executionArgs: [],
+        abort: expect.any(Function),
+        onAbort: expect.any(Function),
       }],
       status: AsyncStateStatus.success,
       data: "Some Value",

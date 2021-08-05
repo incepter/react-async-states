@@ -10,7 +10,7 @@ describe('AsyncState - run - abort', () => {
   it('should abort while loading and check state did not update after supposed resolve', async () => {
     // given
     let key = "simulated";
-    let promise = timeout(100, [{ id: 1, description: "value" }]);
+    let promise = timeout(100, [{id: 1, description: "value"}]);
     let myConfig = {};
     let subscription = jest.fn();
 
@@ -36,7 +36,8 @@ describe('AsyncState - run - abort', () => {
     expect(subscription).toHaveBeenCalledWith({
       args: [{
         executionArgs: [],
-        lastSuccess: undefined,
+        lastSuccess: {},
+        abort: expect.any(Function),
         onAbort: expect.any(Function),
         aborted: false,
         payload: null
@@ -52,7 +53,8 @@ describe('AsyncState - run - abort', () => {
     expect(subscription).toHaveBeenCalledWith({
       args: {
         executionArgs: [],
-        lastSuccess: undefined,
+        lastSuccess: {},
+        abort: expect.any(Function),
         onAbort: expect.any(Function),
         aborted: true,
         payload: null
@@ -64,7 +66,8 @@ describe('AsyncState - run - abort', () => {
     expect(myAsyncState.currentState).toEqual({
       args: {
         executionArgs: [],
-        lastSuccess: undefined,
+        lastSuccess: {},
+        abort: expect.any(Function),
         onAbort: expect.any(Function),
         aborted: true,
         payload: null
@@ -81,7 +84,8 @@ describe('AsyncState - run - abort', () => {
     expect(myAsyncState.currentState).toEqual({
       args: {
         executionArgs: [],
-        lastSuccess: undefined,
+        lastSuccess: {},
+        abort: expect.any(Function),
         onAbort: expect.any(Function),
         aborted: true,
         payload: null
@@ -128,11 +132,12 @@ describe('AsyncState - run - abort', () => {
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
       args: {
-        executionArgs: [],
-        lastSuccess: undefined,
-        onAbort: expect.any(Function),
+        payload: null,
         aborted: true,
-        payload: null
+        lastSuccess: {},
+        executionArgs: [],
+        abort: expect.any(Function),
+        onAbort: expect.any(Function),
       },
       status: AsyncStateStatus.aborted,
       data: "reason",
@@ -176,22 +181,11 @@ describe('AsyncState - run - abort', () => {
     expect(myAsyncState.currentState).toEqual({
       args: [{
         executionArgs: [],
+        abort: expect.any(Function),
         onAbort: expect.any(Function),
         aborted: false,
         payload: null,
-        lastSuccess: {
-          args: [
-            {
-              executionArgs: [],
-              lastSuccess: undefined,
-              onAbort: expect.any(Function),
-              aborted: true,
-              payload: null
-            }
-          ],
-          data: null,
-          status: AsyncStateStatus.loading,
-        },
+        lastSuccess: {},
       }],
       status: AsyncStateStatus.success,
       data: "value",
