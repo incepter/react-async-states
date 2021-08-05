@@ -13,9 +13,8 @@ function identity(...args) {
 }
 
 export function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual, initialValue = undefined) {
-
-  const {get, waitFor, dispose} = React.useContext(AsyncStateContext);
   const effectiveKeys = typeof keys === "string" ? [keys] : keys; // assumes keys is an array of string, check to add
+  const {get, watch, dispose} = React.useContext(AsyncStateContext);
 
   const [returnValue, setReturnValue] = React.useState(function getInitialState() {
     return selectValues() || initialValue;
@@ -46,9 +45,8 @@ export function useAsyncStateSelector(keys, selector = identity, areEqual = shal
 
     effectiveKeys.forEach(function subscribeOrWaitFor(key) {
       const asyncState = get(key);
-      if (!asyncState) {
-        cleanups.push(waitFor(key, subscription));
-      } else {
+      cleanups.push(watch(key, subscription)); // watch for the key
+      if (asyncState) {
         cleanups.push(asyncState.subscribe(subscription));
         cleanups.push(function disposeAs() {dispose(asyncState)});
       }

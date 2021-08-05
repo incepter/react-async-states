@@ -32,3 +32,11 @@ export function invokeIfPresent(fn, ...args) {
   }
   return undefined;
 }
+
+export function isPromise(candidate) {
+  return !!candidate && typeof candidate.then === "function";
+}
+
+export function isGenerator(candidate) {
+  return !!candidate && typeof candidate.next === "function" && typeof candidate.throw === "function";
+}

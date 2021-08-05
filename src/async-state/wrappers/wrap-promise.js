@@ -1,17 +1,27 @@
 import { AsyncStateStateBuilder } from "../StateBuilder";
+import { isGenerator, isPromise } from "../../shared";
+import { wrapGenerator } from "./wrap-generator";
+import { logger } from "../../logger";
 
 export function wrapPromise(asyncState) {
   return function promiseFuncImpl(...args) {
-    asyncState.setState(AsyncStateStateBuilder.loading(args));
-    // todo: differentiate between promises and generator to apply properly runner logic
-    // todo: add promiseRunner and genRunner
+    let runningPromise;
+    const executionValue = asyncState.originalPromise(...args);
+    if (isGenerator(executionValue)) {
+      logger.info(`[${asyncState.key}][is a generator]`);
+      asyncState.setState(AsyncStateStateBuilder.loading(args));
+      runningPromise = wrapGenerator(executionValue, asyncState, args);
+    } else if (isPromise(executionValue)) {
+      logger.info(`[${asyncState.key}][is a promise]`);
+      asyncState.setState(AsyncStateStateBuilder.loading(args));
+      runningPromise = executionValue;
+    } else { // final value
+      logger.info(`[${asyncState.key}][resolved immediately] - skiping the loading state`);
+      asyncState.setState(AsyncStateStateBuilder.success(executionValue, args));
+      return;
+    }
 
-    const executionPrimaryResult = Promise.resolve(
-      asyncState
-        .originalPromise(...args)
-    );
-
-    return executionPrimaryResult
+    runningPromise
       .then(stateData => {
         let aborted = args[0].aborted;
         if (!aborted) {

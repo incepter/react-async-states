@@ -1,9 +1,8 @@
 import React from "react";
 import { AsyncStateContext } from "../context";
 import useRawAsyncState from "./useRawAsyncState";
-import { EMPTY_OBJECT, invokeIfPresent } from "../../shared";
-import { AsyncStateSubscriptionMode } from "./subscriptionUtils";
-import { AsyncStateProviderSubscription } from "../orchestration/AsyncStateProviderSubscription";
+import { EMPTY_OBJECT } from "../../shared";
+import { AsyncStateProviderSubscription } from "./AsyncStateProviderSubscription";
 
 export default function useProviderAsyncState(configuration, dependencies) {
   const {key} = configuration;
@@ -17,18 +16,13 @@ export default function useProviderAsyncState(configuration, dependencies) {
   }, dependenciesArray);
 
   // wait early
-  React.useLayoutEffect(function waitForIfWaitingMode() {
-    if (subscription.mode !== AsyncStateSubscriptionMode.WAITING) {
-      return undefined;
-    }
+  // this sets  a watcher to observe present async state
+  React.useLayoutEffect(function watchAsyncState() {
+    let watchedKey = subscription.asyncState?.key || key;
 
-    const waitingCleanup = contextValue.waitFor(key, function notify() {
+    return contextValue.watch(watchedKey, function notify() {
       setGuard({});
     });
-
-    return function cleanup() {
-      invokeIfPresent(waitingCleanup);
-    };
   }, [subscription.asyncState]);
 
   return useRawAsyncState(

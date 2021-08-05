@@ -10,8 +10,15 @@ export function createAsyncStateEntry(asyncState) {
 
 export function createInitialAsyncStatesReducer(result, current) {
   const {key, promise, lazy, initialValue} = current;
-  result[current.key] = createAsyncStateEntry(new AsyncState(key, promise, {lazy, initialValue}));
-  result[current.key].initiallyHoisted = true;
+  const existingEntry = result[key];
+  if (existingEntry) {
+    const asyncState = existingEntry.value;
+    if (asyncState.originalPromise === promise && asyncState.config.lazy === lazy && asyncState.config.initialValue === initialValue) {
+      return result;
+    }
+  }
+  result[key] = createAsyncStateEntry(new AsyncState(key, promise, {lazy, initialValue}));
+  result[key].initiallyHoisted = true;
   return result;
 }
 

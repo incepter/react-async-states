@@ -183,8 +183,8 @@ let demoAsyncStates = {
   },
   userAndPosts: {
     key: "userAndPosts",
-    // generators aren't yet supported, but are the recommended way to go!
-    // because they allow to abort between yields! unlike promises and async-await
+    // generators are the recommended way to go!
+    // because they allow to abort between yields! unlike promises and async-await!
     promise: function* getUserAndPosts(argv) {
       let {userId} = argv.payload.matchParams;
       let user = yield fetchUser(userId);
@@ -397,12 +397,13 @@ This gives full control about selecting derived data from one or multiple states
 We are currently adding some configurable logging, and planning to add a small dev tools
 extension with a UI representation for better developer experience.
 
-
 ## todo and roadmap
-- support generators
-- support the standalone/anonymous `useAsyncState(promise, dependencies)` ? [not confirmed][under discussion]
-- support config at provider level for all async states to inherit it
-- support default provider payload (select, run other async states)
-- subscription to be aware of provider async states change, to re-connect and re-run lazy...
-- support anonymous async states that acts as standalone
-- tests
+- [x] support generators
+- [x] re-use old instances if nothing changed (originalPromise + key + lazy)
+- [x] subscription to be aware of provider async states change, to re-connect and re-run lazy...
+- [ ] support the standalone/anonymous `useAsyncState(promise, dependencies)` ? [not confirmed][under discussion] We need a way to configure initialValue and lazy
+- [ ] support config at provider level for all async states to inherit it
+- [ ] support default embedded provider payload (select, run other async states)
+- [ ] support passive listen mode without running async state
+- [ ] tests
+- [ ] Types

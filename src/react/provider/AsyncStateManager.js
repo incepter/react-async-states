@@ -1,5 +1,6 @@
 import AsyncState from "../../async-state/AsyncState";
-import { createAsyncStateEntry, runScheduledAsyncState } from "../provider/providerUtils";
+import { createAsyncStateEntry, runScheduledAsyncState } from "./providerUtils";
+import { logger } from "../../logger";
 
 export function AsyncStateManager(asyncStateEntries) {
   function get(key) {
@@ -30,7 +31,9 @@ export function AsyncStateManager(asyncStateEntries) {
     const didDispose = asyncStateEntry.value.dispose();
 
     if (!asyncStateEntry.initiallyHoisted && didDispose) {
+      logger.info(`[provider][${key}] dispose`);
       delete asyncStateEntries[key];
+      notifyWatchers(key, null);
     }
 
     return didDispose;
@@ -45,25 +48,37 @@ export function AsyncStateManager(asyncStateEntries) {
     const forkedAsyncState = asyncState.fork(forkConfig);
     asyncStateEntries[forkedAsyncState.key] = createAsyncStateEntry(forkedAsyncState);
 
+    notifyWatchers(forkedAsyncState.key, asyncStateEntries[forkedAsyncState.key].value);
+
     return forkedAsyncState;
   }
 
-  let listeners = {};
+  let watchers = {};
 
-  function waitFor(key, notify) {
-    if (!listeners[key]) {
-      listeners[key] = {meter: 0};
+  function watch(key, notify) {
+    if (!watchers[key]) {
+      watchers[key] = {meter: 0, watchers: {}};
     }
 
-    let keyListeners = listeners[key];
-    const index = ++keyListeners.meter;
+    let keyWatchers = watchers[key];
+    const index = ++keyWatchers.meter;
+    keyWatchers.watchers[index] = {notify, cleanup};
 
     function cleanup() {
-      delete keyListeners[index];
+      delete keyWatchers[index];
     }
 
-    keyListeners[index] = {notify, cleanup};
     return cleanup;
+  }
+
+  function notifyWatchers(key, value) {
+    if (!watchers[key]) {
+      return;
+    }
+    console.log('notify watchers,', key, watchers, watchers[key])
+    Object.values(watchers[key].watchers).forEach(function notifyWatcher(watcher) {
+      watcher.notify(value);
+    })
   }
 
   function hoist(config) {
@@ -82,16 +97,12 @@ export function AsyncStateManager(asyncStateEntries) {
     }
 
     asyncStateEntries[key] = createAsyncStateEntry(new AsyncState(key, promise, {lazy, initialValue}));
-    const returnValue = get(key);
 
-    if (listeners[key]) {
-      Object.values(listeners).forEach(function notifyListeners(listener) {
-        listener.notify(returnValue);
-      });
-    }
+    const returnValue = get(key);
+    notifyWatchers(key, returnValue); // returnValue is an AsyncState or undefined
 
     return returnValue;
   }
 
-  return {run, get, fork, hoist, dispose, waitFor, runAsyncState};
+  return {run, get, fork, hoist, dispose, watch, runAsyncState};
 }

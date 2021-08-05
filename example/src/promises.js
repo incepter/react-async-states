@@ -14,14 +14,14 @@ export function timeoutPromise(delay = 2000) {
   }
 }
 
-export function usersPromise(argv) {
+export function* usersPromise(argv) {
   const controller = new AbortController();
   const {signal} = controller;
   argv.onAbort(function abortSignal() {
     controller.abort();
   });
 
-  return fetch('https://jsonplaceholder.typicode.com/users', {signal})
+  return yield fetch('https://jsonplaceholder.typicode.com/users', {signal})
     .then(res => res.json());
 }
 

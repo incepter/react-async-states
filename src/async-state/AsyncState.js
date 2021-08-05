@@ -84,7 +84,7 @@ AsyncState.prototype.run = function run(...execArgs) {
 
   const that = this;
 
-  let userAborter = null;
+  let userAborters = [];
 
   const argsObject = {
     abort,
@@ -93,7 +93,7 @@ AsyncState.prototype.run = function run(...execArgs) {
     executionArgs: execArgs,
     lastSuccess: shallowClone(this.lastSuccess),
     onAbort(cb) {
-      userAborter = cb;
+      userAborters.push(cb);
     }
   };
 
@@ -105,7 +105,9 @@ AsyncState.prototype.run = function run(...execArgs) {
     argsObject.aborted = true;
     logInDevAbort(that.key, reason);
     that.setState(AsyncStateStateBuilder.aborted(reason, argsObject));
-    invokeIfPresent(userAborter);
+    userAborters.forEach(function clean(func) {
+      invokeIfPresent(func, reason);
+    });
   }
 
   logInDevPromiseRun(this.key, argsObject);

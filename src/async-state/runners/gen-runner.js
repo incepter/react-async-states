@@ -1,33 +1,44 @@
 /* not used, yet! */
 /* istanbul ignore next */
+import { invokeIfPresent } from "../../shared";
+
 export function generatorRunner(generator, ...genArgs) {
-  let done = false;
-  let aborted = false;
   let gen = generator(...genArgs);
 
-  function step(...params) {
-    if (done) throw new Error("gen already done! cannot step further");
-    let next = gen.next(...params);
+  return stepAndContinueGenerator(gen);
+}
+
+export function stepAndContinueGenerator(generator, onDone, onReject) {
+  let done = false;
+  let aborted = false;
+
+  function step(input) {
+    if (done) throw new Error("generator already done! cannot step further");
+    let next = generator.next(input);
 
     if (next.done) done = true;
     let promise = Promise.resolve(next.value);
 
     promise
-      .then((...args) => {
+      .then(function continueGen(value) {
         if (!done && !aborted) {
-          step(...args);
+          step(value);
+        }
+        if (done && !aborted) {
+          invokeIfPresent(onDone, value);
         }
       })
-      .catch(e => {
+      .catch(function onCatch(e){
         if (!aborted && !done) {
-          gen.throw(e);
+          generator.throw(e);
+          invokeIfPresent(onReject, e);
         }
       })
   }
 
   step();
 
-  return function() {
+  return function abort() {
     aborted = true;
   }
 }
