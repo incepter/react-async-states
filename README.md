@@ -401,9 +401,9 @@ extension with a UI representation for better developer experience.
 - [x] support generators
 - [x] re-use old instances if nothing changed (originalPromise + key + lazy)
 - [x] subscription to be aware of provider async states change, to re-connect and re-run lazy...
-- [ ] support the standalone/anonymous `useAsyncState(promise, dependencies)` ? [not confirmed][under discussion] We need a way to configure initialValue and lazy
-- [ ] support config at provider level for all async states to inherit it (we must define supported config)
+- [x] support the standalone/anonymous `useAsyncState(promise, dependencies)` ? [not confirmed][under discussion] We need a way to configure initialValue and lazy
 - [ ] support default embedded provider payload (select, run other async states)
+- [ ] support config at provider level for all async states to inherit it (we must define supported config)
 - [ ] support passive listen mode without running async state
 - [ ] tests
 - [ ] Types
