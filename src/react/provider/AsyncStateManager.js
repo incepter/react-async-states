@@ -1,6 +1,7 @@
 import AsyncState from "../../async-state/AsyncState";
 import { createAsyncStateEntry, runScheduledAsyncState } from "./providerUtils";
 import { logger } from "../../logger";
+import { AsyncStateStatus, identity, invokeIfPresent } from "../../shared";
 
 export function AsyncStateManager(asyncStateEntries) {
   function get(key) {
@@ -104,5 +105,37 @@ export function AsyncStateManager(asyncStateEntries) {
     return returnValue;
   }
 
-  return {run, get, fork, hoist, dispose, watch, runAsyncState};
+  function select(keys, selector = identity) {
+    const effectiveKeys = Array.isArray(keys) ? keys : [keys];
+
+    return selector(...effectiveKeys.map(function getStateValue(key) {
+      return get(key)?.currentState;
+    }));
+  }
+  //
+  // function runAndWait(key, ...args) {
+  //   return new Promise(function promiseDefinition(resolve, reject) {
+  //     const asyncState = get(key);
+  //     if (!asyncState) {
+  //       return;
+  //     }
+  //     let unsubscribe = asyncState.subscribe(function subscription(stateValue) {
+  //
+  //       const status = stateValue?.status;
+  //       if (status === AsyncStateStatus.success) {
+  //         resolve(stateValue);
+  //       }
+  //       if (status === AsyncStateStatus.error) {
+  //         reject(stateValue);
+  //       }
+  //       if (status !== AsyncStateStatus.loading) {
+  //         invokeIfPresent(unsubscribe);
+  //       }
+  //     });
+  //     asyncState.run(...args);
+  //   });
+  //
+  // }
+
+  return {run, get, fork, select, hoist, dispose, watch, runAsyncState};
 }

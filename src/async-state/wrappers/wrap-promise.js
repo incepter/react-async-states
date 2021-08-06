@@ -1,5 +1,5 @@
 import { AsyncStateStateBuilder } from "../StateBuilder";
-import { isGenerator, isPromise } from "../../shared";
+import { cloneArgs, isGenerator, isPromise } from "../../shared";
 import { wrapGenerator } from "./wrap-generator";
 import { logger } from "../../logger";
 
@@ -17,17 +17,18 @@ export function wrapPromise(asyncState) {
     let runningPromise;
     const executionValue = asyncState.originalPromise(...args);
 
+    const clonedArgs = cloneArgs(args);
     if (isGenerator(executionValue)) {
       logger.info(`[${asyncState.key}][is a generator]`);
-      asyncState.setState(AsyncStateStateBuilder.loading(args));
+      asyncState.setState(AsyncStateStateBuilder.loading(clonedArgs));
       runningPromise = wrapGenerator(executionValue, asyncState, args);
     } else if (isPromise(executionValue)) {
       logger.info(`[${asyncState.key}][is a promise]`);
-      asyncState.setState(AsyncStateStateBuilder.loading(args));
+      asyncState.setState(AsyncStateStateBuilder.loading(clonedArgs));
       runningPromise = executionValue;
     } else { // final value
       logger.info(`[${asyncState.key}][resolved immediately] - skiping the loading state`);
-      asyncState.setState(AsyncStateStateBuilder.success(executionValue, args));
+      asyncState.setState(AsyncStateStateBuilder.success(executionValue, clonedArgs));
       return;
     }
 
@@ -35,13 +36,13 @@ export function wrapPromise(asyncState) {
       .then(stateData => {
         let aborted = args[0].aborted;
         if (!aborted) {
-          asyncState.setState(AsyncStateStateBuilder.success(stateData, args));
+          asyncState.setState(AsyncStateStateBuilder.success(stateData, clonedArgs));
         }
       })
       .catch(stateError => {
         let aborted = args[0].aborted;
         if (!aborted) {
-          asyncState.setState(AsyncStateStateBuilder.error(stateError, args));
+          asyncState.setState(AsyncStateStateBuilder.error(stateError, clonedArgs));
         }
         // return Promise.reject(stateError);
       });

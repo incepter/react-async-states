@@ -26,7 +26,6 @@ describe('AsyncState - run', () => {
 
     myAsyncState.run();
     // should transition synchronously to loading state
-    console.log("_____________", myAsyncState.currentState)
     expect(myAsyncState.currentState).toEqual({
       args: [{
         payload: null,

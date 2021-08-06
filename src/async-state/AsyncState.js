@@ -1,4 +1,4 @@
-import { AsyncStateStatus, invokeIfPresent, shallowClone } from "../shared";
+import { AsyncStateStatus, cloneArgs, invokeIfPresent, shallowClone } from "../shared";
 import { wrapPromise } from "./wrappers/wrap-promise";
 import { clearSubscribers, notifySubscribers } from "./notify-subscribers";
 import { AsyncStateStateBuilder } from "./StateBuilder";
@@ -54,6 +54,10 @@ AsyncState.prototype.setState = function setState(newState, notify = true) {
     this.lastSuccess = shallowClone(this.currentState);
   }
 
+  if (this.currentState.status !== AsyncStateStatus.loading) {
+    this.currentAborter = null;
+  }
+
   if (notify) {
     notifySubscribers(this);
   }
@@ -68,10 +72,13 @@ AsyncState.prototype.dispose = function disposeImpl() {
   if (this.locks > 0) {
     return false;
   }
-  this.locks = 0;
+
+  this.abort();
   clearSubscribers(this);
-  this.subscriptions = {};
+
+  this.locks = 0;
   this.setState(AsyncStateStateBuilder.initial(this.config.initialValue));
+
   return true;
 }
 
@@ -104,10 +111,11 @@ AsyncState.prototype.run = function run(...execArgs) {
     }
     argsObject.aborted = true;
     logInDevAbort(that.key, reason);
-    that.setState(AsyncStateStateBuilder.aborted(reason, argsObject));
+    that.setState(AsyncStateStateBuilder.aborted(reason, cloneArgs([argsObject])));
     userAborters.forEach(function clean(func) {
       invokeIfPresent(func, reason);
     });
+    that.currentAborter = null;
   }
 
   logInDevPromiseRun(this.key, argsObject);

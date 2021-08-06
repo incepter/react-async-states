@@ -1,4 +1,4 @@
-import { __DEV__, shallowClone } from "./shared";
+import { __DEV__ } from "./shared";
 import { logger } from "./logger";
 
 export function warnDevAboutAsyncStateKey(key) {

@@ -14,14 +14,41 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
     return Object.values(initialAsyncStates).reduce(createInitialAsyncStatesReducer, initialValue);
   }, [initialAsyncStates]);
 
-  React.useLayoutEffect(function onPayloadChange() {
+  const contextValue = React.useMemo(function getProviderValue() {
+    const manager = AsyncStateManager(asyncStateEntries);
+
+    return {
+      payload,
+      get: manager.get,
+      run: manager.run,
+      fork: manager.fork,
+      hoist: manager.hoist,
+      watch: manager.watch,
+      select: manager.select,
+      dispose: manager.dispose,
+      runAsyncState: manager.runAsyncState,
+    };
+  }, [asyncStateEntries, payload]);
+
+  React.useLayoutEffect(function propagatePayload() {
     if (!asyncStateEntries) {
       return;
     }
+
+    const commonPayload = Object.assign(
+      /*provider config*/{
+        __provider__: {
+          select: contextValue.select,
+          run: contextValue.runAsyncState,
+        }
+      },
+      payload,
+    );
+
     Object.values(asyncStateEntries).forEach(function mergePayload(entry) {
-      entry.value.payload = shallowClone(entry.value.payload, payload);
+      entry.value.payload = shallowClone(entry.value.payload, commonPayload);
     });
-  }, [payload]);
+  }, [payload, contextValue]);
 
   React.useEffect(function disposeOldEntries() {
     lastAsyncStateEntries.current = asyncStateEntries;
@@ -34,21 +61,6 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
       });
     }
   }, [asyncStateEntries]);
-
-  const contextValue = React.useMemo(function getProviderValue() {
-    const manager = AsyncStateManager(asyncStateEntries);
-
-    return {
-      payload,
-      get: manager.get,
-      run: manager.run,
-      fork: manager.fork,
-      hoist: manager.hoist,
-      watch: manager.watch,
-      dispose: manager.dispose,
-      runAsyncState: manager.runAsyncState,
-    };
-  }, [asyncStateEntries, payload]);
 
   // React.useEffect(() => {
   //   const id = setInterval(() => console.log(asyncStateEntries), 2000);

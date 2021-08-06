@@ -40,3 +40,43 @@ export function isPromise(candidate) {
 export function isGenerator(candidate) {
   return !!candidate && typeof candidate.next === "function" && typeof candidate.throw === "function";
 }
+
+export function shallowEqual(prev, next) {
+  return prev === next;
+}
+export function identity(...args) {
+  if (!args || !args.length) {
+    return undefined;
+  }
+  return args.length === 1 ? args[0] : args;
+}
+
+/**
+ * will extract serializable and meaningful arguments to save
+ * @param args array of parameters
+ * @returns {{}[]|*}
+ */
+export function cloneArgs(args) {
+  if (!args || !Array.isArray(args) || !args.length) {
+    return args;
+  }
+
+  return [cloneAsyncStateArgsObject(args[0])];
+}
+
+export function cloneAsyncStateArgsObject(argsObj) {
+  const output = {};
+
+  if (argsObj.lastSuccess && Object.keys(argsObj.lastSuccess).length) {
+    output.lastSuccess = shallowClone(argsObj.lastSuccess);
+    delete output.lastSuccess["args"]; // cut the circular ref here
+  }
+  output.payload = shallowClone(argsObj.payload);
+  delete output.payload["__provider__"]; // no need!
+
+  if (Array.isArray(argsObj.executionArgs) && argsObj.executionArgs.length) {
+    output.executionArgs = [...argsObj.executionArgs];
+  }
+
+  return output;
+}

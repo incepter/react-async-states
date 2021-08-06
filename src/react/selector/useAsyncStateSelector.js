@@ -1,16 +1,6 @@
 import React from "react";
 import { AsyncStateContext } from "../context";
-import { invokeIfPresent } from "../../shared";
-
-function shallowEqual(prev, next) {
-  return prev === next;
-}
-function identity(...args) {
-  if (!args || !args.length) {
-    return undefined;
-  }
-  return args.length === 1 ? args[0] : args;
-}
+import { identity, invokeIfPresent, shallowEqual } from "../../shared";
 
 export function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual, initialValue = undefined) {
   const effectiveKeys = typeof keys === "string" ? [keys] : keys; // assumes keys is an array of string, check to add
