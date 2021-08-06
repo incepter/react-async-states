@@ -3,10 +3,20 @@ import { isGenerator, isPromise } from "../../shared";
 import { wrapGenerator } from "./wrap-generator";
 import { logger } from "../../logger";
 
+function returnsUndefined() {
+  return undefined;
+}
+
 export function wrapPromise(asyncState) {
+  // identifies promises that will be used with replaceState rather than run;
+  // this allows the developer to omit the promise attribute.
+  if (typeof asyncState.originalPromise !== "function") {
+    return returnsUndefined;
+  }
   return function promiseFuncImpl(...args) {
     let runningPromise;
     const executionValue = asyncState.originalPromise(...args);
+
     if (isGenerator(executionValue)) {
       logger.info(`[${asyncState.key}][is a generator]`);
       asyncState.setState(AsyncStateStateBuilder.loading(args));

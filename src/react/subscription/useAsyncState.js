@@ -2,8 +2,8 @@ import React from "react";
 import { AsyncStateContext } from "../context";
 import useProviderAsyncState from "./useProviderAsyncState";
 import { useStandaloneAsyncState } from "./useStandaloneAsyncState";
-import { defaultRerenderStatusConfig } from "./subscriptionUtils";
-import { EMPTY_ARRAY, EMPTY_OBJECT, shallowClone } from "../../shared";
+import { EMPTY_ARRAY, shallowClone } from "../../shared";
+import { defaultUseASConfig } from "./subscriptionUtils";
 
 /**
  * @typedef {Object} UseAsyncStateConfig
@@ -21,7 +21,12 @@ export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
   const contextValue = React.useContext(AsyncStateContext);
 
   const configuration = React.useMemo(function readConfiguration() {
-    return readConfig(subscriptionConfig);
+    // this is an anonymous promise configuration (lazy: true, fork: false, hoist: false, payload: null)
+    if (typeof subscriptionConfig === "function") {
+      return readConfigFromPromise(subscriptionConfig);
+    } else {
+      return readRegularConfig(subscriptionConfig);
+    }
   }, dependencies);
 
   // this will never change, because if suddenly you are no longer in this context
@@ -35,28 +40,27 @@ export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
   return useStandaloneAsyncState(configuration, dependencies);
 }
 
-const defaultConfig = Object.freeze({
-  lazy: true,
-  fork: false,
-  condition: true,
-  hoistToProvider: false,
-  forkConfig: EMPTY_OBJECT,
-  hoistToProviderConfig: EMPTY_OBJECT,
-  rerenderStatus: defaultRerenderStatusConfig,
-
-  promise() {
-    return undefined;
-  },
-});
-
 // userConfig is the config the developer wrote
-function readConfig(userConfig) {
+function readRegularConfig(userConfig) {
   if (typeof userConfig === "function") {
-    // if a function, re-attempt with string or object userConfig
-    return readConfig(userConfig());
+    return readConfigFromPromise(userConfig);
   }
   if (typeof userConfig === "string") {
-    return shallowClone(defaultConfig, {key: userConfig});
+    return shallowClone(defaultUseASConfig, {key: userConfig});
   }
-  return shallowClone(defaultConfig, userConfig);
+  return shallowClone(defaultUseASConfig, userConfig);
+}
+
+
+const defaultAnonymousPrefix = "anonymous-async-state-";
+const nextKey = (function autoKey() {
+  let key = 0;
+  return function incrementAndGet() {
+    key += 1;
+    return `${defaultAnonymousPrefix}-${key}`;
+  }
+}());
+
+function readConfigFromPromise(promise) {
+  return shallowClone(defaultUseASConfig, {promise, key: nextKey()});
 }

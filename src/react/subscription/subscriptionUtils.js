@@ -1,5 +1,5 @@
 import AsyncState from "../../async-state/AsyncState";
-import { shallowClone } from "../../shared";
+import { EMPTY_OBJECT, shallowClone } from "../../shared";
 
 export const defaultRerenderStatusConfig = Object.freeze({
   error: true,
@@ -70,6 +70,20 @@ export function deduceAsyncState(mode, configuration, contextValue) {
       return candidate;
   }
 }
+
+export const defaultUseASConfig = Object.freeze({
+  lazy: true,
+  fork: false,
+  condition: true,
+  hoistToProvider: false,
+  forkConfig: EMPTY_OBJECT,
+  hoistToProviderConfig: EMPTY_OBJECT,
+  rerenderStatus: defaultRerenderStatusConfig,
+
+  promise() {
+    return undefined;
+  },
+});
 
 export function makeReturnValueFromAsyncState(asyncState, contextValue) {
   return Object.freeze({
