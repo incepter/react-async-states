@@ -8,7 +8,7 @@ export default function Demo() {
   const history = useHistory();
   const params = useParams();
 
-  const {state: {status, data}} = useAsyncState({
+  const {state: {status, data}, lastSuccess} = useAsyncState({
     key: demoAsyncStates.getUser.key,
     payload: {matchParams: params},
     rerenderStatus: {loading: true}
@@ -24,7 +24,14 @@ export default function Demo() {
       <form onSubmit={navigate}>
         <input defaultValue={params.userId} ref={ref} style={{backgroundColor: "red"}} placeholder="user id"/>
       </form>
-      {status === "loading" && <span>Loading...</span>}
+      {status === "loading" && (
+        <>
+          <span>Loading...</span>
+          <pre>
+            {JSON.stringify(lastSuccess, null, "  ")}
+          </pre>
+        </>
+        )}
       <span>
           <pre>
             <details>
