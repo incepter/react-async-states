@@ -241,14 +241,11 @@ the context value.
 
 ### useAsyncState
 This hook allows subscription to async state, and represents the API that you will be interacting with the most.
-its signature is one of the following:
+its signature is:
 
 ```javascript
 function useAsyncState(configuration, dependencies) {}
 ```
-The configuration may be a string, an object with supported properties, or even a function returning one of them
-(under discussion, what about: if configuration is a function, consider it an anonymous promise, because anyways,
-a function returning a string or an object isn't interesting).
 
 It returns an object that contains few properties, we'll explore them in a moment.
 
@@ -309,8 +306,8 @@ The `useAsyncState` hook's supported configuration is:
 |`condition`            |boolean    |true              |     x    |   x    | If this condition is falsy, run will not be granted |
 |`forkConfig`           |ForkConfig |{keepState: false}|          |   x    | defines whether to keep state when forking or not |
 |`initialValue`         |any        |null              |     x    |        | The initial promise value, useful only if working as standalone(ie defining own promise) |
-|`hoistToProvider`      |boolean    |false             |          |   x    | Defines whether to register in the provider or not |
 |`rerenderStats`        |object     |{<status>: true}  |     x    |   x    | Defines whether to register in the provider or not |
+|`hoistToProvider`      |boolean    |false             |          |   x    | Defines whether to register in the provider or not |
 |`hoistToProviderConfig`|HoistConfig|{override: false} |          |   x    | Defines whether to override an existing async state in provider while hoisting |
 
 The returned object from useAsyncState contains the following properties:

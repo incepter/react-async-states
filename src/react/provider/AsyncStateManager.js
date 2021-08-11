@@ -1,7 +1,7 @@
 import AsyncState from "../../async-state/AsyncState";
 import { createAsyncStateEntry, runScheduledAsyncState } from "./providerUtils";
 import { logger } from "../../logger";
-import { AsyncStateStatus, identity, invokeIfPresent } from "../../shared";
+import { identity } from "../../shared";
 
 export function AsyncStateManager(asyncStateEntries) {
   function get(key) {
@@ -112,6 +112,7 @@ export function AsyncStateManager(asyncStateEntries) {
       return get(key)?.currentState;
     }));
   }
+
   //
   // function runAndWait(key, ...args) {
   //   return new Promise(function promiseDefinition(resolve, reject) {

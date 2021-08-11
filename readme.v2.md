@@ -62,7 +62,7 @@ the one you used to fall into while trying to learn `useEffect` in the very firs
 
 ## Getting started
 
-### Motivations and features
+## Motivations and features
 This library aims to facilitate working with asynchronous states (and states in general) while sharing them.
 It was designed to help us reduce the needed boilerplate (code/files) to achieve great results. The main features that
 makes it special are:
@@ -81,7 +81,7 @@ makes it special are:
 
 And many more features.
 
-### Library status
+## Library status
 `react-async-states` is in its early phases, where we've boxed more or less the features we would like it to have.
 It is far from complete, we do not recommend using it in production at the moment, unless
 you are a core contributor or a believer in the concepts and you want to explore it while having the ability to be
@@ -95,8 +95,10 @@ Here is the road map and the list of things that should be added before talking 
 - [x] subscription to be aware of provider async states change, to re-connect and re-run lazy...
 - [x] support the standalone/anonymous `useAsyncState(promise, dependencies)` ?
 - [x] support default embedded provider payload (select, run other async states)[partially done, we need to define the payload properties]
+- [ ] writing docs
+- [ ] writing codesandbox usage examples
 - [ ] support selector keys to be a function receiving available keys in provider(regex usage against keys may be used in this function)
-- [ ] support passive listen mode without running async state on deps change
+- [ ] support passive listen mode without running async state on deps change (if typeof config === string => simple listen)
 - [ ] writing tests: only the core part is tested atm, not the react parts (although we kept a huge separation of concerns and the react finger print should be minimal)
 - [ ] enhance logging and add dev tools to visualize states transitions
 - [ ] performance tests and optimizations
@@ -105,7 +107,7 @@ Here is the road map and the list of things that should be added before talking 
 - [ ] support concurrent mode to add a special mode with suspending abilities
 - [ ] support server side rendering
 
-### Core concepts
+## Core concepts
 __todo__
 
 This library tries to automate and facilitate subscriptions to states along with their updates, while having the ability
@@ -119,9 +121,12 @@ entry the following: `key`, `promise`, `lazy` and `initialValue`.
 - Later, from any point in your app, you can use `useAsyncState(key)` or `useAsyncStateSelector(key)` to get the state
 based on your needs.
 
-Of course, this is only the basic usage of the library, let's now explore more in depth each component and how it works.
+Of course, this is only the basic usage of the library, and the `useAsyncState` hook may be used in different forms
+and serve different purposes:
+- You may `hoist` an async state to the provider and become accessible.
+- You may `fork` an async state and reuse its promise function without impacting its state and subscribers.
 
-### The promise function
+## The promise function
 The main goal and purpose is to run your function, let's see what it receives:
 ```javascript
 // somewhere in the code, simplified:
@@ -211,9 +216,9 @@ function reducer(argv) {
 You can even omit the promise function, it will do nothing if you run it, not even transitioning the state.
 It was supported along the with the `replaceState` API that we will see later.
 
-Although, we recommend using generators to write your promise functions, because they will be instantly aborted in needed.
+Although, we recommend using generators to write your promise functions, because they will be instantly aborted if needed.
 
-### The provider `AsyncStateProvider`
+## The provider `AsyncStateProvider`
 To share the state returned from your promise function, you need a Provider to hold it.
 
 The main purpose of the provider is:
@@ -287,13 +292,81 @@ let usersAS = AsyncStateBuilder()
 let usersAs = createAsyncState(/*key*/"users", /*promise*/fetchUsersPromise, /*initialValue*/ [], /**lazy**/ false);
 ```
 
-### The subscription `useAsyncState`
+## `useAsyncState`
+This hook allows subscription to async state, and represents the API that you will be interacting with the most.
+Its signature is:
 
-#### Standalone vs Provider
-#### Subscription modes
-#### Subscription modes
+```javascript
+function useAsyncState(configuration, dependencies) {}
+```
+It returns an object that contains few properties, we'll explore them in a moment.
 
-### Selectors via `useAsyncStateSelector`
+### Standalone vs Provider
+This hooks may be used inside and outside the provider, you won't be able to share it if outside the provider, but it has
+the same behavior.
+
+For example, you can use this hook to fetch the current user from your api before mounting the provider and pass the user
+information to payload.
+
+While being outside provider, it will expect you to use a promise function as configuration, or with an object defining
+the promise and all other necessary information.
+
+### Subscription modes
+While inside provider, many subscription modes are possible. You won't have to use them, but you should essentially
+know what they mean and how your configuration impacts them.
+
+What is a subscription mode already ?
+When you call `useAsyncState`, please recall that you call it every time your component renders, and should react to
+the given configuration synchronized with your dependencies. Then, this hook tries to get the async state from the provider.
+If not found, it may wait for it if you did not present a `promise` function in your configuration, or fallback with a noop mode for example.
+
+The possible subscription mode are:
+- `LISTEN`: Listens to an existing async state from its key
+- `HOIST`: Registers the async state in the provider, and subscribes to it (more like an injection)
+- `STANDALONE`: Mimics the standalone mode
+- `FORK`: Fork an existing async state in the provider
+- `WAITING`: When the desired async state does not exist in provider, and you do not want to hoist it
+- `NOOP`: If none of the above matches, should not happen
+
+If you are curious about how the subscription mode is inferred, please refer to the `inferSubscriptionMode` function
+defined [here](./src/react/subscription/subscriptionUtils.js).
+
+### configuration and manipulation
+The configuration argument may be a string, an object with supported properties, or a promise function (you won't be able to share it by this signature).
+If it is a string, it is used inside provider to only listen on an async state, without automatically triggering the run
+(but you can do it programmatically using what this hooks returns).
+If an object is provided, it may act like a simple subscription or a registration of a new async state (with fork/hoist).
+
+Let's see in details the supported configuration:
+
+|Property               |Type       |Default Value     |Standalone|Provider|Description
+|-----------------------|-----------|------------------|----------|--------|------------------------------------------------|
+|`key`                  |string     |sting             |     x    |   x    | The unique key, either for definition or subscription |
+|`lazy`                 |boolean    |true              |     x    |   x    | If false, the subscription will re-run every dependency change |
+|`fork`                 |boolean    |false             |          |   x    | If true, subscription will fork own async state |
+|`promise`              |function   |undefined         |     x    |   x    | Our promise function |
+|`condition`            |boolean    |true              |     x    |   x    | If this condition is falsy, run will not be granted |
+|`forkConfig`           |ForkConfig |{keepState: false}|          |   x    | defines whether to keep state when forking or not |
+|`initialValue`         |any        |null              |     x    |        | The initial promise value, useful only if working as standalone(ie defining own promise) |
+|`rerenderStats`        |object     |{<status>: true}  |     x    |   x    | Defines whether to register in the provider or not |
+|`hoistToProvider`      |boolean    |false             |          |   x    | Defines whether to register in the provider or not |
+|`hoistToProviderConfig`|HoistConfig|{override: false} |          |   x    | Defines whether to override an existing async state in provider while hoisting |
+
+The returned object from useAsyncState contains the following properties:
+
+|Property            |Description              |
+|--------------------|-------------------------|
+|`key`               | The key of the async state instance, if forked, it is different from the given one |
+|`run`               | Imperatively trigger the run, arguments to this function are received as array in the executionArgs |
+|`state`             | The current state, of shape {status, data, args} |
+|`abort`             | Imperatively abort the current run if running |
+|`lastSuccess`       | The last registered success |
+|`replaceState`      | Imperatively and instantly replace state as success with the given value (accepts a callback receiving the old state) |
+|`runAsyncState`     | If inside provider, `runAsyncState(key, ...args)` runs the given async state by key with the later arguments |
+
+### examples
+
+## Selectors via `useAsyncStateSelector`
 
 ## Contribution guide
 
