@@ -81,11 +81,211 @@ makes it special are:
 
 And many more features.
 
+### Library status
+`react-async-states` is in its early phases, where we've boxed more or less the features we would like it to have.
+It is far from complete, we do not recommend using it in production at the moment, unless
+you are a core contributor or a believer in the concepts and you want to explore it while having the ability to be
+blocked by a bug or an unsupported feature, and wait for it to be released/fixed.
+
+Having a stable release will require a lot of more work to be done, as actual contributors do not have enough time.
+Here is the road map and the list of things that should be added before talking about a stable release (or if you wish to contribute):
+
+- [x] support generators
+- [x] re-use old instances if nothing changed (originalPromise + key + lazy)
+- [x] subscription to be aware of provider async states change, to re-connect and re-run lazy...
+- [x] support the standalone/anonymous `useAsyncState(promise, dependencies)` ?
+- [x] support default embedded provider payload (select, run other async states)[partially done, we need to define the payload properties]
+- [ ] support selector keys to be a function receiving available keys in provider(regex usage against keys may be used in this function)
+- [ ] support passive listen mode without running async state on deps change
+- [ ] writing tests: only the core part is tested atm, not the react parts (although we kept a huge separation of concerns and the react finger print should be minimal)
+- [ ] enhance logging and add dev tools to visualize states transitions
+- [ ] performance tests and optimizations
+- [ ] add types for a better development experience
+- [ ] support config at provider level for all async states to inherit it (we must define supported config)
+- [ ] support concurrent mode to add a special mode with suspending abilities
+- [ ] support server side rendering
+
 ### Core concepts
+__todo__
+
+This library tries to automate and facilitate subscriptions to states along with their updates, while having the ability
+to cancel and abort either automatically, by developer action or by user action.
+Here is how you will be using it:
+
+- First you define your promise function (aka: reducer, saga, thunk...) and give it its unique name. This function shall
+receive a powerful single argument object detailed in a few. This function may take any of the supported forms.
+- Second, you define a provider that will host your asynchronous states and payload. It needs from you for every async state
+entry the following: `key`, `promise`, `lazy` and `initialValue`.
+- Later, from any point in your app, you can use `useAsyncState(key)` or `useAsyncStateSelector(key)` to get the state
+based on your needs.
+
+Of course, this is only the basic usage of the library, let's now explore more in depth each component and how it works.
 
 ### The promise function
+The main goal and purpose is to run your function, let's see what it receives:
+```javascript
+// somewhere in the code, simplified:
+yourFunction({
+  lastSuccess,
+
+  payload,
+  executionArgs,
+
+  aborted,
+  onAbort,
+  abort
+});
+```
+
+|Property            |Description              |
+|--------------------|-------------------------|
+|`payload`           | The merged payload from provider and all subscribers |
+|`lastSuccess`       | The last success value that was registered |
+|`executionArgs`     | Whatever arguments that the `run` function received when it was invoked |
+|`aborted`           | If the request have been cancelled (by dependency change, unmount or user action) |
+|`abort`             | Imperatively abort the promise while processing it, this may be helpful only if you are working with generators |
+|`onAbort`           | Registers a callback that will be fired when the abort is invoked (like aborting a fetch request if the user aborts or component unmounts) |
+
+We believe that these properties will solve all sort of possible use cases, in fact, your function will run while having
+access to payload from the render, from either the provider and subscription. And also, execution args if you run it manually (not automatic).
+
+So basically you have three entry-points to your function (provider + subscription + exec args).
+
+Your function will be notified with the cancellation by registering an `onAbort` callback, you can exploit this to abort
+an `AbortController` which will lead your fetches to be cancelled, or to clear a timeout, for example.
+The `aborted` property is a boolean that's truthy if this current run is aborted, you may want to use it before calling
+a callback received from payload or execution arguments. If using a generator, only yielding is sufficient, since the
+library internally checks on cancellation before executing any step.
+
+The following functions are all supported by the library:
+
+```javascript
+// retrives current user, his permissions and allowed stores before resolving
+function* getCurrentUser(argv) {
+  const controller = new AbortController();
+  const {signal} = controller;
+  argv.onAbort(function abortFetch() {
+    controller.abort();
+  });
+
+  const userData = yield fetchCurrentUser({signal});
+  const [permissions, stores] = yield Promise.all([
+    fetchUserPermissions(userData.id, {signal}),
+    fetchUserStores(userData.id, {signal}),
+  ]);
+
+  return {
+    stores,
+    permissions,
+    user: userData,
+  };
+}
+
+async function getCurrentUserPosts(argv) {
+  // abort logic
+  return await fetchUserPosts(argv.payload.principal.id, {signal});
+}
+
+function timeout(argv) {
+  let timeoutId;
+  argv.onAbort(function clear() {
+    clearTimeout(timeoutId);
+  });
+
+  return new Promise(function resolver(resolve) {
+    function callback() {
+      resolve(argv.payload.callback());
+    }
+    timeoutId = setTimeout(callback, argv.payload.delay);
+  });
+}
+
+function reducer(argv) {
+  const action = argv.executionArgs[0];
+  switch(action.type) {
+    case type1: return {...argv.lastSuccess.data, ...action.newData};
+    case type2: return {...action.data};
+  }
+}
+```
+You can even omit the promise function, it will do nothing if you run it, not even transitioning the state.
+It was supported along the with the `replaceState` API that we will see later.
+
+Although, we recommend using generators to write your promise functions, because they will be instantly aborted in needed.
 
 ### The provider `AsyncStateProvider`
+To share the state returned from your promise function, you need a Provider to hold it.
+
+The main purpose of the provider is:
+- To hold the async states and allows subscription and selection
+- To hold a universal payload that's given to all registered async states
+
+It accepts the following props:
+
+|Prop                | PropType                                                     | Default value| Usage            |
+|--------------------|--------------------------------------------------------------|--------------|------------------|
+|`payload`           | `Map<any, any>`                                              | `{}`         | Payload at provider level, will be accessible to all hoisted async states |
+|`initialAsyncStates`| `AsyncStateDefinition[] or Map<string, AsyncStateDefinition>`| `[]`         | The initial Map or array of definitions of async states |
+|`children`          | `ReactElement`                                               | `undefined`  | The React tree inside this provider |
+
+To define an async state for the provider, you need the following:
+
+|Property      | Type                  | Default value| Description            |
+|--------------|-----------------------|--------------|------------------------|
+|`key`         |`string`               |`undefined`   |The unique identifier or the name of the async state|
+|`promise`     |`function or undefined`|`undefined`   |The promise function|
+|`lazy`        |`boolean`              |`true`        |Defines whether to run the promise function or not when a subscription occurs|
+|`initialValue`|`any`                  |`null`        |The state value when the status is `initial`|
+
+The initialAsyncStates, like stated, is an array of objects or a map; let's create some:
+```javascript
+// pass this to provider
+let demoAsyncStates = {
+  users: {
+    key: "users",
+    lazy: false,
+    initialValue: [],
+    promise: async function getUsers(argv) {
+      return await fetchUsers(argv.payload.queryString);
+    },
+  },
+  currentUser: {
+    key: "currentUser",
+    lazy: false,
+    // generators are the recommended way to go!
+    // because they allow to abort between yields! unlike promises and async-await!
+    promise: getCurrentUserGenerator,
+  },
+  // with undefined promise, you will be calling `replaceState` to change the state
+  somethingOpen: {
+    key: "somethingOpen",
+    initialValue: false,
+  },
+  localTodos: {
+    key: "something",
+    initialValue: {},
+    promise: function todosReducerPromise(argv) {
+      // myTodosReducer is a regular reducer(state, action) that returns the new state value, my guess is that you've wrote many
+      return myTodosReducer(argv.lastSuccess, ...argv.executionArgs);
+    }
+  },
+}
+const initialAsyncState = Object.values(demoAsyncStates); // or pass this to provider
+```
+
+PS: You can use `AsyncStateBuilder` or `createAsyncState` to create these objects this way:
+
+```javascript
+import {AsyncStateBuilder, createAsyncState} from "react-async-states";
+let usersAS = AsyncStateBuilder()
+    .key("users")
+    .lazy(false)
+    .initialValue([])
+    .promise(fetchUsersPromise)
+    .build();
+// or this way
+let usersAs = createAsyncState(/*key*/"users", /*promise*/fetchUsersPromise, /*initialValue*/ [], /**lazy**/ false);
+```
 
 ### The subscription `useAsyncState`
 
@@ -95,6 +295,6 @@ And many more features.
 
 ### Selectors via `useAsyncStateSelector`
 
-## Contribution
+## Contribution guide
 
 ## Roadmap
