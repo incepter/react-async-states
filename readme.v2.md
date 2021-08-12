@@ -99,7 +99,7 @@ Here is the road map and the list of things that should be added before talking 
 - [ ] writing codesandbox usage examples
 - [ ] support selector keys to be a function receiving available keys in provider(regex usage against keys may be used in this function)
 - [ ] support passive listen mode without running async state on deps change (if typeof config === string => simple listen)
-- [ ] writing tests: only the core part is tested atm, not the react parts (although we kept a huge separation of concerns and the react finger print should be minimal)
+- [ ] writing tests: only the core part is tested atm, not the react parts (although we kept a huge separation of concerns and the react fingerprint should be minimal)
 - [ ] enhance logging and add dev tools to visualize states transitions
 - [ ] performance tests and optimizations
 - [ ] add types for a better development experience
@@ -189,6 +189,11 @@ function* getCurrentUser(argv) {
 async function getCurrentUserPosts(argv) {
   // abort logic
   return await fetchUserPosts(argv.payload.principal.id, {signal});
+}
+
+async function getTransactionsList(argv) {
+  // abort logic
+  return await fetchUserTransactions(argv.payload.principal.id, {query: argv.payload.queryString, signal});
 }
 
 function timeout(argv) {
@@ -293,7 +298,7 @@ let usersAs = createAsyncState(/*key*/"users", /*promise*/fetchUsersPromise, /*i
 ```
 
 ## `useAsyncState`
-This hook allows subscription to async state, and represents the API that you will be interacting with the most.
+This hook allows subscription to an async state, and represents the API that you will be interacting with the most.
 Its signature is:
 
 ```javascript
@@ -317,8 +322,8 @@ know what they mean and how your configuration impacts them.
 
 What is a subscription mode already ?
 When you call `useAsyncState`, please recall that you call it every time your component renders, and should react to
-the given configuration synchronized with your dependencies. Then, this hook tries to get the async state from the provider.
-If not found, it may wait for it if you did not present a `promise` function in your configuration, or fallback with a noop mode for example.
+the given configuration synchronized by your dependencies. Then, this hook tries to get the async state from the provider.
+If not found, it may wait for it if you did not provide a `promise` function in your configuration, or fallback with a noop mode for example.
 
 The possible subscription mode are:
 - `LISTEN`: Listens to an existing async state from its key
@@ -362,12 +367,142 @@ The returned object from useAsyncState contains the following properties:
 |`abort`             | Imperatively abort the current run if running |
 |`lastSuccess`       | The last registered success |
 |`replaceState`      | Imperatively and instantly replace state as success with the given value (accepts a callback receiving the old state) |
-|`runAsyncState`     | If inside provider, `runAsyncState(key, ...args)` runs the given async state by key with the later arguments |
+|`runAsyncState`     | If inside provider, `runAsyncState(key, ...args)` runs the given async state by key with the later execution args |
+
+We bet in this shape because it provides the key for further subscriptions, the current state with status, data and the
+arguments that produced it. `run` runs the subscribed async state, to abort it invoke `abort`. The `lastSuccess`
+holds for you the last succeeded value.
+`replaceState` instantly gives a new value to the state with success status.
+`runAsyncState` works only in provider, and was added as convenience to trigger some side effect after
+the current async promise did something, for example, reload users list after updating a user successfully.
+
+Notes:
+1. Calling the `run` function, if it is still `loading` the previous run, it aborts it instantly, and start a new cycle.
+2. The provider doesn't run promises, it is the `useAsyncState` that does it. But then, if you have multiple subscriptions
+to the same async state, will it run multiple times ? Yes, and No. Yes because technically you register a run, but the run
+is locked via semaphore lock on the event loop: This means that each time you call the run function automatically via
+dependency change of first subscription, the only done thing synchronously is to lock by incrementing, and effectively
+run using `Promise.resolve().then(runner)`; Let's put this simplified:
+```javascript
+// deep inside
+
+function theRunYouCall(id) {
+  const as = get(id);
+  asyncSempahoreLockedRun(as);
+}
+function asyncSempahoreLockedRun(as) {
+  // ...
+  lock(); // ++
+  // ...
+  function cleanup() {}
+  // ...
+  function runner() {
+    if (locked) unlock(); // --
+    if (!locked) as.run();
+  }
+  // ...
+  Promise.resolve().then(runner);
+  return cleanup();
+}
+```
+This allows all runs issued from the same render to be batched together. This won't work if one subscription if deferred,
+if it runs while running, the natural implemented behavior is to cancel the previous. To solve this, you may fork the
+previous async state, or even, we could introduce some new mode to passively listen (do not trigger any run). Or, simply
+use a selector.
 
 ### examples
 
+Let's now make some examples using `useAsyncState`:
+
+```javascript
+import {useAsyncState} from "react-async-states";
+
+// later and during render
+
+// executes currentUserPromise on mount
+const {state: {data, status}} = useAsyncState({key: "current-user", promise: currentUserPromise, lazy: false});
+
+// subscribes to transactions list state
+const {state: {data: transactions, status}} = useAsyncState("transactions");
+
+// injects the users list state
+const {state: {data, status}} = useAsyncState({key: "users-list", promise: usersListPromise, lazy: false, payload: {storeId}, hoistToProvider: true});
+
+// forks the list of transactions for another store (for preview for example)
+// this will create another async state issued from users-list -with a new key (forked)- without impacting its state
+const {state: {data, status}} = useAsyncState({key: "users-list", payload: {anotherStoreId}, fork: true});
+
+// reloads the user profile each time the match params change
+// this assumes you have a variable in your path
+// for example, once the user chooses a profile, just redirect to the new url => matchParams will change => refetch as non lazy
+const matchParams = useParams();
+const {state} = useAsuncState({
+  ...userProfilePromiseConfig, // (key, promise, lazy), or take only the key if hoisted and no problem impacting the state
+  lazy: false,
+  payload: {matchParams}
+}, [matchParams]);
+
+// add element to existing state via replaceState
+const {state: {data: myTodos}, replaceState} = useAsyncState("todos");
+function addToDo(data) {
+  replaceState(old => ({...old, [data.id]: data}));
+}
+
+// add element to existing state via run (may be a reducer)
+// run in this case acts like a `dispatch`
+const {state: {data: myTodos}, run} = useAsyncState("todos");
+
+function addTodo(data) {
+  run({type: ADD_TODO, payload: data});
+}
+function removeTodo(id) {
+  run({type: REMOVE_TODO, payload: id});
+}
+
+// a standalone async state (even inside provider, not hoisted nor forked => standalone)
+const value = useAsyncState({
+  key: "not_in_provider",
+  payload: {
+    delay: 2000,
+    onSuccess() {
+      showNotification();
+    }
+  },
+  promise(argv) {
+    timeout(argv.payload.delay)
+    .then(function callSuccess() {
+      if (!argv.aborted) {
+        // notice that we are taking onSuccess from payload, not from component's closure
+        // that's the way to go, this creates a separation of concerns
+        // and your promise may be extracted outisde this file, and will be easier to test
+        // but in general, please avoid code like this, and make it like an effect reacting to a value
+        // (the state data for example)
+        argv.payload.onSuccess();
+      }
+    })
+  }
+});
+```
+
 ## Selectors via `useAsyncStateSelector`
+Now that we know how to define and share asynchronous states (or states in general), what about selecting values
+from multiple states at once, and derive its data. Let's get back to `useAsyncStateSelector` signature:
+
+```javascript
+// keys: string or array (or function: not yet)
+function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual, initialValue = undefined) {
+  // returns whathever the selector returns (or initialValue)
+}
+```
+
+Let's explore the arguments one by one and see what we can with them:
+
+- `keys`: the keys you need to derive state from, can be either a string or a single async state, and array of keys
+or a function that will receive the keys being hoisted in the provider (should return a string or an array of strings).
+- `selector`: will receive as many parameters (the async state state value) as the count of resulting keys.
+- `areEqual`: This function receives the previous and current selected value, then re-renders only if the previous and current value are not equal.
+- `initialValue`: The desired initial value if the selected value is falsy.
+
+Examples: __todo__ add selectors examples.
 
 ## Contribution guide
-
-## Roadmap

@@ -333,7 +333,7 @@ Notes:
 1. Calling the `run` function, if it is still `loading` the previous run, it aborts it instantly, and start a new cycle.
 2. The provider doesn't run promises, it is the `useAsyncState` that does it. But then, if you have multiple subscriptions
 to the same async state, will it run multiple times ? Yes, and No. Yes because technically you register a run, but the run
-is locked via sempahore lock on the event loop: This means that each time you call the run function automatically via
+is locked via semaphore lock on the event loop: This means that each time you call the run function automatically via
 dependency change of first subscription, the only done thing synchronously is to lock by incrementing, and effectively
 run using `Promise.resolve().then(runner)`; Let's put this simplified:
 ```javascript
@@ -360,7 +360,8 @@ function asyncSempahoreLockedRun(as) {
 ```
 This allows all runs issued from the same render to be batched together. This won't work if one subscription if deferred,
 if it runs while running, the natural implemented behavior is to cancel the previous. To solve this, you may fork the
-previous async state, or even, we could introduce some new mode to passively listen (do not trigger any run).
+previous async state, or even, we could introduce some new mode to passively listen (do not trigger any run). Or, simply
+use a selector.
 
 ### useAsyncStateSelector
 
