@@ -5,7 +5,9 @@
 This is yet another library for state management in React. The difference is that is was built for asynchronous states
 in the first place, and later, we found that synchronous/immediate state is one direct use case of async state.
 
-This library assumes that the state is issued from a function. The function may be:
+This library assumes that the state is issued from a function (we will call it `the promise function` in this text).
+
+The function may be:
 - A regular function returning a value.
 - A pure function returning a value based on the previous value (aka reducer).
 - A generator (must return the state value).
@@ -14,7 +16,7 @@ This library assumes that the state is issued from a function. The function may 
 
 The state value is described using the following:
 - `status`: refers to the current asynchronous state status, possible values are: `initial, loading, aborted, success, error`.
-- `args`: refers to the arguments that the promise function was ran with (__todo__ link to promise function arguments).
+- `args`: refers to the arguments that the promise function was ran with.
 - `data`: the state actual value.
 
 So every state update sets all these three properties as `currentState` object.
@@ -25,10 +27,10 @@ or may be you will need to replicate it in case of some error.
 
 The most notable APIs that you will be using most often from this library are:
 
-- `useAsyncState`: a hook that allows you to define and subscribe to an asynchronous state, it works inside
-and outside a provider (__todo__ link hook).
-- `AsyncStateProvider`: A component holding a set of asynchronous states, and allows extra controls and features (__todo__ link provider).
-- `useAsyncStateSelector`: A selector that accepts enough parameters to make it very cool(__todo__ link selector).
+- [`useAsyncState`](#use-async-state): a hook that allows you to define and subscribe to an asynchronous state, it works inside
+and outside a provider.
+- [`AsyncStateProvider`](#async-provider): A component holding a set of asynchronous states, and allows extra controls and features.
+- [`useAsyncStateSelector`](#use-async-state-selector): A selector that accepts enough parameters to make it very cool.
 
 ## Minimal usage
 Let's explore these APIs signatures first, it will give you the overall idea about the concept.
@@ -108,7 +110,6 @@ Here is the road map and the list of things that should be added before talking 
 - [ ] support server side rendering
 
 ## Core concepts
-__todo__
 
 This library tries to automate and facilitate subscriptions to states along with their updates, while having the ability
 to cancel and abort either automatically, by developer action or by user action.
@@ -126,7 +127,14 @@ and serve different purposes:
 - You may `hoist` an async state to the provider and become accessible.
 - You may `fork` an async state and reuse its promise function without impacting its state and subscribers.
 
-## The promise function
+## <a name="promise-function"></a> The promise function
+This function may be:
+- A regular function returning a value.
+- A pure function returning a value based on the previous value (aka reducer).
+- A generator (must return the state value).
+- An asynchronous function using `async/await`.
+- A regular function returning a `Promise` object.
+
 The main goal and purpose is to run your function, let's see what it receives:
 ```javascript
 // somewhere in the code, simplified:
@@ -223,7 +231,7 @@ It was supported along the with the `replaceState` API that we will see later.
 
 Although, we recommend using generators to write your promise functions, because they will be instantly aborted if needed.
 
-## The provider `AsyncStateProvider`
+## <a name="async-provider"></a> The provider `AsyncStateProvider`
 To share the state returned from your promise function, you need a Provider to hold it.
 
 The main purpose of the provider is:
@@ -297,7 +305,7 @@ let usersAS = AsyncStateBuilder()
 let usersAs = createAsyncState(/*key*/"users", /*promise*/fetchUsersPromise, /*initialValue*/ [], /**lazy**/ false);
 ```
 
-## `useAsyncState`
+## <a name="use-async-state"></a> `useAsyncState`
 This hook allows subscription to an async state, and represents the API that you will be interacting with the most.
 Its signature is:
 
@@ -484,7 +492,7 @@ const value = useAsyncState({
 });
 ```
 
-## Selectors via `useAsyncStateSelector`
+## <a name="use-async-state-selector"></a> Selectors via `useAsyncStateSelector`
 Now that we know how to define and share asynchronous states (or states in general), what about selecting values
 from multiple states at once, and derive its data. Let's get back to `useAsyncStateSelector` signature:
 
