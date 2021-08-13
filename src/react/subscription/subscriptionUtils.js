@@ -96,6 +96,7 @@ export function makeReturnValueFromAsyncState(asyncState, contextValue) {
 
     state: Object.freeze(shallowClone(asyncState.currentState)),
     lastSuccess: Object.freeze(shallowClone(asyncState.lastSuccess)),
+    payload: Object.freeze(shallowClone(asyncState.payload))
   });
 }
 

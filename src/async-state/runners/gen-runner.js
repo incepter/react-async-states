@@ -30,8 +30,8 @@ export function stepAndContinueGenerator(generator, onDone, onReject) {
       })
       .catch(function onCatch(e){
         if (!aborted && !done) {
-          generator.throw(e);
           invokeIfPresent(onReject, e);
+          generator.throw(e);
         }
       })
   }
