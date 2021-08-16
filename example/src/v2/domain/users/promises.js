@@ -7,10 +7,10 @@ export function* getCurrentUser(argv) {
   return yield fetchUserData(argv.payload.userId, {cancelToken});
 }
 
-export function* getUserDetails(argv) {
+export function getUserDetails(argv) {
   const cancelToken = bindAbortAndCancelToken(argv);
 
-  return yield fetchUserData(argv.payload.userId, {cancelToken});
+  return fetchUserData(argv.payload.userId, {cancelToken});
 }
 
 export function* getUsersList(argv) {
