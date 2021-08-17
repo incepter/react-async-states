@@ -3,7 +3,7 @@ import useRerender from "../utils/useRerender";
 import { defaultRerenderStatusConfig, makeReturnValueFromAsyncState } from "./subscriptionUtils";
 import { EMPTY_OBJECT, invokeIfPresent, shallowClone } from "../../shared";
 
-export default function useRawAsyncState(asyncState, dependencies, configuration, run, dispose) {
+export default function useRawAsyncState(asyncState, dependencies, configuration, run, dispose, runAsyncState) {
   const rerender = useRerender();
   const returnValue = React.useRef();
 
@@ -15,7 +15,7 @@ export default function useRawAsyncState(asyncState, dependencies, configuration
     const rerenderStatusConfig = {...defaultRerenderStatusConfig, ...(rerenderStatus ?? EMPTY_OBJECT)};
 
     const unsubscribe = asyncState.subscribe(function onUpdate(newState) {
-      returnValue.current = makeReturnValueFromAsyncState(asyncState);
+      returnValue.current = makeReturnValueFromAsyncState(asyncState, run, runAsyncState);
       if (rerenderStatusConfig[newState.status]) {
         rerender({});
       }
@@ -37,13 +37,13 @@ export default function useRawAsyncState(asyncState, dependencies, configuration
 
     asyncState.payload = shallowClone(asyncState.payload, configuration.payload);
     if (typeof run === "function") {
-      return run(asyncState);
+      return run();
     }
     return asyncState.run();
   }, dependencies);
 
   if (!returnValue.current) {
-    returnValue.current = makeReturnValueFromAsyncState(asyncState);
+    returnValue.current = makeReturnValueFromAsyncState(asyncState, run, runAsyncState);
   }
 
   return returnValue.current;

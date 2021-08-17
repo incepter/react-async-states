@@ -9,10 +9,10 @@ export function generatorRunner(generator, ...genArgs) {
 }
 
 export function stepAndContinueGenerator(generator, onDone, onReject) {
-  let done = false;
   let aborted = false;
 
   function step(input) {
+    let done = false;
     if (done) throw new Error("generator already done! cannot step further");
     let next = generator.next(input);
 

@@ -48,6 +48,16 @@ export default function UsersPage() {
 }
 
 export function UserDetailsPage() {
+  return (
+    <div style={{ display: "flex"}}>
+      <UserDetailsPageImpl/>
+      <UserDetailsPageImpl2 />
+    </div>
+  );
+}
+
+function UserDetailsPageImpl({ fork = false }) {
+
   const history = useHistory();
   const matchParams = useParams();
 
@@ -70,6 +80,54 @@ export function UserDetailsPage() {
       <div>
         <form onSubmit={onSubmit}>
           <input defaultValue={matchParams.userId} name="id" placeholder="user-id"/>
+          <button type="submit">search</button>
+        </form>
+      </div>
+      <h3>Users details</h3>{status === "loading" && <span>...<button onClick={() => abort()}>Abort</button></span>}
+      {status !== "loading" && <button onClick={() => run()}>Reload</button>}
+      {status === "success" && (
+        <div>
+          {!data && "No results!"}
+          <pre>
+            {JSON.stringify(data, null, "  ")}
+          </pre>
+        </div>
+      )}
+      {status === "error" && (<div>
+        <button onClick={() => run()}>Retry</button>
+        <pre>
+            {JSON.stringify(data, null, "  ")}
+          </pre>
+      </div>)}
+    </div>
+  );
+}
+
+function UserDetailsPageImpl2() {
+  const [value, setValue] = React.useState(null);
+
+
+  const {state: {status, data}, abort, run} = useAsyncState({
+    key: DOMAIN_USER_PROMISES.details.key,
+    condition: !!value?.id,
+    fork: true,
+    payload: {
+      userId: value?.id,
+    }
+  }, [value?.id]);
+
+  function onSubmit(e) {
+    e.preventDefault();
+
+    const values = readFormValues(e.target);
+    setValue(values);
+  }
+
+  return (
+    <div>
+      <div>
+        <form onSubmit={onSubmit}>
+          <input defaultValue={value?.id || ""} name="id" placeholder="user-id"/>
           <button type="submit">search</button>
         </form>
       </div>

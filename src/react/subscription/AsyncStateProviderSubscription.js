@@ -3,6 +3,7 @@ import {
   deduceAsyncState,
   inferSubscriptionMode
 } from "./subscriptionUtils";
+import { shallowClone } from "../../shared";
 
 export function AsyncStateProviderSubscription(contextValue, configuration) {
   const mode = inferSubscriptionMode(contextValue, configuration);
@@ -11,14 +12,18 @@ export function AsyncStateProviderSubscription(contextValue, configuration) {
   return {
     mode,
     asyncState,
-    run() {
+    run(...args) {
       switch (mode) {
-        case AsyncStateSubscriptionMode.STANDALONE:
-          return asyncState.run();
+        case AsyncStateSubscriptionMode.STANDALONE: {
+          asyncState.payload = shallowClone(asyncState.payload, configuration.payload);
+          return asyncState.run(...args);
+        }
         case AsyncStateSubscriptionMode.FORK:
         case AsyncStateSubscriptionMode.HOIST:
-        case AsyncStateSubscriptionMode.LISTEN:
-          return contextValue.run(asyncState);
+        case AsyncStateSubscriptionMode.LISTEN: {
+          asyncState.payload = shallowClone(asyncState.payload, configuration.payload);
+          return contextValue.run(asyncState, ...args);
+        }
         // NoOp
         case AsyncStateSubscriptionMode.NOOP:
         case AsyncStateSubscriptionMode.WAITING:

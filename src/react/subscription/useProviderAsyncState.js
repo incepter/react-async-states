@@ -21,7 +21,10 @@ export default function useProviderAsyncState(configuration, dependencies) {
     let watchedKey = subscription.asyncState?.key || key;
 
     return contextValue.watch(watchedKey, function notify() {
-      setGuard({});
+      // todo: take value from notification to see what to do, here and in selector
+      if (!subscription.asyncState) {
+        setGuard({});
+      }
     });
   }, [subscription.asyncState]);
 
@@ -30,6 +33,7 @@ export default function useProviderAsyncState(configuration, dependencies) {
     dependencies,
     configuration,
     subscription.run,
-    subscription.dispose
+    subscription.dispose,
+    contextValue.runAsyncState
   );
 }

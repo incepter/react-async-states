@@ -8,7 +8,7 @@ const LogLevels = Object.freeze({
   error: {order: 5, value: "error"},
 });
 
-export const IS_LOGGER_ENABLED = process.env.IS_LOGGER_ENABLED || __DEV__;
+export const IS_LOGGER_ENABLED = process.env.IS_LOGGER_ENABLED || false;
 export const LOG_LEVEL = process.env.LOG_LEVEL || LogLevels.trace.value;
 
 function Logger(enable) {

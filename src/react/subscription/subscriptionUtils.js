@@ -85,14 +85,14 @@ export const defaultUseASConfig = Object.freeze({
   },
 });
 
-export function makeReturnValueFromAsyncState(asyncState, contextValue) {
+export function makeReturnValueFromAsyncState(asyncState, run, runAsyncState) {
   return Object.freeze({
     key: asyncState.key,
 
-    run: asyncState.run.bind(asyncState),
+    runAsyncState: runAsyncState,
     abort: asyncState.abort.bind(asyncState),
     replaceState: asyncState.replaceState.bind(asyncState),
-    runAsyncState: contextValue ? contextValue.runAsyncState : undefined,
+    run: typeof run === "function" ? run : asyncState.run.bind(asyncState),
 
     state: Object.freeze(shallowClone(asyncState.currentState)),
     lastSuccess: Object.freeze(shallowClone(asyncState.lastSuccess)),
