@@ -13,7 +13,7 @@ function SimpleSub({asyncStateKey, displayValue}) {
       <br/>
       <span>Run: <button onClick={() => run()}>Run {key}</button></span>
       <br/>
-      <span>Abort: <button onClick={() => abort()} disabled={status !== "loading"}>Abort {key}</button></span>
+      <span>Abort: <button onClick={() => abort()} disabled={status !== "pending"}>Abort {key}</button></span>
       <br/>
       {status === "success" && (
         <div>

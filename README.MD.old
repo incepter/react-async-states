@@ -30,7 +30,7 @@ and the initial thinking of all of this
  *          {
  *            fork: defines whether to fork from parent promise state (very, very important)
  *            forkConfig: { keepState, keepSubscriptions }
- *            rerenderStatus: { loading, success, error } defines when to trigger a re-render
+ *            rerenderStatus: { pending, success, error } defines when to trigger a re-render
  *            onResolve (state): callback when a subscription is resolved
  *          }
  * promiseConfig: this parameter will allow the usePromiseState to work on standalone mode

@@ -30,8 +30,8 @@ export default function UsersPage() {
           <button type="submit">search</button>
         </form>
       </div>
-      <h3>Users List</h3>{status === "loading" && <span>...<button onClick={() => abort()}>Abort</button></span>}
-      {status !== "loading" && <button onClick={() => run()}>Reload</button>}
+      <h3>Users List</h3>{status === "pending" && <span>...<button onClick={() => abort()}>Abort</button></span>}
+      {status !== "pending" && <button onClick={() => run()}>Reload</button>}
       {status === "success" && (
         <div>
           {!data.length && "No results!"}
@@ -83,8 +83,8 @@ function UserDetailsPageImpl({ fork = false }) {
           <button type="submit">search</button>
         </form>
       </div>
-      <h3>Users details</h3>{status === "loading" && <span>...<button onClick={() => abort()}>Abort</button></span>}
-      {status !== "loading" && <button onClick={() => run()}>Reload</button>}
+      <h3>Users details</h3>{status === "pending" && <span>...<button onClick={() => abort()}>Abort</button></span>}
+      {status !== "pending" && <button onClick={() => run()}>Reload</button>}
       {status === "success" && (
         <div>
           {!data && "No results!"}
@@ -131,8 +131,8 @@ function UserDetailsPageImpl2() {
           <button type="submit">search</button>
         </form>
       </div>
-      <h3>Users details</h3>{status === "loading" && <span>...<button onClick={() => abort()}>Abort</button></span>}
-      {status !== "loading" && <button onClick={() => run()}>Reload</button>}
+      <h3>Users details</h3>{status === "pending" && <span>...<button onClick={() => abort()}>Abort</button></span>}
+      {status !== "pending" && <button onClick={() => run()}>Reload</button>}
       {status === "success" && (
         <div>
           {!data && "No results!"}

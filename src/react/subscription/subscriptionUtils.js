@@ -5,7 +5,7 @@ export const defaultRerenderStatusConfig = Object.freeze({
   error: true,
   success: true,
   aborted: true,
-  loading: true,
+  pending: true,
 });
 
 export const AsyncStateSubscriptionMode = Object.freeze({

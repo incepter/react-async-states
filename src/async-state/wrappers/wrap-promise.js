@@ -20,14 +20,14 @@ export function wrapPromise(asyncState) {
     const clonedArgs = cloneArgs(args);
     if (isGenerator(executionValue)) {
       logger.info(`[${asyncState.key}][is a generator]`);
-      asyncState.setState(AsyncStateStateBuilder.loading(clonedArgs));
+      asyncState.setState(AsyncStateStateBuilder.pending(clonedArgs));
       runningPromise = wrapGenerator(executionValue, asyncState, args);
     } else if (isPromise(executionValue)) {
       logger.info(`[${asyncState.key}][is a promise]`);
-      asyncState.setState(AsyncStateStateBuilder.loading(clonedArgs));
+      asyncState.setState(AsyncStateStateBuilder.pending(clonedArgs));
       runningPromise = executionValue;
     } else { // final value
-      logger.info(`[${asyncState.key}][resolved immediately] - skiping the loading state`);
+      logger.info(`[${asyncState.key}][resolved immediately] - skiping the pending state`);
       asyncState.setState(AsyncStateStateBuilder.success(executionValue, clonedArgs));
       return;
     }

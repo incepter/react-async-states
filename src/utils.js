@@ -45,9 +45,9 @@ export function logInDevReplaceState(key, value) {
   }
 }
 
-export function warnInDevAboutRunWhileLoading(key) {
+export function warnInDevAboutRunWhilePending(key) {
   if (__DEV__) {
-    logger.info(`[${key}][run while loading] previous run will be aborted`);
+    logger.info(`[${key}][run while pending] previous run will be aborted`);
   }
 }
 

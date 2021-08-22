@@ -26,7 +26,7 @@ and statuses in which you choose to re-render.
 The asynchronous state may have the following states:
 
 - `initial`: this is the very initial state
-- `loading`: when it starts the loading state
+- `pending`: when it starts the pending state
 - `success`: when it resolves successfully
 - `aborted`: when you choose to abort your promise. (if it is still running, it forces the abort)
 - `error`: when your promise rejects, function throws or generator throws during the call

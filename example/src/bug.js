@@ -72,7 +72,7 @@ function AppWrapped() {
       <h2>Search value: {JSON.stringify(args?.[0]?.executionArgs?.[0])}</h2>
       <hr />
       <h3>status: {status}</h3>
-      {status === "loading" && (
+      {status === "pending" && (
         <button onClick={() => abort("USER BGHA")}>Abort</button>
       )}
       {status === "aborted" && (

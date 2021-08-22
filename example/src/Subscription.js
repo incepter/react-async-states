@@ -21,7 +21,7 @@ export function Subscription({asyncStateConfig}) {
   return (
     <span style={{maxWidth: 400}}>
       <button onClick={() => run()}>RUN</button><br/>
-      {state.status === "loading" && <button onClick={() => abort("bghit")}>ABORT</button>}
+      {state.status === "pending" && <button onClick={() => abort("bghit")}>ABORT</button>}
       <pre>
         {state.status}
       </pre>
@@ -31,7 +31,7 @@ export function Subscription({asyncStateConfig}) {
 }
 
 function usersSelector(usersState, postsState) {
-  if (!usersState || !postsState || usersState.status === "loading" || postsState.status === "loading") {
+  if (!usersState || !postsState || usersState.status === "pending" || postsState.status === "pending") {
     return undefined;
   }
   let user = usersState?.data?.find?.(t => t.id = 1);

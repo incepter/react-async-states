@@ -25,7 +25,7 @@ describe('AsyncState - run', () => {
     });
 
     myAsyncState.run();
-    // should transition synchronously to loading state
+    // should transition synchronously to pending state
     expect(myAsyncState.currentState).toEqual({
       args: [{
         payload: null,
@@ -36,12 +36,12 @@ describe('AsyncState - run', () => {
         onAbort: expect.any(Function),
       }],
       data: null,
-      status: AsyncStateStatus.loading,
+      status: AsyncStateStatus.pending,
     });
     await act(async () => {
       await jest.advanceTimersByTime(50);
     });
-    // should be still in loading state while promise did not resolve yet
+    // should be still in pending state while promise did not resolve yet
     expect(myAsyncState.currentState).toEqual({
       args: [{
         executionArgs: [],
@@ -52,7 +52,7 @@ describe('AsyncState - run', () => {
         onAbort: expect.any(Function),
       }],
       data: null,
-      status: AsyncStateStatus.loading,
+      status: AsyncStateStatus.pending,
     });
 
     await act(async () => {

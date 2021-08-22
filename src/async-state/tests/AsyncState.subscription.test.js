@@ -37,7 +37,7 @@ describe('AsyncState - subscriptions', () => {
             executionArgs: [],
             abort: expect.any(Function),
             onAbort: expect.any(Function),
-          }], data: null, status: AsyncStateStatus.loading
+          }], data: null, status: AsyncStateStatus.pending
         }],
         [{
           args: [{
@@ -82,7 +82,7 @@ describe('AsyncState - subscriptions', () => {
     await act(async () => {
       await jest.advanceTimersByTime(49);
     });
-    unsubscribe(); // unsubscribe one milli before resolve; we should only receive the loading notification
+    unsubscribe(); // unsubscribe one milli before resolve; we should only receive the pending notification
     await act(async () => {
       await jest.advanceTimersByTime(5);
     });
@@ -97,7 +97,7 @@ describe('AsyncState - subscriptions', () => {
             executionArgs: [],
             abort: expect.any(Function),
             onAbort: expect.any(Function),
-          }], data: null, status: AsyncStateStatus.loading
+          }], data: null, status: AsyncStateStatus.pending
         }],
       ]
     );
@@ -136,7 +136,7 @@ describe('AsyncState - subscriptions', () => {
 
     expect(subscriptionFn.mock.calls).toEqual([]);
     expect(subscriptionFn).toHaveBeenCalledTimes(0);
-    expect(myAsyncState.currentState).toEqual({ // original async state resolved, but we got notified neither by loading nor success
+    expect(myAsyncState.currentState).toEqual({ // original async state resolved, but we got notified neither by pending nor success
       args: [{
         payload: null,
         aborted: false,

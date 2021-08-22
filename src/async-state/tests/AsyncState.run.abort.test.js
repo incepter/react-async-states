@@ -7,7 +7,7 @@ jest.useFakeTimers();
 
 describe('AsyncState - run - abort', () => {
 
-  it('should abort while loading and check state did not update after supposed resolve', async () => {
+  it('should abort while pending and check state did not update after supposed resolve', async () => {
     // given
     let key = "simulated";
     let promise = timeout(100, [{id: 1, description: "value"}]);
@@ -43,7 +43,7 @@ describe('AsyncState - run - abort', () => {
         payload: null
       }],
       data: null,
-      status: AsyncStateStatus.loading,
+      status: AsyncStateStatus.pending,
     });
 
     subscription.mockClear();
@@ -95,7 +95,7 @@ describe('AsyncState - run - abort', () => {
     });
   });
 
-  it('should abort while loading and check state did not update after supposed rejection', async () => {
+  it('should abort while pending and check state did not update after supposed rejection', async () => {
     // given
     let key = "simulated";
     let promise = rejectionTimeout(100, "reason");
@@ -162,14 +162,14 @@ describe('AsyncState - run - abort', () => {
       await jest.advanceTimersByTime(50);
     });
 
-    expect(myAsyncState.currentState.status).toBe(AsyncStateStatus.loading);
+    expect(myAsyncState.currentState.status).toBe(AsyncStateStatus.pending);
 
-    // rerun while loading should interrupt previous
+    // rerun while pending should interrupt previous
     subscription.mockClear();
     myAsyncState.run();
 
     expect(subscription.mock.calls[0][0].status).toBe(AsyncStateStatus.aborted);
-    expect(subscription.mock.calls[1][0].status).toBe(AsyncStateStatus.loading);
+    expect(subscription.mock.calls[1][0].status).toBe(AsyncStateStatus.pending);
 
     expect(subscription).toHaveBeenCalledTimes(2);
 

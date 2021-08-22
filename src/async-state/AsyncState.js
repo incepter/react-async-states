@@ -10,7 +10,7 @@ import {
   logInDevStateChange,
   warnDevAboutAsyncStateKey,
   warnDevAboutUndefinedPromise,
-  warnInDevAboutRunWhileLoading
+  warnInDevAboutRunWhilePending
 } from "../utils";
 
 export const defaultASConfig = Object.freeze({lazy: true, initialValue: null});
@@ -54,7 +54,7 @@ AsyncState.prototype.setState = function setState(newState, notify = true) {
     this.lastSuccess = shallowClone(this.currentState);
   }
 
-  if (this.currentState.status !== AsyncStateStatus.loading) {
+  if (this.currentState.status !== AsyncStateStatus.pending) {
     this.currentAborter = null;
   }
 
@@ -83,8 +83,8 @@ AsyncState.prototype.dispose = function disposeImpl() {
 }
 
 AsyncState.prototype.run = function run(...execArgs) {
-  if (this.currentState.status === AsyncStateStatus.loading) {
-    warnInDevAboutRunWhileLoading(this.key);
+  if (this.currentState.status === AsyncStateStatus.pending) {
+    warnInDevAboutRunWhilePending(this.key);
     this.abort();
     this.currentAborter = null;
   }
@@ -167,7 +167,7 @@ function forkKey(asyncState) {
 }
 
 AsyncState.prototype.replaceState = function replaceState(newValue) {
-  if (this.currentState.status === AsyncStateStatus.loading) {
+  if (this.currentState.status === AsyncStateStatus.pending) {
     this.abort();
     this.currentAborter = null;
   }

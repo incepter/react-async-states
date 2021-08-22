@@ -15,14 +15,14 @@ The function may be:
 - A regular function returning a `Promise` object.
 
 The state value is described using the following:
-- `status`: refers to the current asynchronous state status, possible values are: `initial, loading, aborted, success, error`.
+- `status`: refers to the current asynchronous state status, possible values are: `initial, pending, aborted, success, error`.
 - `args`: refers to the arguments that the promise function was ran with.
 - `data`: the state actual value.
 
 So every state update sets all these three properties as `currentState` object.
 
-This was set for convenience, because an asynchronous state status isn't a boolean (`true/false` to indicate a loading).
-And also, sometimes you need to display at the loading state the parameters that are actually running the promise function
+This was set for convenience, because an asynchronous state status isn't a boolean (`true/false` to indicate a pending state).
+And also, sometimes you need to display at the pending state the parameters that are actually running the promise function
 or may be you will need to replicate it in case of some error.
 
 The most notable APIs that you will be using most often from this library are:
@@ -385,7 +385,7 @@ holds for you the last succeeded value.
 the current async promise did something, for example, reload users list after updating a user successfully.
 
 Notes:
-1. Calling the `run` function, if it is still `loading` the previous run, it aborts it instantly, and start a new cycle.
+1. Calling the `run` function, if it is still `pending` the previous run, it aborts it instantly, and start a new cycle.
 2. The provider doesn't run promises, it is the `useAsyncState` that does it. But then, if you have multiple subscriptions
 to the same async state, will it run multiple times ? Yes, and No. Yes because technically you register a run, but the run
 is locked via semaphore lock on the event loop: This means that each time you call the run function automatically via

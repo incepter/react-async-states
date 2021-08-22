@@ -19,7 +19,7 @@ function AnonymousExample() {
       <span>key: {key}</span><br />
       <span>status: {status}</span><br />
       <span><button onClick={run}>Click me</button></span><br />
-      <span><button onClick={abort} disabled={status !== "loading"}>abort me</button></span><br />
+      <span><button onClick={abort} disabled={status !== "pending"}>abort me</button></span><br />
       <span>data: {JSON.stringify(data, null, "  ")}</span><br />
     </div>
   );

@@ -20,12 +20,12 @@ describe('AsyncState - setState', () => {
 
   it('should synchronously mutate the state after setState call and notify subscribers', () => {
     // when
-    myAsyncState.setState(AsyncStateStateBuilder.loading({}));
+    myAsyncState.setState(AsyncStateStateBuilder.pending({}));
     // then
     let expectedState = {
       args: {},
       data: null,
-      status: AsyncStateStatus.loading,
+      status: AsyncStateStatus.pending,
     };
     expect(myAsyncState.currentState).toEqual(expectedState);
 

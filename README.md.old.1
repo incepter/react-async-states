@@ -5,7 +5,7 @@
 ## What is this
 
 An asynchronous state is a state issued from a promise (may be other than the Promise object) that occur (or not) in
-a later point of time. An async state instance holds three properties: `status(initial|loading|aborted|success|error)`,
+a later point of time. An async state instance holds three properties: `status(initial|pending|aborted|success|error)`,
 `data` and `args` (the run arguments).
 
 This library consists of a `Provider` that holds the asynchronous states definitions along with their promises,
@@ -330,7 +330,7 @@ holds for you the last succeeded value.
 the current async promise did something, for example, reload users list after updating a user successfully.
 
 Notes:
-1. Calling the `run` function, if it is still `loading` the previous run, it aborts it instantly, and start a new cycle.
+1. Calling the `run` function, if it is still `pending` the previous run, it aborts it instantly, and start a new cycle.
 2. The provider doesn't run promises, it is the `useAsyncState` that does it. But then, if you have multiple subscriptions
 to the same async state, will it run multiple times ? Yes, and No. Yes because technically you register a run, but the run
 is locked via semaphore lock on the event loop: This means that each time you call the run function automatically via

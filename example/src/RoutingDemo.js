@@ -11,7 +11,7 @@ export default function Demo() {
   const {state: {status, data}, lastSuccess} = useAsyncState({
     key: demoAsyncStates.getUser.key,
     payload: {matchParams: params},
-    rerenderStatus: {loading: true}
+    rerenderStatus: {pending: true}
   }, [params]);
 
   function navigate(e) {
@@ -24,7 +24,7 @@ export default function Demo() {
       <form onSubmit={navigate}>
         <input defaultValue={params.userId} ref={ref} style={{backgroundColor: "red"}} placeholder="user id"/>
       </form>
-      {status === "loading" && (
+      {status === "pending" && (
         <>
           <span>Loading...</span>
           <pre>

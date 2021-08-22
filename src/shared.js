@@ -10,7 +10,7 @@ export function shallowClone(source1, source2) {
 
 export const AsyncStateStatus = {
   error: "error",
-  loading: "loading",
+  pending: "pending",
   success: "success",
   aborted: "aborted",
   initial: "initial",

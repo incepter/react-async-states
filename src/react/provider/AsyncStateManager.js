@@ -129,7 +129,7 @@ export function AsyncStateManager(asyncStateEntries) {
   //       if (status === AsyncStateStatus.error) {
   //         reject(stateValue);
   //       }
-  //       if (status !== AsyncStateStatus.loading) {
+  //       if (status !== AsyncStateStatus.pending) {
   //         invokeIfPresent(unsubscribe);
   //       }
   //     });
