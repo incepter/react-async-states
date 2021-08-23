@@ -1,5 +1,3 @@
-/* not used, yet! */
-/* istanbul ignore next */
 import { invokeIfPresent } from "../../shared";
 
 export function generatorRunner(generator, ...genArgs) {
@@ -12,15 +10,18 @@ export function stepAndContinueGenerator(generator, onDone, onReject) {
   let aborted = false;
 
   function step(input) {
-    let done = false;
-    if (done) throw new Error("generator already done! cannot step further");
-    let next = generator.next(input);
+    // if we try to step in an already finished generator, we throw. That's a bug
+    if (generator.done) throw new Error("generator already done! cannot step further");
 
-    if (next.done) done = true;
+    // now, move generator forward
+    let next = generator.next(input);
+    // is it done now ?
+    const {done} = next;
+
     let promise = Promise.resolve(next.value);
 
     promise
-      .then(function continueGen(value) {
+      .then(function continueGenerator(value) {
         if (!done && !aborted) {
           step(value);
         }
