@@ -76,7 +76,6 @@ export function AsyncStateManager(asyncStateEntries) {
     if (!watchers[key]) {
       return;
     }
-    console.log('notify watchers,', key, watchers, watchers[key])
     Object.values(watchers[key].watchers).forEach(function notifyWatcher(watcher) {
       watcher.notify(value);
     })
@@ -108,9 +107,7 @@ export function AsyncStateManager(asyncStateEntries) {
   function select(keys, selector = identity) {
     const effectiveKeys = Array.isArray(keys) ? keys : [keys];
 
-    return selector(...effectiveKeys.map(function getStateValue(key) {
-      return get(key)?.currentState;
-    }));
+    return selector(...effectiveKeys.map(key => get(key)?.currentState));
   }
 
   //

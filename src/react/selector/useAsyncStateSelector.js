@@ -3,8 +3,8 @@ import { AsyncStateContext } from "../context";
 import { identity, invokeIfPresent, shallowEqual } from "../../shared";
 
 export function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual, initialValue = undefined) {
-  const effectiveKeys = typeof keys === "string" ? [keys] : keys; // assumes keys is an array of string, check to add
-  const {get, watch, dispose} = React.useContext(AsyncStateContext);
+  const effectiveKeys = Array.isArray(keys) ? keys : [keys];
+  const {get, watch, dispose, select} = React.useContext(AsyncStateContext);
 
   const [returnValue, setReturnValue] = React.useState(function getInitialState() {
     return selectValues() || initialValue;
@@ -12,13 +12,7 @@ export function useAsyncStateSelector(keys, selector = identity, areEqual = shal
 
 
   function selectValues() {
-    const selectedValue = selector(...effectiveKeys.map(function extractCurrentState(key) {
-      const candidate = get(key);
-      if (!candidate) {
-        return undefined;
-      }
-      return candidate.currentState;
-    }));
+    const selectedValue = select(effectiveKeys, selector);
 
     if (!areEqual(returnValue, selectedValue)) {
       return selectedValue;

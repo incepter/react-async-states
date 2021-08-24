@@ -15,13 +15,17 @@ export function AsyncStateProviderSubscription(contextValue, configuration) {
     run(...args) {
       switch (mode) {
         case AsyncStateSubscriptionMode.STANDALONE: {
-          asyncState.payload = shallowClone(asyncState.payload, configuration.payload);
+          if (configuration.payload) {
+            asyncState.payload = shallowClone(asyncState.payload, configuration.payload);
+          }
           return asyncState.run(...args);
         }
         case AsyncStateSubscriptionMode.FORK:
         case AsyncStateSubscriptionMode.HOIST:
         case AsyncStateSubscriptionMode.LISTEN: {
-          asyncState.payload = shallowClone(asyncState.payload, configuration.payload);
+          if (configuration.payload) {
+            asyncState.payload = shallowClone(asyncState.payload, configuration.payload);
+          }
           return contextValue.run(asyncState, ...args);
         }
         // NoOp

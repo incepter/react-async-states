@@ -21,12 +21,7 @@ export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
   const contextValue = React.useContext(AsyncStateContext);
 
   const configuration = React.useMemo(function readConfiguration() {
-    // this is an anonymous promise configuration (lazy: true, fork: false, hoist: false, payload: null)
-    if (typeof subscriptionConfig === "function") {
-      return readConfigFromPromise(subscriptionConfig);
-    } else {
-      return readRegularConfig(subscriptionConfig);
-    }
+    return readRegularConfig(subscriptionConfig);
   }, dependencies);
 
   // this will never change, because if suddenly you are no longer in this context
@@ -42,8 +37,9 @@ export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
 
 // userConfig is the config the developer wrote
 function readRegularConfig(userConfig) {
+  // this is an anonymous promise configuration (lazy: true, fork: false, hoist: false, payload: null)
   if (typeof userConfig === "function") {
-    return readConfigFromPromise(userConfig);
+    return readConfigFromPromiseFunction(userConfig);
   }
   if (typeof userConfig === "string") {
     return shallowClone(defaultUseASConfig, {key: userConfig});
@@ -61,6 +57,6 @@ const nextKey = (function autoKey() {
   }
 }());
 
-function readConfigFromPromise(promise) {
+function readConfigFromPromiseFunction(promise) {
   return shallowClone(defaultUseASConfig, {promise, key: nextKey()});
 }

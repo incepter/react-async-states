@@ -5,14 +5,16 @@ import { createInitialAsyncStatesReducer } from "./providerUtils";
 import { AsyncStateManager } from "./AsyncStateManager";
 
 export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsyncStates = EMPTY_ARRAY}) {
-  const lastAsyncStateEntries = React.useRef();
+  const entriesRef = React.useRef();
   // mutable, and will be mutated!
   // this asyncStateEntries may receive other entries at runtime if you hoist
   const asyncStateEntries = React.useMemo(function constructAsyncStates() {
     // this re-uses the old managed async states, and bind to them the new ones
-    const initialValue = shallowClone(lastAsyncStateEntries.current);
+    const initialValue = shallowClone(entriesRef.current);
     return Object.values(initialAsyncStates).reduce(createInitialAsyncStatesReducer, initialValue);
   }, [initialAsyncStates]);
+
+  entriesRef.current = asyncStateEntries;
 
   const contextValue = React.useMemo(function getProviderValue() {
     const manager = AsyncStateManager(asyncStateEntries);
@@ -30,7 +32,8 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
     };
   }, [asyncStateEntries, payload]);
 
-  React.useLayoutEffect(function propagatePayload() {
+  // synchronous effect to propagate payload
+  React.useMemo(function propagatePayload() {
     if (!asyncStateEntries) {
       return;
     }
@@ -51,13 +54,14 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
   }, [payload, contextValue]);
 
   React.useEffect(function disposeOldEntries() {
-    lastAsyncStateEntries.current = asyncStateEntries;
     if (!asyncStateEntries) {
       return undefined;
     }
     return function cleanup() {
       Object.values(asyncStateEntries).forEach(function disposeAsyncState(entry) {
-        contextValue.dispose(entry.value);
+        if (!asyncStateEntries[entry.value.key]) {
+          contextValue.dispose(entry.value);
+        }
       });
     }
   }, [asyncStateEntries]);

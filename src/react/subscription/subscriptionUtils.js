@@ -1,5 +1,5 @@
 import AsyncState from "../../async-state/AsyncState";
-import { EMPTY_OBJECT, shallowClone } from "../../shared";
+import { EMPTY_OBJECT, oneObjectIdentity, shallowClone, shallowEqual } from "../../shared";
 
 export const defaultRerenderStatusConfig = Object.freeze({
   error: true,
@@ -80,25 +80,13 @@ export const defaultUseASConfig = Object.freeze({
   hoistToProviderConfig: EMPTY_OBJECT,
   rerenderStatus: defaultRerenderStatusConfig,
 
+  areEqual: shallowEqual,
+  selector: oneObjectIdentity,
+
   promise() {
     return undefined;
   },
 });
-
-export function makeReturnValueFromAsyncState(asyncState, run, runAsyncState) {
-  return Object.freeze({
-    key: asyncState.key,
-
-    runAsyncState: runAsyncState,
-    abort: asyncState.abort.bind(asyncState),
-    replaceState: asyncState.replaceState.bind(asyncState),
-    run: typeof run === "function" ? run : asyncState.run.bind(asyncState),
-
-    state: Object.freeze(shallowClone(asyncState.currentState)),
-    lastSuccess: Object.freeze(shallowClone(asyncState.lastSuccess)),
-    payload: Object.freeze(shallowClone(asyncState.payload))
-  });
-}
 
 function NoOp() {
 }

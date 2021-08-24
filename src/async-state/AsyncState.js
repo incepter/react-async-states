@@ -23,8 +23,8 @@ function AsyncState(key, promise, config) {
   this.config = shallowClone(defaultASConfig, config);
   this.originalPromise = promise;
 
-  this.lastSuccess = undefined;
   this.currentState = AsyncStateStateBuilder.initial(this.config.initialValue);
+  this.lastSuccess = this.currentState;
 
   this.forkCount = 0;
   this.subscriptionsMeter = 0;

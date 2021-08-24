@@ -1,37 +1,63 @@
 import React from "react";
 import useRerender from "../utils/useRerender";
-import { defaultRerenderStatusConfig, makeReturnValueFromAsyncState } from "./subscriptionUtils";
-import { EMPTY_OBJECT, invokeIfPresent, shallowClone } from "../../shared";
+import { defaultRerenderStatusConfig } from "./subscriptionUtils";
+import { shallowClone } from "../../shared";
 
 export default function useRawAsyncState(asyncState, dependencies, configuration, run, dispose, runAsyncState) {
   const rerender = useRerender();
   const returnValue = React.useRef();
 
+  // whenever the async state changes, synchronously make the return value a null
+  React.useMemo(function onAsyncStateChangeSync() {
+    returnValue.current = null;
+  }, [asyncState]);
+
+  // if rendering with a null value, construct the return value
+  if (!returnValue.current) {
+    returnValue.current = {};
+    const calculatedState = calculateSelectedState(asyncState.currentState, configuration);
+    applyUpdateOnReturnValue(returnValue.current, asyncState, calculatedState, run, runAsyncState);
+  }
+
+  // the subscription to state change along with the decision to re-render
   React.useLayoutEffect(function subscribeToAsyncState() {
     if (!asyncState) {
       return undefined;
     }
     const {rerenderStatus} = configuration;
-    const rerenderStatusConfig = {...defaultRerenderStatusConfig, ...(rerenderStatus ?? EMPTY_OBJECT)};
+    const rerenderStatusConfig = shallowClone(defaultRerenderStatusConfig, rerenderStatus);
 
-    const unsubscribe = asyncState.subscribe(function onUpdate(newState) {
-      returnValue.current = makeReturnValueFromAsyncState(asyncState, run, runAsyncState);
-      if (rerenderStatusConfig[newState.status]) {
+    return asyncState.subscribe(function onUpdate(newState) {
+      const calculatedState = calculateSelectedState(newState, configuration);
+      const prevStateValue = returnValue.current.state;
+      applyUpdateOnReturnValue(returnValue.current, asyncState, calculatedState, run, runAsyncState);
+
+      if (!rerenderStatusConfig[newState.status]) {
+        return;
+      }
+
+      const {areEqual} = configuration;
+      if (!areEqual(prevStateValue, calculatedState)) {
         rerender({});
       }
     });
+  }, [...dependencies, asyncState]);
+
+  // attempt to dispose/reset old async state
+  // this case is rare and will happen if you have changing props declared as dependencies
+  React.useEffect(function disposeOldAsyncState() {
     return function cleanup() {
-      invokeIfPresent(unsubscribe);
       if (typeof dispose === "function") {
         dispose(asyncState);
-      } else {
+      } else if (asyncState) {
         asyncState.dispose();
       }
-    };
+    }
   }, [asyncState]);
 
+  // automatic run if not marked as lazy
   React.useEffect(function runAsyncState() {
-    if (!asyncState || !configuration.condition || asyncState.config.lazy) {
+    if (!asyncState || !configuration.condition || asyncState.config.lazy || configuration.lazy) {
       return undefined;
     }
 
@@ -42,9 +68,31 @@ export default function useRawAsyncState(asyncState, dependencies, configuration
     return asyncState.run();
   }, dependencies);
 
-  if (!returnValue.current) {
-    returnValue.current = makeReturnValueFromAsyncState(asyncState, run, runAsyncState);
-  }
-
   return returnValue.current;
+}
+
+function calculateSelectedState(newState, configuration) {
+  const {selector} = configuration;
+  return typeof selector === "function" ? selector(newState) : newState;
+}
+
+function applyUpdateOnReturnValue(returnValue, asyncState, stateValue, run, runAsyncState) {
+  returnValue.state = stateValue;
+  returnValue.payload = asyncState.payload;
+  returnValue.lastSuccess = asyncState.lastSuccess;
+
+  returnValue.key = asyncState.key;
+
+  if (!returnValue.run) {
+    returnValue.run = typeof run === "function" ? run : asyncState.run.bind(asyncState);
+  }
+  if (!returnValue.abort) {
+    returnValue.abort = asyncState.abort.bind(asyncState);
+  }
+  if (!returnValue.replaceState) {
+    returnValue.replaceState = asyncState.replaceState.bind(asyncState);
+  }
+  if (!returnValue.runAsyncState) {
+    returnValue.runAsyncState = runAsyncState;
+  }
 }

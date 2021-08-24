@@ -51,6 +51,9 @@ export function identity(...args) {
   return args.length === 1 ? args[0] : args;
 }
 
+export function oneObjectIdentity(obj) {
+  return obj;
+}
 /**
  * will extract serializable and meaningful arguments to save
  * @param args array of parameters
