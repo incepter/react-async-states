@@ -37,7 +37,8 @@ Let's explore these APIs signatures first, it will give you the overall idea abo
 ```javascript
 // config: string | object | function
 function useAsyncState(config, dependencies = []) {
-  return { key, run, abort, state: {args, status, data}, replaceState, runAsyncState};
+  // state is whatever your selector returns, by default will return the whole state object with args and status
+  return { key, run, abort, state, replaceState, runAsyncState};
 }
 
 // keys: string or array (or function: not yet)
@@ -97,6 +98,7 @@ Here is the road map and the list of things that should be added before talking 
 - [x] subscription to be aware of provider async states change, to re-connect and re-run lazy...
 - [x] support the standalone/anonymous `useAsyncState(promise, dependencies)` ?
 - [x] support default embedded provider payload (select, run other async states)[partially done, we need to define the payload properties]
+- [x] support selector in useAsyncState configuration
 - [ ] writing docs
 - [ ] writing codesandbox usage examples
 - [ ] support selector keys to be a function receiving available keys in provider(regex usage against keys may be used in this function)
@@ -124,6 +126,7 @@ based on your needs.
 
 Of course, this is only the basic usage of the library, and the `useAsyncState` hook may be used in different forms
 and serve different purposes:
+- you may select only a portion of the state based on a `selector` and rerender only if `areEqual` is falsy.
 - You may `hoist` an async state to the provider and become accessible.
 - You may `fork` an async state and reuse its promise function without impacting its state and subscribers.
 
@@ -352,18 +355,20 @@ If an object is provided, it may act like a simple subscription or a registratio
 
 Let's see in details the supported configuration:
 
-|Property               |Type       |Default Value     |Standalone|Provider|Description
-|-----------------------|-----------|------------------|----------|--------|------------------------------------------------|
-|`key`                  |string     |sting             |     x    |   x    | The unique key, either for definition or subscription |
-|`lazy`                 |boolean    |true              |     x    |   x    | If false, the subscription will re-run every dependency change |
-|`fork`                 |boolean    |false             |          |   x    | If true, subscription will fork own async state |
-|`promise`              |function   |undefined         |     x    |   x    | Our promise function |
-|`condition`            |boolean    |true              |     x    |   x    | If this condition is falsy, run will not be granted |
-|`forkConfig`           |ForkConfig |{keepState: false}|          |   x    | defines whether to keep state when forking or not |
-|`initialValue`         |any        |null              |     x    |        | The initial promise value, useful only if working as standalone(ie defining own promise) |
-|`rerenderStats`        |object     |{<status>: true}  |     x    |   x    | Defines whether to register in the provider or not |
-|`hoistToProvider`      |boolean    |false             |          |   x    | Defines whether to register in the provider or not |
-|`hoistToProviderConfig`|HoistConfig|{override: false} |          |   x    | Defines whether to override an existing async state in provider while hoisting |
+|Property               |Type         |Default Value       |Standalone|Provider|Description
+|-----------------------|-------------|--------------------|----------|--------|------------------------------------------------|
+|`key`                  |`string`     |`string`            |     x    |   x    | The unique key, either for definition or subscription |
+|`lazy`                 |`boolean`    |`true`              |     x    |   x    | If false, the subscription will re-run every dependency change |
+|`fork`                 |`boolean`    |`false`             |          |   x    | If true, subscription will fork own async state |
+|`promise`              |`function`   |`undefined`         |     x    |   x    | Our promise function |
+|`selector`             |`function`   |`identity`          |     x    |   x    | receives state (`{data, args, status}`) as unique parameter and whatever it returns it is put in the state return |
+|`areEqual`             |`function`   |`shallowEqual`      |     x    |   x    | `(prevValue, nextValue) => areEqual(prevValue, nextValue)` if it returns true, the render is skipped |
+|`condition`            |`boolean`    |`true`              |     x    |   x    | If this condition is falsy, run will not be granted |
+|`forkConfig`           |`ForkConfig` |`{keepState: false}`|          |   x    | defines whether to keep state when forking or not |
+|`initialValue`         |`any`        |`null`              |     x    |        | The initial promise value, useful only if working as standalone(ie defining own promise) |
+|`rerenderStats`        |`object`     |`{<status>: true}`  |     x    |   x    | Defines whether to register in the provider or not |
+|`hoistToProvider`      |`boolean`    |`false`             |          |   x    | Defines whether to register in the provider or not |
+|`hoistToProviderConfig`|`HoistConfig`|`{override: false}` |          |   x    | Defines whether to override an existing async state in provider while hoisting |
 
 The returned object from useAsyncState contains the following properties:
 
@@ -371,7 +376,7 @@ The returned object from useAsyncState contains the following properties:
 |--------------------|-------------------------|
 |`key`               | The key of the async state instance, if forked, it is different from the given one |
 |`run`               | Imperatively trigger the run, arguments to this function are received as array in the executionArgs |
-|`state`             | The current state, of shape {status, data, args} |
+|`state`             | The current selected portion of state, by default, the selector is `identity` and so the state is of shape `{status, args, data}` |
 |`abort`             | Imperatively abort the current run if running |
 |`lastSuccess`       | The last registered success |
 |`replaceState`      | Imperatively and instantly replace state as success with the given value (accepts a callback receiving the old state) |
@@ -383,6 +388,11 @@ holds for you the last succeeded value.
 `replaceState` instantly gives a new value to the state with success status.
 `runAsyncState` works only in provider, and was added as convenience to trigger some side effect after
 the current async promise did something, for example, reload users list after updating a user successfully.
+
+The `selector` as config in for `useAsyncState` allows you to subscribe to just a small portion of the state while
+choosing when to trigger a rerender, this is an important feature and the probably the most important of this library.
+It was not designed from the start, but the benefits from having it are noticeable and allowed new extensions for
+the library itself.
 
 Notes:
 1. Calling the `run` function, if it is still `pending` the previous run, it aborts it instantly, and start a new cycle.
@@ -468,7 +478,7 @@ function removeTodo(id) {
 }
 
 // a standalone async state (even inside provider, not hoisted nor forked => standalone)
-const value = useAsyncState({
+useAsyncState({
   key: "not_in_provider",
   payload: {
     delay: 2000,
@@ -490,6 +500,34 @@ const value = useAsyncState({
     })
   }
 });
+
+// hoists a controlled form to provider
+useAsyncState({
+  key: "some-form",
+  promise(argv) {
+    const [name, value] = argv.executionArgs;
+    if (!name) {
+      return argv.lastSuccess.data;
+    }
+    return {...argv.lastSuccess.data, [name]: value};
+  },
+  hoistToProvider: true,
+  rerenderStatus: {pending: false, success: false},
+  initialValue: {}
+});
+// later
+<Input name="username" />
+<Input name="password" />
+<Input name="phoneNumber" />
+// where
+function Input({name, ...rest}) {
+  const {state, run} = useAsyncState({
+    key: "login-form",
+    selector: state => state.data[name],
+  }, [name]);
+  return //...
+}
+
 ```
 
 ## <a name="use-async-state-selector"></a> Selectors via `useAsyncStateSelector`

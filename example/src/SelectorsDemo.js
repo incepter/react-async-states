@@ -50,8 +50,6 @@ function Input({name}) {
     selector: state => state.data[name],
   }, [name]);
 
-  console.log('rendering', name)
-
   return (<input
     value={state || ""}
     name={name}
