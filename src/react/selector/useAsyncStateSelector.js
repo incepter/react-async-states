@@ -10,7 +10,6 @@ export function useAsyncStateSelector(keys, selector = identity, areEqual = shal
     return selectValues() || initialValue;
   });
 
-
   function selectValues() {
     const selectedValue = select(effectiveKeys, selector);
 
@@ -20,8 +19,18 @@ export function useAsyncStateSelector(keys, selector = identity, areEqual = shal
     return returnValue;
   }
 
-  React.useEffect(function cleanOldSubscriptions() {
+  React.useLayoutEffect(function cleanOldSubscriptions() {
     let cleanups = [];
+
+    function watcher(newValue) {
+      if (newValue) {
+        // appearance
+        cleanups.push(newValue.subscribe(subscription));
+        cleanups.push(function disposeAs() {dispose(newValue)});
+      }
+      // disappearances should not occur because they are being watched from here
+      setReturnValue(selectValues());
+    }
 
     function subscription() {
       setReturnValue(selectValues());
@@ -29,7 +38,7 @@ export function useAsyncStateSelector(keys, selector = identity, areEqual = shal
 
     effectiveKeys.forEach(function subscribeOrWaitFor(key) {
       const asyncState = get(key);
-      cleanups.push(watch(key, subscription)); // watch for the key
+      cleanups.push(watch(key, watcher)); // watch for the key
       if (asyncState) {
         cleanups.push(asyncState.subscribe(subscription));
         cleanups.push(function disposeAs() {dispose(asyncState)});

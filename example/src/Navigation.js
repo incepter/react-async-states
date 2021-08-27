@@ -1,9 +1,38 @@
 import React from "react";
-import { Link} from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useAsyncState, useAsyncStateSelector } from "react-async-states";
+
+function Resume() {
+  const {state} = useAsyncState({
+    key: "login-form",
+    selector: state => {
+      return Object.entries(state.data ?? {}).map(([key, value]) => `${key}=${value}`).join('&');
+    }
+  })
+
+  return <span>{state}</span>;
+}
+
+const exampleSelector = (lf, ui) => {
+  return [Object.entries(lf?.data ?? {}).map(([key, value]) => `${key}=${value}`).join('&'), ui?.data];
+};
+
+function ResumeS() {
+  const [state, ui] = useAsyncStateSelector(["login-form", "user_input"], exampleSelector);
+
+  // console.log('________', state, ui)
+  return <span>{state} - {ui}</span>;
+}
 
 export default function Navigation() {
   return (
     <ul style={{display: "flex", justifyContent: 'space-around'}}>
+      <li>
+        <div style={{display: "flex", flexDirection: "column"}}>
+          <Resume/>
+          <ResumeS/>
+        </div>
+      </li>
       <li>
         <Link to="/">Basique usage</Link>
       </li>

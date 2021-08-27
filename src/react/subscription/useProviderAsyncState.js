@@ -3,6 +3,7 @@ import { AsyncStateContext } from "../context";
 import useRawAsyncState from "./useRawAsyncState";
 import { EMPTY_OBJECT } from "../../shared";
 import { AsyncStateProviderSubscription } from "./AsyncStateProviderSubscription";
+import { AsyncStateSubscriptionMode } from "./subscriptionUtils";
 
 export default function useProviderAsyncState(configuration, dependencies) {
   const {key} = configuration;
@@ -15,18 +16,29 @@ export default function useProviderAsyncState(configuration, dependencies) {
     return AsyncStateProviderSubscription(contextValue, configuration);
   }, dependenciesArray);
 
+  // React.useLayoutEffect(() => {
+  //   return () => console.log('i am unmounting', configuration.key)
+  // }, [])
   // wait early
   // this sets  a watcher to observe present async state
   React.useLayoutEffect(function watchAsyncState() {
-    let watchedKey = subscription.asyncState?.key || key;
-
-    return contextValue.watch(watchedKey, function notify() {
-      // todo: take value from notification to see what to do, here and in selector
-      if (!subscription.asyncState) {
-        setGuard({});
+    switch (subscription.mode) {
+      case AsyncStateSubscriptionMode.FORK:
+      case AsyncStateSubscriptionMode.HOIST:
+      case AsyncStateSubscriptionMode.WAITING:
+      case AsyncStateSubscriptionMode.LISTEN: {
+        let watchedKey = AsyncStateSubscriptionMode.WAITING === subscription.mode ? key : subscription.asyncState?.key;
+        return contextValue.watch(watchedKey, function notify(newValue) {
+          if (newValue !== subscription.asyncState) {
+            setGuard({});
+          }
+        });
       }
-    });
-  }, [subscription.asyncState]);
+      case AsyncStateSubscriptionMode.NOOP:
+      case AsyncStateSubscriptionMode.STANDALONE:
+      default: return undefined;
+    }
+  }, [subscription]);
 
   return useRawAsyncState(
     subscription.asyncState,

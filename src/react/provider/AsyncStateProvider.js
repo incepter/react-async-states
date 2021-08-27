@@ -5,6 +5,7 @@ import { createInitialAsyncStatesReducer } from "./providerUtils";
 import { AsyncStateManager } from "./AsyncStateManager";
 
 export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsyncStates = EMPTY_ARRAY}) {
+  const managerRef = React.useRef();
   const entriesRef = React.useRef();
   // mutable, and will be mutated!
   // this asyncStateEntries may receive other entries at runtime if you hoist
@@ -14,13 +15,17 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
     return Object.values(initialAsyncStates).reduce(createInitialAsyncStatesReducer, initialValue);
   }, [initialAsyncStates]);
 
-  entriesRef.current = asyncStateEntries;
-
   const contextValue = React.useMemo(function getProviderValue() {
-    const manager = AsyncStateManager(asyncStateEntries);
+    let manager = managerRef.current;
+
+    if (entriesRef.current !== asyncStateEntries || !manager) {
+      manager = AsyncStateManager(asyncStateEntries, managerRef.current);
+      managerRef.current = manager;
+    }
 
     return {
       payload,
+      manager,
       get: manager.get,
       run: manager.run,
       fork: manager.fork,
@@ -32,6 +37,7 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
     };
   }, [asyncStateEntries, payload]);
 
+  entriesRef.current = asyncStateEntries;
   // synchronous effect to propagate payload
   React.useMemo(function propagatePayload() {
     if (!asyncStateEntries) {
@@ -67,7 +73,7 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
   }, [asyncStateEntries]);
 
   // React.useEffect(() => {
-  //   const id = setInterval(() => console.log(asyncStateEntries), 2000);
+  //   const id = setInterval(() => console.log(asyncStateEntries), 5000);
   //   return () => clearInterval(id);
   // }, []);
 

@@ -15,7 +15,7 @@ export default function useRawAsyncState(asyncState, dependencies, configuration
   // if rendering with a null value, construct the return value
   if (!returnValue.current) {
     returnValue.current = {};
-    const calculatedState = calculateSelectedState(asyncState.currentState, configuration);
+    const calculatedState = calculateSelectedState(asyncState.currentState, asyncState.lastSuccess, configuration);
     applyUpdateOnReturnValue(returnValue.current, asyncState, calculatedState, run, runAsyncState);
   }
 
@@ -28,7 +28,7 @@ export default function useRawAsyncState(asyncState, dependencies, configuration
     const rerenderStatusConfig = shallowClone(defaultRerenderStatusConfig, rerenderStatus);
 
     return asyncState.subscribe(function onUpdate(newState) {
-      const calculatedState = calculateSelectedState(newState, configuration);
+      const calculatedState = calculateSelectedState(newState, asyncState.lastSuccess, configuration);
       const prevStateValue = returnValue.current.state;
       applyUpdateOnReturnValue(returnValue.current, asyncState, calculatedState, run, runAsyncState);
 
@@ -71,9 +71,9 @@ export default function useRawAsyncState(asyncState, dependencies, configuration
   return returnValue.current;
 }
 
-function calculateSelectedState(newState, configuration) {
+function calculateSelectedState(newState, lastSuccess, configuration) {
   const {selector} = configuration;
-  return typeof selector === "function" ? selector(newState) : newState;
+  return typeof selector === "function" ? selector(newState, lastSuccess) : newState;
 }
 
 function applyUpdateOnReturnValue(returnValue, asyncState, stateValue, run, runAsyncState) {

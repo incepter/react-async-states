@@ -19,7 +19,7 @@ export const AsyncStateSubscriptionMode = Object.freeze({
 });
 
 export function inferSubscriptionMode(contextValue, configuration) {
-  const {fork, hoistToProvider} = configuration;
+  const {fork, hoistToProvider, promise} = configuration;
   const existsInProvider = !!contextValue.get(configuration.key);
 
   // early decide that this is a listener and return it immediately
@@ -28,7 +28,7 @@ export function inferSubscriptionMode(contextValue, configuration) {
     return AsyncStateSubscriptionMode.LISTEN;
   }
 
-  if (!hoistToProvider && !fork) { // we dont want to hoist or fork
+  if (!hoistToProvider && !fork && promise) { // we dont want to hoist or fork
     return AsyncStateSubscriptionMode.STANDALONE;
   }
 
@@ -82,10 +82,6 @@ export const defaultUseASConfig = Object.freeze({
 
   areEqual: shallowEqual,
   selector: oneObjectIdentity,
-
-  promise() {
-    return undefined;
-  },
 });
 
 function NoOp() {
@@ -93,8 +89,5 @@ function NoOp() {
 
 const waitingAsyncState = new AsyncState(
   "waiting_async_state",
-  function promise() {
-    return new Promise(NoOp);
-  },
   {}
 );

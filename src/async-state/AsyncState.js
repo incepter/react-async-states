@@ -51,7 +51,7 @@ AsyncState.prototype.setState = function setState(newState, notify = true) {
   logInDevStateChange(this.key, this.currentState);
 
   if (this.currentState.status === AsyncStateStatus.success) {
-    this.lastSuccess = shallowClone(this.currentState);
+    this.lastSuccess = this.currentState;
   }
 
   if (this.currentState.status !== AsyncStateStatus.pending) {
@@ -98,7 +98,7 @@ AsyncState.prototype.run = function run(...execArgs) {
     aborted: false,
     payload: this.payload,
     executionArgs: execArgs,
-    lastSuccess: shallowClone(this.lastSuccess),
+    lastSuccess: this.lastSuccess,
     onAbort(cb) {
       userAborters.push(cb);
     }

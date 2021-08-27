@@ -111,6 +111,8 @@ Here is the road map and the list of things that should be added before talking 
 - [ ] support concurrent mode to add a special mode with suspending abilities
 - [ ] support server side rendering
 
+A [trello board](https://trello.com/b/Xx23e0Dc/react-async-states) was created for better team organization.
+
 ## Core concepts
 
 This library tries to automate and facilitate subscriptions to states along with their updates, while having the ability

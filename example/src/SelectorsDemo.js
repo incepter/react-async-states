@@ -1,20 +1,18 @@
 import React from "react";
-import { useAsyncState } from "react-async-states";
+import { useAsyncState, createReducerPromise } from "react-async-states";
 
-const size = 200;
+function reducer(old, name, value) {
+  return {...old, [name]: value};
+}
+
+const size = 3;
 export default function Demo() {
   useAsyncState({
     key: "login-form",
-    promise(argv) {
-      const [name, value] = argv.executionArgs;
-      if (!name) {
-        return argv.lastSuccess.data;
-      }
-      return {...argv.lastSuccess.data, [name]: value};
-    },
     hoistToProvider: true,
-    rerenderStatus: {pending: false, success: false},
-    initialValue: {}
+    initialValue: {hello: "world!"},
+    promise: createReducerPromise(reducer),
+    rerenderStatus: {pending: false, success: false}
   });
 
   return (

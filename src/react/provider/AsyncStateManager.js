@@ -1,9 +1,9 @@
 import AsyncState from "../../async-state/AsyncState";
 import { createAsyncStateEntry, runScheduledAsyncState } from "./providerUtils";
 import { logger } from "../../logger";
-import { identity } from "../../shared";
+import { asyncify, identity, shallowClone } from "../../shared";
 
-export function AsyncStateManager(asyncStateEntries) {
+export function AsyncStateManager(asyncStateEntries, oldManager) {
   function get(key) {
     return asyncStateEntries[key]?.value;
   }
@@ -34,7 +34,7 @@ export function AsyncStateManager(asyncStateEntries) {
     if (!asyncStateEntry.initiallyHoisted && didDispose) {
       logger.info(`[provider][${key}] dispose`);
       delete asyncStateEntries[key];
-      notifyWatchers(key, null);
+      asyncify(notifyWatchers)(key, null);
     }
 
     return didDispose;
@@ -49,12 +49,12 @@ export function AsyncStateManager(asyncStateEntries) {
     const forkedAsyncState = asyncState.fork(forkConfig);
     asyncStateEntries[forkedAsyncState.key] = createAsyncStateEntry(forkedAsyncState);
 
-    notifyWatchers(forkedAsyncState.key, asyncStateEntries[forkedAsyncState.key].value);
+    asyncify(notifyWatchers)(forkedAsyncState.key, asyncStateEntries[forkedAsyncState.key].value);
 
     return forkedAsyncState;
   }
 
-  let watchers = {};
+  let watchers = shallowClone(oldManager?.watchers);
 
   function watch(key, notify) {
     if (!watchers[key]) {
@@ -66,7 +66,7 @@ export function AsyncStateManager(asyncStateEntries) {
     keyWatchers.watchers[index] = {notify, cleanup};
 
     function cleanup() {
-      delete keyWatchers[index];
+      delete keyWatchers.watchers[index];
     }
 
     return cleanup;
@@ -87,8 +87,8 @@ export function AsyncStateManager(asyncStateEntries) {
     const existing = get(key);
     if (existing && !hoistToProviderConfig.override) {
       return existing;
-    }
 
+    }
     if (existing) {
       let didDispose = dispose(existing);
       if (!didDispose) {
@@ -99,7 +99,7 @@ export function AsyncStateManager(asyncStateEntries) {
     asyncStateEntries[key] = createAsyncStateEntry(new AsyncState(key, promise, {lazy, initialValue}));
 
     const returnValue = get(key);
-    notifyWatchers(key, returnValue); // returnValue is an AsyncState or undefined
+    asyncify(notifyWatchers)(key, returnValue); // returnValue is an AsyncState or undefined
 
     return returnValue;
   }
@@ -135,5 +135,5 @@ export function AsyncStateManager(asyncStateEntries) {
   //
   // }
 
-  return {run, get, fork, select, hoist, dispose, watch, runAsyncState};
+  return {run, get, fork, select, hoist, dispose, watch, runAsyncState, watchers};
 }
