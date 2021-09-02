@@ -33,8 +33,8 @@ export default function Navigation() {
     <ul style={{display: "flex", justifyContent: 'space-around'}}>
       <li>
         {/*<div style={{display: "flex", flexDirection: "column"}}>*/}
-          <Resume/>
-          <ResumeS/>
+        <Resume/>
+        <ResumeS/>
         {/*</div>*/}
       </li>
       <li>
