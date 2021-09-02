@@ -69,19 +69,25 @@ function UndefinedPromiseDemo() {
 }
 
 function UndefinedPromiseDemoHoister() {
-  const {state: {data}} = useAsyncState({key: "user_input", initialValue: "Type something", hoistToProvider: true});
+  const {state} = useAsyncState({
+    lazy: true,
+    key: "user_input",
+    selector: s => s.data,
+    hoistToProvider: true,
+    initialValue: "Type something",
+  });
 
   return (
     <div>
-      <h3>user input value: {data}</h3>
+      <h3>user input value: {state}</h3>
     </div>
   );
 }
 
 function UndefinedPromiseDemoConsumer() {
-  const {state: {data}, replaceState} = useAsyncState("user_input");
+  const {state: {data}, run} = useAsyncState("user_input");
   return (
-    <input style={{backgroundColor: "gray", border: "2px solid red"}} onChange={e => replaceState(e.target.value)}
+    <input style={{backgroundColor: "gray", border: "2px solid red"}} onChange={e => run(e.target.value)}
            value={data} placeholder="type something"/>
   );
 }

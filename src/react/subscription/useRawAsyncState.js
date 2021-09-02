@@ -83,6 +83,12 @@ function applyUpdateOnReturnValue(returnValue, asyncState, stateValue, run, runA
 
   returnValue.key = asyncState.key;
 
+  if (!returnValue.mergePayload) {
+    returnValue.mergePayload = function mergePayload(newPayload) {
+      asyncState.payload = shallowClone(asyncState.payload, newPayload);
+    }
+  }
+
   if (!returnValue.run) {
     returnValue.run = typeof run === "function" ? run : asyncState.run.bind(asyncState);
   }
