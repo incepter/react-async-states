@@ -56,7 +56,7 @@ export default function useRawAsyncState(asyncState, dependencies, configuration
   }, [asyncState]);
 
   // automatic run if not marked as lazy
-  React.useEffect(function runAsyncState() {
+  React.useEffect(function autoRunAsyncState() {
     if (!asyncState || !configuration.condition || asyncState.config.lazy || configuration.lazy) {
       return undefined;
     }

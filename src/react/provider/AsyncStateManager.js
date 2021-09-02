@@ -104,10 +104,16 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
     return returnValue;
   }
 
-  function select(keys, selector = identity) {
-    const effectiveKeys = Array.isArray(keys) ? keys : [keys];
+  function selectIncludeKeyReducer(result, key) {
+    result[key] = get(key)?.currentState;
+    return result;
+  }
 
-    return selector(...effectiveKeys.map(key => get(key)?.currentState));
+  function select(keys, selector = identity, reduceToObject = false) {
+    if (reduceToObject) {
+      return selector(keys.reduce(selectIncludeKeyReducer, {}));
+    }
+    return selector(...keys.map(key => get(key)?.currentState));
   }
 
   //
@@ -135,5 +141,9 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
   //
   // }
 
-  return {run, get, fork, select, hoist, dispose, watch, runAsyncState, watchers};
+  function getAllKeys() {
+    return Object.keys(asyncStateEntries);
+  }
+
+  return {run, get, fork, select, hoist, dispose, watch, runAsyncState, getAllKeys, watchers};
 }

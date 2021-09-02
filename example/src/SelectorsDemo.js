@@ -1,11 +1,11 @@
 import React from "react";
-import { useAsyncState, createReducerPromise } from "react-async-states";
+import { useAsyncStateSelector, useAsyncState, createReducerPromise } from "react-async-states";
 
 function reducer(old, name, value) {
   return {...old, [name]: value};
 }
 
-const size = 3;
+const size = 30;
 export default function Demo() {
   useAsyncState({
     key: "login-form",
@@ -19,9 +19,29 @@ export default function Demo() {
     <div>
       <h3>This is a controlled dynamic login form of size: {size}</h3>
       <DynamicForm initialSize={size}/>
+      <hr />
+      <div>
+        <h3>Function selector</h3>
+        <FunctionSelectorDemo />
+      </div>
     </div>
   );
 }
+
+function keysSelector(allKeys) {
+  return allKeys.filter(key => key.match(new RegExp('timeout|login-form', 'g')));
+}
+
+function selectorFunctionDemo(states) {
+  return states;
+}
+
+function FunctionSelectorDemo() {
+  const t = useAsyncStateSelector(keysSelector, selectorFunctionDemo);
+
+  return JSON.stringify(t);
+}
+
 
 function DynamicForm({ initialSize}) {
   const name = React.useRef();

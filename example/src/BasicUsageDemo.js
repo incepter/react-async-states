@@ -63,7 +63,7 @@ function UndefinedPromiseDemo() {
     <>
       <UndefinedPromiseDemoHoister/>
       <UndefinedPromiseDemoConsumer/>
-      {/*<UndefinedPromiseDemoSelector/>*/}
+      <UndefinedPromiseDemoSelector/>
     </>
   );
 }

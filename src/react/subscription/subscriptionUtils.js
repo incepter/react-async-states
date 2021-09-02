@@ -72,7 +72,6 @@ export function deduceAsyncState(mode, configuration, contextValue) {
 }
 
 export const defaultUseASConfig = Object.freeze({
-  lazy: true,
   fork: false,
   condition: true,
   hoistToProvider: false,

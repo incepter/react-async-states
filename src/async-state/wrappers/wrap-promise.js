@@ -15,6 +15,7 @@ export function wrapPromise(asyncState) {
   }
   return function promiseFuncImpl(...args) {
     let runningPromise;
+    // todo: catch this execution
     const executionValue = asyncState.originalPromise(...args);
 
     const clonedArgs = cloneArgs(args);
@@ -27,7 +28,7 @@ export function wrapPromise(asyncState) {
       asyncState.setState(AsyncStateStateBuilder.pending(clonedArgs));
       runningPromise = executionValue;
     } else { // final value
-      logger.info(`[${asyncState.key}][resolved immediately] - skiping the pending state`);
+      logger.info(`[${asyncState.key}][resolved immediately] - skipping the pending state`);
       asyncState.setState(AsyncStateStateBuilder.success(executionValue, clonedArgs));
       return;
     }
