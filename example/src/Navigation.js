@@ -13,12 +13,16 @@ function Resume() {
   return <span>{state}</span>;
 }
 
-const exampleSelector = (lf, ui) => {
+const exampleSelector = ({["login-form"]: lf, ["user_input"]: ui}) => {
   return [Object.entries(lf?.data ?? {}).map(([key, value]) => `${key}=${value}`).join('&'), ui?.data];
 };
 
+function keysSelector() {
+  return ["login-form", "user_input"];
+}
+
 function ResumeS() {
-  const [state, ui] = useAsyncStateSelector(["login-form", "user_input"], exampleSelector);
+  const [state, ui] = useAsyncStateSelector(keysSelector, exampleSelector);
 
   // console.log('________', state, ui)
   return <span>{state} - {ui}</span>;
@@ -29,8 +33,8 @@ export default function Navigation() {
     <ul style={{display: "flex", justifyContent: 'space-around'}}>
       <li>
         {/*<div style={{display: "flex", flexDirection: "column"}}>*/}
-        {/*  <Resume/>*/}
-        {/*  <ResumeS/>*/}
+          <Resume/>
+          <ResumeS/>
         {/*</div>*/}
       </li>
       <li>

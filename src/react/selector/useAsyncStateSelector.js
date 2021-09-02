@@ -16,7 +16,7 @@ function readSelectorKeys(keys, availableKeys) {
 }
 
 export function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual, initialValue = undefined) {
-  const {get, watch, dispose, select, getAllKeys} = React.useContext(AsyncStateContext);
+  const {get, watch, dispose, select, getAllKeys, watchAll} = React.useContext(AsyncStateContext);
 
   const effectiveKeys = React.useMemo(function deduceKeys() {
     return readSelectorKeys(keys, getAllKeys());
@@ -38,6 +38,12 @@ export function useAsyncStateSelector(keys, selector = identity, areEqual = shal
 
   React.useLayoutEffect(function watchAndSubscribeAndCleanOldSubscriptions() {
     let cleanups = [];
+
+    if (typeof keys === "function") {
+      cleanups.push(watchAll(function onSomethingHoisted() {
+        setReturnValue(selectValues());
+      }));
+    }
 
     function watcher(newValue) {
       if (newValue) {

@@ -33,6 +33,7 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
       watch: manager.watch,
       select: manager.select,
       dispose: manager.dispose,
+      watchAll: manager.watchAll,
       getAllKeys: manager.getAllKeys,
       runAsyncState: manager.runAsyncState,
     };
