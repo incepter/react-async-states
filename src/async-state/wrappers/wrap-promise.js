@@ -11,7 +11,9 @@ export function wrapPromise(asyncState) {
   // identifies promises that will be used with replaceState rather than run;
   // this allows the developer to omit the promise attribute.
   if (typeof asyncState.originalPromise !== "function") {
-    return returnsUndefined;
+    return function delegateToReplaceState(argv) {
+      return asyncState.replaceState(argv.executionArgs[0]);
+    }
   }
   return function promiseFuncImpl(...args) {
     let runningPromise;
