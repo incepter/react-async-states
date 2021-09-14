@@ -1,9 +1,0 @@
-{
-  "manifest_version" : 2,
-  "name" : "React Async States Dev Tools",
-  "version" : "0.1",
-  "description" : "Developer tools for react-async-states",
-  "author" : "INCEPTER",
-
-  "devtools_page" : "html/devtools.html"
-}

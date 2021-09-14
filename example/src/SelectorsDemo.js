@@ -8,6 +8,7 @@ function reducer(old, name, value) {
 const size = 30;
 export default function Demo() {
   useAsyncState({
+    lazy: true,
     key: "login-form",
     hoistToProvider: true,
     initialValue: {hello: "world!"},
@@ -64,6 +65,7 @@ function DynamicForm({ initialSize}) {
 
 function Input({name}) {
   const {state, run} = useAsyncState({
+    lazy: true,
     key: "login-form",
     selector: state => state.data[name],
   }, [name]);

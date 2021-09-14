@@ -38,10 +38,10 @@ Let's explore these APIs signatures first, it will give you the overall idea abo
 // config: string | object | function
 function useAsyncState(config, dependencies = []) {
   // state is whatever your selector returns, by default will return the whole state object with args and status
-  return { key, run, abort, state, replaceState, runAsyncState};
+  return { key, run, abort, state, replaceState, runAsyncState, mergePayload };
 }
 
-// keys: string or array (or function: not yet)
+// keys: string or array or function
 function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual, initialValue = undefined) {
   // returns whathever the selector returns (or initialValue)
 }

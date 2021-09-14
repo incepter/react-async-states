@@ -8593,7 +8593,7 @@ react-app-polyfill@^1.0.6:
     regenerator-runtime "^0.13.3"
     whatwg-fetch "^3.0.0"
 
-"react-async-states@link:..":
+"react-async-states@link:../react-async-states":
   version "0.0.0"
   uid ""
 
@@ -8736,7 +8736,7 @@ react-scripts@^3.0.1:
   optionalDependencies:
     fsevents "2.1.2"
 
-"react@link:../node_modules/react":
+"react@link:../react-async-states/node_modules/react":
   version "0.0.0"
   uid ""
 

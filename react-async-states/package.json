@@ -28,8 +28,8 @@
     "src/index.js"
   ],
   "scripts": {
-    "test": "cross-env CI=1 react-scripts test --env=jsdom",
-    "test:watch": "react-scripts test --env=jsdom",
+    "test": "cross-envCI=1react-scriptstest--env=jsdom",
+    "test:watch": "react-scriptstest--env=jsdom",
     "build": "cross-env NODE_ENV=production webpack --config ./webpack/webpack.prod.config.js --color --progress --mode production",
     "start": "cross-env NODE_ENV=development webpack --watch --config ./webpack/webpack.dev.config.js --color --progress --mode development",
     "prepare": "yarn run build",
@@ -62,7 +62,7 @@
     "@babel/preset-react": "^7.0.0",
     "@testing-library/react-hooks": "^3.2.1",
     "babel-eslint": "^10.0.1",
-    "babel-loader": "^8.2.2",
+    "babel-loader": "8.1.0",
     "circular-dependency-plugin": "^5.2.2",
     "compression-webpack-plugin": "^8.0.1",
     "cross-env": "^5.2.0",
@@ -75,7 +75,7 @@
     "eslint-plugin-standard": "^3.1.0",
     "gh-pages": "^2.0.1",
     "react": "^16.9.0",
-    "react-scripts": "^3.4.0",
+    "react-scripts": "^4.0.3",
     "react-test-renderer": "^16.9.0",
     "terser-webpack-plugin": "^4.2.3",
     "webpack": "^5.47.1",

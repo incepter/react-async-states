@@ -1,0 +1,28 @@
+{
+  "manifest_version" : 2,
+  "name" : "React Async States Dev Tools",
+  "version" : "0.1",
+  "description" : "Developer tools for react-async-states",
+  "author" : "INCEPTER",
+
+  "devtools_page" : "index.html",
+
+  "background": {
+    "scripts": [
+      "background.js"
+    ],
+    "persistent": false
+  },
+  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "contentScript.js"
+      ],
+      "run_at": "document_start"
+    }
+  ]
+}
