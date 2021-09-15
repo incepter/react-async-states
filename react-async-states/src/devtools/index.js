@@ -9,6 +9,9 @@ const DEV_TOOLS_EVENTS = Object.freeze({
     dispose: 4,
     run: 5,
   },
+  provider: {
+    list: 6,
+  }
 });
 
 const allowedOrigins = "*";
@@ -66,7 +69,15 @@ const devtools = Object.freeze((function () {
         asyncState.key,
         {config: asyncState.config, state: asyncState.currentState}
       );
-    }
+    },
+    emitProvider(entries) {
+      emit(
+        DEV_TOOLS_EVENTS.provider.list,
+        null,
+        {entries: formatEntriesToDevtools(entries)}
+      );
+      currentUpdate = null;
+    },
   };
 }()));
 
@@ -109,6 +120,15 @@ function getPayloadForEventAndContext(eventType, asyncState, context) {
       };
     }
   }
+}
+
+function formatEntriesToDevtools(entries) {
+  return Object.entries(entries).reduce((result, [key, entry]) => {
+    result[key] = {};
+    result[key].state = entry.value.currentState;
+    result[key].lastSuccess = entry.value.lastSuccess;
+    return result;
+  }, {});
 }
 
 export default devtools;

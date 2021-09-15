@@ -1,50 +1,45 @@
-let tabPorts = {};
-// Receive message from content script and relay to the devTools page for the
-// current tab
-/*
- * agent -> content-script.js -> **background.js** -> dev tools
- */
-chrome.runtime.onMessage.addListener((message, sender) => {
-  console.log("background->message", message);
-  const port = sender.tab && sender.tab.id !== undefined && tabPorts[sender.tab.id];
+chrome.runtime.onMessage.addListener(forwardToContentScriptFromBackground);
+chrome.runtime.onConnect.addListener(forwardToBackgroundFromDevtools);
+
+let ports = {};
+
+function forwardToContentScriptFromBackground(message, sender) {
+  const port = sender.tab && sender.tab.id !== undefined && ports[sender.tab.id];
+  console.log('sending to devtools from background', message, sender?.tab?.id, ports[sender?.tab?.id], sender);
   if (port) {
-    console.log("background->port", port);
     port.postMessage(message);
-  } else {
   }
   return true;
-});
+}
 
-/*
- * agent <- content-script.js <- **background.js** <- dev tools
- */
-chrome.runtime.onConnect.addListener(port => {
-  console.log('ON CONNECT - bg.js');
+function forwardToBackgroundFromDevtools(port) {
   let tabId;
   port.onMessage.addListener(message => {
-    console.log('bg.js, onConnect, onMessage,', message);
-    if (message.name === "init") {
-      // set in devtools.ts
-      if (!tabId) {
-        // this is a first message from devtools so let's set the tabId-port mapping
-        tabId = message.tabId;
-        tabPorts[tabId] = port;
-      }
+    if (message.source !== "async-states-devtools-panel") {
+      return;
     }
-    if (message.name && message.name === "action" && message.data) {
-      const conn = tabPorts[tabId];
-      if (conn) {
-        console.log("background->contentScript", message);
-        chrome.tabs.sendMessage(tabId, message);
+    if (message.name === "init") {
+      if (tabId && ports[tabId]) {
+        ports[tabId].disconnect?.();
+        delete ports[tabId];
       }
+      tabId = message.tabId;
+      ports[tabId] = port;
+      return;
+    }
+    if (!tabId) {
+      return;
+    }
+    console.log('sending to', tabId, message);
+    if (ports[tabId]) {
+      chrome.tabs.sendMessage(tabId, message);
     }
   });
 
   port.onDisconnect.addListener(() => {
-    delete tabPorts[tabId];
+    delete ports[tabId];
   });
-});
-
+}
 
 chrome.runtime.onInstalled.addListener(detail => {
   console.log("On Installed", detail);

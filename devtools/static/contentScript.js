@@ -1,32 +1,23 @@
-/*
-* agent -> **content-script.js** -> background.js -> dev tools
-*/
-window.addEventListener("message", (event) => {
-  // Only accept messages from the same frame
-  if (event.source !== window) {
-    return;
-  }
-
-  const message = event.data;
-
-  // Only accept messages that we know are ours
-  if (typeof message !== "object" || message === null ||
-    !!message.source && message.source !== "async-states-agent") {
-    return;
-  }
-  if (chrome.runtime && !!chrome.runtime.getManifest()) {
-    chrome.runtime.sendMessage(message);
-  } else {
-    console.log("Cannot send the message because of the Chrome Runtime manifest not available")
-  }
+const port = window.chrome.runtime.connect({
+  name: 'content-script',
 });
 
+chrome.runtime.onMessage.addListener(forwardFromBackgroundToPage);
+window.addEventListener('message', forwardFromPageToBackground);
 
+function forwardFromBackgroundToPage(message) {
+  if (message.source !== "async-states-devtools-panel") {
+    return;
+  }
+  window.postMessage(message, '*');
+}
 
-/*
- * agent <- **content-script.js** <- background.js <- dev tools
- */
-chrome.runtime.onMessage.addListener((request) => {
-  request.source = 'dataaccessgateway-devtools';
-  window.postMessage(request, '*');
-});
+function forwardFromPageToBackground(event) {
+  if (
+    event.source === window &&
+    event.data &&
+    event.data.source === 'async-states-agent'
+  ) {
+    chrome.runtime.sendMessage(event.data);
+  }
+}

@@ -3,6 +3,7 @@ import { AsyncStateContext } from "../context";
 import { EMPTY_ARRAY, EMPTY_OBJECT, shallowClone } from "../../shared";
 import { createInitialAsyncStatesReducer } from "./providerUtils";
 import { AsyncStateManager } from "./AsyncStateManager";
+import useProviderDevtools from "../../devtools/useProviderDevtools";
 
 export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsyncStates = EMPTY_ARRAY}) {
   const managerRef = React.useRef();
@@ -14,6 +15,7 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
     const initialValue = shallowClone(entriesRef.current);
     return Object.values(initialAsyncStates).reduce(createInitialAsyncStatesReducer, initialValue);
   }, [initialAsyncStates]);
+  useProviderDevtools(asyncStateEntries);
 
   const contextValue = React.useMemo(function getProviderValue() {
     let manager = managerRef.current;
