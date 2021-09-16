@@ -11,14 +11,14 @@ export default function useProviderDevtools(entries) {
   React.useLayoutEffect(function waitForDevtoolsAndEmit() {
     console.log('provider effect');
     function listener(message) {
-      if (message.data?.source !== "async-states-devtools-panel" || message.data?.type !== devtoolsRequests.provider) {
+      if (message.data?.source !== "async-states-devtools-panel") {
         return;
       }
-      if (message.data?.source === "async-states-devtools-panel" && message.data?.type === devtoolsRequests.connect) {
-        devtools.connect();
+      devtools.connect();
+      if (message.data?.type === devtoolsRequests.provider) {
+        devtools.emitProviderState(entries);
       }
 
-      devtools.emitProviderState(entries);
       console.log('________', message.data);
     }
     window.addEventListener("message", listener)
