@@ -1,6 +1,3 @@
-/**
- * global chrome
- */
 import React from "react";
 
 
@@ -14,7 +11,7 @@ function App() {
     console.log('port', port.current)
 
     port.current.postMessage({
-      name: "init",
+      type: "init",
       source: "async-states-devtools-panel",
       tabId: window.chrome.devtools.inspectedWindow.tabId
     });
@@ -28,7 +25,6 @@ function App() {
     });
 
     port.current.postMessage({
-      name: "ping",
       type: "request-provider",
       payload: {hello: "devtools_open"},
       source: "async-states-devtools-panel"
