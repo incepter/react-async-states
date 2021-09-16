@@ -8,7 +8,7 @@ export default function Demo() {
   const history = useHistory();
   const params = useParams();
 
-  const {state: {status, data}, lastSuccess} = useAsyncState({
+  const {state: {status, data}, lastSuccess, abort} = useAsyncState({
     key: demoAsyncStates.getUser.key,
     payload: {matchParams: params},
     rerenderStatus: {pending: true}
@@ -26,6 +26,7 @@ export default function Demo() {
       </form>
       {status === "pending" && (
         <>
+          <button onClick={() => abort()}>Abort</button>
           <span>Loading...</span>
           <pre>
             {JSON.stringify(lastSuccess, null, "  ")}

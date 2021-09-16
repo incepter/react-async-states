@@ -2,6 +2,7 @@ import React from "react";
 import useRerender from "../utils/useRerender";
 import { defaultRerenderStatusConfig } from "./subscriptionUtils";
 import { shallowClone } from "../../shared";
+import devtools from "../../devtools/devtools";
 
 export default function useRawAsyncState(asyncState, dependencies, configuration, run, dispose, runAsyncState) {
   const rerender = useRerender();
@@ -39,6 +40,7 @@ export default function useRawAsyncState(asyncState, dependencies, configuration
       const {areEqual} = configuration;
       if (!areEqual(prevStateValue, calculatedState)) {
         rerender({});
+        devtools.emitAsyncState(asyncState);
       }
     });
   }, [...dependencies, asyncState]);

@@ -2,13 +2,13 @@
  * when a message is received from content-script
  * we send it to the corresponding devtools port
  */
-chrome.runtime.onMessage.addListener(onMessageFromContentScript); // content-script -> background (here) -> devtools
+window.chrome.runtime.onMessage.addListener(onMessageFromContentScript); // content-script -> background (here) -> devtools
 /**
  * when devtools is connected, we listen to messages from it
  * and send them to content-script
  * devtools -> background (here) -> content-script
  */
-chrome.runtime.onConnect.addListener(onDevtoolsConnect);
+window.chrome.runtime.onConnect.addListener(onDevtoolsConnect);
 
 
 let ports = {};
@@ -51,3 +51,16 @@ function onDevtoolsConnect(port) {
     delete ports[tabId];
   }
 }
+
+chrome.runtime.onInstalled.addListener(detail => {
+  console.log("On Installed", detail);
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === "complete") {
+    chrome.tabs.sendMessage(tabId, {
+      type: "get-provider-state",
+      source: "async-states-devtools-panel"
+    });
+  }
+});

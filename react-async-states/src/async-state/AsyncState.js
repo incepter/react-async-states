@@ -12,7 +12,6 @@ import {
   warnDevAboutUndefinedPromise,
   warnInDevAboutRunWhilePending
 } from "../utils";
-import devtools from "../devtools";
 
 export const defaultASConfig = Object.freeze({lazy: true, initialValue: null});
 
@@ -41,11 +40,9 @@ function AsyncState(key, promise, config) {
   this.locks = 0;
 
   Object.preventExtensions(this);
-  devtools.emitCreation(this);
 }
 
 AsyncState.prototype.setState = function setState(newState, notify = true) {
-  devtools.startUpdate(this);
   if (typeof newState === "function") {
     this.currentState = newState(this.currentState);
   } else {
@@ -61,7 +58,6 @@ AsyncState.prototype.setState = function setState(newState, notify = true) {
     this.currentAborter = null;
   }
 
-  devtools.emitUpdate(this);
   if (notify) {
     notifySubscribers(this);
   }
@@ -123,7 +119,6 @@ AsyncState.prototype.run = function run(...execArgs) {
   }
 
   logInDevPromiseRun(this.key, argsObject);
-  devtools.emitRun(this, argsObject);
   this.promise(argsObject);
   this.currentAborter = abort;
   return abort;

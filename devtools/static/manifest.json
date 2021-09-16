@@ -27,7 +27,6 @@
   ],
   "web_accessible_resources": [
     "index.html",
-    "backend.js",
     "contentScript.js",
     "background.js",
     "main.js"

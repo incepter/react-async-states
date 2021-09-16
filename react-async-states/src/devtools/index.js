@@ -21,7 +21,7 @@ function emit(eventType, key, payload) {
   window.postMessage({eventType, key, payload: JSON.parse(JSON.stringify(payload)), source}, allowedOrigins);
 }
 
-const devtools = Object.freeze((function () {
+const devtools_old = Object.freeze((function () {
   let currentUpdate = null;
   return {
     emitCreation(asyncState) {
@@ -131,4 +131,4 @@ function formatEntriesToDevtools(entries) {
   }, {});
 }
 
-export default devtools;
+export default devtools_old;

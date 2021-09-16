@@ -15,7 +15,7 @@ function onMessageFromBackground(message) {
   window.postMessage(message, '*');
 }
 
-function onMessageFromPage(event) {
+function onMessageFromPage(event) { // page -> content-script (here) -> background
   if (
     event.source === window &&
     event.data &&
