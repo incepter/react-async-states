@@ -16,11 +16,19 @@ function readSelectorKeys(keys, availableKeys) {
 }
 
 export function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual, initialValue = undefined) {
-  const {get, watch, dispose, select, getAllKeys, watchAll} = React.useContext(AsyncStateContext);
+  const {get, dispose, getAllKeys, watchAll} = React.useContext(AsyncStateContext);
 
-  const effectiveKeys = React.useMemo(function deduceKeys() {
-    return readSelectorKeys(keys, getAllKeys());
+  const asMap = React.useMemo(function deduceKeys() {
+    return readSelectorKeys(keys, getAllKeys())
+      .reduce((result, key) => {
+        result[key] = get(key) || null;
+        return result;
+      }, {});
   }, [keys, getAllKeys]);
+
+  const dependencies = React.useMemo(function getEffectDependencies() {
+    return [...Object.keys(asMap), watchAll, dispose, selector]
+  }, [asMap, watchAll, dispose, selector]);
 
   const [returnValue, setReturnValue] = React.useState(function getInitialState() {
     return selectValues() || initialValue;
@@ -28,7 +36,18 @@ export function useAsyncStateSelector(keys, selector = identity, areEqual = shal
 
   function selectValues() {
     const reduceToObject = typeof keys === "function";
-    const selectedValue = select(effectiveKeys, selector, reduceToObject);
+
+    let selectedValue;
+    if (reduceToObject) {
+      selectedValue = selector(
+        Object.entries(asMap).reduce((result, [key, as]) => {
+          result[key] = as?.currentState;
+          return result;
+        }, {})
+      );
+    } else {
+      selectedValue = selector(Object.values(asMap).map(t => t?.currentState))
+    }
 
     if (!areEqual(returnValue, selectedValue)) {
       return selectedValue;
@@ -39,39 +58,39 @@ export function useAsyncStateSelector(keys, selector = identity, areEqual = shal
   React.useLayoutEffect(function watchAndSubscribeAndCleanOldSubscriptions() {
     let cleanups = [];
 
-    if (typeof keys === "function") {
-      cleanups.push(watchAll(function onSomethingHoisted() {
-        setReturnValue(selectValues());
-      }));
-    }
-
-    function watcher(newValue) {
-      if (newValue) {
-        // appearance
-        cleanups.push(newValue.subscribe(subscription));
-        cleanups.push(function disposeAs() {dispose(newValue)});
-      }
-      // disappearances should not occur because they are being watched from here
-      setReturnValue(selectValues());
-    }
-
     function subscription() {
       setReturnValue(selectValues());
     }
 
-    effectiveKeys.forEach(function subscribeOrWaitFor(key) {
-      const asyncState = get(key);
-      cleanups.push(watch(key, watcher)); // watch for the key
+    Object.values(asMap).forEach(function subscribeOrWaitFor(asyncState) {
       if (asyncState) {
         cleanups.push(asyncState.subscribe(subscription));
-        cleanups.push(function disposeAs() {dispose(asyncState)});
+        cleanups.push(function disposeAs() {
+          dispose(asyncState)
+        });
       }
     });
+
+    cleanups.push(watchAll(function onSomethingHoisted(asyncState, notificationKey) {
+      if (asMap[notificationKey] || asMap[notificationKey] === undefined) {
+        return;
+      }
+      // appearance
+      if (asyncState && asMap[notificationKey] === null) {
+        asMap[notificationKey] = asyncState;
+        cleanups.push(asyncState.subscribe(subscription));
+        cleanups.push(function disposeAs() {
+          dispose(asyncState)
+        });
+      }
+      // disappearances should not occur because they are being watched from here
+      setReturnValue(selectValues());
+    }));
 
     return function invokeOldCleanups() {
       cleanups.forEach(invokeIfPresent);
     };
-  }, [...effectiveKeys, selector]);
+  }, dependencies);
 
   return returnValue;
 }

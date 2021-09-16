@@ -10,7 +10,6 @@ export default function useProviderDevtools(entries) {
   React.useEffect(function waitForDevtoolsAndEmit() {
     console.log('provider effect');
     function listener(message) {
-      console.log("proviiiiiiiiiiiiiiiiiiiiiiiiiiiider", message.data?.source, message.data)
       if (message.data?.source !== "async-states-devtools-panel" || message.data?.type !== "request-provider") {
         return;
       }

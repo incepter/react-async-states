@@ -83,11 +83,11 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
       return;
     }
     Object.values(watchers[key].watchers).forEach(function notifyWatcher(watcher) {
-      watcher.notify(value);
+      watcher.notify(value, key);
     })
     if (watchers[allWatchersKey]?.watchers) {
       Object.values(watchers[allWatchersKey].watchers).forEach(function notifyWatcher(watcher) {
-        watcher.notify(value);
+        watcher.notify(value, key);
       })
     }
   }

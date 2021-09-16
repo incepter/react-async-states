@@ -32,10 +32,7 @@ export default function Navigation() {
   return (
     <ul style={{display: "flex", justifyContent: 'space-around'}}>
       <li>
-        {/*<div style={{display: "flex", flexDirection: "column"}}>*/}
-        <Resume/>
         <ResumeS/>
-        {/*</div>*/}
       </li>
       <li>
         <Link to="/">Basique usage</Link>
