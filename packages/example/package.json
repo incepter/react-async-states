@@ -8,11 +8,11 @@
     "axios": "^0.21.1",
     "lodash": "^4.17.21",
     "prop-types": "^15.6.2",
-    "react": "link:../react-async-states/node_modules/react",
-    "react-async-states": "link:../react-async-states",
+    "react": "^16.9.0",
+    "react-async-states": "0.0.1-rc-1",
     "react-dom": "^16.9.0",
     "react-router-dom": "^5.2.0",
-    "react-scripts": "^3.0.1"
+    "react-scripts": "4.0.3"
   },
   "scripts": {
     "start": "react-scripts start",
