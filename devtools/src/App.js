@@ -36,7 +36,6 @@ function App() {
     port.current = window.chrome.runtime.connect({
       name: "panel"
     });
-    console.log('port', port.current)
 
     port.current.postMessage({
       type: "init",
@@ -71,28 +70,66 @@ function App() {
     <div>
       <header>
         {!entries.length && <p>
-          Hello
+          Nothing to show
         </p>}
-        {entries && (
-          <div style={{display: "flex", flexWrap: "wrap", overflow: "auto"}}>
-            {entries.map(([key, value]) => (
-              <div key={key} style={{padding: 8, minWidth: 300}}>
-                <div style={{border: "1px solid white", borderRadius: "1rem", padding: "1rem", color: "white"}}>
-                  <ReactJson name={`${key} - ${value.state.status}`} style={{borderRadius: 8, padding: "1rem"}}
-                             theme="monokai"
-                             collapsed={2}
-                             src={value}
-                             displayArrayKey={false}
-                             displayDataTypes={false}
-                             displayObjectSize={false}
-                             enableClipboard={false}/>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <Layout port={port}/>
       </header>
     </div>
+  );
+
+}
+
+function Layout() {
+  return (
+    <div className="main-container">
+      <div className="sidebar-wrapper">
+        <Sidebar/>
+      </div>
+      <div className="view-wrapper">
+        <Overview/>
+      </div>
+    </div>
+  );
+}
+
+function Sidebar() {
+  return (
+    <div>
+      <ul>
+        <li className="sidebar-element">Overview</li>
+        <li className="sidebar-element">Provider</li>
+        <li className="sidebar-element">Journal</li>
+      </ul>
+    </div>
+  );
+}
+
+function Overview() {
+  const entries = Object.entries(dictionary);
+  const [currentJson, setCurrentJson] = React.useState(null);
+  return (
+    entries && (
+      <div className="overview-container">
+        <div className="overview-list-container">
+          {entries.map(([key, value]) => (
+            <button className="overview-key" key={key} onClick={() => setCurrentJson([key, value])}>{key}</button>
+          ))}
+        </div>
+        <div className="overview-json-container">
+          {currentJson && (
+            <ReactJson name={`${currentJson[0]} - ${currentJson[1].state.status}`}
+                       style={{padding: "1rem", height: "calc(100% - 33px)", overflow: "auto"}}
+                       theme="monokai"
+                       collapsed={3}
+                       src={currentJson[1]}
+                       displayArrayKey={false}
+                       displayDataTypes={false}
+                       displayObjectSize={false}
+                       enableClipboard={false}/>
+          )}
+        </div>
+      </div>
+    )
   );
 }
 
