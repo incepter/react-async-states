@@ -40,7 +40,7 @@ export default function useRawAsyncState(asyncState, dependencies, configuration
       const {areEqual} = configuration;
       if (!areEqual(prevStateValue, calculatedState)) {
         rerender({});
-        devtools.emitAsyncState(asyncState);
+        // devtools.emitAsyncState(asyncState);
       }
     });
   }, [...dependencies, asyncState]);

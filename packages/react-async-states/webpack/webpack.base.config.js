@@ -41,13 +41,10 @@ function makeConfigFromOutput(options, output) {
 function makeOutputFor(type) {
   return function makeFromType(options) {
     return {
-      clean: true,
       path: path.resolve(process.cwd(), `dist/${type}`),
       ...options.output,
-      library: {
-        type,
-        name: "ReactAsyncState",
-      }
+      libraryTarget: type,
+      library: "ReactAsyncState"
     };
   }
 }

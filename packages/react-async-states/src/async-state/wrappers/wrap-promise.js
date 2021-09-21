@@ -1,7 +1,7 @@
 import { AsyncStateStateBuilder } from "../StateBuilder";
 import { cloneArgs, isGenerator, isPromise } from "../../shared";
 import { wrapGenerator } from "./wrap-generator";
-import { logger } from "../../logger";
+import devtools from "../../devtools/devtools";
 
 function returnsUndefined() {
   return undefined;
@@ -22,15 +22,15 @@ export function wrapPromise(asyncState) {
 
     const clonedArgs = cloneArgs(args);
     if (isGenerator(executionValue)) {
-      logger.info(`[${asyncState.key}][is a generator]`);
+      devtools.emitRunType(asyncState, "generator");
       asyncState.setState(AsyncStateStateBuilder.pending(clonedArgs));
       runningPromise = wrapGenerator(executionValue, asyncState, args);
     } else if (isPromise(executionValue)) {
-      logger.info(`[${asyncState.key}][is a promise]`);
+      devtools.emitRunType(asyncState, "promise");
       asyncState.setState(AsyncStateStateBuilder.pending(clonedArgs));
       runningPromise = executionValue;
     } else { // final value
-      logger.info(`[${asyncState.key}][resolved immediately] - skipping the pending state`);
+      devtools.emitRunType(asyncState, "sync");
       asyncState.setState(AsyncStateStateBuilder.success(executionValue, clonedArgs));
       return;
     }

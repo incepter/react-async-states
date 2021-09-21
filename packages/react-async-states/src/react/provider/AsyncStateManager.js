@@ -1,6 +1,5 @@
 import AsyncState from "../../async-state/AsyncState";
 import { createAsyncStateEntry, runScheduledAsyncState } from "./providerUtils";
-import { logger } from "../../logger";
 import { asyncify, identity, shallowClone } from "../../shared";
 
 const allWatchersKey = Symbol();
@@ -34,7 +33,6 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
     const didDispose = asyncStateEntry.value.dispose();
 
     if (!asyncStateEntry.initiallyHoisted && didDispose) {
-      logger.info(`[provider][${key}] dispose`);
       delete asyncStateEntries[key];
       asyncify(notifyWatchers)(key, null);
     }

@@ -1,17 +1,18 @@
-import { AsyncStateStatus, cloneArgs, invokeIfPresent, shallowClone } from "../shared";
+import { __DEV__, AsyncStateStatus, cloneArgs, invokeIfPresent, shallowClone } from "../shared";
 import { wrapPromise } from "./wrappers/wrap-promise";
 import { clearSubscribers, notifySubscribers } from "./notify-subscribers";
 import { AsyncStateStateBuilder } from "./StateBuilder";
 import {
-  logInDevAbort,
-  logInDevDispose,
-  logInDevPromiseRun,
-  logInDevReplaceState,
-  logInDevStateChange,
   warnDevAboutAsyncStateKey,
   warnDevAboutUndefinedPromise,
   warnInDevAboutRunWhilePending
 } from "../utils";
+import devtools from "../devtools/devtools";
+
+let uniqueId = 0;
+function nextUniqueId() {
+  return ++uniqueId;
+}
 
 export const defaultASConfig = Object.freeze({lazy: true, initialValue: null});
 
@@ -39,16 +40,23 @@ function AsyncState(key, promise, config) {
 
   this.locks = 0;
 
+  if (__DEV__) {
+    this.uniqueId = nextUniqueId();
+  }
+
   Object.preventExtensions(this);
+
+  devtools.emitCreation(this);
 }
 
 AsyncState.prototype.setState = function setState(newState, notify = true) {
+  devtools.startUpdate(this);
   if (typeof newState === "function") {
     this.currentState = newState(this.currentState);
   } else {
     this.currentState = newState;
   }
-  logInDevStateChange(this.key, this.currentState);
+  devtools.emitUpdate(this);
 
   if (this.currentState.status === AsyncStateStatus.success) {
     this.lastSuccess = this.currentState;
@@ -68,7 +76,6 @@ AsyncState.prototype.abort = function abortImpl(reason) {
 }
 
 AsyncState.prototype.dispose = function disposeImpl() {
-  logInDevDispose(this.key, this.locks);
   if (this.locks > 0) {
     return false;
   }
@@ -78,6 +85,7 @@ AsyncState.prototype.dispose = function disposeImpl() {
 
   this.locks = 0;
   this.setState(AsyncStateStateBuilder.initial(this.config.initialValue));
+  devtools.emitDispose(this);
 
   return true;
 }
@@ -110,7 +118,6 @@ AsyncState.prototype.run = function run(...execArgs) {
       return;
     }
     argsObject.aborted = true;
-    logInDevAbort(that.key, reason);
     that.setState(AsyncStateStateBuilder.aborted(reason, cloneArgs([argsObject])));
     userAborters.forEach(function clean(func) {
       invokeIfPresent(func, reason);
@@ -118,7 +125,8 @@ AsyncState.prototype.run = function run(...execArgs) {
     that.currentAborter = null;
   }
 
-  logInDevPromiseRun(this.key, argsObject);
+  devtools.emitRun(this, argsObject);
+
   this.promise(argsObject);
   this.currentAborter = abort;
   return abort;
@@ -132,6 +140,7 @@ AsyncState.prototype.subscribe = function subscribe(cb) {
   function cleanup() {
     that.locks -= 1;
     delete that.subscriptions[subscriptionKey];
+    devtools.emitUnsubscription(that, subscriptionKey);
   }
 
   this.subscriptions[subscriptionKey] = {
@@ -140,6 +149,8 @@ AsyncState.prototype.subscribe = function subscribe(cb) {
     key: subscriptionKey,
   };
   this.locks += 1;
+
+  devtools.emitSubscription(this, subscriptionKey);
   return cleanup;
 }
 
@@ -176,8 +187,6 @@ AsyncState.prototype.replaceState = function replaceState(newValue) {
   if (typeof newValue === "function") {
     effectiveValue = newValue(this.currentState);
   }
-
-  logInDevReplaceState(this.key, effectiveValue);
 
   this.setState(AsyncStateStateBuilder.success(effectiveValue));
 }
