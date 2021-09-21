@@ -1,4 +1,9 @@
 {
   "private": true,
-  "workspaces": ["packages/*"]
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "build:devtools": "cd packages/devtools && yarn build",
+    "build": "cd packages/react-async-states && yarn build",
+    "build:all": "cd packages/react-async-states && yarn build && cd ../devtools && yarn build"
+  }
 }

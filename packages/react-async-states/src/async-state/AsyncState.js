@@ -56,7 +56,6 @@ AsyncState.prototype.setState = function setState(newState, notify = true) {
   } else {
     this.currentState = newState;
   }
-  devtools.emitUpdate(this);
 
   if (this.currentState.status === AsyncStateStatus.success) {
     this.lastSuccess = this.currentState;
@@ -65,6 +64,7 @@ AsyncState.prototype.setState = function setState(newState, notify = true) {
   if (this.currentState.status !== AsyncStateStatus.pending) {
     this.currentAborter = null;
   }
+  devtools.emitUpdate(this);
 
   if (notify) {
     notifySubscribers(this);

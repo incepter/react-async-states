@@ -42,6 +42,7 @@ code {
     width: 250px;
     display: flex;
     flex-direction: column;
+    overflow: auto;
 }
 
 .overview-journal-list-container {
@@ -50,6 +51,7 @@ code {
     flex-direction: column;
     border-left: 1px solid #004444;
     border-right: 1px solid #004444;
+    overflow: auto;
 }
 
 .overview-json-container {

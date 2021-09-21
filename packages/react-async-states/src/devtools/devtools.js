@@ -154,12 +154,12 @@ const devtools = ((function makeDevtools() {
 
 function formatEntriesToDevtools(entries) {
   return Object.entries(entries).reduce((result, [key, entry]) => {
-    result[key] = {};
-    result[key].key = entry.value.key;
-    result[key].uniqueId = entry.value.uniqueId;
-    result[key].state = entry.value.currentState;
-    result[key].lastSuccess = entry.value.lastSuccess;
-    result[key].subscriptions = Object.keys(entry.value.subscriptions);
+    result[entry.value.uniqueId] = {};
+    result[entry.value.uniqueId].key = entry.value.key;
+    result[entry.value.uniqueId].uniqueId = entry.value.uniqueId;
+    result[entry.value.uniqueId].state = entry.value.currentState;
+    result[entry.value.uniqueId].lastSuccess = entry.value.lastSuccess;
+    result[entry.value.uniqueId].subscriptions = Object.keys(entry.value.subscriptions);
     return result;
   }, {});
 }

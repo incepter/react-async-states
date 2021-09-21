@@ -77,7 +77,6 @@ function applyMessageFromAgent(message) {
         }
         case "promiseType": {
           dictionary[uniqueId].promiseType = eventPayload;
-          journalArray.push({key, uniqueId, eventType, eventDate, eventPayload});
           return true;
         }
         case "run":
@@ -86,12 +85,12 @@ function applyMessageFromAgent(message) {
           return true;
         }
         case "subscription": {
-          dictionary[uniqueId].subscriptions = dictionary[uniqueId].subscriptions.push(eventPayload);
+          dictionary[uniqueId].subscriptions.push(eventPayload);
           journalArray.push({key, uniqueId, eventType, eventDate, eventPayload});
           return true;
         }
         case "unsubscription": {
-          dictionary[uniqueId].subscriptions = dictionary[uniqueId].subscriptions.filter(t => t !== eventPayload);
+          dictionary[uniqueId].subscriptions = dictionary[uniqueId]?.subscriptions?.filter(t => t !== eventPayload);
           journalArray.push({key, uniqueId, eventType, eventDate, eventPayload});
           return true;
         }
@@ -247,7 +246,7 @@ function Overview() {
         </div>
         <div className="overview-json-container">
           {currentJson && (
-            <ReactJson name={`${currentJson.key} - ${currentJson.state.status}`}
+            <ReactJson name={`${currentJson.key} - ${currentJson.state?.status}`}
                        style={{padding: "1rem", height: "calc(100% - 33px)", overflow: "auto"}}
                        theme="monokai"
                        collapsed={3}
