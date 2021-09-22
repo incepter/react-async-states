@@ -2,14 +2,11 @@ import { __DEV__, AsyncStateStatus, cloneArgs, invokeIfPresent, shallowClone } f
 import { wrapPromise } from "./wrappers/wrap-promise";
 import { clearSubscribers, notifySubscribers } from "./notify-subscribers";
 import { AsyncStateStateBuilder } from "./StateBuilder";
-import {
-  warnDevAboutAsyncStateKey,
-  warnDevAboutUndefinedPromise,
-  warnInDevAboutRunWhilePending
-} from "./utils";
+import { warnDevAboutAsyncStateKey, warnDevAboutUndefinedPromise, warnInDevAboutRunWhilePending } from "./utils";
 import devtools from "devtools";
 
 let uniqueId = 0;
+
 function nextUniqueId() {
   return ++uniqueId;
 }
@@ -124,8 +121,6 @@ AsyncState.prototype.run = function run(...execArgs) {
     });
     that.currentAborter = null;
   }
-
-  devtools.emitRun(this, argsObject);
 
   this.promise(argsObject);
   this.currentAborter = abort;

@@ -12,8 +12,9 @@ const devtools = ((function makeDevtools() {
     disconnect,
 
     emitCreation,
-    emitRun,
-    emitRunType,
+    emitRunSync,
+    emitRunPromise,
+    emitRunGenerator,
     startUpdate,
     emitUpdate,
     emitDispose,
@@ -22,6 +23,8 @@ const devtools = ((function makeDevtools() {
 
     emitAsyncState,
     emitProviderState,
+
+    emitInsideProvider,
   };
 
   function connect() {
@@ -89,22 +92,43 @@ const devtools = ((function makeDevtools() {
       type: devtoolsJournalEvents.creation,
       payload: {
         config: asyncState.config,
-        initialValue: asyncState.currentState.data
+        state: asyncState.currentState
       },
     });
   }
 
-  function emitRun(asyncState, argv) {
+  function emitInsideProvider(asyncState, insideProvider) {
     emitJournalEvent(asyncState, {
-      payload: argv,
+      payload: insideProvider,
+      type: devtoolsJournalEvents.insideProvider,
+    });
+  }
+
+  function emitRun(asyncState, argv, type) {
+    emitJournalEvent(asyncState, {
+      payload: {argv, type},
       type: devtoolsJournalEvents.run
     });
   }
 
-  function emitRunType(asyncState, type) {
+  function emitRunSync(asyncState, argv) {
     emitJournalEvent(asyncState, {
-      payload: type,
-      type: devtoolsJournalEvents.promiseType
+      payload: {argv, type: "sync"},
+      type: devtoolsJournalEvents.run
+    });
+  }
+
+  function emitRunGenerator(asyncState, argv) {
+    emitJournalEvent(asyncState, {
+      payload: {argv, type: "generator"},
+      type: devtoolsJournalEvents.run
+    });
+  }
+
+  function emitRunPromise(asyncState, argv) {
+    emitJournalEvent(asyncState, {
+      payload: {argv, type: "promise"},
+      type: devtoolsJournalEvents.run
     });
   }
 

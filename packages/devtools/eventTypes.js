@@ -17,7 +17,7 @@ export const devtoolsJournalEvents = {
   update: "update",
   dispose: "dispose",
   creation: "creation",
-  promiseType: "promiseType",
   subscription: "subscription",
-  unsubscription: "unsubscription"
+  unsubscription: "unsubscription",
+  insideProvider: "inside-provider",
 }

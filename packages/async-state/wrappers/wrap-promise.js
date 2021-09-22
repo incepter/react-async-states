@@ -22,15 +22,15 @@ export function wrapPromise(asyncState) {
 
     const clonedArgs = cloneArgs(args);
     if (isGenerator(executionValue)) {
-      devtools.emitRunType(asyncState, "generator");
+      devtools.emitRunGenerator(asyncState, args[0]);
       asyncState.setState(AsyncStateStateBuilder.pending(clonedArgs));
       runningPromise = wrapGenerator(executionValue, asyncState, args);
     } else if (isPromise(executionValue)) {
-      devtools.emitRunType(asyncState, "promise");
+      devtools.emitRunPromise(asyncState, args[0]);
       asyncState.setState(AsyncStateStateBuilder.pending(clonedArgs));
       runningPromise = executionValue;
     } else { // final value
-      devtools.emitRunType(asyncState, "sync");
+      devtools.emitRunSync(asyncState, args[0]);
       asyncState.setState(AsyncStateStateBuilder.success(executionValue, clonedArgs));
       return;
     }
