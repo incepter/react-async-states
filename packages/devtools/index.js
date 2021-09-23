@@ -13,6 +13,7 @@ const devtools = ((function makeDevtools() {
 
     emitCreation,
     emitRunSync,
+    emitReplaceState,
     emitRunPromise,
     emitRunGenerator,
     startUpdate,
@@ -97,7 +98,7 @@ const devtools = ((function makeDevtools() {
     });
   }
 
-  function emitInsideProvider(asyncState, insideProvider) {
+  function emitInsideProvider(asyncState, insideProvider = true) {
     emitJournalEvent(asyncState, {
       payload: insideProvider,
       type: devtoolsJournalEvents.insideProvider,
@@ -114,6 +115,13 @@ const devtools = ((function makeDevtools() {
   function emitRunSync(asyncState, argv) {
     emitJournalEvent(asyncState, {
       payload: {argv, type: "sync"},
+      type: devtoolsJournalEvents.run
+    });
+  }
+
+  function emitReplaceState(asyncState) {
+    emitJournalEvent(asyncState, {
+      payload: {type: "sync"},
       type: devtoolsJournalEvents.run
     });
   }

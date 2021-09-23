@@ -4,6 +4,7 @@ import { AsyncStateContext } from "../../context";
 import useRawAsyncState from "./useRawAsyncState";
 import { AsyncStateProviderSubscription } from "../utils/AsyncStateProviderSubscription";
 import { AsyncStateSubscriptionMode } from "../utils/subscriptionUtils";
+import devtools from "devtools";
 
 export default function useProviderAsyncState(configuration, dependencies) {
   const {key} = configuration;
@@ -13,7 +14,9 @@ export default function useProviderAsyncState(configuration, dependencies) {
   const dependenciesArray = [contextValue, guard, ...dependencies];
 
   const subscription = React.useMemo(function deduceSubscription() {
-    return AsyncStateProviderSubscription(contextValue, configuration);
+    const sub = AsyncStateProviderSubscription(contextValue, configuration);
+    devtools.emitInsideProvider(sub.asyncState);
+    return sub;
   }, dependenciesArray);
 
   // React.useLayoutEffect(() => {

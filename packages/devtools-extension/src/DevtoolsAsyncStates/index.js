@@ -1,14 +1,11 @@
 import { devtoolsJournalEvents, toDevtoolsEvents } from "devtools/eventTypes";
 import { shallowClone } from "shared";
 
-function createPort(name = "panel") {
-  return window.chrome.runtime.connect({name});
-}
-
 export function DevtoolsAsyncStates(initialMap) {
   let map = shallowClone(initialMap);
 
-  return {value: map, applyMessage};
+  const returnValue = {value: map, applyMessage};
+  return returnValue;
 
   function applyMessage(message) {
     if (message.source !== "async-states-agent") {
@@ -31,6 +28,8 @@ export function DevtoolsAsyncStates(initialMap) {
       return false;
     }
 
+    map = shallowClone(map);
+    returnValue.value = map;
     Object.values(message.payload).forEach(function syncProviderAsyncState(eventValue) {
       const {uniqueId, state, lastSuccess} = eventValue;
       if (!map[uniqueId]) {
@@ -40,6 +39,7 @@ export function DevtoolsAsyncStates(initialMap) {
       }
       map[uniqueId].state = state;
       map[uniqueId].lastSuccess = lastSuccess;
+      map[uniqueId].isInsideProvider = true;
     });
 
     return true;
@@ -59,7 +59,7 @@ export function DevtoolsAsyncStates(initialMap) {
   }
 
   function readJournalMessage(message) {
-    const {key, uniqueId, eventType, eventDate, eventPayload} = message.payload;
+    const {key, uniqueId, eventType, eventPayload} = message.payload;
     if (!map[uniqueId]) {
       createDevtoolAsyncState(uniqueId, key);
     } else {
@@ -81,8 +81,14 @@ export function DevtoolsAsyncStates(initialMap) {
         map[uniqueId].journal.push(message.payload);
         return true;
       }
-      case devtoolsJournalEvents.update:
       case devtoolsJournalEvents.dispose: {
+        map[uniqueId].state = eventPayload.state;
+        map[uniqueId].lastSuccess = eventPayload.lastSuccess;
+        map[uniqueId].journal.push(message.payload);
+        return true;
+      }
+
+      case devtoolsJournalEvents.update: {
         map[uniqueId].state = eventPayload.newState;
         map[uniqueId].lastSuccess = eventPayload.lastSuccess;
         map[uniqueId].journal.push(message.payload);
@@ -118,8 +124,4 @@ export function DevtoolsAsyncStates(initialMap) {
     };
     Object.preventExtensions(map[uniqueId]);
   }
-}
-
-function promise(argv) {
-
 }

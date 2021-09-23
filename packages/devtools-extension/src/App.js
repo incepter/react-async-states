@@ -1,113 +1,21 @@
-import React from "react";
+import React, { useRef } from "react";
 import ReactJson from "react-json-view";
-import { dictionaryMock, journalMock } from "./mocks";
+import { isEqual } from "lodash";
+import { DevtoolsContextProvider, useDevtoolsContext } from "./context/DevtoolsContext";
+import "./index.v2.css";
+import DevtoolsViewTypes from "./domain/DevtoolsViewTypes";
+import { useAsyncState } from "react-async-states";
+import { EMPTY_ARRAY } from "shared";
 
-const isDev = process.env.NODE_ENV !== "production";
+export default function App() {
+  let port = useRef();
+  const {run} = useAsyncState({
+    key: "devtools",
+    rerenderStatus: {pending: false, success: false, aborted: false}
+  });
 
-let dictionary = !isDev ? {} : dictionaryMock;
-
-let journal = !isDev ? {} : journalMock;
-
-if (isDev) {
-  window.chrome = {
-    devtools: {
-      inspectedWindow: {
-        tabId: -1,
-      },
-    },
-    runtime: {
-      connect() {
-        return {
-          postMessage(msg) {
-            console.log('posting messages', msg);
-          },
-          onMessage: {
-            addListener(fn) {
-              console.log('listener', fn);
-            }
-          }
-        };
-      },
-    }
-  };
-}
-
-function applyMessageFromAgent(message) {
-  if (!message) {
-    return false;
-  }
-  switch (message.type) {
-    case "sync-provider": {
-      dictionary = {...dictionary, ...message.payload};
-      return true;
-    }
-    case "async-state-information": {
-      const {payload} = message;
-      dictionary[payload.uniqueId] = payload;
-      return true;
-    }
-    case "journal-event": {
-      const {key, uniqueId, eventType, eventDate, eventPayload} = message.payload;
-      if (!journal[uniqueId]) {
-        journal[uniqueId] = [];
-      }
-      if (!dictionary[uniqueId]) {
-        dictionary[uniqueId] = {
-          key,
-          uniqueId,
-          state: {},
-          lastSuccess: {},
-          subscriptions: [],
-          promiseType: undefined,
-        };
-      }
-      const journalArray = journal[uniqueId];
-      switch (eventType) {
-
-        case "update":
-        case "dispose": {
-          dictionary[uniqueId].state = eventPayload.newState;
-          dictionary[uniqueId].lastSuccess = eventPayload.lastSuccess;
-          journalArray.push({key, uniqueId, eventType, eventDate, eventPayload});
-          return true;
-        }
-        case "promiseType": {
-          dictionary[uniqueId].promiseType = eventPayload;
-          return true;
-        }
-        case "run":
-        case "creation": {
-          journalArray.push({key, uniqueId, eventType, eventDate, eventPayload});
-          return true;
-        }
-        case "subscription": {
-          dictionary[uniqueId].subscriptions.push(eventPayload);
-          journalArray.push({key, uniqueId, eventType, eventDate, eventPayload});
-          return true;
-        }
-        case "unsubscription": {
-          dictionary[uniqueId].subscriptions = dictionary[uniqueId]?.subscriptions?.filter(t => t !== eventPayload);
-          journalArray.push({key, uniqueId, eventType, eventDate, eventPayload});
-          return true;
-        }
-        default: {
-          return false;
-        }
-      }
-    }
-    default: {
-      return false;
-    }
-  }
-}
-
-function App() {
-  const rerender = React.useState()[1];
-  const port = React.useRef();
-  React.useEffect(() => {
-    port.current = window.chrome.runtime.connect({
-      name: "panel"
-    });
+  React.useEffect(function subscribeToPort() {
+    port.current = window.chrome.runtime.connect({name: "panel"});
 
     port.current.postMessage({
       type: "init",
@@ -119,11 +27,7 @@ function App() {
       if (message.source !== "async-states-agent") {
         return;
       }
-      console.log("*__message__from__agent*", message.type, message.payload, journal);
-      const didApply = applyMessageFromAgent(message);
-      if (didApply) {
-        rerender({});
-      }
+      run(message);
     });
 
     port.current.postMessage({
@@ -132,133 +36,165 @@ function App() {
     });
   }, []);
 
-  console.log("========>", {journal: JSON.stringify(journal), dictionary: JSON.stringify(dictionary)});
-  const entries = Object.entries(dictionary);
-
   return (
-    <div>
-      <header>
-        {!entries.length && <p>
-          Nothing to show
-        </p>}
-        <Layout port={port}/>
-      </header>
-    </div>
-  );
-
-}
-
-const views = {
-  overview: 0,
-  journal: 1,
-};
-
-function Layout() {
-  const [currentView, setCurrentView] = React.useState(views.overview);
-
-  function onElementClick(nextValue) {
-    return function caller() {
-      setCurrentView(nextValue);
-    }
-  }
-
-  return (
-    <div className="main-container">
-      <div className="sidebar-wrapper">
-        <Sidebar onElementClick={onElementClick}/>
+    <DevtoolsContextProvider>
+      <button onClick={() => port.current.postMessage({
+        type: "get-provider-state",
+        source: "async-states-devtools-panel"
+      })}>Resync provider</button>
+      <div className="main">
+        <div className="sidebar-container">
+          <Sidebar/>
+        </div>
+        <div className="content-container">
+          <DevtoolsView/>
+        </div>
       </div>
-      <div className="view-wrapper">
-        {currentView === views.overview && <Overview/>}
-        {currentView === views.journal && <Journal/>}
+    </DevtoolsContextProvider>
+  );
+}
+
+function Sidebar() {
+  const [view, setView] = useDevtoolsContext();
+  return (
+    <div className="sidebar">
+      <button className={`sidebar-button ${DevtoolsViewTypes.overview === view ? 'sidebar-el-active' : ''}`}
+              role="button" onClick={() => setView(DevtoolsViewTypes.overview)}>Overview
+      </button>
+      <button className={`sidebar-button ${DevtoolsViewTypes.journal === view ? 'sidebar-el-active' : ''}`}
+              role="button" onClick={() => setView(DevtoolsViewTypes.journal)}>Journal
+      </button>
+    </div>
+  );
+}
+
+function DevtoolsView() {
+  const [view] = useDevtoolsContext();
+  return (
+    <div className="devtools-view-container h-full">
+      {view === DevtoolsViewTypes.journal && <DevtoolsJournal/>}
+      {view === DevtoolsViewTypes.overview && <DevtoolsOverview/>}
+    </div>
+  );
+}
+
+function useDevtoolsEntriesKeys() {
+  return useAsyncState({
+    key: "devtools",
+    areEqual: isEqual,
+    selector: s => Object.entries(s.data.value).map(([uniqueId, as]) => ({uniqueId, key: as.key})),
+  }).state;
+}
+
+function useDevtoolsEntry(uniqueId) {
+  return useAsyncState({
+    key: "devtools",
+    areEqual: isEqual,
+    selector: s => s.data.value?.[uniqueId],
+  }).state;
+}
+
+function useDevtoolsEntryJournal(uniqueId) {
+  return useDevtoolsEntry(uniqueId)?.journal;
+}
+
+function useDevtoolsEntryState(uniqueId) {
+  return useDevtoolsEntry(uniqueId);
+}
+
+function DevtoolsJournal() {
+  const [currentAsyncState, setCurrentAsyncState] = React.useState(EMPTY_ARRAY);
+  const keys = useDevtoolsEntriesKeys();
+  return (
+    <div className="h-full">
+      <h1>Devtools journal</h1>
+      <div className="flex h-full">
+        <div className="sidebar-container">
+          <div className="sidebar">
+            {keys.map(({uniqueId, key}) =>
+              <button key={uniqueId}
+                      className={`sidebar-button ${uniqueId === currentAsyncState[0] ? 'sidebar-el-active' : ''}`}
+                      role="button" onClick={() => setCurrentAsyncState([uniqueId, key])}>{key}
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="content-container">
+          {currentAsyncState.length &&
+          <AsyncStateJournal key={currentAsyncState[0]} identifier={currentAsyncState}/> || null}
+        </div>
       </div>
     </div>
   );
 }
 
-function Sidebar({onElementClick}) {
-  return (
-    <div>
-      <ul>
-        <li onClick={onElementClick(views.overview)} className="sidebar-element">Overview</li>
-        <li className="sidebar-element">Provider</li>
-        <li onClick={onElementClick(views.journal)} className="sidebar-element">Journal</li>
-      </ul>
-    </div>
-  );
-}
-
-function Journal() {
-  const entries = Object.entries(journal);
-  const [currentJson, setCurrentJson] = React.useState(null);
+function AsyncStateJournal({identifier: [id, key]}) {
   const [currentJournal, setCurrentJournal] = React.useState(null);
+  const journal = useDevtoolsEntryJournal(id);
+  console.log({journal})
   return (
-    entries && (
-      <div className="overview-container">
-        <div className="overview-journal-list-container">
-          {entries.map(([uniqueId, events]) => (
-            <button className={`overview-key ${events === currentJournal ? 'active' : ''}`} key={uniqueId}
-                    onClick={() => {
-                      setCurrentJournal(events);
-                      setCurrentJson(events?.length ? events[0] : null);
-                    }}>{dictionary[uniqueId]?.key ?? "unknown__bug"}</button>
+    <div className="flex">
+      <div className="sidebar-container">
+        <div className="sidebar o-auto">
+          {journal.map((evt, index) => (
+            <button key={`${evt.eventDate}-${evt.eventType}-${index}`}
+                    className={`sidebar-button ${evt === currentJournal ? 'sidebar-el-active' : ''}`}
+                    role="button" onClick={() => setCurrentJournal(evt)}>{evt.eventType}
+            </button>
           ))}
-        </div>
-        <div className="overview-list-container">
-          {currentJournal && currentJournal.map(value => (
-            <button className={`overview-key ${value === currentJson ? 'active' : ''}`}
-                    key={`${value.eventDate}-${value.uniqueId}-${value.eventType}`}
-                    onClick={() => setCurrentJson(value)}>{value.eventType}</button>
-          ))}
-        </div>
-        <div className="overview-journal-json-container">
-          {currentJson && (
-            <ReactJson name={`${currentJson.key}`}
-                       style={{padding: "1rem", height: "calc(100% - 33px)", overflow: "auto"}}
-                       theme="monokai"
-                       collapsed={4}
-                       src={currentJson}
-                       displayArrayKey={false}
-                       displayDataTypes={false}
-                       displayObjectSize={false}
-                       enableClipboard={false}/>
-          )}
         </div>
       </div>
-    )
+      <div style={{width: "80%"}}>
+        {currentJournal && <ReactJson name={`${key} - ${currentJournal.eventType}`}
+                                      style={{padding: "1rem", height: "100%", overflow: "auto"}}
+                                      theme="monokai"
+                                      collapsed={2}
+                                      displayArrayKey={false}
+                                      displayDataTypes={false}
+                                      displayObjectSize={false}
+                                      enableClipboard={false}
+                                      src={currentJournal}
+        />}
+      </div>
+    </div>
   );
 }
 
-
-function Overview() {
-  const entries = Object.values(dictionary);
-  const [currentJson, setCurrentJson] = React.useState(null);
+function DevtoolsOverview() {
+  const [currentAsyncState, setCurrentAsyncState] = React.useState(EMPTY_ARRAY);
+  const keys = useDevtoolsEntriesKeys();
   return (
-    entries && (
-      <div className="overview-container">
-        <div className="overview-list-container">
-          {entries.map(value => (
-            <button className="overview-key" key={value.uniqueId}
-                    onClick={() => setCurrentJson(value)}>{value.key}</button>
-          ))}
+    <div className="h-full">
+      <h1>Devtools overview: state</h1>
+      <div className="flex h-full">
+        <div className="sidebar-container">
+          <div className="sidebar">
+            {keys.map(({uniqueId, key}) =>
+              <button key={uniqueId}
+                      className={`sidebar-button ${uniqueId === currentAsyncState[0] ? 'sidebar-el-active' : ''}`}
+                      role="button" onClick={() => setCurrentAsyncState([uniqueId, key])}>{key}
+              </button>
+            )}
+          </div>
         </div>
-        <div className="overview-json-container">
-          {currentJson && (
-            <ReactJson name={`${currentJson.key} - ${currentJson.state?.status}`}
-                       style={{padding: "1rem", height: "calc(100% - 33px)", overflow: "auto"}}
-                       theme="monokai"
-                       collapsed={3}
-                       src={currentJson}
-                       displayArrayKey={false}
-                       displayDataTypes={false}
-                       displayObjectSize={false}
-                       enableClipboard={false}/>
-          )}
+        <div className="content-container">
+          {currentAsyncState.length &&
+          <AsyncStateOverview key={currentAsyncState[0]} identifier={currentAsyncState}/> || null}
         </div>
       </div>
-    )
+    </div>
   );
 }
 
-
-export default App;
-
+function AsyncStateOverview({identifier: [id, key]}) {
+  const data = useDevtoolsEntryState(id);
+  return data && <ReactJson name={`${key}`}
+                            style={{padding: "1rem", minHeight: "50vh", display: "flex", overflow: "auto"}}
+                            theme="monokai"
+                            collapsed={2}
+                            src={data}
+                            displayArrayKey={false}
+                            displayDataTypes={false}
+                            displayObjectSize={false}
+                            enableClipboard={false}/> || null;
+}

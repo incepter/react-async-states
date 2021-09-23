@@ -2,6 +2,8 @@ import React from "react";
 import { useAsyncState } from "react-async-states";
 
 function promise(argv) {
+  argv.onAbort(() => console.log('aborting!!'))
+  console.log('running!!')
   return argv.payload.entry;
 }
 

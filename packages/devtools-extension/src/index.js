@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import App from './App.v2';
+import App from './App';
 import DevtoolsAsyncStatesProvider from "./core/DevtoolsAsyncStatesProvider";
 
 

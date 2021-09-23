@@ -33,7 +33,7 @@ function AsyncState(key, promise, config) {
   this.__IS_FORK__ = false;
 
   this.payload = null;
-  this.currentAborter = null;
+  this.currentAborter = undefined;
 
   this.locks = 0;
 
@@ -59,7 +59,7 @@ AsyncState.prototype.setState = function setState(newState, notify = true) {
   }
 
   if (this.currentState.status !== AsyncStateStatus.pending) {
-    this.currentAborter = null;
+    this.currentAborter = undefined;
   }
   devtools.emitUpdate(this);
 
@@ -91,7 +91,7 @@ AsyncState.prototype.run = function run(...execArgs) {
   if (this.currentState.status === AsyncStateStatus.pending) {
     warnInDevAboutRunWhilePending(this.key);
     this.abort();
-    this.currentAborter = null;
+    this.currentAborter = undefined;
   }
 
   const that = this;
@@ -119,12 +119,12 @@ AsyncState.prototype.run = function run(...execArgs) {
     userAborters.forEach(function clean(func) {
       invokeIfPresent(func, reason);
     });
-    that.currentAborter = null;
+    that.currentAborter = undefined;
   }
 
-  this.promise(argsObject);
   this.currentAborter = abort;
-  return abort;
+  this.promise(argsObject);
+  return this.currentAborter;
 }
 
 AsyncState.prototype.subscribe = function subscribe(cb) {
@@ -175,7 +175,7 @@ function forkKey(asyncState) {
 AsyncState.prototype.replaceState = function replaceState(newValue) {
   if (this.currentState.status === AsyncStateStatus.pending) {
     this.abort();
-    this.currentAborter = null;
+    this.currentAborter = undefined;
   }
 
   let effectiveValue = newValue;
@@ -183,6 +183,7 @@ AsyncState.prototype.replaceState = function replaceState(newValue) {
     effectiveValue = newValue(this.currentState);
   }
 
+  devtools.emitReplaceState(this);
   this.setState(AsyncStateStateBuilder.success(effectiveValue));
 }
 

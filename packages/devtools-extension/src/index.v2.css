@@ -21,6 +21,7 @@
     height: 100%;
     display: flex;
     overflow: auto;
+    max-height: 100vh;
     align-items: center;
     align-content: center;
     flex-direction: column;
@@ -28,7 +29,7 @@
 
 .sidebar-button {
     width: 100%;
-    height: 3rem;
+    min-height: 3rem;
     border: none;
     cursor: pointer;
     font-size: 1rem;
@@ -63,4 +64,7 @@
 }
 .h-full {
     height: 100%;
+}
+.o-auto {
+    overflow: auto;
 }
