@@ -41,7 +41,8 @@ export default function App() {
       <button onClick={() => port.current.postMessage({
         type: "get-provider-state",
         source: "async-states-devtools-panel"
-      })}>Resync provider</button>
+      })}>Resync provider
+      </button>
       <div className="main">
         <div className="sidebar-container">
           <Sidebar/>
@@ -82,7 +83,7 @@ function useDevtoolsEntriesKeys() {
   return useAsyncState({
     key: "devtools",
     areEqual: isEqual,
-    selector: s => Object.entries(s.data.value).map(([uniqueId, as]) => ({uniqueId, key: as.key})),
+    selector: s => Object.entries(s.data.value).map(([uniqueId, as]) => ({uniqueId, key: as.key, status: as.status})),
   }).state;
 }
 
@@ -111,10 +112,10 @@ function DevtoolsJournal() {
       <div className="flex h-full">
         <div className="sidebar-container">
           <div className="sidebar">
-            {keys.map(({uniqueId, key}) =>
+            {keys.map(({uniqueId, key, status}) =>
               <button key={uniqueId}
                       className={`sidebar-button ${uniqueId === currentAsyncState[0] ? 'sidebar-el-active' : ''}`}
-                      role="button" onClick={() => setCurrentAsyncState([uniqueId, key])}>{key}
+                      role="button" onClick={() => setCurrentAsyncState([uniqueId, key])}>{key}-{status}
               </button>
             )}
           </div>
@@ -172,7 +173,7 @@ function DevtoolsOverview() {
             {keys.map(({uniqueId, key}) =>
               <button key={uniqueId}
                       className={`sidebar-button ${uniqueId === currentAsyncState[0] ? 'sidebar-el-active' : ''}`}
-                      role="button" onClick={() => setCurrentAsyncState([uniqueId, key])}>{key}
+                      role="button" onClick={() => setCurrentAsyncState([uniqueId, key])}>{key}-{status}
               </button>
             )}
           </div>
