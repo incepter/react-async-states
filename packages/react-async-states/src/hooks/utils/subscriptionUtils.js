@@ -1,5 +1,6 @@
 import AsyncState from "async-state";
 import { EMPTY_OBJECT, oneObjectIdentity, shallowClone, shallowEqual } from "shared";
+import { readAsyncStateFromSource } from "async-state/utils";
 
 export const defaultRerenderStatusConfig = Object.freeze({
   error: true,
@@ -16,11 +17,16 @@ export const AsyncStateSubscriptionMode = Object.freeze({
 
   FORK: 4, // forking an existing one in the provider
   NOOP: 5, // a weird case that should not happen
+  SOURCE: 6, // a weird case that should not happen
 });
 
 export function inferSubscriptionMode(contextValue, configuration) {
   const {fork, hoistToProvider, promise} = configuration;
   const existsInProvider = !!contextValue.get(configuration.key);
+
+  if (configuration[sourceSecretSymbol] === true) {
+    return AsyncStateSubscriptionMode.SOURCE;
+  }
 
   // early decide that this is a listener and return it immediately
   // because this is the most common use case that it will be, we'll be optimizing this path first
@@ -66,12 +72,18 @@ export function deduceAsyncState(mode, configuration, contextValue) {
       return new AsyncState(configuration.key, configuration.promise, promiseConfigFromConfiguration(configuration));
     case AsyncStateSubscriptionMode.NOOP:
       return null;
+    case AsyncStateSubscriptionMode.SOURCE:
+      return readAsyncStateFromSource(configuration.source);
     default:
       return candidate;
   }
 }
 
+export const sourceSecretSymbol = Symbol();
+
 export const defaultUseASConfig = Object.freeze({
+  source: undefined,
+
   fork: false,
   condition: true,
   hoistToProvider: false,

@@ -3,20 +3,9 @@ import { EMPTY_ARRAY, shallowClone } from "shared";
 import { AsyncStateContext } from "../context";
 import useProviderAsyncState from "./internal-hooks/useProviderAsyncState";
 import { useStandaloneAsyncState } from "./internal-hooks/useStandaloneAsyncState";
-import { defaultUseASConfig } from "./utils/subscriptionUtils";
+import { defaultUseASConfig, sourceSecretSymbol } from "./utils/subscriptionUtils";
+import { isAsyncStateSource } from "async-state/AsyncState";
 
-/**
- * @typedef {Object} UseAsyncStateConfig
- * @property {string} key
- * @property {function} promise
- * @property {boolean} [fork=false]
- * @property {boolean} [condition=true]
- * @property {boolean} [hoistToProvider=false]
- *
- * @param {string | function | UseAsyncStateConfig} subscriptionConfig
- * @param dependencies
- * @returns {{ key, run, abort, runAsyncState, state: {status, data}}}
- */
 export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
   const contextValue = React.useContext(AsyncStateContext);
 
@@ -44,9 +33,25 @@ function readRegularConfig(userConfig) {
   if (typeof userConfig === "string") {
     return shallowClone(defaultUseASConfig, {key: userConfig});
   }
+  if (isAsyncStateSource(userConfig)) {
+    return readSourceConfig(userConfig);
+  }
+  if (isAsyncStateSource(userConfig.source)) {
+    return readHybridSourceConfig(userConfig);
+  }
   return shallowClone(defaultUseASConfig, userConfig);
 }
 
+function readSourceConfig(source) {
+  return shallowClone(defaultUseASConfig, {source, [sourceSecretSymbol]: true});
+}
+
+function readHybridSourceConfig(userConfig) {
+  return Object.assign({}, defaultUseASConfig, userConfig, {
+    source: userConfig.source,
+    [sourceSecretSymbol]: true
+  });
+}
 
 const defaultAnonymousPrefix = "anonymous-async-state-";
 const nextKey = (function autoKey() {

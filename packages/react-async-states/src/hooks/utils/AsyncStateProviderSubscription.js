@@ -14,6 +14,7 @@ export function AsyncStateProviderSubscription(contextValue, configuration) {
     asyncState,
     run(...args) {
       switch (mode) {
+        case AsyncStateSubscriptionMode.SOURCE:
         case AsyncStateSubscriptionMode.STANDALONE: {
           if (configuration.payload) {
             asyncState.payload = shallowClone(asyncState.payload, configuration.payload);
@@ -37,6 +38,7 @@ export function AsyncStateProviderSubscription(contextValue, configuration) {
     },
     dispose() {
       switch (mode) {
+        case AsyncStateSubscriptionMode.SOURCE:
         case AsyncStateSubscriptionMode.STANDALONE:
           return asyncState.dispose();
         case AsyncStateSubscriptionMode.FORK:

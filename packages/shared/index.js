@@ -24,7 +24,8 @@ export function asyncify(fn) {
   }
 }
 
-export function noop() {}
+export function noop() {
+}
 
 export function invokeIfPresent(fn, ...args) {
   if (typeof fn === "function") {
@@ -44,6 +45,7 @@ export function isGenerator(candidate) {
 export function shallowEqual(prev, next) {
   return prev === next;
 }
+
 export function identity(...args) {
   if (!args || !args.length) {
     return undefined;
@@ -54,6 +56,7 @@ export function identity(...args) {
 export function oneObjectIdentity(obj) {
   return obj;
 }
+
 /**
  * will extract serializable and meaningful arguments to save
  * @param args array of parameters

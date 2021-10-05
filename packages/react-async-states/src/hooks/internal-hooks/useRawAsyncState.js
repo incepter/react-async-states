@@ -38,7 +38,6 @@ export default function useRawAsyncState(asyncState, dependencies, configuration
       const {areEqual} = configuration;
       if (!areEqual(prevStateValue, calculatedState)) {
         rerender({});
-        // devtools.emitAsyncState(asyncState);
       }
     });
   }, [...dependencies, asyncState]);
@@ -77,6 +76,8 @@ function calculateSelectedState(newState, lastSuccess, configuration) {
 }
 
 function applyUpdateOnReturnValue(returnValue, asyncState, stateValue, run, runAsyncState) {
+  returnValue.source = asyncState._source;
+
   returnValue.state = stateValue;
   returnValue.payload = asyncState.payload;
   returnValue.lastSuccess = asyncState.lastSuccess;

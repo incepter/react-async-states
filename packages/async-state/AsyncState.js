@@ -2,7 +2,12 @@ import { __DEV__, AsyncStateStatus, cloneArgs, invokeIfPresent, shallowClone } f
 import { wrapPromise } from "./wrappers/wrap-promise";
 import { clearSubscribers, notifySubscribers } from "./notify-subscribers";
 import { AsyncStateStateBuilder } from "./StateBuilder";
-import { warnDevAboutAsyncStateKey, warnDevAboutUndefinedPromise, warnInDevAboutRunWhilePending } from "./utils";
+import {
+  constructAsyncStateSource, readAsyncStateFromSource,
+  warnDevAboutAsyncStateKey,
+  warnDevAboutUndefinedPromise,
+  warnInDevAboutRunWhilePending
+} from "./utils";
 import devtools from "devtools";
 
 let uniqueId = 0;
@@ -40,6 +45,8 @@ function AsyncState(key, promise, config) {
   if (__DEV__) {
     this.uniqueId = nextUniqueId();
   }
+
+  this._source = makeSource(this);
 
   Object.preventExtensions(this);
 
@@ -188,3 +195,18 @@ AsyncState.prototype.replaceState = function replaceState(newValue) {
 }
 
 export default AsyncState;
+
+function makeSource(asyncState) {
+  const source = constructAsyncStateSource(asyncState);
+  source.key = asyncState.key;
+
+  if (__DEV__) {
+    source.uniqueId = asyncState.uniqueId;
+  }
+
+  return Object.freeze(source);
+}
+
+export function isAsyncStateSource(source) {
+  return readAsyncStateFromSource(source, false) instanceof AsyncState;
+}

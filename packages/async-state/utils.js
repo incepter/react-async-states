@@ -1,4 +1,5 @@
 import { __DEV__ } from "shared";
+import AsyncState from "./AsyncState";
 
 export function warnDevAboutAsyncStateKey(key) {
   if (__DEV__) {
@@ -21,3 +22,40 @@ export function warnInDevAboutRunWhilePending(key) {
     console.log(`[${key}][run while pending] previous run will be aborted`);
   }
 }
+
+function Secret() {
+  const vault = new WeakMap();
+  return function Hidden() {
+    if (arguments.length === 1) {
+      return vault.get(arguments[0]);
+    }
+    if (arguments.length === 2) {
+      vault.set(arguments[0], arguments[1]);
+    }
+  };
+}
+
+function objectWithHiddenProperty(key, value) {
+  let output = new (Secret())();
+  output.constructor(key, value);
+
+  return output;
+}
+
+const asyncStatesKey = Object.freeze(Object.create(null));
+export function constructAsyncStateSource(asyncState) {
+  return objectWithHiddenProperty(asyncStatesKey, asyncState);
+}
+
+export function readAsyncStateFromSource(source, logError = true) {
+  try {
+    return source.constructor(asyncStatesKey); // async state instance
+  } catch (e) {
+    if (logError) {
+      const errorString = "You ve passed an incompatible source object. Please make sure to pass the received source object.";
+      console.error(errorString);
+      throw new Error(errorString);
+    }
+  }
+}
+

@@ -3,7 +3,8 @@ import { demoAsyncStates } from "./Provider";
 import { useAsyncState, useAsyncStateSelector } from "react-async-states";
 
 function SimpleSub({asyncStateKey, displayValue}) {
-  const {key, state: {status, data}, run, abort} = useAsyncState(asyncStateKey);
+  const {key, state: {status, data}, run, abort, source} = useAsyncState(asyncStateKey);
+  // console.log('source ' + source.key, source.getState(), source.isSource, source);
 
   return (
     <div>
@@ -24,8 +25,14 @@ function SimpleSub({asyncStateKey, displayValue}) {
           </ul>
         </div>
       )}
+      <SourceExample source={source}/>
     </div>
   );
+}
+
+function SourceExample({source}) {
+  console.log(useAsyncState({source, selector: d => d.status}).state);
+  return null;
 }
 
 export default function Demo() {
