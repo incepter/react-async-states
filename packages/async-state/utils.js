@@ -1,5 +1,4 @@
 import { __DEV__ } from "shared";
-import AsyncState from "./AsyncState";
 
 export function warnDevAboutAsyncStateKey(key) {
   if (__DEV__) {

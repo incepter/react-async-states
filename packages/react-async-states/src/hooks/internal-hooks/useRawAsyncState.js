@@ -1,6 +1,6 @@
 import React from "react";
 import { EMPTY_OBJECT, shallowClone } from "shared";
-import { defaultRerenderStatusConfig } from "../utils/subscriptionUtils";
+import { defaultRerenderStatusConfig, sourceSecretSymbol } from "../utils/subscriptionUtils";
 
 export default function useRawAsyncState(asyncState, dependencies, configuration, run, dispose, runAsyncState) {
   const returnValue = React.useRef();
@@ -56,7 +56,7 @@ export default function useRawAsyncState(asyncState, dependencies, configuration
 
   // automatic run if not marked as lazy
   React.useEffect(function autoRunAsyncState() {
-    if (!asyncState || !configuration.condition || asyncState.config.lazy || configuration.lazy) {
+    if (!asyncState || !configuration.condition || configuration[sourceSecretSymbol] || asyncState.config.lazy || configuration.lazy) {
       return undefined;
     }
 

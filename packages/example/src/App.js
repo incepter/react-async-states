@@ -9,8 +9,20 @@ import StandaloneDemo from "./StandaloneDemo";
 import ReplaceStateDemo from "./ReplaceStateDemo";
 import Navigation from "./Navigation";
 import DemoProvider from "./Provider";
+import { DOMAIN_USER_PROMISES } from "./v2/domain/users/promises";
 
-function OutsideProvider() {
+function OutsideProvider({setSource}) {
+  const {source} = useAsyncState({
+    lazy: true,
+    ...DOMAIN_USER_PROMISES.details,
+  });
+
+  window.__AM_LAZY__ = source;
+
+  return null;
+}
+
+function InsideProvider() {
   const {state, run, replaceState} = useAsyncState({
     lazy: true,
     key: "counter",
@@ -37,8 +49,9 @@ export default function App() {
 
   return (
     <Router>
+      <OutsideProvider/>
       <DemoProvider>
-        <OutsideProvider/>
+        <InsideProvider/>
         <div>
           <Navigation/>
           <hr/>

@@ -31,7 +31,7 @@ function SimpleSub({asyncStateKey, displayValue}) {
 }
 
 function SourceExample({source}) {
-  console.log(useAsyncState({source, selector: d => d.status}).state);
+  console.log(useAsyncState({lazy: false, source: window.__AM_LAZY__, payload: {userId: 1}, selector: d => d.status}).state);
   return null;
 }
 

@@ -39,6 +39,7 @@ export default function useProviderAsyncState(configuration, dependencies) {
       }
       case AsyncStateSubscriptionMode.NOOP:
       case AsyncStateSubscriptionMode.STANDALONE:
+      case AsyncStateSubscriptionMode.SOURCE:
       default: return undefined;
     }
   }, [subscription]);

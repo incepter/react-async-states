@@ -1,4 +1,4 @@
-import { invokeIfPresent } from "../shared";
+import { invokeIfPresent } from "shared";
 
 export function notifySubscribers(promiseState) {
   Object.values(promiseState.subscriptions).forEach(t => {
