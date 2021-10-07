@@ -3,7 +3,8 @@ import { wrapPromise } from "./wrappers/wrap-promise";
 import { clearSubscribers, notifySubscribers } from "./notify-subscribers";
 import { AsyncStateStateBuilder } from "./StateBuilder";
 import {
-  constructAsyncStateSource, readAsyncStateFromSource,
+  constructAsyncStateSource,
+  readAsyncStateFromSource,
   warnDevAboutAsyncStateKey,
   warnDevAboutUndefinedPromise,
   warnInDevAboutRunWhilePending

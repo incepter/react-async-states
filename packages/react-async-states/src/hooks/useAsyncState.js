@@ -1,67 +1,155 @@
 import React from "react";
-import { EMPTY_ARRAY, shallowClone } from "shared";
+import { EMPTY_ARRAY, EMPTY_OBJECT, invokeIfPresent, shallowClone } from "shared";
 import { AsyncStateContext } from "../context";
-import useProviderAsyncState from "./internal-hooks/useProviderAsyncState";
-import { useStandaloneAsyncState } from "./internal-hooks/useStandaloneAsyncState";
-import { defaultUseASConfig, sourceSecretSymbol } from "./utils/subscriptionUtils";
-import { isAsyncStateSource } from "async-state/AsyncState";
+import {
+  applyUpdateOnReturnValue,
+  AsyncStateSubscriptionMode,
+  calculateSelectedState,
+  defaultRerenderStatusConfig,
+  inferAsyncStateInstance,
+  inferSubscriptionMode,
+  shouldRecalculateInstance
+} from "./utils/subscriptionUtils";
+import { readUserConfiguration } from "./utils/readConfig";
+import { disposeAsyncStateSubscriptionFn, runAsyncStateSubscriptionFn } from "./utils/asyncStateSubscription";
+
+// guard: if inside provider, and subscription occurred before hoist, component may wait and uses this to trigger recalculation
+// rerender: when async state updates and value change, if we should rerender (areEqual = false) => rerender
+const initialStateDependencies = Object.freeze({rerender: EMPTY_OBJECT, guard: EMPTY_OBJECT});
+
+function refsFactory() {
+  return {
+    returnValue: undefined,
+    subscriptionInfo: undefined,
+  };
+}
 
 export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
   const contextValue = React.useContext(AsyncStateContext);
 
-  const configuration = React.useMemo(function readConfiguration() {
-    return readRegularConfig(subscriptionConfig);
+  const isInsideProvider = contextValue !== null;
+  const runAsyncState = contextValue?.runAsyncState;
+
+  const refs = React.useRef(EMPTY_OBJECT);
+  const [stateDeps, setStateDeps] = React.useState(initialStateDependencies);
+
+  if (refs.current === EMPTY_OBJECT) {
+    refs.current = refsFactory();
+  }
+
+  const {mode, asyncState, configuration, run, dispose} = React.useMemo(function readConfiguration() {
+    const configuration = readUserConfiguration(subscriptionConfig);
+    const mode = inferSubscriptionMode(contextValue, configuration);
+
+    const {guard} = stateDeps;
+    const recalculateInstance = shouldRecalculateInstance(configuration, mode, guard, refs.current.subscriptionInfo);
+
+    let output = {
+      mode,
+      guard,
+      configuration,
+      deps: dependencies,
+    };
+    if (recalculateInstance) {
+      output.asyncState = inferAsyncStateInstance(mode, configuration, contextValue);
+      // output = {configuration, guard, ...asyncStateSubscription(contextValue, mode, configuration), deps: dependencies};
+    } else {
+      output.asyncState = refs.current.subscriptionInfo.asyncState;
+    }
+
+    output.asyncState.payload = shallowClone(output.asyncState.payload, configuration.payload);
+    output.run = runAsyncStateSubscriptionFn(mode, output.asyncState, configuration, contextValue);
+    output.dispose = disposeAsyncStateSubscriptionFn(mode, output.asyncState, configuration, contextValue);
+
+    // the calculated async state instance changed
+    if (output.asyncState !== refs.current.subscriptionInfo?.asyncState) {
+      // whenever the async state changes, synchronously make the return value a new object
+      // it is like a synchronous effect that applies a mutation and does not have a cleanup
+      refs.current.returnValue = undefined;
+    }
+
+    refs.current.subscriptionInfo = output;
+
+    return output;
+  }, [contextValue, stateDeps.guard, ...dependencies]);
+
+  // it is okay to use hooks inside this condition
+  // because if it changes, react will throw the old tree to gc
+  if (isInsideProvider) {
+    // wait early
+    // this sets  a watcher to observe present async state
+    React.useLayoutEffect(function watchAsyncState() {
+      switch (mode) {
+        case AsyncStateSubscriptionMode.FORK:
+        case AsyncStateSubscriptionMode.HOIST:
+        case AsyncStateSubscriptionMode.WAITING:
+        case AsyncStateSubscriptionMode.LISTEN: {
+          let watchedKey = AsyncStateSubscriptionMode.WAITING === mode
+            ? configuration.key
+            :
+            asyncState?.key;
+
+          return contextValue.watch(watchedKey, function notify(newValue) {
+            if (newValue !== asyncState) {
+              setStateDeps(old => ({guard: {}, rerender: old.rerender}));
+            }
+          });
+        }
+        case AsyncStateSubscriptionMode.NOOP:
+        case AsyncStateSubscriptionMode.SOURCE:
+        case AsyncStateSubscriptionMode.STANDALONE:
+        case AsyncStateSubscriptionMode.OUTSIDE_PROVIDER:
+        default:
+          return undefined;
+      }
+    }, [mode, asyncState, configuration.key]);
+  }
+
+  // if rendering with an undefined value, construct the return value
+  if (!refs.current.returnValue) {
+    refs.current.returnValue = Object.create(null); // inherit nothing
+    const calculatedState = calculateSelectedState(asyncState.currentState, asyncState.lastSuccess, configuration);
+    applyUpdateOnReturnValue(refs.current.returnValue, asyncState, calculatedState, run, runAsyncState);
+  }
+
+  // the subscription to state change along with the decision to re-render
+  React.useLayoutEffect(function subscribeToAsyncState() {
+    if (!asyncState) {
+      return undefined;
+    }
+    const {rerenderStatus} = configuration;
+    const rerenderStatusConfig = shallowClone(defaultRerenderStatusConfig, rerenderStatus);
+
+    return asyncState.subscribe(function onUpdate(newState) {
+      const calculatedState = calculateSelectedState(newState, asyncState.lastSuccess, configuration);
+      const prevStateValue = refs.current.returnValue.state;
+      applyUpdateOnReturnValue(refs.current.returnValue, asyncState, calculatedState, run, runAsyncState);
+
+      if (!rerenderStatusConfig[newState.status]) {
+        return;
+      }
+
+      const {areEqual} = configuration;
+      if (!areEqual(prevStateValue, calculatedState)) {
+        setStateDeps(old => ({rerender: {}, guard: old.guard}));
+      }
+    });
+  }, [...dependencies, asyncState]); // re-subscribe if deps
+
+  React.useEffect(function autoRunAsyncState() {
+    if (!asyncState || !configuration.condition || asyncState.config.lazy || configuration.lazy) {
+      return undefined;
+    }
+
+    return run();
   }, dependencies);
 
-  // this will never change, because if suddenly you are no longer in this context
-  // this means this component no longer exists (diffing algorithm will detect a type change and unmount)
-  // so it is safe not be added as dependency to hooks ;) or even to violate the condition hook usage ;)
-  const isInsideProvider = contextValue !== null; // null == context default value (React.createContext(null))
+  // attempt to dispose/reset old async state
+  React.useEffect(function disposeOldAsyncState() {
+    return function cleanup() {
+      invokeIfPresent(dispose);
+    }
+  }, [dispose]);
 
-  if (isInsideProvider) {
-    return useProviderAsyncState(configuration, dependencies);
-  }
-  return useStandaloneAsyncState(configuration, dependencies);
-}
-
-// userConfig is the config the developer wrote
-function readRegularConfig(userConfig) {
-  // this is an anonymous promise configuration (lazy: true, fork: false, hoist: false, payload: null)
-  if (typeof userConfig === "function") {
-    return readConfigFromPromiseFunction(userConfig);
-  }
-  if (typeof userConfig === "string") {
-    return shallowClone(defaultUseASConfig, {key: userConfig});
-  }
-  if (isAsyncStateSource(userConfig)) {
-    return readSourceConfig(userConfig);
-  }
-  if (isAsyncStateSource(userConfig.source)) {
-    return readHybridSourceConfig(userConfig);
-  }
-  return shallowClone(defaultUseASConfig, userConfig);
-}
-
-function readSourceConfig(source) {
-  return shallowClone(defaultUseASConfig, {source, [sourceSecretSymbol]: true});
-}
-
-function readHybridSourceConfig(userConfig) {
-  return Object.assign({}, defaultUseASConfig, userConfig, {
-    source: userConfig.source,
-    [sourceSecretSymbol]: true
-  });
-}
-
-const defaultAnonymousPrefix = "anonymous-async-state-";
-const nextKey = (function autoKey() {
-  let key = 0;
-  return function incrementAndGet() {
-    key += 1;
-    return `${defaultAnonymousPrefix}${key}`;
-  }
-}());
-
-function readConfigFromPromiseFunction(promise) {
-  return shallowClone(defaultUseASConfig, {promise, key: nextKey()});
+  return refs.current.returnValue;
 }

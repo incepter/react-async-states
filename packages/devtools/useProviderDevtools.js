@@ -9,7 +9,7 @@ export default function useProviderDevtools(entries) {
   }
 
   React.useLayoutEffect(function waitForDevtoolsAndEmit() {
-    console.log('provider effect');
+    // console.log('provider effect');
     function listener(message) {
       if (!message.data || message.data.source !== "async-states-devtools-panel") {
         return;
@@ -19,7 +19,7 @@ export default function useProviderDevtools(entries) {
         devtools.emitProviderState(entries);
       }
 
-      console.log('________', message.data);
+      // console.log('________', message.data);
     }
     window.addEventListener("message", listener)
 

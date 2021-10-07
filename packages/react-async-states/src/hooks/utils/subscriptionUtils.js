@@ -17,16 +17,24 @@ export const AsyncStateSubscriptionMode = Object.freeze({
 
   FORK: 4, // forking an existing one in the provider
   NOOP: 5, // a weird case that should not happen
-  SOURCE: 6, // a weird case that should not happen
+  SOURCE: 6, // subscription via source property
+  SOURCE_FORK: 8, // subscription via source property and fork
+
+  OUTSIDE_PROVIDER: 7, // standalone outside provider
 });
 
 export function inferSubscriptionMode(contextValue, configuration) {
+  // the subscription via source passes directly
+  if (configuration[sourceSecretSymbol] === true) {
+    return configuration.fork ? AsyncStateSubscriptionMode.SOURCE_FORK : AsyncStateSubscriptionMode.SOURCE;
+  }
+
+  if (contextValue === null) {
+    return AsyncStateSubscriptionMode.OUTSIDE_PROVIDER;
+  }
+
   const {fork, hoistToProvider, promise} = configuration;
   const existsInProvider = !!contextValue.get(configuration.key);
-
-  if (configuration[sourceSecretSymbol] === true) {
-    return AsyncStateSubscriptionMode.SOURCE;
-  }
 
   // early decide that this is a listener and return it immediately
   // because this is the most common use case that it will be, we'll be optimizing this path first
@@ -57,8 +65,8 @@ export function promiseConfigFromConfiguration(configuration) {
   return {lazy: configuration.lazy, initialValue: configuration.initialValue};
 }
 
-export function deduceAsyncState(mode, configuration, contextValue) {
-  const candidate = contextValue.get(configuration.key);
+export function inferAsyncStateInstance(mode, configuration, contextValue) {
+  const candidate = contextValue?.get(configuration.key);
   switch (mode) {
     case AsyncStateSubscriptionMode.FORK:
       return contextValue.fork(configuration.key, configuration.forkConfig);
@@ -69,11 +77,16 @@ export function deduceAsyncState(mode, configuration, contextValue) {
     case AsyncStateSubscriptionMode.WAITING:
       return waitingAsyncState;
     case AsyncStateSubscriptionMode.STANDALONE:
+    case AsyncStateSubscriptionMode.OUTSIDE_PROVIDER:
       return new AsyncState(configuration.key, configuration.promise, promiseConfigFromConfiguration(configuration));
     case AsyncStateSubscriptionMode.NOOP:
       return null;
     case AsyncStateSubscriptionMode.SOURCE:
       return readAsyncStateFromSource(configuration.source);
+    case AsyncStateSubscriptionMode.SOURCE_FORK: {
+      const sourceAsyncState = readAsyncStateFromSource(configuration.source);
+      return sourceAsyncState.fork(configuration.forkConfig);
+    }
     default:
       return candidate;
   }
@@ -102,3 +115,54 @@ const waitingAsyncState = new AsyncState(
   "waiting_async_state",
   {}
 );
+
+
+export function calculateSelectedState(newState, lastSuccess, configuration) {
+  const {selector} = configuration;
+  return typeof selector === "function" ? selector(newState, lastSuccess) : newState;
+}
+
+export function applyUpdateOnReturnValue(returnValue, asyncState, stateValue, run, runAsyncState) {
+  returnValue.source = asyncState._source;
+
+  returnValue.state = stateValue;
+  returnValue.payload = asyncState.payload;
+  returnValue.lastSuccess = asyncState.lastSuccess;
+
+  returnValue.key = asyncState.key;
+
+  if (!returnValue.mergePayload) {
+    returnValue.mergePayload = function mergePayload(newPayload) {
+      asyncState.payload = shallowClone(asyncState.payload, newPayload);
+    }
+  }
+
+  if (!returnValue.run) {
+    returnValue.run = typeof run === "function" ? run : asyncState.run.bind(asyncState);
+  }
+  if (!returnValue.abort) {
+    returnValue.abort = asyncState.abort.bind(asyncState);
+  }
+  if (!returnValue.replaceState) {
+    returnValue.replaceState = asyncState.replaceState.bind(asyncState);
+  }
+  if (!returnValue.runAsyncState) {
+    returnValue.runAsyncState = runAsyncState;
+  }
+}
+
+export function shouldRecalculateInstance(configuration, mode, guard, deps, oldValue) {
+  return !oldValue ||
+    guard !== oldValue.guard ||
+    mode !== oldValue.mode ||
+    configuration.promise !== oldValue.configuration.promise ||
+    configuration.source !== oldValue.configuration.source ||
+
+    deps.some((dep, index) => !Object.is(dep, oldValue.deps[index])) ||
+
+    configuration.fork !== oldValue.configuration.fork ||
+    configuration.forkConfig?.keepState !== oldValue.configuration.forkConfig?.keepState ||
+
+    configuration.hoistToProvider !== oldValue.configuration.hoistToProvider ||
+    configuration.hoistToProviderConfig.override !== oldValue.configuration.hoistToProviderConfig.override;
+}

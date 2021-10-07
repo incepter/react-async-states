@@ -25,14 +25,8 @@ function SimpleSub({asyncStateKey, displayValue}) {
           </ul>
         </div>
       )}
-      <SourceExample source={source}/>
     </div>
   );
-}
-
-function SourceExample({source}) {
-  console.log(useAsyncState({lazy: false, source: window.__AM_LAZY__, payload: {userId: 1}, selector: d => d.status}).state);
-  return null;
 }
 
 export default function Demo() {

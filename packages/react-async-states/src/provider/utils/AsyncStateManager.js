@@ -11,6 +11,10 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
 
   function run(asyncState, ...args) {
     const asyncStateEntry = asyncStateEntries[asyncState.key];
+    // either a mistake/bug, or subscription was via source
+    if (!asyncStateEntry) {
+      return asyncState.run(...args);
+    }
     return runScheduledAsyncState(asyncStateEntry, ...args);
   }
 
@@ -26,8 +30,9 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
     const {key} = asyncState;
     const asyncStateEntry = asyncStateEntries[key];
 
+    // either a mistake/bug, or subscription was via source
     if (!asyncStateEntry) {
-      return false;
+      return asyncState.dispose();
     }
 
     const didDispose = asyncStateEntry.value.dispose();

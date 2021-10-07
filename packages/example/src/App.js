@@ -11,15 +11,19 @@ import Navigation from "./Navigation";
 import DemoProvider from "./Provider";
 import { DOMAIN_USER_PROMISES } from "./v2/domain/users/promises";
 
-function OutsideProvider({setSource}) {
-  const {source} = useAsyncState({
+function OutsideProvider() {
+  const data = useAsyncState({
     lazy: true,
+    condition: false,
     ...DOMAIN_USER_PROMISES.details,
   });
 
-  window.__AM_LAZY__ = source;
+  window.__AM_LAZY__ = data.source;
 
-  return null;
+  return <button onClick={() => {
+    data.mergePayload({ userId: (data.payload.userId || 0) - 1 });
+    data.run();
+  }}>RUUUUUUUN{JSON.stringify(data.state.status)}-{JSON.stringify(data.lastSuccess.data?.id)}</button>;
 }
 
 function InsideProvider() {
