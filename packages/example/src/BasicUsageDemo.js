@@ -2,8 +2,8 @@ import React from "react";
 import { demoAsyncStates } from "./Provider";
 import { useAsyncState, useAsyncStateSelector } from "react-async-states";
 
-function SimpleSub({asyncStateKey, displayValue}) {
-  const {key, state: {status, data}, run, abort, source} = useAsyncState(asyncStateKey);
+function SimpleSub({source, asyncStateKey, displayValue, lazy = false}) {
+  const {key, state: {status, data}, run, abort} = useAsyncState({source, key: asyncStateKey, lazy});
   // console.log('source ' + source.key, source.getState(), source.isSource, source);
 
   return (
@@ -40,7 +40,7 @@ export default function Demo() {
           <h3>Subscribe to global async state - {demoAsyncStates.users.key}</h3>
           <div style={{display: "flex"}}>
             <SimpleSub
-              asyncStateKey={demoAsyncStates.users.key}
+              source={demoAsyncStates.users}
               displayValue={data => data.map(user => <li
                 key={user.id}>{user.id} - {user.username} - {user.name} - {user.email}</li>)}
             />

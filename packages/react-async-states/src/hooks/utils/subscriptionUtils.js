@@ -25,7 +25,7 @@ export const AsyncStateSubscriptionMode = Object.freeze({
 
 export function inferSubscriptionMode(contextValue, configuration) {
   // the subscription via source passes directly
-  if (configuration[sourceSecretSymbol] === true) {
+  if (configuration[sourceConfigurationSecretSymbol] === true) {
     return configuration.fork ? AsyncStateSubscriptionMode.SOURCE_FORK : AsyncStateSubscriptionMode.SOURCE;
   }
 
@@ -92,7 +92,7 @@ export function inferAsyncStateInstance(mode, configuration, contextValue) {
   }
 }
 
-export const sourceSecretSymbol = Symbol();
+export const sourceConfigurationSecretSymbol = Symbol();
 
 export const defaultUseASConfig = Object.freeze({
   source: undefined,

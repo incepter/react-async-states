@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
-import { AsyncStateBuilder, AsyncStateProvider } from 'react-async-states';
+import { AsyncStateBuilder, AsyncStateProvider, createSourceAsyncState } from 'react-async-states';
 import { getUserPromise, postsPromise, timeoutPromise, usersPromise } from "./promises";
 
 export const demoAsyncStates = {
@@ -10,11 +10,7 @@ export const demoAsyncStates = {
     .promise(timeoutPromise(4000))
     .build(),
 
-  users: AsyncStateBuilder()
-    .key("users")
-    .lazy(false)
-    .promise(usersPromise)
-    .build(),
+  users: createSourceAsyncState("users", usersPromise, {lazy: false}),
 
   posts: AsyncStateBuilder()
     .key("posts")

@@ -4,7 +4,6 @@ import { clearSubscribers, notifySubscribers } from "./notify-subscribers";
 import { AsyncStateStateBuilder } from "./StateBuilder";
 import {
   constructAsyncStateSource,
-  readAsyncStateFromSource,
   warnDevAboutAsyncStateKey,
   warnDevAboutUndefinedPromise,
   warnInDevAboutRunWhilePending
@@ -197,9 +196,12 @@ AsyncState.prototype.replaceState = function replaceState(newValue) {
 
 export default AsyncState;
 
+const sourceIsSourceSymbol = Symbol();
+
 function makeSource(asyncState) {
   const source = constructAsyncStateSource(asyncState);
   source.key = asyncState.key;
+  source[sourceIsSourceSymbol] = true;
 
   if (__DEV__) {
     source.uniqueId = asyncState.uniqueId;
@@ -208,6 +210,7 @@ function makeSource(asyncState) {
   return Object.freeze(source);
 }
 
+
 export function isAsyncStateSource(source) {
-  return readAsyncStateFromSource(source, false) instanceof AsyncState;
+  return !!source && source[sourceIsSourceSymbol] === true;
 }

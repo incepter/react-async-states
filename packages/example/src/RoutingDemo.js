@@ -40,7 +40,9 @@ export default function Demo() {
           </details>
         </pre>
       </span>
-      <SourceExample source={source}/>
+      <SourceExample source={window.__AM_LAZY__}/>
+      <br />
+      <SourceExample source={demoAsyncStates.users}/>
     </div>
   );
 }
@@ -50,10 +52,10 @@ function next() {
   return ++id;
 }
 function SourceExample({source}) {
-  const data = useAsyncState({lazy: false, source: window.__AM_LAZY__, payload: {userId: id}});
+  const data = useAsyncState({lazy: false, source, payload: {userId: id}, fork: true});
   return <button onClick={() => {
     console.log('==>data', data.payload, { userId: (data.payload.userId || 0) + 1 });
     data.mergePayload({ userId: (data.payload.userId || 0) + 1 });
     data.run();
-  }}>RUUUUUUUN{JSON.stringify(data.state.status)}-{JSON.stringify(data.lastSuccess.data?.id)}</button>;
+  }}>RUUUUUUUN{JSON.stringify(data.state.status)}-{JSON.stringify(data.lastSuccess.data)?.substring(0, 30)}</button>;
 }

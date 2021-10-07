@@ -1,5 +1,5 @@
 import { shallowClone } from "shared";
-import { defaultUseASConfig, sourceSecretSymbol } from "./subscriptionUtils";
+import { defaultUseASConfig, sourceConfigurationSecretSymbol } from "./subscriptionUtils";
 import { isAsyncStateSource } from "async-state/AsyncState";
 
 // userConfig is the config the developer wrote
@@ -14,20 +14,20 @@ export function readUserConfiguration(userConfig) {
   if (isAsyncStateSource(userConfig)) {
     return readSourceConfig(userConfig);
   }
-  if (isAsyncStateSource(userConfig.source)) {
+  if (isAsyncStateSource(userConfig?.source)) {
     return readHybridSourceConfig(userConfig);
   }
   return shallowClone(defaultUseASConfig, userConfig);
 }
 
 function readSourceConfig(source) {
-  return shallowClone(defaultUseASConfig, {source, [sourceSecretSymbol]: true});
+  return shallowClone(defaultUseASConfig, {source, [sourceConfigurationSecretSymbol]: true});
 }
 
 function readHybridSourceConfig(userConfig) {
   return Object.assign({}, defaultUseASConfig, userConfig, {
     source: userConfig.source,
-    [sourceSecretSymbol]: true
+    [sourceConfigurationSecretSymbol]: true
   });
 }
 

@@ -1,5 +1,7 @@
 import { asyncify } from "shared";
 import AsyncState from "async-state";
+import { isAsyncStateSource } from "async-state/AsyncState";
+import { readAsyncStateFromSource } from "async-state/utils";
 
 export function createAsyncStateEntry(asyncState) {
   return {
@@ -9,6 +11,17 @@ export function createAsyncStateEntry(asyncState) {
 }
 
 export function createInitialAsyncStatesReducer(result, current) {
+  if (isAsyncStateSource(current)) {
+    const existingEntry = result[current.key];
+    const asyncState = readAsyncStateFromSource(current);
+
+    if (!existingEntry || asyncState !== existingEntry.value) {
+      result[key] = createAsyncStateEntry(asyncState);
+      result[key].initiallyHoisted = true;
+    }
+
+    return result;
+  }
   const {key, promise, lazy, initialValue} = current;
   const existingEntry = result[key];
   if (existingEntry) {

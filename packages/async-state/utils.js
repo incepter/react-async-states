@@ -46,11 +46,11 @@ export function constructAsyncStateSource(asyncState) {
   return objectWithHiddenProperty(asyncStatesKey, asyncState);
 }
 
-export function readAsyncStateFromSource(source, logError = true) {
+export function readAsyncStateFromSource(source, throwError = true) {
   try {
     return source.constructor(asyncStatesKey); // async state instance
   } catch (e) {
-    if (logError) {
+    if (throwError) {
       const errorString = "You ve passed an incompatible source object. Please make sure to pass the received source object.";
       console.error(errorString);
       throw new Error(errorString);

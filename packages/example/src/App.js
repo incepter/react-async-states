@@ -21,7 +21,7 @@ function OutsideProvider() {
   window.__AM_LAZY__ = data.source;
 
   return <button onClick={() => {
-    data.mergePayload({ userId: (data.payload.userId || 0) - 1 });
+    data.mergePayload({ userId: (data.payload.userId || 0) + 1 });
     data.run();
   }}>RUUUUUUUN{JSON.stringify(data.state.status)}-{JSON.stringify(data.lastSuccess.data?.id)}</button>;
 }
