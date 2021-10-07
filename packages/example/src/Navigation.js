@@ -52,6 +52,9 @@ export default function Navigation() {
       <li>
         <Link to="/selectors">Selectors</Link>
       </li>
+      <li>
+        <Link to="/redux">Redux</Link>
+      </li>
     </ul>
   );
 }
