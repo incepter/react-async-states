@@ -24,22 +24,11 @@ export function asyncify(fn) {
   }
 }
 
-export function noop() {
-}
-
 export function invokeIfPresent(fn, ...args) {
   if (typeof fn === "function") {
     return fn(...args);
   }
   return undefined;
-}
-
-export function isPromise(candidate) {
-  return !!candidate && typeof candidate.then === "function";
-}
-
-export function isGenerator(candidate) {
-  return !!candidate && typeof candidate.next === "function" && typeof candidate.throw === "function";
 }
 
 export function shallowEqual(prev, next) {

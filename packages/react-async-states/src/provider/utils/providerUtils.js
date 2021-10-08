@@ -21,18 +21,20 @@ export function createInitialAsyncStatesReducer(result, current) {
     }
 
     return result;
-  }
-  const {key, promise, lazy, initialValue} = current;
-  const existingEntry = result[key];
-  if (existingEntry) {
-    const asyncState = existingEntry.value;
-    if (asyncState.originalPromise === promise && asyncState.config.lazy === lazy && asyncState.config.initialValue === initialValue) {
-      return result;
+  } else {
+    const {key, promise, lazy, initialValue} = current;
+    const existingEntry = result[key];
+    if (existingEntry) {
+      const asyncState = existingEntry.value;
+      if (asyncState.originalPromise === promise && asyncState.config.lazy === lazy && asyncState.config.initialValue === initialValue) {
+        return result;
+      }
     }
+    result[key] = createAsyncStateEntry(new AsyncState(key, promise, {lazy, initialValue}));
+    result[key].initiallyHoisted = true;
+    return result;
   }
-  result[key] = createAsyncStateEntry(new AsyncState(key, promise, {lazy, initialValue}));
-  result[key].initiallyHoisted = true;
-  return result;
+
 }
 
 export function runScheduledAsyncState(asyncStateEntry, ...executionArgs) {

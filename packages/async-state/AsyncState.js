@@ -1,8 +1,7 @@
 import { __DEV__, AsyncStateStatus, cloneArgs, invokeIfPresent, shallowClone } from "shared";
-import { wrapPromise } from "./wrappers/wrap-promise";
-import { clearSubscribers, notifySubscribers } from "./notify-subscribers";
-import { AsyncStateStateBuilder } from "./StateBuilder";
+import { wrapPromiseFunction } from "./wrap-promise-function";
 import {
+  AsyncStateStateBuilder,
   constructAsyncStateSource,
   warnDevAboutAsyncStateKey,
   warnDevAboutUndefinedPromise,
@@ -10,17 +9,8 @@ import {
 } from "./utils";
 import devtools from "devtools";
 
-let uniqueId = 0;
-
-function nextUniqueId() {
-  return ++uniqueId;
-}
-
-export const defaultASConfig = Object.freeze({lazy: true, initialValue: null});
-
 function AsyncState(key, promise, config) {
   warnDevAboutAsyncStateKey(key);
-  warnDevAboutUndefinedPromise(key, promise);
 
   this.key = key;
   this.config = shallowClone(defaultASConfig, config);
@@ -33,7 +23,7 @@ function AsyncState(key, promise, config) {
   this.subscriptionsMeter = 0;
 
   this.subscriptions = {};
-  this.promise = wrapPromise(this);
+  this.promise = wrapPromiseFunction(this);
 
   this.__IS_FORK__ = false;
 
@@ -156,8 +146,6 @@ AsyncState.prototype.subscribe = function subscribe(cb) {
   return cleanup;
 }
 
-const defaultForkConfig = Object.freeze({keepState: false});
-
 AsyncState.prototype.fork = function fork(forkConfig) {
   const mergedConfig = shallowClone(defaultForkConfig, forkConfig);
 
@@ -175,10 +163,6 @@ AsyncState.prototype.fork = function fork(forkConfig) {
   return clone;
 }
 
-function forkKey(asyncState) {
-  return `${asyncState.key}-fork-${asyncState.forkCount + 1}`;
-}
-
 AsyncState.prototype.replaceState = function replaceState(newValue) {
   if (this.currentState.status === AsyncStateStatus.pending) {
     this.abort();
@@ -194,9 +178,19 @@ AsyncState.prototype.replaceState = function replaceState(newValue) {
   this.setState(AsyncStateStateBuilder.success(effectiveValue));
 }
 
-export default AsyncState;
+function nextUniqueId() {
+  return ++uniqueId;
+}
 
+let uniqueId = 0;
 const sourceIsSourceSymbol = Symbol();
+
+const defaultForkConfig = Object.freeze({keepState: false});
+export const defaultASConfig = Object.freeze({lazy: true, initialValue: null});
+
+function forkKey(asyncState) {
+  return `${asyncState.key}-fork-${asyncState.forkCount + 1}`;
+}
 
 function makeSource(asyncState) {
   const source = constructAsyncStateSource(asyncState);
@@ -211,6 +205,21 @@ function makeSource(asyncState) {
 }
 
 
+function notifySubscribers(promiseState) {
+  Object.values(promiseState.subscriptions).forEach(t => {
+    invokeIfPresent(t.callback, promiseState.currentState);
+  });
+}
+
+function clearSubscribers(promiseState) {
+  Object.values(promiseState.subscriptions).forEach(t => {
+    invokeIfPresent(t.cleanup);
+  });
+}
+
+
 export function isAsyncStateSource(source) {
   return !!source && source[sourceIsSourceSymbol] === true;
 }
+
+export default AsyncState;

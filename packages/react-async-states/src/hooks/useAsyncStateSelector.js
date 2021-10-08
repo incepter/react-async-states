@@ -18,7 +18,7 @@ function readSelectorKeys(keys, availableKeys) {
 export function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual, initialValue = undefined) {
   const {get, dispose, getAllKeys, watchAll} = React.useContext(AsyncStateContext);
 
-  const asMap = React.useMemo(function deduceKeys() {
+  const asyncStatesMap = React.useMemo(function deduceKeys() {
     return readSelectorKeys(keys, getAllKeys())
       .reduce((result, key) => {
         result[key] = get(key) || null;
@@ -27,8 +27,8 @@ export function useAsyncStateSelector(keys, selector = identity, areEqual = shal
   }, [keys, getAllKeys]);
 
   const dependencies = React.useMemo(function getEffectDependencies() {
-    return [...Object.keys(asMap), watchAll, dispose, selector]
-  }, [asMap, watchAll, dispose, selector]);
+    return [...Object.keys(asyncStatesMap), watchAll, dispose, selector]
+  }, [asyncStatesMap, watchAll, dispose, selector]);
 
   const [returnValue, setReturnValue] = React.useState(function getInitialState() {
     return selectValues() || initialValue;
@@ -40,13 +40,13 @@ export function useAsyncStateSelector(keys, selector = identity, areEqual = shal
     let selectedValue;
     if (reduceToObject) {
       selectedValue = selector(
-        Object.entries(asMap).reduce((result, [key, as]) => {
+        Object.entries(asyncStatesMap).reduce((result, [key, as]) => {
           result[key] = as?.currentState;
           return result;
         }, {})
       );
     } else {
-      selectedValue = selector(Object.values(asMap).map(t => t?.currentState))
+      selectedValue = selector(Object.values(asyncStatesMap).map(t => t?.currentState))
     }
 
     if (!areEqual(returnValue, selectedValue)) {
@@ -62,7 +62,7 @@ export function useAsyncStateSelector(keys, selector = identity, areEqual = shal
       setReturnValue(selectValues());
     }
 
-    Object.values(asMap).forEach(function subscribeOrWaitFor(asyncState) {
+    Object.values(asyncStatesMap).forEach(function subscribeOrWaitFor(asyncState) {
       if (asyncState) {
         cleanups.push(asyncState.subscribe(subscription));
         cleanups.push(function disposeAs() {
@@ -72,12 +72,12 @@ export function useAsyncStateSelector(keys, selector = identity, areEqual = shal
     });
 
     cleanups.push(watchAll(function onSomethingHoisted(asyncState, notificationKey) {
-      if (asMap[notificationKey] || asMap[notificationKey] === undefined) {
+      if (asyncStatesMap[notificationKey] || asyncStatesMap[notificationKey] === undefined) {
         return;
       }
       // appearance
-      if (asyncState && asMap[notificationKey] === null) {
-        asMap[notificationKey] = asyncState;
+      if (asyncState && asyncStatesMap[notificationKey] === null) {
+        asyncStatesMap[notificationKey] = asyncState;
         cleanups.push(asyncState.subscribe(subscription));
         cleanups.push(function disposeAs() {
           dispose(asyncState)

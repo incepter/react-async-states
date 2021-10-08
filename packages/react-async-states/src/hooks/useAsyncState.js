@@ -38,28 +38,28 @@ export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
   }
 
   const {mode, asyncState, configuration, run, dispose} = React.useMemo(function readConfiguration() {
-    const configuration = readUserConfiguration(subscriptionConfig);
-    const mode = inferSubscriptionMode(contextValue, configuration);
+    const newConfig = readUserConfiguration(subscriptionConfig);
+    const newMode = inferSubscriptionMode(contextValue, newConfig);
 
     const {guard} = stateDeps;
-    const recalculateInstance = shouldRecalculateInstance(configuration, mode, guard, refs.current.subscriptionInfo);
+    const recalculateInstance = shouldRecalculateInstance(newConfig, newMode, guard, refs.current.subscriptionInfo);
 
     let output = {
-      mode,
       guard,
-      configuration,
+      mode: newMode,
       deps: dependencies,
+      configuration: newConfig,
     };
+
     if (recalculateInstance) {
-      output.asyncState = inferAsyncStateInstance(mode, configuration, contextValue);
-      // output = {configuration, guard, ...asyncStateSubscription(contextValue, mode, configuration), deps: dependencies};
+      output.asyncState = inferAsyncStateInstance(newMode, newConfig, contextValue);
     } else {
       output.asyncState = refs.current.subscriptionInfo.asyncState;
     }
 
-    output.asyncState.payload = shallowClone(output.asyncState.payload, configuration.payload);
-    output.run = runAsyncStateSubscriptionFn(mode, output.asyncState, configuration, contextValue);
-    output.dispose = disposeAsyncStateSubscriptionFn(mode, output.asyncState, configuration, contextValue);
+    output.asyncState.payload = shallowClone(output.asyncState.payload, newConfig.payload);
+    output.run = runAsyncStateSubscriptionFn(newMode, output.asyncState, newConfig, contextValue);
+    output.dispose = disposeAsyncStateSubscriptionFn(newMode, output.asyncState, newConfig, contextValue);
 
     // the calculated async state instance changed
     if (output.asyncState !== refs.current.subscriptionInfo?.asyncState) {

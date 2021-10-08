@@ -108,14 +108,10 @@ export const defaultUseASConfig = Object.freeze({
   selector: oneObjectIdentity,
 });
 
-function NoOp() {
-}
-
 const waitingAsyncState = new AsyncState(
   "waiting_async_state",
   {}
 );
-
 
 export function calculateSelectedState(newState, lastSuccess, configuration) {
   const {selector} = configuration;
