@@ -54,7 +54,6 @@ function next() {
 function SourceExample({source}) {
   const data = useAsyncState({lazy: false, source, payload: {userId: id}, fork: true});
   return <button onClick={() => {
-    console.log('==>data', data.payload, { userId: (data.payload.userId || 0) + 1 });
     data.mergePayload({ userId: (data.payload.userId || 0) + 1 });
     data.run();
   }}>RUUUUUUUN{JSON.stringify(data.state.status)}-{JSON.stringify(data.lastSuccess.data)?.substring(0, 30)}</button>;

@@ -1,7 +1,8 @@
-import AsyncState, { defaultASConfig } from "async-state";
+import AsyncState  from "async-state";
 import { AsyncStateStatus, shallowClone } from "shared";
 import { act } from "@testing-library/react-hooks";
 import { timeout } from "./test-utils";
+import { defaultASConfig } from "async-state/AsyncState";
 
 jest.useFakeTimers();
 

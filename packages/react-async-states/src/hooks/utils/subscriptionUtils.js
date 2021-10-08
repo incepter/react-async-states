@@ -61,10 +61,6 @@ export function inferSubscriptionMode(contextValue, configuration) {
   return AsyncStateSubscriptionMode.NOOP; // we should not be here
 }
 
-export function promiseConfigFromConfiguration(configuration) {
-  return {lazy: configuration.lazy, initialValue: configuration.initialValue};
-}
-
 export function inferAsyncStateInstance(mode, configuration, contextValue) {
   const candidate = contextValue?.get(configuration.key);
   switch (mode) {
@@ -78,7 +74,7 @@ export function inferAsyncStateInstance(mode, configuration, contextValue) {
       return waitingAsyncState;
     case AsyncStateSubscriptionMode.STANDALONE:
     case AsyncStateSubscriptionMode.OUTSIDE_PROVIDER:
-      return new AsyncState(configuration.key, configuration.promise, promiseConfigFromConfiguration(configuration));
+      return new AsyncState(configuration.key, configuration.promise, {initialValue: configuration.initialValue});
     case AsyncStateSubscriptionMode.NOOP:
       return null;
     case AsyncStateSubscriptionMode.SOURCE:
@@ -97,6 +93,7 @@ export const sourceConfigurationSecretSymbol = Symbol();
 export const defaultUseASConfig = Object.freeze({
   source: undefined,
 
+  lazy: true,
   fork: false,
   condition: true,
   hoistToProvider: false,

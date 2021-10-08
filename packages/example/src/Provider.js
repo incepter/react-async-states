@@ -6,20 +6,18 @@ import { getUserPromise, postsPromise, timeoutPromise, usersPromise } from "./pr
 export const demoAsyncStates = {
   timeout: AsyncStateBuilder()
     .key("timeout")
-    .lazy(false)
     .promise(timeoutPromise(4000))
     .build(),
 
-  users: createSourceAsyncState("users", usersPromise, {lazy: false}),
+  users: createSourceAsyncState("users", usersPromise),
 
   posts: AsyncStateBuilder()
     .key("posts")
     .promise(postsPromise)
     .build(),
 
-  getUser: AsyncStateBuilder() // {key, promise, lazy=true, initialValue=null}
+  getUser: AsyncStateBuilder() // {key, promise, initialValue=null}
     .key("get-user")
-    .lazy(false)
     .promise(getUserPromise)
     .build()
   ,

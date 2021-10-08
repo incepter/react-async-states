@@ -4,7 +4,6 @@ import {
   AsyncStateStateBuilder,
   constructAsyncStateSource,
   warnDevAboutAsyncStateKey,
-  warnDevAboutUndefinedPromise,
   warnInDevAboutRunWhilePending
 } from "./utils";
 import devtools from "devtools";
@@ -186,7 +185,7 @@ let uniqueId = 0;
 const sourceIsSourceSymbol = Symbol();
 
 const defaultForkConfig = Object.freeze({keepState: false});
-export const defaultASConfig = Object.freeze({lazy: true, initialValue: null});
+export const defaultASConfig = Object.freeze({initialValue: null});
 
 function forkKey(asyncState) {
   return `${asyncState.key}-fork-${asyncState.forkCount + 1}`;

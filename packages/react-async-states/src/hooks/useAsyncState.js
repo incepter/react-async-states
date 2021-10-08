@@ -42,7 +42,7 @@ export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
     const newMode = inferSubscriptionMode(contextValue, newConfig);
 
     const {guard} = stateDeps;
-    const recalculateInstance = shouldRecalculateInstance(newConfig, newMode, guard, refs.current.subscriptionInfo);
+    const recalculateInstance = shouldRecalculateInstance(newConfig, newMode, guard, dependencies, refs.current.subscriptionInfo);
 
     let output = {
       guard,
@@ -120,7 +120,7 @@ export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
     const {rerenderStatus} = configuration;
     const rerenderStatusConfig = shallowClone(defaultRerenderStatusConfig, rerenderStatus);
 
-    return asyncState.subscribe(function onUpdate(newState) {
+    const unsubscribe = asyncState.subscribe(function onUpdate(newState) {
       const calculatedState = calculateSelectedState(newState, asyncState.lastSuccess, configuration);
       const prevStateValue = refs.current.returnValue.state;
       applyUpdateOnReturnValue(refs.current.returnValue, asyncState, calculatedState, run, runAsyncState);
@@ -134,15 +134,15 @@ export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
         setStateDeps(old => ({rerender: {}, guard: old.guard}));
       }
     });
-  }, [...dependencies, asyncState]); // re-subscribe if deps
 
-  React.useEffect(function autoRunAsyncState() {
-    if (!asyncState || !configuration.condition || asyncState.config.lazy || configuration.lazy) {
-      return undefined;
+    const shouldAutoRun = configuration.condition && !configuration.lazy;
+    const abort = shouldAutoRun ? run() : undefined;
+
+    return function abortAndUnsubscribe() {
+      unsubscribe();
+      invokeIfPresent(abort);
     }
-
-    return run();
-  }, dependencies);
+  }, [...dependencies, asyncState]); // re-subscribe if deps
 
   // attempt to dispose/reset old async state
   React.useEffect(function disposeOldAsyncState() {

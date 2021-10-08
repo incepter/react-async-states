@@ -215,7 +215,6 @@ PS: You can use `AsyncStateBuilder` to create these objects this way:
 import {AsyncStateBuilder, createAsyncState} from "react-async-states";
 let usersAS = AsyncStateBuilder()
     .key("users")
-    .lazy(false)
     .initialValue([])
     .promise(fetchUsersPromise)
     .build();

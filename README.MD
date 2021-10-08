@@ -45,7 +45,7 @@ function useAsyncState(config, dependencies = []) {
 function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual, initialValue = undefined) {
   // returns whathever the selector returns (or initialValue)
 }
-// initialAsyncStates: array or map of {key, promise, initialValue, lazy}
+// initialAsyncStates: array or map of {key, promise, initialValue}
 function AsyncStateProvider({ payload, initialAsyncStates, chidlren }) {}
 ```
 
@@ -122,7 +122,7 @@ Here is how you will be using it:
 - First you define your promise function (aka: reducer, saga, thunk...) and give it its unique name. This function shall
 receive a powerful single argument object detailed in a few. This function may take any of the supported forms.
 - Second, you define a provider that will host your asynchronous states and payload. It needs from you for every async state
-entry the following: `key`, `promise`, `lazy` and `initialValue`.
+entry the following: `key`, `promise` and `initialValue`.
 - Later, from any point in your app, you can use `useAsyncState(key)` or `useAsyncStateSelector(key)` to get the state
 based on your needs.
 
@@ -257,7 +257,6 @@ To define an async state for the provider, you need the following:
 |--------------|-----------------------|--------------|------------------------|
 |`key`         |`string`               |`undefined`   |The unique identifier or the name of the async state|
 |`promise`     |`function or undefined`|`undefined`   |The promise function|
-|`lazy`        |`boolean`              |`true`        |Defines whether to run the promise function or not when a subscription occurs|
 |`initialValue`|`any`                  |`null`        |The state value when the status is `initial`|
 
 The initialAsyncStates, like stated, is an array of objects or a map; let's create some:
@@ -266,7 +265,6 @@ The initialAsyncStates, like stated, is an array of objects or a map; let's crea
 let demoAsyncStates = {
   users: {
     key: "users",
-    lazy: false,
     initialValue: [],
     promise: async function getUsers(argv) {
       return await fetchUsers(argv.payload.queryString);
@@ -274,7 +272,6 @@ let demoAsyncStates = {
   },
   currentUser: {
     key: "currentUser",
-    lazy: false,
     // generators are the recommended way to go!
     // because they allow to abort between yields! unlike promises and async-await!
     promise: getCurrentUserGenerator,
@@ -302,12 +299,11 @@ PS: You can use `AsyncStateBuilder` or `createAsyncState` to create these object
 import {AsyncStateBuilder, createAsyncState} from "react-async-states";
 let usersAS = AsyncStateBuilder()
     .key("users")
-    .lazy(false)
     .initialValue([])
     .promise(fetchUsersPromise)
     .build();
 // or this way
-let usersAs = createAsyncState(/*key*/"users", /*promise*/fetchUsersPromise, /*initialValue*/ [], /**lazy**/ false);
+let usersAs = createAsyncState(/*key*/"users", /*promise*/fetchUsersPromise, /*initialValue*/ []);
 ```
 
 ## <a name="use-async-state"></a> `useAsyncState`
@@ -457,7 +453,7 @@ const {state: {data, status}} = useAsyncState({key: "users-list", payload: {anot
 // for example, once the user chooses a profile, just redirect to the new url => matchParams will change => refetch as non lazy
 const matchParams = useParams();
 const {state} = useAsuncState({
-  ...userProfilePromiseConfig, // (key, promise, lazy), or take only the key if hoisted and no problem impacting the state
+  ...userProfilePromiseConfig, // (key, promise), or take only the key if hoisted and no problem impacting the state
   lazy: false,
   payload: {matchParams}
 }, [matchParams]);

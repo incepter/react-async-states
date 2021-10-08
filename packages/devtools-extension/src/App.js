@@ -132,7 +132,6 @@ function DevtoolsJournal() {
 function AsyncStateJournal({identifier: [id, key]}) {
   const [currentJournal, setCurrentJournal] = React.useState(null);
   const journal = useDevtoolsEntryJournal(id);
-  console.log({journal})
   return (
     <div className="flex">
       <div className="sidebar-container">

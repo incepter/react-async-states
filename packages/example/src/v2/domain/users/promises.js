@@ -28,22 +28,18 @@ export function* getUserPosts(argv) {
 
 export const DOMAIN_USER_PROMISES = Object.freeze({
   list: {
-    lazy: false,
     key: "users-list",
     promise: getUsersList
   },
   current: {
-    lazy: false,
     key: "current-user",
     promise: getCurrentUser
   },
   posts: {
-    lazy: false,
     key: "user-posts",
     promise: getUserPosts
   },
   details: {
-    lazy: false,
     key: "user-details",
     promise: getUserDetails,
   },

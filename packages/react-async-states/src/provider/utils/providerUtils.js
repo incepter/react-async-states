@@ -16,21 +16,21 @@ export function createInitialAsyncStatesReducer(result, current) {
     const asyncState = readAsyncStateFromSource(current);
 
     if (!existingEntry || asyncState !== existingEntry.value) {
-      result[key] = createAsyncStateEntry(asyncState);
-      result[key].initiallyHoisted = true;
+      result[current.key] = createAsyncStateEntry(asyncState);
+      result[current.key].initiallyHoisted = true;
     }
 
     return result;
   } else {
-    const {key, promise, lazy, initialValue} = current;
+    const {key, promise, initialValue} = current;
     const existingEntry = result[key];
     if (existingEntry) {
       const asyncState = existingEntry.value;
-      if (asyncState.originalPromise === promise && asyncState.config.lazy === lazy && asyncState.config.initialValue === initialValue) {
+      if (asyncState.originalPromise === promise && asyncState.config.initialValue === initialValue) {
         return result;
       }
     }
-    result[key] = createAsyncStateEntry(new AsyncState(key, promise, {lazy, initialValue}));
+    result[key] = createAsyncStateEntry(new AsyncState(key, promise, {initialValue}));
     result[key].initiallyHoisted = true;
     return result;
   }

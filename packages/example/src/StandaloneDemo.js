@@ -12,7 +12,7 @@ export default function Demo() {
 }
 
 function AnonymousExample() {
-  const {key, state: {status, data}, run, abort} = useAsyncState(demoAsyncStates.users.promise);
+  const {key, state: {status, data}, run, abort} = useAsyncState(demoAsyncStates.users);
 
   return (
     <div>

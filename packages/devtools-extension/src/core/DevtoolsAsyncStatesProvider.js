@@ -6,7 +6,6 @@ import { mapmock } from "./dev";
 const initialDevtools = process.env.NODE_ENV === "production" ? {} : mapmock;
 
 const globalAsyncState = {
-  lazy: true,
   key: "devtools",
   initialValue: DevtoolsAsyncStates(initialDevtools),
   promise(argv) {
