@@ -101,6 +101,8 @@ export const defaultUseASConfig = Object.freeze({
   hoistToProviderConfig: EMPTY_OBJECT,
   rerenderStatus: defaultRerenderStatusConfig,
 
+  subscriptionKey: undefined,
+
   areEqual: shallowEqual,
   selector: oneObjectIdentity,
 });

@@ -123,10 +123,14 @@ AsyncState.prototype.run = function run(...execArgs) {
   return this.currentAborter;
 }
 
-AsyncState.prototype.subscribe = function subscribe(cb) {
+AsyncState.prototype.subscribe = function subscribe(cb, subKey) {
   let that = this;
   this.subscriptionsMeter += 1;
-  let subscriptionKey = `${this.key}-sub-${this.subscriptionsMeter}`;
+  let subscriptionKey = subKey;
+
+  if (subKey === undefined) {
+    subscriptionKey = `${this.key}-sub-${this.subscriptionsMeter}`;
+  }
 
   function cleanup() {
     that.locks -= 1;
@@ -148,8 +152,15 @@ AsyncState.prototype.subscribe = function subscribe(cb) {
 AsyncState.prototype.fork = function fork(forkConfig) {
   const mergedConfig = shallowClone(defaultForkConfig, forkConfig);
 
-  const clone = new AsyncState(forkKey(this), this.originalPromise, this.config);
+  let {key} = mergedConfig;
 
+  if (key === undefined) {
+    key = forkKey(this);
+  }
+
+  const clone = new AsyncState(key, this.originalPromise, this.config);
+
+  // if something fail, no need to increment
   this.forkCount += 1;
 
   if (mergedConfig.keepState) {

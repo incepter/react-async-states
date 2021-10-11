@@ -133,7 +133,7 @@ export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
       if (!areEqual(prevStateValue, calculatedState)) {
         setStateDeps(old => ({rerender: {}, guard: old.guard}));
       }
-    });
+    }, configuration.subscriptionKey);
 
     const shouldAutoRun = configuration.condition && !configuration.lazy;
     const abort = shouldAutoRun ? run() : undefined;

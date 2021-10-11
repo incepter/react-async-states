@@ -6,12 +6,12 @@ export default function Demo() {
   return (
     <div>
       <h3>Anonymous example</h3>
-      <section><AnonymousExample /></section>
+      <section><SourceExample /></section>
     </div>
   );
 }
 
-function AnonymousExample() {
+function SourceExample() {
   const {key, state: {status, data}, run, abort} = useAsyncState(demoAsyncStates.users);
 
   return (
