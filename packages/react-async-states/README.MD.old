@@ -16,7 +16,7 @@ and the initial thinking of all of this
  *   renderCtx: anything passed from the render via usePromiseState
  *   providerCtx: anything that the provider received from props (can be: {dispatch, store} from redux ;))
  *   aborted: whether the trigger of the promise state unmounted or cleaned it
- *   executionArgs: if not lazy and execution is manual, it may provide some args
+ *   args: if not lazy and execution is manual, it may provide some args
  *   lastState: the last resolved state (may be success or error)
  * }
  *

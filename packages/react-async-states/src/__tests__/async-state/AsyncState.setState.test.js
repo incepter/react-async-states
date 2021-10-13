@@ -2,7 +2,7 @@ import { AsyncStateStatus } from "shared";
 import AsyncState, { AsyncStateStateBuilder } from "async-state";
 import { timeout } from "./test-utils";
 
-jest.useFakeTimers();
+jest.useFakeTimers("modern");
 
 describe('AsyncState - setState', () => {
   // given
@@ -22,7 +22,7 @@ describe('AsyncState - setState', () => {
     myAsyncState.setState(AsyncStateStateBuilder.pending({}));
     // then
     let expectedState = {
-      args: {},
+      argv: {},
       data: null,
       status: AsyncStateStatus.pending,
     };
@@ -42,7 +42,7 @@ describe('AsyncState - setState', () => {
     // then
     expect(updater).toHaveBeenCalledTimes(1);
     expect(myAsyncState.currentState).toEqual({
-      args: {},
+      argv: {},
       data: {},
       status: AsyncStateStatus.success,
     });

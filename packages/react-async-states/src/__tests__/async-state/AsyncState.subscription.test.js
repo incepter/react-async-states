@@ -3,7 +3,7 @@ import AsyncState from "async-state";
 import { AsyncStateStatus } from "shared";
 import { timeout } from "./test-utils";
 
-jest.useFakeTimers();
+jest.useFakeTimers("modern");
 
 describe('AsyncState - subscriptions', () => {
   it('should subscribe to async-state and get notified', async () => {
@@ -30,37 +30,35 @@ describe('AsyncState - subscriptions', () => {
     expect(subscriptionFn.mock.calls).toEqual(
       [
         [{
-          args: [{
-            payload: null,
-            aborted: false,
-            lastSuccess: {},
-            executionArgs: [],
-            abort: expect.any(Function),
-            onAbort: expect.any(Function),
-          }], data: null, status: AsyncStateStatus.pending
+          argv: {
+            payload: {},
+            lastSuccess: {
+              data: null, status: AsyncStateStatus.initial
+            },
+          },
+          data: null,
+          status: AsyncStateStatus.pending
         }],
         [{
-          args: [{
-            payload: null,
-            lastSuccess: {},
-            aborted: false,
-            executionArgs: [],
-            abort: expect.any(Function),
-            onAbort: expect.any(Function),
-          }], data: "Some Value", status: AsyncStateStatus.success
+          argv: {
+            payload: {},
+            lastSuccess: {
+              data: null, status: AsyncStateStatus.initial
+            },
+          },
+          data: "Some Value",
+          status: AsyncStateStatus.success
         }]
       ]
     );
     expect(subscriptionFn).toHaveBeenCalledTimes(2);
     expect(myAsyncState.currentState).toEqual({
-      args: [{
-        payload: null,
-        aborted: false,
-        lastSuccess: {},
-        executionArgs: [],
-        abort: expect.any(Function),
-        onAbort: expect.any(Function),
-      }],
+      argv: {
+        payload: {},
+        lastSuccess: {
+          data: null, status: AsyncStateStatus.initial
+        },
+      },
       status: AsyncStateStatus.success,
       data: "Some Value",
     });
@@ -90,27 +88,23 @@ describe('AsyncState - subscriptions', () => {
     expect(subscriptionFn.mock.calls).toEqual(
       [
         [{
-          args: [{
-            payload: null,
-            aborted: false,
-            lastSuccess: {},
-            executionArgs: [],
-            abort: expect.any(Function),
-            onAbort: expect.any(Function),
-          }], data: null, status: AsyncStateStatus.pending
+          argv: {
+            payload: {},
+            lastSuccess: {
+              data: null, status: AsyncStateStatus.initial
+            },
+          }, data: null, status: AsyncStateStatus.pending
         }],
       ]
     );
     expect(subscriptionFn).toHaveBeenCalledTimes(1);
     expect(myAsyncState.currentState).toEqual({
-      args: [{
-        payload: null,
-        aborted: false,
-        executionArgs: [],
-        lastSuccess: {},
-        abort: expect.any(Function),
-        onAbort: expect.any(Function),
-      }],
+      argv: {
+        payload: {},
+        lastSuccess: {
+          data: null, status: AsyncStateStatus.initial
+        },
+      },
       status: AsyncStateStatus.success,
       data: "Some Value",
     });
@@ -137,14 +131,12 @@ describe('AsyncState - subscriptions', () => {
     expect(subscriptionFn.mock.calls).toEqual([]);
     expect(subscriptionFn).toHaveBeenCalledTimes(0);
     expect(myAsyncState.currentState).toEqual({ // original async state resolved, but we got notified neither by pending nor success
-      args: [{
-        payload: null,
-        aborted: false,
-        lastSuccess: {},
-        executionArgs: [],
-        abort: expect.any(Function),
-        onAbort: expect.any(Function),
-      }],
+      argv: {
+        payload: {},
+        lastSuccess: {
+          data: null, status: AsyncStateStatus.initial
+        },
+      },
       status: AsyncStateStatus.success,
       data: "Some Value",
     });

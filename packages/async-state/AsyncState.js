@@ -94,11 +94,11 @@ AsyncState.prototype.run = function run(...execArgs) {
 
   let userAborters = [];
 
-  const argsObject = {
+  const argv = {
     abort,
+    args: execArgs,
     aborted: false,
     payload: this.payload,
-    executionArgs: execArgs,
     lastSuccess: this.lastSuccess,
     onAbort(cb) {
       userAborters.push(cb);
@@ -106,12 +106,12 @@ AsyncState.prototype.run = function run(...execArgs) {
   };
 
   function abort(reason) {
-    if (argsObject.aborted) {
+    if (argv.aborted) {
       // already aborted!
       return;
     }
-    argsObject.aborted = true;
-    that.setState(AsyncStateStateBuilder.aborted(reason, cloneArgs([argsObject])));
+    argv.aborted = true;
+    that.setState(AsyncStateStateBuilder.aborted(reason, cloneArgs(argv)));
     userAborters.forEach(function clean(func) {
       invokeIfPresent(func, reason);
     });
@@ -119,7 +119,7 @@ AsyncState.prototype.run = function run(...execArgs) {
   }
 
   this.currentAborter = abort;
-  this.promise(argsObject);
+  this.promise(argv);
   return this.currentAborter;
 }
 

@@ -3,6 +3,6 @@ export function createReducerPromise(reducerFn) {
     throw new Error(`Reducer Promise creator expects reducerFn to be a function, received ${typeof reducerFn}`);
   }
   return function reducer(argv) {
-    return reducerFn(argv.lastSuccess.data, ...argv.executionArgs);
+    return reducerFn(argv.lastSuccess.data, ...argv.args);
   }
 }

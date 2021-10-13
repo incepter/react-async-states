@@ -14,7 +14,7 @@ function Wrapper({children}) {
 }
 
 function TimeoutSubscription() {
-  const {state: {status}, key, run} = useAsyncState(demoAsyncStates.timeout.key);
+  const {state: {status}, key, run} = useAsyncState({key: demoAsyncStates.timeout.key, lazy: false});
 
   return (
     <div>

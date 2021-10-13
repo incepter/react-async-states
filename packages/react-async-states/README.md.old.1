@@ -107,7 +107,7 @@ For now, let's explore the object argument's properties that your promise will r
 
 ```javascript
 function myPromise(argv) {
-    const { payload, lastSuccess, executionArgs, aborted, abort, onAbort } = argv;
+    const { payload, lastSuccess, args, aborted, abort, onAbort } = argv;
     // ...
 }
 ```
@@ -116,7 +116,7 @@ function myPromise(argv) {
 |--------------------|-------------------------|
 |`payload`           | The merged payload from provider and all subscribers |
 |`lastSuccess`       | The last success value that was registered |
-|`executionArgs`     | Whatever arguments that the `run` function received when it was invoked |
+|`args`              | Whatever arguments that the `run` function received when it was invoked |
 |`aborted`           | If the request have been cancelled (by dependency change, unmount or user action) |
 |`abort`             | Imperatively abort the promise while processing it, this may be helpful only if you are working with generators |
 |`onAbort`           | Registers a callback that will be fired when the abort is invoked (like aborting a fetch request if the user aborts or component unmounts) |
@@ -125,8 +125,8 @@ The payload may contain in the future utilities to connect your promise to other
 
 We bet on this structure to handle our use cases, in fact, it allows to:
 - have a snapshot of the last success
-- send anything at the `run`-time to your promise `executionArgs`
-- combining the two previous benefits, a reducer signature may be like `myReducer(currentSuccess, executionArgs)`.
+- send anything at the `run`-time to your promise `args`
+- combining the two previous benefits, a reducer signature may be like `myReducer(currentSuccess, args)`.
 There is a special export `createReducerPromise` that does exactly this. It allows you to write reducers and accept
 two arguments based on the arguments object. The reducer may be decorated with `immer`.
 - dynamic declarative arguments go inside payload, and should be added dependencies to the subscription
@@ -202,7 +202,7 @@ let demoAsyncStates = {
     initialValue: {},
     promise: function todosReducerPromise(argv) {
       // myTodosReducer is a regular reducer(state, action) that returns the new state value, my guess is that you've wrote many
-      return myTodosReducer(argv.lastSuccess, argv.executionArgs);
+      return myTodosReducer(argv.lastSuccess, argv.args);
     }
   },
 }
@@ -314,7 +314,7 @@ The returned object from useAsyncState contains the following properties:
 |Property            |Description              |
 |--------------------|-------------------------|
 |`key`               | The key of the async state instance, if forked, it is different from the given one |
-|`run`               | Imperatively trigger the run, arguments to this function are received as array in the executionArgs |
+|`run`               | Imperatively trigger the run, arguments to this function are received as array in the execution args |
 |`state`             | The current state, of shape {status, data, args} |
 |`abort`             | Imperatively abort the current run if running |
 |`lastSuccess`       | The last registered success |

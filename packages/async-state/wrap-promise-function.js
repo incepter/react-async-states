@@ -7,47 +7,47 @@ export function wrapPromiseFunction(asyncState) {
   // this allows the developer to omit the promise attribute.
   if (typeof asyncState.originalPromise !== "function") {
     return function delegateToReplaceState(argv) {
-      return asyncState.replaceState(argv.executionArgs[0]);
+      return asyncState.replaceState(argv.args[0]);
     }
   }
-  return function promiseFuncImpl(...args) {
+  return function promiseFuncImpl(argv) {
     let runningPromise;
     let executionValue;
-    const clonedArgs = cloneArgs(args);
+    const clonedArgv = cloneArgs(argv);
 
     try {
-      executionValue = asyncState.originalPromise(...args);
+      executionValue = asyncState.originalPromise(argv);
     } catch (e) {
-      devtools.emitRunSync(asyncState, args[0]);
-      asyncState.setState(AsyncStateStateBuilder.error(e, clonedArgs));
+      devtools.emitRunSync(asyncState, argv);
+      asyncState.setState(AsyncStateStateBuilder.error(e, clonedArgv));
       return;
     }
 
     if (isGenerator(executionValue)) {
-      devtools.emitRunGenerator(asyncState, args[0]);
-      asyncState.setState(AsyncStateStateBuilder.pending(clonedArgs));
-      runningPromise = wrapGenerator(executionValue, asyncState, args);
+      devtools.emitRunGenerator(asyncState, argv);
+      asyncState.setState(AsyncStateStateBuilder.pending(clonedArgv));
+      runningPromise = wrapGenerator(executionValue, asyncState, argv);
     } else if (isPromise(executionValue)) {
-      devtools.emitRunPromise(asyncState, args[0]);
-      asyncState.setState(AsyncStateStateBuilder.pending(clonedArgs));
+      devtools.emitRunPromise(asyncState, argv);
+      asyncState.setState(AsyncStateStateBuilder.pending(clonedArgv));
       runningPromise = executionValue;
     } else { // final value
-      devtools.emitRunSync(asyncState, args[0]);
-      asyncState.setState(AsyncStateStateBuilder.success(executionValue, clonedArgs));
+      devtools.emitRunSync(asyncState, argv);
+      asyncState.setState(AsyncStateStateBuilder.success(executionValue, clonedArgv));
       return;
     }
 
     runningPromise
       .then(stateData => {
-        let aborted = args[0].aborted;
+        let aborted = argv.aborted;
         if (!aborted) {
-          asyncState.setState(AsyncStateStateBuilder.success(stateData, clonedArgs));
+          asyncState.setState(AsyncStateStateBuilder.success(stateData, clonedArgv));
         }
       })
       .catch(stateError => {
-        let aborted = args[0].aborted;
+        let aborted = argv.aborted;
         if (!aborted) {
-          asyncState.setState(AsyncStateStateBuilder.error(stateError, clonedArgs));
+          asyncState.setState(AsyncStateStateBuilder.error(stateError, clonedArgv));
         }
       });
   };
@@ -63,7 +63,7 @@ function isGenerator(candidate) {
 
 function wrapGenerator(generator, asyncState, argsArray) {
   return new Promise((resolve, reject) => {
-    argsArray[0].onAbort(stepAndContinueGenerator(generator, resolve, reject));
+    argsArray.onAbort(stepAndContinueGenerator(generator, resolve, reject));
   });
 }
 
@@ -90,7 +90,7 @@ function stepAndContinueGenerator(generator, onDone, onReject) {
           invokeIfPresent(onDone, value);
         }
       })
-      .catch(function onCatch(e){
+      .catch(function onCatch(e) {
         if (!aborted && !done) {
           invokeIfPresent(onReject, e);
           generator.throw(e);

@@ -3,14 +3,13 @@ import AsyncState from "async-state";
 import { AsyncStateStatus } from "shared";
 import { rejectionTimeout, timeout } from "./test-utils";
 
-jest.useFakeTimers();
+jest.useFakeTimers("modern");
 
 describe('AsyncState - run', () => {
-
   it('should run an async state successfully with no subscribers', async () => {
     // given
     let key = "simulated";
-    let promise = timeout(100, [{ id: 1, description: "value" }]);
+    let promise = timeout(100, [{id: 1, description: "value"}]);
     let myConfig = {};
 
     // when
@@ -19,7 +18,7 @@ describe('AsyncState - run', () => {
     // then
     // should have initial status
     expect(myAsyncState.currentState).toEqual({
-      args: null,
+      argv: null,
       data: null,
       status: AsyncStateStatus.initial,
     });
@@ -27,30 +26,29 @@ describe('AsyncState - run', () => {
     myAsyncState.run();
     // should transition synchronously to pending state
     expect(myAsyncState.currentState).toEqual({
-      args: [{
-        payload: null,
-        aborted: false,
-        lastSuccess: {},
-        executionArgs: [],
-        abort: expect.any(Function),
-        onAbort: expect.any(Function),
-      }],
+      argv: {
+        payload: {},
+        lastSuccess: {
+          data: null,
+          status: AsyncStateStatus.initial,
+        },
+      },
       data: null,
       status: AsyncStateStatus.pending,
     });
+
     await act(async () => {
       await jest.advanceTimersByTime(50);
     });
     // should be still in pending state while promise did not resolve yet
     expect(myAsyncState.currentState).toEqual({
-      args: [{
-        executionArgs: [],
-        payload: null,
-        aborted: false,
-        lastSuccess: {},
-        abort: expect.any(Function),
-        onAbort: expect.any(Function),
-      }],
+      argv: {
+        payload: {},
+        lastSuccess: {
+          data: null,
+          status: AsyncStateStatus.initial,
+        },
+      },
       data: null,
       status: AsyncStateStatus.pending,
     });
@@ -58,19 +56,17 @@ describe('AsyncState - run', () => {
     await act(async () => {
       await jest.advanceTimersByTime(50);
     });
-
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
-      args: [{
-        executionArgs: [],
-        payload: null,
-        aborted: false,
-        lastSuccess: {},
-        abort: expect.any(Function),
-        onAbort: expect.any(Function),
-      }],
+      argv: {
+        payload: {},
+        lastSuccess: {
+          data: null,
+          status: AsyncStateStatus.initial,
+        },
+      },
       status: AsyncStateStatus.success,
-      data: [{ id: 1, description: "value" }],
+      data: [{id: 1, description: "value"}],
     });
   });
   it('should run an async state with rejection with no subscribers', async () => {
@@ -89,14 +85,13 @@ describe('AsyncState - run', () => {
     });
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
-      args: [{
-        payload: null,
-        aborted: false,
-        lastSuccess: {},
-        executionArgs: [],
-        abort: expect.any(Function),
-        onAbort: expect.any(Function),
-      }],
+      argv: {
+        payload: {},
+        lastSuccess: {
+          data: null,
+          status: AsyncStateStatus.initial,
+        },
+      },
       status: AsyncStateStatus.error,
       data: "Some Error",
     });

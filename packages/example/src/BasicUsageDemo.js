@@ -46,6 +46,7 @@ export default function Demo() {
             />
             <hr/>
             <SimpleSub
+              lazy
               asyncStateKey={demoAsyncStates.posts.key}
               displayValue={data => data.map(post => <li key={post.id}>{post.id} -
                 userId: {post.userId} - {post.title}</li>)}

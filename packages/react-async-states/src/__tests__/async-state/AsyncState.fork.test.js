@@ -1,16 +1,16 @@
-import AsyncState  from "async-state";
+import AsyncState from "async-state";
 import { AsyncStateStatus, shallowClone } from "shared";
 import { act } from "@testing-library/react-hooks";
 import { timeout } from "./test-utils";
 import { defaultASConfig } from "async-state/AsyncState";
 
-jest.useFakeTimers();
+jest.useFakeTimers("modern");
 
 describe('AsyncState - fork', () => {
   it('should simulate async state and check fork count', () => {
     // given
     let key = "simulated";
-    let promise = timeout(100, [{ id: 1, description: "value" }]);
+    let promise = timeout(100, [{id: 1, description: "value"}]);
     let myConfig = {};
 
     // when
@@ -20,11 +20,11 @@ describe('AsyncState - fork', () => {
     expect(myAsyncState.key).toBe(key);
     expect(myAsyncState.forkCount).toBe(0);
     expect(myAsyncState.__IS_FORK__).toBeFalsy();
-    expect(myAsyncState.lastSuccess).toBe(undefined);
     expect(myAsyncState.subscriptions).toEqual({});
     expect(typeof myAsyncState.run).toBe("function");
     expect(myAsyncState.config).toEqual(shallowClone(defaultASConfig, myConfig));
-    expect(myAsyncState.currentState).toEqual({ data: null, status: AsyncStateStatus.initial, args: null });
+    expect(myAsyncState.lastSuccess).toEqual({argv: null, data: null, status: AsyncStateStatus.initial});
+    expect(myAsyncState.currentState).toEqual({data: null, status: AsyncStateStatus.initial, argv: null});
 
     let forkedAsyncState = myAsyncState.fork();
     expect(myAsyncState.forkCount).toBe(1);
@@ -43,7 +43,7 @@ describe('AsyncState - fork', () => {
   it('should fork and keep state and subscriptions after run', async () => {
     // given
     let key = "simulated";
-    let promise = timeout(100, [{ id: 1, description: "value" }]);
+    let promise = timeout(100, [{id: 1, description: "value"}]);
     let myConfig = {};
 
     // when
@@ -56,7 +56,7 @@ describe('AsyncState - fork', () => {
 
     expect(myAsyncState.currentState.status).toBe(AsyncStateStatus.success); // make sure it resolved
 
-    let forkedAsyncState = myAsyncState.fork({ keepSubscriptions: true, keepState: true });
+    let forkedAsyncState = myAsyncState.fork({keepSubscriptions: true, keepState: true});
     // then
     // make sure they are deeply equal, but not with same reference ;)
     expect(myAsyncState.lastSuccess).toEqual(forkedAsyncState.lastSuccess);
@@ -67,13 +67,13 @@ describe('AsyncState - fork', () => {
   it('should fork and keep state and subscriptions before run', async () => {
     // given
     let key = "simulated";
-    let promise = timeout(100, [{ id: 1, description: "value" }]);
+    let promise = timeout(100, [{id: 1, description: "value"}]);
     let myConfig = {};
 
     // when
     let myAsyncState = new AsyncState(key, promise, myConfig);
 
-    let forkedAsyncState = myAsyncState.fork({ keepSubscriptions: true, keepState: true });
+    let forkedAsyncState = myAsyncState.fork({keepSubscriptions: true, keepState: true});
 
     forkedAsyncState.run();
 

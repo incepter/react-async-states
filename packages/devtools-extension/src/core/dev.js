@@ -687,9 +687,9 @@ export const mapmock = {
         "eventDate": 1632407743871,
         "eventPayload": {
           "argv": {
-            "aborted": false,
+            "args": [],
             "payload": {},
-            "executionArgs": [],
+            "aborted": false,
             "lastSuccess": {
               "status": "initial",
               "args": null

@@ -8,10 +8,10 @@ export default function Demo() {
   const history = useHistory();
   const params = useParams();
 
-  const {state: {status, data}, lastSuccess, abort, source} = useAsyncState({
-    key: demoAsyncStates.getUser.key,
+  const {state: {status, data}, lastSuccess, abort} = useAsyncState({
+    lazy: false,
     payload: {matchParams: params},
-    rerenderStatus: {pending: true}
+    key: demoAsyncStates.getUser.key,
   }, [params]);
 
   function navigate(e) {

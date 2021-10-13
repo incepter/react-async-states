@@ -10,8 +10,8 @@ const globalAsyncState = {
   initialValue: DevtoolsAsyncStates(initialDevtools),
   promise(argv) {
     const {data} = argv.lastSuccess;
-    data.applyMessage(argv.executionArgs[0]);
-    console.log('running promise', argv.executionArgs[0], argv.executionArgs[0].payload.eventType, argv.executionArgs[0].payload.eventPayload, data);
+    data.applyMessage(argv.args[0]);
+    console.log('running promise', argv.args[0], argv.args[0].payload.eventType, argv.args[0].payload.eventPayload, data);
     return data;
   }
 };

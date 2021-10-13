@@ -3,7 +3,7 @@ import AsyncState from "async-state";
 import { AsyncStateStatus } from "shared";
 import { rejectionTimeout, timeout } from "./test-utils";
 
-jest.useFakeTimers();
+jest.useFakeTimers("modern");
 
 describe('AsyncState - run - abort', () => {
 
@@ -20,7 +20,7 @@ describe('AsyncState - run - abort', () => {
     // then
     // should have initial status
     expect(myAsyncState.currentState).toEqual({
-      args: null,
+      argv: null,
       data: null,
       status: AsyncStateStatus.initial,
     });
@@ -34,14 +34,12 @@ describe('AsyncState - run - abort', () => {
 
     expect(subscription).toHaveBeenCalledTimes(1);
     expect(subscription).toHaveBeenCalledWith({
-      args: [{
-        executionArgs: [],
-        lastSuccess: {},
-        abort: expect.any(Function),
-        onAbort: expect.any(Function),
-        aborted: false,
-        payload: null
-      }],
+      argv: {
+        payload: {},
+        lastSuccess: {
+          data: null, status: AsyncStateStatus.initial,
+        },
+      },
       data: null,
       status: AsyncStateStatus.pending,
     });
@@ -51,26 +49,22 @@ describe('AsyncState - run - abort', () => {
 
     expect(subscription).toHaveBeenCalledTimes(1);
     expect(subscription).toHaveBeenCalledWith({
-      args: {
-        executionArgs: [],
-        lastSuccess: {},
-        abort: expect.any(Function),
-        onAbort: expect.any(Function),
-        aborted: true,
-        payload: null
+      argv: {
+        lastSuccess: {
+          data: null,  status: AsyncStateStatus.initial
+        },
+        payload: {}
       },
       data: "reason",
       status: AsyncStateStatus.aborted,
     });
 
     expect(myAsyncState.currentState).toEqual({
-      args: {
-        executionArgs: [],
-        lastSuccess: {},
-        abort: expect.any(Function),
-        onAbort: expect.any(Function),
-        aborted: true,
-        payload: null
+      argv: {
+        lastSuccess: {
+          data: null, status: AsyncStateStatus.initial
+        },
+        payload: {}
       },
       data: "reason",
       status: AsyncStateStatus.aborted,
@@ -82,13 +76,11 @@ describe('AsyncState - run - abort', () => {
 
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
-      args: {
-        executionArgs: [],
-        lastSuccess: {},
-        abort: expect.any(Function),
-        onAbort: expect.any(Function),
-        aborted: true,
-        payload: null
+      argv: {
+        lastSuccess: {
+          data: null, status: AsyncStateStatus.initial
+        },
+        payload: {}
       },
       status: AsyncStateStatus.aborted,
       data: "reason",
@@ -131,13 +123,12 @@ describe('AsyncState - run - abort', () => {
 
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
-      args: {
-        payload: null,
-        aborted: true,
-        lastSuccess: {},
-        executionArgs: [],
-        abort: expect.any(Function),
-        onAbort: expect.any(Function),
+      argv: {
+        payload: {},
+        lastSuccess: {
+          data: null,
+          status: AsyncStateStatus.initial,
+        },
       },
       status: AsyncStateStatus.aborted,
       data: "reason",
@@ -173,20 +164,19 @@ describe('AsyncState - run - abort', () => {
 
     expect(subscription).toHaveBeenCalledTimes(2);
 
+
     await act(async () => {
       await jest.advanceTimersByTime(100);
     });
 
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
-      args: [{
-        executionArgs: [],
-        abort: expect.any(Function),
-        onAbort: expect.any(Function),
-        aborted: false,
-        payload: null,
-        lastSuccess: {},
-      }],
+      argv: {
+        lastSuccess: {
+          data: null, status: AsyncStateStatus.initial
+        },
+        payload: {}
+      },
       status: AsyncStateStatus.success,
       data: "value",
     });

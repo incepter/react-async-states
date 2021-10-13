@@ -58,14 +58,14 @@ export function readAsyncStateFromSource(source, throwError = true) {
   }
 }
 
-function state(status, data, args) {
-  return Object.freeze({status, data, args});
+function state(status, data, argv) {
+  return Object.freeze({status, data, argv});
 }
 
 export const AsyncStateStateBuilder = Object.freeze({
   initial: initialValue => state(AsyncStateStatus.initial, initialValue, null),
-  error: (data, args) => state(AsyncStateStatus.error, data, args),
-  success: (data, args) => state(AsyncStateStatus.success, data, args),
-  pending: args => state(AsyncStateStatus.pending, null, args),
-  aborted: (reason, args) => state(AsyncStateStatus.aborted, reason, args),
+  error: (data, argv) => state(AsyncStateStatus.error, data, argv),
+  success: (data, argv) => state(AsyncStateStatus.success, data, argv),
+  pending: argv => state(AsyncStateStatus.pending, null, argv),
+  aborted: (reason, argv) => state(AsyncStateStatus.aborted, reason, argv),
 });

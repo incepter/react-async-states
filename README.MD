@@ -146,8 +146,8 @@ The main goal and purpose is to run your function, let's see what it receives:
 yourFunction({
   lastSuccess,
 
+  args,
   payload,
-  executionArgs,
 
   aborted,
   onAbort,
@@ -159,7 +159,7 @@ yourFunction({
 |--------------------|-------------------------|
 |`payload`           | The merged payload from provider and all subscribers |
 |`lastSuccess`       | The last success value that was registered |
-|`executionArgs`     | Whatever arguments that the `run` function received when it was invoked |
+|`args`              | Whatever arguments that the `run` function received when it was invoked |
 |`aborted`           | If the request have been cancelled (by dependency change, unmount or user action) |
 |`abort`             | Imperatively abort the promise while processing it, this may be helpful only if you are working with generators |
 |`onAbort`           | Registers a callback that will be fired when the abort is invoked (like aborting a fetch request if the user aborts or component unmounts) |
@@ -224,7 +224,7 @@ function timeout(argv) {
 }
 
 function reducer(argv) {
-  const action = argv.executionArgs[0];
+  const action = argv.args[0];
   switch(action.type) {
     case type1: return {...argv.lastSuccess.data, ...action.newData};
     case type2: return {...action.data};
@@ -286,7 +286,7 @@ let demoAsyncStates = {
     initialValue: {},
     promise: function todosReducerPromise(argv) {
       // myTodosReducer is a regular reducer(state, action) that returns the new state value, my guess is that you've wrote many
-      return myTodosReducer(argv.lastSuccess, ...argv.executionArgs);
+      return myTodosReducer(argv.lastSuccess, ...argv.args);
     }
   },
 }
@@ -373,7 +373,7 @@ The returned object from useAsyncState contains the following properties:
 |Property            |Description              |
 |--------------------|-------------------------|
 |`key`               | The key of the async state instance, if forked, it is different from the given one |
-|`run`               | Imperatively trigger the run, arguments to this function are received as array in the executionArgs |
+|`run`               | Imperatively trigger the run, arguments to this function are received as array in the execution args |
 |`state`             | The current selected portion of state, by default, the selector is `identity` and so the state is of shape `{status, args, data}` |
 |`abort`             | Imperatively abort the current run if running |
 |`lastSuccess`       | The last registered success |
@@ -503,7 +503,7 @@ useAsyncState({
 useAsyncState({
   key: "some-form",
   promise(argv) {
-    const [name, value] = argv.executionArgs;
+    const [name, value] = argv.args;
     if (!name) {
       return argv.lastSuccess.data;
     }

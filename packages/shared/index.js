@@ -46,17 +46,8 @@ export function oneObjectIdentity(obj) {
   return obj;
 }
 
-/**
- * will extract serializable and meaningful arguments to save
- * @param args array of parameters
- * @returns {{}[]|*}
- */
-export function cloneArgs(args) {
-  if (!args || !Array.isArray(args) || !args.length) {
-    return args;
-  }
-
-  return [cloneAsyncStateArgsObject(args[0])];
+export function cloneArgs(argv) {
+  return cloneAsyncStateArgsObject(argv);
 }
 
 export function cloneAsyncStateArgsObject(argsObj) {
@@ -64,13 +55,13 @@ export function cloneAsyncStateArgsObject(argsObj) {
 
   if (argsObj.lastSuccess && Object.keys(argsObj.lastSuccess).length) {
     output.lastSuccess = shallowClone(argsObj.lastSuccess);
-    delete output.lastSuccess["args"]; // cut the circular ref here
+    delete output.lastSuccess.argv; // cut the circular ref here
   }
   output.payload = shallowClone(argsObj.payload);
   delete output.payload["__provider__"]; // no need!
 
-  if (Array.isArray(argsObj.executionArgs) && argsObj.executionArgs.length) {
-    output.executionArgs = [...argsObj.executionArgs];
+  if (Array.isArray(argsObj.args) && argsObj.args.length) {
+    output.args = [...argsObj.args];
   }
 
   return output;

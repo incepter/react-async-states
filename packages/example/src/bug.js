@@ -12,7 +12,7 @@ function timeout(delay, resolveValue, setTimeoutId) {
 }
 
 function* doSomething(argv) {
-  const searchValue = argv.executionArgs[0];
+  const searchValue = argv.args[0];
   const delay = !searchValue ? 0 : 3000 / searchValue.length;
   let timeoutId = null;
   argv.onAbort(() => clearTimeout(timeoutId));
@@ -39,7 +39,7 @@ function invokeIfPresent(fn, ...args) {
 
 function AppWrapped() {
   const {
-    state: { status, data, args },
+    state: { status, data, argv },
     abort,
     run
   } = useAsyncState({
@@ -69,14 +69,14 @@ function AppWrapped() {
         placeholder="type something"
       />
       <hr />
-      <h2>Search value: {JSON.stringify(args?.[0]?.executionArgs?.[0])}</h2>
+      <h2>Search value: {JSON.stringify(argv?.args?.[0])}</h2>
       <hr />
       <h3>status: {status}</h3>
       {status === "pending" && (
         <button onClick={() => abort("USER BGHA")}>Abort</button>
       )}
       {status === "aborted" && (
-        <button onClick={() => run(args?.[0]?.executionArgs?.[0])}>
+        <button onClick={() => run(argv?.args?.[0])}>
           Retry
         </button>
       )}

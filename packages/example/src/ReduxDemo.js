@@ -2,7 +2,7 @@ import React from "react";
 import { createSourceAsyncState } from "react-async-states";
 
 function* reduxPromise(argv) {
-  yield argv.lastSuccess.data.store.dispatch(...argv.executionArgs, argv);
+  yield argv.lastSuccess.data.store.dispatch(...argv.args, argv);
   return argv.lastSuccess.data;
 }
 

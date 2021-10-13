@@ -43,6 +43,7 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
 
   entriesRef.current = asyncStateEntries;
   // synchronous effect to propagate payload
+  // because child effect is executed first, and needs to have this __provider__ in payload entry
   React.useMemo(function propagatePayload() {
     if (!asyncStateEntries) {
       return;

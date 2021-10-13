@@ -106,7 +106,7 @@ const reducerPromise = {
   key: "reducer_promise",
   hoistToProvider: false,
   promise(argv) {
-    const {executionArgs: [userInput]} = argv;
+    const {args: [userInput]} = argv;
     if (userInput > 10) {
       return "OK good!";
     }
