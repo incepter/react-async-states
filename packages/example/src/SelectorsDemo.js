@@ -34,13 +34,14 @@ function keysSelector(allKeys) {
 }
 
 function selectorFunctionDemo(states) {
+  console.log('function selector, from', states);
   return states;
 }
 
 function FunctionSelectorDemo() {
   const t = useAsyncStateSelector(keysSelector, selectorFunctionDemo);
 
-  return JSON.stringify(t);
+  return <pre>{JSON.stringify(t, null, "    ")}</pre>;
 }
 
 
