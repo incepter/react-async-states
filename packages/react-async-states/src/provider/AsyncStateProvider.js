@@ -25,9 +25,21 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
       managerRef.current = manager;
     }
 
-    return {
+    const providerPayload = Object.assign(
+      /*provider config*/{
+        __provider__: {
+          select: manager.select,
+          run: manager.runAsyncState,
+        }
+      },
       payload,
+    );
+
+    return {
+      payload: constructContextPayload(manager, payload),
+
       manager,
+
       get: manager.get,
       run: manager.run,
       fork: manager.fork,
@@ -42,27 +54,6 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
   }, [asyncStateEntries, payload]);
 
   entriesRef.current = asyncStateEntries;
-  // synchronous effect to propagate payload
-  // because child effect is executed first, and needs to have this __provider__ in payload entry
-  React.useMemo(function propagatePayload() {
-    if (!asyncStateEntries) {
-      return;
-    }
-
-    const commonPayload = Object.assign(
-      /*provider config*/{
-        __provider__: {
-          select: contextValue.select,
-          run: contextValue.runAsyncState,
-        }
-      },
-      payload,
-    );
-
-    Object.values(asyncStateEntries).forEach(function mergePayload(entry) {
-      entry.value.payload = shallowClone(entry.value.payload, commonPayload);
-    });
-  }, [payload, contextValue]);
 
   React.useEffect(function disposeOldEntries() {
     if (!asyncStateEntries) {
@@ -86,5 +77,20 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
     <AsyncStateContext.Provider value={contextValue}>
       {children}
     </AsyncStateContext.Provider>
+  );
+}
+
+function constructContextPayload(manager, otherPayload) {
+  if (manager == null) {
+    return undefined;
+  }
+  return Object.assign(
+    {
+      __provider__: {
+        select: manager.select,
+        run: manager.runAsyncState,
+      }
+    },
+    otherPayload,
   );
 }

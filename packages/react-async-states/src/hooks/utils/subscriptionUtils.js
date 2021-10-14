@@ -70,19 +70,18 @@ export function inferAsyncStateInstance(mode, configuration, contextValue) {
       return contextValue.hoist(configuration);
     case AsyncStateSubscriptionMode.LISTEN:
       return candidate;
-    case AsyncStateSubscriptionMode.WAITING:
-      return waitingAsyncState;
     case AsyncStateSubscriptionMode.STANDALONE:
     case AsyncStateSubscriptionMode.OUTSIDE_PROVIDER:
       return new AsyncState(configuration.key, configuration.promise, {initialValue: configuration.initialValue});
-    case AsyncStateSubscriptionMode.NOOP:
-      return null;
     case AsyncStateSubscriptionMode.SOURCE:
       return readAsyncStateFromSource(configuration.source);
     case AsyncStateSubscriptionMode.SOURCE_FORK: {
       const sourceAsyncState = readAsyncStateFromSource(configuration.source);
       return sourceAsyncState.fork(configuration.forkConfig);
     }
+    case AsyncStateSubscriptionMode.NOOP:
+    case AsyncStateSubscriptionMode.WAITING:
+      return null;
     default:
       return candidate;
   }
@@ -106,11 +105,6 @@ export const defaultUseASConfig = Object.freeze({
   areEqual: shallowEqual,
   selector: oneObjectIdentity,
 });
-
-const waitingAsyncState = new AsyncState(
-  "waiting_async_state",
-  {}
-);
 
 export function calculateSelectedState(newState, lastSuccess, configuration) {
   const {selector} = configuration;

@@ -2,7 +2,7 @@ import React from "react";
 import { EMPTY_ARRAY, EMPTY_OBJECT, invokeIfPresent, shallowClone } from "shared";
 import { AsyncStateContext } from "../context";
 import {
-  applyUpdateOnReturnValue,
+  applyUpdateOnReturnValue, getVoidOnReturnValue,
   AsyncStateSubscriptionMode,
   calculateSelectedState,
   defaultRerenderStatusConfig,
@@ -57,7 +57,12 @@ export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
       output.asyncState = refs.current.subscriptionInfo.asyncState;
     }
 
-    output.asyncState.payload = shallowClone(output.asyncState.payload, newConfig.payload);
+    if (output.asyncState) {
+      if (!output.asyncState.payload) {
+        output.asyncState.payload = Object.create(null);
+      }
+      output.asyncState.payload = Object.assign(output.asyncState.payload, contextValue?.payload, newConfig.payload);
+    }
     output.run = runAsyncStateSubscriptionFn(newMode, output.asyncState, newConfig, contextValue);
     output.dispose = disposeAsyncStateSubscriptionFn(newMode, output.asyncState, newConfig, contextValue);
 
@@ -108,8 +113,10 @@ export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
   // if rendering with an undefined value, construct the return value
   if (!refs.current.returnValue) {
     refs.current.returnValue = Object.create(null); // inherit nothing
-    const calculatedState = calculateSelectedState(asyncState.currentState, asyncState.lastSuccess, configuration);
-    applyUpdateOnReturnValue(refs.current.returnValue, asyncState, calculatedState, run, runAsyncState);
+    if (asyncState) {
+      const calculatedState = calculateSelectedState(asyncState.currentState, asyncState.lastSuccess, configuration);
+      applyUpdateOnReturnValue(refs.current.returnValue, asyncState, calculatedState, run, runAsyncState);
+    }
   }
 
   // the subscription to state change along with the decision to re-render
