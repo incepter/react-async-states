@@ -48,7 +48,7 @@ export function useAsyncStateSelector(keys, selector = identity, areEqual = shal
         }, {})
       );
     } else {
-      selectedValue = selector(Object.values(asyncStatesMap)
+      selectedValue = selector(...Object.values(asyncStatesMap)
         .map(t => Object.assign({lastSuccess: t?.lastSuccess}, t?.currentState)))
     }
 
