@@ -25,20 +25,9 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
       managerRef.current = manager;
     }
 
-    const providerPayload = Object.assign(
-      /*provider config*/{
-        __provider__: {
-          select: manager.select,
-          run: manager.runAsyncState,
-        }
-      },
-      payload,
-    );
-
     return {
-      payload: constructContextPayload(manager, payload),
-
       manager,
+      payload: constructContextPayload(manager, payload),
 
       get: manager.get,
       run: manager.run,
@@ -60,8 +49,11 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
       return undefined;
     }
     return function cleanup() {
+      // here asyncStateEntries points to old manager
       Object.values(asyncStateEntries).forEach(function disposeAsyncState(entry) {
-        if (!asyncStateEntries[entry.value.key]) {
+        // entriesRef.current is the new manager
+        // this conditions means this async state was dismissed and no longer used, should be disposed then removed
+        if (!entriesRef.current[entry.value.key]) {
           contextValue.dispose(entry.value);
         }
       });

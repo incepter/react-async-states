@@ -5,6 +5,9 @@ import { createAsyncStateEntry, runScheduledAsyncState } from "./providerUtils";
 const allWatchersKey = Symbol();
 
 export function AsyncStateManager(asyncStateEntries, oldManager) {
+  let watchers = shallowClone(oldManager?.watchers);
+  return {run, get, fork, select, hoist, dispose, watch, runAsyncState, getAllKeys, watchers, watchAll};
+
   function get(key) {
     return asyncStateEntries[key]?.value;
   }
@@ -59,8 +62,6 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
     return forkedAsyncState;
   }
 
-  let watchers = shallowClone(oldManager?.watchers);
-
   function watch(key, notify) {
     if (!watchers[key]) {
       watchers[key] = {meter: 0, watchers: {}};
@@ -82,17 +83,17 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
   }
 
   function notifyWatchers(key, value) {
+    if (watchers[allWatchersKey]?.watchers) {
+      Object.values(watchers[allWatchersKey].watchers).forEach(function notifyWatcher(watcher) {
+        watcher.notify(value, key);
+      })
+    }
     if (!watchers[key]) {
       return;
     }
     Object.values(watchers[key].watchers).forEach(function notifyWatcher(watcher) {
       watcher.notify(value, key);
     })
-    if (watchers[allWatchersKey]?.watchers) {
-      Object.values(watchers[allWatchersKey].watchers).forEach(function notifyWatcher(watcher) {
-        watcher.notify(value, key);
-      })
-    }
   }
 
   function hoist(config) {
@@ -158,6 +159,4 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
   function getAllKeys() {
     return Object.keys(asyncStateEntries);
   }
-
-  return {run, get, fork, select, hoist, dispose, watch, runAsyncState, getAllKeys, watchers, watchAll};
 }
