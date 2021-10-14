@@ -1,5 +1,5 @@
 import AsyncState from "async-state";
-import { EMPTY_OBJECT, oneObjectIdentity, shallowClone, shallowEqual } from "shared";
+import { __DEV__, EMPTY_OBJECT, oneObjectIdentity, shallowClone, shallowEqual } from "shared";
 import { readAsyncStateFromSource } from "async-state/utils";
 
 export const defaultRerenderStatusConfig = Object.freeze({
@@ -10,17 +10,15 @@ export const defaultRerenderStatusConfig = Object.freeze({
 });
 
 export const AsyncStateSubscriptionMode = Object.freeze({
-  LISTEN: 0, // simple listener
-  HOIST: 1, // hoisting a promise, for first time and intended to be shared, more like of an injection
-  STANDALONE: 2, // working standalone even if inside provider
-  WAITING: 3, // waits for the original to be hoisted
-
-  FORK: 4, // forking an existing one in the provider
-  NOOP: 5, // a weird case that should not happen
-  SOURCE: 6, // subscription via source property
-  SOURCE_FORK: 8, // subscription via source property and fork
-
-  OUTSIDE_PROVIDER: 7, // standalone outside provider
+  LISTEN: __DEV__ ? "LISTEN" : 0, // simple listener
+  HOIST: __DEV__ ? "HOIST" : 1, // hoisting a promise, for first time and intended to be shared, more like of an injection
+  STANDALONE: __DEV__ ? "STANDALONE" : 2, // working standalone even if inside provider
+  WAITING: __DEV__ ? "WAITING" : 3, // waits for the original to be hoisted
+  FORK: __DEV__ ? "FORK" : 4, // forking an existing one in the provider
+  NOOP: __DEV__ ? "NOOP" : 5, // a weird case that should not happen
+  SOURCE: __DEV__ ? "SOURCE" : 6, // subscription via source property
+  SOURCE_FORK: __DEV__ ? "SOURCE_FORK" : 8, // subscription via source property and fork
+  OUTSIDE_PROVIDER: __DEV__ ? "OUTSIDE_PROVIDER" : 7, // standalone outside provider
 });
 
 export function inferSubscriptionMode(contextValue, configuration) {
@@ -33,8 +31,12 @@ export function inferSubscriptionMode(contextValue, configuration) {
     return AsyncStateSubscriptionMode.OUTSIDE_PROVIDER;
   }
 
-  const {fork, hoistToProvider, promise} = configuration;
-  const existsInProvider = !!contextValue.get(configuration.key);
+  const {key, fork, hoistToProvider, promise} = configuration;
+  if (key === undefined && configuration.source?.key === undefined) {
+    return AsyncStateSubscriptionMode.STANDALONE;
+  }
+
+  const existsInProvider = !!contextValue.get(key);
 
   // early decide that this is a listener and return it immediately
   // because this is the most common use case that it will be, we'll be optimizing this path first

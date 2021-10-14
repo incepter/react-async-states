@@ -8,7 +8,10 @@ export default function UsersPage() {
   const history = useHistory();
   const search = useLocation().search;
   const queryString = parseSearch(search);
-  const {state: {status, data}, abort, run} = useAsyncState(DOMAIN_USER_PROMISES.list.key, [search]);
+  const {state: {status, data}, abort, run} = useAsyncState({
+    lazy: false,
+    key: DOMAIN_USER_PROMISES.list.key
+  }, [search]);
 
   function onSubmit(e) {
     e.preventDefault();
@@ -49,14 +52,14 @@ export default function UsersPage() {
 
 export function UserDetailsPage() {
   return (
-    <div style={{ display: "flex"}}>
+    <div style={{display: "flex"}}>
       <UserDetailsPageImpl/>
-      <UserDetailsPageImpl2 />
+      <UserDetailsPageImpl2/>
     </div>
   );
 }
 
-function UserDetailsPageImpl({ fork = false }) {
+function UserDetailsPageImpl({fork = false}) {
 
   const history = useHistory();
   const matchParams = useParams();
@@ -150,3 +153,48 @@ function UserDetailsPageImpl2() {
     </div>
   );
 }
+
+// string, object(), source, object(source), promise function (generator, async await, function returnning anything, sync or astync)
+
+// const {
+//   key,
+//   source,
+//
+//   state, // selector return
+//   run,
+//   lastSuccess,
+//   payload,
+//
+//   abort,
+//   replaceState,
+//   mergePayload,
+//
+//   runAsyncState,
+// } = useAsyncState({
+//   source: null,
+//   key: "my-key",
+//   initialValue: 0, // value or function
+//
+//   hoistToProvider: true,
+//   hoistToProviderConfig: {override: false},
+//   fork: true,
+//   forkConfig: {keepState: true, key: "new-key"},
+//
+//   rerenderStatus: {pending: true, success: true, error: true, aborted: true},
+//
+//   selector: (s, lastSu) => [],
+//   areEqual: (prev, next) => true,
+//
+//   promise (argv) {}
+// }, []);
+//
+// const argv = {
+//   payload, // combined, __provider__.select/run, principal, queryString, pathname, onSuccess
+//
+//   aborted: false,
+//   onAbort: cb => cb,
+//   abort() {},
+//
+//   args: [],
+//   lastSuccess: {status, data, argv},
+// }

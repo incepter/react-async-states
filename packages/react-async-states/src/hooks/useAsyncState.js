@@ -2,7 +2,7 @@ import React from "react";
 import { EMPTY_ARRAY, EMPTY_OBJECT, invokeIfPresent, shallowClone } from "shared";
 import { AsyncStateContext } from "../context";
 import {
-  applyUpdateOnReturnValue, getVoidOnReturnValue,
+  applyUpdateOnReturnValue,
   AsyncStateSubscriptionMode,
   calculateSelectedState,
   defaultRerenderStatusConfig,

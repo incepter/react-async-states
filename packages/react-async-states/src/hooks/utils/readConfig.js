@@ -32,7 +32,7 @@ function readHybridSourceConfig(userConfig) {
 }
 
 const defaultAnonymousPrefix = "anonymous-async-state-";
-const nextKey = (function autoKey() {
+export const nextKey = (function autoKey() {
   let key = 0;
   return function incrementAndGet() {
     key += 1;
