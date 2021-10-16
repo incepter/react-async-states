@@ -57,10 +57,10 @@ export default function Demo() {
 }
 
 function WaitingDemo() {
-  const {key, state, run} = useAsyncState({key: "waiting_demo", selector: s => s.data});
+  const {key, state, run, mode} = useAsyncState({key: "waiting_demo", selector: s => s.data});
 
   return <p>
-    {"waiting for state: " + key + " , " + JSON.stringify(state ?? {})}
+    {mode+" waiting for state: " + key + " , " + JSON.stringify(state ?? {})}
     <button onClick={() => run()}>Run</button>
   </p>;
 }

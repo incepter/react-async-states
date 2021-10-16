@@ -1,11 +1,11 @@
 import React from "react";
-import { useAsyncStateSelector, useAsyncState, createReducerPromise } from "react-async-states";
+import { createReducerPromise, useAsyncState, useAsyncStateSelector } from "react-async-states";
 
 function reducer(old, name, value) {
   return {...old, [name]: value};
 }
 
-const size = 30;
+const size = 60;
 export default function Demo() {
   useAsyncState({
     lazy: true,
@@ -20,11 +20,11 @@ export default function Demo() {
     <div>
       <h3>This is a controlled dynamic login form of size: {size}</h3>
       <DynamicForm initialSize={size}/>
-      <hr />
-      <div>
-        <h3>Function selector</h3>
-        <FunctionSelectorDemo />
-      </div>
+      <hr/>
+      {/*<div>*/}
+      {/*  <h3>Function selector</h3>*/}
+      {/*  <FunctionSelectorDemo/>*/}
+      {/*</div>*/}
     </div>
   );
 }
@@ -45,7 +45,7 @@ function FunctionSelectorDemo() {
 }
 
 
-function DynamicForm({ initialSize}) {
+function DynamicForm({initialSize}) {
   const name = React.useRef();
 
   const [fields, setFields] = React.useState(() => [...Array(initialSize).keys()].map(t => ({name: `name_${t}`})));
@@ -65,11 +65,11 @@ function DynamicForm({ initialSize}) {
 }
 
 function Input({name}) {
-  const {state, run} = useAsyncState({
-    lazy: true,
-    key: "login-form",
-    selector: state => state.data[name],
-  }, [name]);
+  const {state, run} = useAsyncState
+    .selector(state => state.data[name])
+    .lazy("login-form", [name]);
+
+  React.useEffect(() => run(name, "init"), [])
 
   return (<input
     value={state || ""}

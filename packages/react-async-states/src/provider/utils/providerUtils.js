@@ -38,10 +38,6 @@ export function createInitialAsyncStatesReducer(result, current) {
 }
 
 export function runScheduledAsyncState(asyncStateEntry, ...args) {
-
-  if (!asyncStateEntry) {
-    return;
-  }
   asyncStateEntry.scheduledRunsCount += 1; // increment schedules
   let isRunning = false;
   let isCancelled = false;
