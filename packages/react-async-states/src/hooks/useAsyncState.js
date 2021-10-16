@@ -1,5 +1,5 @@
 import React from "react";
-import { EMPTY_ARRAY, EMPTY_OBJECT, invokeIfPresent, shallowClone } from "shared";
+import { EMPTY_ARRAY, EMPTY_OBJECT, invokeIfPresent, oneObjectIdentity, shallowClone, shallowEqual } from "shared";
 import { AsyncStateContext } from "../context";
 import {
   applyUpdateOnReturnValue,
@@ -45,7 +45,6 @@ function useAsyncStateImpl(subscriptionConfig, dependencies = EMPTY_ARRAY, confi
       newConfig.key = nextKey();
     }
 
-    console.log('reading', configOverrides, newConfig, newMode);
     const {guard} = stateDeps;
     const recalculateInstance = shouldRecalculateInstance(newConfig, newMode, guard, dependencies, refs.current.subscriptionInfo);
 
@@ -199,11 +198,18 @@ function useForkAutoAsyncState(subscriptionConfig, dependencies) {
   return useAsyncStateImpl(subscriptionConfig, dependencies, forkAutoConfigOverrides);
 }
 
-// fork auto
+// hoist
 const hoistConfigOverrides = {hoistToProvider: true};
 
 function useHoistAsyncState(subscriptionConfig, dependencies) {
   return useAsyncStateImpl(subscriptionConfig, dependencies, hoistConfigOverrides);
+}
+
+// hoistAuto
+const hoistAutoConfigOverrides = {hoistToProvider: true, lazy: false};
+
+function useHoistAutoAsyncState(subscriptionConfig, dependencies) {
+  return useAsyncStateImpl(subscriptionConfig, dependencies, hoistAutoConfigOverrides);
 }
 
 useAsyncStateExp.auto = useAutoAsyncState;
@@ -211,5 +217,52 @@ useAsyncStateExp.lazy = useLazyAsyncState;
 useAsyncStateExp.fork = useForkAsyncState;
 useAsyncStateExp.hoist = useHoistAsyncState;
 useAsyncStateExp.forkAuto = useForkAutoAsyncState;
+useAsyncStateExp.hoistAuto = useHoistAutoAsyncState;
+
+function selectorArgsToOverrides(args) {
+  const areEqual = args[1] || shallowEqual;
+  const selector = args[0] || oneObjectIdentity;
+
+  return {selector, areEqual};
+}
+function payloadArgsToOverrides(args) {
+  return {payload: args[0]};
+}
+
+useAsyncStateExp.payload = curryProperty(payloadArgsToOverrides, {});
+useAsyncStateExp.selector = curryProperty(selectorArgsToOverrides, {});
+
+function curryProperty(argsToOverrides, configOverrides) {
+  return function constructHookBuilder(...args) {
+    configOverrides = shallowClone(configOverrides, argsToOverrides(args));
+
+    function hookBuilder(subscriptionConfig, dependencies) {
+      return useAsyncStateImpl(subscriptionConfig, dependencies, configOverrides);
+    }
+
+    function addProp(overridePropName, overridePropValue, prop2, value2) {
+      return function overrides(subscriptionConfig, dependencies) {
+        configOverrides[overridePropName] = overridePropValue;
+        if (prop2 !== undefined && value2 !== undefined) {
+          configOverrides[prop2] = value2;
+        }
+        return useAsyncStateImpl(subscriptionConfig, dependencies, configOverrides);
+      }
+    }
+
+    hookBuilder.fork = addProp("fork", true);
+    hookBuilder.lazy = addProp("lazy", true);
+    hookBuilder.auto = addProp("lazy", false);
+    hookBuilder.hoist = addProp("hoistToProvider", true);
+    hookBuilder.forkAuto = addProp("fork", true, "lazy", false);
+    hookBuilder.hoistAuto = addProp("hoist", true, "lazy", false);
+
+    hookBuilder.payload = curryProperty(payloadArgsToOverrides, configOverrides);
+    hookBuilder.selector = curryProperty(selectorArgsToOverrides, configOverrides);
+
+    return Object.freeze(hookBuilder);
+  }
+}
+
 
 export const useAsyncState = Object.freeze(useAsyncStateExp);
