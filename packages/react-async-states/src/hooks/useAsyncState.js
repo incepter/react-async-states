@@ -10,7 +10,7 @@ import {
   inferSubscriptionMode,
   shouldRecalculateInstance
 } from "./utils/subscriptionUtils";
-import { readUserConfiguration } from "./utils/readConfig";
+import { nextKey, readUserConfiguration } from "./utils/readConfig";
 import { disposeAsyncStateSubscriptionFn, runAsyncStateSubscriptionFn } from "./utils/asyncStateSubscription";
 
 // guard: if inside provider, and subscription occurred before hoist, component may wait and uses this to trigger recalculation
@@ -24,7 +24,7 @@ function refsFactory() {
   };
 }
 
-export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
+function useAsyncStateImpl(subscriptionConfig, dependencies = EMPTY_ARRAY, configOverrides = EMPTY_OBJECT) {
   const contextValue = React.useContext(AsyncStateContext);
 
   const isInsideProvider = contextValue !== null;
@@ -38,9 +38,14 @@ export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
   }
 
   const {mode, asyncState, configuration, run, dispose} = React.useMemo(function readConfiguration() {
-    const newConfig = readUserConfiguration(subscriptionConfig);
+    const newConfig = readUserConfiguration(subscriptionConfig, configOverrides);
     const newMode = inferSubscriptionMode(contextValue, newConfig);
 
+    if (newConfig.key === undefined && newConfig.source?.key === undefined) {
+      newConfig.key = nextKey();
+    }
+
+    console.log('reading', configOverrides, newConfig, newMode);
     const {guard} = stateDeps;
     const recalculateInstance = shouldRecalculateInstance(newConfig, newMode, guard, dependencies, refs.current.subscriptionInfo);
 
@@ -115,7 +120,7 @@ export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
     refs.current.returnValue = Object.create(null); // inherit nothing
     if (asyncState) {
       const calculatedState = calculateSelectedState(asyncState.currentState, asyncState.lastSuccess, configuration);
-      applyUpdateOnReturnValue(refs.current.returnValue, asyncState, calculatedState, run, runAsyncState);
+      applyUpdateOnReturnValue(refs.current.returnValue, asyncState, calculatedState, run, runAsyncState, mode);
     }
   }
 
@@ -130,7 +135,7 @@ export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
     const unsubscribe = asyncState.subscribe(function onUpdate(newState) {
       const calculatedState = calculateSelectedState(newState, asyncState.lastSuccess, configuration);
       const prevStateValue = refs.current.returnValue.state;
-      applyUpdateOnReturnValue(refs.current.returnValue, asyncState, calculatedState, run, runAsyncState);
+      applyUpdateOnReturnValue(refs.current.returnValue, asyncState, calculatedState, run, runAsyncState, mode);
 
       if (!rerenderStatusConfig[newState.status]) {
         return;
@@ -160,3 +165,51 @@ export function useAsyncState(subscriptionConfig, dependencies = EMPTY_ARRAY) {
 
   return refs.current.returnValue;
 }
+
+// default
+function useAsyncStateExp(subscriptionConfig, dependencies) {
+  return useAsyncStateImpl(subscriptionConfig, dependencies);
+}
+
+// auto runs
+const autoConfigOverrides = {lazy: false};
+
+function useAutoAsyncState(subscriptionConfig, dependencies) {
+  return useAsyncStateImpl(subscriptionConfig, dependencies, autoConfigOverrides);
+}
+
+// lazy
+const lazyConfigOverrides = {lazy: true};
+
+function useLazyAsyncState(subscriptionConfig, dependencies) {
+  return useAsyncStateImpl(subscriptionConfig, dependencies, lazyConfigOverrides);
+}
+
+// fork
+const forkConfigOverrides = {fork: true};
+
+function useForkAsyncState(subscriptionConfig, dependencies) {
+  return useAsyncStateImpl(subscriptionConfig, dependencies, forkConfigOverrides);
+}
+
+// fork auto
+const forkAutoConfigOverrides = {fork: true, lazy: false};
+
+function useForkAutoAsyncState(subscriptionConfig, dependencies) {
+  return useAsyncStateImpl(subscriptionConfig, dependencies, forkAutoConfigOverrides);
+}
+
+// fork auto
+const hoistConfigOverrides = {hoistToProvider: true};
+
+function useHoistAsyncState(subscriptionConfig, dependencies) {
+  return useAsyncStateImpl(subscriptionConfig, dependencies, hoistConfigOverrides);
+}
+
+useAsyncStateExp.auto = useAutoAsyncState;
+useAsyncStateExp.lazy = useLazyAsyncState;
+useAsyncStateExp.fork = useForkAsyncState;
+useAsyncStateExp.hoist = useHoistAsyncState;
+useAsyncStateExp.forkAuto = useForkAutoAsyncState;
+
+export const useAsyncState = Object.freeze(useAsyncStateExp);

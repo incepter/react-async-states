@@ -113,7 +113,7 @@ export function calculateSelectedState(newState, lastSuccess, configuration) {
   return typeof selector === "function" ? selector(newState, lastSuccess) : newState;
 }
 
-export function applyUpdateOnReturnValue(returnValue, asyncState, stateValue, run, runAsyncState) {
+export function applyUpdateOnReturnValue(returnValue, asyncState, stateValue, run, runAsyncState, mode) {
   returnValue.source = asyncState._source;
 
   returnValue.state = stateValue;
@@ -139,6 +139,9 @@ export function applyUpdateOnReturnValue(returnValue, asyncState, stateValue, ru
   }
   if (!returnValue.runAsyncState) {
     returnValue.runAsyncState = runAsyncState;
+  }
+  if (__DEV__) {
+    returnValue.mode = mode;
   }
 }
 

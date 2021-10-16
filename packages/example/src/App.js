@@ -7,6 +7,7 @@ import SelectorsDemo from "./SelectorsDemo";
 import ReducersDemo from "./ReducersDemo";
 import StandaloneDemo from "./StandaloneDemo";
 import ReduxDemo from "./ReduxDemo";
+import NextDemo from "./NextDemo";
 import ReplaceStateDemo from "./ReplaceStateDemo";
 import Navigation from "./Navigation";
 import DemoProvider from "./Provider";
@@ -81,6 +82,9 @@ export default function App() {
             </Route>
             <Route path="/redux">
               <ReduxDemo/>
+            </Route>
+            <Route path="/next">
+              <NextDemo/>
             </Route>
           </Switch>
         </div>

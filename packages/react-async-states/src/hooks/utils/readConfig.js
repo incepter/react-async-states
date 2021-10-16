@@ -1,31 +1,30 @@
-import { shallowClone } from "shared";
 import { defaultUseASConfig, sourceConfigurationSecretSymbol } from "./subscriptionUtils";
 import { isAsyncStateSource } from "async-state/AsyncState";
 
 // userConfig is the config the developer wrote
-export function readUserConfiguration(userConfig) {
+export function readUserConfiguration(userConfig, overrides) {
   // this is an anonymous promise configuration (lazy: true, fork: false, hoist: false, payload: null)
   if (typeof userConfig === "function") {
-    return readConfigFromPromiseFunction(userConfig);
+    return readConfigFromPromiseFunction(userConfig, overrides);
   }
   if (typeof userConfig === "string") {
-    return shallowClone(defaultUseASConfig, {key: userConfig});
+    return Object.assign({}, defaultUseASConfig, overrides, {key: userConfig});
   }
   if (isAsyncStateSource(userConfig)) {
-    return readSourceConfig(userConfig);
+    return readSourceConfig(userConfig, overrides);
   }
   if (isAsyncStateSource(userConfig?.source)) {
-    return readHybridSourceConfig(userConfig);
+    return readHybridSourceConfig(userConfig, overrides);
   }
-  return shallowClone(defaultUseASConfig, userConfig);
+  return Object.assign({}, defaultUseASConfig, overrides, userConfig);
 }
 
-function readSourceConfig(source) {
-  return shallowClone(defaultUseASConfig, {source, [sourceConfigurationSecretSymbol]: true});
+function readSourceConfig(source, overrides) {
+  return Object.assign({}, defaultUseASConfig, overrides, {source, [sourceConfigurationSecretSymbol]: true});
 }
 
-function readHybridSourceConfig(userConfig) {
-  return Object.assign({}, defaultUseASConfig, userConfig, {
+function readHybridSourceConfig(userConfig, overrides) {
+  return Object.assign({}, defaultUseASConfig, userConfig, overrides, {
     source: userConfig.source,
     [sourceConfigurationSecretSymbol]: true
   });
@@ -40,6 +39,6 @@ export const nextKey = (function autoKey() {
   }
 }());
 
-function readConfigFromPromiseFunction(promise) {
-  return shallowClone(defaultUseASConfig, {promise, key: nextKey()});
+function readConfigFromPromiseFunction(promise, overrides) {
+  return Object.assign({}, defaultUseASConfig, overrides, {promise});
 }
