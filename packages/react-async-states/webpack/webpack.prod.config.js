@@ -3,7 +3,6 @@ const webpack = require("webpack");
 const CopyPlugin = require("copy-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const CompressionPlugin = require("compression-webpack-plugin");
-const {BundleAnalyzerPlugin} = require("webpack-bundle-analyzer");
 
 function buildFor(entry, output, mode) {
   return {
@@ -41,9 +40,9 @@ function buildFor(entry, output, mode) {
           }
         }),
       ],
+      nodeEnv: mode,
       usedExports: true,
       sideEffects: false,
-      nodeEnv: "production",
       concatenateModules: true
     },
 
@@ -54,11 +53,6 @@ function buildFor(entry, output, mode) {
         test: /\.js$/,
         threshold: 10240,
         minRatio: 0.8,
-      }),
-      new BundleAnalyzerPlugin({
-        openAnalyzer: false,
-        analyzerMode: "static",
-        reportFilename: "report.html"
       }),
       new webpack.EnvironmentPlugin({
         NODE_ENV: mode,
@@ -110,6 +104,6 @@ function devBuild() {
 }
 
 module.exports = [
-  umdBuild(),
   devBuild(),
+  umdBuild(),
 ];
