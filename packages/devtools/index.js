@@ -1,5 +1,4 @@
 import { devtoolsJournalEvents, toDevtoolsEvents } from "./eventTypes";
-import { shallowClone } from "shared";
 
 const source = "async-states-agent";
 const devtools = ((function makeDevtools() {
@@ -102,13 +101,6 @@ const devtools = ((function makeDevtools() {
     emitJournalEvent(asyncState, {
       payload: insideProvider,
       type: devtoolsJournalEvents.insideProvider,
-    });
-  }
-
-  function emitRun(asyncState, argv, type) {
-    emitJournalEvent(asyncState, {
-      payload: {argv, type},
-      type: devtoolsJournalEvents.run
     });
   }
 

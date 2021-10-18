@@ -1,4 +1,4 @@
-import { cloneArgs, invokeIfPresent } from "shared";
+import { __DEV__, cloneArgs, invokeIfPresent } from "shared";
 import devtools from "devtools";
 import { AsyncStateStateBuilder } from "./utils";
 
@@ -18,21 +18,21 @@ export function wrapPromiseFunction(asyncState) {
     try {
       executionValue = asyncState.originalPromise(argv);
     } catch (e) {
-      devtools.emitRunSync(asyncState, argv);
+      if (__DEV__) devtools.emitRunSync(asyncState, argv);
       asyncState.setState(AsyncStateStateBuilder.error(e, clonedArgv));
       return;
     }
 
     if (isGenerator(executionValue)) {
-      devtools.emitRunGenerator(asyncState, argv);
+      if (__DEV__) devtools.emitRunGenerator(asyncState, argv);
       asyncState.setState(AsyncStateStateBuilder.pending(clonedArgv));
       runningPromise = wrapGenerator(executionValue, asyncState, argv);
     } else if (isPromise(executionValue)) {
-      devtools.emitRunPromise(asyncState, argv);
+      if (__DEV__) devtools.emitRunPromise(asyncState, argv);
       asyncState.setState(AsyncStateStateBuilder.pending(clonedArgv));
       runningPromise = executionValue;
     } else { // final value
-      devtools.emitRunSync(asyncState, argv);
+      if (__DEV__) devtools.emitRunSync(asyncState, argv);
       asyncState.setState(AsyncStateStateBuilder.success(executionValue, clonedArgv));
       return;
     }

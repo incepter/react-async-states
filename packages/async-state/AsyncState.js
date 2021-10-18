@@ -1,7 +1,6 @@
 import { __DEV__, AsyncStateStatus, cloneArgs, EMPTY_OBJECT, invokeIfPresent, shallowClone } from "shared";
 import { wrapPromiseFunction } from "./wrap-promise-function";
 import {
-  asyncStatesKey,
   AsyncStateStateBuilder,
   constructAsyncStateSource,
   warnDevAboutAsyncStateKey,
@@ -40,11 +39,11 @@ function AsyncState(key, promise, config) {
 
   Object.preventExtensions(this);
 
-  devtools.emitCreation(this);
+  if (__DEV__) devtools.emitCreation(this);
 }
 
 AsyncState.prototype.setState = function setState(newState, notify = true) {
-  devtools.startUpdate(this);
+  if (__DEV__) devtools.startUpdate(this);
   if (typeof newState === "function") {
     this.currentState = newState(this.currentState);
   } else {
@@ -58,7 +57,7 @@ AsyncState.prototype.setState = function setState(newState, notify = true) {
   if (this.currentState.status !== AsyncStateStatus.pending) {
     this.currentAborter = undefined;
   }
-  devtools.emitUpdate(this);
+  if (__DEV__) devtools.emitUpdate(this);
 
   if (notify) {
     notifySubscribers(this);
@@ -79,7 +78,7 @@ AsyncState.prototype.dispose = function disposeImpl() {
 
   this.locks = 0;
   this.setState(AsyncStateStateBuilder.initial(this.config.initialValue));
-  devtools.emitDispose(this);
+  if (__DEV__) devtools.emitDispose(this);
 
   return true;
 }
@@ -136,7 +135,7 @@ AsyncState.prototype.subscribe = function subscribe(cb, subKey) {
   function cleanup() {
     that.locks -= 1;
     delete that.subscriptions[subscriptionKey];
-    devtools.emitUnsubscription(that, subscriptionKey);
+    if (__DEV__) devtools.emitUnsubscription(that, subscriptionKey);
   }
 
   this.subscriptions[subscriptionKey] = {
@@ -146,7 +145,7 @@ AsyncState.prototype.subscribe = function subscribe(cb, subKey) {
   };
   this.locks += 1;
 
-  devtools.emitSubscription(this, subscriptionKey);
+  if (__DEV__) devtools.emitSubscription(this, subscriptionKey);
   return cleanup;
 }
 
@@ -185,7 +184,7 @@ AsyncState.prototype.replaceState = function replaceState(newValue) {
     effectiveValue = newValue(this.currentState);
   }
 
-  devtools.emitReplaceState(this);
+  if (__DEV__) devtools.emitReplaceState(this);
   this.setState(AsyncStateStateBuilder.success(effectiveValue));
 }
 
