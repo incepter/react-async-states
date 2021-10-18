@@ -1,56 +1,115 @@
-// Important modules this config uses
 const path = require("path");
-// const OfflinePlugin = require("offline-plugin");
+const webpack = require("webpack");
+const CopyPlugin = require("copy-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const CompressionPlugin = require("compression-webpack-plugin");
-const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
+const {BundleAnalyzerPlugin} = require("webpack-bundle-analyzer");
 
-module.exports = require("./webpack.base.config")({
-  mode: "production",
+function buildFor(entry, output, mode) {
+  return {
+    mode,
+    entry,
+    output,
 
-  // In production, we skip all hot-reloading stuff
-  entry: path.join(process.cwd(), "src/index.js"),
-
-  // Utilize long-term caching by adding content hashes (not compilation hashes) to compiled assets
-  output: {
-    filename: "index.js"
-  },
-
-  optimization: {
-    minimize: true,
-    minimizer: [
-      new TerserPlugin({
-        terserOptions: {
-          warnings: false,
-          compress: {
-            comparisons: false,
+    module: {
+      rules: [
+        {
+          test: /\.js?$/,
+          exclude: /node_modules/,
+          use: {
+            loader: "babel-loader",
           },
-          parse: {},
-          mangle: true,
-          output: {
-            comments: false,
-            ascii_only: true,
-          },
-        }
+        },
+      ],
+    },
+
+    optimization: {
+      minimize: true,
+      minimizer: [
+        new TerserPlugin({
+          terserOptions: {
+            warnings: false,
+            compress: {
+              comparisons: false,
+            },
+            parse: {},
+            mangle: true,
+            output: {
+              comments: false,
+              ascii_only: true,
+            },
+          }
+        }),
+      ],
+      usedExports: true,
+      sideEffects: false,
+      nodeEnv: "production",
+      concatenateModules: true
+    },
+
+    plugins: [
+
+      new CompressionPlugin({
+        algorithm: "gzip",
+        test: /\.js$/,
+        threshold: 10240,
+        minRatio: 0.8,
+      }),
+      new BundleAnalyzerPlugin({
+        openAnalyzer: false,
+        analyzerMode: "static",
+        reportFilename: "report.html"
+      }),
+      new webpack.EnvironmentPlugin({
+        NODE_ENV: mode,
+      }),
+      new CopyPlugin({
+        patterns: [
+          {
+            from: path.join(process.cwd(), "src/index-prod.js"),
+            to: path.join(process.cwd(), "dist/index.js")
+          }
+        ]
       }),
     ],
-    nodeEnv: "production",
-    sideEffects: true,
-    concatenateModules: true
-  },
+    resolve: {
+      modules: ["node_modules", "src"],
+      extensions: [".js"]
+    },
+    externals: {
+      react: "react"
+    }
+  };
+}
 
-  plugins: [
+function umdBuild() {
+  return buildFor(
+    path.join(process.cwd(), "src/index.js"),
+    {
+      libraryTarget: "umd",
+      library: "ReactAsyncState",
+      path: path.resolve(process.cwd(), `dist`),
+      filename: "react-async-states.production.js",
+    },
+    "production"
+  );
+}
 
-    new CompressionPlugin({
-      algorithm: "gzip",
-      test: /\.js$/,
-      threshold: 10240,
-      minRatio: 0.8,
-    }),
-    new BundleAnalyzerPlugin({
-      openAnalyzer: false,
-      analyzerMode: "static",
-      reportFilename: "report.html"
-    }),
-  ]
-});
+function devBuild() {
+
+  return buildFor(
+    path.join(process.cwd(), "src/index.js"),
+    {
+      libraryTarget: "umd",
+      library: "ReactAsyncState",
+      path: path.resolve(process.cwd(), `dist`),
+      filename: "react-async-states.development.js",
+    },
+    "development"
+  );
+}
+
+module.exports = [
+  umdBuild(),
+  devBuild(),
+];

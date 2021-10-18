@@ -1,7 +1,8 @@
 import { devtoolsJournalEvents, toDevtoolsEvents } from "./eventTypes";
+import { __DEV__, shallowClone } from "shared";
 
 const source = "async-states-agent";
-const devtools = ((function makeDevtools() {
+const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
   let queue = [];
   let connected = false;
   let currentUpdate = null;
@@ -173,7 +174,9 @@ const devtools = ((function makeDevtools() {
       oldState: shallowClone(asyncState.currentState),
     };
   }
-})());
+})()
+)
+;
 
 
 function formatEntriesToDevtools(entries) {

@@ -1,9 +1,10 @@
 {
   "private": false,
   "license": "MIT",
+  "main": "dist/index.js",
   "author": "incepter",
+  "sideEffects": false,
   "version": "0.0.1-rc-1",
-  "main": "dist/umd/index.js",
   "name": "react-async-states",
   "repository": "incepter/react-async-states",
   "description": "A lightweight React library for asynchronous state management",
@@ -24,13 +25,12 @@
   ],
   "files": [
     "dist/*",
-    "README.MD",
-    "src/index.js"
+    "README.MD"
   ],
   "scripts": {
     "test": "cross-env CI=1 react-scripts test --env=jsdom",
     "test:watch": "react-scripts test --env=jsdom",
-    "build": "cross-env NODE_ENV=production webpack --config ./webpack/webpack.prod.config.js --color --progress --mode production",
+    "build": "cross-env webpack --config ./webpack/webpack.prod.config.js --color --progress",
     "start": "cross-env NODE_ENV=development webpack --watch --config ./webpack/webpack.dev.config.js --color --progress --mode development",
     "prepare": "yarn run build",
     "predeploy": "cd example && yarn install && yarn run build",
@@ -65,6 +65,7 @@
     "babel-loader": "8.1.0",
     "circular-dependency-plugin": "^5.2.2",
     "compression-webpack-plugin": "3.0.0",
+    "copy-webpack-plugin": "6.0.4",
     "cross-env": "^5.2.0",
     "eslint-config-standard": "^11.0.0",
     "eslint-config-standard-react": "^6.0.0",
