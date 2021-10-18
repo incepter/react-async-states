@@ -8,10 +8,7 @@ export default function UsersPage() {
   const history = useHistory();
   const search = useLocation().search;
   const queryString = parseSearch(search);
-  const {state: {status, data}, abort, run} = useAsyncState({
-    lazy: false,
-    key: DOMAIN_USER_PROMISES.list.key
-  }, [search]);
+  const {state: {status, data}, abort, run} = useAsyncState.auto(DOMAIN_USER_PROMISES.list.key, [search]);
 
   function onSubmit(e) {
     e.preventDefault();
@@ -64,8 +61,8 @@ function UserDetailsPageImpl({fork = false}) {
   const history = useHistory();
   const matchParams = useParams();
 
-  const {state: {status, data}, abort, run} = useAsyncState({
-    key: DOMAIN_USER_PROMISES.details.key,
+  const {state, abort, run} = useAsyncState.auto({
+    source: DOMAIN_USER_PROMISES.details,
     payload: {
       userId: matchParams.userId
     }
@@ -86,20 +83,21 @@ function UserDetailsPageImpl({fork = false}) {
           <button type="submit">search</button>
         </form>
       </div>
-      <h3>Users details</h3>{status === "pending" && <span>...<button onClick={() => abort()}>Abort</button></span>}
-      {status !== "pending" && <button onClick={() => run()}>Reload</button>}
-      {status === "success" && (
+      <h3>Users details</h3>{state?.status === "pending" && <span>...<button
+      onClick={() => abort()}>Abort</button></span>}
+      {state?.status !== "pending" && <button onClick={() => run()}>Reload</button>}
+      {state?.status === "success" && (
         <div>
-          {!data && "No results!"}
+          {!state.data && "No results!"}
           <pre>
-            {JSON.stringify(data, null, "  ")}
+            {JSON.stringify(state.data, null, "  ")}
           </pre>
         </div>
       )}
-      {status === "error" && (<div>
+      {state?.status === "error" && (<div>
         <button onClick={() => run()}>Retry</button>
         <pre>
-            {JSON.stringify(data, null, "  ")}
+            {JSON.stringify(state?.data, null, "  ")}
           </pre>
       </div>)}
     </div>
@@ -107,30 +105,21 @@ function UserDetailsPageImpl({fork = false}) {
 }
 
 function UserDetailsPageImpl2() {
-  const [value, setValue] = React.useState(null);
-
-
-  const {state: {status, data}, abort, run} = useAsyncState({
-    key: DOMAIN_USER_PROMISES.details.key,
-    condition: !!value?.id,
-    fork: true,
-    payload: {
-      userId: value?.id,
-    }
-  }, [value?.id]);
+  const {state: {status, data}, abort, run, mergePayload} = useAsyncState.fork(DOMAIN_USER_PROMISES.details);
 
   function onSubmit(e) {
     e.preventDefault();
 
-    const values = readFormValues(e.target);
-    setValue(values);
+    const {id: userId} = readFormValues(e.target);
+    mergePayload({userId})
+    run();
   }
 
   return (
     <div>
       <div>
         <form onSubmit={onSubmit}>
-          <input defaultValue={value?.id || ""} name="id" placeholder="user-id"/>
+          <input defaultValue={""} name="id" placeholder="user-id"/>
           <button type="submit">search</button>
         </form>
       </div>
@@ -147,7 +136,7 @@ function UserDetailsPageImpl2() {
       {status === "error" && (<div>
         <button onClick={() => run()}>Retry</button>
         <pre>
-            {JSON.stringify(data, null, "  ")}
+            Error: {typeof data === "string" ? data: JSON.stringify(data, null, 4)}
           </pre>
       </div>)}
     </div>

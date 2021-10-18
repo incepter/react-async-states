@@ -14,6 +14,9 @@ export function timeoutPromise(delay = 2000) {
   }
 }
 
+// function returns state value
+// argv
+
 export function* usersPromise(argv) {
   const controller = new AbortController();
   const {signal} = controller;

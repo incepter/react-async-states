@@ -6,6 +6,7 @@ import RoutingDemo from "./RoutingDemo";
 import SelectorsDemo from "./SelectorsDemo";
 import ReducersDemo from "./ReducersDemo";
 import StandaloneDemo from "./StandaloneDemo";
+import DemoDemo from "./DemoDemo";
 import ReduxDemo from "./ReduxDemo";
 import NextDemo from "./NextDemo";
 import ReplaceStateDemo from "./ReplaceStateDemo";
@@ -17,7 +18,7 @@ function OutsideProvider() {
   const data = useAsyncState({
     lazy: true,
     condition: false,
-    ...DOMAIN_USER_PROMISES.details,
+    source: DOMAIN_USER_PROMISES.details,
   });
 
   window.__AM_LAZY__ = data.source;
@@ -85,6 +86,9 @@ export default function App() {
             </Route>
             <Route path="/next">
               <NextDemo/>
+            </Route>
+            <Route path="/demo">
+              <DemoDemo/>
             </Route>
           </Switch>
         </div>

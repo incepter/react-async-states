@@ -1,6 +1,7 @@
-import { __DEV__, AsyncStateStatus, cloneArgs, invokeIfPresent, shallowClone } from "shared";
+import { __DEV__, AsyncStateStatus, cloneArgs, EMPTY_OBJECT, invokeIfPresent, shallowClone } from "shared";
 import { wrapPromiseFunction } from "./wrap-promise-function";
 import {
+  asyncStatesKey,
   AsyncStateStateBuilder,
   constructAsyncStateSource,
   warnDevAboutAsyncStateKey,
@@ -205,7 +206,13 @@ function forkKey(asyncState) {
 function makeSource(asyncState) {
   const source = constructAsyncStateSource(asyncState);
   source.key = asyncState.key;
-  source[sourceIsSourceSymbol] = true;
+
+  Object.defineProperty(source, sourceIsSourceSymbol, {
+    value: true,
+    writable: false,
+    enumerable: false,
+    configurable: false,
+  });
 
   if (__DEV__) {
     source.uniqueId = asyncState.uniqueId;

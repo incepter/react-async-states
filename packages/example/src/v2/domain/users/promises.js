@@ -1,5 +1,6 @@
 import { fetchUserData, fetchUserPosts, fetchUsersList } from "./api";
 import { bindAbortAndCancelToken, omitSearchParams } from "../../shared/utils";
+import { createSourceAsyncState } from "react-async-states";
 
 export function* getCurrentUser(argv) {
   const cancelToken = bindAbortAndCancelToken(argv);
@@ -8,6 +9,9 @@ export function* getCurrentUser(argv) {
 }
 
 export function getUserDetails(argv) {
+  if (!argv.payload.userId) {
+    throw "userId is required";
+  }
   const cancelToken = bindAbortAndCancelToken(argv);
 
   return fetchUserData(argv.payload.userId, {cancelToken});
@@ -39,8 +43,5 @@ export const DOMAIN_USER_PROMISES = Object.freeze({
     key: "user-posts",
     promise: getUserPosts
   },
-  details: {
-    key: "user-details",
-    promise: getUserDetails,
-  },
+  details: createSourceAsyncState("user-details", getUserDetails),
 });

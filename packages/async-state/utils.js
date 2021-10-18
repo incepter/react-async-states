@@ -24,7 +24,7 @@ export function warnInDevAboutRunWhilePending(key) {
 
 function Secret() {
   const vault = new WeakMap();
-  return function Hidden() {
+  return function Source() {
     if (arguments.length === 1) {
       return vault.get(arguments[0]);
     }

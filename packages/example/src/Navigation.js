@@ -58,6 +58,9 @@ export default function Navigation() {
       <li>
         <Link to="/next">Next</Link>
       </li>
+      <li>
+        <Link to="/demo">Demo</Link>
+      </li>
     </ul>
   );
 }
