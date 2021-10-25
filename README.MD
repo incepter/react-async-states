@@ -1,56 +1,56 @@
 # React async states
-> A naive lightweight React library for managing shared abortable and forkable asynchronous state.
+> A naive lightweight React library for managing state.
 
 ## What is this ?
-This is yet another library for state management in React. The difference is that is was built for asynchronous states
-in the first place, and later, we found that synchronous/immediate state is one direct use case of async state.
+This is a library for decentralized state management in React.
+It assumes that state is issued from a function call with a unique `argv` parameter (called the `the promise function`).
 
-This library assumes that the state is issued from a function (we will call it `the promise function` in this text).
+The state is then composed of three properties:
+- `data`: the state's actual value, holds what the function returns if `success`, the error in case of `error`...
+- `status`: refers to the current asynchronous state status, possible values are: `initial, pending, aborted, success, error`.
+- `argv`: refers to the `argv` that the promise function was ran with.
 
 The function may be:
 - A regular function returning a value.
 - A pure function returning a value based on the previous value (aka reducer).
-- A generator (must return the state value).
-- An asynchronous function using `async/await`.
+- A generator.
+- An asynchronous function with `async/await` syntax.
 - A regular function returning a `Promise` object.
 
-The state value is described using the following:
-- `status`: refers to the current asynchronous state status, possible values are: `initial, pending, aborted, success, error`.
-- `args`: refers to the arguments that the promise function was ran with.
-- `data`: the state actual value.
+The `promise function` is called (either automatically or imperatively) with an argv parameter, and the state
+is whatever this functions returns/throws at any point of time.
+The state contains a `status` property because an asynchronous state status isn't a boolean
+(`true/false` to indicate a pending state).
 
-So every state update sets all these three properties as `currentState` object.
+The APIs that you will be using most often are:
 
-This was set for convenience, because an asynchronous state status isn't a boolean (`true/false` to indicate a pending state).
-And also, sometimes you need to display at the pending state the parameters that are actually running the promise function
-or may be you will need to replicate it in case of some error.
-
-The most notable APIs that you will be using most often from this library are:
-
-- [`useAsyncState`](#use-async-state): a hook that allows you to define and subscribe to an asynchronous state, it works inside
-and outside a provider.
-- [`AsyncStateProvider`](#async-provider): A component holding a set of asynchronous states, and allows extra controls and features.
+- [`useAsyncState`](#use-async-state): a hook that allows you to define and subscribe to asynchronous states,
+it works inside and outside a provider.
+- [`AsyncStateProvider`](#async-provider): A component holding a set of asynchronous states, and allows subscriptions
+- and extra controls and features.
 - [`useAsyncStateSelector`](#use-async-state-selector): A selector that accepts enough parameters to make it very cool.
 
+## Core concepts
+
 ## Minimal usage
-Let's explore these APIs signatures first, it will give you the overall idea about the concept.
+Let's explore these APIs signatures first, it will give you the overall idea about the library.
 ```javascript
-// config: string | object | function
-function useAsyncState(config, dependencies = []) {
-  // state is whatever your selector returns, by default will return the whole state object with args and status
-  return { key, run, abort, state, replaceState, runAsyncState, mergePayload };
+// configuration: string | object | function | source
+function useAsyncState(configuration, dependencies = []) {
+  // state is whatever your selector returns, by default will return the whole state object with argv, data and status
+  return { key, source, payload, run, abort, state, replaceState, mergePayload, runAsyncState };
 }
 
 // keys: string or array or function
 function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual, initialValue = undefined) {
   // returns whathever the selector returns (or initialValue)
 }
-// initialAsyncStates: array or map of {key, promise, initialValue}
+// initialAsyncStates: array or map of {key, promise, initialValue} or source objects
 function AsyncStateProvider({ payload, initialAsyncStates, chidlren }) {}
 ```
 
-In our case, the dependencies array defaults to empty array rather than undefined, because we found that it is easily
-forgotten, and there are nearly no valid use cases to re-run a function automatically (which most likely fetches data
+In our case, the dependencies array defaults to `empty array` rather than undefined, because we found that it is easily
+forgotten, and there are nearly no valid use cases to re-run an function automatically (which most likely fetches data
 from your api) each time the component renders. And also, the library provides other ways to run the promise every
 render, if you insist!
 
@@ -60,26 +60,73 @@ render, if you insist!
 const {run} = useAsyncState(config);
 React.useEffect(run);
 ```
-PS: please note that depending on your promise and dependencies, you may fall into infinite loop of renders, like
-the one you used to fall into while trying to learn `useEffect` in the very first days.
+
+Now, let's see what `useAsyncState` looks like when used to its fullest:
+
+```javascript
+const {
+  key,
+  source,
+
+  state, // selector return
+  run,
+  lastSuccess,
+  payload,
+
+  abort,
+  replaceState,
+  mergePayload,
+
+  runAsyncState,
+} = useAsyncState({
+  source: null,
+  key: "my-key",
+  initialValue: 0, // value or function
+
+  hoistToProvider: false,
+  hoistToProviderConfig: {override: false},
+  fork: false,
+  forkConfig: {keepState: true, key: "new-key"},
+
+  rerenderStatus: {pending: true, success: true, error: true, aborted: true},
+
+  selector: (currentState, lastSuccess) => currentState,
+  areEqual: (prev, next) => prev === next,
+
+  promise (argv) {}
+}, []);
+```
+
+This allows us to easily manage asynchronous state while having the ability to share it in all directions of a react app.
+The following snippets are all valid use cases of useAsyncState hook:
+
+```javascript
+import {useAsyncState} from "react-async-states";
+
+useAsyncState("current-user"); // subscribes or waits for the async state 'current-user' to appear in the provider
+useAsyncState(() => fetchStoreData(storeId), [storeId]);// fetches store data whenever the store id changes
+useAsyncState(async () => await fetchUserPosts(userId), [userId]);// fetches user posts
+
+useAsyncState();
+```
 
 ## Getting started
 
 ## Motivations and features
-This library aims to facilitate working with asynchronous states (and states in general) while sharing them.
+This library aims to facilitate working with [a]synchronous states while sharing them.
 It was designed to help us reduce the needed boilerplate (code/files) to achieve great results. The main features that
 makes it special are:
 - Minimal and Easy to use API.
-- Tiny library with 0 dependencies, it only requests react as a peer dependency, and should work in all environments.
+- Tiny library with 0 dependencies, it only requests react as a peer dependency, and should target all environments.
 - Run, abort and replace state anytime.
-- Dynamic creation of states at runtime.
-- Subscribe and react to state updates.
+- Dynamic creation and sharing of states at runtime.
+- Share states inside and outside the context provider.
+- Subscribe and react to selected portions of state while controlling when to re-render.
 - Fork an asynchronous state to re-use its promise function without impacting its state value.
 - Hoist states to provider on demand.
-- Three entry-points to the promise function, through provider, own payload and execution args.
-- Bidirectional abort binding that lets you register an abort callback from promise.
-- Automatic cleanup on dependencies cleanup (includes unmount).
-- Supports many forms on promise functions (async, promises, generators, reducers...).
+- Bidirectional abort binding that lets you register an `abort callback` from the promise function.
+- Automatic cleanup/reset on dependencies change (includes unmount).
+- Supports many forms on promise functions (async/await, promises, generators, reducers...).
 - Powerful selectors system.
 
 And many more features.
@@ -99,12 +146,12 @@ Here is the road map and the list of things that should be added before talking 
 - [x] support the standalone/anonymous `useAsyncState(promise, dependencies)` ?
 - [x] support default embedded provider payload (select, run other async states)[partially done, we need to define the payload properties]
 - [x] support selector in useAsyncState configuration
+- [x] support selector keys to be a function receiving available keys in provider(regex usage against keys may be used in this function)
+- [x] enhance logging and add dev tools to visualize states transitions
 - [ ] writing docs
 - [ ] writing codesandbox usage examples
-- [ ] support selector keys to be a function receiving available keys in provider(regex usage against keys may be used in this function)
 - [ ] support passive listen mode without running async state on deps change (if typeof config === string => simple listen)
 - [ ] writing tests: only the core part is tested atm, not the react parts (although we kept a huge separation of concerns and the react fingerprint should be minimal)
-- [ ] enhance logging and add dev tools to visualize states transitions
 - [ ] performance tests and optimizations
 - [ ] add types for a better development experience
 - [ ] support config at provider level for all async states to inherit it (we must define supported config)
@@ -122,7 +169,7 @@ Here is how you will be using it:
 - First you define your promise function (aka: reducer, saga, thunk...) and give it its unique name. This function shall
 receive a powerful single argument object detailed in a few. This function may take any of the supported forms.
 - Second, you define a provider that will host your asynchronous states and payload. It needs from you for every async state
-entry the following: `key`, `promise` and `initialValue`.
+entry the following: `key`, `promise` and `initialValue` or a source object.
 - Later, from any point in your app, you can use `useAsyncState(key)` or `useAsyncStateSelector(key)` to get the state
 based on your needs.
 
@@ -140,7 +187,7 @@ This function may be:
 - An asynchronous function using `async/await`.
 - A regular function returning a `Promise` object.
 
-The main goal and purpose is to run your function, let's see what it receives:
+The main goal and purpose is to run your function, it receives one argument like this:
 ```javascript
 // somewhere in the code, simplified:
 yourFunction({
@@ -165,7 +212,8 @@ yourFunction({
 |`onAbort`           | Registers a callback that will be fired when the abort is invoked (like aborting a fetch request if the user aborts or component unmounts) |
 
 We believe that these properties will solve all sort of possible use cases, in fact, your function will run while having
-access to payload from the render, from either the provider and subscription. And also, execution args if you run it manually (not automatic).
+access to payload from the render, from either the provider and subscription, and can be merged imperatively anytime
+using `mergePayload` obtained from `useAsyncstate`. And also, execution args if you run it manually (not automatic).
 
 So basically you have three entry-points to your function (provider + subscription + exec args).
 
@@ -173,7 +221,7 @@ Your function will be notified with the cancellation by registering an `onAbort`
 an `AbortController` which will lead your fetches to be cancelled, or to clear a timeout, for example.
 The `aborted` property is a boolean that's truthy if this current run is aborted, you may want to use it before calling
 a callback received from payload or execution arguments. If using a generator, only yielding is sufficient, since the
-library internally checks on cancellation before executing any step.
+library internally checks on cancellation before stepping any further in the generator.
 
 The following functions are all supported by the library:
 
@@ -200,7 +248,7 @@ function* getCurrentUser(argv) {
 }
 
 async function getCurrentUserPosts(argv) {
-  // abort logic
+  // [...] abort logic
   return await fetchUserPosts(argv.payload.principal.id, {signal});
 }
 
@@ -216,9 +264,7 @@ function timeout(argv) {
   });
 
   return new Promise(function resolver(resolve) {
-    function callback() {
-      resolve(argv.payload.callback());
-    }
+    const callback = () => resolve(invokeIfPresent(argv.payload.callback));
     timeoutId = setTimeout(callback, argv.payload.delay);
   });
 }
@@ -228,13 +274,14 @@ function reducer(argv) {
   switch(action.type) {
     case type1: return {...argv.lastSuccess.data, ...action.newData};
     case type2: return {...action.data};
+    
+    // mixed sync and async reducers is possible
+    // case type3: return fetchSomething()
   }
 }
 ```
-You can even omit the promise function, it will do nothing if you run it, not even transitioning the state.
-It was supported along the with the `replaceState` API that we will see later.
-
-Although, we recommend using generators to write your promise functions, because they will be instantly aborted if needed.
+You can even omit the promise function, it was supported along the with the `replaceState` API that we will see later.
+If you attempt to run it, it will delegate to replaceState while passing the arguments.
 
 ## <a name="async-provider"></a> The provider `AsyncStateProvider`
 To share the state returned from your promise function, you need a Provider to hold it.
@@ -392,39 +439,8 @@ choosing when to trigger a rerender, this is an important feature and the probab
 It was not designed from the start, but the benefits from having it are noticeable and allowed new extensions for
 the library itself.
 
-Notes:
-1. Calling the `run` function, if it is still `pending` the previous run, it aborts it instantly, and start a new cycle.
-2. The provider doesn't run promises, it is the `useAsyncState` that does it. But then, if you have multiple subscriptions
-to the same async state, will it run multiple times ? Yes, and No. Yes because technically you register a run, but the run
-is locked via semaphore lock on the event loop: This means that each time you call the run function automatically via
-dependency change of first subscription, the only done thing synchronously is to lock by incrementing, and effectively
-run using `Promise.resolve().then(runner)`; Let's put this simplified:
-```javascript
-// deep inside
-
-function theRunYouCall(id) {
-  const as = get(id);
-  asyncSempahoreLockedRun(as);
-}
-function asyncSempahoreLockedRun(as) {
-  // ...
-  lock(); // ++
-  // ...
-  function cleanup() {}
-  // ...
-  function runner() {
-    if (locked) unlock(); // --
-    if (!locked) as.run();
-  }
-  // ...
-  Promise.resolve().then(runner);
-  return cleanup();
-}
-```
-This allows all runs issued from the same render to be batched together. This won't work if one subscription if deferred,
-if it runs while running, the natural implemented behavior is to cancel the previous. To solve this, you may fork the
-previous async state, or even, we could introduce some new mode to passively listen (do not trigger any run). Or, simply
-use a selector.
+Note :
+- Calling the `run` function, if it is still `pending` the previous run, it aborts it instantly, and start a new cycle.
 
 ### examples
 

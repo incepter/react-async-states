@@ -1,6 +1,8 @@
 import AsyncState from "async-state";
 import { asyncify, identity, shallowClone } from "shared";
 import { createAsyncStateEntry } from "./providerUtils";
+import { isAsyncStateSource } from "async-state/AsyncState";
+import { readAsyncStateFromSource } from "async-state/utils";
 
 const allWatchersKey = Symbol();
 
@@ -17,7 +19,12 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
   }
 
   function runAsyncState(key, ...args) {
-    const asyncState = get(key);
+    let asyncState;
+    if (isAsyncStateSource(key)) {
+      asyncState = readAsyncStateFromSource(key);
+    } else {
+      asyncState = get(key);
+    }
     if (!asyncState) {
       return undefined;
     }

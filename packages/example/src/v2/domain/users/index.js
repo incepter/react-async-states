@@ -8,7 +8,7 @@ export default function UsersPage() {
   const history = useHistory();
   const search = useLocation().search;
   const queryString = parseSearch(search);
-  const {state: {status, data}, abort, run} = useAsyncState.auto(DOMAIN_USER_PROMISES.list.key, [search]);
+  const {state: {status, data}, run, abort} = useAsyncState.auto(DOMAIN_USER_PROMISES.list.key, [search]);
 
   function onSubmit(e) {
     e.preventDefault();
@@ -136,7 +136,7 @@ function UserDetailsPageImpl2() {
       {status === "error" && (<div>
         <button onClick={() => run()}>Retry</button>
         <pre>
-            Error: {typeof data === "string" ? data: JSON.stringify(data, null, 4)}
+            Error: {typeof data === "string" ? data : JSON.stringify(data, null, 4)}
           </pre>
       </div>)}
     </div>
@@ -164,6 +164,7 @@ function UserDetailsPageImpl2() {
 //   key: "my-key",
 //   initialValue: 0, // value or function
 //
+//   payload: {},
 //   hoistToProvider: true,
 //   hoistToProviderConfig: {override: false},
 //   fork: true,

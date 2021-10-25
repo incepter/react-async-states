@@ -1,4 +1,4 @@
-import { __DEV__, AsyncStateStatus, cloneArgs, EMPTY_OBJECT, invokeIfPresent, shallowClone } from "shared";
+import { __DEV__, AsyncStateStatus, cloneArgs, invokeIfPresent, shallowClone } from "shared";
 import { wrapPromiseFunction } from "./wrap-promise-function";
 import {
   AsyncStateStateBuilder,
