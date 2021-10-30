@@ -3,6 +3,7 @@
   "workspaces": ["packages/*"],
   "scripts": {
     "start": "cd packages/react-async-states && yarn start",
+    "start:docs": "cd packages/docs && yarn start",
     "start:devtools": "cd packages/devtools-extension && yarn start",
     "start:example": "cd packages/example && yarn start",
     "build:devtools": "cd packages/devtools-extension && yarn build",
