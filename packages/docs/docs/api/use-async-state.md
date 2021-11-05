@@ -13,8 +13,7 @@ function useAsyncState(configuration, dependencies) {}
 It returns an object that contains few properties, we'll explore them in a moment.
 
 ### Standalone vs Provider
-This hooks may be used inside and outside the provider, you won't be able to share it if outside the provider, but it has
-the same behavior.
+This hooks may be used inside and outside the provider and has almost the same behavior.
 
 For example, you can use this hook to fetch the current user from your api before mounting the provider and pass the user
 information to payload.
@@ -23,12 +22,13 @@ While being outside provider, it will expect you to use a producer function as c
 the producer and all other necessary information.
 
 ### Subscription modes
-While inside provider, many subscription modes are possible. You won't have to use them, but you should essentially
-know what they mean and how your configuration impacts them.
+Many subscription modes are possible. You won't have to use them, but you should essentially
+know what they mean and how your configuration impacts them for any debugging purposes.
 
 What is a subscription mode already ?
-When you call `useAsyncState`, please recall that you call it every time your component renders, and should react to
-the given configuration synchronized by your dependencies. Then, this hook tries to get the async state from the provider.
+When you call `useAsyncState` -every time your component renders- this hook reacts to the given configuration
+synchronized by your dependencies. Then, tries to get the async state instance from the provider.
+
 If not found, it may wait for it if you did not provide a `producer` function in your configuration, or fallback with a noop mode for example.
 
 The possible subscription mode are:
@@ -37,12 +37,15 @@ The possible subscription mode are:
 - `STANDALONE`: Mimics the standalone mode
 - `FORK`: Fork an existing async state in the provider
 - `WAITING`: When the desired async state does not exist in provider, and you do not want to hoist it
+- `SOURCE`: When you use a source object for subscription
+- `SOURCE_FORK`: When you use a source object for subscription and you decide to fork it
+- `OUTSIDE_PROVIDER`: When you call it outside the async state context provider
 - `NOOP`: If none of the above matches, should not happen
 
 If you are curious about how the subscription mode is inferred, please refer to the `inferSubscriptionMode` function
 defined [here](./src/react/subscription/subscriptionUtils.js).
 
-### configuration and manipulation
+### Configuration and manipulation
 The configuration argument may be a string, an object with supported properties, or a producer function (you won't be able to share it by this signature).
 If it is a string, it is used inside provider to only listen on an async state, without automatically triggering the run
 (but you can do it programmatically using what this hooks returns).
@@ -55,7 +58,8 @@ Let's see in details the supported configuration:
 |`key`                  |`string`     |`string`            |     x    |   x    | The unique key, either for definition or subscription |
 |`lazy`                 |`boolean`    |`true`              |     x    |   x    | If false, the subscription will re-run every dependency change |
 |`fork`                 |`boolean`    |`false`             |          |   x    | If true, subscription will fork own async state |
-|`producer`              |`function`   |`undefined`         |     x    |   x    | Our producer function |
+|`source`               |`object`     |`undefined`         |     x    |   x    | Subscribes to the hidden instance of async state in this special object |
+|`producer`             |`function`   |`undefined`         |     x    |   x    | Our producer function |
 |`selector`             |`function`   |`identity`          |     x    |   x    | receives state (`{data, args, status}`) as unique parameter and whatever it returns it is put in the state return |
 |`areEqual`             |`function`   |`shallowEqual`      |     x    |   x    | `(prevValue, nextValue) => areEqual(prevValue, nextValue)` if it returns true, the render is skipped |
 |`condition`            |`boolean`    |`true`              |     x    |   x    | If this condition is falsy, run will not be granted |
@@ -71,15 +75,20 @@ The returned object from useAsyncState contains the following properties:
 |--------------------|-------------------------|
 |`key`               | The key of the async state instance, if forked, it is different from the given one |
 |`run`               | Imperatively trigger the run, arguments to this function are received as array in the execution args |
+|`mode`              | The subscription mode |
 |`state`             | The current selected portion of state, by default, the selector is `identity` and so the state is of shape `{status, args, data}` |
 |`abort`             | Imperatively abort the current run if running |
+|`source`            | The special source object of the subscribed async state instance, could be reused for further subscription without passing by provider or key |
+|`payload`           | The async state instance payload (could be removed in the future) |
 |`lastSuccess`       | The last registered success |
 |`replaceState`      | Imperatively and instantly replace state as success with the given value (accepts a callback receiving the old state) |
+|`mergePayload`      | Imperatively merge the payload of the subscribed async state instance with the object in first parameter |
 |`runAsyncState`     | If inside provider, `runAsyncState(key, ...args)` runs the given async state by key with the later execution args |
 
 We bet in this shape because it provides the key for further subscriptions, the current state with status, data and the
 arguments that produced it. `run` runs the subscribed async state, to abort it invoke `abort`. The `lastSuccess`
 holds for you the last succeeded value.
+
 `replaceState` instantly gives a new value to the state with success status.
 `runAsyncState` works only in provider, and was added as convenience to trigger some side effect after
 the current async producer did something, for example, reload users list after updating a user successfully.
@@ -92,7 +101,7 @@ the library itself.
 Note :
 - Calling the `run` function, if it is still `pending` the previous run, it aborts it instantly, and start a new cycle.
 
-### examples
+### Examples
 
 Let's now make some examples using `useAsyncState`:
 
