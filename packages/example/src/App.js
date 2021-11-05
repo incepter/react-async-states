@@ -12,13 +12,13 @@ import NextDemo from "./NextDemo";
 import ReplaceStateDemo from "./ReplaceStateDemo";
 import Navigation from "./Navigation";
 import DemoProvider from "./Provider";
-import { DOMAIN_USER_PROMISES } from "./v2/domain/users/promises";
+import { DOMAIN_USER_PRODUCERS } from "./v2/domain/users/producers";
 
 function OutsideProvider() {
   const data = useAsyncState({
     lazy: true,
     condition: false,
-    source: DOMAIN_USER_PROMISES.details,
+    source: DOMAIN_USER_PRODUCERS.details,
   });
 
   window.__AM_LAZY__ = data.source;

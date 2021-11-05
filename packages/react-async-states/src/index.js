@@ -1,5 +1,5 @@
 export { AsyncStateStatus } from "shared";
-export { createReducerPromise } from "./helpers/create-promise";
+export { createReducerProducer } from "./helpers/create-producer";
 export { useAsyncState } from "./hooks/useAsyncState";
 export { AsyncStateProvider } from "./provider/AsyncStateProvider";
 export { createSourceAsyncState } from "./helpers/create-async-state";

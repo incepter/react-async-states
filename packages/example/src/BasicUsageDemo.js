@@ -34,7 +34,7 @@ export default function Demo() {
     <div>
       <div>
         <section>
-          <UndefinedPromiseDemo/>
+          <UndefinedProducerDemo/>
         </section>
         <section>
           <h3>Subscribe to global async state - {demoAsyncStates.users.key}</h3>
@@ -59,18 +59,18 @@ export default function Demo() {
   );
 }
 
-function UndefinedPromiseDemo() {
+function UndefinedProducerDemo() {
 
   return (
     <>
-      <UndefinedPromiseDemoHoister/>
-      <UndefinedPromiseDemoConsumer/>
-      <UndefinedPromiseDemoSelector/>
+      <UndefinedProducerDemoHoister/>
+      <UndefinedProducerDemoConsumer/>
+      <UndefinedProducerDemoSelector/>
     </>
   );
 }
 
-function UndefinedPromiseDemoHoister() {
+function UndefinedProducerDemoHoister() {
   const {state} = useAsyncState({
     lazy: true,
     key: "user_input",
@@ -86,7 +86,7 @@ function UndefinedPromiseDemoHoister() {
   );
 }
 
-function UndefinedPromiseDemoConsumer() {
+function UndefinedProducerDemoConsumer() {
   const {state: {data}, run} = useAsyncState("user_input");
   return (
     <input style={{backgroundColor: "gray", border: "2px solid red"}} onChange={e => run(e.target.value)}
@@ -98,7 +98,7 @@ function selectCurrentValue(state) {
   return state?.data;
 }
 
-function UndefinedPromiseDemoSelector() {
+function UndefinedProducerDemoSelector() {
   const data = useAsyncStateSelector("user_input", selectCurrentValue);
   return (
 

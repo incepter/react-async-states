@@ -43,7 +43,7 @@ function AppWrapped() {
     abort,
     run
   } = useAsyncState({
-    promise: doSomething,
+    producer: doSomething,
     key: "do-something",
     payload: {
       onSuccess() {

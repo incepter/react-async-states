@@ -2503,7 +2503,7 @@ export const mapmock = {
       ]
     },
     "subscriptions": [],
-    "promiseType": "generator",
+    "producerType": "generator",
     "isInsideProvider": true
   }
 };

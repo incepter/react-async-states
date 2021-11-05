@@ -30,18 +30,18 @@ export function* getUserPosts(argv) {
 }
 
 
-export const DOMAIN_USER_PROMISES = Object.freeze({
+export const DOMAIN_USER_PRODUCERS = Object.freeze({
   list: {
     key: "users-list",
-    promise: getUsersList
+    producer: getUsersList
   },
   current: {
     key: "current-user",
-    promise: getCurrentUser
+    producer: getCurrentUser
   },
   posts: {
     key: "user-posts",
-    promise: getUserPosts
+    producer: getUserPosts
   },
   details: createSourceAsyncState("user-details", getUserDetails),
 });

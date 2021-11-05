@@ -1,14 +1,14 @@
 import React from "react";
 import { useHistory, useLocation, useParams } from "react-router-dom";
 import { useAsyncState } from "react-async-states";
-import { DOMAIN_USER_PROMISES } from "./promises";
+import { DOMAIN_USER_PRODUCERS } from "./producers";
 import { parseSearch, readFormValues } from "../../shared/utils";
 
 export default function UsersPage() {
   const history = useHistory();
   const search = useLocation().search;
   const queryString = parseSearch(search);
-  const {state: {status, data}, run, abort} = useAsyncState.auto(DOMAIN_USER_PROMISES.list.key, [search]);
+  const {state: {status, data}, run, abort} = useAsyncState.auto(DOMAIN_USER_PRODUCERS.list.key, [search]);
 
   function onSubmit(e) {
     e.preventDefault();
@@ -62,7 +62,7 @@ function UserDetailsPageImpl({fork = false}) {
   const matchParams = useParams();
 
   const {state, abort, run} = useAsyncState.auto({
-    source: DOMAIN_USER_PROMISES.details,
+    source: DOMAIN_USER_PRODUCERS.details,
     payload: {
       userId: matchParams.userId
     }
@@ -105,7 +105,7 @@ function UserDetailsPageImpl({fork = false}) {
 }
 
 function UserDetailsPageImpl2() {
-  const {state: {status, data}, abort, run, mergePayload} = useAsyncState.fork(DOMAIN_USER_PROMISES.details);
+  const {state: {status, data}, abort, run, mergePayload} = useAsyncState.fork(DOMAIN_USER_PRODUCERS.details);
 
   function onSubmit(e) {
     e.preventDefault();
@@ -143,7 +143,7 @@ function UserDetailsPageImpl2() {
   );
 }
 
-// string, object(), source, object(source), promise function (generator, async await, function returnning anything, sync or astync)
+// string, object(), source, object(source), producer function (generator, async await, function returnning anything, sync or astync)
 
 // const {
 //   key,
@@ -175,7 +175,7 @@ function UserDetailsPageImpl2() {
 //   selector: (s, lastSu) => [],
 //   areEqual: (prev, next) => true,
 //
-//   promise (argv) {}
+//   producer (argv) {}
 // }, []);
 //
 // const argv = {

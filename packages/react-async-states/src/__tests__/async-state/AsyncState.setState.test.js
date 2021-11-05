@@ -7,9 +7,9 @@ jest.useFakeTimers("modern");
 describe('AsyncState - setState', () => {
   // given
   let key = "simulated";
-  let promise = timeout(100, [{id: 1, description: "value"}]);
+  let producer = timeout(100, [{id: 1, description: "value"}]);
   let myConfig = {};
-  let myAsyncState = new AsyncState(key, promise, myConfig);
+  let myAsyncState = new AsyncState(key, producer, myConfig);
   let subscription = jest.fn();
   myAsyncState.subscribe(subscription);
 

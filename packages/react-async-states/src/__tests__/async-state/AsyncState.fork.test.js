@@ -10,11 +10,11 @@ describe('AsyncState - fork', () => {
   it('should simulate async state and check fork count', () => {
     // given
     let key = "simulated";
-    let promise = timeout(100, [{id: 1, description: "value"}]);
+    let producer = timeout(100, [{id: 1, description: "value"}]);
     let myConfig = {};
 
     // when
-    let myAsyncState = new AsyncState(key, promise, myConfig);
+    let myAsyncState = new AsyncState(key, producer, myConfig);
 
     // then
     expect(myAsyncState.key).toBe(key);
@@ -32,22 +32,22 @@ describe('AsyncState - fork', () => {
     expect(forkedAsyncState.__IS_FORK__).toBeTruthy();
     expect(forkedAsyncState.config).toEqual(myAsyncState.config);
     expect(forkedAsyncState.lastSuccess).toEqual(myAsyncState.lastSuccess);
-    expect(forkedAsyncState.originalPromise).toBe(myAsyncState.originalPromise);
+    expect(forkedAsyncState.originalProducer).toBe(myAsyncState.originalProducer);
 
 
     expect(forkedAsyncState.key).not.toBe(myAsyncState.key);
-    expect(forkedAsyncState.promise).not.toBe(myAsyncState.promise);
+    expect(forkedAsyncState.producer).not.toBe(myAsyncState.producer);
     expect(forkedAsyncState.currentState).not.toBe(myAsyncState.currentState);// not same reference even if retrieved
     expect(forkedAsyncState.subscriptions).not.toBe(myAsyncState.subscriptions);// not same reference even if retrieved
   });
   it('should fork and keep state and subscriptions after run', async () => {
     // given
     let key = "simulated";
-    let promise = timeout(100, [{id: 1, description: "value"}]);
+    let producer = timeout(100, [{id: 1, description: "value"}]);
     let myConfig = {};
 
     // when
-    let myAsyncState = new AsyncState(key, promise, myConfig);
+    let myAsyncState = new AsyncState(key, producer, myConfig);
     myAsyncState.run();
 
     await act(async () => {
@@ -67,11 +67,11 @@ describe('AsyncState - fork', () => {
   it('should fork and keep state and subscriptions before run', async () => {
     // given
     let key = "simulated";
-    let promise = timeout(100, [{id: 1, description: "value"}]);
+    let producer = timeout(100, [{id: 1, description: "value"}]);
     let myConfig = {};
 
     // when
-    let myAsyncState = new AsyncState(key, promise, myConfig);
+    let myAsyncState = new AsyncState(key, producer, myConfig);
 
     let forkedAsyncState = myAsyncState.fork({keepSubscriptions: true, keepState: true});
 

@@ -1,4 +1,4 @@
-import { createReducerPromise } from "./create-promise";
+import { createReducerProducer } from "./create-producer";
 
 export function AsyncStateBuilder() {
   let output = {initialValue: null};
@@ -12,7 +12,7 @@ export function AsyncStateBuilder() {
 
   const builder = {};
   builder.key = curryPropOfOutput("key");
-  builder.promise = curryPropOfOutput("promise");
+  builder.producer = curryPropOfOutput("producer");
   builder.initialValue = curryPropOfOutput("initialValue");
   builder.build = function build() {
     return output;
@@ -20,14 +20,14 @@ export function AsyncStateBuilder() {
   return builder;
 }
 
-export function createAsyncState(key, promise, initialValue) {
+export function createAsyncState(key, producer, initialValue) {
   return AsyncStateBuilder()
     .key(key)
-    .promise(promise)
+    .producer(producer)
     .initialValue(initialValue)
     .build();
 }
 
 export function createReducerAsyncState(key, reducer, initialValue) {
-  return createAsyncState(key, createReducerPromise(reducer), initialValue)
+  return createAsyncState(key, createReducerProducer(reducer), initialValue)
 }

@@ -11,7 +11,7 @@ export const defaultRerenderStatusConfig = Object.freeze({
 
 export const AsyncStateSubscriptionMode = Object.freeze({
   LISTEN: __DEV__ ? "LISTEN" : 0, // simple listener
-  HOIST: __DEV__ ? "HOIST" : 1, // hoisting a promise, for first time and intended to be shared, more like of an injection
+  HOIST: __DEV__ ? "HOIST" : 1, // hoisting a producer, for first time and intended to be shared, more like of an injection
   STANDALONE: __DEV__ ? "STANDALONE" : 2, // working standalone even if inside provider
   WAITING: __DEV__ ? "WAITING" : 3, // waits for the original to be hoisted
   FORK: __DEV__ ? "FORK" : 4, // forking an existing one in the provider
@@ -31,7 +31,7 @@ export function inferSubscriptionMode(contextValue, configuration) {
     return AsyncStateSubscriptionMode.OUTSIDE_PROVIDER;
   }
 
-  const {key, fork, hoistToProvider, promise} = configuration;
+  const {key, fork, hoistToProvider, producer} = configuration;
   if (key === undefined && configuration.source?.key === undefined) {
     return AsyncStateSubscriptionMode.STANDALONE;
   }
@@ -44,7 +44,7 @@ export function inferSubscriptionMode(contextValue, configuration) {
     return AsyncStateSubscriptionMode.LISTEN;
   }
 
-  if (!hoistToProvider && !fork && promise) { // we dont want to hoist or fork
+  if (!hoistToProvider && !fork && producer) { // we dont want to hoist or fork
     return AsyncStateSubscriptionMode.STANDALONE;
   }
 
@@ -74,7 +74,7 @@ export function inferAsyncStateInstance(mode, configuration, contextValue) {
       return candidate;
     case AsyncStateSubscriptionMode.STANDALONE:
     case AsyncStateSubscriptionMode.OUTSIDE_PROVIDER:
-      return new AsyncState(configuration.key, configuration.promise, {initialValue: configuration.initialValue});
+      return new AsyncState(configuration.key, configuration.producer, {initialValue: configuration.initialValue});
     case AsyncStateSubscriptionMode.SOURCE:
       return readAsyncStateFromSource(configuration.source);
     case AsyncStateSubscriptionMode.SOURCE_FORK: {
@@ -149,7 +149,7 @@ export function shouldRecalculateInstance(configuration, mode, guard, deps, oldV
   return !oldValue ||
     guard !== oldValue.guard ||
     mode !== oldValue.mode ||
-    configuration.promise !== oldValue.configuration.promise ||
+    configuration.producer !== oldValue.configuration.producer ||
     configuration.source !== oldValue.configuration.source ||
 
     deps.some((dep, index) => !Object.is(dep, oldValue.deps[index])) ||

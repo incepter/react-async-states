@@ -1,4 +1,4 @@
-export function timeoutPromise(delay = 2000) {
+export function timeoutProducer(delay = 2000) {
   return function delayed(argv) {
     let timeoutId;
     argv.onAbort(function cancelTimeout() {
@@ -17,7 +17,7 @@ export function timeoutPromise(delay = 2000) {
 // function returns state value
 // argv
 
-export function* usersPromise(argv) {
+export function* usersProducer(argv) {
   const controller = new AbortController();
   const {signal} = controller;
   argv.onAbort(function abortSignal() {
@@ -28,7 +28,7 @@ export function* usersPromise(argv) {
     .then(res => res.json());
 }
 
-export function postsPromise(argv) {
+export function postsProducer(argv) {
   const controller = new AbortController();
   const {signal} = controller;
   argv.onAbort(function abortSignal() {
@@ -39,7 +39,7 @@ export function postsPromise(argv) {
     .then(res => res.json());
 }
 
-export function getUserPromise(argv) {
+export function getUserProducer(argv) {
   const controller = new AbortController();
   const {signal} = controller;
   argv.onAbort(function abortSignal() {

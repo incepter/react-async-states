@@ -8,8 +8,8 @@ const FeatureList = [
     Svg: require('../../static/img/undraw_docusaurus_mountain.svg').default,
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        <code>react-async-states</code> tries to facilitate subscriptions to states while supporting different
+        polymorphic behaviors.
       </>
     ),
   },
@@ -18,18 +18,47 @@ const FeatureList = [
     Svg: require('../../static/img/undraw_docusaurus_tree.svg').default,
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
+        Being able to summon a derived state anywhere in the application while having full control
+        will help you reduce the time and overhead needed to manage state, and you will be able to focus
+        on making the best of the user experience you can do.
       </>
     ),
   },
   {
-    title: 'Powered by React',
+    title: 'Different forms of states producers',
     Svg: require('../../static/img/undraw_docusaurus_react.svg').default,
     description: (
       <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
+        <code>react-async-states</code> allows you to produce state from different forms of functions: regular functions,
+        async/await, generators and promises. This allows to combine synchronous and asynchronous behavior.
+      </>
+    ),
+  },
+  {
+    title: 'Automatic cleanup',
+    Svg: require('../../static/img/undraw_docusaurus_react.svg').default,
+    description: (
+      <>
+        Automatically cancel asynchronous operations when the component unmounts or dependencies change, and prevent
+        execution of old callbacks.
+      </>
+    ),
+  },
+  {
+    title: 'Cancellations friendly',
+    Svg: require('../../static/img/undraw_docusaurus_react.svg').default,
+    description: (
+      <>
+        Registering a cancellation <code>callback</code> is as easy as: <code>argv.onAbort(callback)</code>.
+      </>
+    ),
+  },
+  {
+    title: 'No dependencies and targets all react environments',
+    Svg: require('../../static/img/undraw_docusaurus_react.svg').default,
+    description: (
+      <>
+        <code>react-async-states</code> has no dependencies and should target all React environments.
       </>
     ),
   },

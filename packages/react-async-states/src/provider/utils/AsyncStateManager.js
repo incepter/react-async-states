@@ -99,7 +99,7 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
   }
 
   function hoist(config) {
-    const {key, hoistToProviderConfig = {override: false}, promise, initialValue} = config;
+    const {key, hoistToProviderConfig = {override: false}, producer, initialValue} = config;
 
     const existing = get(key);
     if (existing && !hoistToProviderConfig.override) {
@@ -113,7 +113,7 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
       }
     }
 
-    asyncStateEntries[key] = createAsyncStateEntry(new AsyncState(key, promise, {initialValue}));
+    asyncStateEntries[key] = createAsyncStateEntry(new AsyncState(key, producer, {initialValue}));
 
     const returnValue = get(key);
     asyncify(notifyWatchers)(key, returnValue); // returnValue is an AsyncState or undefined

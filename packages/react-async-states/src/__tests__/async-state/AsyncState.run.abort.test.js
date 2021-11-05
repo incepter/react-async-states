@@ -10,12 +10,12 @@ describe('AsyncState - run - abort', () => {
   it('should abort while pending and check state did not update after supposed resolve', async () => {
     // given
     let key = "simulated";
-    let promise = timeout(100, [{id: 1, description: "value"}]);
+    let producer = timeout(100, [{id: 1, description: "value"}]);
     let myConfig = {};
     let subscription = jest.fn();
 
     // when
-    let myAsyncState = new AsyncState(key, promise, myConfig);
+    let myAsyncState = new AsyncState(key, producer, myConfig);
     myAsyncState.subscribe(subscription);
     // then
     // should have initial status
@@ -90,12 +90,12 @@ describe('AsyncState - run - abort', () => {
   it('should abort while pending and check state did not update after supposed rejection', async () => {
     // given
     let key = "simulated";
-    let promise = rejectionTimeout(100, "reason");
+    let producer = rejectionTimeout(100, "reason");
     let myConfig = {};
     let subscription = jest.fn();
 
     // when
-    let myAsyncState = new AsyncState(key, promise, myConfig);
+    let myAsyncState = new AsyncState(key, producer, myConfig);
     myAsyncState.subscribe(subscription);
     // then
 
@@ -134,15 +134,15 @@ describe('AsyncState - run - abort', () => {
       data: "reason",
     });
   });
-  it('should automatically abort previous promise and start new one', async () => {
+  it('should automatically abort previous producer and start new one', async () => {
     // given
     let key = "simulated";
-    let promise = timeout(100, "value");
+    let producer = timeout(100, "value");
     let myConfig = {};
     let subscription = jest.fn();
 
     // when
-    let myAsyncState = new AsyncState(key, promise, myConfig);
+    let myAsyncState = new AsyncState(key, producer, myConfig);
 
     myAsyncState.subscribe(subscription);
     // then

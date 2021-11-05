@@ -67,7 +67,7 @@ export function DevtoolsAsyncStates(initialMap) {
     }
     switch (eventType) {
       case devtoolsJournalEvents.run: {
-        map[uniqueId].promiseType = eventPayload.type;
+        map[uniqueId].producerType = eventPayload.type;
         map[uniqueId].journal.push(message.payload);
         return true;
       }
@@ -119,7 +119,7 @@ export function DevtoolsAsyncStates(initialMap) {
       journal: [],
       lastSuccess: {},
       subscriptions: [],
-      promiseType: undefined,
+      producerType: undefined,
       isInsideProvider: false,
     };
     Object.preventExtensions(map[uniqueId]);

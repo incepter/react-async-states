@@ -11,7 +11,7 @@ export function warnDevAboutAsyncStateKey(key) {
 export function warnDevAboutUndefinedPromise(key, fn) {
   if (__DEV__) {
     if (typeof fn !== "function") {
-      console.error(`Warning: The promise of asyncState with key='${key}' is not a function, received type '${typeof fn}'. This assumes that you are using it as a basic state that will be replaced by replaceState each time.`)
+      console.error(`Warning: The producer of asyncState with key='${key}' is not a function, received type '${typeof fn}'. This assumes that you are using it as a basic state that will be replaced by replaceState each time.`)
     }
   }
 }

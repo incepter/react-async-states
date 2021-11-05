@@ -1,24 +1,25 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import { AsyncStateBuilder, AsyncStateProvider, createSourceAsyncState } from 'react-async-states';
-import { getUserPromise, postsPromise, timeoutPromise, usersPromise } from "./promises";
+import { getUserProducer, postsProducer, timeoutProducer, usersProducer } from "./producers";
 
+console.log("===>", AsyncStateBuilder.toString())
 export const demoAsyncStates = {
   timeout: AsyncStateBuilder()
     .key("timeout")
-    .promise(timeoutPromise(4000))
+    .producer(timeoutProducer(4000))
     .build(),
 
-  users: createSourceAsyncState("users", usersPromise),
+  users: createSourceAsyncState("users", usersProducer),
 
   posts: AsyncStateBuilder()
     .key("posts")
-    .promise(postsPromise)
+    .producer(postsProducer)
     .build(),
 
-  getUser: AsyncStateBuilder() // {key, promise, initialValue=null}
+  getUser: AsyncStateBuilder() // {key, producer, initialValue=null}
     .key("get-user")
-    .promise(getUserPromise)
+    .producer(getUserProducer)
     .build()
   ,
 }

@@ -1,13 +1,13 @@
 import React from "react";
 import { createSourceAsyncState, useAsyncState } from "react-async-states";
 
-function* reduxPromise(argv) {
+function* reduxProducer(argv) {
   yield argv.lastSuccess.data.store.dispatch(...argv.args, argv);
   return argv.lastSuccess.data;
 }
 
 const initialRedux = {}; // createReduxStore(reducers, middlewares...);
-const reduxSource = createSourceAsyncState("redux", reduxPromise, {initialValue: initialRedux});
+const reduxSource = createSourceAsyncState("redux", reduxProducer, {initialValue: initialRedux});
 
 export default function Demo() {
 
@@ -33,7 +33,7 @@ function DemoDemo() {
   const {state: {status}, lastSuccess: {data: lastSuccessData}, run} = useAsyncState({
     key: "some-name",
     hoistToProvider: true,
-    promise: (argv) => { // ./promises.js but works as inline
+    producer: (argv) => { // ./producers.js but works as inline
       const controller = new AbortController();
       const {signal} = controller;
       argv.onAbort(() => controller.abort());

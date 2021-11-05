@@ -13,9 +13,9 @@ Having a stable release will require a lot of more work to be done, as actual co
 Here is the road map and the list of things that should be added before talking about a stable release (or if you wish to contribute):
 
 - [x] support generators
-- [x] re-use old instances if nothing changed (originalPromise + key + lazy)
+- [x] re-use old instances if nothing changed (originalProducer + key + lazy)
 - [x] subscription to be aware of provider async states change, to re-connect and re-run lazy...
-- [x] support the standalone/anonymous `useAsyncState(promise, dependencies)` ?
+- [x] support the standalone/anonymous `useAsyncState(producer, dependencies)` ?
 - [x] support default embedded provider payload (select, run other async states)[partially done, we need to define the payload properties]
 - [x] support selector in useAsyncState configuration
 - [x] support selector keys to be a function receiving available keys in provider(regex usage against keys may be used in this function)

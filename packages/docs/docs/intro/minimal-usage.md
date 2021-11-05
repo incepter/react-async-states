@@ -5,29 +5,38 @@ sidebar_label: Minimal usage
 
 # Minimal usage
 
-Let's explore the APIs signatures first, it will give you the overall idea about the library.
+Let's explore the APIs signatures, it will give you the overall idea about the library.
+
+## AsyncStateProvider
+
+The provider allows you to register dynamic states and subscribe
+```javascript
+// initialAsyncStates: array or map of {key, producer, initialValue} or source objects
+function AsyncStateProvider({ payload, initialAsyncStates, chidlren }) {}
+```
+## useAsyncState
 ```javascript
 // configuration: string | object | function | source
 function useAsyncState(configuration, dependencies = []) {
   // state is whatever your selector returns, by default will return the whole state object with argv, data and status
-  return { key, source, payload, run, abort, state, replaceState, mergePayload, runAsyncState };
+  return { key, mode, source, payload, run, abort, state, replaceState, mergePayload, runAsyncState };
 }
-
-// keys: string or array or function
+```
+## useAsyncStateSelector
+```javascript
+// keys: string | source | array of string|source | function returning source | string | array of source|string
 function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual, initialValue = undefined) {
   // returns whathever the selector returns (or initialValue)
 }
-// initialAsyncStates: array or map of {key, promise, initialValue} or source objects
-function AsyncStateProvider({ payload, initialAsyncStates, chidlren }) {}
 ```
 
 In our case, the dependencies array defaults to `empty array` rather than undefined, because we found that it is easily
 forgotten, and there are nearly no valid use cases to re-run an function automatically (which most likely fetches data
-from your api) each time the component renders. And also, the library provides other ways to run the promise every
+from your api) each time the component renders. And also, the library provides other ways to run the producer every
 render, if you insist!
 
 ```javascript
-// this snippet will make your promise run every render, if you want.
+// this snippet will make your producer run every render, if you want.
 // the `run` function returns its cleanup ;)
 const {run} = useAsyncState(config);
 React.useEffect(run);
@@ -65,7 +74,7 @@ const {
   selector: (currentState, lastSuccess) => currentState,
   areEqual: (prev, next) => prev === next,
 
-  promise (argv) {}
+  producer (argv) {}
 }, []);
 ```
 

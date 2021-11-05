@@ -2,21 +2,21 @@ import { __DEV__, cloneArgs, invokeIfPresent } from "shared";
 import devtools from "devtools";
 import { AsyncStateStateBuilder } from "./utils";
 
-export function wrapPromiseFunction(asyncState) {
-  // identifies promises that will be used with replaceState rather than run;
-  // this allows the developer to omit the promise attribute.
-  if (typeof asyncState.originalPromise !== "function") {
+export function wrapProducerFunction(asyncState) {
+  // this allows the developer to omit the producer attribute.
+  // and replaces state when there is no producer
+  if (typeof asyncState.originalProducer !== "function") {
     return function delegateToReplaceState(argv) {
       return asyncState.replaceState(argv.args[0]);
     }
   }
-  return function promiseFuncImpl(argv) {
+  return function producerFuncImpl(argv) {
     let runningPromise;
     let executionValue;
     const clonedArgv = cloneArgs(argv);
 
     try {
-      executionValue = asyncState.originalPromise(argv);
+      executionValue = asyncState.originalProducer(argv);
     } catch (e) {
       if (__DEV__) devtools.emitRunSync(asyncState, argv);
       asyncState.setState(AsyncStateStateBuilder.error(e, clonedArgv));

@@ -4,8 +4,8 @@ This package provides utilities to manage asynchronous states.
 It provides shared-interruptible and forkable asynchronous states.
 
 The goal of this package is that developers should have less head-ache dealing with side effects.
-In fact, you need to provide a unique name (the key) and a promise property:
-that's a regular function returning a value (a reducer?), an asynchronous function, a function returning a promise
+In fact, you need to provide a unique name (the key) and a producer property:
+that's a regular function returning a value (a reducer?), an asynchronous function, a function returning a producer
 or even a generator. And an optional config property.
 
 Under the hood, the package will wrap the result of your function in the appropriate runner manages it.
@@ -28,8 +28,8 @@ The asynchronous state may have the following states:
 - `initial`: this is the very initial state
 - `pending`: when it starts the pending state
 - `success`: when it resolves successfully
-- `aborted`: when you choose to abort your promise. (if it is still running, it forces the abort)
-- `error`: when your promise rejects, function throws or generator throws during the call
+- `aborted`: when you choose to abort your producer. (if it is still running, it forces the abort)
+- `error`: when your producer rejects, function throws or generator throws during the call
 
 ## Motivations
 Sure managing side effects isn't an easy task, especially when it holds a shared state between multiple subscribers.
@@ -61,7 +61,7 @@ even if some appear to be impossible:
 - Docs: we need a provide proper and detailed docs with several examples
 - support transitions
 - support effects: debounce, throttle...
-- concurrent-mode: we may be able to suspend subscribers if concurrent mode is enabled until the promise/gen resolves
+- concurrent-mode: we may be able to suspend subscribers if concurrent mode is enabled until the producer/gen resolves
 - listeners: aka middlewares. they can intercept (readonly) any state change in any async state
 - cache control: I don't know if this is a good idea or we should drop it
 - control routing through async states

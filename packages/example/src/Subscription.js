@@ -72,14 +72,14 @@ export default function Wrapper() {
 }
 
 
-const undefinedPromise = {
-  key: "undefined_promise",
+const undefinedProducer = {
+  key: "undefined_producer",
   hoistToProvider: true,
   lazy: false
 };
 
 function ReplaceStateOriginal() {
-  const {state: {status, data}, replaceState} = useAsyncState(undefinedPromise, []);
+  const {state: {status, data}, replaceState} = useAsyncState(undefinedProducer, []);
 
   return (
     <>
@@ -92,7 +92,7 @@ function ReplaceStateOriginal() {
 }
 
 function ReplaceStateListener() {
-  const {state: {status, data}} = useAsyncState(undefinedPromise.key, []);
+  const {state: {status, data}} = useAsyncState(undefinedProducer.key, []);
 
   return (
     <>
@@ -102,10 +102,10 @@ function ReplaceStateListener() {
 }
 
 
-const reducerPromise = {
-  key: "reducer_promise",
+const reducerProducer = {
+  key: "reducer_producer",
   hoistToProvider: false,
-  promise(argv) {
+  producer(argv) {
     const {args: [userInput]} = argv;
     if (userInput > 10) {
       return "OK good!";
@@ -117,7 +117,7 @@ const reducerPromise = {
 
 function ReducerDemo() {
   const inputRef = React.useRef();
-  const {state: {status, data}, run} = useAsyncState(reducerPromise, []);
+  const {state: {status, data}, run} = useAsyncState(reducerProducer, []);
 
   return (
     <div>

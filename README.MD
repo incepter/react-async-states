@@ -3,12 +3,12 @@
 
 ## What is this ?
 This is a library for decentralized state management in React.
-It assumes that state is issued from a function call with a unique `argv` parameter (called the `the promise function`).
+It assumes that state is issued from a function call with a unique `argv` parameter (called the `the producer function`).
 
 The state is then composed of three properties:
 - `data`: the state's actual value, holds what the function returns if `success`, the error in case of `error`...
 - `status`: refers to the current asynchronous state status, possible values are: `initial, pending, aborted, success, error`.
-- `argv`: refers to the `argv` that the promise function was ran with.
+- `argv`: refers to the `argv` that the producer function was ran with.
 
 The function may be:
 - A regular function returning a value.
@@ -17,7 +17,7 @@ The function may be:
 - An asynchronous function with `async/await` syntax.
 - A regular function returning a `Promise` object.
 
-The `promise function` is called (either automatically or imperatively) with an argv parameter, and the state
+The `producer function` is called (either automatically or imperatively) with an argv parameter, and the state
 is whatever this functions returns/throws at any point of time.
 The state contains a `status` property because an asynchronous state status isn't a boolean
 (`true/false` to indicate a pending state).
@@ -45,17 +45,17 @@ function useAsyncState(configuration, dependencies = []) {
 function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual, initialValue = undefined) {
   // returns whathever the selector returns (or initialValue)
 }
-// initialAsyncStates: array or map of {key, promise, initialValue} or source objects
+// initialAsyncStates: array or map of {key, producer, initialValue} or source objects
 function AsyncStateProvider({ payload, initialAsyncStates, chidlren }) {}
 ```
 
 In our case, the dependencies array defaults to `empty array` rather than undefined, because we found that it is easily
 forgotten, and there are nearly no valid use cases to re-run an function automatically (which most likely fetches data
-from your api) each time the component renders. And also, the library provides other ways to run the promise every
+from your api) each time the component renders. And also, the library provides other ways to run the producer every
 render, if you insist!
 
 ```javascript
-// this snippet will make your promise run every render, if you want.
+// this snippet will make your producer run every render, if you want.
 // the `run` function returns its cleanup ;)
 const {run} = useAsyncState(config);
 React.useEffect(run);
@@ -93,7 +93,7 @@ const {
   selector: (currentState, lastSuccess) => currentState,
   areEqual: (prev, next) => prev === next,
 
-  promise (argv) {}
+  producer (argv) {}
 }, []);
 ```
 
@@ -122,11 +122,11 @@ makes it special are:
 - Dynamic creation and sharing of states at runtime.
 - Share states inside and outside the context provider.
 - Subscribe and react to selected portions of state while controlling when to re-render.
-- Fork an asynchronous state to re-use its promise function without impacting its state value.
+- Fork an asynchronous state to re-use its producer function without impacting its state value.
 - Hoist states to provider on demand.
-- Bidirectional abort binding that lets you register an `abort callback` from the promise function.
+- Bidirectional abort binding that lets you register an `abort callback` from the producer function.
 - Automatic cleanup/reset on dependencies change (includes unmount).
-- Supports many forms on promise functions (async/await, promises, generators, reducers...).
+- Supports many forms of producer functions (async/await, promises, generators, reducers...).
 - Powerful selectors system.
 
 And many more features.
@@ -141,9 +141,9 @@ Having a stable release will require a lot of more work to be done, as actual co
 Here is the road map and the list of things that should be added before talking about a stable release (or if you wish to contribute):
 
 - [x] support generators
-- [x] re-use old instances if nothing changed (originalPromise + key + lazy)
+- [x] re-use old instances if nothing changed (originalProducer + key + lazy)
 - [x] subscription to be aware of provider async states change, to re-connect and re-run lazy...
-- [x] support the standalone/anonymous `useAsyncState(promise, dependencies)` ?
+- [x] support the standalone/anonymous `useAsyncState(producer, dependencies)` ?
 - [x] support default embedded provider payload (select, run other async states)[partially done, we need to define the payload properties]
 - [x] support selector in useAsyncState configuration
 - [x] support selector keys to be a function receiving available keys in provider(regex usage against keys may be used in this function)
@@ -166,10 +166,10 @@ This library tries to automate and facilitate subscriptions to states along with
 to cancel and abort either automatically, by developer action or by user action.
 Here is how you will be using it:
 
-- First you define your promise function (aka: reducer, saga, thunk...) and give it its unique name. This function shall
+- First you define your producer function (aka: reducer, saga, thunk...) and give it its unique name. This function shall
 receive a powerful single argument object detailed in a few. This function may take any of the supported forms.
 - Second, you define a provider that will host your asynchronous states and payload. It needs from you for every async state
-entry the following: `key`, `promise` and `initialValue` or a source object.
+entry the following: `key`, `producer` and `initialValue` or a source object.
 - Later, from any point in your app, you can use `useAsyncState(key)` or `useAsyncStateSelector(key)` to get the state
 based on your needs.
 
@@ -177,9 +177,9 @@ Of course, this is only the basic usage of the library, and the `useAsyncState` 
 and serve different purposes:
 - you may select only a portion of the state based on a `selector` and rerender only if `areEqual` is falsy.
 - You may `hoist` an async state to the provider and become accessible.
-- You may `fork` an async state and reuse its promise function without impacting its state and subscribers.
+- You may `fork` an async state and reuse its producer function without impacting its state and subscribers.
 
-## <a name="promise-function"></a> The promise function
+## <a name="producer-function"></a> The producer function
 This function may be:
 - A regular function returning a value.
 - A pure function returning a value based on the previous value (aka reducer).
@@ -208,7 +208,7 @@ yourFunction({
 |`lastSuccess`       | The last success value that was registered |
 |`args`              | Whatever arguments that the `run` function received when it was invoked |
 |`aborted`           | If the request have been cancelled (by dependency change, unmount or user action) |
-|`abort`             | Imperatively abort the promise while processing it, this may be helpful only if you are working with generators |
+|`abort`             | Imperatively abort the producer while processing it, this may be helpful only if you are working with generators |
 |`onAbort`           | Registers a callback that will be fired when the abort is invoked (like aborting a fetch request if the user aborts or component unmounts) |
 
 We believe that these properties will solve all sort of possible use cases, in fact, your function will run while having
@@ -280,11 +280,11 @@ function reducer(argv) {
   }
 }
 ```
-You can even omit the promise function, it was supported along the with the `replaceState` API that we will see later.
+You can even omit the producer function, it was supported along the with the `replaceState` API that we will see later.
 If you attempt to run it, it will delegate to replaceState while passing the arguments.
 
 ## <a name="async-provider"></a> The provider `AsyncStateProvider`
-To share the state returned from your promise function, you need a Provider to hold it.
+To share the state returned from your producer function, you need a Provider to hold it.
 
 The main purpose of the provider is:
 - To hold the async states and allows subscription and selection
@@ -303,7 +303,7 @@ To define an async state for the provider, you need the following:
 |Property      | Type                  | Default value| Description            |
 |--------------|-----------------------|--------------|------------------------|
 |`key`         |`string`               |`undefined`   |The unique identifier or the name of the async state|
-|`promise`     |`function or undefined`|`undefined`   |The promise function|
+|`producer`     |`function or undefined`|`undefined`   |The producer function|
 |`initialValue`|`any`                  |`null`        |The state value when the status is `initial`|
 
 The initialAsyncStates, like stated, is an array of objects or a map; let's create some:
@@ -313,7 +313,7 @@ let demoAsyncStates = {
   users: {
     key: "users",
     initialValue: [],
-    promise: async function getUsers(argv) {
+    producer: async function getUsers(argv) {
       return await fetchUsers(argv.payload.queryString);
     },
   },
@@ -321,9 +321,9 @@ let demoAsyncStates = {
     key: "currentUser",
     // generators are the recommended way to go!
     // because they allow to abort between yields! unlike promises and async-await!
-    promise: getCurrentUserGenerator,
+    producer: getCurrentUserGenerator,
   },
-  // with undefined promise, you will be calling `replaceState` to change the state
+  // with undefined producer, you will be calling `replaceState` to change the state
   somethingOpen: {
     key: "somethingOpen",
     initialValue: false,
@@ -331,7 +331,7 @@ let demoAsyncStates = {
   localTodos: {
     key: "something",
     initialValue: {},
-    promise: function todosReducerPromise(argv) {
+    producer: function todosReducerPromise(argv) {
       // myTodosReducer is a regular reducer(state, action) that returns the new state value, my guess is that you've wrote many
       return myTodosReducer(argv.lastSuccess, ...argv.args);
     }
@@ -347,10 +347,10 @@ import {AsyncStateBuilder, createAsyncState} from "react-async-states";
 let usersAS = AsyncStateBuilder()
     .key("users")
     .initialValue([])
-    .promise(fetchUsersPromise)
+    .producer(fetchUsers)
     .build();
 // or this way
-let usersAs = createAsyncState(/*key*/"users", /*promise*/fetchUsersPromise, /*initialValue*/ []);
+let usersAs = createAsyncState(/*key*/"users", /*producer*/fetchUsers, /*initialValue*/ []);
 ```
 
 ## <a name="use-async-state"></a> `useAsyncState`
@@ -369,8 +369,8 @@ the same behavior.
 For example, you can use this hook to fetch the current user from your api before mounting the provider and pass the user
 information to payload.
 
-While being outside provider, it will expect you to use a promise function as configuration, or with an object defining
-the promise and all other necessary information.
+While being outside provider, it will expect you to use a producer function as configuration, or with an object defining
+the producer and all other necessary information.
 
 ### Subscription modes
 While inside provider, many subscription modes are possible. You won't have to use them, but you should essentially
@@ -379,7 +379,7 @@ know what they mean and how your configuration impacts them.
 What is a subscription mode already ?
 When you call `useAsyncState`, please recall that you call it every time your component renders, and should react to
 the given configuration synchronized by your dependencies. Then, this hook tries to get the async state from the provider.
-If not found, it may wait for it if you did not provide a `promise` function in your configuration, or fallback with a noop mode for example.
+If not found, it may wait for it if you did not provide a `producer` function in your configuration, or fallback with a noop mode for example.
 
 The possible subscription mode are:
 - `LISTEN`: Listens to an existing async state from its key
@@ -393,7 +393,7 @@ If you are curious about how the subscription mode is inferred, please refer to 
 defined [here](./src/react/subscription/subscriptionUtils.js).
 
 ### configuration and manipulation
-The configuration argument may be a string, an object with supported properties, or a promise function (you won't be able to share it by this signature).
+The configuration argument may be a string, an object with supported properties, or a producer function (you won't be able to share it by this signature).
 If it is a string, it is used inside provider to only listen on an async state, without automatically triggering the run
 (but you can do it programmatically using what this hooks returns).
 If an object is provided, it may act like a simple subscription or a registration of a new async state (with fork/hoist).
@@ -405,12 +405,12 @@ Let's see in details the supported configuration:
 |`key`                  |`string`     |`string`            |     x    |   x    | The unique key, either for definition or subscription |
 |`lazy`                 |`boolean`    |`true`              |     x    |   x    | If false, the subscription will re-run every dependency change |
 |`fork`                 |`boolean`    |`false`             |          |   x    | If true, subscription will fork own async state |
-|`promise`              |`function`   |`undefined`         |     x    |   x    | Our promise function |
+|`producer`              |`function`   |`undefined`         |     x    |   x    | Our producer function |
 |`selector`             |`function`   |`identity`          |     x    |   x    | receives state (`{data, args, status}`) as unique parameter and whatever it returns it is put in the state return |
 |`areEqual`             |`function`   |`shallowEqual`      |     x    |   x    | `(prevValue, nextValue) => areEqual(prevValue, nextValue)` if it returns true, the render is skipped |
 |`condition`            |`boolean`    |`true`              |     x    |   x    | If this condition is falsy, run will not be granted |
 |`forkConfig`           |`ForkConfig` |`{keepState: false}`|          |   x    | defines whether to keep state when forking or not |
-|`initialValue`         |`any`        |`null`              |     x    |        | The initial promise value, useful only if working as standalone(ie defining own promise) |
+|`initialValue`         |`any`        |`null`              |     x    |        | The initial producer value, useful only if working as standalone(ie defining own producer) |
 |`rerenderStats`        |`object`     |`{<status>: true}`  |     x    |   x    | Defines whether to register in the provider or not |
 |`hoistToProvider`      |`boolean`    |`false`             |          |   x    | Defines whether to register in the provider or not |
 |`hoistToProviderConfig`|`HoistConfig`|`{override: false}` |          |   x    | Defines whether to override an existing async state in provider while hoisting |
@@ -432,7 +432,7 @@ arguments that produced it. `run` runs the subscribed async state, to abort it i
 holds for you the last succeeded value.
 `replaceState` instantly gives a new value to the state with success status.
 `runAsyncState` works only in provider, and was added as convenience to trigger some side effect after
-the current async promise did something, for example, reload users list after updating a user successfully.
+the current async producer did something, for example, reload users list after updating a user successfully.
 
 The `selector` as config in for `useAsyncState` allows you to subscribe to just a small portion of the state while
 choosing when to trigger a rerender, this is an important feature and the probably the most important of this library.
@@ -452,13 +452,13 @@ import {useAsyncState} from "react-async-states";
 // later and during render
 
 // executes currentUserPromise on mount
-const {state: {data, status}} = useAsyncState({key: "current-user", promise: currentUserPromise, lazy: false});
+const {state: {data, status}} = useAsyncState({key: "current-user", producer: currentUserPromise, lazy: false});
 
 // subscribes to transactions list state
 const {state: {data: transactions, status}} = useAsyncState("transactions");
 
 // injects the users list state
-const {state: {data, status}} = useAsyncState({key: "users-list", promise: usersListPromise, lazy: false, payload: {storeId}, hoistToProvider: true});
+const {state: {data, status}} = useAsyncState({key: "users-list", producer: usersListPromise, lazy: false, payload: {storeId}, hoistToProvider: true});
 
 // forks the list of transactions for another store (for preview for example)
 // this will create another async state issued from users-list -with a new key (forked)- without impacting its state
@@ -469,7 +469,7 @@ const {state: {data, status}} = useAsyncState({key: "users-list", payload: {anot
 // for example, once the user chooses a profile, just redirect to the new url => matchParams will change => refetch as non lazy
 const matchParams = useParams();
 const {state} = useAsuncState({
-  ...userProfilePromiseConfig, // (key, promise), or take only the key if hoisted and no problem impacting the state
+  ...userProfilePromiseConfig, // (key, producer), or take only the key if hoisted and no problem impacting the state
   lazy: false,
   payload: {matchParams}
 }, [matchParams]);
@@ -500,13 +500,13 @@ useAsyncState({
       showNotification();
     }
   },
-  promise(argv) {
+  producer(argv) {
     timeout(argv.payload.delay)
     .then(function callSuccess() {
       if (!argv.aborted) {
         // notice that we are taking onSuccess from payload, not from component's closure
         // that's the way to go, this creates a separation of concerns
-        // and your promise may be extracted outisde this file, and will be easier to test
+        // and your producer may be extracted outisde this file, and will be easier to test
         // but in general, please avoid code like this, and make it like an effect reacting to a value
         // (the state data for example)
         argv.payload.onSuccess();
@@ -518,7 +518,7 @@ useAsyncState({
 // hoists a controlled form to provider
 useAsyncState({
   key: "some-form",
-  promise(argv) {
+  producer(argv) {
     const [name, value] = argv.args;
     if (!name) {
       return argv.lastSuccess.data;

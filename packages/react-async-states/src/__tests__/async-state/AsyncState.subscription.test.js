@@ -11,10 +11,10 @@ describe('AsyncState - subscriptions', () => {
     let myConfig = {};
     let key = "simulated";
     let subscriptionFn = jest.fn();
-    let promise = timeout(50, "Some Value");
+    let producer = timeout(50, "Some Value");
 
     // when
-    let myAsyncState = new AsyncState(key, promise, myConfig);
+    let myAsyncState = new AsyncState(key, producer, myConfig);
 
     // then
     expect(myAsyncState.subscriptionsMeter).toBe(0);
@@ -68,10 +68,10 @@ describe('AsyncState - subscriptions', () => {
     let myConfig = {};
     let key = "simulated";
     let subscriptionFn = jest.fn();
-    let promise = timeout(50, "Some Value");
+    let producer = timeout(50, "Some Value");
 
     // when
-    let myAsyncState = new AsyncState(key, promise, myConfig);
+    let myAsyncState = new AsyncState(key, producer, myConfig);
     let unsubscribe = myAsyncState.subscribe(subscriptionFn);
 
     // then
@@ -114,10 +114,10 @@ describe('AsyncState - subscriptions', () => {
     let myConfig = {};
     let key = "simulated";
     let subscriptionFn = jest.fn();
-    let promise = timeout(50, "Some Value");
+    let producer = timeout(50, "Some Value");
 
     // when
-    let myAsyncState = new AsyncState(key, promise, myConfig);
+    let myAsyncState = new AsyncState(key, producer, myConfig);
     let unsubscribe = myAsyncState.subscribe(subscriptionFn);
     unsubscribe();
 

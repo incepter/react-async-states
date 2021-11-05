@@ -19,8 +19,8 @@ the same behavior.
 For example, you can use this hook to fetch the current user from your api before mounting the provider and pass the user
 information to payload.
 
-While being outside provider, it will expect you to use a promise function as configuration, or with an object defining
-the promise and all other necessary information.
+While being outside provider, it will expect you to use a producer function as configuration, or with an object defining
+the producer and all other necessary information.
 
 ### Subscription modes
 While inside provider, many subscription modes are possible. You won't have to use them, but you should essentially
@@ -29,7 +29,7 @@ know what they mean and how your configuration impacts them.
 What is a subscription mode already ?
 When you call `useAsyncState`, please recall that you call it every time your component renders, and should react to
 the given configuration synchronized by your dependencies. Then, this hook tries to get the async state from the provider.
-If not found, it may wait for it if you did not provide a `promise` function in your configuration, or fallback with a noop mode for example.
+If not found, it may wait for it if you did not provide a `producer` function in your configuration, or fallback with a noop mode for example.
 
 The possible subscription mode are:
 - `LISTEN`: Listens to an existing async state from its key
@@ -43,7 +43,7 @@ If you are curious about how the subscription mode is inferred, please refer to 
 defined [here](./src/react/subscription/subscriptionUtils.js).
 
 ### configuration and manipulation
-The configuration argument may be a string, an object with supported properties, or a promise function (you won't be able to share it by this signature).
+The configuration argument may be a string, an object with supported properties, or a producer function (you won't be able to share it by this signature).
 If it is a string, it is used inside provider to only listen on an async state, without automatically triggering the run
 (but you can do it programmatically using what this hooks returns).
 If an object is provided, it may act like a simple subscription or a registration of a new async state (with fork/hoist).
@@ -55,12 +55,12 @@ Let's see in details the supported configuration:
 |`key`                  |`string`     |`string`            |     x    |   x    | The unique key, either for definition or subscription |
 |`lazy`                 |`boolean`    |`true`              |     x    |   x    | If false, the subscription will re-run every dependency change |
 |`fork`                 |`boolean`    |`false`             |          |   x    | If true, subscription will fork own async state |
-|`promise`              |`function`   |`undefined`         |     x    |   x    | Our promise function |
+|`producer`              |`function`   |`undefined`         |     x    |   x    | Our producer function |
 |`selector`             |`function`   |`identity`          |     x    |   x    | receives state (`{data, args, status}`) as unique parameter and whatever it returns it is put in the state return |
 |`areEqual`             |`function`   |`shallowEqual`      |     x    |   x    | `(prevValue, nextValue) => areEqual(prevValue, nextValue)` if it returns true, the render is skipped |
 |`condition`            |`boolean`    |`true`              |     x    |   x    | If this condition is falsy, run will not be granted |
 |`forkConfig`           |`ForkConfig` |`{keepState: false}`|          |   x    | defines whether to keep state when forking or not |
-|`initialValue`         |`any`        |`null`              |     x    |        | The initial promise value, useful only if working as standalone(ie defining own promise) |
+|`initialValue`         |`any`        |`null`              |     x    |        | The initial producer value, useful only if working as standalone(ie defining own producer) |
 |`rerenderStats`        |`object`     |`{<status>: true}`  |     x    |   x    | Defines whether to register in the provider or not |
 |`hoistToProvider`      |`boolean`    |`false`             |          |   x    | Defines whether to register in the provider or not |
 |`hoistToProviderConfig`|`HoistConfig`|`{override: false}` |          |   x    | Defines whether to override an existing async state in provider while hoisting |
@@ -82,7 +82,7 @@ arguments that produced it. `run` runs the subscribed async state, to abort it i
 holds for you the last succeeded value.
 `replaceState` instantly gives a new value to the state with success status.
 `runAsyncState` works only in provider, and was added as convenience to trigger some side effect after
-the current async promise did something, for example, reload users list after updating a user successfully.
+the current async producer did something, for example, reload users list after updating a user successfully.
 
 The `selector` as config in for `useAsyncState` allows you to subscribe to just a small portion of the state while
 choosing when to trigger a rerender, this is an important feature and the probably the most important of this library.
@@ -102,13 +102,13 @@ import {useAsyncState} from "react-async-states";
 // later and during render
 
 // executes currentUserPromise on mount
-const {state: {data, status}} = useAsyncState({key: "current-user", promise: currentUserPromise, lazy: false});
+const {state: {data, status}} = useAsyncState({key: "current-user", producer: currentUserPromise, lazy: false});
 
 // subscribes to transactions list state
 const {state: {data: transactions, status}} = useAsyncState("transactions");
 
 // injects the users list state
-const {state: {data, status}} = useAsyncState({key: "users-list", promise: usersListPromise, lazy: false, payload: {storeId}, hoistToProvider: true});
+const {state: {data, status}} = useAsyncState({key: "users-list", producer: usersListPromise, lazy: false, payload: {storeId}, hoistToProvider: true});
 
 // forks the list of transactions for another store (for preview for example)
 // this will create another async state issued from users-list -with a new key (forked)- without impacting its state
@@ -119,7 +119,7 @@ const {state: {data, status}} = useAsyncState({key: "users-list", payload: {anot
 // for example, once the user chooses a profile, just redirect to the new url => matchParams will change => refetch as non lazy
 const matchParams = useParams();
 const {state} = useAsuncState({
-  ...userProfilePromiseConfig, // (key, promise), or take only the key if hoisted and no problem impacting the state
+  ...userProfilePromiseConfig, // (key, producer), or take only the key if hoisted and no problem impacting the state
   lazy: false,
   payload: {matchParams}
 }, [matchParams]);
@@ -150,13 +150,13 @@ useAsyncState({
       showNotification();
     }
   },
-  promise(argv) {
+  producer(argv) {
     timeout(argv.payload.delay)
     .then(function callSuccess() {
       if (!argv.aborted) {
         // notice that we are taking onSuccess from payload, not from component's closure
         // that's the way to go, this creates a separation of concerns
-        // and your promise may be extracted outisde this file, and will be easier to test
+        // and your producer may be extracted outisde this file, and will be easier to test
         // but in general, please avoid code like this, and make it like an effect reacting to a value
         // (the state data for example)
         argv.payload.onSuccess();
@@ -168,7 +168,7 @@ useAsyncState({
 // hoists a controlled form to provider
 useAsyncState({
   key: "some-form",
-  promise(argv) {
+  producer(argv) {
     const [name, value] = argv.args;
     if (!name) {
       return argv.lastSuccess.data;

@@ -1,10 +1,10 @@
 ---
 sidebar_position: 2
-sidebar_label: The promise function
+sidebar_label: The producer function
 ---
-# The promise function
+# The producer function
 
-The promise function is the function that returns the state value, it may be:
+The producer function is the function that returns the state value, it may be:
 
 - A regular function returning a value.
 - A pure function returning a value based on the previous value (aka reducer).
@@ -33,7 +33,7 @@ yourFunction({
 |`lastSuccess`       | The last success value that was registered |
 |`args`              | Whatever arguments that the `run` function received when it was invoked |
 |`aborted`           | If the request have been cancelled (by dependency change, unmount or user action) |
-|`abort`             | Imperatively abort the promise while processing it, this may be helpful only if you are working with generators |
+|`abort`             | Imperatively abort the producer while processing it, this may be helpful only if you are working with generators |
 |`onAbort`           | Registers a callback that will be fired when the abort is invoked (like aborting a fetch request if the user aborts or component unmounts) |
 
 We believe that these properties will solve all sort of possible use cases, in fact, your function will run while having
@@ -105,5 +105,5 @@ function reducer(argv) {
   }
 }
 ```
-You can even omit the promise function, it was supported along the with the `replaceState` API that we will see later.
+You can even omit the producer function, it was supported along the with the `replaceState` API that we will see later.
 If you attempt to run it, it will delegate to replaceState while passing the arguments.

@@ -3,9 +3,9 @@ import { isAsyncStateSource } from "async-state/AsyncState";
 
 // userConfig is the config the developer wrote
 export function readUserConfiguration(userConfig, overrides) {
-  // this is an anonymous promise configuration (lazy: true, fork: false, hoist: false, payload: null)
+  // this is an anonymous producer configuration (lazy: true, fork: false, hoist: false, payload: null)
   if (typeof userConfig === "function") {
-    return readConfigFromPromiseFunction(userConfig, overrides);
+    return readConfigFromProducerFunction(userConfig, overrides);
   }
   if (typeof userConfig === "string") {
     return Object.assign({}, defaultUseASConfig, overrides, {key: userConfig});
@@ -39,6 +39,6 @@ export const nextKey = (function autoKey() {
   }
 }());
 
-function readConfigFromPromiseFunction(promise, overrides) {
-  return Object.assign({}, defaultUseASConfig, overrides, {promise});
+function readConfigFromProducerFunction(producer, overrides) {
+  return Object.assign({}, defaultUseASConfig, overrides, {producer});
 }

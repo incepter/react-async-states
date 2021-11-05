@@ -9,11 +9,11 @@ describe('AsyncState - run', () => {
   it('should run an async state successfully with no subscribers', async () => {
     // given
     let key = "simulated";
-    let promise = timeout(100, [{id: 1, description: "value"}]);
+    let producer = timeout(100, [{id: 1, description: "value"}]);
     let myConfig = {};
 
     // when
-    let myAsyncState = new AsyncState(key, promise, myConfig);
+    let myAsyncState = new AsyncState(key, producer, myConfig);
 
     // then
     // should have initial status
@@ -40,7 +40,7 @@ describe('AsyncState - run', () => {
     await act(async () => {
       await jest.advanceTimersByTime(50);
     });
-    // should be still in pending state while promise did not resolve yet
+    // should be still in pending state while producer did not resolve yet
     expect(myAsyncState.currentState).toEqual({
       argv: {
         payload: {},
@@ -72,11 +72,11 @@ describe('AsyncState - run', () => {
   it('should run an async state with rejection with no subscribers', async () => {
     // given
     let key = "simulated";
-    let promise = rejectionTimeout(50, "Some Error");
+    let producer = rejectionTimeout(50, "Some Error");
     let myConfig = {};
 
     // when
-    let myAsyncState = new AsyncState(key, promise, myConfig);
+    let myAsyncState = new AsyncState(key, producer, myConfig);
 
     // then
     myAsyncState.run();

@@ -3,7 +3,7 @@ sidebar_position: 3
 sidebar_label: AsyncStateProvider
 ---
 # `AsyncStateProvider`
-To share the state returned from your promise function, you need a Provider to hold it.
+To share the state returned from your producer function, you need a Provider to hold it.
 
 The main purpose of the provider is:
 - To hold the async states and allows subscription and selection
@@ -22,7 +22,7 @@ To define an async state for the provider, you need the following:
 |Property      | Type                  | Default value| Description            |
 |--------------|-----------------------|--------------|------------------------|
 |`key`         |`string`               |`undefined`   |The unique identifier or the name of the async state|
-|`promise`     |`function or undefined`|`undefined`   |The promise function|
+|`producer`     |`function or undefined`|`undefined`   |The producer function|
 |`initialValue`|`any`                  |`null`        |The state value when the status is `initial`|
 
 The initialAsyncStates, like stated, is an array of objects or a map; let's create some:
@@ -32,7 +32,7 @@ let demoAsyncStates = {
   users: {
     key: "users",
     initialValue: [],
-    promise: async function getUsers(argv) {
+    producer: async function getUsers(argv) {
       return await fetchUsers(argv.payload.queryString);
     },
   },
@@ -40,9 +40,9 @@ let demoAsyncStates = {
     key: "currentUser",
     // generators are the recommended way to go!
     // because they allow to abort between yields! unlike promises and async-await!
-    promise: getCurrentUserGenerator,
+    producer: getCurrentUserGenerator,
   },
-  // with undefined promise, you will be calling `replaceState` to change the state
+  // with undefined producer, you will be calling `replaceState` to change the state
   somethingOpen: {
     key: "somethingOpen",
     initialValue: false,
@@ -50,7 +50,7 @@ let demoAsyncStates = {
   localTodos: {
     key: "something",
     initialValue: {},
-    promise: function todosReducerPromise(argv) {
+    producer: function todosReducerPromise(argv) {
       // myTodosReducer is a regular reducer(state, action) that returns the new state value, my guess is that you've wrote many
       return myTodosReducer(argv.lastSuccess, ...argv.args);
     }
@@ -66,8 +66,8 @@ import {AsyncStateBuilder, createAsyncState} from "react-async-states";
 let usersAS = AsyncStateBuilder()
     .key("users")
     .initialValue([])
-    .promise(fetchUsersPromise)
+    .producer(fetchUsersPromise)
     .build();
 // or this way
-let usersAs = createAsyncState(/*key*/"users", /*promise*/fetchUsersPromise, /*initialValue*/ []);
+let usersAs = createAsyncState(/*key*/"users", /*producer*/fetchUsersPromise, /*initialValue*/ []);
 ```

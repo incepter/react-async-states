@@ -12,7 +12,7 @@ export default function Demo() {
     key: "login-form",
     hoistToProvider: true,
     initialValue: {hello: "world!"},
-    promise: createReducerPromise(reducer),
+    producer: createReducerPromise(reducer),
     rerenderStatus: {pending: false, success: false}
   });
 

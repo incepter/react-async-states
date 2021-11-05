@@ -1,5 +1,5 @@
 import { __DEV__, AsyncStateStatus, cloneArgs, invokeIfPresent, shallowClone } from "shared";
-import { wrapPromiseFunction } from "./wrap-promise-function";
+import { wrapProducerFunction } from "./wrap-producer-function";
 import {
   AsyncStateStateBuilder,
   constructAsyncStateSource,
@@ -8,12 +8,12 @@ import {
 } from "./utils";
 import devtools from "devtools";
 
-function AsyncState(key, promise, config) {
+function AsyncState(key, producer, config) {
   warnDevAboutAsyncStateKey(key);
 
   this.key = key;
   this.config = shallowClone(defaultASConfig, config);
-  this.originalPromise = promise;
+  this.originalProducer = producer;
 
   this.currentState = AsyncStateStateBuilder.initial(this.config.initialValue);
   this.lastSuccess = this.currentState;
@@ -22,7 +22,7 @@ function AsyncState(key, promise, config) {
   this.subscriptionsMeter = 0;
 
   this.subscriptions = {};
-  this.promise = wrapPromiseFunction(this);
+  this.producer = wrapProducerFunction(this);
 
   this.__IS_FORK__ = false;
 
@@ -119,7 +119,7 @@ AsyncState.prototype.run = function run(...execArgs) {
   }
 
   this.currentAborter = abort;
-  this.promise(argv);
+  this.producer(argv);
   return this.currentAborter;
 }
 
@@ -158,7 +158,7 @@ AsyncState.prototype.fork = function fork(forkConfig) {
     key = forkKey(this);
   }
 
-  const clone = new AsyncState(key, this.originalPromise, this.config);
+  const clone = new AsyncState(key, this.originalProducer, this.config);
 
   // if something fail, no need to increment
   this.forkCount += 1;
@@ -221,14 +221,14 @@ function makeSource(asyncState) {
 }
 
 
-function notifySubscribers(promiseState) {
-  Object.values(promiseState.subscriptions).forEach(t => {
-    invokeIfPresent(t.callback, promiseState.currentState);
+function notifySubscribers(asyncState) {
+  Object.values(asyncState.subscriptions).forEach(t => {
+    invokeIfPresent(t.callback, asyncState.currentState);
   });
 }
 
-function clearSubscribers(promiseState) {
-  Object.values(promiseState.subscriptions).forEach(t => {
+function clearSubscribers(asyncState) {
+  Object.values(asyncState.subscriptions).forEach(t => {
     invokeIfPresent(t.cleanup);
   });
 }

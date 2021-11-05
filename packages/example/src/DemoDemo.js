@@ -7,7 +7,7 @@ export function Inject() {
     initialValue: {},
     key: "hakky-login",
     hoistToProvider: true,
-    promise(argv) {
+    producer(argv) {
       argv.payload.__provider__.select()
       argv.payload.__provider__.run("", "", "");
       return {...argv.lastSuccess.data, [argv.args[0]]: argv.args[1]};
