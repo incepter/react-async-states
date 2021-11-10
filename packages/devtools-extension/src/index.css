@@ -1,0 +1,83 @@
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+.main-container {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+}
+
+.sidebar-wrapper {
+    width: 150px;
+    border-right: 1px solid #004444;
+}
+
+.sidebar-element {
+    cursor: pointer;
+}
+
+.view-wrapper {
+    width: calc(100% - 150px);
+}
+
+
+.overview-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+}
+
+.overview-list-container {
+    width: 250px;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+}
+
+.overview-journal-list-container {
+    width: 250px;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #004444;
+    border-right: 1px solid #004444;
+    overflow: auto;
+}
+
+.overview-json-container {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    border-left: 1px solid #004444;
+}
+
+.overview-journal-json-container {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    border-left: 1px solid #004444;
+}
+.overview-key {
+    border: none;
+    border-bottom: 1px solid #7f7f7f;
+    background-color: transparent;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 300ms ease-out;
+}
+.overview-key .active {
+    background-color: #999999;
+}
+.overview-key:hover {
+    background-color: #999999;
+}
