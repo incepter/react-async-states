@@ -9,7 +9,7 @@ const config = {
   title: 'React async states',
   tagline: 'A tiny decentralized state management React library',
   url: 'https://your-docusaurus-test-site.com',
-  baseUrl: '/',
+  baseUrl: '/react-async-states/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
