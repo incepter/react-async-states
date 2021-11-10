@@ -57,8 +57,8 @@ const config = {
           },
           {to: '/blog', label: 'Blog', position: 'left'},
           {
-            href: 'https://gitlab.com/medelayadi/promise-state', // go github
-            label: 'Gitlab', // change to github
+            href: 'https://github.com/incepter/react-async-states', // go github
+            label: 'Github', // change to github
             position: 'right',
           },
         ],
@@ -100,8 +100,8 @@ const config = {
                 to: '/blog',
               },
               {
-                label: 'Gitlab',
-                href: 'https://gitlab.com/medelayadi/promise-state',
+                label: 'Github',
+                href: 'https://github.com/incepter/react-async-states',
               },
             ],
           },
