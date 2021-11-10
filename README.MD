@@ -24,10 +24,8 @@ The state contains a `status` property because an asynchronous state status isn'
 
 The APIs that you will be using most often are:
 
-- [`useAsyncState`](#use-async-state): a hook that allows you to define and subscribe to asynchronous states,
-it works inside and outside a provider.
-- [`AsyncStateProvider`](#async-provider): A component holding a set of asynchronous states, and allows subscriptions
-- and extra controls and features.
+- [`useAsyncState`](#use-async-state): a hook that allows you to define and subscribe to asynchronous states, it works inside and outside a provider.
+- [`AsyncStateProvider`](#async-provider): A component holding a set of asynchronous states, and allows subscriptions and extra controls and features.
 - [`useAsyncStateSelector`](#use-async-state-selector): A selector that accepts enough parameters to make it very cool.
 
 ## Core concepts
@@ -47,18 +45,6 @@ function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqua
 }
 // initialAsyncStates: array or map of {key, producer, initialValue} or source objects
 function AsyncStateProvider({ payload, initialAsyncStates, chidlren }) {}
-```
-
-In our case, the dependencies array defaults to `empty array` rather than undefined, because we found that it is easily
-forgotten, and there are nearly no valid use cases to re-run an function automatically (which most likely fetches data
-from your api) each time the component renders. And also, the library provides other ways to run the producer every
-render, if you insist!
-
-```javascript
-// this snippet will make your producer run every render, if you want.
-// the `run` function returns its cleanup ;)
-const {run} = useAsyncState(config);
-React.useEffect(run);
 ```
 
 Now, let's see what `useAsyncState` looks like when used to its fullest:
@@ -106,6 +92,14 @@ import {useAsyncState} from "react-async-states";
 useAsyncState("current-user"); // subscribes or waits for the async state 'current-user' to appear in the provider
 useAsyncState(() => fetchStoreData(storeId), [storeId]);// fetches store data whenever the store id changes
 useAsyncState(async () => await fetchUserPosts(userId), [userId]);// fetches user posts
+
+useAsyncState(function* getCurrentUser(argv) {
+  const user = yield fetchCurrentUser();
+  const [permissions, stores] = yield Promise.all([fetchUserPermissions(user.id), fetchUserStores(user.id)]);
+  return {user, permissions, stores};
+})
+
+useAsyncState({ key: "weather", selector: s => s.data });
 
 useAsyncState();
 ```
@@ -552,6 +546,41 @@ function Input({name, ...rest}) {
 }
 
 ```
+
+### Other hooks
+For convenience, we've added many other hooks with `useAsyncState` to help inline most of the situations: They inject
+a configuration property which may facilitate using the library:
+
+The following are all hooks with the same signature as `useAsyncState`, but each predefines something in the configuration:
+- `useAsyncState.auto`: adds `lazy: false` to configuration
+- `useAsyncState.lazy`: adds `lazy: true` to configuration
+- `useAsyncState.fork`: adds `fork: true` to configuration
+- `useAsyncState.hoist`: adds `hoistToProvider: true` to configuration
+- `useAsyncState.hoistAuto`: adds `lazy: false, hoistToProvider: true` to configuration
+- `useAsyncState.forkAudo`: adds `lazy: false, fork: true` to configuration
+
+These are functions produce hooks with the same signature as `useAsyncState` (and hooks shortcuts with it)
+while injecting specific properties. They do not work like the other shortcuts because they need an input for
+the property from the developer:
+- `useAsyncState.payload`: adds `payload` to configuration
+- `useAsyncState.selector`: adds a selector
+- `useAsyncState.condition`: make the run conditional
+
+The following snippets results from the previous hooks:
+
+```javascript
+// automatically fetches the user's list when the search url changes
+const {state: {status, data}, run, abort} = useAsyncState.auto(DOMAIN_USER_PRODUCERS.list.key, [search]);
+// automatically fetches user 1 and selects data
+const {state} = useAsyncState.selector(s => s.data).auto(user1Source);
+// automatically fetches user 2 and selects its name
+const {state} = useAsyncState.selector(name).auto(user2Source);
+// automatically fetches user 3 and hoists it to provider and selects its name
+const {state} = useAsyncState.payload({userId: 3}).selector(name).hoistAuto(userPayloadSource);
+// forks userPayloadSource and runs it automatically with a new payload and selects the name from result
+const {state} = useAsyncState.selector(name).payload({userId: 4}).forkAuto(userPayloadSource);
+```
+
 
 ## <a name="use-async-state-selector"></a> Selectors via `useAsyncStateSelector`
 Now that we know how to define and share asynchronous states (or states in general), what about selecting values

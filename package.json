@@ -8,6 +8,7 @@
     "start:example": "cd packages/example && yarn start",
     "build:devtools": "cd packages/devtools-extension && yarn build",
     "build": "cd packages/react-async-states && yarn build",
-    "build:all": "cd packages/react-async-states && yarn build && cd ../devtools-extension && yarn build"
+    "build:all": "cd packages/react-async-states && yarn build && cd ../devtools-extension && yarn build",
+    "publish:lib": "copyfiles -f README.MD packages/react-async-states && cd packages/react-async-states &&  npm publish && rimraf README.MD"
   }
 }

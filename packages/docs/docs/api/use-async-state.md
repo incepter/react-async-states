@@ -202,3 +202,37 @@ function Input({name, ...rest}) {
 }
 
 ```
+
+### Other hooks
+For convenience, we've added many other hooks with `useAsyncState` to help inline most of the situations: They inject
+a configuration property which may facilitate using the library:
+
+The following are all hooks with the same signature as `useAsyncState`, but each predefines something in the configuration:
+- `useAsyncState.auto`: adds `lazy: false` to configuration
+- `useAsyncState.lazy`: adds `lazy: true` to configuration
+- `useAsyncState.fork`: adds `fork: true` to configuration
+- `useAsyncState.hoist`: adds `hoistToProvider: true` to configuration
+- `useAsyncState.hoistAuto`: adds `lazy: false, hoistToProvider: true` to configuration
+- `useAsyncState.forkAudo`: adds `lazy: false, fork: true` to configuration
+
+These are functions produce hooks with the same signature as `useAsyncState` (and hooks shortcuts with it)
+while injecting specific properties. They do not work like the other shortcuts because they need an input for 
+the property from the developer:
+- `useAsyncState.payload`: adds `payload` to configuration
+- `useAsyncState.selector`: adds a selector
+- `useAsyncState.condition`: make the run conditional
+
+The following snippets results from the previous hooks:
+
+```javascript
+// automatically fetches the user's list when the search url changes
+const {state: {status, data}, run, abort} = useAsyncState.auto(DOMAIN_USER_PRODUCERS.list.key, [search]);
+// automatically fetches user 1 and selects data
+const {state} = useAsyncState.selector(s => s.data).auto(user1Source);
+// automatically fetches user 2 and selects its name
+const {state} = useAsyncState.selector(name).auto(user2Source);
+// automatically fetches user 3 and hoists it to provider and selects its name
+const {state} = useAsyncState.payload({userId: 3}).selector(name).hoistAuto(userPayloadSource);
+// forks userPayloadSource and runs it automatically with a new payload and selects the name from result
+const {state} = useAsyncState.selector(name).payload({userId: 4}).forkAuto(userPayloadSource);
+```

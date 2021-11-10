@@ -139,7 +139,4 @@ function usePermissions(allowedPermissions) {
 
 const canSeeWeather = usePermissions(WEATHER_PERMISSIONS);
 //...
-
-
 ```
-
