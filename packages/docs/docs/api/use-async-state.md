@@ -42,8 +42,7 @@ The possible subscription mode are:
 - `OUTSIDE_PROVIDER`: When you call it outside the async state context provider
 - `NOOP`: If none of the above matches, should not happen
 
-If you are curious about how the subscription mode is inferred, please refer to the `inferSubscriptionMode` function
-defined [here](./src/react/subscription/subscriptionUtils.js).
+If you are curious about how the subscription mode is inferred, please refer to the `inferSubscriptionMode` function.
 
 ### Configuration and manipulation
 The configuration argument may be a string, an object with supported properties, or a producer function (you won't be able to share it by this signature).
