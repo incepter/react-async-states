@@ -32,8 +32,8 @@ let demoAsyncStates = {
   users: {
     key: "users",
     initialValue: [],
-    producer: async function getUsers(argv) {
-      return await fetchUsers(argv.payload.queryString);
+    producer: async function getUsers(props) {
+      return await fetchUsers(props.payload.queryString);
     },
   },
   currentUser: {
@@ -50,24 +50,22 @@ let demoAsyncStates = {
   localTodos: {
     key: "something",
     initialValue: {},
-    producer: function todosReducerPromise(argv) {
+    producer: function todosReducerPromise(props) {
       // myTodosReducer is a regular reducer(state, action) that returns the new state value, my guess is that you've wrote many
-      return myTodosReducer(argv.lastSuccess, ...argv.args);
+      return myTodosReducer(props.lastSuccess, ...props.args);
     }
   },
 }
 const initialAsyncState = Object.values(demoAsyncStates); // or pass this to provider
 ```
 
-PS: You can use `AsyncStateBuilder` or `createAsyncState` to create these objects this way:
+PS: You can use `AsyncStateBuilder` to create these objects this way:
 
 ```javascript
-import {AsyncStateBuilder, createAsyncState} from "react-async-states";
+import {AsyncStateBuilder} from "react-async-states";
 let usersAS = AsyncStateBuilder()
     .key("users")
     .initialValue([])
     .producer(fetchUsersPromise)
     .build();
-// or this way
-let usersAs = createAsyncState(/*key*/"users", /*producer*/fetchUsersPromise, /*initialValue*/ []);
 ```

@@ -5,29 +5,25 @@ import { isAsyncStateSource } from "async-state/AsyncState";
 export function readUserConfiguration(userConfig, overrides) {
   // this is an anonymous producer configuration (lazy: true, fork: false, hoist: false, payload: null)
   if (typeof userConfig === "function") {
-    return readConfigFromProducerFunction(userConfig, overrides);
+    return Object.assign({}, defaultUseASConfig, overrides, {producer: userConfig});
   }
   if (typeof userConfig === "string") {
     return Object.assign({}, defaultUseASConfig, overrides, {key: userConfig});
   }
   if (isAsyncStateSource(userConfig)) {
-    return readSourceConfig(userConfig, overrides);
+    return Object.assign(
+      {},
+      defaultUseASConfig,
+      overrides,
+      {source: userConfig, [sourceConfigurationSecretSymbol]: true});
   }
   if (isAsyncStateSource(userConfig?.source)) {
-    return readHybridSourceConfig(userConfig, overrides);
+    return Object.assign({}, defaultUseASConfig, userConfig, overrides, {
+      source: userConfig.source,
+      [sourceConfigurationSecretSymbol]: true
+    });
   }
   return Object.assign({}, defaultUseASConfig, overrides, userConfig);
-}
-
-function readSourceConfig(source, overrides) {
-  return Object.assign({}, defaultUseASConfig, overrides, {source, [sourceConfigurationSecretSymbol]: true});
-}
-
-function readHybridSourceConfig(userConfig, overrides) {
-  return Object.assign({}, defaultUseASConfig, userConfig, overrides, {
-    source: userConfig.source,
-    [sourceConfigurationSecretSymbol]: true
-  });
 }
 
 const defaultAnonymousPrefix = "anonymous-async-state-";
@@ -38,7 +34,3 @@ export const nextKey = (function autoKey() {
     return `${defaultAnonymousPrefix}${key}`;
   }
 }());
-
-function readConfigFromProducerFunction(producer, overrides) {
-  return Object.assign({}, defaultUseASConfig, overrides, {producer});
-}

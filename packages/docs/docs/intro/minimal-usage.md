@@ -61,7 +61,7 @@ const value = useAsyncState({
   selector: (currentState, lastSuccess) => currentState,
   areEqual: (prev, next) => prev === next,
 
-  producer (argv) {}
+  producer (props) {}
 }, []);
 ```
 
@@ -82,7 +82,7 @@ useAsyncState("current-user"); // subscribes or waits for the async state 'curre
 useAsyncState(() => fetchStoreData(storeId), [storeId]);// fetches store data whenever the store id changes
 useAsyncState(async () => await fetchUserPosts(userId), [userId]);// fetches user posts
 
-useAsyncState(function* getCurrentUser(argv) {
+useAsyncState(function* getCurrentUser(props) {
   const user = yield fetchCurrentUser();
   const [permissions, stores] = yield Promise.all([fetchUserPermissions(user.id), fetchUserStores(user.id)]);
   return {user, permissions, stores};

@@ -1,7 +1,7 @@
 export function timeoutProducer(delay = 2000) {
-  return function delayed(argv) {
+  return function delayed(props) {
     let timeoutId;
-    argv.onAbort(function cancelTimeout() {
+    props.onAbort(function cancelTimeout() {
       clearTimeout(timeoutId);
     });
 
@@ -15,12 +15,12 @@ export function timeoutProducer(delay = 2000) {
 }
 
 // function returns state value
-// argv
+// props
 
-export function* usersProducer(argv) {
+export function* usersProducer(props) {
   const controller = new AbortController();
   const {signal} = controller;
-  argv.onAbort(function abortSignal() {
+  props.onAbort(function abortSignal() {
     controller.abort();
   });
 
@@ -28,10 +28,10 @@ export function* usersProducer(argv) {
     .then(res => res.json());
 }
 
-export function postsProducer(argv) {
+export function postsProducer(props) {
   const controller = new AbortController();
   const {signal} = controller;
-  argv.onAbort(function abortSignal() {
+  props.onAbort(function abortSignal() {
     controller.abort();
   });
 
@@ -39,14 +39,14 @@ export function postsProducer(argv) {
     .then(res => res.json());
 }
 
-export function getUserProducer(argv) {
+export function getUserProducer(props) {
   const controller = new AbortController();
   const {signal} = controller;
-  argv.onAbort(function abortSignal() {
+  props.onAbort(function abortSignal() {
     controller.abort();
   });
 
-  return fetch(`https://jsonplaceholder.typicode.com/users/${argv.payload?.matchParams?.userId}`, {signal})
+  return fetch(`https://jsonplaceholder.typicode.com/users/${props.payload?.matchParams?.userId}`, {signal})
     .then(res => res.json());
 }
 

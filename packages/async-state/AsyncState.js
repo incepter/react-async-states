@@ -1,4 +1,4 @@
-import { __DEV__, AsyncStateStatus, cloneArgs, invokeIfPresent, shallowClone } from "shared";
+import { __DEV__, AsyncStateStatus, cloneProducerProps, invokeIfPresent, shallowClone } from "shared";
 import { wrapProducerFunction } from "./wrap-producer-function";
 import {
   AsyncStateStateBuilder,
@@ -92,34 +92,34 @@ AsyncState.prototype.run = function run(...execArgs) {
 
   const that = this;
 
-  let userAborters = [];
+  let onAbortCallbacks = [];
 
-  const argv = {
+  const props = {
     abort,
     args: execArgs,
     aborted: false,
     payload: this.payload,
     lastSuccess: this.lastSuccess,
     onAbort(cb) {
-      userAborters.push(cb);
+      onAbortCallbacks.push(cb);
     }
   };
 
   function abort(reason) {
-    if (argv.aborted) {
+    if (props.aborted) {
       // already aborted!
       return;
     }
-    argv.aborted = true;
-    that.setState(AsyncStateStateBuilder.aborted(reason, cloneArgs(argv)));
-    userAborters.forEach(function clean(func) {
+    props.aborted = true;
+    that.setState(AsyncStateStateBuilder.aborted(reason, cloneProducerProps(props)));
+    onAbortCallbacks.forEach(function clean(func) {
       invokeIfPresent(func, reason);
     });
     that.currentAborter = undefined;
   }
 
   this.currentAborter = abort;
-  this.producer(argv);
+  this.producer(props);
   return this.currentAborter;
 }
 

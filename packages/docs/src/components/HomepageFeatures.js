@@ -49,7 +49,7 @@ const FeatureList = [
     Svg: require('../../static/img/undraw_docusaurus_react.svg').default,
     description: (
       <>
-        Registering a cancellation <code>callback</code> is as easy as: <code>argv.onAbort(callback)</code>.
+        Registering a cancellation <code>callback</code> is as easy as: <code>props.onAbort(callback)</code>.
       </>
     ),
   },

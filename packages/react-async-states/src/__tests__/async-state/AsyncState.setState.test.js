@@ -22,7 +22,7 @@ describe('AsyncState - setState', () => {
     myAsyncState.setState(AsyncStateStateBuilder.pending({}));
     // then
     let expectedState = {
-      argv: {},
+      props: {},
       data: null,
       status: AsyncStateStatus.pending,
     };
@@ -42,7 +42,7 @@ describe('AsyncState - setState', () => {
     // then
     expect(updater).toHaveBeenCalledTimes(1);
     expect(myAsyncState.currentState).toEqual({
-      argv: {},
+      props: {},
       data: {},
       status: AsyncStateStatus.success,
     });

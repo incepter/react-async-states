@@ -66,7 +66,7 @@ function WaitingDemo() {
 }
 
 function WaitingHoister() {
-  const {state} = useAsyncState({key: "waiting_demo", hoistToProvider: true, initialValue: "haha", producer: argv => argv.args[0] ?? 5});
+  const {state} = useAsyncState({key: "waiting_demo", hoistToProvider: true, initialValue: "haha", producer: props => props.args[0] ?? 5});
 
   return "hoister:" + JSON.stringify(state);
 }

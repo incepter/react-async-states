@@ -6,10 +6,10 @@ export function promiseOf(resolvedValue) {
   })
 }
 
-export function bindAbortAndCancelToken(argv) {
+export function bindAbortAndCancelToken(props) {
   const source = axios.CancelToken.source();
 
-  argv.onAbort(function abortCb() {
+  props.onAbort(function abortCb() {
     source.cancel();
   })
 

@@ -2,31 +2,31 @@ import { fetchUserData, fetchUserPosts, fetchUsersList } from "./api";
 import { bindAbortAndCancelToken, omitSearchParams } from "../../shared/utils";
 import { createSourceAsyncState } from "react-async-states";
 
-export function* getCurrentUser(argv) {
-  const cancelToken = bindAbortAndCancelToken(argv);
+export function* getCurrentUser(props) {
+  const cancelToken = bindAbortAndCancelToken(props);
 
-  return yield fetchUserData(argv.payload.userId, {cancelToken});
+  return yield fetchUserData(props.payload.userId, {cancelToken});
 }
 
-export function getUserDetails(argv) {
-  if (!argv.payload.userId) {
+export function getUserDetails(props) {
+  if (!props.payload.userId) {
     throw "userId is required";
   }
-  const cancelToken = bindAbortAndCancelToken(argv);
+  const cancelToken = bindAbortAndCancelToken(props);
 
-  return fetchUserData(argv.payload.userId, {cancelToken});
+  return fetchUserData(props.payload.userId, {cancelToken});
 }
 
-export function* getUsersList(argv) {
-  const cancelToken = bindAbortAndCancelToken(argv);
+export function* getUsersList(props) {
+  const cancelToken = bindAbortAndCancelToken(props);
 
-  return yield fetchUsersList({params: omitSearchParams(argv.payload.queryString), cancelToken});
+  return yield fetchUsersList({params: omitSearchParams(props.payload.queryString), cancelToken});
 }
 
-export function* getUserPosts(argv) {
-  const cancelToken = bindAbortAndCancelToken(argv);
+export function* getUserPosts(props) {
+  const cancelToken = bindAbortAndCancelToken(props);
 
-  return yield fetchUserPosts(argv.payload.userId, {cancelToken});
+  return yield fetchUserPosts(props.payload.userId, {cancelToken});
 }
 
 

@@ -7,15 +7,15 @@ sidebar_label: Intro
 
 ## What is this ?
 This is a library for decentralized state management in React.
-It assumes that state is issued from a function called the `the producer function`.
+It assumes that state is issued from a function called the `the producer function` with a single parameter called `props`.
 
-The state value is then composed of three properties:
+The state value is composed of three properties:
 
 |Property|Type                                   |Description              |
 |--------|---------------------------------------|-------------------------|
 |`data`  |`T`                                    | The returned data from the `producer function` |
 |`status`|`initial,pending,success,error,aborted`| The status of the state |
-|`argv`  |`ArgvObject`                           | The argument object that the producer was ran with |
+|`props`  |`ProducerProps`                       | The argument object that the producer was ran with (the `props`) |
 
 To use the states provided by the library, you need to provide the following:
 

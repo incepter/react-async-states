@@ -1,5 +1,5 @@
 import React from "react";
-import { createReducerPromise, useAsyncState, useAsyncStateSelector } from "react-async-states";
+import { createReducerProducer, useAsyncState, useAsyncStateSelector } from "react-async-states";
 
 function reducer(old, name, value) {
   return {...old, [name]: value};
@@ -12,7 +12,7 @@ export default function Demo() {
     key: "login-form",
     hoistToProvider: true,
     initialValue: {hello: "world!"},
-    producer: createReducerPromise(reducer),
+    producer: createReducerProducer(reducer),
     rerenderStatus: {pending: false, success: false}
   });
 

@@ -1,9 +1,9 @@
 import React from "react";
 import { createSourceAsyncState, useAsyncState } from "react-async-states";
 
-function* reduxProducer(argv) {
-  yield argv.lastSuccess.data.store.dispatch(...argv.args, argv);
-  return argv.lastSuccess.data;
+function* reduxProducer(props) {
+  yield props.lastSuccess.data.store.dispatch(...props.args, props);
+  return props.lastSuccess.data;
 }
 
 const initialRedux = {}; // createReduxStore(reducers, middlewares...);
@@ -33,11 +33,11 @@ function DemoDemo() {
   const {state: {status}, lastSuccess: {data: lastSuccessData}, run} = useAsyncState({
     key: "some-name",
     hoistToProvider: true,
-    producer: (argv) => { // ./producers.js but works as inline
+    producer: (props) => { // ./producers.js but works as inline
       const controller = new AbortController();
       const {signal} = controller;
-      argv.onAbort(() => controller.abort());
-      return fetch(`https://jsonplaceholder.typicode.com/users/${argv.args[0]}`, {signal}).then(res => res.json())
+      props.onAbort(() => controller.abort());
+      return fetch(`https://jsonplaceholder.typicode.com/users/${props.args[0]}`, {signal}).then(res => res.json())
     },
   });
 

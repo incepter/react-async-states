@@ -7,10 +7,10 @@ export function Inject() {
     initialValue: {},
     key: "hakky-login",
     hoistToProvider: true,
-    producer(argv) {
-      argv.payload.__provider__.select()
-      argv.payload.__provider__.run("", "", "");
-      return {...argv.lastSuccess.data, [argv.args[0]]: argv.args[1]};
+    producer(props) {
+      props.payload.__provider__.select()
+      props.payload.__provider__.run("", "", "");
+      return {...props.lastSuccess.data, [props.args[0]]: props.args[1]};
     }
   });
 
@@ -19,10 +19,10 @@ export function Inject() {
 
 
 
-function getUser(argv) {
+function getUser(props) {
   const controller = new AbortController();
-  argv.onAbort(() => {controller.abort()});
-  console.log('argv', argv.payload.userId);
+  props.onAbort(() => {controller.abort()});
+  console.log('props', props.payload.userId);
   return fetch(`https://jsonplaceholder.typicode.com/users`, {signal: controller.signal}).then(r => r.json());
 }
 

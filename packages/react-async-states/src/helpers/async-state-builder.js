@@ -1,5 +1,3 @@
-import { createReducerProducer } from "./create-producer";
-
 export function AsyncStateBuilder() {
   let output = {initialValue: null};
 
@@ -18,16 +16,4 @@ export function AsyncStateBuilder() {
     return output;
   }
   return builder;
-}
-
-export function createAsyncState(key, producer, initialValue) {
-  return AsyncStateBuilder()
-    .key(key)
-    .producer(producer)
-    .initialValue(initialValue)
-    .build();
-}
-
-export function createReducerAsyncState(key, reducer, initialValue) {
-  return createAsyncState(key, createReducerProducer(reducer), initialValue)
 }
