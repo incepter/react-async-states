@@ -9,7 +9,7 @@ sidebar_label: Intro
 This is a library for decentralized state management in React.
 It assumes that state is issued from a function called the `the producer function`.
 
-The state value is then composed of three properties:
+The state value is composed of three properties:
 
 |Property|Type                                   |Description              |
 |--------|---------------------------------------|-------------------------|

@@ -91,6 +91,7 @@ export function inferAsyncStateInstance(mode, configuration, contextValue) {
 
 export const sourceConfigurationSecretSymbol = Symbol();
 
+// todo: remove falsy values
 export const defaultUseASConfig = Object.freeze({
   source: undefined,
 
