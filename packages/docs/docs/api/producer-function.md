@@ -52,10 +52,10 @@ The following functions are all supported by the library:
 
 ```javascript
 // retrives current user, his permissions and allowed stores before resolving
-function* getCurrentUser(argv) {
+function* getCurrentUser(props) {
   const controller = new AbortController();
   const {signal} = controller;
-  argv.onAbort(function abortFetch() {
+  props.onAbort(function abortFetch() {
     controller.abort();
   });
 
@@ -72,32 +72,32 @@ function* getCurrentUser(argv) {
   };
 }
 
-async function getCurrentUserPosts(argv) {
+async function getCurrentUserPosts(props) {
   // [...] abort logic
-  return await fetchUserPosts(argv.payload.principal.id, {signal});
+  return await fetchUserPosts(props.payload.principal.id, {signal});
 }
 
-async function getTransactionsList(argv) {
+async function getTransactionsList(props) {
   // abort logic
-  return await fetchUserTransactions(argv.payload.principal.id, {query: argv.payload.queryString, signal});
+  return await fetchUserTransactions(props.payload.principal.id, {query: props.payload.queryString, signal});
 }
 
-function timeout(argv) {
+function timeout(props) {
   let timeoutId;
-  argv.onAbort(function clear() {
+  props.onAbort(function clear() {
     clearTimeout(timeoutId);
   });
 
   return new Promise(function resolver(resolve) {
-    const callback = () => resolve(invokeIfPresent(argv.payload.callback));
-    timeoutId = setTimeout(callback, argv.payload.delay);
+    const callback = () => resolve(invokeIfPresent(props.payload.callback));
+    timeoutId = setTimeout(callback, props.payload.delay);
   });
 }
 
-function reducer(argv) {
-  const action = argv.args[0];
+function reducer(props) {
+  const action = props.args[0];
   switch(action.type) {
-    case type1: return {...argv.lastSuccess.data, ...action.newData};
+    case type1: return {...props.lastSuccess.data, ...action.newData};
     case type2: return {...action.data};
     
     // mixed sync and async reducers is possible

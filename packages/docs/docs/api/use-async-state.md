@@ -158,16 +158,16 @@ useAsyncState({
       showNotification();
     }
   },
-  producer(argv) {
-    timeout(argv.payload.delay)
+  producer(props) {
+    timeout(props.payload.delay)
     .then(function callSuccess() {
-      if (!argv.aborted) {
+      if (!props.aborted) {
         // notice that we are taking onSuccess from payload, not from component's closure
         // that's the way to go, this creates a separation of concerns
         // and your producer may be extracted outisde this file, and will be easier to test
         // but in general, please avoid code like this, and make it like an effect reacting to a value
         // (the state data for example)
-        argv.payload.onSuccess();
+        props.payload.onSuccess();
       }
     })
   }
@@ -176,12 +176,12 @@ useAsyncState({
 // hoists a controlled form to provider
 useAsyncState({
   key: "some-form",
-  producer(argv) {
-    const [name, value] = argv.args;
+  producer(props) {
+    const [name, value] = props.args;
     if (!name) {
-      return argv.lastSuccess.data;
+      return props.lastSuccess.data;
     }
-    return {...argv.lastSuccess.data, [name]: value};
+    return {...props.lastSuccess.data, [name]: value};
   },
   hoistToProvider: true,
   rerenderStatus: {pending: false, success: false},

@@ -46,22 +46,18 @@ export function oneObjectIdentity(obj) {
   return obj;
 }
 
-export function cloneArgs(argv) {
-  return cloneAsyncStateArgsObject(argv);
-}
-
-export function cloneAsyncStateArgsObject(argsObj) {
+export function cloneProducerProps(props) {
   const output = {};
 
-  if (argsObj.lastSuccess && Object.keys(argsObj.lastSuccess).length) {
-    output.lastSuccess = shallowClone(argsObj.lastSuccess);
-    delete output.lastSuccess.argv; // cut the circular ref here
+  if (props.lastSuccess && Object.keys(props.lastSuccess).length) {
+    output.lastSuccess = shallowClone(props.lastSuccess);
+    delete output.lastSuccess.props; // cut the circular ref here
   }
-  output.payload = shallowClone(argsObj.payload);
+  output.payload = shallowClone(props.payload);
   delete output.payload["__provider__"]; // no need!
 
-  if (Array.isArray(argsObj.args) && argsObj.args.length) {
-    output.args = [...argsObj.args];
+  if (Array.isArray(props.args) && props.args.length) {
+    output.args = [...props.args];
   }
 
   return output;

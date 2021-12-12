@@ -1,10 +1,10 @@
 import React from "react";
 import { useAsyncState } from "react-async-states";
 
-function producer(argv) {
-  argv.onAbort(() => console.log('aborting!!'))
-  console.log('running!!', argv.payload)
-  return argv.payload.entry;
+function producer(props) {
+  props.onAbort(() => console.log('aborting!!'))
+  console.log('running!!', props.payload)
+  return props.payload.entry;
 }
 
 let meter = 0;

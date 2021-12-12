@@ -105,9 +105,9 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
     });
   }
 
-  function emitRunSync(asyncState, argv) {
+  function emitRunSync(asyncState, props) {
     emitJournalEvent(asyncState, {
-      payload: {argv, type: "sync"},
+      payload: {props, type: "sync"},
       type: devtoolsJournalEvents.run
     });
   }
@@ -119,16 +119,16 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
     });
   }
 
-  function emitRunGenerator(asyncState, argv) {
+  function emitRunGenerator(asyncState, props) {
     emitJournalEvent(asyncState, {
-      payload: {argv, type: "generator"},
+      payload: {props, type: "generator"},
       type: devtoolsJournalEvents.run
     });
   }
 
-  function emitRunPromise(asyncState, argv) {
+  function emitRunPromise(asyncState, props) {
     emitJournalEvent(asyncState, {
-      payload: {argv, type: "promise"},
+      payload: {props, type: "promise"},
       type: devtoolsJournalEvents.run
     });
   }

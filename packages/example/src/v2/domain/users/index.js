@@ -175,10 +175,10 @@ function UserDetailsPageImpl2() {
 //   selector: (s, lastSu) => [],
 //   areEqual: (prev, next) => true,
 //
-//   producer (argv) {}
+//   producer (props) {}
 // }, []);
 //
-// const argv = {
+// const props = {
 //   payload, // combined, __provider__.select/run, principal, queryString, pathname, onSuccess
 //
 //   aborted: false,
@@ -186,5 +186,5 @@ function UserDetailsPageImpl2() {
 //   abort() {},
 //
 //   args: [],
-//   lastSuccess: {status, data, argv},
+//   lastSuccess: {status, data, props},
 // }

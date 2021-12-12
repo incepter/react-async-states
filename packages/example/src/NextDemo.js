@@ -7,7 +7,7 @@ function* fetchUser(id) {
 
 const user1Source = createSourceAsyncState("user1", () => fetchUser(1));
 const user2Source = createSourceAsyncState("user2", () => fetchUser(2));
-const userPayloadSource = createSourceAsyncState("userPayload", argv => fetchUser(argv.payload.userId));
+const userPayloadSource = createSourceAsyncState("userPayload", props => fetchUser(props.payload.userId));
 
 const name = s => s.data?.name;
 

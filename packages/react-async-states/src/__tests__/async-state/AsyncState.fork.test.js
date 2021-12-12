@@ -23,8 +23,8 @@ describe('AsyncState - fork', () => {
     expect(myAsyncState.subscriptions).toEqual({});
     expect(typeof myAsyncState.run).toBe("function");
     expect(myAsyncState.config).toEqual(shallowClone(defaultASConfig, myConfig));
-    expect(myAsyncState.lastSuccess).toEqual({argv: null, data: null, status: AsyncStateStatus.initial});
-    expect(myAsyncState.currentState).toEqual({data: null, status: AsyncStateStatus.initial, argv: null});
+    expect(myAsyncState.lastSuccess).toEqual({props: null, data: null, status: AsyncStateStatus.initial});
+    expect(myAsyncState.currentState).toEqual({data: null, status: AsyncStateStatus.initial, props: null});
 
     let forkedAsyncState = myAsyncState.fork();
     expect(myAsyncState.forkCount).toBe(1);

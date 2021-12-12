@@ -18,7 +18,7 @@ describe('AsyncState - run', () => {
     // then
     // should have initial status
     expect(myAsyncState.currentState).toEqual({
-      argv: null,
+      props: null,
       data: null,
       status: AsyncStateStatus.initial,
     });
@@ -26,7 +26,7 @@ describe('AsyncState - run', () => {
     myAsyncState.run();
     // should transition synchronously to pending state
     expect(myAsyncState.currentState).toEqual({
-      argv: {
+      props: {
         payload: {},
         lastSuccess: {
           data: null,
@@ -42,7 +42,7 @@ describe('AsyncState - run', () => {
     });
     // should be still in pending state while producer did not resolve yet
     expect(myAsyncState.currentState).toEqual({
-      argv: {
+      props: {
         payload: {},
         lastSuccess: {
           data: null,
@@ -58,7 +58,7 @@ describe('AsyncState - run', () => {
     });
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
-      argv: {
+      props: {
         payload: {},
         lastSuccess: {
           data: null,
@@ -85,7 +85,7 @@ describe('AsyncState - run', () => {
     });
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
-      argv: {
+      props: {
         payload: {},
         lastSuccess: {
           data: null,

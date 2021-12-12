@@ -11,7 +11,7 @@ The state value is then composed of three properties:
 |--------|---------------------------------------|-------------------------|
 |`data`  |`T`                                    | The returned data from the `producer function` |
 |`status`|`initial,pending,success,error,aborted`| The status of the state |
-|`argv`  |`ArgvObject`                           | The argument object that the producer was ran with |
+|`props`  |`propsObject`                           | The argument object that the producer was ran with |
 
 To use the states provided by the library, you need to provide the following:
 
@@ -45,7 +45,7 @@ Let's explore these APIs signatures first, it will give you the overall idea abo
 ```javascript
 // configuration: string | object | function | source
 function useAsyncState(configuration, dependencies = []) {
-  // state is whatever your selector returns, by default will return the whole state object with argv, data and status
+  // state is whatever your selector returns, by default will return the whole state object with props, data and status
   return { key, source, payload, run, abort, state, replaceState, mergePayload, runAsyncState };
 }
 
@@ -89,7 +89,7 @@ const {
   selector: (currentState, lastSuccess) => currentState,
   areEqual: (prev, next) => prev === next,
 
-  producer (argv) {}
+  producer (props) {}
 }, []);
 ```
 
@@ -103,7 +103,7 @@ useAsyncState("current-user"); // subscribes or waits for the async state 'curre
 useAsyncState(() => fetchStoreData(storeId), [storeId]);// fetches store data whenever the store id changes
 useAsyncState(async () => await fetchUserPosts(userId), [userId]);// fetches user posts
 
-useAsyncState(function* getCurrentUser(argv) {
+useAsyncState(function* getCurrentUser(props) {
   const user = yield fetchCurrentUser();
   const [permissions, stores] = yield Promise.all([fetchUserPermissions(user.id), fetchUserStores(user.id)]);
   return {user, permissions, stores};
@@ -231,10 +231,10 @@ The following functions are all supported by the library:
 
 ```javascript
 // retrives current user, his permissions and allowed stores before resolving
-function* getCurrentUser(argv) {
+function* getCurrentUser(props) {
   const controller = new AbortController();
   const {signal} = controller;
-  argv.onAbort(function abortFetch() {
+  props.onAbort(function abortFetch() {
     controller.abort();
   });
 
@@ -251,32 +251,32 @@ function* getCurrentUser(argv) {
   };
 }
 
-async function getCurrentUserPosts(argv) {
+async function getCurrentUserPosts(props) {
   // [...] abort logic
-  return await fetchUserPosts(argv.payload.principal.id, {signal});
+  return await fetchUserPosts(props.payload.principal.id, {signal});
 }
 
-async function getTransactionsList(argv) {
+async function getTransactionsList(props) {
   // abort logic
-  return await fetchUserTransactions(argv.payload.principal.id, {query: argv.payload.queryString, signal});
+  return await fetchUserTransactions(props.payload.principal.id, {query: props.payload.queryString, signal});
 }
 
-function timeout(argv) {
+function timeout(props) {
   let timeoutId;
-  argv.onAbort(function clear() {
+  props.onAbort(function clear() {
     clearTimeout(timeoutId);
   });
 
   return new Promise(function resolver(resolve) {
-    const callback = () => resolve(invokeIfPresent(argv.payload.callback));
-    timeoutId = setTimeout(callback, argv.payload.delay);
+    const callback = () => resolve(invokeIfPresent(props.payload.callback));
+    timeoutId = setTimeout(callback, props.payload.delay);
   });
 }
 
-function reducer(argv) {
-  const action = argv.args[0];
+function reducer(props) {
+  const action = props.args[0];
   switch(action.type) {
-    case type1: return {...argv.lastSuccess.data, ...action.newData};
+    case type1: return {...props.lastSuccess.data, ...action.newData};
     case type2: return {...action.data};
     
     // mixed sync and async reducers is possible
@@ -317,8 +317,8 @@ let demoAsyncStates = {
   users: {
     key: "users",
     initialValue: [],
-    producer: async function getUsers(argv) {
-      return await fetchUsers(argv.payload.queryString);
+    producer: async function getUsers(props) {
+      return await fetchUsers(props.payload.queryString);
     },
   },
   currentUser: {
@@ -335,9 +335,9 @@ let demoAsyncStates = {
   localTodos: {
     key: "something",
     initialValue: {},
-    producer: function todosReducerPromise(argv) {
+    producer: function todosReducerPromise(props) {
       // myTodosReducer is a regular reducer(state, action) that returns the new state value, my guess is that you've wrote many
-      return myTodosReducer(argv.lastSuccess, ...argv.args);
+      return myTodosReducer(props.lastSuccess, ...props.args);
     }
   },
 }
@@ -513,16 +513,16 @@ useAsyncState({
       showNotification();
     }
   },
-  producer(argv) {
-    timeout(argv.payload.delay)
+  producer(props) {
+    timeout(props.payload.delay)
       .then(function callSuccess() {
-        if (!argv.aborted) {
+        if (!props.aborted) {
           // notice that we are taking onSuccess from payload, not from component's closure
           // that's the way to go, this creates a separation of concerns
           // and your producer may be extracted outisde this file, and will be easier to test
           // but in general, please avoid code like this, and make it like an effect reacting to a value
           // (the state data for example)
-          argv.payload.onSuccess();
+          props.payload.onSuccess();
         }
       })
   }
@@ -531,12 +531,12 @@ useAsyncState({
 // hoists a controlled form to provider
 useAsyncState({
   key: "some-form",
-  producer(argv) {
-    const [name, value] = argv.args;
+  producer(props) {
+    const [name, value] = props.args;
     if (!name) {
-      return argv.lastSuccess.data;
+      return props.lastSuccess.data;
     }
-    return {...argv.lastSuccess.data, [name]: value};
+    return {...props.lastSuccess.data, [name]: value};
   },
   hoistToProvider: true,
   rerenderStatus: {pending: false, success: false},

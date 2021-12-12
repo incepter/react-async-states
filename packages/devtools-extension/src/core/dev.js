@@ -686,7 +686,7 @@ export const mapmock = {
         "eventType": "run",
         "eventDate": 1632407743871,
         "eventPayload": {
-          "argv": {
+          "props": {
             "args": [],
             "payload": {},
             "aborted": false,

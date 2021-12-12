@@ -105,8 +105,8 @@ function ReplaceStateListener() {
 const reducerProducer = {
   key: "reducer_producer",
   hoistToProvider: false,
-  producer(argv) {
-    const {args: [userInput]} = argv;
+  producer(props) {
+    const {args: [userInput]} = props;
     if (userInput > 10) {
       return "OK good!";
     }

@@ -30,7 +30,7 @@ describe('AsyncState - subscriptions', () => {
     expect(subscriptionFn.mock.calls).toEqual(
       [
         [{
-          argv: {
+          props: {
             payload: {},
             lastSuccess: {
               data: null, status: AsyncStateStatus.initial
@@ -40,7 +40,7 @@ describe('AsyncState - subscriptions', () => {
           status: AsyncStateStatus.pending
         }],
         [{
-          argv: {
+          props: {
             payload: {},
             lastSuccess: {
               data: null, status: AsyncStateStatus.initial
@@ -53,7 +53,7 @@ describe('AsyncState - subscriptions', () => {
     );
     expect(subscriptionFn).toHaveBeenCalledTimes(2);
     expect(myAsyncState.currentState).toEqual({
-      argv: {
+      props: {
         payload: {},
         lastSuccess: {
           data: null, status: AsyncStateStatus.initial
@@ -88,7 +88,7 @@ describe('AsyncState - subscriptions', () => {
     expect(subscriptionFn.mock.calls).toEqual(
       [
         [{
-          argv: {
+          props: {
             payload: {},
             lastSuccess: {
               data: null, status: AsyncStateStatus.initial
@@ -99,7 +99,7 @@ describe('AsyncState - subscriptions', () => {
     );
     expect(subscriptionFn).toHaveBeenCalledTimes(1);
     expect(myAsyncState.currentState).toEqual({
-      argv: {
+      props: {
         payload: {},
         lastSuccess: {
           data: null, status: AsyncStateStatus.initial
@@ -131,7 +131,7 @@ describe('AsyncState - subscriptions', () => {
     expect(subscriptionFn.mock.calls).toEqual([]);
     expect(subscriptionFn).toHaveBeenCalledTimes(0);
     expect(myAsyncState.currentState).toEqual({ // original async state resolved, but we got notified neither by pending nor success
-      argv: {
+      props: {
         payload: {},
         lastSuccess: {
           data: null, status: AsyncStateStatus.initial

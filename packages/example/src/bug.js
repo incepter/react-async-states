@@ -11,16 +11,16 @@ function timeout(delay, resolveValue, setTimeoutId) {
   });
 }
 
-function* doSomething(argv) {
-  const searchValue = argv.args[0];
+function* doSomething(props) {
+  const searchValue = props.args[0];
   const delay = !searchValue ? 0 : 3000 / searchValue.length;
   let timeoutId = null;
-  argv.onAbort(() => clearTimeout(timeoutId));
+  props.onAbort(() => clearTimeout(timeoutId));
 
   const returnValue = yield timeout(delay, searchValue, (id) => {
     timeoutId = id;
   });
-  yield argv.payload.onSuccess();
+  yield props.payload.onSuccess();
 
   return returnValue;
 }
@@ -39,7 +39,7 @@ function invokeIfPresent(fn, ...args) {
 
 function AppWrapped() {
   const {
-    state: { status, data, argv },
+    state: { status, data, props },
     abort,
     run
   } = useAsyncState({
@@ -69,14 +69,14 @@ function AppWrapped() {
         placeholder="type something"
       />
       <hr />
-      <h2>Search value: {JSON.stringify(argv?.args?.[0])}</h2>
+      <h2>Search value: {JSON.stringify(props?.args?.[0])}</h2>
       <hr />
       <h3>status: {status}</h3>
       {status === "pending" && (
         <button onClick={() => abort("USER BGHA")}>Abort</button>
       )}
       {status === "aborted" && (
-        <button onClick={() => run(argv?.args?.[0])}>
+        <button onClick={() => run(props?.args?.[0])}>
           Retry
         </button>
       )}

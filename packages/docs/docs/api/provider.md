@@ -32,8 +32,8 @@ let demoAsyncStates = {
   users: {
     key: "users",
     initialValue: [],
-    producer: async function getUsers(argv) {
-      return await fetchUsers(argv.payload.queryString);
+    producer: async function getUsers(props) {
+      return await fetchUsers(props.payload.queryString);
     },
   },
   currentUser: {
@@ -50,9 +50,9 @@ let demoAsyncStates = {
   localTodos: {
     key: "something",
     initialValue: {},
-    producer: function todosReducerPromise(argv) {
+    producer: function todosReducerPromise(props) {
       // myTodosReducer is a regular reducer(state, action) that returns the new state value, my guess is that you've wrote many
-      return myTodosReducer(argv.lastSuccess, ...argv.args);
+      return myTodosReducer(props.lastSuccess, ...props.args);
     }
   },
 }
