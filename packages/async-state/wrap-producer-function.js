@@ -66,19 +66,6 @@ function isGenerator(candidate) {
 }
 
 function wrapStartedGenerator(generatorInstance, props) {
-  const syncResult = runUntilPromiseEncounter(generatorInstance);
-
-  if (!syncResult.done) {
-    return new Promise((resolve, reject) => {
-      const abortGenerator = stepAsyncAndContinueStartedGenerator(generatorInstance, syncResult.value, resolve, reject);
-      props.onAbort(abortGenerator);
-    });
-  } else {
-    return syncResult;
-  }
-}
-
-function runUntilPromiseEncounter(generatorInstance) {
   let {done: actualDone, value: actualValue} = generatorInstance.next();
 
   while (!actualDone && !isPromise(actualValue)) {
@@ -87,7 +74,15 @@ function runUntilPromiseEncounter(generatorInstance) {
     actualDone = done;
   }
 
-  return {done: actualDone, value: actualValue};
+  if (actualDone) {
+    return {done: actualDone, value: actualValue};
+  } else {
+    // encountered a promise
+    return new Promise((resolve, reject) => {
+      const abortGenerator = stepAsyncAndContinueStartedGenerator(generatorInstance, actualValue, resolve, reject);
+      props.onAbort(abortGenerator);
+    });
+  }
 }
 
 function stepAsyncAndContinueStartedGenerator(generatorInstance, startupValue, onDone, onReject) {
