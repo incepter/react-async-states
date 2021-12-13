@@ -8,6 +8,7 @@ export default function Demo() {
   const history = useHistory();
   const params = useParams();
 
+  console.log('render', params)
   const {state: {status, data}, lastSuccess, abort} = useAsyncState({
     lazy: false,
     payload: {matchParams: params},

@@ -104,7 +104,7 @@ function GeneratorsTests() {
   return (
     <>
       <GeneratorSync/>
-      <React.Suspense fallback="pending...">
+      <React.Suspense fallback="pending.............................................">
         <GeneratorAsync/>
       </React.Suspense>
     </>
@@ -120,17 +120,21 @@ function* syncGenExample() {
 }
 
 function GeneratorSync() {
-  React.useLayoutEffect(() => () => console.log('unmounting!! sync'), []);
   const {state} = useAsyncState.auto(syncGenExample);
-  console.log('sync generator value', state);
+  // console.log('sync generator value', state);
   return null;
 }
 
-function* asyncGenExample() {
+function* asyncGenExample(props) {
   for (let i = 0; i < 10; i++) {
     yield i;
   }
-  return yield fetch("https://jsonplaceholder.typicode.com/users/1").then(r => r.json());
+  let timeoutId;
+  props.onAbort(function onAbort() {
+    console.log('aborting timeout id', timeoutId);
+    clearTimeout(timeoutId);
+  });
+  return yield new Promise(resolve => timeoutId = setTimeout(resolve, 10000));
   // try {
   //   throw new Error("testing");
   // } catch (e) {
@@ -139,8 +143,18 @@ function* asyncGenExample() {
 }
 
 function GeneratorAsync() {
-  React.useLayoutEffect(() => () => console.log('unmounting!! async'), []);
-  const {state} = useAsyncState.auto(asyncGenExample);
-  console.log('async generator value', state);
+  React.useLayoutEffect(() => {
+    console.log('async mounted layout effect');
+    return () => console.log('unmounting layout effect!! async');
+  }, []);
+  React.useEffect(() => {
+    console.log('async mounted');
+    return () => console.log('unmounting!! async');
+  }, []);
+  const {state, read} = useAsyncState.auto(asyncGenExample);
+  React.useEffect(() => {
+    console.log('status change', state.status);
+  }, [state.status])
+  console.log('async generator value', read());
   return null;
 }

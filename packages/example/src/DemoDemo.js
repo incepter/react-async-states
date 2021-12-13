@@ -29,13 +29,14 @@ function getUser(props) {
 
 
 export default function DemoDemo() {
+  const [isPending, startTransition] = React.useTransition();
   const {state: {status, data}, run} = useAsyncState(demoAsyncStates.users);
 
   console.log(data);
   return (
     <>
       <input onChange={e => {
-        run()
+        startTransition(run);
       }} />
       <br />
       {status}

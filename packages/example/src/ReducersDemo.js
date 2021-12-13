@@ -13,8 +13,8 @@ function Wrapper({children, initialValue = true}) {
   );
 }
 
-function TimeoutSubscription() {
-  const {state: {status}, key, run} = useAsyncState.auto(demoAsyncStates.timeout.key);
+function TimeoutSubscription({ mode }) {
+  const {state: {status}, key, run} = useAsyncState[mode](demoAsyncStates.timeout.key);
 
   return (
     <div>
@@ -29,10 +29,10 @@ export default function Demo() {
   return (
     <>
       <Wrapper>
-        <TimeoutSubscription/>
+        <TimeoutSubscription mode="lazy"/>
       </Wrapper>
       <Wrapper>
-        <TimeoutSubscription/>
+        <TimeoutSubscription mode="auto"/>
       </Wrapper>
 
       <br />
@@ -59,10 +59,10 @@ export default function Demo() {
 function WaitingDemo() {
   const {key, state, run, mode} = useAsyncState({key: "waiting_demo", selector: s => s.data});
 
-  return <p>
+  return <span>
     {mode+" waiting for state: " + key + " , " + JSON.stringify(state ?? {})}
     <button onClick={() => run()}>Run</button>
-  </p>;
+  </span>;
 }
 
 function WaitingHoister() {

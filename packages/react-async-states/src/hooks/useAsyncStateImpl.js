@@ -87,7 +87,7 @@ export const useAsyncStateImpl = function useAsyncStateImpl(subscriptionConfig, 
   if (isInsideProvider) {
     // wait early
     // this sets  a watcher to observe present async state
-    React.useLayoutEffect(function watchAsyncState() {
+    React.useEffect(function watchAsyncState() {
       switch (mode) {
         case AsyncStateSubscriptionMode.FORK:
         case AsyncStateSubscriptionMode.HOIST:
@@ -162,9 +162,6 @@ export const useAsyncStateImpl = function useAsyncStateImpl(subscriptionConfig, 
     }
   }, [dispose]);
 
-  if (suspendedStatuses[refs.current.returnValue.state?.status] && !!asyncState.suspender) {
-    throw asyncState.suspender;
-  }
   return refs.current.returnValue;
 }
 
