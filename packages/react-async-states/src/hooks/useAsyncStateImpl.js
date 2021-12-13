@@ -1,5 +1,5 @@
 import React from "react";
-import { EMPTY_ARRAY, EMPTY_OBJECT, invokeIfPresent, shallowClone } from "shared";
+import { AsyncStateStatus, EMPTY_ARRAY, EMPTY_OBJECT, invokeIfPresent, shallowClone } from "shared";
 import { AsyncStateContext } from "../context";
 import {
   applyUpdateOnReturnValue,
@@ -124,7 +124,7 @@ export const useAsyncStateImpl = function useAsyncStateImpl(subscriptionConfig, 
   }
 
   // the subscription to state change along with the decision to re-render
-  React.useLayoutEffect(function subscribeToAsyncState() {
+  React.useEffect(function subscribeToAsyncState() {
     if (!asyncState) {
       return undefined;
     }
@@ -162,5 +162,13 @@ export const useAsyncStateImpl = function useAsyncStateImpl(subscriptionConfig, 
     }
   }, [dispose]);
 
+  if (suspendedStatuses[refs.current.returnValue.state?.status] && !!asyncState.suspender) {
+    throw asyncState.suspender;
+  }
   return refs.current.returnValue;
 }
+
+const suspendedStatuses = Object.freeze({
+  [AsyncStateStatus.initial]: true,
+  [AsyncStateStatus.pending]: true,
+});

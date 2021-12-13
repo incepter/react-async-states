@@ -104,7 +104,9 @@ function GeneratorsTests() {
   return (
     <>
       <GeneratorSync/>
-      <GeneratorAsync/>
+      <React.Suspense fallback="pending...">
+        <GeneratorAsync/>
+      </React.Suspense>
     </>
   );
 }
@@ -116,7 +118,9 @@ function* syncGenExample() {
   // throw 5;
   return yield 10_001;
 }
+
 function GeneratorSync() {
+  React.useLayoutEffect(() => () => console.log('unmounting!! sync'), []);
   const {state} = useAsyncState.auto(syncGenExample);
   console.log('sync generator value', state);
   return null;
@@ -133,7 +137,9 @@ function* asyncGenExample() {
   //   throw e;
   // }
 }
+
 function GeneratorAsync() {
+  React.useLayoutEffect(() => () => console.log('unmounting!! async'), []);
   const {state} = useAsyncState.auto(asyncGenExample);
   console.log('async generator value', state);
   return null;

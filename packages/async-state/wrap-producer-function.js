@@ -37,13 +37,15 @@ export function wrapProducerFunction(asyncState) {
         asyncState.setState(AsyncStateStateBuilder.success(generatorResult.value, savedProps));
         return;
       } else {
-        asyncState.setState(AsyncStateStateBuilder.pending(savedProps));
         runningPromise = generatorResult;
+        asyncState.suspender = runningPromise;
+        asyncState.setState(AsyncStateStateBuilder.pending(savedProps));
       }
     } else if (isPromise(executionValue)) {
       if (__DEV__) devtools.emitRunPromise(asyncState, props);
-      asyncState.setState(AsyncStateStateBuilder.pending(savedProps));
       runningPromise = executionValue;
+      asyncState.suspender = runningPromise;
+      asyncState.setState(AsyncStateStateBuilder.pending(savedProps));
     } else { // final value
       if (__DEV__) devtools.emitRunSync(asyncState, props);
       asyncState.setState(AsyncStateStateBuilder.success(executionValue, savedProps));

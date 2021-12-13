@@ -23,6 +23,7 @@ function AsyncState(key, producer, config) {
 
   this.subscriptions = {};
   this.producer = wrapProducerFunction(this);
+  this.suspender = undefined;
 
   this.__IS_FORK__ = false;
 
@@ -55,6 +56,7 @@ AsyncState.prototype.setState = function setState(newState, notify = true) {
   }
 
   if (this.currentState.status !== AsyncStateStatus.pending) {
+    this.suspender = undefined;
     this.currentAborter = undefined;
   }
   if (__DEV__) devtools.emitUpdate(this);
@@ -223,13 +225,13 @@ function makeSource(asyncState) {
 
 function notifySubscribers(asyncState) {
   Object.values(asyncState.subscriptions).forEach(t => {
-    invokeIfPresent(t.callback, asyncState.currentState);
+    t.callback(asyncState.currentState);
   });
 }
 
 function clearSubscribers(asyncState) {
   Object.values(asyncState.subscriptions).forEach(t => {
-    invokeIfPresent(t.cleanup);
+    t.cleanup();
   });
 }
 

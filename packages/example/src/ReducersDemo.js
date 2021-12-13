@@ -5,16 +5,16 @@ import { demoAsyncStates } from "./Provider";
 function Wrapper({children, initialValue = true}) {
   const [visible, setVisible] = React.useState(initialValue);
   return (
-    <div>
+    <React.Suspense fallback="Pending...">
       <button onClick={() => setVisible(!visible)}>{visible ? 'Hide' : 'Show'}</button>
       <br/>
       {visible && children}
-    </div>
+    </React.Suspense>
   );
 }
 
 function TimeoutSubscription() {
-  const {state: {status}, key, run} = useAsyncState({key: demoAsyncStates.timeout.key, lazy: false});
+  const {state: {status}, key, run} = useAsyncState.auto(demoAsyncStates.timeout.key);
 
   return (
     <div>

@@ -39,18 +39,22 @@ export default function Demo() {
         <section>
           <h3>Subscribe to global async state - {demoAsyncStates.users.key}</h3>
           <div style={{display: "flex"}}>
-            <SimpleSub
-              source={demoAsyncStates.users}
-              displayValue={data => data.map(user => <li
-                key={user.id}>{user.id} - {user.username} - {user.name} - {user.email}</li>)}
-            />
+            <React.Suspense fallback="pending...users">
+              <SimpleSub
+                source={demoAsyncStates.users}
+                displayValue={data => data.map(user => <li
+                  key={user.id}>{user.id} - {user.username} - {user.name} - {user.email}</li>)}
+              />
+            </React.Suspense>
             <hr/>
-            <SimpleSub
-              lazy
-              asyncStateKey={demoAsyncStates.posts.key}
-              displayValue={data => data.map(post => <li key={post.id}>{post.id} -
-                userId: {post.userId} - {post.title}</li>)}
-            />
+            <React.Suspense fallback="pending...posts">
+              <SimpleSub
+                lazy
+                asyncStateKey={demoAsyncStates.posts.key}
+                displayValue={data => data.map(post => <li key={post.id}>{post.id} -
+                  userId: {post.userId} - {post.title}</li>)}
+              />
+            </React.Suspense>
             <br/>
           </div>
         </section>
