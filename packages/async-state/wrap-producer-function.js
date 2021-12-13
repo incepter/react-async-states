@@ -1,4 +1,4 @@
-import { __DEV__, cloneProducerProps, invokeIfPresent } from "shared";
+import { __DEV__, cloneProducerProps } from "shared";
 import devtools from "devtools";
 import { AsyncStateStateBuilder } from "./utils";
 
@@ -26,10 +26,13 @@ export function wrapProducerFunction(asyncState) {
     if (isGenerator(executionValue)) {
       if (__DEV__) devtools.emitRunGenerator(asyncState, props);
       asyncState.setState(AsyncStateStateBuilder.pending(savedProps));
-      runningPromise = wrapStartedGenerator(executionValue, props);
-      if (runningPromise.done) {
-        asyncState.setState(AsyncStateStateBuilder.success(runningPromise.value, savedProps));
+      // generatorWrapResult is either {done, value} or a promise
+      const generatorWrapResult = wrapStartedGenerator(executionValue, props);
+      if (generatorWrapResult.done) {
+        asyncState.setState(AsyncStateStateBuilder.success(generatorWrapResult.value, savedProps));
         return;
+      } else {
+        runningPromise = generatorWrapResult;
       }
     } else if (isPromise(executionValue)) {
       if (__DEV__) devtools.emitRunPromise(asyncState, props);
@@ -66,20 +69,27 @@ function isGenerator(candidate) {
 }
 
 function wrapStartedGenerator(generatorInstance, props) {
-  let {done: actualDone, value: actualValue} = generatorInstance.next();
+  let done = undefined, value = undefined;
+  try {
+    let nextValue = generatorInstance.next();
+    done = nextValue.done;
+    value = nextValue.value;
 
-  while (!actualDone && !isPromise(actualValue)) {
-    const {done, value} = generatorInstance.next(actualValue);
-    actualValue = value;
-    actualDone = done;
+    while (!done && !isPromise(value)) {
+      const next = generatorInstance.next(value);
+      done = next.done;
+      value = next.value;
+    }
+  } catch (e) {
+    return Promise.reject(e);
   }
 
-  if (actualDone) {
-    return {done: actualDone, value: actualValue};
+  if (done) {
+    return {done, value};
   } else {
     // encountered a promise
     return new Promise((resolve, reject) => {
-      const abortGenerator = stepAsyncAndContinueStartedGenerator(generatorInstance, actualValue, resolve, reject);
+      const abortGenerator = stepAsyncAndContinueStartedGenerator(generatorInstance, value, resolve, reject);
       props.onAbort(abortGenerator);
     });
   }
@@ -88,28 +98,33 @@ function wrapStartedGenerator(generatorInstance, props) {
 function stepAsyncAndContinueStartedGenerator(generatorInstance, startupValue, onDone, onReject) {
   let aborted = false;
 
-  /**
-   * we enter here only if startupValue is pending promise of the generator instance!
-   */
+  // we enter here only if startupValue is pending promise of the generator instance!
   startupValue.then(step);
 
   function step(oldValue) {
-    let {done, value: actualValue} = generatorInstance.next(oldValue);
+    let done = undefined, value = undefined;
+    try {
+      let nextValue = generatorInstance.next(oldValue);
+      done = nextValue.done;
+      value = nextValue.value;
+    } catch(e) {
+      onReject(e);
+    }
 
+    // we don't know if value is a promise of a js-value
     Promise
-      .resolve(actualValue)
-      .then(function continueGenerator(value) {
+      .resolve(value)
+      .then(function continueGenerator(resolveValue) {
         if (!done && !aborted) {
-          step(value);
+          step(resolveValue);
         }
         if (done && !aborted) {
-          invokeIfPresent(onDone, value);
+          onDone(resolveValue);
         }
       })
       .catch(function onCatch(e) {
         if (!aborted && !done) {
-          invokeIfPresent(onReject, e);
-          generatorInstance.throw(e);
+          onReject(e);
         }
       });
   }

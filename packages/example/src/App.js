@@ -122,10 +122,16 @@ function GeneratorSync() {
 }
 
 function* asyncGenExample() {
-  for (let i = 0; i < 1_000; i++) {
+  for (let i = 0; i < 1_0; i++) {
     yield i;
   }
-  return yield fetch("https://jsonplaceholder.typicode.com/users/1").then(r => r.json());
+  // yield fetch("https://jsonplaceholder.typicode.com/users/1").then(r => r.json());
+  try {
+    throw new Error("testing");
+  } catch (e) {
+    console.log('inside generator e', e);
+    throw e;
+  }
 }
 function GeneratorAsync() {
   const {state} = useAsyncState.auto(asyncGenExample);
