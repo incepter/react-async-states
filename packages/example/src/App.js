@@ -110,9 +110,10 @@ function GeneratorsTests() {
 }
 
 function* syncGenExample() {
-  for (let i = 0; i < 10_000; i++) {
+  for (let i = 0; i < 10_0; i++) {
     yield i;
   }
+  // throw 5;
   return yield 10_001;
 }
 function GeneratorSync() {
@@ -122,16 +123,15 @@ function GeneratorSync() {
 }
 
 function* asyncGenExample() {
-  for (let i = 0; i < 1_0; i++) {
+  for (let i = 0; i < 10; i++) {
     yield i;
   }
-  // yield fetch("https://jsonplaceholder.typicode.com/users/1").then(r => r.json());
-  try {
-    throw new Error("testing");
-  } catch (e) {
-    console.log('inside generator e', e);
-    throw e;
-  }
+  return yield fetch("https://jsonplaceholder.typicode.com/users/1").then(r => r.json());
+  // try {
+  //   throw new Error("testing");
+  // } catch (e) {
+  //   throw e;
+  // }
 }
 function GeneratorAsync() {
   const {state} = useAsyncState.auto(asyncGenExample);

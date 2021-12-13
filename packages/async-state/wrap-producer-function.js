@@ -25,14 +25,20 @@ export function wrapProducerFunction(asyncState) {
 
     if (isGenerator(executionValue)) {
       if (__DEV__) devtools.emitRunGenerator(asyncState, props);
-      asyncState.setState(AsyncStateStateBuilder.pending(savedProps));
-      // generatorWrapResult is either {done, value} or a promise
-      const generatorWrapResult = wrapStartedGenerator(executionValue, props);
-      if (generatorWrapResult.done) {
-        asyncState.setState(AsyncStateStateBuilder.success(generatorWrapResult.value, savedProps));
+      // generatorResult is either {done, value} or a promise
+      let generatorResult;
+      try {
+        generatorResult = wrapStartedGenerator(executionValue, props);
+      } catch (e) {
+        asyncState.setState(AsyncStateStateBuilder.error(e, savedProps));
+        return;
+      }
+      if (generatorResult.done) {
+        asyncState.setState(AsyncStateStateBuilder.success(generatorResult.value, savedProps));
         return;
       } else {
-        runningPromise = generatorWrapResult;
+        asyncState.setState(AsyncStateStateBuilder.pending(savedProps));
+        runningPromise = generatorResult;
       }
     } else if (isPromise(executionValue)) {
       if (__DEV__) devtools.emitRunPromise(asyncState, props);
@@ -69,19 +75,12 @@ function isGenerator(candidate) {
 }
 
 function wrapStartedGenerator(generatorInstance, props) {
-  let done = undefined, value = undefined;
-  try {
-    let nextValue = generatorInstance.next();
-    done = nextValue.done;
-    value = nextValue.value;
+  let {done, value} = generatorInstance.next();
 
-    while (!done && !isPromise(value)) {
-      const next = generatorInstance.next(value);
-      done = next.done;
-      value = next.value;
-    }
-  } catch (e) {
-    return Promise.reject(e);
+  while (!done && !isPromise(value)) {
+    const next = generatorInstance.next(value);
+    done = next.done;
+    value = next.value;
   }
 
   if (done) {
@@ -107,7 +106,7 @@ function stepAsyncAndContinueStartedGenerator(generatorInstance, startupValue, o
       let nextValue = generatorInstance.next(oldValue);
       done = nextValue.done;
       value = nextValue.value;
-    } catch(e) {
+    } catch (e) {
       onReject(e);
     }
 
