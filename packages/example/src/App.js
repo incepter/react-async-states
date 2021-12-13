@@ -24,7 +24,7 @@ function OutsideProvider() {
   window.__AM_LAZY__ = data.source;
 
   return <button onClick={() => {
-    data.mergePayload({ userId: (data.payload.userId || 0) + 1 });
+    data.mergePayload({userId: (data.payload.userId || 0) + 1});
     data.run();
   }}>RUUUUUUUN{JSON.stringify(data.state.status)}-{JSON.stringify(data.lastSuccess.data?.id)}</button>;
 }
@@ -56,6 +56,7 @@ export default function App() {
 
   return (
     <Router>
+      <GeneratorsTests/>
       <OutsideProvider/>
       <DemoProvider>
         <InsideProvider/>
@@ -97,4 +98,36 @@ export default function App() {
     </Router>
   )
     ;
+}
+
+function GeneratorsTests() {
+  return (
+    <>
+      <GeneratorSync/>
+      <GeneratorAsync/>
+    </>
+  );
+}
+
+function* syncGenExample() {
+  for (let i = 0; i < 10_000; i++) {
+    yield i;
+  }
+  return yield 10_001;
+}
+function GeneratorSync() {
+  const {state} = useAsyncState.auto(syncGenExample);
+  return null;
+}
+
+function* asyncGenExample() {
+  for (let i = 0; i < 1_000; i++) {
+    yield i;
+  }
+  return yield fetch("https://jsonplaceholder.typicode.com/users/1").then(r => r.json());
+}
+function GeneratorAsync() {
+  const {state} = useAsyncState.auto(asyncGenExample);
+  console.log('async generator value', state);
+  return null;
 }
