@@ -1,4 +1,4 @@
-import { __DEV__, cloneProducerProps, invokeIfPresent } from "shared";
+import { __DEV__, cloneProducerProps } from "shared";
 import devtools from "devtools";
 import { AsyncStateStateBuilder } from "./utils";
 
@@ -25,8 +25,21 @@ export function wrapProducerFunction(asyncState) {
 
     if (isGenerator(executionValue)) {
       if (__DEV__) devtools.emitRunGenerator(asyncState, props);
-      asyncState.setState(AsyncStateStateBuilder.pending(savedProps));
-      runningPromise = wrapGenerator(executionValue, asyncState, props);
+      // generatorResult is either {done, value} or a promise
+      let generatorResult;
+      try {
+        generatorResult = wrapStartedGenerator(executionValue, props);
+      } catch (e) {
+        asyncState.setState(AsyncStateStateBuilder.error(e, savedProps));
+        return;
+      }
+      if (generatorResult.done) {
+        asyncState.setState(AsyncStateStateBuilder.success(generatorResult.value, savedProps));
+        return;
+      } else {
+        asyncState.setState(AsyncStateStateBuilder.pending(savedProps));
+        runningPromise = generatorResult;
+      }
     } else if (isPromise(executionValue)) {
       if (__DEV__) devtools.emitRunPromise(asyncState, props);
       asyncState.setState(AsyncStateStateBuilder.pending(savedProps));
@@ -61,46 +74,59 @@ function isGenerator(candidate) {
   return !!candidate && typeof candidate.next === "function" && typeof candidate.throw === "function";
 }
 
-// todo: do not return a promise if the generator finishes while synchronous
-function wrapGenerator(generator, asyncState, props) {
-  return new Promise((resolve, reject) => {
-    const abortGenerator = stepAndContinueGenerator(generator, resolve, reject);
-    props.onAbort(abortGenerator);
-  });
+function wrapStartedGenerator(generatorInstance, props) {
+  let {done, value} = generatorInstance.next();
+
+  while (!done && !isPromise(value)) {
+    const next = generatorInstance.next(value);
+    done = next.done;
+    value = next.value;
+  }
+
+  if (done) {
+    return {done, value};
+  } else {
+    // encountered a promise
+    return new Promise((resolve, reject) => {
+      const abortGenerator = stepAsyncAndContinueStartedGenerator(generatorInstance, value, resolve, reject);
+      props.onAbort(abortGenerator);
+    });
+  }
 }
 
-function stepAndContinueGenerator(generator, onDone, onReject) {
+function stepAsyncAndContinueStartedGenerator(generatorInstance, startupValue, onDone, onReject) {
   let aborted = false;
 
-  function step(input) {
-    // if we try to step in an already finished generator, we throw. That's a bug
-    if (generator.done) throw new Error("generator already done! cannot step further");
+  // we enter here only if startupValue is pending promise of the generator instance!
+  startupValue.then(step);
 
-    // now, move generator forward
-    let next = generator.next(input);
-    // is it done now ?
-    const {done} = next;
+  function step(oldValue) {
+    let done = undefined, value = undefined;
+    try {
+      let nextValue = generatorInstance.next(oldValue);
+      done = nextValue.done;
+      value = nextValue.value;
+    } catch (e) {
+      onReject(e);
+    }
 
-    let promise = Promise.resolve(next.value);
-
-    promise
-      .then(function continueGenerator(value) {
+    // we don't know if value is a promise of a js-value
+    Promise
+      .resolve(value)
+      .then(function continueGenerator(resolveValue) {
         if (!done && !aborted) {
-          step(value);
+          step(resolveValue);
         }
         if (done && !aborted) {
-          invokeIfPresent(onDone, value);
+          onDone(resolveValue);
         }
       })
       .catch(function onCatch(e) {
         if (!aborted && !done) {
-          invokeIfPresent(onReject, e);
-          generator.throw(e);
+          onReject(e);
         }
-      })
+      });
   }
-
-  step();
 
   return function abort() {
     aborted = true;

@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "author": "incepter",
   "sideEffects": false,
-  "version": "0.1.0-beta-7",
+  "version": "0.1.0-beta-8",
   "name": "react-async-states",
   "repository": "incepter/react-async-states",
   "description": "A hooks-based lightweight React library for state management",
@@ -30,8 +30,9 @@
   "scripts": {
     "test": "cross-env CI=1 react-scripts test --env=jsdom",
     "test:watch": "react-scripts test --env=jsdom",
-    "build": "cross-env webpack --config ./webpack/webpack.prod.config.js --color --progress",
-    "start": "cross-env NODE_ENV=development webpack --watch --config ./webpack/webpack.dev.config.js --color --progress --mode development",
+    "clean:dist": "rimraf dist",
+    "build": "rimraf dist && cross-env webpack --config ./webpack/webpack.prod.config.js --color --progress",
+    "start": "rimraf dist && cross-env NODE_ENV=development webpack --watch --config ./webpack/webpack.dev.config.js --color --progress --mode development",
     "prepare": "yarn run build",
     "predeploy": "cd example && yarn install && yarn run build",
     "deploy": "gh-pages -d example/build"

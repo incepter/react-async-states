@@ -38,10 +38,10 @@ function makeConfigFromOutput(options, output) {
   };
 }
 
-function makeOutputFor(type) {
+function makeOutputFor(type, outputPath = `dist/${type}`) {
   return function makeFromType(options) {
     return {
-      path: path.resolve(process.cwd(), `dist/${type}`),
+      path: path.resolve(process.cwd(), outputPath),
       ...options.output,
       libraryTarget: type,
       library: "ReactAsyncState"
@@ -50,7 +50,7 @@ function makeOutputFor(type) {
 }
 
 
-const umdOutput = makeOutputFor("umd");
+const umdOutput = makeOutputFor("umd", "dist");
 
 module.exports = options => [
   makeConfigFromOutput(options, umdOutput(options))

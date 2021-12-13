@@ -3,7 +3,6 @@ import { useLocation } from "react-router-dom";
 import { AsyncStateBuilder, AsyncStateProvider, createSourceAsyncState } from 'react-async-states';
 import { getUserProducer, postsProducer, timeoutProducer, usersProducer } from "./producers";
 
-console.log("===>", AsyncStateBuilder.toString())
 export const demoAsyncStates = {
   timeout: AsyncStateBuilder()
     .key("timeout")
