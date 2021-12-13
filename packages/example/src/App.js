@@ -117,6 +117,7 @@ function* syncGenExample() {
 }
 function GeneratorSync() {
   const {state} = useAsyncState.auto(syncGenExample);
+  console.log('sync generator value', state);
   return null;
 }
 

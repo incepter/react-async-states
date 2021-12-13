@@ -70,7 +70,7 @@ function wrapStartedGenerator(generatorInstance, props) {
 
   if (!syncResult.done) {
     return new Promise((resolve, reject) => {
-      const abortGenerator = stepAsyncAndContinueStartedGenerator(generatorInstance, resolve, reject);
+      const abortGenerator = stepAsyncAndContinueStartedGenerator(generatorInstance, syncResult.value, resolve, reject);
       props.onAbort(abortGenerator);
     });
   } else {
@@ -90,11 +90,15 @@ function runUntilPromiseEncounter(generatorInstance) {
   return {done: actualDone, value: actualValue};
 }
 
-function stepAsyncAndContinueStartedGenerator(generatorInstance, onDone, onReject) {
+function stepAsyncAndContinueStartedGenerator(generatorInstance, startupValue, onDone, onReject) {
   let aborted = false;
 
+  /**
+   * we enter here only if startupValue is pending promise of the generator instance!
+   */
+  startupValue.then(step);
+
   function step(oldValue) {
-    // now, move generatorInstance forward
     let {done, value: actualValue} = generatorInstance.next(oldValue);
 
     Promise
@@ -114,8 +118,6 @@ function stepAsyncAndContinueStartedGenerator(generatorInstance, onDone, onRejec
         }
       });
   }
-
-  step();
 
   return function abort() {
     aborted = true;
