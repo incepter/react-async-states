@@ -26,7 +26,7 @@ export function* usersProducer(props) {
     controller.abort();
   });
 
-  return yield new Promise(res => timeoutId = setTimeout(res, 2000)).then(() => fetch('https://jsonplaceholder.typicode.com/users', {signal})
+  return yield new Promise(res => timeoutId = setTimeout(res, 0)).then(() => fetch('https://jsonplaceholder.typicode.com/users', {signal})
     .then(res => res.json()));
 }
 

@@ -19,7 +19,6 @@ export function readUserConfiguration(userConfig, overrides) {
   }
   if (isAsyncStateSource(userConfig?.source)) {
     return Object.assign({}, defaultUseASConfig, userConfig, overrides, {
-      source: userConfig.source,
       [sourceConfigurationSecretSymbol]: true
     });
   }

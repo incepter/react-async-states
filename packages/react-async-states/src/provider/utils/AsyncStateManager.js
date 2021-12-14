@@ -1,5 +1,5 @@
 import AsyncState from "async-state";
-import { asyncify, identity, shallowClone } from "shared";
+import { asyncify, identity, readAsyncStateConfigFromSubscriptionConfig, shallowClone } from "shared";
 import { createAsyncStateEntry } from "./providerUtils";
 import { isAsyncStateSource } from "async-state/AsyncState";
 import { readAsyncStateFromSource } from "async-state/utils";
@@ -99,7 +99,7 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
   }
 
   function hoist(config) {
-    const {key, hoistToProviderConfig = {override: false}, producer, initialValue} = config;
+    const {key, hoistToProviderConfig = {override: false}, producer} = config;
 
     const existing = get(key);
     if (existing && !hoistToProviderConfig.override) {
@@ -113,7 +113,9 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
       }
     }
 
-    asyncStateEntries[key] = createAsyncStateEntry(new AsyncState(key, producer, {initialValue}));
+    asyncStateEntries[key] = createAsyncStateEntry(
+      new AsyncState(key, producer, readAsyncStateConfigFromSubscriptionConfig(config))
+    );
 
     const returnValue = get(key);
     asyncify(notifyWatchers)(key, returnValue); // returnValue is an AsyncState or undefined

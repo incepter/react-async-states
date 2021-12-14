@@ -58,7 +58,7 @@ export function useAsyncStateSelector(keys, selector = identity, areEqual = shal
     return returnValue;
   }
 
-  React.useEffect(function watchAndSubscribeAndCleanOldSubscriptions() {
+  React.useLayoutEffect(function watchAndSubscribeAndCleanOldSubscriptions() {
     let cleanups = [];
 
     function subscription() {

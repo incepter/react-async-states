@@ -7,12 +7,13 @@ import {
   warnInDevAboutRunWhilePending
 } from "./utils";
 import devtools from "devtools";
+import { enableRunEffects } from "react-async-states/src/featureFlags";
 
 function AsyncState(key, producer, config) {
   warnDevAboutAsyncStateKey(key);
 
   this.key = key;
-  this.config = shallowClone(defaultASConfig, config);
+  this.config = shallowClone(config);
   this.originalProducer = producer;
 
   const initialValue = typeof this.config.initialValue === "function" ? this.config.initialValue() : this.config.initialValue;
@@ -35,6 +36,9 @@ function AsyncState(key, producer, config) {
 
   if (__DEV__) {
     this.uniqueId = nextUniqueId();
+  }
+  if (enableRunEffects) {
+    this.pendingTimeout = null;
   }
 
   this._source = makeSource(this);
@@ -88,6 +92,78 @@ AsyncState.prototype.dispose = function disposeImpl() {
 }
 
 AsyncState.prototype.run = function run(...execArgs) {
+  console.log('____', enableRunEffects, this.config);
+  const that = this;
+  if (enableRunEffects) {
+    const timeoutMs = numberOrZero(this.config.runEffectDurationMs);
+    if (timeoutMs === 0) {
+      return this.run_old(...execArgs);
+    }
+
+    function registerTimeout() {
+      that.pendingTimeout = Object.create(null);
+      let runAbortCallback = null;
+      that.pendingTimeout.startDate = now;
+      that.pendingTimeout.id = setTimeout(function realRun() {
+        that.pendingTimeout = null;
+        runAbortCallback = that.run_old(...execArgs);
+      }, timeoutMs);
+
+      const timeoutId = that.pendingTimeout.id;
+      return function abortCleanup(reason) {
+        clearTimeout(timeoutId);
+        that.pendingTimeout = null;
+        invokeIfPresent(runAbortCallback, reason);
+      }
+    }
+
+
+    const now = Date.now();
+    switch (this.config.runEffect) {
+      case "delay":
+      case "debounce":
+      case "takeLast":
+      case "takeLatest": {
+
+        console.log('RUNNING!!!');
+        if (this.pendingTimeout) {
+          const deadline = this.pendingTimeout.startDate + timeoutMs;
+          if (now < deadline) {
+            clearTimeout(this.pendingTimeout.id);
+          }
+        }
+        return registerTimeout();
+      }
+      case "throttle":
+      case "takeFirst":
+      case "takeLeading": {
+        if (this.pendingTimeout) {
+          const deadline = this.pendingTimeout.startDate + timeoutMs;
+          if (now <= deadline) {
+            return function noop() {
+              // this functions does nothing
+            };
+          }
+          break;
+        } else {
+          return registerTimeout();
+        }
+      }
+      default:
+        return this.run_old(...execArgs);
+    }
+
+  } else {
+    return this.run_old(...execArgs);
+  }
+}
+
+function numberOrZero(maybeNumber) {
+  return Number(maybeNumber) || 0;
+}
+
+AsyncState.prototype.run_old = function run(...execArgs) {
+
   if (this.currentState.status === AsyncStateStatus.pending) {
     warnInDevAboutRunWhilePending(this.key);
     this.abort();
@@ -200,7 +276,6 @@ let uniqueId = 0;
 const sourceIsSourceSymbol = Symbol();
 
 const defaultForkConfig = Object.freeze({keepState: false});
-export const defaultASConfig = Object.freeze({initialValue: null});
 
 function forkKey(asyncState) {
   return `${asyncState.key}-fork-${asyncState.forkCount + 1}`;

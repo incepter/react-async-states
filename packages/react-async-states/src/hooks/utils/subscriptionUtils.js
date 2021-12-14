@@ -1,5 +1,13 @@
 import AsyncState from "async-state";
-import { __DEV__, AsyncStateStatus, EMPTY_OBJECT, oneObjectIdentity, shallowClone, shallowEqual } from "shared";
+import {
+  __DEV__,
+  AsyncStateStatus,
+  EMPTY_OBJECT,
+  oneObjectIdentity,
+  readAsyncStateConfigFromSubscriptionConfig,
+  shallowClone,
+  shallowEqual
+} from "shared";
 import { readAsyncStateFromSource } from "async-state/utils";
 import { isConcurrentMode } from "../../helpers/is-concurrent-mode";
 import { enableComponentSuspension } from "../../featureFlags";
@@ -76,7 +84,7 @@ export function inferAsyncStateInstance(mode, configuration, contextValue) {
       return candidate;
     case AsyncStateSubscriptionMode.STANDALONE:
     case AsyncStateSubscriptionMode.OUTSIDE_PROVIDER:
-      return new AsyncState(configuration.key, configuration.producer, {initialValue: configuration.initialValue});
+      return new AsyncState(configuration.key, configuration.producer, readAsyncStateConfigFromSubscriptionConfig(configuration));
     case AsyncStateSubscriptionMode.SOURCE:
       return readAsyncStateFromSource(configuration.source);
     case AsyncStateSubscriptionMode.SOURCE_FORK: {
@@ -130,8 +138,10 @@ export function applyUpdateOnReturnValue(returnValue, asyncState, stateValue, ru
 
   returnValue.read = function readInConcurrentMode() {
     if (isConcurrentMode()) {
-      if (enableComponentSuspension && AsyncStateStatus.pending === asyncState?.currentState?.status && asyncState.suspender) {
-        throw asyncState.suspender;
+      if (enableComponentSuspension) {
+        if (AsyncStateStatus.pending === asyncState?.currentState?.status && asyncState.suspender) {
+          throw asyncState.suspender;
+        }
       }
       return stateValue;
     } else if (__DEV__ && !didWarnAboutUnsupportedConcurrentFeatures) {

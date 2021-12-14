@@ -2,7 +2,6 @@ import AsyncState from "async-state";
 import { AsyncStateStatus, shallowClone } from "shared";
 import { act } from "@testing-library/react-hooks";
 import { timeout } from "./test-utils";
-import { defaultASConfig } from "async-state/AsyncState";
 
 jest.useFakeTimers("modern");
 
@@ -22,7 +21,7 @@ describe('AsyncState - fork', () => {
     expect(myAsyncState.__IS_FORK__).toBeFalsy();
     expect(myAsyncState.subscriptions).toEqual({});
     expect(typeof myAsyncState.run).toBe("function");
-    expect(myAsyncState.config).toEqual(shallowClone(defaultASConfig, myConfig));
+    expect(myAsyncState.config).toEqual(shallowClone(myConfig));
     expect(myAsyncState.lastSuccess).toEqual({props: null, data: null, status: AsyncStateStatus.initial});
     expect(myAsyncState.currentState).toEqual({data: null, status: AsyncStateStatus.initial, props: null});
 
