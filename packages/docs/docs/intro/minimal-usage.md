@@ -19,6 +19,7 @@ function useAsyncState(configuration, dependencies = []) {
 
     state,
     run,
+    read,
     lastSuccess,
     payload,
 

@@ -2,10 +2,12 @@ import React from "react";
 import { demoAsyncStates } from "./Provider";
 import { useAsyncState, useAsyncStateSelector } from "react-async-states";
 
-function SimpleSub({source, asyncStateKey, displayValue, lazy = false}) {
-  const {key, state: {status, data}, run, abort} = useAsyncState({source, key: asyncStateKey, lazy});
+function SimpleSub({source, asyncStateKey, displayValue, lazy = false, suspend = false}) {
+  const {key, state: {status, data}, read, run, abort} = useAsyncState({source, key: asyncStateKey, lazy});
   // console.log('source ' + source.key, source.getState(), source.isSource, source);
 
+  // console.log('suspend', suspend, read());
+  const readData = suspend ? read().data : data;
   return (
     <div>
       <span>Key: {key}</span>
@@ -21,7 +23,7 @@ function SimpleSub({source, asyncStateKey, displayValue, lazy = false}) {
           <span>Data: </span>
           <br/>
           <ul>
-            {displayValue(data)}
+            {displayValue(readData)}
           </ul>
         </div>
       )}
@@ -39,18 +41,23 @@ export default function Demo() {
         <section>
           <h3>Subscribe to global async state - {demoAsyncStates.users.key}</h3>
           <div style={{display: "flex"}}>
-            <SimpleSub
-              source={demoAsyncStates.users}
-              displayValue={data => data.map(user => <li
-                key={user.id}>{user.id} - {user.username} - {user.name} - {user.email}</li>)}
-            />
+            <React.Suspense fallback="pending...users">
+              <SimpleSub
+                suspend
+                source={demoAsyncStates.users}
+                displayValue={data => data.map(user => <li
+                  key={user.id}>{user.id} - {user.username} - {user.name} - {user.email}</li>)}
+              />
+            </React.Suspense>
             <hr/>
-            <SimpleSub
-              lazy
-              asyncStateKey={demoAsyncStates.posts.key}
-              displayValue={data => data.map(post => <li key={post.id}>{post.id} -
-                userId: {post.userId} - {post.title}</li>)}
-            />
+            <React.Suspense fallback="pending...posts">
+              <SimpleSub
+                lazy
+                asyncStateKey={demoAsyncStates.posts.key}
+                displayValue={data => data.map(post => <li key={post.id}>{post.id} -
+                  userId: {post.userId} - {post.title}</li>)}
+              />
+            </React.Suspense>
             <br/>
           </div>
         </section>

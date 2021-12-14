@@ -5,16 +5,16 @@ import { demoAsyncStates } from "./Provider";
 function Wrapper({children, initialValue = true}) {
   const [visible, setVisible] = React.useState(initialValue);
   return (
-    <div>
+    <React.Suspense fallback="Pending...">
       <button onClick={() => setVisible(!visible)}>{visible ? 'Hide' : 'Show'}</button>
       <br/>
       {visible && children}
-    </div>
+    </React.Suspense>
   );
 }
 
-function TimeoutSubscription() {
-  const {state: {status}, key, run} = useAsyncState({key: demoAsyncStates.timeout.key, lazy: false});
+function TimeoutSubscription({ mode }) {
+  const {state: {status}, key, run} = useAsyncState[mode](demoAsyncStates.timeout.key);
 
   return (
     <div>
@@ -29,10 +29,10 @@ export default function Demo() {
   return (
     <>
       <Wrapper>
-        <TimeoutSubscription/>
+        <TimeoutSubscription mode="lazy"/>
       </Wrapper>
       <Wrapper>
-        <TimeoutSubscription/>
+        <TimeoutSubscription mode="auto"/>
       </Wrapper>
 
       <br />
@@ -59,10 +59,10 @@ export default function Demo() {
 function WaitingDemo() {
   const {key, state, run, mode} = useAsyncState({key: "waiting_demo", selector: s => s.data});
 
-  return <p>
+  return <span>
     {mode+" waiting for state: " + key + " , " + JSON.stringify(state ?? {})}
     <button onClick={() => run()}>Run</button>
-  </p>;
+  </span>;
 }
 
 function WaitingHoister() {
