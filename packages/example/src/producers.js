@@ -20,12 +20,14 @@ export function timeoutProducer(delay = 2000) {
 export function* usersProducer(props) {
   const controller = new AbortController();
   const {signal} = controller;
+  let timeoutId;
   props.onAbort(function abortSignal() {
+    clearTimeout(timeoutId);
     controller.abort();
   });
 
-  return yield fetch('https://jsonplaceholder.typicode.com/users', {signal})
-    .then(res => res.json());
+  return yield new Promise(res => timeoutId = setTimeout(res, 2000)).then(() => fetch('https://jsonplaceholder.typicode.com/users', {signal})
+    .then(res => res.json()));
 }
 
 export function postsProducer(props) {

@@ -1,5 +1,5 @@
 import React from "react";
-import { AsyncStateStatus, EMPTY_ARRAY, EMPTY_OBJECT, invokeIfPresent, shallowClone } from "shared";
+import { EMPTY_ARRAY, EMPTY_OBJECT, invokeIfPresent, shallowClone } from "shared";
 import { AsyncStateContext } from "../context";
 import {
   applyUpdateOnReturnValue,
@@ -164,8 +164,3 @@ export const useAsyncStateImpl = function useAsyncStateImpl(subscriptionConfig, 
 
   return refs.current.returnValue;
 }
-
-const suspendedStatuses = Object.freeze({
-  [AsyncStateStatus.initial]: true,
-  [AsyncStateStatus.pending]: true,
-});

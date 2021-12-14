@@ -15,7 +15,8 @@ function AsyncState(key, producer, config) {
   this.config = shallowClone(defaultASConfig, config);
   this.originalProducer = producer;
 
-  this.currentState = AsyncStateStateBuilder.initial(this.config.initialValue);
+  const initialValue = typeof this.config.initialValue === "function" ? this.config.initialValue() : this.config.initialValue;
+  this.currentState = AsyncStateStateBuilder.initial(initialValue);
   this.lastSuccess = this.currentState;
 
   this.forkCount = 0;
@@ -79,7 +80,8 @@ AsyncState.prototype.dispose = function disposeImpl() {
   clearSubscribers(this);
 
   this.locks = 0;
-  this.setState(AsyncStateStateBuilder.initial(this.config.initialValue));
+  const initialValue = typeof this.config.initialValue === "function" ? this.config.initialValue() : this.config.initialValue;
+  this.setState(AsyncStateStateBuilder.initial(initialValue));
   if (__DEV__) devtools.emitDispose(this);
 
   return true;
@@ -224,14 +226,14 @@ function makeSource(asyncState) {
 
 
 function notifySubscribers(asyncState) {
-  Object.values(asyncState.subscriptions).forEach(t => {
-    t.callback(asyncState.currentState);
+  Object.values(asyncState.subscriptions).forEach(subscription => {
+    subscription.callback(asyncState.currentState);
   });
 }
 
 function clearSubscribers(asyncState) {
-  Object.values(asyncState.subscriptions).forEach(t => {
-    t.cleanup();
+  Object.values(asyncState.subscriptions).forEach(subscription => {
+    subscription.cleanup();
   });
 }
 

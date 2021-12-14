@@ -1,6 +1,8 @@
 import AsyncState from "async-state";
 import { __DEV__, AsyncStateStatus, EMPTY_OBJECT, oneObjectIdentity, shallowClone, shallowEqual } from "shared";
 import { readAsyncStateFromSource } from "async-state/utils";
+import { isConcurrentMode } from "../../helpers/is-concurrent-mode";
+import { enableComponentSuspension } from "../../featureFlags";
 
 export const defaultRerenderStatusConfig = Object.freeze({
   error: true,
@@ -114,19 +116,29 @@ export function calculateSelectedState(newState, lastSuccess, configuration) {
   return typeof selector === "function" ? selector(newState, lastSuccess) : newState;
 }
 
+let didWarnAboutUnsupportedConcurrentFeatures = false;
+
 export function applyUpdateOnReturnValue(returnValue, asyncState, stateValue, run, runAsyncState, mode) {
   returnValue.mode = mode;
   returnValue.source = asyncState._source;
 
   returnValue.state = stateValue;
-  returnValue.payload = asyncState.payload;
+  returnValue.payload = asyncState.payload; // todo: should this be exposed ?
   returnValue.lastSuccess = asyncState.lastSuccess;
 
   returnValue.key = asyncState.key;
 
   returnValue.read = function readInConcurrentMode() {
-    if (AsyncStateStatus.pending === asyncState?.currentState?.status && asyncState.suspender) {
-      throw asyncState.suspender;
+    if (isConcurrentMode()) {
+      if (enableComponentSuspension && AsyncStateStatus.pending === asyncState?.currentState?.status && asyncState.suspender) {
+        throw asyncState.suspender;
+      }
+      return stateValue;
+    } else if (__DEV__ && !didWarnAboutUnsupportedConcurrentFeatures) {
+      console.error("[Warning] You are calling useAsyncState().read() without having react 18 or above " +
+        "(concurrent mode), if the library throws, you will get an error in your app. You will be receiving" +
+        "the state value without any suspension. Please consider upgrading to react 18 or above to use concurrent features.")
+      didWarnAboutUnsupportedConcurrentFeatures = true;
     }
     return stateValue;
   }

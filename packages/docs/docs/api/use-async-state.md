@@ -75,6 +75,7 @@ The returned object from useAsyncState contains the following properties:
 |`key`               | The key of the async state instance, if forked, it is different from the given one |
 |`run`               | Imperatively trigger the run, arguments to this function are received as array in the execution args |
 |`mode`              | The subscription mode |
+|`read`              | This function supports React's concurrent mode and suspends the component if its status is `pending` |
 |`state`             | The current selected portion of state, by default, the selector is `identity` and so the state is of shape `{status, args, data}` |
 |`abort`             | Imperatively abort the current run if running |
 |`source`            | The special source object of the subscribed async state instance, could be reused for further subscription without passing by provider or key |
@@ -235,3 +236,7 @@ const {state} = useAsyncState.payload({userId: 3}).selector(name).hoistAuto(user
 // forks userPayloadSource and runs it automatically with a new payload and selects the name from result
 const {state} = useAsyncState.selector(name).payload({userId: 4}).forkAuto(userPayloadSource);
 ```
+
+:::tip
+To suspend a component in concurrent mode, just call the `read` function returned by `useAsyncState`
+:::

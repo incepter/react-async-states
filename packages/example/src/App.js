@@ -143,18 +143,18 @@ function* asyncGenExample(props) {
 }
 
 function GeneratorAsync() {
-  React.useLayoutEffect(() => {
-    console.log('async mounted layout effect');
-    return () => console.log('unmounting layout effect!! async');
-  }, []);
-  React.useEffect(() => {
-    console.log('async mounted');
-    return () => console.log('unmounting!! async');
-  }, []);
+  // React.useLayoutEffect(() => {
+  //   console.log('async mounted layout effect');
+  //   return () => console.log('unmounting layout effect!! async');
+  // }, []);
+  // React.useEffect(() => {
+  //   console.log('async mounted');
+  //   return () => console.log('unmounting!! async');
+  // }, []);
   const {state, read} = useAsyncState.auto(asyncGenExample);
-  React.useEffect(() => {
-    console.log('status change', state.status);
-  }, [state.status])
-  console.log('async generator value', read());
+  // React.useEffect(() => {
+  //   console.log('status change', state.status);
+  // }, [state.status])
+  // console.log('async generator value', read());
   return null;
 }
