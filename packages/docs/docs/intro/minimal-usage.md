@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 1
 sidebar_label: Minimal usage
 ---
 
@@ -37,7 +37,7 @@ every render, you can to the following:
 
 ```javascript
 // this snippet will make your producer run every render, if you want.
-// the `run` function returns its cleanup ;)
+// the `run` function returns its cleanup
 const {run} = useAsyncState(config);
 React.useEffect(run);
 ```
@@ -94,6 +94,17 @@ useAsyncState({ key: "weather", selector: s => s.data });
 useAsyncState();
 ```
 :::
+
+See how I used it here in the [following codesandbox](https://codesandbox.io/s/angry-meitner-lne6o?file=/src/App.js)
+to have a prior idea (I will keep updating the same codesandbox on my free time):
+
+<iframe
+style={{width: '100%', height: '500px', border: 0, borderRaduis: 4, overflow: 'hidden'}}
+src="https://codesandbox.io/embed/angry-meitner-lne6o?fontsize=14&hidenavigation=1&theme=dark"
+allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe>
+
 
 ## AsyncStateProvider
 

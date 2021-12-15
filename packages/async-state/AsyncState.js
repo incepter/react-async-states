@@ -94,13 +94,13 @@ AsyncState.prototype.run = function run(...execArgs) {
 
     const that = this;
     const now = Date.now();
-    const deadline = this.pendingTimeout.startDate + effectDurationMs;
     switch (this.config.runEffect) {
       case "delay":
       case "debounce":
       case "takeLast":
       case "takeLatest": {
         if (this.pendingTimeout) {
+          const deadline = this.pendingTimeout.startDate + effectDurationMs;
           if (now < deadline) {
             clearTimeout(this.pendingTimeout.id);
           }
@@ -111,6 +111,7 @@ AsyncState.prototype.run = function run(...execArgs) {
       case "takeFirst":
       case "takeLeading": {
         if (this.pendingTimeout) {
+          const deadline = this.pendingTimeout.startDate + effectDurationMs;
           if (now <= deadline) {
             return function noop() {
               // this functions does nothing
