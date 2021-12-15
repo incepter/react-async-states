@@ -16,12 +16,6 @@ export function warnDevAboutUndefinedPromise(key, fn) {
   }
 }
 
-export function warnInDevAboutRunWhilePending(key) {
-  if (__DEV__) {
-    console.log(`[${key}][run while pending] previous run will be aborted`);
-  }
-}
-
 function Secret() {
   const vault = new WeakMap();
   return function Source() {

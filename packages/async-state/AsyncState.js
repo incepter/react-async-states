@@ -1,18 +1,14 @@
-import { __DEV__, AsyncStateStatus, cloneProducerProps, invokeIfPresent, shallowClone } from "shared";
+import { __DEV__, AsyncStateStatus, cloneProducerProps, invokeIfPresent, numberOrZero, shallowClone } from "shared";
 import { wrapProducerFunction } from "./wrap-producer-function";
-import {
-  AsyncStateStateBuilder,
-  constructAsyncStateSource,
-  warnDevAboutAsyncStateKey,
-  warnInDevAboutRunWhilePending
-} from "./utils";
+import { AsyncStateStateBuilder, constructAsyncStateSource, warnDevAboutAsyncStateKey } from "./utils";
 import devtools from "devtools";
+import { enableRunEffects } from "shared/featureFlags";
 
 function AsyncState(key, producer, config) {
   warnDevAboutAsyncStateKey(key);
 
   this.key = key;
-  this.config = shallowClone(defaultASConfig, config);
+  this.config = shallowClone(config);
   this.originalProducer = producer;
 
   const initialValue = typeof this.config.initialValue === "function" ? this.config.initialValue() : this.config.initialValue;
@@ -26,8 +22,6 @@ function AsyncState(key, producer, config) {
   this.producer = wrapProducerFunction(this);
   this.suspender = undefined;
 
-  this.__IS_FORK__ = false;
-
   this.payload = null;
   this.currentAborter = undefined;
 
@@ -35,6 +29,10 @@ function AsyncState(key, producer, config) {
 
   if (__DEV__) {
     this.uniqueId = nextUniqueId();
+  }
+
+  if (enableRunEffects) {
+    this.pendingTimeout = null;
   }
 
   this._source = makeSource(this);
@@ -88,8 +86,68 @@ AsyncState.prototype.dispose = function disposeImpl() {
 }
 
 AsyncState.prototype.run = function run(...execArgs) {
+  if (enableRunEffects && this.config.runEffect) {
+    const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
+    if (effectDurationMs === 0) {
+      return this.abortAndRunProducer(...execArgs);
+    }
+
+    const that = this;
+    const now = Date.now();
+    switch (this.config.runEffect) {
+      case "delay":
+      case "debounce":
+      case "takeLast":
+      case "takeLatest": {
+        if (this.pendingTimeout) {
+          const deadline = this.pendingTimeout.startDate + effectDurationMs;
+          if (now < deadline) {
+            clearTimeout(this.pendingTimeout.id);
+          }
+        }
+        return registerTimeout();
+      }
+      case "throttle":
+      case "takeFirst":
+      case "takeLeading": {
+        if (this.pendingTimeout) {
+          const deadline = this.pendingTimeout.startDate + effectDurationMs;
+          if (now <= deadline) {
+            return function noop() {
+              // this functions does nothing
+            };
+          }
+          break;
+        } else {
+          return registerTimeout();
+        }
+      }
+    }
+
+    function registerTimeout() {
+      let runAbortCallback = null;
+
+      that.pendingTimeout = Object.create(null);
+      that.pendingTimeout.startDate = now;
+      that.pendingTimeout.id = setTimeout(function realRun() {
+        that.pendingTimeout = null;
+        runAbortCallback = that.abortAndRunProducer(...execArgs);
+      }, effectDurationMs);
+
+      const timeoutId = that.pendingTimeout.id;
+      return function abortCleanup(reason) {
+        clearTimeout(timeoutId);
+        that.pendingTimeout = null;
+        invokeIfPresent(runAbortCallback, reason);
+      }
+    }
+  } else {
+    return this.abortAndRunProducer(...execArgs);
+  }
+}
+
+AsyncState.prototype.abortAndRunProducer = function abortAndRunProducer(...execArgs) {
   if (this.currentState.status === AsyncStateStatus.pending) {
-    warnInDevAboutRunWhilePending(this.key);
     this.abort();
     this.currentAborter = undefined;
   }
@@ -172,8 +230,6 @@ AsyncState.prototype.fork = function fork(forkConfig) {
     clone.lastSuccess = shallowClone(this.lastSuccess);
   }
 
-  clone.__IS_FORK__ = true;
-
   return clone;
 }
 
@@ -200,7 +256,6 @@ let uniqueId = 0;
 const sourceIsSourceSymbol = Symbol();
 
 const defaultForkConfig = Object.freeze({keepState: false});
-export const defaultASConfig = Object.freeze({initialValue: null});
 
 function forkKey(asyncState) {
   return `${asyncState.key}-fork-${asyncState.forkCount + 1}`;

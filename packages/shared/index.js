@@ -62,3 +62,16 @@ export function cloneProducerProps(props) {
 
   return output;
 }
+
+export function readAsyncStateConfigFromSubscriptionConfig(configuration) {
+  return {
+    initialValue: configuration.initialValue,
+
+    runEffect: configuration.runEffect,
+    runEffectDurationMs: configuration.runEffectDurationMs,
+  };
+}
+
+export function numberOrZero(maybeNumber) {
+  return Number(maybeNumber) || 0;
+}

@@ -2,6 +2,7 @@ import React from "react";
 import { createReducerProducer, useAsyncState, useAsyncStateSelector } from "react-async-states";
 
 function reducer(old, name, value) {
+  console.log('running', name, value);
   return {...old, [name]: value};
 }
 
@@ -13,7 +14,7 @@ export default function Demo() {
     hoistToProvider: true,
     initialValue: {hello: "world!"},
     producer: createReducerProducer(reducer),
-    rerenderStatus: {pending: false, success: false}
+    rerenderStatus: {pending: false, success: false},
   });
 
   return (
@@ -69,7 +70,7 @@ function Input({name}) {
     .selector(state => state.data[name])
     .lazy("login-form", [name]);
 
-  React.useEffect(() => run(name, "init"), [])
+  React.useEffect(() => run(name, "init"+ name), [])
 
   return (<input
     value={state || ""}

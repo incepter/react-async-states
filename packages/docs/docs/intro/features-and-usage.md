@@ -1,9 +1,32 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 sidebar_label: Features and usage
 ---
 
-# Motivations and features
+# Features and Motivations
+
+## Features
+This library aims to facilitate working with [a]synchronous states while sharing them.
+It was designed to help us reduce the needed boilerplate (code/files) to achieve great and effective results.
+
+The main features that makes it special are:
+- Minimal API.
+- Easy to use.
+- Tiny library with 0 dependencies, only react as a peer dependency, and should target all environments.
+- Run, abort and replace state anytime.
+- Debounce and throttle.
+- Dynamic creation and sharing of states at runtime.
+- Share states inside and outside the context provider.
+- Subscribe and react to selected portions of state while controlling when to re-render.
+- Fork an asynchronous state to re-use its producer function without impacting its state value.
+- Hoist states to provider on demand.
+- Bidirectional abort binding that lets you register an `abort callback` from the producer function.
+- Automatic cleanup/reset on dependencies change (includes unmount).
+- Supports many forms on producer functions (async/await, promises, generators, reducers...).
+- React concurrent mode friendly (already supported through the `read()` API)
+- Powerful selectors.
+
+And many more features.
 
 ## Motivations
 Managing state using React native APIs or third party libraries ain't an easy task. Let's talk about the parts we miss:
@@ -22,27 +45,6 @@ Without these aspects, your application will surely be in a mess, when you get t
 search operation, when you have to do over-engineered stuff to support a simple thing such as cancelling a fetch request
 and a lot of other messy stuff.
 
-## Features
-This library aims to facilitate working with [a]synchronous states while sharing them.
-It was designed to help us reduce the needed boilerplate (code/files) to achieve great and effective results.
-
-The main features that makes it special are:
-- Minimal and Easy to use API.
-- Tiny library with 0 dependencies, only react as a peer dependency, and should target all environments.
-- Run, abort and replace state anytime.
-- Dynamic creation and sharing of states at runtime.
-- Share states inside and outside the context provider.
-- Subscribe and react to selected portions of state while controlling when to re-render.
-- Fork an asynchronous state to re-use its producer function without impacting its state value.
-- Hoist states to provider on demand.
-- Bidirectional abort binding that lets you register an `abort callback` from the producer function.
-- Automatic cleanup/reset on dependencies change (includes unmount).
-- Supports many forms on producer functions (async/await, promises, generators, reducers...).
-- Powerful selectors system.
-
-And many more features.
-
-
 ## Concepts
 
 This library tries to automate and facilitate subscriptions to states along with their updates, while having the ability
@@ -59,8 +61,9 @@ Here is how you will be using it:
 Of course, this is only the basic usage of the library, and the `useAsyncState` hook may be used in different forms
 and serve different purposes:
 - you may select only a portion of the state based on a `selector` and rerender only if `areEqual` is falsy.
-- You may `hoist` an async state to the provider and become accessible.
+- You may `hoist` an async state to the provider and become accessible while notifying its watchers.
 - You may `fork` an async state and reuse its producer function without impacting its state and subscribers.
+- If using react concurrent, you can suspend your component using the `read` function.
 
 After mounting your app, it will more likely appear like this:
 

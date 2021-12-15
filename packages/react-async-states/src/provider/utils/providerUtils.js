@@ -1,4 +1,4 @@
-import { asyncify } from "shared";
+import { asyncify, readAsyncStateConfigFromSubscriptionConfig } from "shared";
 import AsyncState from "async-state";
 import { isAsyncStateSource } from "async-state/AsyncState";
 import { readAsyncStateFromSource } from "async-state/utils";
@@ -30,7 +30,9 @@ export function createInitialAsyncStatesReducer(result, current) {
         return result;
       }
     }
-    result[key] = createAsyncStateEntry(new AsyncState(key, producer, {initialValue}));
+    result[key] = createAsyncStateEntry(
+      new AsyncState(key, producer, readAsyncStateConfigFromSubscriptionConfig(current))
+    );
     result[key].initiallyHoisted = true;
     return result;
   }

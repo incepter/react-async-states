@@ -87,7 +87,7 @@ export const useAsyncStateImpl = function useAsyncStateImpl(subscriptionConfig, 
   if (isInsideProvider) {
     // wait early
     // this sets  a watcher to observe present async state
-    React.useEffect(function watchAsyncState() {
+    React.useLayoutEffect(function watchAsyncState() {
       switch (mode) {
         case AsyncStateSubscriptionMode.FORK:
         case AsyncStateSubscriptionMode.HOIST:

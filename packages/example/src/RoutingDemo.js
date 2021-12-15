@@ -8,12 +8,12 @@ export default function Demo() {
   const history = useHistory();
   const params = useParams();
 
-  console.log('render', params)
   const {state: {status, data}, lastSuccess, abort} = useAsyncState({
     lazy: false,
     payload: {matchParams: params},
     key: demoAsyncStates.getUser.key,
   }, [params]);
+  console.log('render', params, status)
 
   function navigate(e) {
     e.preventDefault();

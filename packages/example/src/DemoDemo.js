@@ -1,5 +1,5 @@
 import React from "react";
-import { useAsyncState, useAsyncStateSelector } from "react-async-states";
+import { useAsyncState } from "react-async-states";
 import { demoAsyncStates } from "./Provider";
 
 export function Inject() {
@@ -18,29 +18,31 @@ export function Inject() {
 }
 
 
-
 function getUser(props) {
   const controller = new AbortController();
-  props.onAbort(() => {controller.abort()});
+  props.onAbort(() => {
+    controller.abort()
+  });
   console.log('props', props.payload.userId);
   return fetch(`https://jsonplaceholder.typicode.com/users`, {signal: controller.signal}).then(r => r.json());
 }
 
 
-
 export default function DemoDemo() {
-  const [isPending, startTransition] = React.useTransition();
+  // const [isPending, startTransition] = React.useTransition();
   const {state: {status, data}, run} = useAsyncState(demoAsyncStates.users);
 
   console.log(data);
   return (
     <>
       <input onChange={e => {
-        startTransition(run);
-      }} />
-      <br />
+        console.log('onchange, running');
+        // startTransition(run);
+        run();
+      }}/>
+      <br/>
       {status}
-      <br />
+      <br/>
       <pre>
         {JSON.stringify(data, null, 4)}
       </pre>

@@ -9,7 +9,7 @@ export const demoAsyncStates = {
     .producer(timeoutProducer(4000))
     .build(),
 
-  users: createSourceAsyncState("users", usersProducer),
+  users: createSourceAsyncState("users", usersProducer, {runEffect: "throttle", runEffectDurationMs: 1}),
 
   posts: AsyncStateBuilder()
     .key("posts")
