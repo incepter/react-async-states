@@ -71,3 +71,7 @@ export function readAsyncStateConfigFromSubscriptionConfig(configuration) {
     runEffectDurationMs: configuration.runEffectDurationMs,
   };
 }
+
+export function numberOrZero(maybeNumber) {
+  return Number(maybeNumber) || 0;
+}

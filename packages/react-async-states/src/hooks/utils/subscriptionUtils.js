@@ -10,7 +10,7 @@ import {
 } from "shared";
 import { readAsyncStateFromSource } from "async-state/utils";
 import { isConcurrentMode } from "../../helpers/is-concurrent-mode";
-import { enableComponentSuspension } from "../../featureFlags";
+import { enableComponentSuspension } from "shared/featureFlags";
 
 export const defaultRerenderStatusConfig = Object.freeze({
   error: true,

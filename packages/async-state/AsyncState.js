@@ -1,13 +1,8 @@
-import { __DEV__, AsyncStateStatus, cloneProducerProps, invokeIfPresent, shallowClone } from "shared";
+import { __DEV__, AsyncStateStatus, cloneProducerProps, invokeIfPresent, numberOrZero, shallowClone } from "shared";
 import { wrapProducerFunction } from "./wrap-producer-function";
-import {
-  AsyncStateStateBuilder,
-  constructAsyncStateSource,
-  warnDevAboutAsyncStateKey,
-  warnInDevAboutRunWhilePending
-} from "./utils";
+import { AsyncStateStateBuilder, constructAsyncStateSource, warnDevAboutAsyncStateKey } from "./utils";
 import devtools from "devtools";
-import { enableRunEffects } from "react-async-states/src/featureFlags";
+import { enableRunEffects } from "shared/featureFlags";
 
 function AsyncState(key, producer, config) {
   warnDevAboutAsyncStateKey(key);
@@ -27,8 +22,6 @@ function AsyncState(key, producer, config) {
   this.producer = wrapProducerFunction(this);
   this.suspender = undefined;
 
-  this.__IS_FORK__ = false;
-
   this.payload = null;
   this.currentAborter = undefined;
 
@@ -37,6 +30,7 @@ function AsyncState(key, producer, config) {
   if (__DEV__) {
     this.uniqueId = nextUniqueId();
   }
+
   if (enableRunEffects) {
     this.pendingTimeout = null;
   }
@@ -92,42 +86,21 @@ AsyncState.prototype.dispose = function disposeImpl() {
 }
 
 AsyncState.prototype.run = function run(...execArgs) {
-  console.log('____', enableRunEffects, this.config);
-  const that = this;
-  if (enableRunEffects) {
-    const timeoutMs = numberOrZero(this.config.runEffectDurationMs);
-    if (timeoutMs === 0) {
-      return this.run_old(...execArgs);
+  if (enableRunEffects && this.config.runEffect) {
+    const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
+    if (effectDurationMs === 0) {
+      return this.abortAndRunProducer(...execArgs);
     }
 
-    function registerTimeout() {
-      that.pendingTimeout = Object.create(null);
-      let runAbortCallback = null;
-      that.pendingTimeout.startDate = now;
-      that.pendingTimeout.id = setTimeout(function realRun() {
-        that.pendingTimeout = null;
-        runAbortCallback = that.run_old(...execArgs);
-      }, timeoutMs);
-
-      const timeoutId = that.pendingTimeout.id;
-      return function abortCleanup(reason) {
-        clearTimeout(timeoutId);
-        that.pendingTimeout = null;
-        invokeIfPresent(runAbortCallback, reason);
-      }
-    }
-
-
+    const that = this;
     const now = Date.now();
+    const deadline = this.pendingTimeout.startDate + effectDurationMs;
     switch (this.config.runEffect) {
       case "delay":
       case "debounce":
       case "takeLast":
       case "takeLatest": {
-
-        console.log('RUNNING!!!');
         if (this.pendingTimeout) {
-          const deadline = this.pendingTimeout.startDate + timeoutMs;
           if (now < deadline) {
             clearTimeout(this.pendingTimeout.id);
           }
@@ -138,7 +111,6 @@ AsyncState.prototype.run = function run(...execArgs) {
       case "takeFirst":
       case "takeLeading": {
         if (this.pendingTimeout) {
-          const deadline = this.pendingTimeout.startDate + timeoutMs;
           if (now <= deadline) {
             return function noop() {
               // this functions does nothing
@@ -149,23 +121,32 @@ AsyncState.prototype.run = function run(...execArgs) {
           return registerTimeout();
         }
       }
-      default:
-        return this.run_old(...execArgs);
     }
 
+    function registerTimeout() {
+      let runAbortCallback = null;
+
+      that.pendingTimeout = Object.create(null);
+      that.pendingTimeout.startDate = now;
+      that.pendingTimeout.id = setTimeout(function realRun() {
+        that.pendingTimeout = null;
+        runAbortCallback = that.abortAndRunProducer(...execArgs);
+      }, effectDurationMs);
+
+      const timeoutId = that.pendingTimeout.id;
+      return function abortCleanup(reason) {
+        clearTimeout(timeoutId);
+        that.pendingTimeout = null;
+        invokeIfPresent(runAbortCallback, reason);
+      }
+    }
   } else {
-    return this.run_old(...execArgs);
+    return this.abortAndRunProducer(...execArgs);
   }
 }
 
-function numberOrZero(maybeNumber) {
-  return Number(maybeNumber) || 0;
-}
-
-AsyncState.prototype.run_old = function run(...execArgs) {
-
+AsyncState.prototype.abortAndRunProducer = function abortAndRunProducer(...execArgs) {
   if (this.currentState.status === AsyncStateStatus.pending) {
-    warnInDevAboutRunWhilePending(this.key);
     this.abort();
     this.currentAborter = undefined;
   }
@@ -247,8 +228,6 @@ AsyncState.prototype.fork = function fork(forkConfig) {
     clone.currentState = shallowClone(this.currentState);
     clone.lastSuccess = shallowClone(this.lastSuccess);
   }
-
-  clone.__IS_FORK__ = true;
 
   return clone;
 }
