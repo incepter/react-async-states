@@ -4,15 +4,16 @@ sidebar_label: The producer function
 ---
 # The producer function
 
-The producer function is the function that returns the state value, it may be:
+The producer function is the function that returns the state's value, it may be:
 
 - A regular function returning a value.
 - A pure function returning a value based on the previous value (aka reducer).
 - A generator (must return the state value).
 - An asynchronous function using `async/await`.
 - A regular function returning a `Promise` object.
+- `undefined`.
 
-The main goal and purpose is to run your function, it receives one argument like this:
+The main goal and purpose is to run your function, it receives a single argument like this:
 ```javascript
 // somewhere in the code, simplified:
 yourFunction({
@@ -26,6 +27,8 @@ yourFunction({
   abort
 });
 ```
+
+where:
 
 |Property            |Description              |
 |--------------------|-------------------------|
@@ -107,3 +110,22 @@ function reducer(props) {
 ```
 You can even omit the producer function, it was supported along the with the `replaceState` API that we will see later.
 If you attempt to run it, it will delegate to replaceState while passing the arguments.
+
+
+### What do you need to declare a producer function:
+
+The following properties are needed when declaring a production function, either at module scope or via `useAsyncState`:
+
+|Property        |Type                 |Description              |
+|----------------|---------------------|-------------------------|
+|`key`           |`string`             | The unique identifier of the async state |
+|`producer`      |`producer function`  | Returns the state value of type `T` |
+|`configuration` |`AsyncStateConfig`   | The argument object that the producer was ran with |
+
+The supported configuration is:
+
+|Property              |Type                                      |Description               |
+|----------------------|------------------------------------------|-------------------------|
+|`initialValue`        |`T`                                       | The initial value or the initializer of the state (status = `initial`) |
+|`runEffect`           |`oneOf('debounce', 'throttle', undefined)`| An effect to apply when running the producer, can be used to debounce or throttle |
+|`runEffectDurationMs` |`number > 0`, `undefined`                 | The debounce/throttle duration |
