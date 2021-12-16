@@ -1,6 +1,6 @@
 ---
 sidebar_position: 5
-sidebar_label: Concurrent mode
+sidebar_label: Concurrent mode (React 18+)
 ---
 
 # `Concurrent mode`

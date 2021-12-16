@@ -5,12 +5,15 @@ sidebar_label: Minimal usage
 
 # Minimal usage
 
-Let's first take a look at the signature of the library's APIs.
+The most important API of the library is `useAsyncState` and it has a polymorphic behavior allowing it to support
+several writings.
+
+Let's take a look at the signature of the library's APIs.
 
 ## useAsyncState
 
 ```javascript
-// configuration: string | object | function | source
+// configuration: string | configuration object | producer function | source
 function useAsyncState(configuration, dependencies = []) {
   return {
     mode,
@@ -99,11 +102,11 @@ See how I used it here in the [following codesandbox](https://codesandbox.io/s/a
 to have a prior idea (I will keep updating the same codesandbox on my free time):
 
 <iframe
-style={{width: '100%', height: '500px', border: 0, borderRaduis: 4, overflow: 'hidden'}}
+style={{width: '100%', height: '500px', border: 0, borderRadius: 4, overflow: 'hidden'}}
 src="https://codesandbox.io/embed/angry-meitner-lne6o?fontsize=14&hidenavigation=1&theme=dark"
 allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
 sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
-></iframe>
+/>
 
 
 ## AsyncStateProvider
