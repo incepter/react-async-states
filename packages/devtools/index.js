@@ -30,8 +30,9 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
 
   function connect() {
     connected = true;
+    emitFlush();
     if (queue.length) {
-      queue.forEach(emit);
+      queue.forEach(e => emit(e, false));
     }
   }
 
@@ -39,14 +40,18 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
     connected = false;
   }
 
-  function emit(message) {
+  function emit(message, saveToQueue = true) {
     if (connected) {
       window.postMessage(JSON.parse(JSON.stringify(message)), "*");
     }
-    queue.push(message);
-    queue = [];
+    if (saveToQueue && message.type !== toDevtoolsEvents.provider) {
+      queue.push(message);
+    }
   }
 
+  function emitFlush() {
+    emit({ source, type: toDevtoolsEvents.flush }, false);
+  }
   function emitProviderState(entries) {
     emit({
       source,

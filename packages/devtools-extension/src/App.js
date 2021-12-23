@@ -83,7 +83,9 @@ function useDevtoolsEntriesKeys() {
   return useAsyncState({
     key: "devtools",
     areEqual: isEqual,
-    selector: s => Object.entries(s.data.value).map(([uniqueId, as]) => ({uniqueId, key: as.key, status: as.status})),
+    selector: s => Object
+      .entries(s.data.value)
+      .map(([uniqueId, as]) => ({uniqueId, key: as.key, status: as.status})),
   }).state;
 }
 
@@ -105,14 +107,20 @@ function useDevtoolsEntryState(uniqueId) {
 
 function DevtoolsJournal() {
   const [currentAsyncState, setCurrentAsyncState] = React.useState(EMPTY_ARRAY);
+
   const keys = useDevtoolsEntriesKeys();
+  React.useEffect(() => {
+    if (!keys) {
+      setCurrentAsyncState(EMPTY_ARRAY);
+    }
+  }, [keys]);
   return (
     <div className="h-full">
       <h1>Devtools journal</h1>
       <div className="flex h-full">
         <div className="sidebar-container">
           <div className="sidebar">
-            {keys.map(({uniqueId, key, status}) =>
+            {(keys ?? []).map(({uniqueId, key, status}) =>
               <button key={uniqueId}
                       className={`sidebar-button ${uniqueId === currentAsyncState[0] ? 'sidebar-el-active' : ''}`}
                       role="button" onClick={() => setCurrentAsyncState([uniqueId, key])}>{key}-{status}
@@ -163,13 +171,20 @@ function AsyncStateJournal({identifier: [id, key]}) {
 function DevtoolsOverview() {
   const [currentAsyncState, setCurrentAsyncState] = React.useState(EMPTY_ARRAY);
   const keys = useDevtoolsEntriesKeys();
+
+  React.useEffect(() => {
+    if (!keys) {
+      setCurrentAsyncState(EMPTY_ARRAY);
+    }
+  }, [keys]);
+
   return (
     <div className="h-full">
       <h1>Devtools overview: state</h1>
       <div className="flex h-full">
         <div className="sidebar-container">
           <div className="sidebar">
-            {keys.map(({uniqueId, key}) =>
+            {(keys ?? []).map(({uniqueId, key, status}) =>
               <button key={uniqueId}
                       className={`sidebar-button ${uniqueId === currentAsyncState[0] ? 'sidebar-el-active' : ''}`}
                       role="button" onClick={() => setCurrentAsyncState([uniqueId, key])}>{key}-{status}

@@ -248,6 +248,7 @@ AsyncState.prototype.replaceState = function replaceState(newValue) {
   this.setState(AsyncStateStateBuilder.success(effectiveValue));
 }
 
+
 function nextUniqueId() {
   return ++uniqueId;
 }
@@ -298,3 +299,27 @@ export function isAsyncStateSource(source) {
 }
 
 export default AsyncState;
+/**
+ * devtools v2
+ * if __dev__ listen to DevtoolsEvents
+ * if __dev__ PingDevtools
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ */

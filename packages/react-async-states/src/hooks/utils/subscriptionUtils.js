@@ -137,18 +137,19 @@ export function applyUpdateOnReturnValue(returnValue, asyncState, stateValue, ru
   returnValue.key = asyncState.key;
 
   returnValue.read = function readInConcurrentMode() {
-    if (isConcurrentMode()) {
-      if (enableComponentSuspension) {
+    if (enableComponentSuspension) {
+      if (isConcurrentMode()) {
         if (AsyncStateStatus.pending === asyncState?.currentState?.status && asyncState.suspender) {
           throw asyncState.suspender;
         }
+      } else {
+        if (__DEV__ && !didWarnAboutUnsupportedConcurrentFeatures) {
+          console.error("[Warning] You are calling useAsyncState().read() without having react 18 or above " +
+            "if the library throws, you will get an error in your app. You will be receiving the state value without " +
+            "any suspension. Please consider upgrading to react 18 or above to use concurrent features.")
+          didWarnAboutUnsupportedConcurrentFeatures = true;
+        }
       }
-      return stateValue;
-    } else if (__DEV__ && !didWarnAboutUnsupportedConcurrentFeatures) {
-      console.error("[Warning] You are calling useAsyncState().read() without having react 18 or above " +
-        "(concurrent mode), if the library throws, you will get an error in your app. You will be receiving" +
-        "the state value without any suspension. Please consider upgrading to react 18 or above to use concurrent features.")
-      didWarnAboutUnsupportedConcurrentFeatures = true;
     }
     return stateValue;
   }
