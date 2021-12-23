@@ -6,7 +6,7 @@ function reducer(old, name, value) {
   return {...old, [name]: value};
 }
 
-const size = 60;
+const size = 5;
 export default function Demo() {
   useAsyncState({
     lazy: true,

@@ -7,7 +7,7 @@ export default function Bug() {
       <h2>From Here we are inside the provider</h2>
       <CounterReducerExample />
       <CounterReducerExampleSub />
-      <CounterReducerExampleFork />
+      {/*<CounterReducerExampleFork />*/}
     </AsyncStateProvider>
   );
 }

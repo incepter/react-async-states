@@ -4,11 +4,12 @@ import { createAsyncStateEntry } from "./providerUtils";
 import { isAsyncStateSource } from "async-state/AsyncState";
 import { readAsyncStateFromSource } from "async-state/utils";
 
-const allWatchersKey = Symbol();
+const listenersKey = Symbol();
 
 export function AsyncStateManager(asyncStateEntries, oldManager) {
+  // stores all listeners/watchers about an async state
   let watchers = shallowClone(oldManager?.watchers);
-  return {run, get, fork, select, hoist, dispose, watch, runAsyncState, getAllKeys, watchers, watchAll};
+  return {run, get, fork, select, hoist, dispose, watch, notifyWatchers, runAsyncState, getAllKeys, watchers, watchAll};
 
   function get(key) {
     return asyncStateEntries[key]?.value;
@@ -44,7 +45,7 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
 
     if (!asyncStateEntry.initiallyHoisted && didDispose) {
       delete asyncStateEntries[key];
-      asyncify(notifyWatchers)(key, null);
+      notifyWatchers(key, null);
     }
 
     return didDispose;
@@ -59,7 +60,7 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
     const forkedAsyncState = asyncState.fork(forkConfig);
     asyncStateEntries[forkedAsyncState.key] = createAsyncStateEntry(forkedAsyncState);
 
-    asyncify(notifyWatchers)(forkedAsyncState.key, asyncStateEntries[forkedAsyncState.key].value);
+    notifyWatchers(forkedAsyncState.key, asyncStateEntries[forkedAsyncState.key].value);
 
     return forkedAsyncState;
   }
@@ -71,9 +72,19 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
 
     let keyWatchers = watchers[key];
     const index = ++keyWatchers.meter;
-    keyWatchers.watchers[index] = {notify, cleanup};
+
+    let didUnwatch = false;
+
+    function notification(...args) {
+      if (!didUnwatch) {
+        notify(...args);
+      }
+    }
+
+    keyWatchers.watchers[index] = {notify: notification, cleanup};
 
     function cleanup() {
+      didUnwatch = true;
       delete keyWatchers.watchers[index];
     }
 
@@ -81,21 +92,25 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
   }
 
   function watchAll(notify) {
-    return watch(allWatchersKey, notify);
+    return watch(listenersKey, notify);
   }
 
   function notifyWatchers(key, value) {
-    if (watchers[allWatchersKey]?.watchers) {
-      Object.values(watchers[allWatchersKey].watchers).forEach(function notifyWatcher(watcher) {
+    let notificationCallbacks = [];
+    if (watchers[listenersKey]?.watchers) {
+      notificationCallbacks = Object.values(watchers[listenersKey].watchers);
+    }
+    if (watchers[key]) {
+      notificationCallbacks = notificationCallbacks.concat(Object.values(watchers[key].watchers));
+    }
+
+    function cb() {
+      notificationCallbacks.forEach(function notifyWatcher(watcher) {
         watcher.notify(value, key);
-      })
+      });
     }
-    if (!watchers[key]) {
-      return;
-    }
-    Object.values(watchers[key].watchers).forEach(function notifyWatcher(watcher) {
-      watcher.notify(value, key);
-    })
+
+    asyncify(cb)();
   }
 
   function hoist(config) {
@@ -118,7 +133,7 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
     );
 
     const returnValue = get(key);
-    asyncify(notifyWatchers)(key, returnValue); // returnValue is an AsyncState or undefined
+    notifyWatchers(key, returnValue); // returnValue is an AsyncState or undefined
 
     return returnValue;
   }

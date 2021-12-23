@@ -9,7 +9,9 @@ export const toDevtoolsEvents = {
 
   asyncState: "async-state-information", // gives information about an async state
 
-  journal: "journal-event"
+  journal: "journal-event",
+
+  flush: "flush"
 };
 
 export const devtoolsJournalEvents = {

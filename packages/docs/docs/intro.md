@@ -3,7 +3,7 @@ sidebar_position: 1
 sidebar_label: Intro
 ---
 # React async states
-> A naive lightweight library for React state management.
+> A multi-paradigm React state management library.
 
 ## What is this ?
 This is a multi-paradigm library for decentralized state management in React.

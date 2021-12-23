@@ -87,22 +87,38 @@ export const useAsyncStateImpl = function useAsyncStateImpl(subscriptionConfig, 
   if (isInsideProvider) {
     // wait early
     // this sets  a watcher to observe present async state
-    React.useLayoutEffect(function watchAsyncState() {
+    React.useEffect(function watchAsyncState() {
+      let didClean = false;
+
+      if (mode === AsyncStateSubscriptionMode.WAITING && !asyncState) {
+        let candidate = contextValue.get(configuration.key);
+        if (candidate && candidate !== asyncState) {
+          setStateDeps(old => ({guard: {}, rerender: old.rerender}));
+          return;
+        }
+      }
+
       switch (mode) {
+        case AsyncStateSubscriptionMode.HOIST: {
+          contextValue.notifyWatchers(asyncState.key, asyncState);
+          return;
+        }
         case AsyncStateSubscriptionMode.FORK:
-        case AsyncStateSubscriptionMode.HOIST:
         case AsyncStateSubscriptionMode.WAITING:
         case AsyncStateSubscriptionMode.LISTEN: {
-          let watchedKey = AsyncStateSubscriptionMode.WAITING === mode
-            ? configuration.key
-            :
-            asyncState?.key;
-
-          return contextValue.watch(watchedKey, function notify(newValue) {
+          let watchedKey = AsyncStateSubscriptionMode.WAITING === mode ? configuration.key : asyncState?.key;
+          const unwatch = contextValue.watch(watchedKey, function notify(newValue) {
+            if (didClean) {
+              return;
+            }
             if (newValue !== asyncState) {
               setStateDeps(old => ({guard: {}, rerender: old.rerender}));
             }
           });
+          return function cleanup() {
+            didClean = true;
+            invokeIfPresent(unwatch);
+          };
         }
         case AsyncStateSubscriptionMode.NOOP:
         case AsyncStateSubscriptionMode.SOURCE:

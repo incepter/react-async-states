@@ -39,6 +39,7 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
       watchAll: manager.watchAll,
       getAllKeys: manager.getAllKeys,
       runAsyncState: manager.runAsyncState,
+      notifyWatchers: manager.notifyWatchers,
     };
   }, [asyncStateEntries, payload]);
 

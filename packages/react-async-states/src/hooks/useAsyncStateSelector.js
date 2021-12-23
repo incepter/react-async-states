@@ -42,8 +42,8 @@ export function useAsyncStateSelector(keys, selector = identity, areEqual = shal
     // ?. optional channing is used bellow because the async state may be undefined (not hoisted yet)
     if (reduceToObject) {
       selectedValue = selector(
-        Object.entries(asyncStatesMap).reduce((result, [key, as]) => {
-          result[key] = Object.assign({lastSuccess: as?.lastSuccess}, as?.currentState);
+        Object.entries(asyncStatesMap).reduce((result, [key, asyncState]) => {
+          result[key] = Object.assign({lastSuccess: asyncState?.lastSuccess}, asyncState?.currentState);
           return result;
         }, {})
       );
@@ -58,7 +58,7 @@ export function useAsyncStateSelector(keys, selector = identity, areEqual = shal
     return returnValue;
   }
 
-  React.useLayoutEffect(function watchAndSubscribeAndCleanOldSubscriptions() {
+  React.useEffect(function watchAndSubscribeAndCleanOldSubscriptions() {
     let cleanups = [];
 
     function subscription() {
