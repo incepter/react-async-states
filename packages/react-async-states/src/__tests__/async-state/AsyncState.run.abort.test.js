@@ -11,7 +11,7 @@ describe('AsyncState - run - abort', () => {
     // given
     let key = "simulated";
     let producer = timeout(100, [{id: 1, description: "value"}]);
-    let myConfig = {};
+    let myConfig = {initialValue: null};
     let subscription = jest.fn();
 
     // when
@@ -91,7 +91,7 @@ describe('AsyncState - run - abort', () => {
     // given
     let key = "simulated";
     let producer = rejectionTimeout(100, "reason");
-    let myConfig = {};
+    let myConfig = {initialValue: null};
     let subscription = jest.fn();
 
     // when
@@ -138,7 +138,7 @@ describe('AsyncState - run - abort', () => {
     // given
     let key = "simulated";
     let producer = timeout(100, "value");
-    let myConfig = {};
+    let myConfig = {initialValue: null};
     let subscription = jest.fn();
 
     // when

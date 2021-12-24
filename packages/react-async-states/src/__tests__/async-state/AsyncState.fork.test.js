@@ -10,7 +10,7 @@ describe('AsyncState - fork', () => {
     // given
     let key = "simulated";
     let producer = timeout(100, [{id: 1, description: "value"}]);
-    let myConfig = {};
+    let myConfig = {initialValue: null};
 
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);

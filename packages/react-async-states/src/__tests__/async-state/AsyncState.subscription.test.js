@@ -8,7 +8,7 @@ jest.useFakeTimers("modern");
 describe('AsyncState - subscriptions', () => {
   it('should subscribe to async-state and get notified', async () => {
     // given
-    let myConfig = {};
+    let myConfig = {initialValue: null};
     let key = "simulated";
     let subscriptionFn = jest.fn();
     let producer = timeout(50, "Some Value");
@@ -65,9 +65,9 @@ describe('AsyncState - subscriptions', () => {
   });
   it('should subscribe to async-state and unsubscribe before success', async () => {
     // given
-    let myConfig = {};
     let key = "simulated";
     let subscriptionFn = jest.fn();
+    let myConfig = {initialValue: null};
     let producer = timeout(50, "Some Value");
 
     // when
@@ -111,9 +111,9 @@ describe('AsyncState - subscriptions', () => {
   });
   it('should subscribe to async-state and unsubscribe before running', async () => {
     // given
-    let myConfig = {};
     let key = "simulated";
     let subscriptionFn = jest.fn();
+    let myConfig = {initialValue: null};
     let producer = timeout(50, "Some Value");
 
     // when

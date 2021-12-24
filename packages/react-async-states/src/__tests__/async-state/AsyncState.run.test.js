@@ -10,7 +10,7 @@ describe('AsyncState - run', () => {
     // given
     let key = "simulated";
     let producer = timeout(100, [{id: 1, description: "value"}]);
-    let myConfig = {};
+    let myConfig = {initialValue: null};
 
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
@@ -73,7 +73,7 @@ describe('AsyncState - run', () => {
     // given
     let key = "simulated";
     let producer = rejectionTimeout(50, "Some Error");
-    let myConfig = {};
+    let myConfig = {initialValue: null};
 
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);

@@ -8,7 +8,7 @@ describe('AsyncState - setState', () => {
   // given
   let key = "simulated";
   let producer = timeout(100, [{id: 1, description: "value"}]);
-  let myConfig = {};
+  let myConfig = {initialValue: null};
   let myAsyncState = new AsyncState(key, producer, myConfig);
   let subscription = jest.fn();
   myAsyncState.subscribe(subscription);
