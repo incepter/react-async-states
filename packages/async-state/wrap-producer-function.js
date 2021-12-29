@@ -10,9 +10,13 @@ export function wrapProducerFunction(asyncState) {
       return asyncState.replaceState(props.args[0]);
     }
   }
+  // this is the real deal
   return function producerFuncImpl(props) {
+    // the running promise is used to pass the status to pending and as suspender in react18+
     let runningPromise;
+    // the execution value is the return of the initial producer function
     let executionValue;
+    // it is important to clone to capture properties and save only serializable stuff
     const savedProps = cloneProducerProps(props);
 
     try {
@@ -36,6 +40,7 @@ export function wrapProducerFunction(asyncState) {
         return;
       }
       if (generatorResult.done) {
+        props.fulfilled = true;
         asyncState.setState(AsyncStateStateBuilder.success(generatorResult.value, savedProps));
         return;
       } else {
@@ -105,10 +110,10 @@ function stepAsyncAndContinueStartedGenerator(generatorInstance, startupValue, o
   let aborted = false;
 
   // we enter here only if startupValue is pending promise of the generator instance!
-  startupValue.then(step);
+  startupValue.then(step).catch(onReject);
 
   function step(oldValue) {
-    let done = undefined, value = undefined;
+    let done, value;
     try {
       let nextValue = generatorInstance.next(oldValue);
       done = nextValue.done;
