@@ -3,13 +3,16 @@ import { isAsyncStateSource } from "async-state/AsyncState";
 
 // userConfig is the config the developer wrote
 export function readUserConfiguration(userConfig, overrides) {
-  // this is an anonymous producer configuration (lazy: true, fork: false, hoist: false, payload: null)
+  // this is direct anonymous producer configuration
   if (typeof userConfig === "function") {
     return Object.assign({}, defaultUseASConfig, overrides, {producer: userConfig});
   }
+  // subscription to a state inside provider by key (or wait)
+  // or a standalone outside provider with an undefined producer
   if (typeof userConfig === "string") {
     return Object.assign({}, defaultUseASConfig, overrides, {key: userConfig});
   }
+  // subscription via source directly as configuration
   if (isAsyncStateSource(userConfig)) {
     return Object.assign(
       {},
@@ -17,6 +20,7 @@ export function readUserConfiguration(userConfig, overrides) {
       overrides,
       {source: userConfig, [sourceConfigurationSecretSymbol]: true});
   }
+  // subscription via source using object configuration
   if (isAsyncStateSource(userConfig?.source)) {
     return Object.assign({}, defaultUseASConfig, userConfig, overrides, {
       [sourceConfigurationSecretSymbol]: true

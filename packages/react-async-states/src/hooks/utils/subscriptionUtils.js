@@ -14,6 +14,7 @@ import { enableComponentSuspension } from "shared/featureFlags";
 
 export const defaultRerenderStatusConfig = Object.freeze({
   error: true,
+  initial: true,
   success: true,
   aborted: true,
   pending: true,
@@ -131,7 +132,7 @@ export function applyUpdateOnReturnValue(returnValue, asyncState, stateValue, ru
   returnValue.source = asyncState._source;
 
   returnValue.state = stateValue;
-  returnValue.payload = asyncState.payload; // todo: should this be exposed ?
+  returnValue.payload = asyncState.payload; // todo: should this be exposed ? at least, shallow clone while shallow freezing
   returnValue.lastSuccess = asyncState.lastSuccess;
 
   returnValue.key = asyncState.key;
@@ -174,18 +175,20 @@ export function applyUpdateOnReturnValue(returnValue, asyncState, stateValue, ru
   }
 }
 
-export function shouldRecalculateInstance(configuration, mode, guard, deps, oldValue) {
-  return !oldValue ||
-    guard !== oldValue.guard ||
-    mode !== oldValue.mode ||
-    configuration.producer !== oldValue.configuration.producer ||
-    configuration.source !== oldValue.configuration.source ||
+export function shouldRecalculateInstance(newConfig, newMode, newGuard, currentDeps, oldSubscriptionInfo) {
+  // here we check on relevant information to decide on the asyncState instance
+  return !oldSubscriptionInfo ||
+    newGuard !== oldSubscriptionInfo.guard ||
+    newMode !== oldSubscriptionInfo.mode ||
+    newConfig.producer !== oldSubscriptionInfo.configuration.producer ||
+    newConfig.source !== oldSubscriptionInfo.configuration.source ||
 
-    deps.some((dep, index) => !Object.is(dep, oldValue.deps[index])) ||
+    // attempt new instance if dependencies change
+    currentDeps.some((dep, index) => !Object.is(dep, oldSubscriptionInfo.deps[index])) ||
 
-    configuration.fork !== oldValue.configuration.fork ||
-    configuration.forkConfig?.keepState !== oldValue.configuration.forkConfig?.keepState ||
+    newConfig.fork !== oldSubscriptionInfo.configuration.fork ||
+    newConfig.forkConfig?.keepState !== oldSubscriptionInfo.configuration.forkConfig?.keepState ||
 
-    configuration.hoistToProvider !== oldValue.configuration.hoistToProvider ||
-    configuration.hoistToProviderConfig.override !== oldValue.configuration.hoistToProviderConfig.override;
+    newConfig.hoistToProvider !== oldSubscriptionInfo.configuration.hoistToProvider ||
+    newConfig.hoistToProviderConfig.override !== oldSubscriptionInfo.configuration.hoistToProviderConfig.override;
 }
