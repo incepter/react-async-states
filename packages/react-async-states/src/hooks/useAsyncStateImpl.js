@@ -162,14 +162,19 @@ export const useAsyncStateImpl = function useAsyncStateImpl(subscriptionConfig, 
       }
     }, configuration.subscriptionKey);
 
+    return function abortAndUnsubscribe() {
+      unsubscribe();
+    }
+  }, [...dependencies, asyncState]); // re-subscribe if deps
+
+  React.useEffect(function autoRun() {
     const shouldAutoRun = configuration.condition && !configuration.lazy;
     const abort = shouldAutoRun ? run() : undefined;
 
     return function abortAndUnsubscribe() {
-      unsubscribe();
       invokeIfPresent(abort);
     }
-  }, [...dependencies, asyncState]); // re-subscribe if deps
+  }, [...dependencies])
 
   // attempt to dispose/reset old async state
   React.useEffect(function disposeOldAsyncState() {

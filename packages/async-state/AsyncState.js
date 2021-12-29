@@ -160,16 +160,16 @@ AsyncState.prototype.abortAndRunProducer = function abortAndRunProducer(...execA
     abort,
     args: execArgs,
     aborted: false,
-    payload: this.payload,
-    lastSuccess: this.lastSuccess,
+    lastSuccess: that.lastSuccess,
+    payload: shallowClone(that.payload),
     onAbort(cb) {
       onAbortCallbacks.push(cb);
     }
   };
 
   function abort(reason) {
-    if (props.aborted) {
-      // already aborted!
+    if (props.aborted || props.fulfilled) {
+      // already aborted or fulfilled in this closure!!!
       return;
     }
     props.aborted = true;
@@ -182,7 +182,7 @@ AsyncState.prototype.abortAndRunProducer = function abortAndRunProducer(...execA
 
   this.currentAborter = abort;
   this.producer(props);
-  return this.currentAborter;
+  return abort;
 }
 
 AsyncState.prototype.subscribe = function subscribe(cb, subKey) {

@@ -19,6 +19,7 @@ export function wrapProducerFunction(asyncState) {
       executionValue = asyncState.originalProducer(props);
     } catch (e) {
       if (__DEV__) devtools.emitRunSync(asyncState, props);
+      props.fulfilled = true;
       asyncState.setState(AsyncStateStateBuilder.error(e, savedProps));
       return;
     }
@@ -30,6 +31,7 @@ export function wrapProducerFunction(asyncState) {
       try {
         generatorResult = wrapStartedGenerator(executionValue, props);
       } catch (e) {
+        props.fulfilled = true;
         asyncState.setState(AsyncStateStateBuilder.error(e, savedProps));
         return;
       }
@@ -48,6 +50,7 @@ export function wrapProducerFunction(asyncState) {
       asyncState.setState(AsyncStateStateBuilder.pending(savedProps));
     } else { // final value
       if (__DEV__) devtools.emitRunSync(asyncState, props);
+      props.fulfilled = true;
       asyncState.setState(AsyncStateStateBuilder.success(executionValue, savedProps));
       return;
     }
@@ -56,12 +59,14 @@ export function wrapProducerFunction(asyncState) {
       .then(stateData => {
         let aborted = props.aborted;
         if (!aborted) {
+          props.fulfilled = true;
           asyncState.setState(AsyncStateStateBuilder.success(stateData, savedProps));
         }
       })
       .catch(stateError => {
         let aborted = props.aborted;
         if (!aborted) {
+          props.fulfilled = true;
           asyncState.setState(AsyncStateStateBuilder.error(stateError, savedProps));
         }
       });
