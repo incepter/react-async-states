@@ -54,7 +54,6 @@ export function cloneProducerProps(props) {
     delete output.lastSuccess.props; // cut the circular ref here
   }
   output.payload = shallowClone(props.payload);
-  delete output.payload["__provider__"]; // no need!
 
   if (Array.isArray(props.args) && props.args.length) {
     output.args = [...props.args];

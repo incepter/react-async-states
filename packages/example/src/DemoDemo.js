@@ -8,8 +8,6 @@ export function Inject() {
     key: "hakky-login",
     hoistToProvider: true,
     producer(props) {
-      props.payload.__provider__.select()
-      props.payload.__provider__.run("", "", "");
       return {...props.lastSuccess.data, [props.args[0]]: props.args[1]};
     }
   });
