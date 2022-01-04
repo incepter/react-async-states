@@ -6,6 +6,9 @@ import { readAsyncStateFromSource } from "async-state/utils";
 
 const listenersKey = Symbol();
 
+// the manager contains all functions responsible for managing the context provider
+// there is a manager per provider
+// the manager operates on the asyncStateEntries map after copying the oldManager watchers
 export function AsyncStateManager(asyncStateEntries, oldManager) {
   // stores all listeners/watchers about an async state
   let watchers = shallowClone(oldManager?.watchers);
@@ -21,6 +24,7 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
 
   function runAsyncState(key, ...args) {
     let asyncState;
+    // always attempt a source object
     if (isAsyncStateSource(key)) {
       asyncState = readAsyncStateFromSource(key);
     } else {
@@ -43,14 +47,17 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
 
     const didDispose = asyncStateEntry.value.dispose();
 
+    // delete only if it was not initially hoisted and the dispose is successful (no locks)
     if (!asyncStateEntry.initiallyHoisted && didDispose) {
       delete asyncStateEntries[key];
+      // notify watchers about disappearance
       notifyWatchers(key, null);
     }
 
     return didDispose;
   }
 
+  // the fork registers in the provider automatically
   function fork(key, forkConfig) {
     const asyncState = get(key);
     if (!asyncState) {
@@ -65,11 +72,34 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
     return forkedAsyncState;
   }
 
+  // there is two types of watchers: per key, and watching everything
+  // the everything watcher is the useAsyncStateSelector with a function selecting keys
+  // (cannot statically predict them, so it needs to be notified about everything happening)
+  // watch: watches only a key
+  // watchAll: watches everything and uses a special key to watch (a symbol)
+  // watchers have this shape
+  // {
+  //    listenersKey(symbol): { // watching everything
+  //      meter: 3,
+  //      watchers: {
+  //        1: {notify, cleanup}
+  //        2: {notify, cleanup}
+  //        3: {notify, cleanup}
+  //      }
+  //    },
+  //    users: {
+  //      meter: 1,
+  //      watchers: {
+  //        1: {notify, cleanup}
+  //      }
+  //    }
+  // }
   function watch(key, notify) {
     if (!watchers[key]) {
       watchers[key] = {meter: 0, watchers: {}};
     }
 
+    // these are the watchers about the specified key
     let keyWatchers = watchers[key];
     const index = ++keyWatchers.meter;
 
@@ -96,6 +126,9 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
   }
 
   function notifyWatchers(key, value) {
+    // it is important to close over the notifications to be sent
+    // to avoid sending notifications to old closures that aren't relevant anymore
+    // if this occurs, the component will receive a false notification that may let him enter an infinite loop
     let notificationCallbacks = [];
     if (watchers[listenersKey]?.watchers) {
       notificationCallbacks = Object.values(watchers[listenersKey].watchers);
@@ -110,6 +143,10 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
       });
     }
 
+    // the notification should not go synchronous
+    // because it occurs when a component A is rendering, if we notify a component B that schedules a render
+    // react would throw a warning in the console about scheduling an update in a component in the render phase
+    // from another one
     asyncify(cb)();
   }
 
@@ -133,7 +170,7 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
     );
 
     const returnValue = get(key);
-    notifyWatchers(key, returnValue); // returnValue is an AsyncState or undefined
+    notifyWatchers(key, returnValue);
 
     return returnValue;
   }
@@ -175,6 +212,7 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
   //
   // }
 
+  // used in function selector in useAsyncStateSelector
   function getAllKeys() {
     return Object.keys(asyncStateEntries);
   }

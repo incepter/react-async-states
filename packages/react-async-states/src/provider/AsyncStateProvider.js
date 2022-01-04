@@ -27,7 +27,7 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
 
     return {
       manager,
-      payload: constructContextPayload(manager, payload),
+      payload: shallowClone(payload),
 
       get: manager.get,
       run: manager.run,
@@ -61,11 +61,6 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
     }
   }, [asyncStateEntries]);
 
-  // React.useEffect(() => {
-  //   const id = setInterval(() => console.log(asyncStateEntries), 5000);
-  //   return () => clearInterval(id);
-  // }, []);
-
   return (
     <AsyncStateContext.Provider value={contextValue}>
       {children}
@@ -73,17 +68,3 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
   );
 }
 
-function constructContextPayload(manager, otherPayload) {
-  if (manager == null) {
-    return undefined;
-  }
-  return Object.assign(
-    {
-      __provider__: {
-        select: manager.select,
-        run: manager.runAsyncState,
-      }
-    },
-    otherPayload,
-  );
-}
