@@ -29,7 +29,7 @@ function makeConfigFromOutput(options, output) {
     ]),
     resolve: {
       modules: ["node_modules", "src"],
-      extensions: [".js"]
+      extensions: [".js", ".ts"]
     },
     devtool: options.devtool,
     performance: options.performance || {},

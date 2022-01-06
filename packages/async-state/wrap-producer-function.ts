@@ -1,17 +1,27 @@
 import { __DEV__, cloneProducerProps } from "shared";
 import devtools from "devtools";
 import { AsyncStateStateBuilder } from "./utils";
+import {
+  AbortFn,
+  AsyncStateInterface,
+  Producer,
+  ProducerFunction,
+  ProducerProps,
+  WrappedProducerFunction
+} from "./types";
+import AsyncState from "./AsyncState";
 
-export function wrapProducerFunction(asyncState) {
+export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunction<T> {
   // this allows the developer to omit the producer attribute.
   // and replaces state when there is no producer
   if (typeof asyncState.originalProducer !== "function") {
-    return function delegateToReplaceState(props) {
-      return asyncState.replaceState(props.args[0]);
+    return function delegateToReplaceState(props: ProducerProps<T>): undefined {
+      asyncState.replaceState(props.args[0]);
+      return; // makes ts happy
     }
   }
   // this is the real deal
-  return function producerFuncImpl(props) {
+  return function producerFuncImpl(props: ProducerProps<T>): undefined {
     // the running promise is used to pass the status to pending and as suspender in react18+
     let runningPromise;
     // the execution value is the return of the initial producer function

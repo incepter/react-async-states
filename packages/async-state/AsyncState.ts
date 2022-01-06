@@ -1,364 +1,296 @@
-import { __DEV__, AsyncStateStatus, cloneProducerProps, invokeIfPresent, numberOrZero, shallowClone } from "shared";
-import { wrapProducerFunction } from "./wrap-producer-function";
-import { AsyncStateStateBuilder, constructAsyncStateSource, warnDevAboutAsyncStateKey } from "./utils";
+import {__DEV__, cloneProducerProps, invokeIfPresent, numberOrZero, shallowClone} from "shared";
+import {wrapProducerFunction} from "./wrap-producer-function";
+import {AsyncStateStateBuilder, constructAsyncStateSource, warnDevAboutAsyncStateKey} from "./utils";
 import devtools from "devtools";
-import { enableRunEffects } from "shared/featureFlags";
+import {enableRunEffects} from "shared/featureFlags";
+import {
+  AbortFn,
+  AsyncStateInterface,
+  AsyncStateKeyType,
+  AsyncStateSource, AsyncStateStateFunctionUpdater,
+  AsyncStateStateType, AsyncStateStateUpdater,
+  AsyncStateStatus,
+  AsyncStateSubscription,
+  ForkConfigType,
+  Producer,
+  ProducerConfig,
+  ProducerFunction,
+  ProducerProps
+} from "./types";
 
-enum AsyncStateStatus {
-  error = "error",
-  pending = "pending",
-  success = "success",
-  aborted = "aborted",
-  initial = "initial",
-}
+export default class AsyncState<T> implements AsyncStateInterface<T> {
+  //region properties
+  key: AsyncStateKeyType;
+  _source: AsyncStateSource;
+  uniqueId: number | undefined;
 
-enum ProducerRunEffects {
-  debounce = "debounce",
-  throttle = "throttle",
-}
+  currentState: AsyncStateStateType<T>;
+  lastSuccess: AsyncStateStateType<T>;
 
-type AsyncStateStateType<T> = {
-  data: T,
-  status: AsyncStateStatus,
-  props: ProducerSavedProps,
-};
+  config: ProducerConfig<T>;
+  private locks: number = 0;
+  private forkCount: number = 0;
+  payload: Object | null = null;
+  private pendingTimeout: { id: ReturnType<typeof setTimeout>, startDate: number } | null = null;
 
-type ProducerAbortFn  = (reason: any) => void;
+  private subscriptionsMeter: number = 0;
+  subscriptions: { [id: number]: AsyncStateSubscription<T> } = {};
 
-type ProducerOnAbortFn  = (cb: () => void) => void;
+  producer: ProducerFunction<T>;
+  suspender: Promise<T> | undefined = undefined;
+  readonly originalProducer: Producer<T>;
+  private currentAborter: AbortFn = undefined;
 
-type ProducerProps<T> = {
-  aborted: boolean,
-  abort: ProducerAbortFn,
-  onAbort: ProducerOnAbortFn,
+  //endregion
 
-  payload: any,
-  args: any[],
-  lastSuccess: AsyncStateStateType<T>
-}
+  constructor(key: AsyncStateKeyType, producer: Producer<T>, config: ProducerConfig<T>) {
+    warnDevAboutAsyncStateKey(key);
 
-type ProducerSavedProps = {
-  aborted: boolean,
-  abort: ProducerAbortFn,
-  onAbort: ProducerOnAbortFn,
+    this.key = key;
+    this.config = shallowClone(config);
+    this.originalProducer = producer;
 
-  payload: any,
-  args: any[],
-  lastSuccess
-}
-
-type ProducerFunction<T>  = (props: ProducerProps<T>) => T;
-
-type ProducerConfig<T>  = {
-  initialValue: T,
-  runEffect: ProducerRunEffects | undefined,
-  runEffectDurationMs: number | undefined,
-}
-
-type AsyncStateKeyType = string | undefined;
-
-type WrappedProducerFunction<T> = () => () => void;
-
-interface AsyncStateInterface<T> {
-  new (key: AsyncStateKeyType, producer: ProducerFunction<T>, config: ProducerConfig<T>) : {
-    forkCount: 0,
-    locks: number,
-    currentAborter: any,
-    subscriptionsMeter: 0,
-    payload: any, // todo
-    key: AsyncStateKeyType,
-    suspender: any, // todo
-    _source: AsyncStateSource,
-    config: ProducerConfig<T>,
-    subscriptions: any, // todo
-    uniqueId: number | undefined,
-    pendingTimeout: number | undefined,
-    lastSuccess: AsyncStateStateType<T>,
-    initialValue: AsyncStateStateType<T>,
-    producer: WrappedProducerFunction<T>,
-    originalProducer: ProducerFunction<T>,
-
-
-    dispose: () => void,
-    abort: (reason: any) => void,
-    setState: AsyncStateStateUpdater<T>,
-
-  }
-}
-
-type AsyncStateStateFunctionUpdater<T> = (updater: AsyncStateStateType<T>) => T;
-
-type AsyncStateStateUpdater<T> = (updater: T | AsyncStateStateFunctionUpdater<T>) => void;
-
-type AsyncStateSource = {
-  key: AsyncStateKeyType,
-  uniqueId: number | undefined,
-}
-
-function AsyncState<T>(key: AsyncStateKeyType, producer: ProducerFunction<T>, config: ProducerConfig<T>): AsyncStateInterface<T> {
-  warnDevAboutAsyncStateKey(key);
-
-  this.key = key;
-  this.config = shallowClone(config);
-  this.originalProducer = producer;
-
-  const initialValue = typeof this.config.initialValue === "function" ? this.config.initialValue() : this.config.initialValue;
-  this.currentState = AsyncStateStateBuilder.initial(initialValue);
-  this.lastSuccess = this.currentState;
-
-  this.forkCount = 0;
-  this.subscriptionsMeter = 0;
-
-  this.subscriptions = {};
-  this.producer = wrapProducerFunction(this);
-  this.suspender = undefined;
-
-  this.payload = null;
-  this.currentAborter = undefined;
-
-  this.locks = 0;
-
-  if (__DEV__) {
-    this.uniqueId = nextUniqueId();
-  }
-
-  if (enableRunEffects) {
-    this.pendingTimeout = null;
-  }
-
-  this._source = makeSource(this);
-
-  Object.preventExtensions(this);
-
-  if (__DEV__) devtools.emitCreation(this);
-
-  return this;
-}
-
-AsyncState.prototype.setState = function setState<T>(newState: AsyncStateStateUpdater<T>, notify = true) {
-  if (__DEV__) devtools.startUpdate(this);
-  if (typeof newState === "function") {
-    this.currentState = newState(this.currentState);
-  } else {
-    this.currentState = newState;
-  }
-
-  if (this.currentState.status === AsyncStateStatus.success) {
+    const initialValue = typeof this.config.initialValue === "function" ? this.config.initialValue() : this.config.initialValue;
+    this.currentState = AsyncStateStateBuilder.initial(initialValue);
     this.lastSuccess = this.currentState;
+
+    this.producer = wrapProducerFunction(this);
+
+    if (__DEV__) {
+      this.uniqueId = nextUniqueId();
+    }
+
+    this._source = makeSource(this);
+
+    Object.preventExtensions(this);
+
+    if (__DEV__) devtools.emitCreation(this);
   }
 
-  if (this.currentState.status !== AsyncStateStatus.pending) {
-    this.suspender = undefined;
-    this.currentAborter = undefined;
+  setState(newState: AsyncStateStateType<T>, notify: boolean = true): void {
+    if (__DEV__) devtools.startUpdate(this);
+
+    this.currentState = newState;
+
+    if (this.currentState.status === AsyncStateStatus.success) {
+      this.lastSuccess = this.currentState;
+    }
+
+    if (this.currentState.status !== AsyncStateStatus.pending) {
+      this.suspender = undefined;
+      this.currentAborter = undefined;
+    }
+    if (__DEV__) devtools.emitUpdate(this);
+
+    if (notify) {
+      notifySubscribers(this as AsyncStateInterface<any>);
+    }
   }
-  if (__DEV__) devtools.emitUpdate(this);
 
-  if (notify) {
-    notifySubscribers(this);
-  }
-}
-
-AsyncState.prototype.abort = function abortImpl(reason) {
-  invokeIfPresent(this.currentAborter, reason);
-}
-
-AsyncState.prototype.dispose = function disposeImpl() {
-  if (this.locks > 0) {
-    return false;
+  abort(reason: any = undefined) {
+    invokeIfPresent(this.currentAborter, reason);
   }
 
-  this.abort();
-  clearSubscribers(this);
+  dispose() {
+    if (this.locks > 0) {
+      return false;
+    }
 
-  this.locks = 0;
-  const initialValue = typeof this.config.initialValue === "function" ? this.config.initialValue() : this.config.initialValue;
-  this.setState(AsyncStateStateBuilder.initial(initialValue));
-  if (__DEV__) devtools.emitDispose(this);
+    this.abort();
+    clearSubscribers(this as AsyncStateInterface<T>);
 
-  return true;
-}
+    this.locks = 0;
+    const initialValue = typeof this.config.initialValue === "function" ? this.config.initialValue() : this.config.initialValue;
+    this.setState(AsyncStateStateBuilder.initial(initialValue));
+    if (__DEV__) devtools.emitDispose(this);
 
-AsyncState.prototype.run = function run(...execArgs) {
-  if (enableRunEffects && this.config.runEffect) {
-    const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
-    if (effectDurationMs === 0) {
-      return this.abortAndRunProducer(...execArgs);
+    return true;
+  }
+
+  run(...args: any[]) {
+
+    const that = this;
+    if (enableRunEffects && this.config.runEffect) {
+
+      const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
+      if (effectDurationMs === 0) {
+        return this.abortAndRunProducer(...args);
+      }
+
+      const now = Date.now();
+
+      // @ts-ignore
+      // this function should not be declared unless run effects are enabled and the user requested them
+      function registerTimeout() {
+        let runAbortCallback: AbortFn | null = null;
+
+        const timeoutId = setTimeout(function realRun() {
+          that.pendingTimeout = null;
+          runAbortCallback = that.abortAndRunProducer(...args);
+        }, effectDurationMs);
+
+        that.pendingTimeout = {
+          id: timeoutId,
+          startDate: now,
+        };
+
+        return function abortCleanup(reason) {
+          clearTimeout(timeoutId);
+          that.pendingTimeout = null;
+          invokeIfPresent(runAbortCallback, reason);
+        }
+      }
+
+
+      switch (this.config.runEffect) {
+        case "delay":
+        case "debounce":
+        case "takeLast":
+        case "takeLatest": {
+          if (this.pendingTimeout) {
+            const deadline = this.pendingTimeout.startDate + effectDurationMs;
+            if (now < deadline) {
+              clearTimeout(this.pendingTimeout.id);
+            }
+          }
+          return registerTimeout();
+        }
+        case "throttle":
+        case "takeFirst":
+        case "takeLeading": {
+          if (this.pendingTimeout) {
+            const deadline = this.pendingTimeout.startDate + effectDurationMs;
+            if (now <= deadline) {
+              return function noop() {
+                // this functions does nothing
+              };
+            }
+            break;
+          } else {
+            return registerTimeout();
+          }
+        }
+      }
+    }
+    return this.abortAndRunProducer(...args);
+  }
+
+  private abortAndRunProducer(...execArgs: any[]) {
+    if (this.currentState.status === AsyncStateStatus.pending) {
+      this.abort();
+      this.currentAborter = undefined;
     }
 
     const that = this;
-    const now = Date.now();
-    switch (this.config.runEffect) {
-      case "delay":
-      case "debounce":
-      case "takeLast":
-      case "takeLatest": {
-        if (this.pendingTimeout) {
-          const deadline = this.pendingTimeout.startDate + effectDurationMs;
-          if (now < deadline) {
-            clearTimeout(this.pendingTimeout.id);
-          }
-        }
-        return registerTimeout();
+
+    let onAbortCallbacks: AbortFn[] = [];
+
+    const props: ProducerProps<T> = {
+      abort,
+      args: execArgs,
+      aborted: false,
+      lastSuccess: that.lastSuccess,
+      payload: shallowClone(that.payload),
+      onAbort(cb: AbortFn) {
+        onAbortCallbacks.push(cb);
       }
-      case "throttle":
-      case "takeFirst":
-      case "takeLeading": {
-        if (this.pendingTimeout) {
-          const deadline = this.pendingTimeout.startDate + effectDurationMs;
-          if (now <= deadline) {
-            return function noop() {
-              // this functions does nothing
-            };
-          }
-          break;
-        } else {
-          return registerTimeout();
-        }
+    };
+
+    function abort(reason: any): AbortFn | undefined {
+      if (props.aborted || props.fulfilled) {
+        // already aborted or fulfilled in this closure!!!
+        return;
       }
+      props.aborted = true;
+      that.setState(AsyncStateStateBuilder.aborted(reason, cloneProducerProps(props)));
+      onAbortCallbacks.forEach(function clean(func) {
+        invokeIfPresent(func, reason);
+      });
+      that.currentAborter = undefined;
     }
 
+    this.currentAborter = abort;
+    this.producer(props);
+    return abort;
+  }
+
+  subscribe(cb, subKey: string | undefined) {
+    let that = this;
+    this.subscriptionsMeter += 1;
     // @ts-ignore
-    function registerTimeout() {
-      let runAbortCallback = null;
+    let subscriptionKey: string = subKey;
 
-      that.pendingTimeout = Object.create(null);
-      that.pendingTimeout.startDate = now;
-      that.pendingTimeout.id = setTimeout(function realRun() {
-        that.pendingTimeout = null;
-        runAbortCallback = that.abortAndRunProducer(...execArgs);
-      }, effectDurationMs);
-
-      const timeoutId = that.pendingTimeout.id;
-      return function abortCleanup(reason) {
-        clearTimeout(timeoutId);
-        that.pendingTimeout = null;
-        invokeIfPresent(runAbortCallback, reason);
-      }
+    if (subKey === undefined) {
+      subscriptionKey = `${this.key}-sub-${this.subscriptionsMeter}`;
     }
-  } else {
-    return this.abortAndRunProducer(...execArgs);
-  }
-}
 
-AsyncState.prototype.abortAndRunProducer = function abortAndRunProducer(...execArgs) {
-  if (this.currentState.status === AsyncStateStatus.pending) {
-    this.abort();
-    this.currentAborter = undefined;
-  }
-
-  const that = this;
-
-  let onAbortCallbacks = [];
-
-  const props = {
-    abort,
-    args: execArgs,
-    aborted: false,
-    lastSuccess: that.lastSuccess,
-    payload: shallowClone(that.payload),
-    onAbort(cb) {
-      onAbortCallbacks.push(cb);
+    function cleanup() {
+      that.locks -= 1;
+      delete that.subscriptions[subscriptionKey];
+      if (__DEV__) devtools.emitUnsubscription(that, subscriptionKey);
     }
-  };
 
-  function abort(reason) {
-    if (props.aborted || props.fulfilled) {
-      // already aborted or fulfilled in this closure!!!
-      return;
+    this.subscriptions[subscriptionKey] = {
+      cleanup,
+      callback: cb,
+      key: subscriptionKey,
+    };
+    this.locks += 1;
+
+    if (__DEV__) devtools.emitSubscription(this, subscriptionKey);
+    return cleanup;
+  }
+
+  fork(forkConfig: { keepState: boolean, key: AsyncStateKeyType }) {
+    const mergedConfig: ForkConfigType = shallowClone(defaultForkConfig, forkConfig);
+
+    let {key} = mergedConfig;
+
+    if (key === undefined) {
+      key = `${this.key}-fork-${this.forkCount + 1}`;
     }
-    props.aborted = true;
-    that.setState(AsyncStateStateBuilder.aborted(reason, cloneProducerProps(props)));
-    onAbortCallbacks.forEach(function clean(func) {
-      invokeIfPresent(func, reason);
-    });
-    that.currentAborter = undefined;
+
+    const clone = new AsyncState(key, this.originalProducer, this.config);
+
+    // if something fail, no need to increment
+    this.forkCount += 1;
+
+    if (mergedConfig.keepState) {
+      clone.currentState = shallowClone(this.currentState);
+      clone.lastSuccess = shallowClone(this.lastSuccess);
+    }
+
+    return clone as AsyncStateInterface<T>;
   }
 
-  this.currentAborter = abort;
-  this.producer(props);
-  return abort;
+  replaceState(newValue: T | AsyncStateStateFunctionUpdater<T>): void {
+    if (this.currentState.status === AsyncStateStatus.pending) {
+      this.abort();
+      this.currentAborter = undefined;
+    }
+
+    let effectiveValue = newValue;
+    if (typeof newValue === "function") {
+      effectiveValue = (newValue as AsyncStateStateFunctionUpdater<T>)(this.currentState);
+    }
+
+    if (__DEV__) devtools.emitReplaceState(this);
+    const savedProps = cloneProducerProps({args: effectiveValue});
+    this.setState(AsyncStateStateBuilder.success(effectiveValue, savedProps));
+  }
 }
-
-AsyncState.prototype.subscribe = function subscribe(cb, subKey) {
-  let that = this;
-  this.subscriptionsMeter += 1;
-  let subscriptionKey = subKey;
-
-  if (subKey === undefined) {
-    subscriptionKey = `${this.key}-sub-${this.subscriptionsMeter}`;
-  }
-
-  function cleanup() {
-    that.locks -= 1;
-    delete that.subscriptions[subscriptionKey];
-    if (__DEV__) devtools.emitUnsubscription(that, subscriptionKey);
-  }
-
-  this.subscriptions[subscriptionKey] = {
-    cleanup,
-    callback: cb,
-    key: subscriptionKey,
-  };
-  this.locks += 1;
-
-  if (__DEV__) devtools.emitSubscription(this, subscriptionKey);
-  return cleanup;
-}
-
-AsyncState.prototype.fork = function fork(forkConfig) {
-  const mergedConfig = shallowClone(defaultForkConfig, forkConfig);
-
-  let {key} = mergedConfig;
-
-  if (key === undefined) {
-    key = forkKey(this);
-  }
-
-  const clone = new AsyncState(key, this.originalProducer, this.config);
-
-  // if something fail, no need to increment
-  this.forkCount += 1;
-
-  if (mergedConfig.keepState) {
-    clone.currentState = shallowClone(this.currentState);
-    clone.lastSuccess = shallowClone(this.lastSuccess);
-  }
-
-  return clone;
-}
-
-AsyncState.prototype.replaceState = function replaceState(newValue) {
-  if (this.currentState.status === AsyncStateStatus.pending) {
-    this.abort();
-    this.currentAborter = undefined;
-  }
-
-  let effectiveValue = newValue;
-  if (typeof newValue === "function") {
-    effectiveValue = newValue(this.currentState);
-  }
-
-  if (__DEV__) devtools.emitReplaceState(this);
-  const savedProps = cloneProducerProps({args: effectiveValue});
-  this.setState(AsyncStateStateBuilder.success(effectiveValue, savedProps));
-}
-
 
 function nextUniqueId() {
   return ++uniqueId;
 }
 
-let uniqueId = 0;
-const sourceIsSourceSymbol = Symbol();
+let uniqueId: number = 0;
+const sourceIsSourceSymbol: symbol = Symbol();
 
-const defaultForkConfig = Object.freeze({keepState: false});
+const defaultForkConfig: ForkConfigType = Object.freeze({keepState: false});
 
-function forkKey(asyncState) {
-  return `${asyncState.key}-fork-${asyncState.forkCount + 1}`;
-}
-
-function makeSource(asyncState) {
-  const source = constructAsyncStateSource(asyncState);
+function makeSource<T>(asyncState: AsyncStateInterface<T>) {
+  const source: AsyncStateSource = constructAsyncStateSource(asyncState);
   source.key = asyncState.key;
 
   Object.defineProperty(source, sourceIsSourceSymbol, {
@@ -376,45 +308,19 @@ function makeSource(asyncState) {
 }
 
 
-function notifySubscribers(asyncState) {
+function notifySubscribers(asyncState: AsyncStateInterface<any>) {
   Object.values(asyncState.subscriptions).forEach(subscription => {
     subscription.callback(asyncState.currentState);
   });
 }
 
-function clearSubscribers(asyncState) {
+function clearSubscribers(asyncState: AsyncStateInterface<any>) {
   Object.values(asyncState.subscriptions).forEach(subscription => {
     subscription.cleanup();
   });
 }
 
 
-export function isAsyncStateSource(source) {
-  return !!source && source[sourceIsSourceSymbol] === true;
+export function isAsyncStateSource(possiblySource: any) {
+  return possiblySource && possiblySource[sourceIsSourceSymbol] === true;
 }
-
-export default AsyncState;
-/**
- * devtools v2
- * if __dev__ listen to DevtoolsEvents
- * if __dev__ PingDevtools
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- */

@@ -1,4 +1,11 @@
-import { __DEV__, AsyncStateStatus } from "shared";
+import {__DEV__} from "shared";
+import {
+  AsyncStateInterface,
+  AsyncStateSource,
+  AsyncStateStateBuilderInterface,
+  AsyncStateStateType, AsyncStateStatus,
+  ProducerSavedProps
+} from "./types";
 
 export function warnDevAboutAsyncStateKey(key) {
   if (__DEV__) {
@@ -28,7 +35,8 @@ function Secret() {
   };
 }
 
-function objectWithHiddenProperty(key, value) {
+function objectWithHiddenProperty(key: Object, value: AsyncStateInterface<any>) {
+  // @ts-ignore
   let output = new (Secret())();
   output.constructor(key, value);
 
@@ -36,13 +44,14 @@ function objectWithHiddenProperty(key, value) {
 }
 
 const asyncStatesKey = Object.freeze(Object.create(null));
-export function constructAsyncStateSource(asyncState) {
+
+export function constructAsyncStateSource(asyncState: AsyncStateInterface<any>): AsyncStateSource {
   return objectWithHiddenProperty(asyncStatesKey, asyncState);
 }
 
-export function readAsyncStateFromSource(source, throwError = true) {
+export function readAsyncStateFromSource(possiblySource: any, throwError: boolean = true) {
   try {
-    return source.constructor(asyncStatesKey); // async state instance
+    return possiblySource.constructor(asyncStatesKey); // async state instance
   } catch (e) {
     if (throwError) {
       const errorString = "You ve passed an incompatible source object. Please make sure to pass the received source object.";
@@ -52,14 +61,14 @@ export function readAsyncStateFromSource(source, throwError = true) {
   }
 }
 
-function state(status, data, props) {
+function state<T>(status: AsyncStateStatus, data: T | any, props: ProducerSavedProps<T> | null): AsyncStateStateType<T> {
   return Object.freeze({status, data, props});
 }
 
 export const AsyncStateStateBuilder = Object.freeze({
-  initial: initialValue => state(AsyncStateStatus.initial, initialValue, null),
+  initial: (initialValue) => state(AsyncStateStatus.initial, initialValue, null),
   error: (data, props) => state(AsyncStateStatus.error, data, props),
   success: (data, props) => state(AsyncStateStatus.success, data, props),
   pending: props => state(AsyncStateStatus.pending, null, props),
   aborted: (reason, props) => state(AsyncStateStatus.aborted, reason, props),
-});
+}) as AsyncStateStateBuilderInterface;
