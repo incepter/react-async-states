@@ -120,9 +120,21 @@ export const defaultUseASConfig = Object.freeze({
   selector: oneObjectIdentity,
 });
 
-export function calculateSelectedState(newState, lastSuccess, configuration) {
-  const {selector} = configuration;
-  return typeof selector === "function" ? selector(newState, lastSuccess) : newState;
+export function calculateSelectedState(asyncState, newState, lastSuccess, configuration) {
+  const {selector, stateExtender} = configuration;
+  const {stateExtender: configStateExtender} = asyncState.config;
+
+  if (stateExtender || configStateExtender) {
+    console.log('calculating state', stateExtender, configStateExtender);
+  }
+
+  const globallyExtendedState = typeof configStateExtender === "function" ?
+    shallowClone(newState, configStateExtender(newState)) : newState;
+
+  const extendedState = typeof stateExtender === "function" ?
+    shallowClone(globallyExtendedState, stateExtender(globallyExtendedState)) : globallyExtendedState;
+
+  return typeof selector === "function" ? selector(extendedState, lastSuccess) : extendedState;
 }
 
 let didWarnAboutUnsupportedConcurrentFeatures = false;

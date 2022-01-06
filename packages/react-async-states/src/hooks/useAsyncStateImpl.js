@@ -152,7 +152,7 @@ export const useAsyncStateImpl = function useAsyncStateImpl(subscriptionConfig, 
   if (!factory.current.returnValue) {
     factory.current.returnValue = Object.create(null); // inherit nothing
     if (asyncState) {
-      const calculatedState = calculateSelectedState(asyncState.currentState, asyncState.lastSuccess, configuration);
+      const calculatedState = calculateSelectedState(asyncState, asyncState.currentState, asyncState.lastSuccess, configuration);
       applyUpdateOnReturnValue(factory.current.returnValue, asyncState, calculatedState, run, runAsyncState, mode);
     }
   }
@@ -167,7 +167,7 @@ export const useAsyncStateImpl = function useAsyncStateImpl(subscriptionConfig, 
 
     // the subscribe function returns the unsubscribe function, that serves as cleanup
     return asyncState.subscribe(function onUpdate(newState) {
-      const calculatedState = calculateSelectedState(newState, asyncState.lastSuccess, configuration);
+      const calculatedState = calculateSelectedState(asyncState, newState, asyncState.lastSuccess, configuration);
       const prevStateValue = factory.current.returnValue.state;
       applyUpdateOnReturnValue(factory.current.returnValue, asyncState, calculatedState, run, runAsyncState, mode);
 

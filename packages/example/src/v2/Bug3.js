@@ -1,5 +1,5 @@
 import React from "react";
-import { useAsyncState } from "react-async-states";
+import { useAsyncState, createSourceAsyncState } from "react-async-states";
 
 const request = () =>
   fetch("https://jsonplakceholder.typicode.com/posts/1")
@@ -21,8 +21,21 @@ function* producer() {
   }
 }
 
+function addIsThing(state) {
+  const {status} = state;
+  return {
+    isPending: status === "pending",
+    isInitial: status === "initial",
+    isError: status === "error",
+    isAborted: status === "aborted",
+    isSuccess: status === "success"
+  }
+}
+
+const source = createSourceAsyncState("test", producer, {stateExtender: t => ({ haha: true })});
+
 export default function App() {
-  const { state } = useAsyncState.auto(producer);
+  const { state } = useAsyncState.auto({source, stateExtender: addIsThing});
   console.log("state =>", state);
   return <div className="App"><pre>{JSON.stringify(state, null, 4)}</pre></div>;
 }
