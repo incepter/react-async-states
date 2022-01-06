@@ -57,8 +57,6 @@ export type ProducerConfig<T> = {
 
 export type AsyncStateKeyType = string | undefined;
 
-export type WrappedProducerFunction<T> = (props: ProducerProps<T>) => AbortFn;
-
 export type AsyncStateStateFunctionUpdater<T> = (updater: AsyncStateStateType<T>) => T;
 
 export type AsyncStateStateUpdater<T> = (updater: T | AsyncStateStateFunctionUpdater<T>, notify: boolean) => void;
@@ -90,7 +88,7 @@ export interface AsyncStateInterface<T> {
   subscriptions: { [id: number]: AsyncStateSubscription<T> },
 
   suspender: Promise<T> | undefined,
-  producer: WrappedProducerFunction<T>,
+  producer: ProducerFunction<T>,
 
   // prototype functions
   dispose: () => boolean,

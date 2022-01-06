@@ -1,14 +1,7 @@
-import { __DEV__, cloneProducerProps } from "shared";
+import {__DEV__, cloneProducerProps} from "shared";
 import devtools from "devtools";
-import { AsyncStateStateBuilder } from "./utils";
-import {
-  AbortFn,
-  AsyncStateInterface,
-  Producer,
-  ProducerFunction,
-  ProducerProps,
-  WrappedProducerFunction
-} from "./types";
+import {AsyncStateStateBuilder} from "./utils";
+import {ProducerFunction, ProducerProps} from "./types";
 import AsyncState from "./AsyncState";
 
 export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunction<T> {
