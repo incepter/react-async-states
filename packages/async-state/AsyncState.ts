@@ -4,7 +4,98 @@ import { AsyncStateStateBuilder, constructAsyncStateSource, warnDevAboutAsyncSta
 import devtools from "devtools";
 import { enableRunEffects } from "shared/featureFlags";
 
-function AsyncState(key, producer, config) {
+enum AsyncStateStatus {
+  error = "error",
+  pending = "pending",
+  success = "success",
+  aborted = "aborted",
+  initial = "initial",
+}
+
+enum ProducerRunEffects {
+  debounce = "debounce",
+  throttle = "throttle",
+}
+
+type AsyncStateStateType<T> = {
+  data: T,
+  status: AsyncStateStatus,
+  props: ProducerSavedProps,
+};
+
+type ProducerAbortFn  = (reason: any) => void;
+
+type ProducerOnAbortFn  = (cb: () => void) => void;
+
+type ProducerProps<T> = {
+  aborted: boolean,
+  abort: ProducerAbortFn,
+  onAbort: ProducerOnAbortFn,
+
+  payload: any,
+  args: any[],
+  lastSuccess: AsyncStateStateType<T>
+}
+
+type ProducerSavedProps = {
+  aborted: boolean,
+  abort: ProducerAbortFn,
+  onAbort: ProducerOnAbortFn,
+
+  payload: any,
+  args: any[],
+  lastSuccess
+}
+
+type ProducerFunction<T>  = (props: ProducerProps<T>) => T;
+
+type ProducerConfig<T>  = {
+  initialValue: T,
+  runEffect: ProducerRunEffects | undefined,
+  runEffectDurationMs: number | undefined,
+}
+
+type AsyncStateKeyType = string | undefined;
+
+type WrappedProducerFunction<T> = () => () => void;
+
+interface AsyncStateInterface<T> {
+  new (key: AsyncStateKeyType, producer: ProducerFunction<T>, config: ProducerConfig<T>) : {
+    forkCount: 0,
+    locks: number,
+    currentAborter: any,
+    subscriptionsMeter: 0,
+    payload: any, // todo
+    key: AsyncStateKeyType,
+    suspender: any, // todo
+    _source: AsyncStateSource,
+    config: ProducerConfig<T>,
+    subscriptions: any, // todo
+    uniqueId: number | undefined,
+    pendingTimeout: number | undefined,
+    lastSuccess: AsyncStateStateType<T>,
+    initialValue: AsyncStateStateType<T>,
+    producer: WrappedProducerFunction<T>,
+    originalProducer: ProducerFunction<T>,
+
+
+    dispose: () => void,
+    abort: (reason: any) => void,
+    setState: AsyncStateStateUpdater<T>,
+
+  }
+}
+
+type AsyncStateStateFunctionUpdater<T> = (updater: AsyncStateStateType<T>) => T;
+
+type AsyncStateStateUpdater<T> = (updater: T | AsyncStateStateFunctionUpdater<T>) => void;
+
+type AsyncStateSource = {
+  key: AsyncStateKeyType,
+  uniqueId: number | undefined,
+}
+
+function AsyncState<T>(key: AsyncStateKeyType, producer: ProducerFunction<T>, config: ProducerConfig<T>): AsyncStateInterface<T> {
   warnDevAboutAsyncStateKey(key);
 
   this.key = key;
@@ -40,9 +131,11 @@ function AsyncState(key, producer, config) {
   Object.preventExtensions(this);
 
   if (__DEV__) devtools.emitCreation(this);
+
+  return this;
 }
 
-AsyncState.prototype.setState = function setState(newState, notify = true) {
+AsyncState.prototype.setState = function setState<T>(newState: AsyncStateStateUpdater<T>, notify = true) {
   if (__DEV__) devtools.startUpdate(this);
   if (typeof newState === "function") {
     this.currentState = newState(this.currentState);
@@ -124,6 +217,7 @@ AsyncState.prototype.run = function run(...execArgs) {
       }
     }
 
+    // @ts-ignore
     function registerTimeout() {
       let runAbortCallback = null;
 
