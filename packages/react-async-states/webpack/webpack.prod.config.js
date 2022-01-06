@@ -16,7 +16,7 @@ function buildFor(entry, output, mode) {
           test: /\.js?$/,
           exclude: /node_modules/,
           use: {
-            loader: "babel-loader",
+            loader: "ts-loader",
           },
         },
       ],

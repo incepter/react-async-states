@@ -245,7 +245,8 @@ AsyncState.prototype.replaceState = function replaceState(newValue) {
   }
 
   if (__DEV__) devtools.emitReplaceState(this);
-  this.setState(AsyncStateStateBuilder.success(effectiveValue));
+  const savedProps = cloneProducerProps({args: effectiveValue});
+  this.setState(AsyncStateStateBuilder.success(effectiveValue, savedProps));
 }
 
 

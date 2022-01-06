@@ -10,12 +10,13 @@ function makeConfigFromOutput(options, output) {
     module: {
       rules: [
         {
-          test: /\.js?$/,
+          test: /\.(t|j)s?$/,
           exclude: /node_modules/,
           use: {
-            loader: "babel-loader",
+            loader: "ts-loader",
           },
         },
+        { enforce: "pre", test: /\.js$/, exclude: /node_modules/, loader: "source-map-loader" }
       ],
     },
     plugins: options.plugins.concat([

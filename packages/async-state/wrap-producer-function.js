@@ -87,57 +87,72 @@ function isGenerator(candidate) {
 }
 
 function wrapStartedGenerator(generatorInstance, props) {
-  let {done, value} = generatorInstance.next();
+  let lastGeneratorValue = generatorInstance.next();
 
-  while (!done && !isPromise(value)) {
-    const next = generatorInstance.next(value);
-    done = next.done;
-    value = next.value;
+  while (!lastGeneratorValue.done && !isPromise(lastGeneratorValue.value)) {
+    lastGeneratorValue = generatorInstance.next(lastGeneratorValue.value);
   }
 
-  if (done) {
-    return {done, value};
+  if (lastGeneratorValue.done) {
+    return {done: true, value: lastGeneratorValue.value};
   } else {
     // encountered a promise
     return new Promise((resolve, reject) => {
-      const abortGenerator = stepAsyncAndContinueStartedGenerator(generatorInstance, value, resolve, reject);
+      const abortGenerator = stepAsyncAndContinueStartedGenerator(generatorInstance, lastGeneratorValue, resolve, reject);
       props.onAbort(abortGenerator);
     });
   }
 }
 
-function stepAsyncAndContinueStartedGenerator(generatorInstance, startupValue, onDone, onReject) {
+function stepAsyncAndContinueStartedGenerator(generatorInstance, lastGeneratorValue, onDone, onReject) {
   let aborted = false;
 
   // we enter here only if startupValue is pending promise of the generator instance!
-  startupValue.then(step).catch(onReject);
+  lastGeneratorValue.value.then(step, onGeneratorCatch);
 
-  function step(oldValue) {
-    let done, value;
-    try {
-      let nextValue = generatorInstance.next(oldValue);
-      done = nextValue.done;
-      value = nextValue.value;
-    } catch (e) {
-      onReject(e);
+  function onGeneratorResolve(resolveValue) {
+    if (aborted) {
+      return;
     }
+    if (!lastGeneratorValue.done) {
+      step();
+    } else {
+      onDone(resolveValue);
+    }
+  }
 
-    // we don't know if value is a promise of a js-value
+  function onGeneratorCatch(e) {
+    if (aborted) {
+      return;
+    }
+    if (lastGeneratorValue.done) {
+      onDone(e);
+    } else {
+      try {
+        lastGeneratorValue = generatorInstance.throw(e);
+      } catch (newException) {
+        onReject(newException);
+      }
+      if (lastGeneratorValue.done) {
+        onDone(lastGeneratorValue.value);
+      } else {
+        step();
+      }
+    }
+  }
+
+  function step() {
+    if (aborted) {
+      return;
+    }
+    try {
+      lastGeneratorValue = generatorInstance.next(lastGeneratorValue.value);
+    } catch (e) {
+      onGeneratorCatch(e);
+    }
     Promise
-      .resolve(value)
-      .then(function continueGenerator(resolveValue) {
-        if (!done && !aborted) {
-          step(resolveValue);
-        }
-        if (done && !aborted) {
-          onDone(resolveValue);
-        }
-      })
-      .catch(function onCatch(e) {
-        if (!aborted && !done) {
-          onReject(e);
-        }
-      });
+      .resolve(lastGeneratorValue.value)
+      .then(onGeneratorResolve, onGeneratorCatch)
   }
 
   return function abort() {
