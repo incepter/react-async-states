@@ -1,6 +1,6 @@
 import { fetchUserData, fetchUserPosts, fetchUsersList } from "./api";
 import { bindAbortAndCancelToken, omitSearchParams } from "../../shared/utils";
-import { createSourceAsyncState } from "react-async-states";
+import { createSource } from "react-async-states";
 
 export function* getCurrentUser(props) {
   const cancelToken = bindAbortAndCancelToken(props);
@@ -43,5 +43,5 @@ export const DOMAIN_USER_PRODUCERS = Object.freeze({
     key: "user-posts",
     producer: getUserPosts
   },
-  details: createSourceAsyncState("user-details", getUserDetails),
+  details: createSource("user-details", getUserDetails),
 });

@@ -59,11 +59,11 @@ let demoAsyncStates = {
 const initialAsyncState = Object.values(demoAsyncStates); // or pass this to provider
 ```
 
-PS: You can use `AsyncStateBuilder` to create these objects this way:
+PS: You can use `AsyncStateBuilderFunction` to create these objects this way:
 
 ```javascript
-import {AsyncStateBuilder} from "react-async-states";
-let usersAS = AsyncStateBuilder()
+import {AsyncStateBuilderFunction} from "react-async-states";
+let usersAS = AsyncStateBuilderFunction()
     .key("users")
     .initialValue([])
     .producer(fetchUsersPromise)

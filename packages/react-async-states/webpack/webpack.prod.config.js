@@ -61,7 +61,7 @@ function buildFor(entry, output, mode) {
         patterns: [
           {
             from: path.join(process.cwd(), "src/index-prod.js"),
-            to: path.join(process.cwd(), "dist/index.js")
+            to: path.join(process.cwd(), "dist/index.ts")
           }
         ]
       }),
@@ -78,7 +78,7 @@ function buildFor(entry, output, mode) {
 
 function umdBuild() {
   return buildFor(
-    path.join(process.cwd(), "src/index.js"),
+    path.join(process.cwd(), "src/index.ts"),
     {
       libraryTarget: "umd",
       library: "ReactAsyncState",
@@ -92,7 +92,7 @@ function umdBuild() {
 function devBuild() {
 
   return buildFor(
-    path.join(process.cwd(), "src/index.js"),
+    path.join(process.cwd(), "src/index.ts"),
     {
       libraryTarget: "umd",
       library: "ReactAsyncState",

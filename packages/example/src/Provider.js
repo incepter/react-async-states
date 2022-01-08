@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
-import { AsyncStateBuilder, AsyncStateProvider, createSourceAsyncState } from 'react-async-states';
+import { AsyncStateBuilder, AsyncStateProvider, createSource } from 'react-async-states';
 import { getUserProducer, postsProducer, timeoutProducer, usersProducer } from "./producers";
 
 export const demoAsyncStates = {
@@ -9,7 +9,7 @@ export const demoAsyncStates = {
     .producer(timeoutProducer(4000))
     .build(),
 
-  users: createSourceAsyncState("users", usersProducer, {runEffect: "throttle", runEffectDurationMs: 1}),
+  users: createSource("users", usersProducer, {runEffect: "throttle", runEffectDurationMs: 1}),
 
   posts: AsyncStateBuilder()
     .key("posts")

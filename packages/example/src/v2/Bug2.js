@@ -1,5 +1,5 @@
 import React from "react";
-import { useAsyncState, createSourceAsyncState } from "react-async-states";
+import { useAsyncState, createSource } from "react-async-states";
 
 function userProducer(props) {
   const controller = new AbortController();
@@ -21,7 +21,7 @@ function userProducer(props) {
   });
 }
 
-const currentUser = createSourceAsyncState("current-user", userProducer);
+const currentUser = createSource("current-user", userProducer);
 
 function MiniApp() {
   const [value, setValue] = React.useState("");

@@ -1,5 +1,5 @@
 import React from "react";
-import { createSourceAsyncState, useAsyncState } from "react-async-states";
+import { createSource, useAsyncState } from "react-async-states";
 
 function* reduxProducer(props) {
   yield props.lastSuccess.data.store.dispatch(...props.args, props);
@@ -7,7 +7,7 @@ function* reduxProducer(props) {
 }
 
 const initialRedux = {}; // createReduxStore(reducers, middlewares...);
-const reduxSource = createSourceAsyncState("redux", reduxProducer, {initialValue: initialRedux});
+const reduxSource = createSource("redux", reduxProducer, {initialValue: initialRedux});
 
 export default function Demo() {
 

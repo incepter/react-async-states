@@ -9,8 +9,9 @@ import {
   shallowEqual
 } from "shared";
 import { readAsyncStateFromSource } from "async-state/utils";
-import { isConcurrentMode } from "../../helpers/is-concurrent-mode";
-import { enableComponentSuspension } from "shared/featureFlags";
+import { supportsConcurrentMode } from "../../helpers/supports-concurrent-mode";
+import { enableComponentSuspension } from "shared/features";
+import {AsyncStateSubscriptionMode} from "../../types";
 
 export const defaultRerenderStatusConfig = Object.freeze({
   error: true,
@@ -20,19 +21,7 @@ export const defaultRerenderStatusConfig = Object.freeze({
   pending: true,
 });
 
-export const AsyncStateSubscriptionMode = Object.freeze({
-  LISTEN: __DEV__ ? "LISTEN" : 0, // simple listener
-  HOIST: __DEV__ ? "HOIST" : 1, // hoisting a producer, for first time and intended to be shared, more like of an injection
-  STANDALONE: __DEV__ ? "STANDALONE" : 2, // working standalone even if inside provider
-  WAITING: __DEV__ ? "WAITING" : 3, // waits for the original to be hoisted
-  FORK: __DEV__ ? "FORK" : 4, // forking an existing one in the provider
-  NOOP: __DEV__ ? "NOOP" : 5, // a weird case that should not happen
-  SOURCE: __DEV__ ? "SOURCE" : 6, // subscription via source property
-  SOURCE_FORK: __DEV__ ? "SOURCE_FORK" : 8, // subscription via source property and fork
-  OUTSIDE_PROVIDER: __DEV__ ? "OUTSIDE_PROVIDER" : 7, // standalone outside provider
-});
-
-export function inferSubscriptionMode(contextValue, configuration) {
+export function inferSubscriptionMode(contextValue, configuration): AsyncStateSubscriptionMode {
   // the subscription via source passes directly
   if (configuration[sourceConfigurationSecretSymbol] === true) {
     return configuration.fork ? AsyncStateSubscriptionMode.SOURCE_FORK : AsyncStateSubscriptionMode.SOURCE;
@@ -139,7 +128,7 @@ export function applyUpdateOnReturnValue(returnValue, asyncState, stateValue, ru
 
   returnValue.read = function readInConcurrentMode() {
     if (enableComponentSuspension) {
-      if (isConcurrentMode()) {
+      if (supportsConcurrentMode()) {
         if (AsyncStateStatus.pending === asyncState?.currentState?.status && asyncState.suspender) {
           throw asyncState.suspender;
         }

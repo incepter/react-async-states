@@ -1,13 +1,14 @@
-import React from "react";
-import { AsyncStateContext } from "../context";
-import { __DEV__, EMPTY_ARRAY, EMPTY_OBJECT, shallowClone } from "shared";
-import { createInitialAsyncStatesReducer } from "./utils/providerUtils";
-import { AsyncStateManager } from "./utils/AsyncStateManager";
+import * as React from "react";
+import {AsyncStateContext} from "../context";
+import {__DEV__, EMPTY_ARRAY, EMPTY_OBJECT, shallowClone} from "shared";
+import {createInitialAsyncStatesReducer} from "./utils/providerUtils";
+import {AsyncStateManager} from "./utils/AsyncStateManager";
 import useProviderDevtools from "devtools/useProviderDevtools";
+import {AsyncStateContextValue, AsyncStateEntries, AsyncStateEntry, AsyncStateManagerInterface} from "../types";
 
 export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsyncStates = EMPTY_ARRAY}) {
-  const managerRef = React.useRef();
-  const entriesRef = React.useRef();
+  const managerRef = React.useRef<AsyncStateManagerInterface>();
+  const entriesRef = React.useRef<AsyncStateEntries>();
   // mutable, and will be mutated!
   // this asyncStateEntries may receive other entries at runtime if you hoist
   const asyncStateEntries = React.useMemo(function constructAsyncStates() {
@@ -17,12 +18,17 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
   }, [initialAsyncStates]);
   if (__DEV__) useProviderDevtools(asyncStateEntries);
 
-  const contextValue = React.useMemo(function getProviderValue() {
-    let manager = managerRef.current;
+  const contextValue: AsyncStateContextValue = React.useMemo(function getProviderValue() {
+    let manager: AsyncStateManagerInterface = managerRef.current;
 
-    if (entriesRef.current !== asyncStateEntries || !manager) {
+    if (!manager || entriesRef.current !== asyncStateEntries) {
       manager = AsyncStateManager(asyncStateEntries, managerRef.current);
       managerRef.current = manager;
+    }
+
+    if (!manager) {
+      const errorToLog = "Couldn't create an AsyncStateManager for some reason, should be printed in the logs";
+      throw new Error(errorToLog);
     }
 
     return {
@@ -51,10 +57,10 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
     }
     return function cleanup() {
       // here asyncStateEntries points to old manager
-      Object.values(asyncStateEntries).forEach(function disposeAsyncState(entry) {
+      Object.values(asyncStateEntries).forEach(function disposeAsyncState(entry: AsyncStateEntry<any>) {
         // entriesRef.current is the new manager
         // this conditions means this async state was dismissed and no longer used, should be disposed then removed
-        if (!entriesRef.current[entry.value.key]) {
+        if (entriesRef.current && !entriesRef.current[entry.value.key]) {
           contextValue.dispose(entry.value);
         }
       });

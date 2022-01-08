@@ -3,8 +3,9 @@ import {
   AsyncStateInterface,
   AsyncStateSource,
   AsyncStateStateBuilderInterface,
-  AsyncStateStateType, AsyncStateStatus,
-  ProducerSavedProps
+  AsyncStateStatus,
+  ProducerSavedProps,
+  State
 } from "./types";
 
 export function warnDevAboutAsyncStateKey(key) {
@@ -45,23 +46,21 @@ function objectWithHiddenProperty(key: Object, value: AsyncStateInterface<any>) 
 
 const asyncStatesKey = Object.freeze(Object.create(null));
 
-export function constructAsyncStateSource(asyncState: AsyncStateInterface<any>): AsyncStateSource {
+export function constructAsyncStateSource<T>(asyncState: AsyncStateInterface<T>): AsyncStateSource<T> {
   return objectWithHiddenProperty(asyncStatesKey, asyncState);
 }
 
-export function readAsyncStateFromSource(possiblySource: any, throwError: boolean = true) {
+export function readAsyncStateFromSource<T>(possiblySource: any): AsyncStateInterface<T> {
   try {
     return possiblySource.constructor(asyncStatesKey); // async state instance
   } catch (e) {
-    if (throwError) {
-      const errorString = "You ve passed an incompatible source object. Please make sure to pass the received source object.";
-      console.error(errorString);
-      throw new Error(errorString);
-    }
+    const errorString = "You ve passed an incompatible source object. Please make sure to pass the received source object.";
+    console.error(errorString);
+    throw new Error(errorString);
   }
 }
 
-function state<T>(status: AsyncStateStatus, data: T | any, props: ProducerSavedProps<T> | null): AsyncStateStateType<T> {
+function state<T>(status: AsyncStateStatus, data: T | any, props: ProducerSavedProps<T> | null): State<T> {
   return Object.freeze({status, data, props});
 }
 

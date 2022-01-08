@@ -2,14 +2,14 @@ import {__DEV__, cloneProducerProps, invokeIfPresent, numberOrZero, shallowClone
 import {wrapProducerFunction} from "./wrap-producer-function";
 import {AsyncStateStateBuilder, constructAsyncStateSource, warnDevAboutAsyncStateKey} from "./utils";
 import devtools from "devtools";
-import {enableRunEffects} from "shared/featureFlags";
+import {areRunEffectsSupported} from "shared/features";
 import {
   AbortFn,
   AsyncStateInterface,
-  AsyncStateKeyType,
+  AsyncStateKey,
   AsyncStateSource,
   AsyncStateStateFunctionUpdater,
-  AsyncStateStateType,
+  State,
   AsyncStateStatus,
   AsyncStateSubscription,
   ForkConfigType,
@@ -22,12 +22,12 @@ import {
 
 export default class AsyncState<T> implements AsyncStateInterface<T> {
   //region properties
-  key: AsyncStateKeyType;
-  _source: AsyncStateSource;
+  key: AsyncStateKey;
+  _source: AsyncStateSource<T>;
   uniqueId: number | undefined;
 
-  currentState: AsyncStateStateType<T>;
-  lastSuccess: AsyncStateStateType<T>;
+  currentState: State<T>;
+  lastSuccess: State<T>;
 
   config: ProducerConfig<T>;
   private locks: number = 0;
@@ -45,7 +45,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   //endregion
 
-  constructor(key: AsyncStateKeyType, producer: Producer<T>, config: ProducerConfig<T>) {
+  constructor(key: AsyncStateKey, producer: Producer<T>, config: ProducerConfig<T>) {
     warnDevAboutAsyncStateKey(key);
 
     this.key = key;
@@ -69,7 +69,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     if (__DEV__) devtools.emitCreation(this);
   }
 
-  setState(newState: AsyncStateStateType<T>, notify: boolean = true): void {
+  setState(newState: State<T>, notify: boolean = true): void {
     if (__DEV__) devtools.startUpdate(this);
 
     this.currentState = newState;
@@ -112,7 +112,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
   run(...args: any[]) {
     const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
 
-    if (!enableRunEffects || !this.config.runEffect || effectDurationMs === 0) {
+    if (!areRunEffectsSupported() || !this.config.runEffect || effectDurationMs === 0) {
       return this.runImmediately(...args);
     } else {
       return this.runWithEffect(...args);
@@ -123,7 +123,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
 
     const that = this;
-    if (enableRunEffects && this.config.runEffect) {
+    if (areRunEffectsSupported() && this.config.runEffect) {
       const now = Date.now();
 
       // @ts-ignore
@@ -222,7 +222,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     return abort;
   }
 
-  subscribe(cb, subKey?: string | undefined) {
+  subscribe(cb, subKey?: string | undefined): AbortFn {
     let that = this;
     this.subscriptionsMeter += 1;
     // @ts-ignore
@@ -249,7 +249,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     return cleanup;
   }
 
-  fork(forkConfig: { keepState: boolean, key: AsyncStateKeyType }) {
+  fork(forkConfig: { keepState: boolean, key: AsyncStateKey }) {
     const mergedConfig: ForkConfigType = shallowClone(defaultForkConfig, forkConfig);
 
     let {key} = mergedConfig;
@@ -283,7 +283,12 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     }
 
     if (__DEV__) devtools.emitReplaceState(this);
-    const savedProps = cloneProducerProps({args: effectiveValue});
+    // @ts-ignore
+    const savedProps = cloneProducerProps({
+      args: [effectiveValue],
+      lastSuccess: this.lastSuccess,
+      payload: shallowClone(this.payload),
+    });
     this.setState(AsyncStateStateBuilder.success(effectiveValue, savedProps));
   }
 }
@@ -298,7 +303,7 @@ const sourceIsSourceSymbol: symbol = Symbol();
 const defaultForkConfig: ForkConfigType = Object.freeze({keepState: false});
 
 function makeSource<T>(asyncState: AsyncStateInterface<T>) {
-  const source: AsyncStateSource = constructAsyncStateSource(asyncState);
+  const source: AsyncStateSource<T> = constructAsyncStateSource(asyncState);
   source.key = asyncState.key;
 
   Object.defineProperty(source, sourceIsSourceSymbol, {

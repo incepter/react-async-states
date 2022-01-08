@@ -1,13 +1,13 @@
 import React from "react";
-import { createSourceAsyncState, useAsyncState } from "react-async-states";
+import { createSource, useAsyncState } from "react-async-states";
 
 function* fetchUser(id) {
   return yield fetch(`https://jsonplaceholder.typicode.com/users/${id}`).then(s => s.json());
 }
 
-const user1Source = createSourceAsyncState("user1", () => fetchUser(1));
-const user2Source = createSourceAsyncState("user2", () => fetchUser(2));
-const userPayloadSource = createSourceAsyncState("userPayload", props => fetchUser(props.payload.userId));
+const user1Source = createSource("user1", () => fetchUser(1));
+const user2Source = createSource("user2", () => fetchUser(2));
+const userPayloadSource = createSource("userPayload", props => fetchUser(props.payload.userId));
 
 const name = s => s.data?.name;
 

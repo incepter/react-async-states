@@ -1,6 +1,8 @@
-import React from "react";
+import * as React from "react";
 import { AsyncStateContext } from "../context";
 import { identity, invokeIfPresent, shallowEqual } from "shared";
+import {ArraySelector, AsyncStateSelector, AsyncStateSelectorKeys, FunctionSelector} from "../types";
+import {State, AsyncStateKey, AsyncStateInterface, AbortFn} from "../../../async-state";
 
 function readSelectorKeys(keys, availableKeys) {
   if (typeof keys === "string") {
@@ -15,10 +17,20 @@ function readSelectorKeys(keys, availableKeys) {
   return [keys];
 }
 
-export function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual, initialValue = undefined) {
-  const {get, dispose, getAllKeys, watchAll} = React.useContext(AsyncStateContext);
+type SelectedAsyncStates = {
+  [key: AsyncStateKey]: AsyncStateInterface<any>,
+}
 
-  const asyncStatesMap = React.useMemo(function deduceKeys() {
+export function useAsyncStateSelector<T>
+  (keys: AsyncStateSelectorKeys, selector: AsyncStateSelector<T> = identity, areEqual = shallowEqual, initialValue?: T) {
+
+  const contextValue = React.useContext(AsyncStateContext);
+  if (!contextValue) {
+    throw new Error("to use useAsyncStateSelector you must be inside a <AsyncStateProvider></AsyncStateProvider>");
+  }
+  const {get, dispose, getAllKeys, watchAll} = contextValue;
+
+  const asyncStatesMap: SelectedAsyncStates = React.useMemo(function deduceKeys() {
     return readSelectorKeys(keys, getAllKeys())
       .reduce((result, key) => {
         result[key] = get(key) || null;
@@ -41,14 +53,14 @@ export function useAsyncStateSelector(keys, selector = identity, areEqual = shal
 
     // ?. optional channing is used bellow because the async state may be undefined (not hoisted yet)
     if (reduceToObject) {
-      selectedValue = selector(
+      selectedValue = (selector as FunctionSelector<T>)(
         Object.entries(asyncStatesMap).reduce((result, [key, asyncState]) => {
           result[key] = Object.assign({lastSuccess: asyncState?.lastSuccess}, asyncState?.currentState);
           return result;
         }, {})
       );
     } else {
-      selectedValue = selector(...Object.values(asyncStatesMap)
+      selectedValue = (selector as ArraySelector<T>)(...Object.values(asyncStatesMap)
         .map(t => Object.assign({lastSuccess: t?.lastSuccess}, t?.currentState)))
     }
 
@@ -59,7 +71,7 @@ export function useAsyncStateSelector(keys, selector = identity, areEqual = shal
   }
 
   React.useEffect(function watchAndSubscribeAndCleanOldSubscriptions() {
-    let cleanups = [];
+    let cleanups: AbortFn[] = [];
 
     function subscription() {
       setReturnValue(selectValues());

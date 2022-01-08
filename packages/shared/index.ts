@@ -1,10 +1,12 @@
+import {ProducerProps, ProducerSavedProps} from "../async-state";
+
 export const __DEV__ = process.env.NODE_ENV !== "production";
 
 export const EMPTY_ARRAY = Object.freeze([]);
 export const EMPTY_OBJECT = Object.freeze({});
 
 // avoid spreading penalty!
-export function shallowClone(source1, source2) {
+export function shallowClone(source1, source2?) {
   return Object.assign({}, source1, source2);
 }
 
@@ -31,28 +33,32 @@ export function invokeIfPresent(fn, ...args) {
   return undefined;
 }
 
-export function shallowEqual(prev, next) {
+export function shallowEqual<T>(prev: T, next): boolean {
   return prev === next;
 }
 
-export function identity(...args) {
+export function identity(...args: any[]): any {
   if (!args || !args.length) {
     return undefined;
   }
   return args.length === 1 ? args[0] : args;
 }
 
-export function oneObjectIdentity(obj) {
+export function oneObjectIdentity<T>(obj: T): T {
   return obj;
 }
 
-export function cloneProducerProps(props) {
-  const output = {};
+export function cloneProducerProps<T>(props: ProducerProps<T>): ProducerSavedProps<T> {
+  const output: ProducerSavedProps<T> = {};
 
-  if (props.lastSuccess && Object.keys(props.lastSuccess).length) {
+  if (props.lastSuccess !== undefined) {
     output.lastSuccess = shallowClone(props.lastSuccess);
-    delete output.lastSuccess.props; // cut the circular ref here
+    // @ts-ignore
+    // todo: whaaat
+    delete output.lastSuccess.props;
   }
+
+
   output.payload = shallowClone(props.payload);
 
   if (Array.isArray(props.args) && props.args.length) {

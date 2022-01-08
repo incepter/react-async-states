@@ -1,34 +1,57 @@
-import AsyncState from "async-state";
-import { asyncify, identity, readAsyncStateConfigFromSubscriptionConfig, shallowClone } from "shared";
-import { createAsyncStateEntry } from "./providerUtils";
-import { isAsyncStateSource } from "async-state/AsyncState";
-import { readAsyncStateFromSource } from "async-state/utils";
+import AsyncState, {
+  AbortFn,
+  AsyncStateInterface,
+  AsyncStateKey,
+  AsyncStateWatchKey,
+  ForkConfigType,
+  State
+} from "async-state";
+import {asyncify, readAsyncStateConfigFromSubscriptionConfig, shallowClone} from "shared";
+import {createAsyncStateEntry} from "./providerUtils";
+import {isAsyncStateSource} from "async-state/AsyncState";
+import {readAsyncStateFromSource} from "async-state/utils";
+import {
+  ArraySelector,
+  AsyncStateEntries,
+  AsyncStateKeyOrSource,
+  AsyncStateManagerInterface,
+  AsyncStateSelector,
+  AsyncStateSelectorKeys,
+  FunctionSelector,
+  ManagerHoistConfig,
+  ManagerWatchCallback,
+  ManagerWatchCallbackValue,
+  ManagerWatchers,
+  WatcherType
+} from "../../types";
 
 const listenersKey = Symbol();
 
 // the manager contains all functions responsible for managing the context provider
 // there is a manager per provider
 // the manager operates on the asyncStateEntries map after copying the oldManager watchers
-export function AsyncStateManager(asyncStateEntries, oldManager) {
+export function AsyncStateManager
+    (asyncStateEntries: AsyncStateEntries, oldManager: AsyncStateManagerInterface | undefined): AsyncStateManagerInterface {
+
   // stores all listeners/watchers about an async state
-  let watchers = shallowClone(oldManager?.watchers);
+  let watchers: ManagerWatchers = shallowClone(oldManager?.watchers);
   return {run, get, fork, select, hoist, dispose, watch, notifyWatchers, runAsyncState, getAllKeys, watchers, watchAll};
 
-  function get(key) {
+  function get<T>(key: AsyncStateKey): AsyncStateInterface<T> {
     return asyncStateEntries[key]?.value;
   }
 
-  function run(asyncState, ...args) {
+  function run<T>(asyncState: AsyncStateInterface<T>, ...args: any[]): AbortFn {
     return asyncState.run(...args);
   }
 
-  function runAsyncState(key, ...args) {
-    let asyncState;
+  function runAsyncState<T>(key: AsyncStateKeyOrSource<T>, ...args: any[]): AbortFn {
+    let asyncState: AsyncStateInterface<T>;
     // always attempt a source object
     if (isAsyncStateSource(key)) {
       asyncState = readAsyncStateFromSource(key);
     } else {
-      asyncState = get(key);
+      asyncState = get(key as AsyncStateKey);
     }
     if (!asyncState) {
       return undefined;
@@ -36,7 +59,7 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
     return run(asyncState, ...args);
   }
 
-  function dispose(asyncState) {
+  function dispose<T>(asyncState: AsyncStateInterface<T>): boolean {
     const {key} = asyncState;
     const asyncStateEntry = asyncStateEntries[key];
 
@@ -58,8 +81,8 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
   }
 
   // the fork registers in the provider automatically
-  function fork(key, forkConfig) {
-    const asyncState = get(key);
+  function fork<T>(key: AsyncStateKey, forkConfig: ForkConfigType): AsyncStateInterface<T> | undefined {
+    const asyncState: AsyncStateInterface<T> = get(key);
     if (!asyncState) {
       return undefined;
     }
@@ -94,7 +117,7 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
   //      }
   //    }
   // }
-  function watch(key, notify) {
+  function watch<T>(key: AsyncStateWatchKey, notify: ManagerWatchCallback<T>): AbortFn {
     if (!watchers[key]) {
       watchers[key] = {meter: 0, watchers: {}};
     }
@@ -105,9 +128,9 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
 
     let didUnwatch = false;
 
-    function notification(...args) {
+    function notification(argv: ManagerWatchCallbackValue<T>) {
       if (!didUnwatch) {
-        notify(...args);
+        notify(argv);
       }
     }
 
@@ -121,15 +144,16 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
     return cleanup;
   }
 
-  function watchAll(notify) {
+  function watchAll(notify: ManagerWatchCallback<any>) {
     return watch(listenersKey, notify);
   }
 
-  function notifyWatchers(key, value) {
+  function notifyWatchers<T>(key: AsyncStateKey, value: ManagerWatchCallbackValue<T>): void {
     // it is important to close over the notifications to be sent
     // to avoid sending notifications to old closures that aren't relevant anymore
     // if this occurs, the component will receive a false notification that may let him enter an infinite loop
-    let notificationCallbacks = [];
+    let notificationCallbacks: WatcherType[] = [];
+
     if (watchers[listenersKey]?.watchers) {
       notificationCallbacks = Object.values(watchers[listenersKey].watchers);
     }
@@ -150,18 +174,18 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
     asyncify(cb)();
   }
 
-  function hoist(config) {
+  function hoist<T>(config: ManagerHoistConfig<T>): AsyncStateInterface<T> {
     const {key, hoistToProviderConfig = {override: false}, producer} = config;
 
     const existing = get(key);
     if (existing && !hoistToProviderConfig.override) {
-      return existing;
+      return existing as AsyncStateInterface<T>;
 
     }
     if (existing) {
       let didDispose = dispose(existing);
       if (!didDispose) {
-        return existing;
+        return existing as AsyncStateInterface<T>;
       }
     }
 
@@ -169,22 +193,25 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
       new AsyncState(key, producer, readAsyncStateConfigFromSubscriptionConfig(config))
     );
 
-    const returnValue = get(key);
-    notifyWatchers(key, returnValue);
+    const returnValue: AsyncStateInterface<T> = get(key);
+    notifyWatchers(key, returnValue); // this is async
 
     return returnValue;
   }
 
-  function selectIncludeKeyReducer(result, key) {
+  function selectIncludeKeyReducer
+  (result: { [id: AsyncStateKey]: State<any> | undefined }, key: AsyncStateKey): { [id: AsyncStateKey]: State<any> | undefined } {
     result[key] = get(key)?.currentState;
     return result;
   }
 
-  function select(keys, selector = identity, reduceToObject = false) {
+  function select<T>(keys: AsyncStateSelectorKeys, selector: AsyncStateSelector<T>, reduceToObject?: boolean): T {
     if (reduceToObject) {
-      return selector(keys.reduce(selectIncludeKeyReducer, {}));
+      const statesMap = keys.reduce(selectIncludeKeyReducer, {});
+      return (selector as FunctionSelector<T>)(statesMap);
     }
-    return selector(...keys.map(key => get(key)?.currentState));
+    const statesArray = keys.map(key => get(key)?.currentState);
+    return (selector as ArraySelector<T>)(...statesArray);
   }
 
   //
@@ -213,7 +240,7 @@ export function AsyncStateManager(asyncStateEntries, oldManager) {
   // }
 
   // used in function selector in useAsyncStateSelector
-  function getAllKeys() {
+  function getAllKeys(): AsyncStateKey[] {
     return Object.keys(asyncStateEntries);
   }
 }
