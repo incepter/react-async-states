@@ -7,15 +7,17 @@ import {
   AbortFn,
   AsyncStateInterface,
   AsyncStateKeyType,
-  AsyncStateSource, AsyncStateStateFunctionUpdater,
-  AsyncStateStateType, AsyncStateStateUpdater,
+  AsyncStateSource,
+  AsyncStateStateFunctionUpdater,
+  AsyncStateStateType,
   AsyncStateStatus,
   AsyncStateSubscription,
   ForkConfigType,
   Producer,
   ProducerConfig,
   ProducerFunction,
-  ProducerProps
+  ProducerProps,
+  ProducerRunEffects
 } from "./types";
 
 export default class AsyncState<T> implements AsyncStateInterface<T> {
@@ -108,25 +110,29 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
   }
 
   run(...args: any[]) {
+    const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
+
+    if (!enableRunEffects || !this.config.runEffect || effectDurationMs === 0) {
+      return this.runImmediately(...args);
+    } else {
+      return this.runWithEffect(...args);
+    }
+  }
+
+  private runWithEffect(...args: any[]): AbortFn {
+    const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
 
     const that = this;
     if (enableRunEffects && this.config.runEffect) {
-
-      const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
-      if (effectDurationMs === 0) {
-        return this.abortAndRunProducer(...args);
-      }
-
       const now = Date.now();
 
       // @ts-ignore
-      // this function should not be declared unless run effects are enabled and the user requested them
       function registerTimeout() {
         let runAbortCallback: AbortFn | null = null;
 
         const timeoutId = setTimeout(function realRun() {
           that.pendingTimeout = null;
-          runAbortCallback = that.abortAndRunProducer(...args);
+          runAbortCallback = that.runImmediately(...args);
         }, effectDurationMs);
 
         that.pendingTimeout = {
@@ -143,10 +149,10 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
 
       switch (this.config.runEffect) {
-        case "delay":
-        case "debounce":
-        case "takeLast":
-        case "takeLatest": {
+        case ProducerRunEffects.delay:
+        case ProducerRunEffects.debounce:
+        case ProducerRunEffects.takeLast:
+        case ProducerRunEffects.takeLatest: {
           if (this.pendingTimeout) {
             const deadline = this.pendingTimeout.startDate + effectDurationMs;
             if (now < deadline) {
@@ -155,9 +161,9 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
           }
           return registerTimeout();
         }
-        case "throttle":
-        case "takeFirst":
-        case "takeLeading": {
+        case ProducerRunEffects.throttle:
+        case ProducerRunEffects.takeFirst:
+        case ProducerRunEffects.takeLeading: {
           if (this.pendingTimeout) {
             const deadline = this.pendingTimeout.startDate + effectDurationMs;
             if (now <= deadline) {
@@ -172,10 +178,10 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
         }
       }
     }
-    return this.abortAndRunProducer(...args);
+    return this.runImmediately(...args);
   }
 
-  private abortAndRunProducer(...execArgs: any[]) {
+  private runImmediately(...execArgs: any[]): AbortFn {
     if (this.currentState.status === AsyncStateStatus.pending) {
       this.abort();
       this.currentAborter = undefined;
@@ -192,7 +198,9 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       lastSuccess: that.lastSuccess,
       payload: shallowClone(that.payload),
       onAbort(cb: AbortFn) {
-        onAbortCallbacks.push(cb);
+        if (typeof cb === "function") {
+          onAbortCallbacks.push(cb);
+        }
       }
     };
 
@@ -214,7 +222,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     return abort;
   }
 
-  subscribe(cb, subKey: string | undefined) {
+  subscribe(cb, subKey?: string | undefined) {
     let that = this;
     this.subscriptionsMeter += 1;
     // @ts-ignore
