@@ -1,5 +1,5 @@
-import { oneObjectIdentity, shallowClone, shallowEqual } from "shared";
-import { useAsyncStateImpl } from "./useAsyncStateImpl";
+import {oneObjectIdentity, shallowClone, shallowEqual} from "shared";
+import {useAsyncStateImpl} from "./useAsyncStateImpl";
 import {
   ExtendedUseAsyncStateConfiguration,
   PartialUseAsyncStateConfiguration,

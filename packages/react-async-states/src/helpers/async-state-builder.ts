@@ -15,10 +15,9 @@ export function AsyncStateBuilder<T>(): AsyncStateBuilderFunction<T> {
     config: curryPropOfOutput("config"),
     producer: curryPropOfOutput("producer"),
     build: function build() {
-    return output;
-  }
+      return output;
+    }
   };
-
 
 
   return builder;

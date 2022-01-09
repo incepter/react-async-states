@@ -1,7 +1,6 @@
 import * as React from "react";
-import {AsyncStateContext} from "../context";
 import {identity, invokeIfPresent, shallowEqual} from "shared";
-import {ArraySelector, AsyncStateSelector, AsyncStateSelectorKeys, FunctionSelector} from "../types";
+import {ArraySelector, AsyncStateSelector, AsyncStateSelectorKeys, EqualityFn, FunctionSelector} from "../types";
 import {AbortFn, AsyncStateInterface, AsyncStateKey} from "../../../async-state";
 import useAsyncStateContext from "./useAsyncStateContext";
 
@@ -22,21 +21,25 @@ type SelectedAsyncStates = {
   [key: AsyncStateKey]: AsyncStateInterface<any>,
 }
 
-export function useAsyncStateSelector<T>
-  (keys: AsyncStateSelectorKeys, selector: AsyncStateSelector<T> = identity, areEqual = shallowEqual, initialValue?: T) {
+export function useAsyncStateSelector<T>(
+  keys: AsyncStateSelectorKeys,
+  selector: AsyncStateSelector<T> = identity,
+  areEqual: EqualityFn<T> = shallowEqual,
+  initialValue?: T
+): T {
 
   const contextValue = useAsyncStateContext();
   const {get, dispose, getAllKeys, watchAll} = contextValue;
 
-  const asyncStatesMap: SelectedAsyncStates = React.useMemo(function deduceKeys() {
-    return readSelectorKeys(keys, getAllKeys())
+  const asyncStatesMap = React.useMemo<SelectedAsyncStates>(function deduceKeys() {
+    return readSelectorKeys(keys, typeof keys === "function" ? getAllKeys() : undefined)
       .reduce((result, key) => {
         result[key] = get(key) || null;
         return result;
       }, {});
   }, [keys, getAllKeys]);
 
-  const dependencies = React.useMemo(function getEffectDependencies() {
+  const dependencies = React.useMemo<any[]>(function getEffectDependencies() {
     return [...Object.keys(asyncStatesMap), watchAll, dispose, selector]
   }, [asyncStatesMap, watchAll, dispose, selector]);
 
@@ -85,7 +88,7 @@ export function useAsyncStateSelector<T>
     });
 
     cleanups.push(watchAll(function onSomethingHoisted(asyncState, notificationKey) {
-      if (asyncStatesMap[notificationKey] || asyncStatesMap[notificationKey] === undefined) {
+      if (asyncStatesMap[notificationKey] || (notificationKey && asyncStatesMap[notificationKey] === undefined)) {
         return;
       }
       // appearance

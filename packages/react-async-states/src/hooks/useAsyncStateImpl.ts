@@ -13,11 +13,12 @@ import {nextKey, readUserConfiguration} from "./utils/readConfig";
 import {disposeAsyncStateSubscriptionFn, runAsyncStateSubscriptionFn} from "./utils/asyncStateSubscription";
 import {
   AsyncStateSubscriptionMode,
-  ExtendedUseAsyncStateConfiguration, PartialUseAsyncStateConfiguration,
-  UseAsyncStateConfiguration,
+  ExtendedUseAsyncStateConfiguration,
+  PartialUseAsyncStateConfiguration,
   UseAsyncStateContextType,
   UseAsyncStateRefsFactory,
-  UseAsyncStateReturnValue, UseAsyncStateStateDeps,
+  UseAsyncStateReturnValue,
+  UseAsyncStateStateDeps,
   UseAsyncStateSubscriptionInfo
 } from "../types";
 import {AsyncStateInterface, AsyncStateKey} from "../../../async-state";

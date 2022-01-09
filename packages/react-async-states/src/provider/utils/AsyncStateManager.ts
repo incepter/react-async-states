@@ -128,9 +128,9 @@ export function AsyncStateManager
 
     let didUnwatch = false;
 
-    function notification(argv: ManagerWatchCallbackValue<T>) {
+    function notification(argv: ManagerWatchCallbackValue<T>, notificationKey: AsyncStateKey) {
       if (!didUnwatch) {
-        notify(argv);
+        notify(argv, notificationKey);
       }
     }
 

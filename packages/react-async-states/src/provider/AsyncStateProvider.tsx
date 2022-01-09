@@ -6,7 +6,11 @@ import {AsyncStateManager} from "./utils/AsyncStateManager";
 import useProviderDevtools from "devtools/useProviderDevtools";
 import {AsyncStateContextValue, AsyncStateEntries, AsyncStateEntry, AsyncStateManagerInterface} from "../types";
 
-export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsyncStates = EMPTY_ARRAY}) {
+export function AsyncStateProvider(
+  {payload = EMPTY_OBJECT,
+    children,
+    initialAsyncStates = EMPTY_ARRAY
+  }) {
   const managerRef = React.useRef<AsyncStateManagerInterface>();
   const entriesRef = React.useRef<AsyncStateEntries>();
   // mutable, and will be mutated!

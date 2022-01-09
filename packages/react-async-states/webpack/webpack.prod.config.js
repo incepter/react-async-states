@@ -13,7 +13,7 @@ function buildFor(entry, output, mode) {
     module: {
       rules: [
         {
-          test: /\.js?$/,
+          test: /\.(t|j)sx?$/,
           exclude: /node_modules/,
           use: {
             loader: "ts-loader",
@@ -61,14 +61,14 @@ function buildFor(entry, output, mode) {
         patterns: [
           {
             from: path.join(process.cwd(), "src/index-prod.js"),
-            to: path.join(process.cwd(), "dist/index.ts")
+            to: path.join(process.cwd(), "dist/index.js")
           }
         ]
       }),
     ],
     resolve: {
       modules: ["node_modules", "src"],
-      extensions: [".js"]
+      extensions: [".js", ".ts", ".tsx"]
     },
     externals: {
       react: "react"

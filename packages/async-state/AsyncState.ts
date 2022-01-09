@@ -9,7 +9,6 @@ import {
   AsyncStateKey,
   AsyncStateSource,
   AsyncStateStateFunctionUpdater,
-  State,
   AsyncStateStatus,
   AsyncStateSubscription,
   ForkConfigType,
@@ -17,7 +16,8 @@ import {
   ProducerConfig,
   ProducerFunction,
   ProducerProps,
-  ProducerRunEffects
+  ProducerRunEffects,
+  State
 } from "./types";
 
 export default class AsyncState<T> implements AsyncStateInterface<T> {

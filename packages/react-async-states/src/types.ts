@@ -81,7 +81,7 @@ export type ManagerHoistConfig<T> = {
 }
 
 export type ManagerWatchCallbackValue<T> = AsyncStateInterface<T> | null;
-export type ManagerWatchCallback<T> = (value: ManagerWatchCallbackValue<T>, additionalInfo?: any) => void;
+export type ManagerWatchCallback<T> = (value: ManagerWatchCallbackValue<T>, additionalInfo: AsyncStateKey) => void;
 
 export type WatcherType = {
   cleanup: AbortFn,
