@@ -22,6 +22,9 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
     // it is important to clone to capture properties and save only serializable stuff
     const savedProps = cloneProducerProps(props);
 
+    if (typeof asyncState.originalProducer !== "function") {
+      throw new Error("a producer should be a function to be ran. This indicates a bug in the library.");
+    }
     try {
       executionValue = asyncState.originalProducer(props);
     } catch (e) {

@@ -13,7 +13,7 @@ module.exports = require("./webpack.base.config")({
 
   // Don't use hashes in dev mode for better performance
   output: {
-    filename: "index.ts"
+    filename: "index.js"
   },
 
   // Add development plugins

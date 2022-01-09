@@ -32,7 +32,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
   config: ProducerConfig<T>;
   private locks: number = 0;
   private forkCount: number = 0;
-  payload: Object | null = null;
+  payload: { [id: string]: any } | null = null;
   private pendingTimeout: { id: ReturnType<typeof setTimeout>, startDate: number } | null = null;
 
   private subscriptionsMeter: number = 0;
@@ -40,12 +40,12 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   producer: ProducerFunction<T>;
   suspender: Promise<T> | undefined = undefined;
-  readonly originalProducer: Producer<T>;
+  readonly originalProducer: Producer<T> | undefined;
   private currentAborter: AbortFn = undefined;
 
   //endregion
 
-  constructor(key: AsyncStateKey, producer: Producer<T>, config: ProducerConfig<T>) {
+  constructor(key: AsyncStateKey, producer: Producer<T> | undefined, config: ProducerConfig<T>) {
     warnDevAboutAsyncStateKey(key);
 
     this.key = key;
@@ -249,7 +249,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     return cleanup;
   }
 
-  fork(forkConfig: { keepState: boolean, key: AsyncStateKey }) {
+  fork(forkConfig?: { keepState: boolean, key: AsyncStateKey }) {
     const mergedConfig: ForkConfigType = shallowClone(defaultForkConfig, forkConfig);
 
     let {key} = mergedConfig;

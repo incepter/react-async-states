@@ -1,7 +1,7 @@
 import AsyncState, {
   AbortFn,
   AsyncStateInterface,
-  AsyncStateKey,
+  AsyncStateKey, AsyncStateSource,
   AsyncStateWatchKey,
   ForkConfigType,
   State
@@ -49,7 +49,7 @@ export function AsyncStateManager
     let asyncState: AsyncStateInterface<T>;
     // always attempt a source object
     if (isAsyncStateSource(key)) {
-      asyncState = readAsyncStateFromSource(key);
+      asyncState = readAsyncStateFromSource(key as AsyncStateSource<T>);
     } else {
       asyncState = get(key as AsyncStateKey);
     }

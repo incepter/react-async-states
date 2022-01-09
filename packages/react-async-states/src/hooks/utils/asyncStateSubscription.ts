@@ -1,6 +1,17 @@
-import { AsyncStateSubscriptionMode } from "./subscriptionUtils";
+import {
+  AsyncStateContextValue,
+  AsyncStateSubscriptionMode,
+  UseAsyncStateConfiguration,
+  UseAsyncStateContextType
+} from "../../types";
+import {AbortFn, AsyncStateInterface} from "../../../../async-state";
 
-export function runAsyncStateSubscriptionFn(mode, asyncState, configuration, contextValue) {
+export function runAsyncStateSubscriptionFn<T, E>(
+  mode: AsyncStateSubscriptionMode,
+  asyncState: AsyncStateInterface<T>,
+  configuration: UseAsyncStateConfiguration<T, E>,
+  contextValue: UseAsyncStateContextType
+): (...args: any[]) => AbortFn {
   return function run(...args) {
     switch (mode) {
       case AsyncStateSubscriptionMode.SOURCE:
@@ -11,8 +22,9 @@ export function runAsyncStateSubscriptionFn(mode, asyncState, configuration, con
         return asyncState.run(...args);
       case AsyncStateSubscriptionMode.FORK:
       case AsyncStateSubscriptionMode.HOIST:
-      case AsyncStateSubscriptionMode.LISTEN:
-        return contextValue.run(asyncState, ...args);
+      case AsyncStateSubscriptionMode.LISTEN: {
+        return (contextValue as AsyncStateContextValue).run(asyncState, ...args);
+      }
       // NoOp
       case AsyncStateSubscriptionMode.NOOP:
       case AsyncStateSubscriptionMode.WAITING:
@@ -22,7 +34,12 @@ export function runAsyncStateSubscriptionFn(mode, asyncState, configuration, con
   };
 }
 
-export function disposeAsyncStateSubscriptionFn(mode, asyncState, configuration, contextValue) {
+export function disposeAsyncStateSubscriptionFn<T, E>(
+  mode: AsyncStateSubscriptionMode,
+  asyncState: AsyncStateInterface<T>,
+  configuration: UseAsyncStateConfiguration<T, E>,
+  contextValue: UseAsyncStateContextType
+): () => (boolean | undefined) {
   return function dispose() {
     switch (mode) {
       case AsyncStateSubscriptionMode.SOURCE:
@@ -35,7 +52,7 @@ export function disposeAsyncStateSubscriptionFn(mode, asyncState, configuration,
       case AsyncStateSubscriptionMode.FORK:
       case AsyncStateSubscriptionMode.HOIST:
       case AsyncStateSubscriptionMode.LISTEN:
-        return contextValue.dispose(asyncState);
+        return (contextValue as AsyncStateContextValue).dispose(asyncState);
       // NoOp
       case AsyncStateSubscriptionMode.NOOP:
       case AsyncStateSubscriptionMode.WAITING:

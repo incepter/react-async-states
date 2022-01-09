@@ -1,4 +1,5 @@
-import {ProducerProps, ProducerSavedProps} from "../async-state";
+import {ProducerConfig, ProducerProps, ProducerSavedProps} from "../async-state";
+import {PartialUseAsyncStateConfiguration, UseAsyncStateConfiguration} from "react-async-states/src/types";
 
 export const __DEV__ = process.env.NODE_ENV !== "production";
 
@@ -68,7 +69,7 @@ export function cloneProducerProps<T>(props: ProducerProps<T>): ProducerSavedPro
   return output;
 }
 
-export function readAsyncStateConfigFromSubscriptionConfig(configuration) {
+export function readAsyncStateConfigFromSubscriptionConfig<T>(configuration: PartialUseAsyncStateConfiguration<T, any>): ProducerConfig<T> {
   return {
     initialValue: configuration.initialValue,
 

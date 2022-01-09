@@ -50,9 +50,9 @@ export type Producer<T> = (props: ProducerProps<T>) => T;
 export type ProducerFunction<T> = (props: ProducerProps<T>) => AbortFn;
 
 export type ProducerConfig<T> = {
-  initialValue: T,
-  runEffect: ProducerRunEffects | undefined,
-  runEffectDurationMs: number | undefined,
+  initialValue?: T,
+  runEffectDurationMs?: number,
+  runEffect?: ProducerRunEffects,
 }
 
 export type AsyncStateKey = string;
@@ -83,21 +83,21 @@ export interface AsyncStateInterface<T> {
   currentState: State<T>,
   lastSuccess: State<T>,
 
-  payload: Object | null,
+  payload: { [id: string]: any } | null,
   config: ProducerConfig<T>,
 
   subscriptions: { [id: number]: AsyncStateSubscription<T> },
 
   suspender: Promise<T> | undefined,
   producer: ProducerFunction<T>,
-  readonly originalProducer: Producer<T>,
+  readonly originalProducer: Producer<T> | undefined,
 
   // prototype functions
   dispose: () => boolean,
   abort: (reason: any) => void,
   run: (...args: any[]) => AbortFn,
   replaceState: AsyncStateStateUpdater<T>,
-  fork: (forkConfig: { keepState: boolean }) => AsyncStateInterface<T>,
+  fork: (forkConfig?: { keepState: boolean }) => AsyncStateInterface<T>,
   subscribe: (cb: Function, subscriptionKey?: AsyncStateKey) => AbortFn,
   setState: (newState: State<T>, notify?: boolean) => void,
 }

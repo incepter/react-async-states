@@ -11,7 +11,7 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
   const entriesRef = React.useRef<AsyncStateEntries>();
   // mutable, and will be mutated!
   // this asyncStateEntries may receive other entries at runtime if you hoist
-  const asyncStateEntries = React.useMemo(function constructAsyncStates() {
+  const asyncStateEntries: AsyncStateEntries = React.useMemo(function constructAsyncStates() {
     // this re-uses the old managed async states, and bind to them the new ones
     const initialValue = shallowClone(entriesRef.current);
     return Object.values(initialAsyncStates).reduce(createInitialAsyncStatesReducer, initialValue);
@@ -49,7 +49,12 @@ export function AsyncStateProvider({payload = EMPTY_OBJECT, children, initialAsy
     };
   }, [asyncStateEntries, payload]);
 
-  entriesRef.current = asyncStateEntries;
+  if (entriesRef.current !== asyncStateEntries) {
+    entriesRef.current = asyncStateEntries;
+  }
+  if (managerRef.current !== contextValue.manager) {
+    managerRef.current = contextValue.manager;
+  }
 
   React.useEffect(function disposeOldEntries() {
     if (!asyncStateEntries) {

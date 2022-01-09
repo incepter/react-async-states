@@ -1,17 +1,23 @@
-import AsyncState from "async-state";
+import AsyncState, {AbortFn, AsyncStateInterface, AsyncStateKey, AsyncStateSource, State} from "async-state";
 import {
   __DEV__,
   AsyncStateStatus,
-  EMPTY_OBJECT,
   oneObjectIdentity,
   readAsyncStateConfigFromSubscriptionConfig,
   shallowClone,
   shallowEqual
 } from "shared";
-import { readAsyncStateFromSource } from "async-state/utils";
-import { supportsConcurrentMode } from "../../helpers/supports-concurrent-mode";
-import { enableComponentSuspension } from "shared/features";
-import {AsyncStateSubscriptionMode} from "../../types";
+import {readAsyncStateFromSource} from "async-state/utils";
+import {supportsConcurrentMode} from "../../helpers/supports-concurrent-mode";
+import {enableComponentSuspension} from "shared/features";
+import {
+  AsyncStateKeyOrSource,
+  AsyncStateSubscriptionMode,
+  UseAsyncStateConfiguration,
+  UseAsyncStateContextType,
+  UseAsyncStateReturnValue,
+  UseAsyncStateSubscriptionInfo
+} from "../../types";
 
 export const defaultRerenderStatusConfig = Object.freeze({
   error: true,
@@ -21,7 +27,10 @@ export const defaultRerenderStatusConfig = Object.freeze({
   pending: true,
 });
 
-export function inferSubscriptionMode(contextValue, configuration): AsyncStateSubscriptionMode {
+export function inferSubscriptionMode<T, E>(
+  contextValue: UseAsyncStateContextType,
+  configuration: UseAsyncStateConfiguration<T, E>
+): AsyncStateSubscriptionMode {
   // the subscription via source passes directly
   if (configuration[sourceConfigurationSecretSymbol] === true) {
     return configuration.fork ? AsyncStateSubscriptionMode.SOURCE_FORK : AsyncStateSubscriptionMode.SOURCE;
@@ -36,7 +45,7 @@ export function inferSubscriptionMode(contextValue, configuration): AsyncStateSu
     return AsyncStateSubscriptionMode.STANDALONE;
   }
 
-  const existsInProvider = !!contextValue.get(key);
+  const existsInProvider = !!contextValue.get(key as AsyncStateKey);
 
   // early decide that this is a listener and return it immediately
   // because this is the most common use case that it will be, we'll be optimizing this path first
@@ -63,7 +72,10 @@ export function inferSubscriptionMode(contextValue, configuration): AsyncStateSu
   return AsyncStateSubscriptionMode.NOOP; // we should not be here
 }
 
-export function inferAsyncStateInstance(mode, configuration, contextValue) {
+export function inferAsyncStateInstance<T, E>(
+  mode: AsyncStateSubscriptionMode,
+  configuration: UseAsyncStateConfiguration<T, E>, contextValue
+): AsyncStateInterface<T> {
   const candidate = contextValue?.get(configuration.key);
   switch (mode) {
     case AsyncStateSubscriptionMode.FORK:
@@ -74,15 +86,17 @@ export function inferAsyncStateInstance(mode, configuration, contextValue) {
       return candidate;
     case AsyncStateSubscriptionMode.STANDALONE:
     case AsyncStateSubscriptionMode.OUTSIDE_PROVIDER:
-      return new AsyncState(configuration.key, configuration.producer, readAsyncStateConfigFromSubscriptionConfig(configuration));
+      return new AsyncState(
+        configuration.key as AsyncStateKey, configuration.producer, readAsyncStateConfigFromSubscriptionConfig(configuration));
     case AsyncStateSubscriptionMode.SOURCE:
-      return readAsyncStateFromSource(configuration.source);
+      return readAsyncStateFromSource(configuration.source as AsyncStateSource<T>);
     case AsyncStateSubscriptionMode.SOURCE_FORK: {
-      const sourceAsyncState = readAsyncStateFromSource(configuration.source);
+      const sourceAsyncState = readAsyncStateFromSource(configuration.source as AsyncStateSource<T>);
       return sourceAsyncState.fork(configuration.forkConfig);
     }
     case AsyncStateSubscriptionMode.NOOP:
     case AsyncStateSubscriptionMode.WAITING:
+      // @ts-ignore
       return null;
     default:
       return candidate;
@@ -91,32 +105,33 @@ export function inferAsyncStateInstance(mode, configuration, contextValue) {
 
 export const sourceConfigurationSecretSymbol = Symbol();
 
-// todo: remove falsy values
 export const defaultUseASConfig = Object.freeze({
-  source: undefined,
-
   lazy: true,
-  fork: false,
   condition: true,
-  hoistToProvider: false,
-  forkConfig: EMPTY_OBJECT,
-  hoistToProviderConfig: EMPTY_OBJECT,
-  rerenderStatus: defaultRerenderStatusConfig,
-
-  subscriptionKey: undefined,
 
   areEqual: shallowEqual,
   selector: oneObjectIdentity,
 });
 
-export function calculateSelectedState(newState, lastSuccess, configuration) {
+export function calculateSelectedState<T, E>(
+  newState: State<T>,
+  lastSuccess: State<T>,
+  configuration: UseAsyncStateConfiguration<T, E>
+): E {
   const {selector} = configuration;
-  return typeof selector === "function" ? selector(newState, lastSuccess) : newState;
+  return selector(newState, lastSuccess);
 }
 
 let didWarnAboutUnsupportedConcurrentFeatures = false;
 
-export function applyUpdateOnReturnValue(returnValue, asyncState, stateValue, run, runAsyncState, mode) {
+export function applyUpdateOnReturnValue<T, E>(
+  returnValue: UseAsyncStateReturnValue<T, E>,
+  asyncState: AsyncStateInterface<T>,
+  stateValue: E,
+  run: (...args: any[]) => AbortFn,
+  runAsyncState: (<F>(key: AsyncStateKeyOrSource<F>, ...args: any[]) => AbortFn) | undefined,
+  mode: AsyncStateSubscriptionMode
+): void {
   returnValue.mode = mode;
   returnValue.source = asyncState._source;
 
@@ -164,7 +179,13 @@ export function applyUpdateOnReturnValue(returnValue, asyncState, stateValue, ru
   }
 }
 
-export function shouldRecalculateInstance(newConfig, newMode, newGuard, currentDeps, oldSubscriptionInfo) {
+export function shouldRecalculateInstance<T, E>(
+  newConfig: UseAsyncStateConfiguration<T, E>,
+  newMode: AsyncStateSubscriptionMode,
+  newGuard: Object,
+  currentDeps: readonly any[],
+  oldSubscriptionInfo: UseAsyncStateSubscriptionInfo<T, E> | undefined
+): boolean {
   // here we check on relevant information to decide on the asyncState instance
   return !oldSubscriptionInfo ||
     newGuard !== oldSubscriptionInfo.guard ||
@@ -173,11 +194,12 @@ export function shouldRecalculateInstance(newConfig, newMode, newGuard, currentD
     newConfig.source !== oldSubscriptionInfo.configuration.source ||
 
     // attempt new instance if dependencies change
+    // todo: this is probably unnecessary, deps shouldn't affect the instance of the async state
     currentDeps.some((dep, index) => !Object.is(dep, oldSubscriptionInfo.deps[index])) ||
 
     newConfig.fork !== oldSubscriptionInfo.configuration.fork ||
     newConfig.forkConfig?.keepState !== oldSubscriptionInfo.configuration.forkConfig?.keepState ||
 
     newConfig.hoistToProvider !== oldSubscriptionInfo.configuration.hoistToProvider ||
-    newConfig.hoistToProviderConfig.override !== oldSubscriptionInfo.configuration.hoistToProviderConfig.override;
+    newConfig.hoistToProviderConfig?.override !== oldSubscriptionInfo.configuration.hoistToProviderConfig?.override;
 }

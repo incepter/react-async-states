@@ -50,7 +50,7 @@ export function constructAsyncStateSource<T>(asyncState: AsyncStateInterface<T>)
   return objectWithHiddenProperty(asyncStatesKey, asyncState);
 }
 
-export function readAsyncStateFromSource<T>(possiblySource: any): AsyncStateInterface<T> {
+export function readAsyncStateFromSource<T>(possiblySource: AsyncStateSource<T>): AsyncStateInterface<T> {
   try {
     return possiblySource.constructor(asyncStatesKey); // async state instance
   } catch (e) {

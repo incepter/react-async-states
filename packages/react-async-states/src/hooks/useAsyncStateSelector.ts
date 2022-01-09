@@ -1,8 +1,9 @@
 import * as React from "react";
-import { AsyncStateContext } from "../context";
-import { identity, invokeIfPresent, shallowEqual } from "shared";
+import {AsyncStateContext} from "../context";
+import {identity, invokeIfPresent, shallowEqual} from "shared";
 import {ArraySelector, AsyncStateSelector, AsyncStateSelectorKeys, FunctionSelector} from "../types";
-import {State, AsyncStateKey, AsyncStateInterface, AbortFn} from "../../../async-state";
+import {AbortFn, AsyncStateInterface, AsyncStateKey} from "../../../async-state";
+import useAsyncStateContext from "./useAsyncStateContext";
 
 function readSelectorKeys(keys, availableKeys) {
   if (typeof keys === "string") {
@@ -24,10 +25,7 @@ type SelectedAsyncStates = {
 export function useAsyncStateSelector<T>
   (keys: AsyncStateSelectorKeys, selector: AsyncStateSelector<T> = identity, areEqual = shallowEqual, initialValue?: T) {
 
-  const contextValue = React.useContext(AsyncStateContext);
-  if (!contextValue) {
-    throw new Error("to use useAsyncStateSelector you must be inside a <AsyncStateProvider></AsyncStateProvider>");
-  }
+  const contextValue = useAsyncStateContext();
   const {get, dispose, getAllKeys, watchAll} = contextValue;
 
   const asyncStatesMap: SelectedAsyncStates = React.useMemo(function deduceKeys() {

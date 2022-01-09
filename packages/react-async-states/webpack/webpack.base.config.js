@@ -10,7 +10,7 @@ function makeConfigFromOutput(options, output) {
     module: {
       rules: [
         {
-          test: /\.(t|j)s?$/,
+          test: /\.(t|j)sx?$/,
           exclude: /node_modules/,
           use: {
             loader: "ts-loader",
@@ -29,7 +29,7 @@ function makeConfigFromOutput(options, output) {
     ]),
     resolve: {
       modules: ["node_modules", "src"],
-      extensions: [".js", ".ts"]
+      extensions: [".js", ".ts", ".tsx"]
     },
     devtool: options.devtool,
     performance: options.performance || {},

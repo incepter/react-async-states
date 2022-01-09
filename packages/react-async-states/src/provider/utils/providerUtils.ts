@@ -1,19 +1,19 @@
 import {readAsyncStateConfigFromSubscriptionConfig} from "shared";
-import AsyncState, {AsyncStateInterface, AsyncStateKey} from "async-state";
+import AsyncState, {AsyncStateInterface, AsyncStateKey, AsyncStateSource} from "async-state";
 import {isAsyncStateSource} from "async-state/AsyncState";
 import {readAsyncStateFromSource} from "async-state/utils";
-import {AsyncStateEntry, InitialAsyncState} from "../../types";
+import {AsyncStateEntry, ExtendedInitialAsyncState, InitialAsyncState} from "../../types";
 
 export function createAsyncStateEntry<T>(asyncState: AsyncStateInterface<T>): AsyncStateEntry<T> {
   return {value: asyncState};
 }
 
 
-export function createInitialAsyncStatesReducer(result: { [id: AsyncStateKey]: AsyncStateEntry<any> }, current: InitialAsyncState<any>) {
+export function createInitialAsyncStatesReducer(result: { [id: AsyncStateKey]: AsyncStateEntry<any> }, current: ExtendedInitialAsyncState<any>) {
   if (isAsyncStateSource(current)) {
     const key = current.key;
     const existingEntry = result[key];
-    const asyncState = readAsyncStateFromSource(current);
+    const asyncState = readAsyncStateFromSource(current as AsyncStateSource<any>);
 
     if (!existingEntry || asyncState !== existingEntry.value) {
       result[key] = createAsyncStateEntry(asyncState);
@@ -22,7 +22,8 @@ export function createInitialAsyncStatesReducer(result: { [id: AsyncStateKey]: A
 
     return result;
   } else {
-    const {key, producer, config: {initialValue}} = current;
+    const {key, producer, config} = current as InitialAsyncState<any>;
+    const initialValue = config?.initialValue;
     const existingEntry = result[key];
     if (existingEntry) {
       const asyncState = existingEntry.value;

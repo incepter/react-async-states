@@ -2,14 +2,18 @@ import {
   AbortFn,
   AsyncStateInterface,
   AsyncStateKey,
-  AsyncStateSource, AsyncStateWatchKey, ForkConfigType,
+  AsyncStateSource,
+  AsyncStateWatchKey,
+  ForkConfigType,
   Producer,
   ProducerConfig,
+  ProducerRunEffects,
   State
 } from "../../async-state";
-import {shallowClone} from "../../shared";
 
 export type Reducer<T> = (T, ...args: any[]) => T;
+
+export type ExtendedInitialAsyncState<T> = InitialAsyncState<T> | AsyncStateSource<T>;
 
 export type InitialAsyncState<T> = {
   key: AsyncStateKey,
@@ -111,7 +115,7 @@ export type AsyncStateManagerInterface = {
 
 export type AsyncStateContextValue = {
   manager: AsyncStateManagerInterface,
-  payload: {[id: string]: any},
+  payload: { [id: string]: any },
   run<T>(asyncState: AsyncStateInterface<T>, ...args: any[]): AbortFn,
   get<T>(key: AsyncStateKey): AsyncStateInterface<T>,
   fork<T>(key: AsyncStateKey, config: ForkConfigType): AsyncStateInterface<T> | undefined,
@@ -124,3 +128,113 @@ export type AsyncStateContextValue = {
   getAllKeys(): AsyncStateKey[],
   watchAll(cb: ManagerWatchCallback<any>),
 }
+
+
+// use async state
+
+
+export type UseAsyncStateStateDeps = {
+  guard: Readonly<Object>,
+  rerender: Readonly<Object>,
+}
+
+export type UseAsyncStateReturnValue<T, E> = {
+  state: E,
+  key: AsyncStateKey,
+
+  source: AsyncStateSource<T>,
+  mode: AsyncStateSubscriptionMode,
+  lastSuccess: State<T>,
+
+  payload: { [id: string]: any } | null,
+
+
+  abort: AbortFn,
+  run: (...args: any[]) => AbortFn,
+  replaceState: (newState: T) => void,
+  mergePayload: (argv: { [id: string]: any }) => void,
+
+  read: () => E,
+  runAsyncState?: <D>(key: AsyncStateKeyOrSource<D>, ...args: any[]) => AbortFn,
+}
+
+export type UseAsyncStateReRenderStatusConfig = {
+  error?: boolean,
+  initial?: boolean,
+  success?: boolean,
+  pending?: boolean,
+  aborted?: boolean,
+};
+
+export type EqualityFn<T> = (prev: T, next: T) => boolean;
+
+export type UseAsyncStateConfiguration<T, E> = {
+  key?: AsyncStateKey,
+  source?: AsyncStateSource<T>,
+  initialValue?: T,
+  runEffect?: ProducerRunEffects,
+  runEffectDurationMs?: number,
+  payload?: { [id: string]: any },
+
+  lazy?: boolean,
+  fork?: boolean,
+  condition?: boolean,
+  hoistToProvider?: boolean,
+  forkConfig?: ForkConfigType,
+  hoistToProviderConfig?: HoistToProviderConfig,
+  rerenderStatus?: UseAsyncStateReRenderStatusConfig,
+
+  subscriptionKey?: AsyncStateKey,
+
+  producer?: Producer<T>,
+  selector: (currentState: State<T>, lastSuccess: State<T>) => E,
+  areEqual: EqualityFn<E>,
+}
+
+export type PartialUseAsyncStateConfiguration<T, E> = {
+  key?: AsyncStateKey,
+  source?: AsyncStateSource<T>,
+  initialValue?: T,
+  runEffect?: ProducerRunEffects,
+  runEffectDurationMs?: number,
+  payload?: { [id: string]: any },
+
+  lazy?: boolean,
+  fork?: boolean,
+  condition?: boolean,
+  hoistToProvider?: boolean,
+  forkConfig?: ForkConfigType,
+  hoistToProviderConfig?: HoistToProviderConfig,
+  rerenderStatus?: UseAsyncStateReRenderStatusConfig,
+
+  subscriptionKey?: AsyncStateKey,
+
+  producer?: Producer<T>,
+  selector?: (currentState: State<T>, lastSuccess: State<T>) => E,
+  areEqual?: EqualityFn<E>,
+}
+
+export type UseAsyncStateSubscriptionInfo<T, E> = {
+  mode: AsyncStateSubscriptionMode,
+  asyncState: AsyncStateInterface<T>,
+  configuration: UseAsyncStateConfiguration<T, E>,
+
+  guard: Object,
+  deps: readonly any[],
+
+  dispose: () => boolean | undefined,
+  run: (...args: any[]) => AbortFn,
+}
+
+export type UseAsyncStateRefsFactory<T, E> = {
+  returnValue?: UseAsyncStateReturnValue<T, E>,
+  subscriptionInfo?: UseAsyncStateSubscriptionInfo<T, E>
+};
+
+export type UseAsyncStateContextType = AsyncStateContextValue | null;
+
+export type ExtendedUseAsyncStateConfiguration<T, E> =
+  string
+  | Producer<T>
+  | AsyncStateSource<T>
+  | UseAsyncStateConfiguration<T, E>;

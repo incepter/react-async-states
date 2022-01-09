@@ -1,50 +1,76 @@
 import { oneObjectIdentity, shallowClone, shallowEqual } from "shared";
 import { useAsyncStateImpl } from "./useAsyncStateImpl";
+import {
+  ExtendedUseAsyncStateConfiguration,
+  PartialUseAsyncStateConfiguration,
+  UseAsyncStateReturnValue
+} from "../types";
 
 // default
-function useAsyncStateExport(subscriptionConfig, dependencies) {
+function useAsyncStateExport<T, E>(
+  subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+  dependencies: readonly any[]
+): UseAsyncStateReturnValue<T, E> {
   return useAsyncStateImpl(subscriptionConfig, dependencies);
 }
 
 // auto runs
 const autoConfigOverrides = Object.freeze({lazy: false});
 
-function useAutoAsyncState(subscriptionConfig, dependencies) {
+function useAutoAsyncState<T, E>(
+  subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+  dependencies: readonly any[]
+): UseAsyncStateReturnValue<T, E> {
   return useAsyncStateImpl(subscriptionConfig, dependencies, autoConfigOverrides);
 }
 
 // lazy
 const lazyConfigOverrides = Object.freeze({lazy: true});
 
-function useLazyAsyncState(subscriptionConfig, dependencies) {
+function useLazyAsyncState<T, E>(
+  subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+  dependencies: readonly any[]
+): UseAsyncStateReturnValue<T, E> {
   return useAsyncStateImpl(subscriptionConfig, dependencies, lazyConfigOverrides);
 }
 
 // fork
 const forkConfigOverrides = Object.freeze({fork: true});
 
-function useForkAsyncState(subscriptionConfig, dependencies) {
+function useForkAsyncState<T, E>(
+  subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+  dependencies: readonly any[]
+): UseAsyncStateReturnValue<T, E> {
   return useAsyncStateImpl(subscriptionConfig, dependencies, forkConfigOverrides);
 }
 
 // fork auto
 const forkAutoConfigOverrides = Object.freeze({fork: true, lazy: false});
 
-function useForkAutoAsyncState(subscriptionConfig, dependencies) {
+function useForkAutoAsyncState<T, E>(
+  subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+  dependencies: readonly any[]
+): UseAsyncStateReturnValue<T, E> {
   return useAsyncStateImpl(subscriptionConfig, dependencies, forkAutoConfigOverrides);
 }
 
 // hoist
 const hoistConfigOverrides = Object.freeze({hoistToProvider: true});
 
-function useHoistAsyncState(subscriptionConfig, dependencies) {
+function useHoistAsyncState<T, E>(
+  subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+  dependencies: readonly any[]
+): UseAsyncStateReturnValue<T, E> {
   return useAsyncStateImpl(subscriptionConfig, dependencies, hoistConfigOverrides);
 }
 
 // hoistAuto
 const hoistAutoConfigOverrides = Object.freeze({hoistToProvider: true, lazy: false});
 
-function useHoistAutoAsyncState(subscriptionConfig, dependencies) {
+function useHoistAutoAsyncState<T, E>(
+  subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+  dependencies: readonly any[]
+): UseAsyncStateReturnValue<T, E> {
   return useAsyncStateImpl(subscriptionConfig, dependencies, hoistAutoConfigOverrides);
 }
 
@@ -74,7 +100,7 @@ function conditionArgsToOverrides(args) {
   return {condition: args[0]};
 }
 
-function curryProperty(argsToOverrides, initialOverrides) {
+function curryProperty<T, E>(argsToOverrides, initialOverrides?: PartialUseAsyncStateConfiguration<T, E>) {
   return function constructHookBuilder(...args) {
     const configOverrides = shallowClone(initialOverrides, argsToOverrides(args));
 
@@ -82,7 +108,7 @@ function curryProperty(argsToOverrides, initialOverrides) {
       return useAsyncStateImpl(subscriptionConfig, dependencies, configOverrides);
     }
 
-    function curryConfigOverride(prop1, value1, prop2, value2) {
+    function curryConfigOverride(prop1, value1?, prop2?, value2?) {
       return function hook(subscriptionConfig, dependencies) {
         configOverrides[prop1] = value1;
         if (prop2 !== undefined) {
@@ -107,4 +133,7 @@ function curryProperty(argsToOverrides, initialOverrides) {
   }
 }
 
-export const useAsyncState = Object.freeze(useAsyncStateExport);
+export const useAsyncState: <T, E>(
+  subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+  dependencies: readonly any[]
+) => UseAsyncStateReturnValue<T, E> = Object.freeze(useAsyncStateExport);
