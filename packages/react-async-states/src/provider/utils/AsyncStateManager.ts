@@ -3,7 +3,6 @@ import AsyncState, {
   AsyncStateInterface,
   AsyncStateKey,
   AsyncStateSource,
-  AsyncStateWatchKey,
   ForkConfigType,
   State
 } from "async-state";
@@ -26,6 +25,7 @@ import {
   AsyncStateManagerInterface,
   AsyncStateSelector,
   AsyncStateSelectorKeys,
+  AsyncStateWatchKey,
   FunctionSelector,
   ManagerHoistConfig,
   ManagerWatchCallback,
@@ -93,7 +93,6 @@ export function AsyncStateManager(
   function get<T>(
     key: AsyncStateKey
   ): AsyncStateInterface<T> {
-    // console.log('getting:', key, asyncStateEntries, asyncStateEntries[key]);
     return asyncStateEntries[key]?.value;
   }
 
@@ -316,31 +315,6 @@ export function AsyncStateManager(
     const statesArray = keys.map(key => get(key)?.currentState);
     return (selector as ArraySelector<T>)(...statesArray);
   }
-
-  //
-  // function runAndWait(key, ...args) {
-  //   return new Promise(function promiseDefinition(resolve, reject) {
-  //     const asyncState = get(key);
-  //     if (!asyncState) {
-  //       return;
-  //     }
-  //     let unsubscribe = asyncState.subscribe(function subscription(stateValue) {
-  //
-  //       const status = stateValue?.status;
-  //       if (status === AsyncStateStatus.success) {
-  //         resolve(stateValue);
-  //       }
-  //       if (status === AsyncStateStatus.error) {
-  //         reject(stateValue);
-  //       }
-  //       if (status !== AsyncStateStatus.pending) {
-  //         invokeIfPresent(unsubscribe);
-  //       }
-  //     });
-  //     asyncState.run(...args);
-  //   });
-  //
-  // }
 
   // used in function selector in useAsyncStateSelector
   function getAllKeys(): AsyncStateKey[] {

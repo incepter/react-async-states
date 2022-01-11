@@ -56,7 +56,6 @@ export type ProducerConfig<T> = {
 }
 
 export type AsyncStateKey = string;
-export type AsyncStateWatchKey = string | symbol;
 
 export type AsyncStateStateFunctionUpdater<T> = (updater: State<T>) => T;
 

@@ -3,7 +3,6 @@ import {
   AsyncStateInterface,
   AsyncStateKey,
   AsyncStateSource,
-  AsyncStateWatchKey,
   ForkConfigType,
   Producer,
   ProducerConfig,
@@ -50,6 +49,8 @@ export enum AsyncStateSubscriptionMode {
   SOURCE_FORK = "SOURCE_FORK", // subscription via source property and fork
   OUTSIDE_PROVIDER = "OUTSIDE_PROVIDER", // standalone outside provider
 }
+
+export type AsyncStateWatchKey = string | symbol;
 
 // manager types
 
