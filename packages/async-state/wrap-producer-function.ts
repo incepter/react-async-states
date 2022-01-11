@@ -1,6 +1,6 @@
 import {__DEV__, cloneProducerProps} from "shared";
 import devtools from "devtools";
-import {AsyncStateStateBuilder} from "./utils";
+import {StateBuilder} from "./utils";
 import {ProducerFunction, ProducerProps} from "./types";
 import AsyncState from "./AsyncState";
 
@@ -30,7 +30,7 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
     } catch (e) {
       if (__DEV__) devtools.emitRunSync(asyncState, props);
       props.fulfilled = true;
-      asyncState.setState(AsyncStateStateBuilder.error(e, savedProps));
+      asyncState.setState(StateBuilder.error(e, savedProps));
       return;
     }
 
@@ -42,27 +42,27 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
         generatorResult = wrapStartedGenerator(executionValue, props);
       } catch (e) {
         props.fulfilled = true;
-        asyncState.setState(AsyncStateStateBuilder.error(e, savedProps));
+        asyncState.setState(StateBuilder.error(e, savedProps));
         return;
       }
       if (generatorResult.done) {
         props.fulfilled = true;
-        asyncState.setState(AsyncStateStateBuilder.success(generatorResult.value, savedProps));
+        asyncState.setState(StateBuilder.success(generatorResult.value, savedProps));
         return;
       } else {
         runningPromise = generatorResult;
         asyncState.suspender = runningPromise;
-        asyncState.setState(AsyncStateStateBuilder.pending(savedProps));
+        asyncState.setState(StateBuilder.pending(savedProps));
       }
     } else if (isPromise(executionValue)) {
       if (__DEV__) devtools.emitRunPromise(asyncState, props);
       runningPromise = executionValue;
       asyncState.suspender = runningPromise;
-      asyncState.setState(AsyncStateStateBuilder.pending(savedProps));
+      asyncState.setState(StateBuilder.pending(savedProps));
     } else { // final value
       if (__DEV__) devtools.emitRunSync(asyncState, props);
       props.fulfilled = true;
-      asyncState.setState(AsyncStateStateBuilder.success(executionValue, savedProps));
+      asyncState.setState(StateBuilder.success(executionValue, savedProps));
       return;
     }
 
@@ -71,14 +71,14 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
         let aborted = props.aborted;
         if (!aborted) {
           props.fulfilled = true;
-          asyncState.setState(AsyncStateStateBuilder.success(stateData, savedProps));
+          asyncState.setState(StateBuilder.success(stateData, savedProps));
         }
       })
       .catch(stateError => {
         let aborted = props.aborted;
         if (!aborted) {
           props.fulfilled = true;
-          asyncState.setState(AsyncStateStateBuilder.error(stateError, savedProps));
+          asyncState.setState(StateBuilder.error(stateError, savedProps));
         }
       });
   };

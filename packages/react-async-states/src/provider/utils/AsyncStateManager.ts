@@ -46,7 +46,10 @@ export function AsyncStateManager(
 
   const asyncStateEntries: AsyncStateEntries = Object
     .values(initializer ?? EMPTY_OBJECT)
-    .reduce(createInitialAsyncStatesReducer, Object.create(null));
+    .reduce(
+      createInitialAsyncStatesReducer,
+      Object.create(null) as AsyncStateEntries
+    );
 
   // stores all listeners/watchers about an async state
   let watchers: ManagerWatchers = Object.create(null);
@@ -71,7 +74,10 @@ export function AsyncStateManager(
   function setInitialStates(initialStates?: ProviderInitialStates): AsyncStateEntry<any>[] {
     const newInitialStates: AsyncStateEntries = Object
       .values(initialStates ?? EMPTY_OBJECT)
-      .reduce(createInitialAsyncStatesReducer, Object.create(null) as AsyncStateEntries);
+      .reduce(
+        createInitialAsyncStatesReducer,
+        Object.create(null) as AsyncStateEntries
+      );
 
     // we should remove the states that were initially hoisted
     // but do no-longer exist in provider.

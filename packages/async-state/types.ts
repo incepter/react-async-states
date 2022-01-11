@@ -57,10 +57,10 @@ export type ProducerConfig<T> = {
 
 export type AsyncStateKey = string;
 
-export type AsyncStateStateFunctionUpdater<T> = (updater: State<T>) => T;
+export type StateFunctionUpdater<T> = (updater: State<T>) => T;
 
-export type AsyncStateStateUpdater<T> = (
-  updater: T | AsyncStateStateFunctionUpdater<T>,
+export type StateUpdater<T> = (
+  updater: T | StateFunctionUpdater<T>,
   notify: boolean
 ) => void;
 
@@ -69,9 +69,9 @@ export type AsyncStateSource<T> = {
   uniqueId: number | undefined,
 }
 
-export type AsyncStateSubscription<T> = {
+export type StateSubscription<T> = {
+  key: AsyncStateKey, // subscription key
   cleanup: () => void,
-  key: AsyncStateKey,
   callback: (newState: State<T>) => void,
 };
 
@@ -88,7 +88,7 @@ export interface AsyncStateInterface<T> {
   payload: { [id: string]: any } | null,
   config: ProducerConfig<T>,
 
-  subscriptions: { [id: number]: AsyncStateSubscription<T> },
+  subscriptions: { [id: number]: StateSubscription<T> },
 
   suspender: Promise<T> | undefined,
   producer: ProducerFunction<T>,
@@ -98,38 +98,21 @@ export interface AsyncStateInterface<T> {
   dispose: () => boolean,
   abort: (reason: any) => void,
   run: (...args: any[]) => AbortFn,
-  replaceState: AsyncStateStateUpdater<T>,
+  replaceState: StateUpdater<T>,
+  setState: (newState: State<T>, notify?: boolean) => void,
   fork: (forkConfig?: { keepState: boolean }) => AsyncStateInterface<T>,
-  subscribe: (
-    cb: Function,
-    subscriptionKey?: AsyncStateKey
-  ) => AbortFn,
-  setState: (
-    newState: State<T>,
-    notify?: boolean
-  ) => void,
+  subscribe: (cb: Function, subscriptionKey?: AsyncStateKey) => AbortFn,
 }
 
-export interface AsyncStateStateBuilderInterface {
+export interface StateBuilderInterface {
   initial: <T> (initialValue: T) => State<T>,
-  error: <T>(
-    data: any,
-    props: ProducerSavedProps<T>
-  ) => State<any>,
-  success: <T>(
-    data: T,
-    props: ProducerSavedProps<T>
-  ) => State<T>,
   pending: <T>(props: ProducerSavedProps<T>) => State<null>,
-  aborted: <T>(
-    reason: any,
-    props: ProducerSavedProps<T>
-  ) => State<any>,
+  success: <T>(data: T, props: ProducerSavedProps<T>) => State<T>,
+  error: <T>(data: any, props: ProducerSavedProps<T>) => State<any>,
+  aborted: <T>(reason: any, props: ProducerSavedProps<T>) => State<any>,
 }
 
 export type ForkConfigType = {
   keepState: boolean,
   key?: AsyncStateKey,
 }
-
-export type StateSelector<T, E> = (state: State<T>) => E;

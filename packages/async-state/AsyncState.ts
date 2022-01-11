@@ -7,7 +7,7 @@ import {
 } from "shared";
 import {wrapProducerFunction} from "./wrap-producer-function";
 import {
-  AsyncStateStateBuilder,
+  StateBuilder,
   constructAsyncStateSource,
   warnDevAboutAsyncStateKey
 } from "./utils";
@@ -18,9 +18,9 @@ import {
   AsyncStateInterface,
   AsyncStateKey,
   AsyncStateSource,
-  AsyncStateStateFunctionUpdater,
+  StateFunctionUpdater,
   AsyncStateStatus,
-  AsyncStateSubscription,
+  StateSubscription,
   ForkConfigType,
   Producer,
   ProducerConfig,
@@ -46,7 +46,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
   private pendingTimeout: { id: ReturnType<typeof setTimeout>, startDate: number } | null = null;
 
   private subscriptionsMeter: number = 0;
-  subscriptions: { [id: number]: AsyncStateSubscription<T> } = {};
+  subscriptions: { [id: number]: StateSubscription<T> } = {};
 
   producer: ProducerFunction<T>;
   suspender: Promise<T> | undefined = undefined;
@@ -67,7 +67,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     this.originalProducer = producer;
 
     const initialValue = typeof this.config.initialValue === "function" ? this.config.initialValue() : this.config.initialValue;
-    this.currentState = AsyncStateStateBuilder.initial(initialValue);
+    this.currentState = StateBuilder.initial(initialValue);
     this.lastSuccess = this.currentState;
 
     this.producer = wrapProducerFunction(this);
@@ -120,7 +120,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
     this.locks = 0;
     const initialValue = typeof this.config.initialValue === "function" ? this.config.initialValue() : this.config.initialValue;
-    this.setState(AsyncStateStateBuilder.initial(initialValue));
+    this.setState(StateBuilder.initial(initialValue));
     if (__DEV__) devtools.emitDispose(this);
 
     return true;
@@ -227,7 +227,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
         return;
       }
       props.aborted = true;
-      that.setState(AsyncStateStateBuilder.aborted(reason, cloneProducerProps(props)));
+      that.setState(StateBuilder.aborted(reason, cloneProducerProps(props)));
       onAbortCallbacks.forEach(function clean(func) {
         invokeIfPresent(func, reason);
       });
@@ -291,7 +291,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     return clone as AsyncStateInterface<T>;
   }
 
-  replaceState(newValue: T | AsyncStateStateFunctionUpdater<T>): void {
+  replaceState(newValue: T | StateFunctionUpdater<T>): void {
     if (this.currentState.status === AsyncStateStatus.pending) {
       this.abort();
       this.currentAborter = undefined;
@@ -299,7 +299,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
     let effectiveValue = newValue;
     if (typeof newValue === "function") {
-      effectiveValue = (newValue as AsyncStateStateFunctionUpdater<T>)(this.currentState);
+      effectiveValue = (newValue as StateFunctionUpdater<T>)(this.currentState);
     }
 
     if (__DEV__) devtools.emitReplaceState(this);
@@ -309,7 +309,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       lastSuccess: this.lastSuccess,
       payload: shallowClone(this.payload),
     });
-    this.setState(AsyncStateStateBuilder.success(effectiveValue, savedProps));
+    this.setState(StateBuilder.success(effectiveValue, savedProps));
   }
 }
 

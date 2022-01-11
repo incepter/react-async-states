@@ -2,7 +2,7 @@ import {__DEV__} from "shared";
 import {
   AsyncStateInterface,
   AsyncStateSource,
-  AsyncStateStateBuilderInterface,
+  StateBuilderInterface,
   AsyncStateStatus,
   ProducerSavedProps,
   State
@@ -74,7 +74,7 @@ function state<T>(
   return Object.freeze({status, data, props});
 }
 
-export const AsyncStateStateBuilder = Object.freeze({
+export const StateBuilder = Object.freeze({
   initial: (initialValue) => state(AsyncStateStatus.initial, initialValue, null),
   error: (
     data,
@@ -89,4 +89,4 @@ export const AsyncStateStateBuilder = Object.freeze({
     reason,
     props
   ) => state(AsyncStateStatus.aborted, reason, props),
-}) as AsyncStateStateBuilderInterface;
+}) as StateBuilderInterface;
