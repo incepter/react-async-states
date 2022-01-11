@@ -11,7 +11,10 @@ function useAsyncStateExport<T, E>(
   subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
   dependencies: readonly any[]
 ): UseAsyncStateReturnValue<T, E> {
-  return useAsyncStateImpl(subscriptionConfig, dependencies);
+  return useAsyncStateImpl(
+    subscriptionConfig,
+    dependencies
+  );
 }
 
 // auto runs
@@ -21,7 +24,11 @@ function useAutoAsyncState<T, E>(
   subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
   dependencies: readonly any[]
 ): UseAsyncStateReturnValue<T, E> {
-  return useAsyncStateImpl(subscriptionConfig, dependencies, autoConfigOverrides);
+  return useAsyncStateImpl(
+    subscriptionConfig,
+    dependencies,
+    autoConfigOverrides
+  );
 }
 
 // lazy
@@ -31,7 +38,11 @@ function useLazyAsyncState<T, E>(
   subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
   dependencies: readonly any[]
 ): UseAsyncStateReturnValue<T, E> {
-  return useAsyncStateImpl(subscriptionConfig, dependencies, lazyConfigOverrides);
+  return useAsyncStateImpl(
+    subscriptionConfig,
+    dependencies,
+    lazyConfigOverrides
+  );
 }
 
 // fork
@@ -41,7 +52,11 @@ function useForkAsyncState<T, E>(
   subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
   dependencies: readonly any[]
 ): UseAsyncStateReturnValue<T, E> {
-  return useAsyncStateImpl(subscriptionConfig, dependencies, forkConfigOverrides);
+  return useAsyncStateImpl(
+    subscriptionConfig,
+    dependencies,
+    forkConfigOverrides
+  );
 }
 
 // fork auto
@@ -51,7 +66,11 @@ function useForkAutoAsyncState<T, E>(
   subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
   dependencies: readonly any[]
 ): UseAsyncStateReturnValue<T, E> {
-  return useAsyncStateImpl(subscriptionConfig, dependencies, forkAutoConfigOverrides);
+  return useAsyncStateImpl(
+    subscriptionConfig,
+    dependencies,
+    forkAutoConfigOverrides
+  );
 }
 
 // hoist
@@ -61,17 +80,28 @@ function useHoistAsyncState<T, E>(
   subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
   dependencies: readonly any[]
 ): UseAsyncStateReturnValue<T, E> {
-  return useAsyncStateImpl(subscriptionConfig, dependencies, hoistConfigOverrides);
+  return useAsyncStateImpl(
+    subscriptionConfig,
+    dependencies,
+    hoistConfigOverrides
+  );
 }
 
 // hoistAuto
-const hoistAutoConfigOverrides = Object.freeze({hoistToProvider: true, lazy: false});
+const hoistAutoConfigOverrides = Object.freeze({
+  hoistToProvider: true,
+  lazy: false
+});
 
 function useHoistAutoAsyncState<T, E>(
   subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
   dependencies: readonly any[]
 ): UseAsyncStateReturnValue<T, E> {
-  return useAsyncStateImpl(subscriptionConfig, dependencies, hoistAutoConfigOverrides);
+  return useAsyncStateImpl(
+    subscriptionConfig,
+    dependencies,
+    hoistAutoConfigOverrides
+  );
 }
 
 useAsyncStateExport.auto = useAutoAsyncState;
@@ -100,34 +130,90 @@ function conditionArgsToOverrides(args) {
   return {condition: args[0]};
 }
 
-function curryProperty<T, E>(argsToOverrides, initialOverrides?: PartialUseAsyncStateConfiguration<T, E>) {
+function curryProperty<T, E>(
+  argsToOverrides,
+  initialOverrides?: PartialUseAsyncStateConfiguration<T, E>
+) {
   return function constructHookBuilder(...args) {
-    const configOverrides = shallowClone(initialOverrides, argsToOverrides(args));
+    const configOverrides = shallowClone(
+      initialOverrides,
+      argsToOverrides(args)
+    );
 
-    function hookBuilder(subscriptionConfig, dependencies) {
-      return useAsyncStateImpl(subscriptionConfig, dependencies, configOverrides);
+    function hookBuilder(
+      subscriptionConfig,
+      dependencies
+    ) {
+      return useAsyncStateImpl(
+        subscriptionConfig,
+        dependencies,
+        configOverrides
+      );
     }
 
-    function curryConfigOverride(prop1, value1?, prop2?, value2?) {
-      return function hook(subscriptionConfig, dependencies) {
+    function curryConfigOverride(
+      prop1,
+      value1?,
+      prop2?,
+      value2?
+    ) {
+      return function hook(
+        subscriptionConfig,
+        dependencies
+      ) {
         configOverrides[prop1] = value1;
         if (prop2 !== undefined) {
           configOverrides[prop2] = value2;
         }
-        return useAsyncStateImpl(subscriptionConfig, dependencies, configOverrides);
+        return useAsyncStateImpl(
+          subscriptionConfig,
+          dependencies,
+          configOverrides
+        );
       }
     }
 
-    hookBuilder.fork = curryConfigOverride("fork", true);
-    hookBuilder.lazy = curryConfigOverride("lazy", true);
-    hookBuilder.auto = curryConfigOverride("lazy", false);
-    hookBuilder.hoist = curryConfigOverride("hoistToProvider", true);
-    hookBuilder.forkAuto = curryConfigOverride("fork", true, "lazy", false);
-    hookBuilder.hoistAuto = curryConfigOverride("hoist", true, "lazy", false);
+    hookBuilder.fork = curryConfigOverride(
+      "fork",
+      true
+    );
+    hookBuilder.lazy = curryConfigOverride(
+      "lazy",
+      true
+    );
+    hookBuilder.auto = curryConfigOverride(
+      "lazy",
+      false
+    );
+    hookBuilder.hoist = curryConfigOverride(
+      "hoistToProvider",
+      true
+    );
+    hookBuilder.forkAuto = curryConfigOverride(
+      "fork",
+      true,
+      "lazy",
+      false
+    );
+    hookBuilder.hoistAuto = curryConfigOverride(
+      "hoist",
+      true,
+      "lazy",
+      false
+    );
 
-    hookBuilder.payload = curryProperty(payloadArgsToOverrides, configOverrides);
-    hookBuilder.selector = curryProperty(selectorArgsToOverrides, configOverrides);
-    hookBuilder.condition = curryProperty(conditionArgsToOverrides, configOverrides);
+    hookBuilder.payload = curryProperty(
+      payloadArgsToOverrides,
+      configOverrides
+    );
+    hookBuilder.selector = curryProperty(
+      selectorArgsToOverrides,
+      configOverrides
+    );
+    hookBuilder.condition = curryProperty(
+      conditionArgsToOverrides,
+      configOverrides
+    );
 
     return Object.freeze(hookBuilder);
   }

@@ -1,4 +1,7 @@
-import {defaultUseASConfig, sourceConfigurationSecretSymbol} from "./subscriptionUtils";
+import {
+  defaultUseASConfig,
+  sourceConfigurationSecretSymbol
+} from "./subscriptionUtils";
 import {isAsyncStateSource} from "async-state/AsyncState";
 import {
   ExtendedUseAsyncStateConfiguration,
@@ -13,12 +16,22 @@ export function readUserConfiguration<T, E>(
 ): UseAsyncStateConfiguration<T, E> {
   // this is direct anonymous producer configuration
   if (typeof userConfig === "function") {
-    return Object.assign({}, defaultUseASConfig, overrides, {producer: userConfig});
+    return Object.assign(
+      {},
+      defaultUseASConfig,
+      overrides,
+      {producer: userConfig}
+    );
   }
   // subscription to a state inside provider by key (or wait)
   // or a standalone outside provider with an undefined producer
   if (typeof userConfig === "string") {
-    return Object.assign({}, defaultUseASConfig, overrides, {key: userConfig});
+    return Object.assign(
+      {},
+      defaultUseASConfig,
+      overrides,
+      {key: userConfig}
+    );
   }
   // subscription via source directly as configuration
   if (isAsyncStateSource(userConfig)) {
@@ -26,15 +39,29 @@ export function readUserConfiguration<T, E>(
       {},
       defaultUseASConfig,
       overrides,
-      {source: userConfig, [sourceConfigurationSecretSymbol]: true});
+      {source: userConfig, [sourceConfigurationSecretSymbol]: true}
+    );
   }
   // subscription via source using object configuration
-  if (isAsyncStateSource((userConfig as UseAsyncStateConfiguration<T, E>)?.source)) {
-    return Object.assign({}, defaultUseASConfig, userConfig, overrides, {
-      [sourceConfigurationSecretSymbol]: true
-    });
+  if (
+    isAsyncStateSource((userConfig as UseAsyncStateConfiguration<T, E>)?.source)
+  ) {
+    return Object.assign(
+      {},
+      defaultUseASConfig,
+      userConfig,
+      overrides,
+      {
+        [sourceConfigurationSecretSymbol]: true
+      }
+    );
   }
-  return Object.assign({}, defaultUseASConfig, overrides, userConfig);
+  return Object.assign(
+    {},
+    defaultUseASConfig,
+    overrides,
+    userConfig
+  );
 }
 
 const defaultAnonymousPrefix = "anonymous-async-state-";

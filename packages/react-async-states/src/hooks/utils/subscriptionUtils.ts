@@ -1,9 +1,15 @@
-import AsyncState, {AbortFn, AsyncStateInterface, AsyncStateKey, AsyncStateSource, State} from "async-state";
+import AsyncState, {
+  AbortFn,
+  AsyncStateInterface,
+  AsyncStateKey,
+  AsyncStateSource,
+  State
+} from "async-state";
 import {
   __DEV__,
   AsyncStateStatus,
   oneObjectIdentity,
-  readAsyncStateConfigFromSubscriptionConfig,
+  readProducerConfigFromSubscriptionConfig,
   shallowClone,
   shallowEqual
 } from "shared";
@@ -33,7 +39,11 @@ export function inferSubscriptionMode<T, E>(
 ): AsyncStateSubscriptionMode {
   // the subscription via source passes directly
   if (configuration[sourceConfigurationSecretSymbol] === true) {
-    return configuration.fork ? AsyncStateSubscriptionMode.SOURCE_FORK : AsyncStateSubscriptionMode.SOURCE;
+    return configuration.fork
+      ?
+      AsyncStateSubscriptionMode.SOURCE_FORK
+      :
+      AsyncStateSubscriptionMode.SOURCE;
   }
 
   if (contextValue === null) {
@@ -48,25 +58,32 @@ export function inferSubscriptionMode<T, E>(
   const existsInProvider = !!contextValue.get(key as AsyncStateKey);
 
   // early decide that this is a listener and return it immediately
-  // because this is the most common use case that it will be, we'll be optimizing this path first
+  // because this is the most common use case that it will be
+  // we'll be optimizing this path first
   if (existsInProvider && !hoistToProvider && !fork) {
     return AsyncStateSubscriptionMode.LISTEN;
   }
 
-  if (!hoistToProvider && !fork && producer) { // we dont want to hoist or fork
+  // we dont want to hoist or fork
+  if (!hoistToProvider && !fork && producer) {
     return AsyncStateSubscriptionMode.STANDALONE;
   }
 
-  if (hoistToProvider && (!existsInProvider || !fork)) { // we want to hoist while (not in provider or we dont want to fork)
+  // we want to hoist while (not in provider or we dont want to fork)
+  if (hoistToProvider && (!existsInProvider || !fork)) {
     return AsyncStateSubscriptionMode.HOIST;
   }
 
-  if (fork && existsInProvider) { // fork a hoisted
+  // fork a hoisted
+  // the provider will hoist it again
+  if (fork && existsInProvider) {
     return AsyncStateSubscriptionMode.FORK;
   }
 
-  if (!existsInProvider) { // not found in provider; so either a mistake, or still not hoisted from
-    return AsyncStateSubscriptionMode.WAITING; // waiting, or may be we should throw ?
+  // not found in provider; so either a mistake, or still not hoisted from
+  if (!existsInProvider) {
+    // waiting, or may be we should throw ?
+    return AsyncStateSubscriptionMode.WAITING;
   }
 
   return AsyncStateSubscriptionMode.NOOP; // we should not be here
@@ -74,24 +91,54 @@ export function inferSubscriptionMode<T, E>(
 
 export function inferAsyncStateInstance<T, E>(
   mode: AsyncStateSubscriptionMode,
-  configuration: UseAsyncStateConfiguration<T, E>, contextValue
+  configuration: UseAsyncStateConfiguration<T, E>,
+  contextValue: UseAsyncStateContextType
 ): AsyncStateInterface<T> {
-  const candidate = contextValue?.get(configuration.key);
+  const candidate = contextValue
+    ?.get(configuration.key as string) as AsyncStateInterface<T>;
+
   switch (mode) {
     case AsyncStateSubscriptionMode.FORK:
-      return contextValue.fork(configuration.key, configuration.forkConfig);
+      // @ts-ignore
+      // contextValue is not null here, because we decide the mode based on it!
+      return contextValue.fork(
+        configuration.key as string,
+        configuration.forkConfig
+      ) as AsyncStateInterface<T>;
     case AsyncStateSubscriptionMode.HOIST:
-      return contextValue.hoist(configuration);
+      const {
+        key,
+        producer,
+        runEffect,
+        initialValue,
+        runEffectDurationMs,
+        hoistToProviderConfig
+      } = configuration;
+      // @ts-ignore
+      // contextValue is not null here, because we decide the mode based on it!
+      return contextValue.hoist({
+        key: key as AsyncStateKey,
+        producer,
+        runEffect,
+        initialValue,
+        runEffectDurationMs,
+        hoistToProviderConfig,
+      });
     case AsyncStateSubscriptionMode.LISTEN:
       return candidate;
     case AsyncStateSubscriptionMode.STANDALONE:
     case AsyncStateSubscriptionMode.OUTSIDE_PROVIDER:
       return new AsyncState(
-        configuration.key as AsyncStateKey, configuration.producer, readAsyncStateConfigFromSubscriptionConfig(configuration));
+        configuration.key as AsyncStateKey,
+        configuration.producer,
+        readProducerConfigFromSubscriptionConfig(configuration)
+      );
     case AsyncStateSubscriptionMode.SOURCE:
-      return readAsyncStateFromSource(configuration.source as AsyncStateSource<T>);
+      return readAsyncStateFromSource(
+        configuration.source as AsyncStateSource<T>);
     case AsyncStateSubscriptionMode.SOURCE_FORK: {
-      const sourceAsyncState = readAsyncStateFromSource(configuration.source as AsyncStateSource<T>);
+      const sourceAsyncState = readAsyncStateFromSource(
+        configuration.source as AsyncStateSource<T>);
       return sourceAsyncState.fork(configuration.forkConfig);
     }
     case AsyncStateSubscriptionMode.NOOP:
@@ -119,24 +166,48 @@ export function calculateSelectedState<T, E>(
   configuration: UseAsyncStateConfiguration<T, E>
 ): E {
   const {selector} = configuration;
-  return selector(newState, lastSuccess);
+  return selector(
+    newState,
+    lastSuccess
+  );
 }
 
 let didWarnAboutUnsupportedConcurrentFeatures = false;
+
+export function applyWaitingReturnValue<T, E>(
+  returnValue: UseAsyncStateReturnValue<T, E>,
+  key: AsyncStateKey,
+  runAsyncState: (<F>(
+    key: AsyncStateKeyOrSource<F>,
+    ...args: any[]
+  ) => AbortFn) | undefined,
+  mode: AsyncStateSubscriptionMode
+): void {
+  returnValue.key = key;
+  returnValue.mode = mode;
+
+  if (!returnValue.runAsyncState) {
+    returnValue.runAsyncState = runAsyncState;
+  }
+}
 
 export function applyUpdateOnReturnValue<T, E>(
   returnValue: UseAsyncStateReturnValue<T, E>,
   asyncState: AsyncStateInterface<T>,
   stateValue: E,
   run: (...args: any[]) => AbortFn,
-  runAsyncState: (<F>(key: AsyncStateKeyOrSource<F>, ...args: any[]) => AbortFn) | undefined,
+  runAsyncState: (<F>(
+    key: AsyncStateKeyOrSource<F>,
+    ...args: any[]
+  ) => AbortFn) | undefined,
   mode: AsyncStateSubscriptionMode
 ): void {
   returnValue.mode = mode;
   returnValue.source = asyncState._source;
 
   returnValue.state = stateValue;
-  returnValue.payload = asyncState.payload; // todo: should this be exposed ? at least, shallow clone while shallow freezing
+  // todo: should this be exposed ? at least, shallow clone while shallow freezing
+  returnValue.payload = asyncState.payload;
   returnValue.lastSuccess = asyncState.lastSuccess;
 
   returnValue.key = asyncState.key;
@@ -144,15 +215,24 @@ export function applyUpdateOnReturnValue<T, E>(
   returnValue.read = function readInConcurrentMode() {
     if (enableComponentSuspension) {
       if (supportsConcurrentMode()) {
-        if (AsyncStateStatus.pending === asyncState?.currentState?.status && asyncState.suspender) {
+        if (
+          AsyncStateStatus.pending === asyncState?.currentState?.status &&
+          asyncState.suspender
+        ) {
           throw asyncState.suspender;
         }
       } else {
-        if (__DEV__ && !didWarnAboutUnsupportedConcurrentFeatures) {
-          console.error("[Warning] You are calling useAsyncState().read() without having react 18 or above " +
-            "if the library throws, you will get an error in your app. You will be receiving the state value without " +
-            "any suspension. Please consider upgrading to react 18 or above to use concurrent features.")
-          didWarnAboutUnsupportedConcurrentFeatures = true;
+        if (__DEV__) {
+          if (!didWarnAboutUnsupportedConcurrentFeatures) {
+            console.error(
+              "[Warning] You are calling useAsyncState().read() without having" +
+              " react 18 or above. If the library throws, you will get an error" +
+              " in your app. You will be receiving the state value without" +
+              " any suspension.Please consider upgrading to " +
+              "react 18 or above to use concurrent features."
+            );
+            didWarnAboutUnsupportedConcurrentFeatures = true;
+          }
         }
       }
     }
@@ -161,12 +241,16 @@ export function applyUpdateOnReturnValue<T, E>(
 
   if (!returnValue.mergePayload) {
     returnValue.mergePayload = function mergePayload(newPayload) {
-      asyncState.payload = shallowClone(asyncState.payload, newPayload);
+      asyncState.payload = shallowClone(
+        asyncState.payload,
+        newPayload
+      );
     }
   }
 
   if (!returnValue.run) {
-    returnValue.run = typeof run === "function" ? run : asyncState.run.bind(asyncState);
+    returnValue.run = typeof run === "function" ? run : asyncState.run.bind(
+      asyncState);
   }
   if (!returnValue.abort) {
     returnValue.abort = asyncState.abort.bind(asyncState);
@@ -195,7 +279,13 @@ export function shouldRecalculateInstance<T, E>(
 
     // attempt new instance if dependencies change
     // todo: this is probably unnecessary, deps shouldn't affect the instance of the async state
-    currentDeps.some((dep, index) => !Object.is(dep, oldSubscriptionInfo.deps[index])) ||
+    currentDeps.some((
+      dep,
+      index
+    ) => !Object.is(
+      dep,
+      oldSubscriptionInfo.deps[index]
+    )) ||
 
     newConfig.fork !== oldSubscriptionInfo.configuration.fork ||
     newConfig.forkConfig?.keepState !== oldSubscriptionInfo.configuration.forkConfig?.keepState ||

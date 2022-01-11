@@ -30,7 +30,7 @@ function OutsideProvider() {
 }
 
 function InsideProvider() {
-  const {state, run, replaceState} = useAsyncState({
+  const {mode, state, run, replaceState} = useAsyncState({
     lazy: true,
     key: "counter",
     initialValue: 0,
@@ -38,7 +38,7 @@ function InsideProvider() {
     hoistToProvider: true,
   });
 
-  console.log('state is', state)
+  console.log('state is', mode, state)
 
   return (<>
     <button onClick={() => run(old => old.data - 1)}>Decrement: {state}</button>

@@ -15,7 +15,7 @@ export default function DemoProvider({children}) {
   }, [location]);
 
   return (
-    <AsyncStateProvider payload={payload} initialAsyncStates={staticProducers}>
+    <AsyncStateProvider payload={payload} initialStates={staticProducers}>
       {children}
     </AsyncStateProvider>
   );

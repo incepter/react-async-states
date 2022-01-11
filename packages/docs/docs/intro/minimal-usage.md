@@ -113,8 +113,8 @@ sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-ori
 
 The provider allows you to register dynamic states and subscribe to them.
 ```javascript
-// initialAsyncStates: array or map of {key, producer, initialValue} or source objects
-function AsyncStateProvider({ payload, initialAsyncStates, chidlren }) {}
+// initialStates: array or map of {key, producer, initialValue} or source objects
+function AsyncStateProvider({ payload, initialStates, chidlren }) {}
 ```
 
 Some usages of the provider:
@@ -128,7 +128,7 @@ return {
 }, [location]);
 
 return (
-<AsyncStateProvider payload={payload} initialAsyncStates={staticProducers}>
+<AsyncStateProvider payload={payload} initialStates={staticProducers}>
   {children}
 </AsyncStateProvider>
 );

@@ -1,5 +1,9 @@
-import {ProducerConfig, ProducerProps, ProducerSavedProps} from "../async-state";
-import {PartialUseAsyncStateConfiguration, UseAsyncStateConfiguration} from "react-async-states/src/types";
+import {
+  ProducerConfig,
+  ProducerProps,
+  ProducerSavedProps
+} from "../async-state";
+import {PartialUseAsyncStateConfiguration} from "react-async-states/src/types";
 
 export const __DEV__ = process.env.NODE_ENV !== "production";
 
@@ -7,7 +11,10 @@ export const EMPTY_ARRAY = Object.freeze([]);
 export const EMPTY_OBJECT = Object.freeze({});
 
 // avoid spreading penalty!
-export function shallowClone(source1, source2?) {
+export function shallowClone(
+  source1,
+  source2?
+) {
   return Object.assign({}, source1, source2);
 }
 
@@ -27,14 +34,20 @@ export function asyncify(fn) {
   }
 }
 
-export function invokeIfPresent(fn, ...args) {
+export function invokeIfPresent(
+  fn,
+  ...args
+) {
   if (typeof fn === "function") {
     return fn(...args);
   }
   return undefined;
 }
 
-export function shallowEqual<T>(prev: T, next): boolean {
+export function shallowEqual<T>(
+  prev: T,
+  next
+): boolean {
   return prev === next;
 }
 
@@ -69,7 +82,9 @@ export function cloneProducerProps<T>(props: ProducerProps<T>): ProducerSavedPro
   return output;
 }
 
-export function readAsyncStateConfigFromSubscriptionConfig<T>(configuration: PartialUseAsyncStateConfiguration<T, any>): ProducerConfig<T> {
+export function readProducerConfigFromSubscriptionConfig<T>(
+  configuration: PartialUseAsyncStateConfiguration<T, any>
+): ProducerConfig<T> {
   return {
     initialValue: configuration.initialValue,
 

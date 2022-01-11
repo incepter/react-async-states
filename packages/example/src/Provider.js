@@ -32,7 +32,7 @@ export default function DemoProvider({children}) {
   }, [location]);
 
   return (
-    <AsyncStateProvider payload={payload} initialAsyncStates={asyncStatesDemo}>
+    <AsyncStateProvider payload={payload} initialStates={asyncStatesDemo}>
       {children}
     </AsyncStateProvider>
   );

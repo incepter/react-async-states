@@ -14,7 +14,7 @@ It accepts the following props:
 |Prop                | PropType                                                     | Default value| Usage            |
 |--------------------|--------------------------------------------------------------|--------------|------------------|
 |`payload`           | `Map<any, any>`                                              | `{}`         | Payload at provider level, will be accessible to all hoisted async states |
-|`initialAsyncStates`| `AsyncStateDefinition[] or Map<string, AsyncStateDefinition>`| `[]`         | The initial Map or array of definitions of async states |
+|`initialStates`     | `AsyncStateDefinition[] or Map<string, AsyncStateDefinition>`| `[]`         | The initial Map or array of definitions of async states |
 |`children`          | `ReactElement`                                               | `undefined`  | The React tree inside this provider |
 
 To define an async state for the provider, you need the following:
@@ -25,7 +25,7 @@ To define an async state for the provider, you need the following:
 |`producer`     |`function or undefined`|`undefined`   |The producer function|
 |`initialValue`|`any`                  |`null`        |The state value when the status is `initial`|
 
-The initialAsyncStates, like stated, is an array of objects or a map; let's create some:
+The `initialStates`, like stated, is an array of objects or a map; let's create some:
 ```javascript
 // pass this to provider
 let demoAsyncStates = {

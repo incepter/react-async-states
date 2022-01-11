@@ -1,40 +1,95 @@
 import * as React from "react";
 import {AsyncStateContext} from "../context";
-import {__DEV__, EMPTY_ARRAY, EMPTY_OBJECT, shallowClone} from "shared";
-import {createInitialAsyncStatesReducer} from "./utils/providerUtils";
+import {shallowClone} from "shared";
 import {AsyncStateManager} from "./utils/AsyncStateManager";
-import useProviderDevtools from "devtools/useProviderDevtools";
-import {AsyncStateContextValue, AsyncStateEntries, AsyncStateEntry, AsyncStateManagerInterface} from "../types";
+import {
+  AsyncStateContextValue,
+  AsyncStateEntry,
+  AsyncStateManagerInterface,
+  StateProviderProps,
+  UseAsyncStateContextType
+} from "../types";
+
+/**
+ * Provider v2
+ *
+ * accepts:
+ * - initialStates
+ * - payload
+ * - children (the actual tree)
+ *
+ * hooks:
+ * 1 x useMemo : the manager
+ * 1 x useMemo [initialStates] : mutate the manager and gets dirty states
+ * 1 x useEffect [stateEntries] : dispose states that are no longer used
+ *
+ */
 
 export function AsyncStateProvider(
-  {payload = EMPTY_OBJECT,
+  {
     children,
-    initialAsyncStates = EMPTY_ARRAY
-  }) {
-  const managerRef = React.useRef<AsyncStateManagerInterface>();
-  const entriesRef = React.useRef<AsyncStateEntries>();
-  // mutable, and will be mutated!
-  // this asyncStateEntries may receive other entries at runtime if you hoist
-  const asyncStateEntries: AsyncStateEntries = React.useMemo(function constructAsyncStates() {
-    // this re-uses the old managed async states, and bind to them the new ones
-    const initialValue = shallowClone(entriesRef.current);
-    return Object.values(initialAsyncStates).reduce(createInitialAsyncStatesReducer, initialValue);
-  }, [initialAsyncStates]);
-  if (__DEV__) useProviderDevtools(asyncStateEntries);
+    payload,
+    initialStates,
+    initialAsyncStates
+  }: StateProviderProps) {
 
-  const contextValue: AsyncStateContextValue = React.useMemo(function getProviderValue() {
-    let manager: AsyncStateManagerInterface = managerRef.current;
+  if (initialAsyncStates) {
+    console.log(
+      "initialAsyncStates is no longer supported in AsyncStateProvider." +
+      "Please use initialState instead."
+    );
+  }
 
-    if (!manager || entriesRef.current !== asyncStateEntries) {
-      manager = AsyncStateManager(asyncStateEntries, managerRef.current);
-      managerRef.current = manager;
+  // manager per provider
+  // this manager lives with the provider
+  // the initialize function should create a mutable manager instance
+  const manager = React.useMemo<AsyncStateManagerInterface>(initialize, []);
+
+  // this function should only tell the manager to execute a diffing
+  // of items he has and the new ones
+  const dirtyStates = React
+    .useMemo<AsyncStateEntry<any>[]>(onInitialStatesChange, [initialStates]);
+
+  // this will serve to dispose old async states that were hoisted
+  // since initialStates changed
+  React.useEffect(onDirtyStatesChange, [dirtyStates]);
+
+  // this should synchronously change the payload held by hoisted items
+  // why not until effect? because all children may benefit from this in their
+  // effects
+  React.useMemo<void>(onPayloadChange, [payload]);
+
+  const contextValue = React.useMemo<UseAsyncStateContextType>(
+    makeContextValue,
+    [manager, payload]
+  );
+
+  // there is no point of having an onUnmount effect that disposes all entries
+  // because if this unmounts, all the tree inside will be thrown to gc
+  // and thus, the whole manager is unreferenced and its memory will be cleared
+
+  function initialize() {
+    return AsyncStateManager(initialStates);
+  }
+
+  function onInitialStatesChange() {
+    return manager.setInitialStates(initialStates);
+  }
+
+  function onDirtyStatesChange() {
+    for (const entry of dirtyStates) {
+      manager.dispose(entry.value);
     }
+  }
 
-    if (!manager) {
-      const errorToLog = "Couldn't create an AsyncStateManager for some reason, should be printed in the logs";
-      throw new Error(errorToLog);
+  function onPayloadChange() {
+    // propagate the new payload
+    for (const entry of Object.values(manager.entries)) {
+      entry.value.payload = shallowClone(entry.value.payload, payload);
     }
+  }
 
+  function makeContextValue(): AsyncStateContextValue {
     return {
       manager,
       payload: shallowClone(payload),
@@ -51,35 +106,12 @@ export function AsyncStateProvider(
       runAsyncState: manager.runAsyncState,
       notifyWatchers: manager.notifyWatchers,
     };
-  }, [asyncStateEntries, payload]);
-
-  if (entriesRef.current !== asyncStateEntries) {
-    entriesRef.current = asyncStateEntries;
   }
-  if (managerRef.current !== contextValue.manager) {
-    managerRef.current = contextValue.manager;
-  }
-
-  React.useEffect(function disposeOldEntries() {
-    if (!asyncStateEntries) {
-      return undefined;
-    }
-    return function cleanup() {
-      // here asyncStateEntries points to old manager
-      Object.values(asyncStateEntries).forEach(function disposeAsyncState(entry: AsyncStateEntry<any>) {
-        // entriesRef.current is the new manager
-        // this conditions means this async state was dismissed and no longer used, should be disposed then removed
-        if (entriesRef.current && !entriesRef.current[entry.value.key]) {
-          contextValue.dispose(entry.value);
-        }
-      });
-    }
-  }, [asyncStateEntries]);
 
   return (
     <AsyncStateContext.Provider value={contextValue}>
       {children}
     </AsyncStateContext.Provider>
   );
-}
 
+}

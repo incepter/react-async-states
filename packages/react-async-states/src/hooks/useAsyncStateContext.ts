@@ -5,7 +5,8 @@ import {AsyncStateContextValue} from "../types";
 export default function useAsyncStateContext(): AsyncStateContextValue {
   const contextValue = React.useContext(AsyncStateContext);
   if (!contextValue) {
-    throw new Error("to use useAsyncStateSelector you must be inside a <AsyncStateProvider></AsyncStateProvider>");
+    throw new Error(
+      "to use useAsyncStateSelector you must be inside a <AsyncStateProvider/>");
   }
   return contextValue;
 }

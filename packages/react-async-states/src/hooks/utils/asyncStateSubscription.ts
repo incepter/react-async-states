@@ -16,14 +16,23 @@ export function runAsyncStateSubscriptionFn<T, E>(
     switch (mode) {
       case AsyncStateSubscriptionMode.SOURCE:
       case AsyncStateSubscriptionMode.SOURCE_FORK:
-        return contextValue !== null ? contextValue.run(asyncState, ...args) : asyncState.run(...args);
+        return contextValue !== null ?
+          contextValue.run(
+            asyncState,
+            ...args
+          )
+          :
+          asyncState.run(...args);
       case AsyncStateSubscriptionMode.STANDALONE:
       case AsyncStateSubscriptionMode.OUTSIDE_PROVIDER:
         return asyncState.run(...args);
       case AsyncStateSubscriptionMode.FORK:
       case AsyncStateSubscriptionMode.HOIST:
       case AsyncStateSubscriptionMode.LISTEN: {
-        return (contextValue as AsyncStateContextValue).run(asyncState, ...args);
+        return (contextValue as AsyncStateContextValue).run(
+          asyncState,
+          ...args
+        );
       }
       // NoOp
       case AsyncStateSubscriptionMode.NOOP:
@@ -44,7 +53,11 @@ export function disposeAsyncStateSubscriptionFn<T, E>(
     switch (mode) {
       case AsyncStateSubscriptionMode.SOURCE:
       case AsyncStateSubscriptionMode.SOURCE_FORK: {
-        return contextValue !== null ? contextValue.dispose(asyncState) : asyncState.dispose();
+        return contextValue !== null
+          ?
+          contextValue.dispose(asyncState)
+          :
+          asyncState.dispose();
       }
       case AsyncStateSubscriptionMode.STANDALONE:
       case AsyncStateSubscriptionMode.OUTSIDE_PROVIDER:

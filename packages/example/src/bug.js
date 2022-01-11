@@ -42,7 +42,7 @@ function AppWrapped() {
     state: { status, data, props },
     abort,
     run
-  } = useAsyncState({
+  } = useAsyncState.hoist({
     producer: doSomething,
     key: "do-something",
     payload: {
@@ -52,9 +52,15 @@ function AppWrapped() {
     }
   });
   const {
-    state: { data: value },
+    state,
     replaceState
-  } = useAsyncState({ key: "myhh" });
+  } = useAsyncState({ key: "do-something" });
+
+  if (!state) {
+    return "waiting!";
+  }
+
+  const { data: value } = state;
 
   return (
     <div className="App">
@@ -88,7 +94,7 @@ function AppWrapped() {
 const empty_array = [];
 export default function App() {
   return (
-    <AsyncStateProvider initialAsyncStates={empty_array}>
+    <AsyncStateProvider initialStates={empty_array}>
       <AppWrapped />
       <SomethingElse />
     </AsyncStateProvider>
@@ -96,7 +102,7 @@ export default function App() {
 }
 
 function SomethingElse() {
-  const { lastSuccess } = useAsyncState("do-somethingh");
+  const { lastSuccess } = useAsyncState("do-something");
 
   return (
     <div>

@@ -60,7 +60,10 @@ export type AsyncStateWatchKey = string | symbol;
 
 export type AsyncStateStateFunctionUpdater<T> = (updater: State<T>) => T;
 
-export type AsyncStateStateUpdater<T> = (updater: T | AsyncStateStateFunctionUpdater<T>, notify: boolean) => void;
+export type AsyncStateStateUpdater<T> = (
+  updater: T | AsyncStateStateFunctionUpdater<T>,
+  notify: boolean
+) => void;
 
 export type AsyncStateSource<T> = {
   key: AsyncStateKey,
@@ -98,16 +101,31 @@ export interface AsyncStateInterface<T> {
   run: (...args: any[]) => AbortFn,
   replaceState: AsyncStateStateUpdater<T>,
   fork: (forkConfig?: { keepState: boolean }) => AsyncStateInterface<T>,
-  subscribe: (cb: Function, subscriptionKey?: AsyncStateKey) => AbortFn,
-  setState: (newState: State<T>, notify?: boolean) => void,
+  subscribe: (
+    cb: Function,
+    subscriptionKey?: AsyncStateKey
+  ) => AbortFn,
+  setState: (
+    newState: State<T>,
+    notify?: boolean
+  ) => void,
 }
 
 export interface AsyncStateStateBuilderInterface {
   initial: <T> (initialValue: T) => State<T>,
-  error: <T>(data: any, props: ProducerSavedProps<T>) => State<any>,
-  success: <T>(data: T, props: ProducerSavedProps<T>) => State<T>,
+  error: <T>(
+    data: any,
+    props: ProducerSavedProps<T>
+  ) => State<any>,
+  success: <T>(
+    data: T,
+    props: ProducerSavedProps<T>
+  ) => State<T>,
   pending: <T>(props: ProducerSavedProps<T>) => State<null>,
-  aborted: <T>(reason: any, props: ProducerSavedProps<T>) => State<any>,
+  aborted: <T>(
+    reason: any,
+    props: ProducerSavedProps<T>
+  ) => State<any>,
 }
 
 export type ForkConfigType = {

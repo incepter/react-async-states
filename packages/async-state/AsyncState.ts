@@ -1,6 +1,16 @@
-import {__DEV__, cloneProducerProps, invokeIfPresent, numberOrZero, shallowClone} from "shared";
+import {
+  __DEV__,
+  cloneProducerProps,
+  invokeIfPresent,
+  numberOrZero,
+  shallowClone
+} from "shared";
 import {wrapProducerFunction} from "./wrap-producer-function";
-import {AsyncStateStateBuilder, constructAsyncStateSource, warnDevAboutAsyncStateKey} from "./utils";
+import {
+  AsyncStateStateBuilder,
+  constructAsyncStateSource,
+  warnDevAboutAsyncStateKey
+} from "./utils";
 import devtools from "devtools";
 import {areRunEffectsSupported} from "shared/features";
 import {
@@ -45,7 +55,11 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   //endregion
 
-  constructor(key: AsyncStateKey, producer: Producer<T> | undefined, config: ProducerConfig<T>) {
+  constructor(
+    key: AsyncStateKey,
+    producer: Producer<T> | undefined,
+    config: ProducerConfig<T>
+  ) {
     warnDevAboutAsyncStateKey(key);
 
     this.key = key;
@@ -69,7 +83,10 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     if (__DEV__) devtools.emitCreation(this);
   }
 
-  setState(newState: State<T>, notify: boolean = true): void {
+  setState(
+    newState: State<T>,
+    notify: boolean = true
+  ): void {
     if (__DEV__) devtools.startUpdate(this);
 
     this.currentState = newState;
@@ -222,7 +239,10 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     return abort;
   }
 
-  subscribe(cb, subKey?: string | undefined): AbortFn {
+  subscribe(
+    cb,
+    subKey?: string | undefined
+  ): AbortFn {
     let that = this;
     this.subscriptionsMeter += 1;
     // @ts-ignore
