@@ -55,14 +55,6 @@ function next() {
 }
 
 function SourceForkExample({source}) {
-  console.log('will use', {
-    lazy: false,
-    source,
-    subscriptionKey: `SourceForkExample-${source.key}-SELF`,
-    payload: {userId: id},
-    fork: true,
-    forkConfig: {key: `SourceForkExample-${source.key}`}
-  })
   const data = useAsyncState({
     lazy: false,
     source,

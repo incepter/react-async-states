@@ -246,13 +246,13 @@ export function shouldRecalculateInstance<T, E>(
 
     // attempt new instance if dependencies change
     // todo: this is probably unnecessary, deps shouldn't affect the instance of the async state
-    currentDeps.some((
-      dep,
-      index
-    ) => !Object.is(
-      dep,
-      oldSubscriptionInfo.deps[index]
-    )) ||
+    // currentDeps.some((
+    //   dep,
+    //   index
+    // ) => !Object.is(
+    //   dep,
+    //   oldSubscriptionInfo.deps[index]
+    // )) ||
 
     newConfig.fork !== oldSubscriptionInfo.configuration.fork ||
     newConfig.forkConfig?.keepState !== oldSubscriptionInfo.configuration.forkConfig?.keepState ||

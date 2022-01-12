@@ -28,13 +28,13 @@ import {
   State
 } from "../../../async-state";
 
+const defaultDependencies = [];
+
 // 2 x useMemo
 // 1 x useContext
 // 2 x useState
 // 3 x useEffect
 // 1 x useEffect (inside provider)
-const defaultDependencies = [];
-
 export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
   subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
   dependencies: any[] = defaultDependencies,
@@ -106,8 +106,6 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
   }
 
   return selectedValue;
-
-  // give selectedValue
 
   function initialize(): Readonly<UseAsyncStateReturnValue<T, E>> {
     return makeUseAsyncStateReturnValue(
@@ -262,10 +260,6 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
     // and tell is to dispose; it then checks if it has no subscribers and resets
     // it to its initial state
     return dispose;
-  }
-
-  function saveOldSubscriptionInfo() {
-    return subscriptionInfo;
   }
 
   function watchOverAsyncState() {
