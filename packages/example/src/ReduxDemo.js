@@ -51,7 +51,6 @@ function DemoDemo() {
 function DemoDemoSUb() {
   const {state: username, lastSuccess, run} = useAsyncState({
     key: "some-name",
-    rerenderStatus: {pending: false},
     selector: s => s.data?.name,
   });
 

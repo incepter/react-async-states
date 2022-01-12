@@ -13,7 +13,7 @@ export default function Demo() {
     payload: {matchParams: params},
     key: demoAsyncStates.getUser.key,
   }, [params]);
-  console.log('render', params, status)
+  console.log('render', params, status, ++React.useRef(0).current)
 
   function navigate(e) {
     e.preventDefault();
@@ -55,6 +55,14 @@ function next() {
 }
 
 function SourceForkExample({source}) {
+  console.log('will use', {
+    lazy: false,
+    source,
+    subscriptionKey: `SourceForkExample-${source.key}-SELF`,
+    payload: {userId: id},
+    fork: true,
+    forkConfig: {key: `SourceForkExample-${source.key}`}
+  })
   const data = useAsyncState({
     lazy: false,
     source,
@@ -63,6 +71,7 @@ function SourceForkExample({source}) {
     fork: true,
     forkConfig: {key: `SourceForkExample-${source.key}`}
   });
+  console.log('RENDERING,', data);
   return <button onClick={() => {
     data.mergePayload({userId: (data.payload.userId || 0) + 1});
     data.run();

@@ -170,8 +170,6 @@ function UserDetailsPageImpl2() {
 //   fork: true,
 //   forkConfig: {keepState: true, key: "new-key"},
 //
-//   rerenderStatus: {pending: true, success: true, error: true, aborted: true},
-//
 //   selector: (s, lastSu) => [],
 //   areEqual: (prev, next) => true,
 //

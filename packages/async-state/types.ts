@@ -23,7 +23,7 @@ export type State<T> = {
   props?: ProducerSavedProps<T> | null,
 };
 
-export type AbortFn = ((reason: any) => void) | undefined;
+export type AbortFn = ((reason?: any) => void) | undefined;
 
 export type OnAbortFn = (cb: () => void) => void;
 

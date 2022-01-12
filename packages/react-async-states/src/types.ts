@@ -7,7 +7,8 @@ import {
   Producer,
   ProducerConfig,
   ProducerRunEffects,
-  State
+  State,
+  StateUpdater
 } from "../../async-state";
 
 export type Reducer<T> = (
@@ -200,34 +201,26 @@ export type UseAsyncStateStateDeps = {
 
 export type UseAsyncStateReturnValue<T, E> = {
   state: E,
-  key: AsyncStateKey,
+  key?: AsyncStateKey,
 
-  source: AsyncStateSource<T>,
+  source?: AsyncStateSource<T>,
   mode: AsyncStateSubscriptionMode,
-  lastSuccess: State<T>,
+  lastSuccess?: State<T>,
 
-  payload: { [id: string]: any } | null,
+  payload?: { [id: string]: any } | null,
 
 
-  abort: AbortFn,
-  run: (...args: any[]) => AbortFn,
-  replaceState: (newState: T) => void,
-  mergePayload: (argv: { [id: string]: any }) => void,
+  abort?: AbortFn,
+  run?: (...args: any[]) => AbortFn,
+  replaceState?: StateUpdater<T>,
+  mergePayload?: (argv: { [id: string]: any }) => void,
 
-  read: () => E,
+  read?: () => E,
   runAsyncState?: <D>(
     key: AsyncStateKeyOrSource<D>,
     ...args: any[]
   ) => AbortFn,
 }
-
-export type UseAsyncStateReRenderStatusConfig = {
-  error?: boolean,
-  initial?: boolean,
-  success?: boolean,
-  pending?: boolean,
-  aborted?: boolean,
-};
 
 export type EqualityFn<T> = (
   prev: T,
@@ -248,7 +241,6 @@ export type UseAsyncStateConfiguration<T, E> = {
   hoistToProvider?: boolean,
   forkConfig?: ForkConfigType,
   hoistToProviderConfig?: HoistToProviderConfig,
-  rerenderStatus?: UseAsyncStateReRenderStatusConfig,
 
   subscriptionKey?: AsyncStateKey,
 
@@ -274,7 +266,6 @@ export type PartialUseAsyncStateConfiguration<T, E> = {
   hoistToProvider?: boolean,
   forkConfig?: ForkConfigType,
   hoistToProviderConfig?: HoistToProviderConfig,
-  rerenderStatus?: UseAsyncStateReRenderStatusConfig,
 
   subscriptionKey?: AsyncStateKey,
 
@@ -321,4 +312,12 @@ export type StateProviderProps = {
   payload?: { [id: string]: any },
   initialStates?: ProviderInitialStates,
   initialAsyncStates?: ProviderInitialStates,
+}
+
+export type CleanupFn = AbortFn
+  | (() => void)
+  | undefined;
+
+export type MemoizedUseAsyncStateRef<T, E> = {
+  subscriptionInfo: UseAsyncStateSubscriptionInfo<T, E>
 }

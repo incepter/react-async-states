@@ -9,6 +9,7 @@ import {
   StateProviderProps,
   UseAsyncStateContextType
 } from "../types";
+import useProviderDevtools from "devtools/useProviderDevtools";
 
 /**
  * Provider v2
@@ -45,8 +46,12 @@ export function AsyncStateProvider(
   // the initialize function should create a mutable manager instance
   const manager = React.useMemo<AsyncStateManagerInterface>(initialize, []);
 
+
+  useProviderDevtools(manager.entries);
+
   // this function should only tell the manager to execute a diffing
   // of items he has and the new ones
+  // we need to figure out a way to un-reference these dirty states
   const dirtyStates = React
     .useMemo<AsyncStateEntry<any>[]>(onInitialStatesChange, [initialStates]);
 

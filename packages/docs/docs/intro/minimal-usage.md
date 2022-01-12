@@ -60,8 +60,6 @@ const value = useAsyncState({
   fork: false,
   forkConfig: {keepState: true, key: "new-key"},
 
-  rerenderStatus: {pending: true, success: true, error: true, aborted: true},
-
   selector: (currentState, lastSuccess) => currentState,
   areEqual: (prev, next) => prev === next,
 

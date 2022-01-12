@@ -14,7 +14,6 @@ export default function Demo() {
     hoistToProvider: true,
     initialValue: {hello: "world!"},
     producer: createReducerProducer(reducer),
-    rerenderStatus: {pending: false, success: false},
   });
 
   return (

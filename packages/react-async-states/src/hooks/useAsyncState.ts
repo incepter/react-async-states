@@ -9,7 +9,7 @@ import {
 // default
 function useAsyncStateExport<T, E>(
   subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
-  dependencies: readonly any[]
+  dependencies: any[]
 ): UseAsyncStateReturnValue<T, E> {
   return useAsyncStateImpl(
     subscriptionConfig,
@@ -22,7 +22,7 @@ const autoConfigOverrides = Object.freeze({lazy: false});
 
 function useAutoAsyncState<T, E>(
   subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
-  dependencies: readonly any[]
+  dependencies: any[]
 ): UseAsyncStateReturnValue<T, E> {
   return useAsyncStateImpl(
     subscriptionConfig,
@@ -36,7 +36,7 @@ const lazyConfigOverrides = Object.freeze({lazy: true});
 
 function useLazyAsyncState<T, E>(
   subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
-  dependencies: readonly any[]
+  dependencies: any[]
 ): UseAsyncStateReturnValue<T, E> {
   return useAsyncStateImpl(
     subscriptionConfig,
@@ -50,7 +50,7 @@ const forkConfigOverrides = Object.freeze({fork: true});
 
 function useForkAsyncState<T, E>(
   subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
-  dependencies: readonly any[]
+  dependencies: any[]
 ): UseAsyncStateReturnValue<T, E> {
   return useAsyncStateImpl(
     subscriptionConfig,
@@ -64,7 +64,7 @@ const forkAutoConfigOverrides = Object.freeze({fork: true, lazy: false});
 
 function useForkAutoAsyncState<T, E>(
   subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
-  dependencies: readonly any[]
+  dependencies: any[]
 ): UseAsyncStateReturnValue<T, E> {
   return useAsyncStateImpl(
     subscriptionConfig,
@@ -78,7 +78,7 @@ const hoistConfigOverrides = Object.freeze({hoistToProvider: true});
 
 function useHoistAsyncState<T, E>(
   subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
-  dependencies: readonly any[]
+  dependencies: any[]
 ): UseAsyncStateReturnValue<T, E> {
   return useAsyncStateImpl(
     subscriptionConfig,
@@ -95,7 +95,7 @@ const hoistAutoConfigOverrides = Object.freeze({
 
 function useHoistAutoAsyncState<T, E>(
   subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
-  dependencies: readonly any[]
+  dependencies: any[]
 ): UseAsyncStateReturnValue<T, E> {
   return useAsyncStateImpl(
     subscriptionConfig,

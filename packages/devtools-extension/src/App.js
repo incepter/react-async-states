@@ -11,7 +11,7 @@ export default function App() {
   let port = useRef();
   const {run} = useAsyncState({
     key: "devtools",
-    rerenderStatus: {pending: false, success: false, aborted: false}
+    selector: () => true,
   });
 
   React.useEffect(function subscribeToPort() {
