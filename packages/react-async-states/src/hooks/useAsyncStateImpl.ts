@@ -151,7 +151,6 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
       newConfig,
       newMode,
       guard,
-      dependencies,
       memoizedRef.subscriptionInfo
     );
 

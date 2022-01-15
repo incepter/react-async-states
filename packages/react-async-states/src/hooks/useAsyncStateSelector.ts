@@ -1,19 +1,160 @@
 import * as React from "react";
-import {identity, invokeIfPresent, shallowEqual} from "shared";
+import {EMPTY_ARRAY, identity, invokeIfPresent, shallowEqual} from "shared";
 import {
-  ArraySelector,
   AsyncStateSelector,
   AsyncStateSelectorKeys,
+  CleanupFn,
   EqualityFn,
-  FunctionSelector,
   SelectorKeysArg
 } from "../types";
-import {
-  AbortFn,
-  AsyncStateInterface,
-  AsyncStateKey
-} from "../../../async-state";
+import {AsyncStateInterface, AsyncStateKey} from "../../../async-state";
 import useAsyncStateContext from "./useAsyncStateContext";
+
+export function useAsyncStateSelector<T>(
+  keys: SelectorKeysArg,
+  selector: AsyncStateSelector<T> = identity,
+  areEqual: EqualityFn<T> = shallowEqual,
+  initialValue?: T
+): T {
+
+  const contextValue = useAsyncStateContext();
+
+  // read actual keys as a memo, will be used as dependencies
+  const watchedKeys: string[] = React.useMemo<string[]>(readKeys, [keys]);
+
+  if (watchedKeys.length === 0) {
+    throw new Error("A selector cannot have 0 watched keys.");
+  }
+
+  const manager = React.useMemo<SelectorManager>(newSelectorManager, EMPTY_ARRAY);
+
+  React.useEffect(watchUnmount, EMPTY_ARRAY);
+
+  // this is the returned value
+  const [selectedValue, setSelectedValue] = React.useState<T>(selectValue);
+
+  React.useEffect(onWatchedKeysChange, watchedKeys);
+
+  function watchUnmount() {
+    return function markUnmount() {
+      manager.didUnmount = true;
+    }
+  }
+
+  function onWatchedKeysChange() {
+    const watchedKeysMap = Object.create(null);
+    watchedKeys.forEach(subscribeToAsyncState);
+
+    const unwatchGlobal = contextValue.watchAll(onAsyncStateChange);
+
+    return cleanup;
+
+    // used to update the state selected value
+    // it maps over watchedKeys to select them from context
+    // and conclude with a value
+    function onUpdate() {
+      const newValue = selectValue();
+      setSelectedValue(old => areEqual(old, newValue) ? old : newValue);
+    }
+
+    // if a hoist occurs with an already existing key and overrides it
+    // or also if a new thing that may not interest us has been hoisted
+    // this is necessary in case the used keys are a dynamic function's return
+    function onAsyncStateChange(newValue: AsyncStateInterface<any>, key) {
+      // we are not interested in anything we aren't expecting
+      if (!watchedKeysMap[key]) {
+        return;
+      }
+
+      const existingSubscription = manager.subscriptions[key];
+
+      if (!existingSubscription) {
+        return;
+      }
+
+      // if we were waiting for this async state
+      if (existingSubscription && !existingSubscription.asyncState) {
+        existingSubscription.asyncState = newValue;
+        manager.subscriptions[key].cleanup = newValue.subscribe(onUpdate);
+
+        onUpdate();
+        return;
+      }
+
+      // if the previous instance changed
+      if (newValue !== existingSubscription.asyncState) {
+        invokeIfPresent(existingSubscription.cleanup);
+        delete manager.subscriptions[key];
+
+        manager.subscriptions[key] = Object.create(null);
+        manager.subscriptions[key].asyncState = newValue;
+        manager.subscriptions[key].cleanup = newValue.subscribe(onUpdate);
+
+        onUpdate();
+        return;
+      }
+    }
+
+    function subscribeToAsyncState(key) {
+      watchedKeysMap[key] = true;
+      // if we start watching a key
+      // we should check if it exists in the context,
+      // if existing, we simply subscribe to it;
+      // or else, we watch over it until it becomes available
+      if (!manager.subscriptions[key]) {
+        const asyncStateSubscription: SelectorSubscription<any> = Object.create(null);
+
+        const asyncState: AsyncStateInterface<any> = contextValue.get(key);
+        asyncStateSubscription.asyncState = asyncState;
+
+        if (asyncState) {
+          asyncStateSubscription.cleanup = asyncState.subscribe(onUpdate);
+        } else {
+          asyncStateSubscription.cleanup = contextValue.watch(key, onAsyncStateChange);
+        }
+        manager.subscriptions[key] = asyncStateSubscription;
+        return;
+      } else {
+        const asyncState: AsyncStateInterface<any> = contextValue.get(key);
+        const existing: SelectorSubscription<any> = manager.subscriptions[key];
+
+        if (asyncState !== existing.asyncState) {
+          invokeIfPresent(existing.cleanup);
+          delete manager.subscriptions[key];
+
+          manager.subscriptions[key] = Object.create(null);
+          manager.subscriptions[key].asyncState = asyncState;
+          manager.subscriptions[key].cleanup = asyncState.subscribe(onUpdate);
+        }
+      }
+    }
+
+    function cleanup() {
+      unwatchGlobal();
+
+      Object
+        .entries(manager.subscriptions)
+        .forEach(([key, subscription]) => {
+          if (manager.didUnmount || !watchedKeysMap[key]) {
+            invokeIfPresent(subscription.cleanup);
+            delete manager.subscriptions[key];
+          }
+        });
+    }
+  }
+
+  function selectValue(): T {
+    const shouldReduceToObject = typeof keys === "function";
+
+    return contextValue.select(watchedKeys, selector, shouldReduceToObject);
+  }
+
+  function readKeys(): string[] {
+    return readSelectorKeys(keys, contextValue.getAllKeys);
+  }
+
+  return selectedValue;
+}
 
 function readSelectorKeys(
   keys: SelectorKeysArg,
@@ -36,126 +177,30 @@ type SelectedAsyncStates = {
   [key: AsyncStateKey]: AsyncStateInterface<any>,
 }
 
-export function useAsyncStateSelector<T>(
-  keys: SelectorKeysArg,
-  selector: AsyncStateSelector<T> = identity,
-  areEqual: EqualityFn<T> = shallowEqual,
-  initialValue?: T
-): T {
+function newSelectorManager() {
+  const output = Object.create(null);
 
-  const contextValue = useAsyncStateContext();
-  const {get, dispose, getAllKeys, watchAll} = contextValue;
+  output.didUnmount = false;
+  output.subscriptions = Object.create(null);
 
-  const asyncStatesMap = React.useMemo<SelectedAsyncStates>(
-    function deduceKeys() {
-      const selectedKeys = readSelectorKeys(keys, getAllKeys);
-      return selectedKeys.reduce((
-        result,
-        key
-      ) => {
-        result[key] = get(key) || null;
-        return result;
-      }, {});
-    },
-    [keys, getAllKeys]
-  );
-
-  const dependencies = React.useMemo<any[]>(
-    function getEffectDependencies() {
-      return [...Object.keys(asyncStatesMap), watchAll, dispose, selector]
-    },
-    [asyncStatesMap, watchAll, dispose, selector]
-  );
-
-  const [returnValue, setReturnValue] = React.useState<T>(
-    function getInitialState() {
-      return selectValues();
-    });
-
-  function selectValues() {
-    const reduceToObject = typeof keys === "function";
-
-    let selectedValue;
-
-    // ?. optional channing is used bellow because
-    // the async state may be undefined (not hoisted yet)
-    if (reduceToObject) {
-      selectedValue = (selector as FunctionSelector<T>)(
-        Object.entries(asyncStatesMap).reduce(
-          (
-            result,
-            [key, asyncState]
-          ) => {
-            result[key] = Object.assign(
-              {lastSuccess: asyncState?.lastSuccess},
-              asyncState?.currentState
-            );
-            return result;
-          },
-          {}
-        )
-      );
-    } else {
-      selectedValue = (selector as ArraySelector<T>)(
-        ...Object.values(asyncStatesMap)
-          .map(t => Object.assign(
-            {lastSuccess: t?.lastSuccess},
-            t?.currentState
-          )))
-    }
-
-    if (!areEqual(returnValue, selectedValue)) {
-      return selectedValue;
-    }
-    return returnValue;
+  output.has = function has(key) {
+    return !!output.subscriptions[key];
   }
 
-  React.useEffect(
-    function watchAndSubscribeAndCleanOldSubscriptions() {
-      let cleanups: AbortFn[] = [];
+  return output;
+}
 
-      function subscription() {
-        setReturnValue(selectValues());
-      }
+type SelectorManager = {
+  didUnmount: boolean,
+  has: (key: string) => boolean,
+  subscriptions: SelectorSubscriptionsMap,
+}
 
-      Object.values(asyncStatesMap).forEach(
-        function subscribeOrWaitFor(asyncState) {
-          if (asyncState) {
-            cleanups.push(asyncState.subscribe(subscription));
-            cleanups.push(function disposeAs() {
-              dispose(asyncState)
-            });
-          }
-        });
+type SelectorSubscriptionsMap = {
+  [id: string]: SelectorSubscription<any>,
+}
 
-      cleanups.push(watchAll(function onSomethingHoisted(
-        asyncState,
-        notificationKey
-      ) {
-        if (
-          asyncStatesMap[notificationKey] ||
-          (notificationKey && asyncStatesMap[notificationKey] === undefined)
-        ) {
-          return;
-        }
-        // appearance
-        if (asyncState && asyncStatesMap[notificationKey] === null) {
-          asyncStatesMap[notificationKey] = asyncState;
-          cleanups.push(asyncState.subscribe(subscription));
-          cleanups.push(function disposeAs() {
-            dispose(asyncState)
-          });
-        }
-        // disappearances should not occur because they are being locked here
-        setReturnValue(selectValues());
-      }));
-
-      return function invokeOldCleanups() {
-        cleanups.forEach(invokeIfPresent);
-      };
-    },
-    dependencies
-  );
-
-  return returnValue;
+type SelectorSubscription<T> = {
+  cleanup: CleanupFn,
+  asyncState: AsyncStateInterface<T>,
 }

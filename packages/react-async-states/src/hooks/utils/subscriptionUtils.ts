@@ -234,7 +234,6 @@ export function shouldRecalculateInstance<T, E>(
   newConfig: UseAsyncStateConfiguration<T, E>,
   newMode: AsyncStateSubscriptionMode,
   newGuard: Object,
-  currentDeps: readonly any[],
   oldSubscriptionInfo: UseAsyncStateSubscriptionInfo<T, E> | undefined
 ): boolean {
   // here we check on relevant information to decide on the asyncState instance
@@ -243,16 +242,6 @@ export function shouldRecalculateInstance<T, E>(
     newMode !== oldSubscriptionInfo.mode ||
     newConfig.producer !== oldSubscriptionInfo.configuration.producer ||
     newConfig.source !== oldSubscriptionInfo.configuration.source ||
-
-    // attempt new instance if dependencies change
-    // todo: this is probably unnecessary, deps shouldn't affect the instance of the async state
-    // currentDeps.some((
-    //   dep,
-    //   index
-    // ) => !Object.is(
-    //   dep,
-    //   oldSubscriptionInfo.deps[index]
-    // )) ||
 
     newConfig.fork !== oldSubscriptionInfo.configuration.fork ||
     newConfig.forkConfig?.keepState !== oldSubscriptionInfo.configuration.forkConfig?.keepState ||
