@@ -23,5 +23,5 @@ const globalAsyncState = {
 const initialAsyncStates = [globalAsyncState];
 
 export default function DevtoolsAsyncStatesProvider({children}) {
-  return (<AsyncStateProvider initialAsyncStates={initialAsyncStates}>{children}</AsyncStateProvider>);
+  return (<AsyncStateProvider initialStates={initialAsyncStates}>{children}</AsyncStateProvider>);
 }

@@ -1,5 +1,5 @@
 import { AsyncStateStatus } from "shared";
-import AsyncState, { AsyncStateStateBuilder } from "async-state";
+import AsyncState, { StateBuilder } from "async-state";
 import { timeout } from "./test-utils";
 
 jest.useFakeTimers("modern");
@@ -19,7 +19,7 @@ describe('AsyncState - setState', () => {
 
   it('should synchronously mutate the state after setState call and notify subscribers', () => {
     // when
-    myAsyncState.setState(AsyncStateStateBuilder.pending({}));
+    myAsyncState.setState(StateBuilder.pending({}));
     // then
     let expectedState = {
       props: {},
@@ -35,7 +35,7 @@ describe('AsyncState - setState', () => {
     // given: updater
     let updater = jest.fn().mockImplementation((...args) => {
       expect(args[0]).toEqual(myAsyncState.currentState);
-      return AsyncStateStateBuilder.success({}, {});
+      return StateBuilder.success({}, {});
     });
     // when
     myAsyncState.setState(updater);
@@ -51,7 +51,7 @@ describe('AsyncState - setState', () => {
   it('should update state and do not notify subscribers', async () => {
     let lastSuccess = myAsyncState.lastSuccess;
 
-    myAsyncState.setState(AsyncStateStateBuilder.success({}), false);
+    myAsyncState.setState(StateBuilder.success({}), false);
     // then
     expect(subscription).not.toHaveBeenCalled();
   });

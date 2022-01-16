@@ -185,7 +185,6 @@ useAsyncState({
     return {...props.lastSuccess.data, [name]: value};
   },
   hoistToProvider: true,
-  rerenderStatus: {pending: false, success: false},
   initialValue: {}
 });
 // later

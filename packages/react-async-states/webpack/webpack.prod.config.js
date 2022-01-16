@@ -13,7 +13,7 @@ function buildFor(entry, output, mode) {
     module: {
       rules: [
         {
-          test: /\.js?$/,
+          test: /\.(t|j)sx?$/,
           exclude: /node_modules/,
           use: {
             loader: "ts-loader",
@@ -68,7 +68,7 @@ function buildFor(entry, output, mode) {
     ],
     resolve: {
       modules: ["node_modules", "src"],
-      extensions: [".js"]
+      extensions: [".js", ".ts", ".tsx"]
     },
     externals: {
       react: "react"
@@ -78,7 +78,7 @@ function buildFor(entry, output, mode) {
 
 function umdBuild() {
   return buildFor(
-    path.join(process.cwd(), "src/index.js"),
+    path.join(process.cwd(), "src/index.ts"),
     {
       libraryTarget: "umd",
       library: "ReactAsyncState",
@@ -92,7 +92,7 @@ function umdBuild() {
 function devBuild() {
 
   return buildFor(
-    path.join(process.cwd(), "src/index.js"),
+    path.join(process.cwd(), "src/index.ts"),
     {
       libraryTarget: "umd",
       library: "ReactAsyncState",

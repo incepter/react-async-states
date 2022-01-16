@@ -97,18 +97,19 @@ const {source} = useAsyncState();
 const {state, run} = useAsyncState(source);
 
 // or at module level
-import {createSourceAsyncState} from "react-async-states";
+import {createSource} from "react-async-states";
 
-const source = createSourceAsyncState(key, producer, config);
+const source = createSource(key, producer, config);
 // then, in any part of the app, subscribe and have full control over it
 const {state, run} = useAsyncState(source);
 ```
 9. **Fork and replicate behavior without impacting the original state**: This allows to re-use your function in a completely
    new state (with all features) without impacting it.
 10. **Debounce and throttle**: You can debounce and throttle function calls. Example:
+
 ```javascript
 // at module level
-const source = createSourceAsyncState(key, producer, {runEffect: "debounce", runEffectDurationMs: 500});
+const source = createSource(key, producer, {runEffect: "debounce", runEffectDurationMs: 500});
 // or
 const {state} = useAsyncState({runEffect: "debounce", runEffectDurationMs: 500});
 ```
