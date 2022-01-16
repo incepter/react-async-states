@@ -23,7 +23,7 @@ import {
   UseAsyncStateContextType,
   UseAsyncStateReturnValue,
   UseAsyncStateSubscriptionInfo
-} from "../../types";
+} from "../../types.internal";
 
 export function inferSubscriptionMode<T, E>(
   contextValue: UseAsyncStateContextType,

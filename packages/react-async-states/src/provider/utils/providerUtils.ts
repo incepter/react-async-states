@@ -7,7 +7,7 @@ import {
   AsyncStateEntry,
   ExtendedInitialAsyncState,
   InitialAsyncState
-} from "../../types";
+} from "../../types.internal";
 
 export function createAsyncStateEntry<T>(
   asyncState: AsyncStateInterface<T>

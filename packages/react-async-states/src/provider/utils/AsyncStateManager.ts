@@ -33,7 +33,7 @@ import {
   ManagerWatchers,
   ProviderInitialStates,
   WatcherType
-} from "../../types";
+} from "../../types.internal";
 
 const listenersKey = Symbol();
 

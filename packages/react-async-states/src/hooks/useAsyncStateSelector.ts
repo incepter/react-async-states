@@ -6,7 +6,7 @@ import {
   CleanupFn,
   EqualityFn,
   SelectorKeysArg
-} from "../types";
+} from "../types.internal";
 import {AsyncStateInterface, AsyncStateKey} from "../../../async-state";
 import useAsyncStateContext from "./useAsyncStateContext";
 

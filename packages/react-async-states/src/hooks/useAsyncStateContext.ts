@@ -1,6 +1,6 @@
 import * as React from "react";
 import {AsyncStateContext} from "../context";
-import {AsyncStateContextValue} from "../types";
+import {AsyncStateContextValue} from "../types.internal";
 
 export default function useAsyncStateContext(): AsyncStateContextValue {
   const contextValue = React.useContext(AsyncStateContext);

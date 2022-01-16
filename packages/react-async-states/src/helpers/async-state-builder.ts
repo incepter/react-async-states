@@ -1,4 +1,4 @@
-import {AsyncStateBuilderFunction, AsyncStateInitializer} from "../types";
+import {AsyncStateBuilderFunction, AsyncStateInitializer} from "../types.internal";
 
 export function AsyncStateBuilder<T>(): AsyncStateBuilderFunction<T> {
   let output: AsyncStateInitializer<T> = {};

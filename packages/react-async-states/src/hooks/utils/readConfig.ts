@@ -7,7 +7,7 @@ import {
   ExtendedUseAsyncStateConfiguration,
   PartialUseAsyncStateConfiguration,
   UseAsyncStateConfiguration
-} from "../../types";
+} from "../../types.internal";
 
 // userConfig is the config the developer wrote
 export function readUserConfiguration<T, E>(

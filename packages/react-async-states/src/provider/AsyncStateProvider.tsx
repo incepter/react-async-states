@@ -8,7 +8,7 @@ import {
   AsyncStateManagerInterface,
   StateProviderProps,
   UseAsyncStateContextType
-} from "../types";
+} from "../types.internal";
 import useProviderDevtools from "devtools/useProviderDevtools";
 
 /**

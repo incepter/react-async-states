@@ -1,5 +1,5 @@
 import {Producer} from "../../../async-state";
-import {Reducer} from "../types";
+import {Reducer} from "../types.internal";
 
 export function createReducerProducer<T>(reducerFn: Reducer<T>): Producer<T> {
   if (typeof reducerFn !== "function") {

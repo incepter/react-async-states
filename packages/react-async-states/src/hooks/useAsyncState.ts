@@ -4,7 +4,7 @@ import {
   ExtendedUseAsyncStateConfiguration,
   PartialUseAsyncStateConfiguration,
   UseAsyncStateReturnValue
-} from "../types";
+} from "../types.internal";
 
 // default
 function useAsyncStateExport<T, E>(

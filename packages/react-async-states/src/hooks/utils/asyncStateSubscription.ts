@@ -3,7 +3,7 @@ import {
   AsyncStateSubscriptionMode,
   UseAsyncStateConfiguration,
   UseAsyncStateContextType
-} from "../../types";
+} from "../../types.internal";
 import {AbortFn, AsyncStateInterface} from "../../../../async-state";
 
 export function runAsyncStateSubscriptionFn<T, E>(

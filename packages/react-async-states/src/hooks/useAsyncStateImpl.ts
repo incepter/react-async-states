@@ -20,7 +20,7 @@ import {
   PartialUseAsyncStateConfiguration,
   UseAsyncStateReturnValue,
   UseAsyncStateSubscriptionInfo
-} from "../types";
+} from "../types.internal";
 import {
   AsyncStateInterface,
   AsyncStateKey,
