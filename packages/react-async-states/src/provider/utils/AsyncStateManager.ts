@@ -3,7 +3,7 @@ import AsyncState, {
   AsyncStateInterface,
   AsyncStateKey,
   AsyncStateSource,
-  ForkConfigType,
+  ForkConfig,
   State
 } from "async-state";
 import {
@@ -31,7 +31,7 @@ import {
   ManagerWatchCallback,
   ManagerWatchCallbackValue,
   ManagerWatchers,
-  ProviderInitialStates,
+  InitialStates,
   WatcherType
 } from "../../types.internal";
 
@@ -41,7 +41,7 @@ const listenersKey = Symbol();
 // there is a manager per provider
 // the manager operates on the asyncStateEntries map after copying the oldManager watchers
 export function AsyncStateManager(
-  initializer?: ProviderInitialStates
+  initializer?: InitialStates
 ): AsyncStateManagerInterface {
 
   const asyncStateEntries: AsyncStateEntries = Object
@@ -71,7 +71,7 @@ export function AsyncStateManager(
     setInitialStates
   };
 
-  function setInitialStates(initialStates?: ProviderInitialStates): AsyncStateEntry<any>[] {
+  function setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[] {
     const newInitialStates: AsyncStateEntries = Object
       .values(initialStates ?? EMPTY_OBJECT)
       .reduce(
@@ -152,7 +152,7 @@ export function AsyncStateManager(
   // the fork registers in the provider automatically
   function fork<T>(
     key: AsyncStateKey,
-    forkConfig: ForkConfigType
+    forkConfig: ForkConfig
   ): AsyncStateInterface<T> | undefined {
     const asyncState: AsyncStateInterface<T> = get(key);
     if (!asyncState) {

@@ -3,7 +3,7 @@ import {
   AsyncStateInterface,
   AsyncStateKey,
   AsyncStateSource,
-  ForkConfigType,
+  ForkConfig,
   Producer,
   ProducerConfig,
   ProducerRunEffects,
@@ -127,7 +127,7 @@ export type AsyncStateManagerInterface = {
   get<T>(key: AsyncStateKey): AsyncStateInterface<T>,
   fork<T>(
     key: AsyncStateKey,
-    config: ForkConfigType
+    config: ForkConfig
   ): AsyncStateInterface<T> | undefined,
   select<T>(
     keys: AsyncStateSelectorKeys,
@@ -150,7 +150,7 @@ export type AsyncStateManagerInterface = {
   ): AbortFn,
   getAllKeys(): AsyncStateKey[],
   watchAll(cb: ManagerWatchCallback<any>),
-  setInitialStates(initialStates?: ProviderInitialStates): AsyncStateEntry<any>[],
+  setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[],
 }
 
 // end manager types
@@ -165,7 +165,7 @@ export type AsyncStateContextValue = {
   get<T>(key: AsyncStateKey): AsyncStateInterface<T>,
   fork<T>(
     key: AsyncStateKey,
-    config?: ForkConfigType
+    config?: ForkConfig
   ): AsyncStateInterface<T> | undefined,
   select<T>(
     keys: AsyncStateSelectorKeys,
@@ -192,12 +192,6 @@ export type AsyncStateContextValue = {
 
 
 // use async state
-
-
-export type UseAsyncStateStateDeps = {
-  guard: Readonly<Object>,
-  rerender: Readonly<Object>,
-}
 
 export type UseAsyncStateReturnValue<T, E> = {
   state: E,
@@ -239,7 +233,7 @@ export type UseAsyncStateConfiguration<T, E> = {
   fork?: boolean,
   condition?: boolean,
   hoistToProvider?: boolean,
-  forkConfig?: ForkConfigType,
+  forkConfig?: ForkConfig,
   hoistToProviderConfig?: HoistToProviderConfig,
 
   subscriptionKey?: AsyncStateKey,
@@ -264,7 +258,7 @@ export type PartialUseAsyncStateConfiguration<T, E> = {
   fork?: boolean,
   condition?: boolean,
   hoistToProvider?: boolean,
-  forkConfig?: ForkConfigType,
+  forkConfig?: ForkConfig,
   hoistToProviderConfig?: HoistToProviderConfig,
 
   subscriptionKey?: AsyncStateKey,
@@ -302,16 +296,16 @@ export type ExtendedUseAsyncStateConfiguration<T, E> =
   | AsyncStateSource<T>
   | UseAsyncStateConfiguration<T, E>;
 
-export type ProviderInitialStatesObject = { [id: string]: ExtendedInitialAsyncState<any> };
+export type InitialStatesObject = { [id: string]: ExtendedInitialAsyncState<any> };
 
-export type ProviderInitialStates = ExtendedInitialAsyncState<any>[]
-  | ProviderInitialStatesObject;
+export type InitialStates = ExtendedInitialAsyncState<any>[]
+  | InitialStatesObject;
 
 export type StateProviderProps = {
   children: any,
+  initialStates?: InitialStates,
   payload?: { [id: string]: any },
-  initialStates?: ProviderInitialStates,
-  initialAsyncStates?: ProviderInitialStates,
+  initialAsyncStates?: InitialStates,
 }
 
 export type CleanupFn = AbortFn
@@ -320,4 +314,19 @@ export type CleanupFn = AbortFn
 
 export type MemoizedUseAsyncStateRef<T, E> = {
   subscriptionInfo: UseAsyncStateSubscriptionInfo<T, E>
+}
+
+export type SelectorManager = {
+  didUnmount: boolean,
+  has: (key: string) => boolean,
+  subscriptions: SelectorSubscriptionsMap,
+}
+
+export type SelectorSubscriptionsMap = {
+  [id: string]: SelectorSubscription<any>,
+}
+
+export type SelectorSubscription<T> = {
+  cleanup: CleanupFn,
+  asyncState: AsyncStateInterface<T>,
 }

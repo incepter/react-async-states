@@ -112,7 +112,7 @@ export interface StateBuilderInterface {
   aborted: <T>(reason: any, props: ProducerSavedProps<T>) => State<any>,
 }
 
-export type ForkConfigType = {
+export type ForkConfig = {
   keepState: boolean,
   key?: AsyncStateKey,
 }

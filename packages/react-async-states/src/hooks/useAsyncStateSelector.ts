@@ -3,9 +3,10 @@ import {EMPTY_ARRAY, identity, invokeIfPresent, shallowEqual} from "shared";
 import {
   AsyncStateSelector,
   AsyncStateSelectorKeys,
-  CleanupFn,
   EqualityFn,
-  SelectorKeysArg
+  SelectorKeysArg,
+  SelectorManager,
+  SelectorSubscription
 } from "../types.internal";
 import {AsyncStateInterface, AsyncStateKey} from "../../../async-state";
 import useAsyncStateContext from "./useAsyncStateContext";
@@ -173,10 +174,6 @@ function readSelectorKeys(
   return [keys];
 }
 
-type SelectedAsyncStates = {
-  [key: AsyncStateKey]: AsyncStateInterface<any>,
-}
-
 function newSelectorManager() {
   const output = Object.create(null);
 
@@ -188,19 +185,4 @@ function newSelectorManager() {
   }
 
   return output;
-}
-
-type SelectorManager = {
-  didUnmount: boolean,
-  has: (key: string) => boolean,
-  subscriptions: SelectorSubscriptionsMap,
-}
-
-type SelectorSubscriptionsMap = {
-  [id: string]: SelectorSubscription<any>,
-}
-
-type SelectorSubscription<T> = {
-  cleanup: CleanupFn,
-  asyncState: AsyncStateInterface<T>,
 }

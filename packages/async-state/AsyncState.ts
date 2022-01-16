@@ -21,7 +21,7 @@ import {
   StateFunctionUpdater,
   AsyncStateStatus,
   StateSubscription,
-  ForkConfigType,
+  ForkConfig,
   Producer,
   ProducerConfig,
   ProducerFunction,
@@ -270,7 +270,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
   }
 
   fork(forkConfig?: { keepState: boolean, key: AsyncStateKey }) {
-    const mergedConfig: ForkConfigType = shallowClone(defaultForkConfig, forkConfig);
+    const mergedConfig: ForkConfig = shallowClone(defaultForkConfig, forkConfig);
 
     let {key} = mergedConfig;
 
@@ -320,7 +320,7 @@ function nextUniqueId() {
 let uniqueId: number = 0;
 const sourceIsSourceSymbol: symbol = Symbol();
 
-const defaultForkConfig: ForkConfigType = Object.freeze({keepState: false});
+const defaultForkConfig: ForkConfig = Object.freeze({keepState: false});
 
 function makeSource<T>(asyncState: AsyncStateInterface<T>) {
   const source: AsyncStateSource<T> = constructAsyncStateSource(asyncState);
