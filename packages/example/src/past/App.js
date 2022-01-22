@@ -7,6 +7,7 @@ import SelectorsDemo from "./SelectorsDemo";
 import ReducersDemo from "./ReducersDemo";
 import StandaloneDemo from "./StandaloneDemo";
 import DemoDemo from "./DemoDemo";
+import EmitDemo from "./EmitDemo";
 import ReduxDemo from "./ReduxDemo";
 import NextDemo from "./NextDemo";
 import ReplaceStateDemo from "./ReplaceStateDemo";
@@ -56,8 +57,8 @@ export default function App() {
 
   return (
     <Router>
-      <GeneratorsTests/>
-      <OutsideProvider/>
+      {/*<GeneratorsTests/>*/}
+      {/*<OutsideProvider/>*/}
       <DemoProvider>
         <InsideProvider/>
         <div>
@@ -90,6 +91,9 @@ export default function App() {
             </Route>
             <Route path="/demo">
               <DemoDemo/>
+            </Route>
+            <Route path="/emit">
+              <EmitDemo/>
             </Route>
           </Switch>
         </div>

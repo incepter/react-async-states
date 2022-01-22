@@ -96,3 +96,7 @@ export function readProducerConfigFromSubscriptionConfig<T>(
 export function numberOrZero(maybeNumber) {
   return Number(maybeNumber) || 0;
 }
+
+export function warning(...args) {
+  console.error(...args);
+}

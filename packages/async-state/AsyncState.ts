@@ -3,12 +3,13 @@ import {
   cloneProducerProps,
   invokeIfPresent,
   numberOrZero,
-  shallowClone
+  shallowClone,
+  warning
 } from "shared";
 import {wrapProducerFunction} from "./wrap-producer-function";
 import {
-  StateBuilder,
   constructAsyncStateSource,
+  StateBuilder,
   warnDevAboutAsyncStateKey
 } from "./utils";
 import devtools from "devtools";
@@ -18,16 +19,16 @@ import {
   AsyncStateInterface,
   AsyncStateKey,
   AsyncStateSource,
-  StateFunctionUpdater,
   AsyncStateStatus,
-  StateSubscription,
   ForkConfig,
   Producer,
   ProducerConfig,
   ProducerFunction,
   ProducerProps,
   ProducerRunEffects,
-  State
+  State,
+  StateFunctionUpdater,
+  StateSubscription
 } from "./types";
 
 export default class AsyncState<T> implements AsyncStateInterface<T> {
@@ -97,7 +98,6 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
     if (this.currentState.status !== AsyncStateStatus.pending) {
       this.suspender = undefined;
-      this.currentAborter = undefined;
     }
     if (__DEV__) devtools.emitUpdate(this);
 
@@ -202,13 +202,17 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     if (this.currentState.status === AsyncStateStatus.pending) {
       this.abort();
       this.currentAborter = undefined;
+    } else if (typeof this.currentAborter === "function") {
+      this.abort();
     }
 
     const that = this;
 
+    let isEmitAllowed = true;
     let onAbortCallbacks: AbortFn[] = [];
 
     const props: ProducerProps<T> = {
+      emit,
       abort,
       args: execArgs,
       aborted: false,
@@ -221,13 +225,32 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       }
     };
 
-    function abort(reason: any): AbortFn | undefined {
-      if (props.aborted || props.fulfilled) {
-        // already aborted or fulfilled in this closure!!!
+    function emit(updater: T | StateFunctionUpdater<T>): void {
+      if (props.cleared && that.currentState.status === AsyncStateStatus.aborted) {
+        warning("You are emitting while your producer is passing to aborted state." +
+          "This has no effect and not supported by the library. The next " +
+          "state value on aborted state is the reason of the abort.");
         return;
       }
-      props.aborted = true;
-      that.setState(StateBuilder.aborted(reason, cloneProducerProps(props)));
+      if (!props.fulfilled) {
+        warning("Called props.emit before the producer resolves. This is" +
+          " not supported in the library and will have no effect");
+        return;
+      }
+      that.replaceState(updater);
+    }
+
+    function abort(reason: any): AbortFn | undefined {
+      if (props.aborted || props.cleared) {
+        return;
+      }
+
+      if (!props.fulfilled) {
+        props.aborted = true;
+        that.setState(StateBuilder.aborted(reason, cloneProducerProps(props)));
+      }
+
+      props.cleared = true;
       onAbortCallbacks.forEach(function clean(func) {
         invokeIfPresent(func, reason);
       });

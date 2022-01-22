@@ -31,9 +31,11 @@ export type ProducerProps<T> = {
   abort: AbortFn,
   aborted: boolean,
   onAbort: OnAbortFn,
+  emit: StateUpdater<T>,
 
   args: any[],
   payload: any,
+  cleared?: boolean,
   fulfilled?: boolean,
   lastSuccess: State<T>
 }
