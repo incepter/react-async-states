@@ -4,6 +4,7 @@ import AsyncState, {
   AsyncStateKey,
   AsyncStateSource,
   ForkConfig,
+  RunExtraProps,
   State
 } from "async-state";
 import {
@@ -27,11 +28,11 @@ import {
   AsyncStateSelectorKeys,
   AsyncStateWatchKey,
   FunctionSelector,
+  InitialStates,
   ManagerHoistConfig,
   ManagerWatchCallback,
   ManagerWatchCallbackValue,
   ManagerWatchers,
-  InitialStates,
   WatcherType
 } from "../../types.internal";
 
@@ -54,7 +55,47 @@ export function AsyncStateManager(
   // stores all listeners/watchers about an async state
   let watchers: ManagerWatchers = Object.create(null);
 
-  return {
+  let runExtraProps: RunExtraProps = {
+    run<T>(
+      input: AsyncStateKeyOrSource<T>,
+      ...args: any[]
+    ): AbortFn {
+      if (isAsyncStateSource(input)) {
+        return readAsyncStateFromSource(input as AsyncStateSource<T>)
+          .run(output.runExtraProps, ...args);
+      }
+      const asyncState = get(input as AsyncStateKey);
+      if (asyncState) {
+        return output.run(asyncState, ...args);
+      }
+    },
+    runFork<T>(
+      input: AsyncStateKeyOrSource<T>,
+      config: ForkConfig,
+      ...args: any[]
+    ): AbortFn {
+      if (isAsyncStateSource(input)) {
+        return readAsyncStateFromSource(input as AsyncStateSource<T>)
+          .fork(config)
+          .run(output.runExtraProps, ...args);
+      }
+      const asyncState = get(input as AsyncStateKey);
+      if (asyncState) {
+        return output.run(asyncState.fork(config), ...args);
+      }
+    },
+    select<T>(
+      input: AsyncStateKeyOrSource<T>
+    ): State<T> | undefined {
+      if (isAsyncStateSource(input)) {
+        return readAsyncStateFromSource(input as AsyncStateSource<T>)
+          .currentState;
+      }
+      return get(input as AsyncStateKey)?.currentState;
+    },
+  };
+
+  const output = {
     entries: asyncStateEntries,
     run,
     get,
@@ -67,9 +108,12 @@ export function AsyncStateManager(
     watchAll,
     getAllKeys,
     runAsyncState,
+    runExtraProps,
     notifyWatchers,
     setInitialStates
   };
+
+  return output;
 
   function setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[] {
     const newInitialStates: AsyncStateEntries = Object
@@ -106,7 +150,7 @@ export function AsyncStateManager(
     asyncState: AsyncStateInterface<T>,
     ...args: any[]
   ): AbortFn {
-    return asyncState.run(...args);
+    return asyncState.run(runExtraProps, ...args);
   }
 
   function runAsyncState<T>(

@@ -15,19 +15,36 @@ import Navigation from "./Navigation";
 import DemoProvider from "./Provider";
 import { DOMAIN_USER_PRODUCERS } from "./v2/domain/users/producers";
 
+
+
+function demoProducer(props) {
+  props.run("posts");
+  console.log('posts state', props.select("posts"));
+  return null;
+}
+
+function ProducerRunPropsDemo() {
+  const {state: {data}, run, abort} = useAsyncState.auto(demoProducer);
+  const {mode, state: postsState} = useAsyncState.lazy("users");
+  return (
+    <div>
+      <h1>run effects demo</h1>
+      <h2>State value is: <pre>{JSON.stringify(data ?? [], null, 4)}</pre></h2>
+
+      <h2>posts state value
+        is {mode}: <pre>{JSON.stringify(postsState ?? {}, null, 4)}</pre>
+      </h2>
+      <button onClick={() => run(data)}>Run</button>
+      <button
+        onClick={() => abort()}>{status === "pending" ? "abort" : "stop"}</button>
+    </div>
+  );
+}
+
+
 function OutsideProvider() {
-  const data = useAsyncState({
-    lazy: true,
-    condition: false,
-    source: DOMAIN_USER_PRODUCERS.details,
-  });
 
-  window.__AM_LAZY__ = data.source;
-
-  return <button onClick={() => {
-    data.mergePayload({userId: (data.payload.userId || 0) + 1});
-    data.run();
-  }}>RUUUUUUUN{JSON.stringify(data.state.status)}-{JSON.stringify(data.lastSuccess.data?.id)}</button>;
+  return <ProducerRunPropsDemo />
 }
 
 function InsideProvider() {
@@ -58,7 +75,7 @@ export default function App() {
   return (
     <Router>
       {/*<GeneratorsTests/>*/}
-      {/*<OutsideProvider/>*/}
+      <OutsideProvider/>
       <DemoProvider>
         <InsideProvider/>
         <div>

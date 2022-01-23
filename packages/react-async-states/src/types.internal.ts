@@ -7,6 +7,7 @@ import {
   Producer,
   ProducerConfig,
   ProducerRunEffects,
+  RunExtraProps,
   State,
   StateUpdater
 } from "../../async-state";
@@ -151,6 +152,8 @@ export type AsyncStateManagerInterface = {
   getAllKeys(): AsyncStateKey[],
   watchAll(cb: ManagerWatchCallback<any>),
   setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[],
+
+  runExtraProps: RunExtraProps,
 }
 
 // end manager types
@@ -188,6 +191,8 @@ export type AsyncStateContextValue = {
   ): AbortFn,
   getAllKeys(): AsyncStateKey[],
   watchAll(cb: ManagerWatchCallback<any>),
+
+  runExtraProps: RunExtraProps,
 }
 
 

@@ -2,7 +2,7 @@ import AsyncState, {
   AbortFn,
   AsyncStateInterface,
   AsyncStateKey,
-  AsyncStateSource,
+  AsyncStateSource, ForkConfig, RunExtraProps,
   State
 } from "async-state";
 import {
@@ -24,6 +24,7 @@ import {
   UseAsyncStateReturnValue,
   UseAsyncStateSubscriptionInfo
 } from "../../types.internal";
+import {isAsyncStateSource} from "../../../../async-state/AsyncState";
 
 export function inferSubscriptionMode<T, E>(
   contextValue: UseAsyncStateContextType,
@@ -226,7 +227,7 @@ export function makeUseAsyncStateReturnValue<T, E>(
     runAsyncState,
     abort: asyncState.abort.bind(asyncState),
     replaceState: asyncState.replaceState.bind(asyncState),
-    run: typeof run === "function" ? run : asyncState.run.bind(asyncState),
+    run: typeof run === "function" ? run : asyncState.run.bind(asyncState, standaloneRunExtraProps),
   });
 }
 
@@ -282,3 +283,34 @@ function createReadInConcurrentMode<T, E>(
     return stateValue;
   }
 }
+
+export const standaloneRunExtraProps: RunExtraProps = {
+  run<T>(
+    input: AsyncStateKeyOrSource<T>,
+    ...args: any[]
+  ): AbortFn {
+    if (isAsyncStateSource(input)) {
+      return readAsyncStateFromSource(input as AsyncStateSource<T>)
+        .run(standaloneRunExtraProps, ...args);
+    }
+  },
+  runFork<T>(
+    input: AsyncStateKeyOrSource<T>,
+    config: ForkConfig,
+    ...args: any[]
+  ): AbortFn {
+    if (isAsyncStateSource(input)) {
+      return readAsyncStateFromSource(input as AsyncStateSource<T>)
+        .fork(config)
+        .run(standaloneRunExtraProps, ...args);
+    }
+  },
+  select<T>(
+    input: AsyncStateKeyOrSource<T>
+  ): State<T> | undefined {
+    if (isAsyncStateSource(input)) {
+      return readAsyncStateFromSource(input as AsyncStateSource<T>)
+        .currentState;
+    }
+  },
+};

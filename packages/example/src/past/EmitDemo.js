@@ -52,7 +52,11 @@ function wsProducer(props) {
 
 function WsDemo() {
   const ref = React.useRef();
-  const {state: {status, data}, run, abort} = useAsyncState.auto(remoteProducer);
+  const {
+    state: {status, data},
+    run,
+    abort
+  } = useAsyncState.auto(wsProducer);
   return (
     <div>
       <h1>Ws demo</h1>
@@ -79,7 +83,7 @@ function IntervalDemo() {
   const {state: {data}, run, abort} = useAsyncState.auto(intervalProducer);
   return (
     <div>
-      <h1>Ws demo</h1>
+      <h1>Interval demo</h1>
       <h2>State value is: <pre>{JSON.stringify(data ?? [], null, 4)}</pre>
       </h2>
       <button onClick={() => run(data)}>Run</button>
@@ -96,6 +100,32 @@ export default function DemoDemo() {
       <WsDemo/>
       <hr/>
       <IntervalDemo/>
+      <hr/>
+      <ProducerRunPropsDemo/>
     </>
+  );
+}
+
+function demoProducer(props) {
+  props.run("posts");
+  console.log('posts state', props.select("posts"));
+  return null;
+}
+
+function ProducerRunPropsDemo() {
+  const {state: {data}, run, abort} = useAsyncState.auto(demoProducer);
+  const {state: postsState} = useAsyncState.lazy("users");
+  return (
+    <div>
+      <h1>run effects demo</h1>
+      <h2>State value is: <pre>{JSON.stringify(data ?? [], null, 4)}</pre></h2>
+
+      <h2>posts state value
+        is: <pre>{JSON.stringify(postsState ?? {}, null, 4)}</pre>
+      </h2>
+      <button onClick={() => run(data)}>Run</button>
+      <button
+        onClick={() => abort()}>{status === "pending" ? "abort" : "stop"}</button>
+    </div>
   );
 }

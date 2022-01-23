@@ -5,6 +5,7 @@ import {
   UseAsyncStateContextType
 } from "../../types.internal";
 import {AbortFn, AsyncStateInterface} from "../../../../async-state";
+import {standaloneRunExtraProps} from "./subscriptionUtils";
 
 export function runAsyncStateSubscriptionFn<T, E>(
   mode: AsyncStateSubscriptionMode,
@@ -15,6 +16,7 @@ export function runAsyncStateSubscriptionFn<T, E>(
   return function run(...args) {
     switch (mode) {
       case AsyncStateSubscriptionMode.SOURCE:
+      case AsyncStateSubscriptionMode.STANDALONE:
       case AsyncStateSubscriptionMode.SOURCE_FORK:
         return contextValue !== null ?
           contextValue.run(
@@ -22,10 +24,9 @@ export function runAsyncStateSubscriptionFn<T, E>(
             ...args
           )
           :
-          asyncState.run(...args);
-      case AsyncStateSubscriptionMode.STANDALONE:
+          asyncState.run(standaloneRunExtraProps, ...args);
       case AsyncStateSubscriptionMode.OUTSIDE_PROVIDER:
-        return asyncState.run(...args);
+        return asyncState.run(standaloneRunExtraProps, ...args);
       case AsyncStateSubscriptionMode.FORK:
       case AsyncStateSubscriptionMode.HOIST:
       case AsyncStateSubscriptionMode.LISTEN: {

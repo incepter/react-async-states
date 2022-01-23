@@ -58,12 +58,11 @@ function SourceForkExample({source}) {
   const data = useAsyncState({
     lazy: false,
     source,
-    subscriptionKey: `SourceForkExample-${source.key}-SELF`,
+    subscriptionKey: `SourceForkExample-${source?.key}-SELF`,
     payload: {userId: id},
     fork: true,
-    forkConfig: {key: `SourceForkExample-${source.key}`}
+    forkConfig: {key: `SourceForkExample-${source?.key}`}
   });
-  console.log('RENDERING,', data);
   return <button onClick={() => {
     data.mergePayload({userId: (data.payload.userId || 0) + 1});
     data.run();

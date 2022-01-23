@@ -26,6 +26,7 @@ import {
   ProducerFunction,
   ProducerProps,
   ProducerRunEffects,
+  RunExtraProps,
   State,
   StateFunctionUpdater,
   StateSubscription
@@ -126,17 +127,18 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     return true;
   }
 
-  run(...args: any[]) {
+  run(extraProps: RunExtraProps, ...args: any[]) {
     const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
 
     if (!areRunEffectsSupported() || !this.config.runEffect || effectDurationMs === 0) {
-      return this.runImmediately(...args);
+      return this.runImmediately(extraProps, ...args);
     } else {
-      return this.runWithEffect(...args);
+      return this.runWithEffect(extraProps, ...args);
     }
   }
 
-  private runWithEffect(...args: any[]): AbortFn {
+  private runWithEffect(extraProps: RunExtraProps, ...args: any[]): AbortFn {
+
     const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
 
     const that = this;
@@ -149,7 +151,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
         const timeoutId = setTimeout(function realRun() {
           that.pendingTimeout = null;
-          runAbortCallback = that.runImmediately(...args);
+          runAbortCallback = that.runImmediately(extraProps, ...args);
         }, effectDurationMs);
 
         that.pendingTimeout = {
@@ -195,10 +197,13 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
         }
       }
     }
-    return this.runImmediately(...args);
+    return this.runImmediately(extraProps, ...args);
   }
 
-  private runImmediately(...execArgs: any[]): AbortFn {
+  private runImmediately(
+    extraProps: RunExtraProps,
+    ...execArgs: any[]
+  ): AbortFn {
     if (this.currentState.status === AsyncStateStatus.pending) {
       this.abort();
       this.currentAborter = undefined;
@@ -213,6 +218,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     const props: ProducerProps<T> = {
       emit,
       abort,
+      ...extraProps,
       args: execArgs,
       aborted: false,
       lastSuccess: that.lastSuccess,
