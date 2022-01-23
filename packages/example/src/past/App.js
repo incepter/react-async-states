@@ -9,11 +9,11 @@ import StandaloneDemo from "./StandaloneDemo";
 import DemoDemo from "./DemoDemo";
 import EmitDemo from "./EmitDemo";
 import ReduxDemo from "./ReduxDemo";
+import BrokerDemo from "./BrokerDemo";
 import NextDemo from "./NextDemo";
 import ReplaceStateDemo from "./ReplaceStateDemo";
 import Navigation from "./Navigation";
 import DemoProvider from "./Provider";
-import { DOMAIN_USER_PRODUCERS } from "./v2/domain/users/producers";
 
 
 
@@ -75,7 +75,7 @@ export default function App() {
   return (
     <Router>
       {/*<GeneratorsTests/>*/}
-      <OutsideProvider/>
+      {/*<OutsideProvider/>*/}
       <DemoProvider>
         <InsideProvider/>
         <div>
@@ -90,6 +90,9 @@ export default function App() {
             </Route>
             <Route path="/reducers">
               <ReducersDemo/>
+            </Route>
+            <Route path="/broker">
+              <BrokerDemo/>
             </Route>
             <Route path="/replace-state">
               <ReplaceStateDemo/>
