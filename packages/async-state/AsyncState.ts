@@ -224,7 +224,10 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       }
     };
 
-    function emit(updater: T | StateFunctionUpdater<T>): void {
+    function emit(
+      updater: T | StateFunctionUpdater<T>,
+      status: AsyncStateStatus
+    ): void {
       if (props.cleared && that.currentState.status === AsyncStateStatus.aborted) {
         warning("You are emitting while your producer is passing to aborted state." +
           "This has no effect and not supported by the library. The next " +
@@ -236,7 +239,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
           " not supported in the library and will have no effect");
         return;
       }
-      that.replaceState(updater);
+      that.replaceState(updater, status);
     }
 
     function abort(reason: any): AbortFn | undefined {
@@ -313,7 +316,10 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     return clone as AsyncStateInterface<T>;
   }
 
-  replaceState(newValue: T | StateFunctionUpdater<T>): void {
+  replaceState(newValue: T | StateFunctionUpdater<T>, status = AsyncStateStatus.success): void {
+    if (!StateBuilder[status]) {
+      throw new Error(`Couldn't replace state to status ${status}, because it is unknown.`);
+    }
     if (this.currentState.status === AsyncStateStatus.pending) {
       this.abort();
       this.currentAborter = undefined;
@@ -331,7 +337,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       lastSuccess: this.lastSuccess,
       payload: shallowClone(this.payload),
     });
-    this.setState(StateBuilder.success(effectiveValue, savedProps));
+    this.setState(StateBuilder[status](effectiveValue, savedProps));
   }
 }
 

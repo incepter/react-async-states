@@ -63,7 +63,7 @@ export type StateFunctionUpdater<T> = (updater: State<T>) => T;
 
 export type StateUpdater<T> = (
   updater: T | StateFunctionUpdater<T>,
-  notify: boolean
+  status?: AsyncStateStatus
 ) => void;
 
 export type AsyncStateSource<T> = {
