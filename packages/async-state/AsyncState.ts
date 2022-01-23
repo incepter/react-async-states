@@ -208,7 +208,6 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
     const that = this;
 
-    let isEmitAllowed = true;
     let onAbortCallbacks: AbortFn[] = [];
 
     const props: ProducerProps<T> = {
