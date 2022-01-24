@@ -11,6 +11,9 @@ function brokerProducer(props) {
     ws.addEventListener("open", () => {
       resolve({ws, connected: true});
     });
+    ws.addEventListener("close", message => {
+      props.emit(message, "error");
+    });
     ws.addEventListener("message", (message) => {
       const jsonData = JSON.parse(message.data);
       const {to} = jsonData;
