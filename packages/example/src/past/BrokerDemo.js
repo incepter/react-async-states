@@ -18,7 +18,7 @@ function brokerProducer(props) {
       const jsonData = JSON.parse(message.data);
       const {to} = jsonData;
       if (to) {
-        props.run(to, jsonData);
+        props.run(to, null, jsonData);
       }
     });
     props.onAbort(() => ws.close());
