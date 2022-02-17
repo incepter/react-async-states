@@ -4,7 +4,6 @@ import AsyncState, {
   AsyncStateKey,
   AsyncStateSource,
   ForkConfig,
-  RunExtraProps,
   State
 } from "async-state";
 import {
@@ -14,7 +13,7 @@ import {
 } from "shared";
 import {
   createAsyncStateEntry,
-  createInitialAsyncStatesReducer
+  createInitialAsyncStatesReducer,
 } from "./providerUtils";
 import {isAsyncStateSource} from "async-state/AsyncState";
 import {readAsyncStateFromSource} from "async-state/utils";
@@ -35,6 +34,7 @@ import {
   ManagerWatchers,
   WatcherType
 } from "../../types.internal";
+import {createRunExtraPropsCreator} from "../../helpers/run-props-creator";
 
 const listenersKey = Symbol();
 
@@ -50,52 +50,15 @@ export function AsyncStateManager(
     .reduce(
       createInitialAsyncStatesReducer,
       Object.create(null) as AsyncStateEntries
-    );
+    ) as AsyncStateEntries;
 
   // stores all listeners/watchers about an async state
   let watchers: ManagerWatchers = Object.create(null);
 
-  let runExtraProps: RunExtraProps = {
-    run<T>(
-      input: AsyncStateKeyOrSource<T>,
-      ...args: any[]
-    ): AbortFn {
-      if (isAsyncStateSource(input)) {
-        return readAsyncStateFromSource(input as AsyncStateSource<T>)
-          .run(output.runExtraProps, ...args);
-      }
-      const asyncState = get(input as AsyncStateKey);
-      if (asyncState) {
-        return output.run(asyncState, ...args);
-      }
-    },
-    runFork<T>(
-      input: AsyncStateKeyOrSource<T>,
-      config: ForkConfig,
-      ...args: any[]
-    ): AbortFn {
-      if (isAsyncStateSource(input)) {
-        return readAsyncStateFromSource(input as AsyncStateSource<T>)
-          .fork(config)
-          .run(output.runExtraProps, ...args);
-      }
-      const asyncState = get(input as AsyncStateKey);
-      if (asyncState) {
-        return output.run(asyncState.fork(config), ...args);
-      }
-    },
-    select<T>(
-      input: AsyncStateKeyOrSource<T>
-    ): State<T> | undefined {
-      if (isAsyncStateSource(input)) {
-        return readAsyncStateFromSource(input as AsyncStateSource<T>)
-          .currentState;
-      }
-      return get(input as AsyncStateKey)?.currentState;
-    },
-  };
-
-  const output = {
+  // @ts-ignore
+  // ts is yelling at runExtraPropsCreator property which will be assigned
+  // in the next statement.
+  const output: AsyncStateManagerInterface = {
     entries: asyncStateEntries,
     run,
     get,
@@ -108,10 +71,10 @@ export function AsyncStateManager(
     watchAll,
     getAllKeys,
     runAsyncState,
-    runExtraProps,
     notifyWatchers,
     setInitialStates
   };
+  output.runExtraPropsCreator = createRunExtraPropsCreator(output);
 
   return output;
 
@@ -121,7 +84,7 @@ export function AsyncStateManager(
       .reduce(
         createInitialAsyncStatesReducer,
         Object.create(null) as AsyncStateEntries
-      );
+      ) as AsyncStateEntries;
 
     // we should remove the states that were initially hoisted
     // but do no-longer exist in provider.
@@ -150,7 +113,7 @@ export function AsyncStateManager(
     asyncState: AsyncStateInterface<T>,
     ...args: any[]
   ): AbortFn {
-    return asyncState.run(runExtraProps, ...args);
+    return asyncState.run(output.runExtraPropsCreator, ...args);
   }
 
   function runAsyncState<T>(

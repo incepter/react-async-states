@@ -31,6 +31,10 @@ export default function NextDemo() {
     <div>
       <RunEffectsDemo/>
     </div>
+    <hr/>
+    <div>
+      <TearingDemo />
+    </div>
   </>;
 }
 
@@ -69,6 +73,52 @@ function RunEffectsDemo() {
         Run Throttled {throttleIndexState}
         {throttledRunning === "pending" && "..."}
       </button>
+    </div>
+  );
+}
+
+
+function TearingDemo() {
+
+  return (
+    <>
+      <TearingExample title="1" />
+      <TearingExample title="2" />
+      <TearingExample title="3" />
+      <TearingExample title="4" />
+    </>
+  );
+}
+
+function tearingProducer(props) {
+  return new Promise((resolve, reject) => {
+    function listener(e) {
+      props.emit({x: e.clientX, y: e.clientY});
+    }
+    document.addEventListener("mousemove", listener);
+    props.onAbort(() => document.removeEventListener("mousemove", listener));
+
+    resolve({x: 0, y: 0});
+  });
+}
+
+function TearingExample({title}) {
+  const {state: {data}} = useAsyncState.auto(tearingProducer);
+  const {state: {data: data2}} = useAsyncState.auto(tearingProducer);
+  const {state: {data: data3}} = useAsyncState.auto(tearingProducer);
+  const {state: {data: data4}} = useAsyncState.auto(tearingProducer);
+  const different = data?.x !== data2?.x || data?.y !== data2?.y
+    || data?.x !== data3?.x || data?.y !== data3?.y ||
+    data?.x !== data4?.x || data?.y !== data4?.y;
+
+  return (
+    <div>
+      {different && <h1>____SEE HERE____</h1>}
+      <h3>Tearing example: {title}</h3>
+      <pre>
+        {JSON.stringify((data ?? {}), null, 4)}
+      </pre>
+      <br />
     </div>
   );
 }

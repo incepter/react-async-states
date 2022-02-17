@@ -19,7 +19,7 @@ export function createAsyncStateEntry<T>(
 export function createInitialAsyncStatesReducer(
   result: AsyncStateEntries,
   current: ExtendedInitialAsyncState<any>
-) {
+): AsyncStateEntries {
   if (isAsyncStateSource(current)) {
     const key = current.key;
     const existingEntry = result[key];

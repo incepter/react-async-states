@@ -27,7 +27,7 @@ export type State<T> = {
 
 export type AbortFn = ((reason?: any) => void) | undefined;
 
-export type OnAbortFn = (cb: () => void) => void;
+export type OnAbortFn = (cb: ((reason?: any) => void)) => void;
 
 export interface ProducerProps<T> extends RunExtraProps {
   abort: AbortFn,
@@ -103,7 +103,7 @@ export interface AsyncStateInterface<T> {
   abort: (reason: any) => void,
   replaceState: StateUpdater<T>,
   setState: (newState: State<T>, notify?: boolean) => void,
-  run: (extraProps: RunExtraProps, ...args: any[]) => AbortFn,
+  run: (extraPropsCreator: RunExtraPropsCreator<T>, ...args: any[]) => AbortFn,
   fork: (forkConfig?: { keepState: boolean }) => AsyncStateInterface<T>,
   subscribe: (cb: Function, subscriptionKey?: AsyncStateKey) => AbortFn,
 }
@@ -121,19 +121,18 @@ export type ForkConfig = {
   key?: AsyncStateKey,
 }
 
-export type RunExtraProps = {
-  select: <T>(
-    input: AsyncStateKeyOrSource<T>
-  ) => State<T> | undefined,
+export interface RunExtraProps {
+  run: <T>(input: ProducerPropsRunInput<T>, config: ProducerPropsRunConfig | null, ...args: any[] ) => AbortFn,
+  runp: <T>(input: ProducerPropsRunInput<T>, config: ProducerPropsRunConfig | null, ...args: any[] ) => Promise<State<T>> | undefined,
 
-  run: <T>(
-    input: AsyncStateKeyOrSource<T>,
-    ...args: any[]
-  ) => AbortFn,
-  // runAndWait?: <T>(input: AsyncStateKeyOrSource<T>, ...args: any[]) => Promise<State<T>>,
-  runFork: <T>(
-    input: AsyncStateKeyOrSource<T>,
-    config: ForkConfig,
-    ...args: any[]
-  ) => AbortFn,
+  select: <T>(input: AsyncStateKeyOrSource<T>) => State<T> | undefined,
+}
+
+export type RunExtraPropsCreator<T> = (props: ProducerProps<T>) => RunExtraProps;
+
+export type ProducerPropsRunInput<T> = AsyncStateKeyOrSource<T> | Producer<T>;
+
+export type ProducerPropsRunConfig = {
+  fork?: boolean,
+  payload?: { [id: string]: any } | null,
 };

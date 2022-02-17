@@ -26,7 +26,7 @@ import {
   ProducerFunction,
   ProducerProps,
   ProducerRunEffects,
-  RunExtraProps,
+  RunExtraProps, RunExtraPropsCreator,
   State,
   StateFunctionUpdater,
   StateSubscription
@@ -127,17 +127,17 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     return true;
   }
 
-  run(extraProps: RunExtraProps, ...args: any[]) {
+  run(extraPropsCreator: RunExtraPropsCreator<T>, ...args: any[]) {
     const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
 
     if (!areRunEffectsSupported() || !this.config.runEffect || effectDurationMs === 0) {
-      return this.runImmediately(extraProps, ...args);
+      return this.runImmediately(extraPropsCreator, ...args);
     } else {
-      return this.runWithEffect(extraProps, ...args);
+      return this.runWithEffect(extraPropsCreator, ...args);
     }
   }
 
-  private runWithEffect(extraProps: RunExtraProps, ...args: any[]): AbortFn {
+  private runWithEffect(extraPropsCreator: RunExtraPropsCreator<T>, ...args: any[]): AbortFn {
 
     const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
 
@@ -151,7 +151,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
         const timeoutId = setTimeout(function realRun() {
           that.pendingTimeout = null;
-          runAbortCallback = that.runImmediately(extraProps, ...args);
+          runAbortCallback = that.runImmediately(extraPropsCreator, ...args);
         }, effectDurationMs);
 
         that.pendingTimeout = {
@@ -197,11 +197,11 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
         }
       }
     }
-    return this.runImmediately(extraProps, ...args);
+    return this.runImmediately(extraPropsCreator, ...args);
   }
 
   private runImmediately(
-    extraProps: RunExtraProps,
+    extraPropsCreator: RunExtraPropsCreator<T>,
     ...execArgs: any[]
   ): AbortFn {
     if (this.currentState.status === AsyncStateStatus.pending) {
@@ -215,10 +215,13 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
     let onAbortCallbacks: AbortFn[] = [];
 
+    // @ts-ignore
+    // ts yelling to add a run, runp and select functions
+    // but run and runp will require access to this props object,
+    // so they are constructed later, and appended to the same object.
     const props: ProducerProps<T> = {
       emit,
       abort,
-      ...extraProps,
       args: execArgs,
       aborted: false,
       lastSuccess: that.lastSuccess,
@@ -227,8 +230,9 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
         if (typeof cb === "function") {
           onAbortCallbacks.push(cb);
         }
-      }
+      },
     };
+    Object.assign(props, extraPropsCreator(props));
 
     function emit(
       updater: T | StateFunctionUpdater<T>,
@@ -335,6 +339,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     if (typeof newValue === "function") {
       effectiveValue = (newValue as StateFunctionUpdater<T>)(this.currentState);
     }
+
 
     if (__DEV__) devtools.emitReplaceState(this);
     // @ts-ignore
