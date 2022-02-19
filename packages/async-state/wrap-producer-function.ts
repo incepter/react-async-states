@@ -28,9 +28,6 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
       executionValue = asyncState.originalProducer(props);
 
     } catch (e) {
-      if (e.rethrow) {
-        throw e;
-      }
       if (__DEV__) devtools.emitRunSync(asyncState, props);
       props.fulfilled = true;
       asyncState.setState(StateBuilder.error(e, savedProps));

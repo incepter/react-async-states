@@ -49,7 +49,7 @@ export function AsyncStateManager(
     .values(initializer ?? EMPTY_OBJECT)
     .reduce(
       createInitialAsyncStatesReducer,
-      Object.create(null) as AsyncStateEntries
+      Object.create(null)
     ) as AsyncStateEntries;
 
   // stores all listeners/watchers about an async state
@@ -83,7 +83,7 @@ export function AsyncStateManager(
       .values(initialStates ?? EMPTY_OBJECT)
       .reduce(
         createInitialAsyncStatesReducer,
-        Object.create(null) as AsyncStateEntries
+        Object.create(null)
       ) as AsyncStateEntries;
 
     // we should remove the states that were initially hoisted

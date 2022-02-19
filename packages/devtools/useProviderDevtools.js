@@ -8,8 +8,7 @@ export default function useProviderDevtools(entries) {
     return null;
   }
 
-  React.useLayoutEffect(function waitForDevtoolsAndEmit() {
-    // console.log('provider effect');
+  React.useEffect(function waitForDevtoolsAndEmit() {
     function listener(message) {
       if (!message.data || message.data.source !== "async-states-devtools-panel") {
         return;
@@ -18,10 +17,9 @@ export default function useProviderDevtools(entries) {
       if (message.data && message.data.type === devtoolsRequests.provider) {
         devtools.emitProviderState(entries);
       }
-
-      // console.log('________', message.data);
     }
-    window.addEventListener("message", listener)
+
+    window.addEventListener("message", listener);
 
     return () => {
       devtools.disconnect();

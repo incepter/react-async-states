@@ -126,6 +126,15 @@ const {read} = useAsyncState(asyncFunction);
 // this either suspends on react 18+ or give you the selected state after warning you
 const selectedState = read();
 ```
+12. **Powerful producers**: The producer concept is  a more generic way to grap
+state from a function, the library tries to give the producers more power to have
+more control in your app. Like
+- Running a producer from a producer
+- Cascade cancellation
+- Create a producer inside a producer (close over params)
+- Select from other async states
+- Run and wait
+- Run while forking...
 
 ## Motivations
 Managing state using React native APIs or third party libraries ain't an easy task. Let's talk about the parts we miss:

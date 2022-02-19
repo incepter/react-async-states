@@ -81,7 +81,7 @@ The returned object from useAsyncState contains the following properties:
 |`source`            | The special source object of the subscribed async state instance, could be reused for further subscription without passing by provider or key |
 |`payload`           | The async state instance payload (could be removed in the future) |
 |`lastSuccess`       | The last registered success |
-|`replaceState`      | Imperatively and instantly replace state as success with the given value (accepts a callback receiving the old state) |
+|`replaceState`      | Imperatively and instantly replace state with the given value (accepts a callback receiving the old state), the status may be specified as a second parameter, it defaults to `success`|
 |`mergePayload`      | Imperatively merge the payload of the subscribed async state instance with the object in first parameter |
 |`runAsyncState`     | If inside provider, `runAsyncState(key, ...args)` runs the given async state by key with the later execution args |
 
@@ -89,7 +89,7 @@ We bet in this shape because it provides the key for further subscriptions, the 
 arguments that produced it. `run` runs the subscribed async state, to abort it invoke `abort`. The `lastSuccess`
 holds for you the last succeeded value.
 
-`replaceState` instantly gives a new value to the state with success status.
+`replaceState` instantly gives a new value to the state with the desired status.
 `runAsyncState` works only in provider, and was added as convenience to trigger some side effect after
 the current async producer did something, for example, reload users list after updating a user successfully.
 

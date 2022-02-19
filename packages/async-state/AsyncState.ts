@@ -26,7 +26,7 @@ import {
   ProducerFunction,
   ProducerProps,
   ProducerRunEffects,
-  RunExtraProps, RunExtraPropsCreator,
+  RunExtraPropsCreator,
   State,
   StateFunctionUpdater,
   StateSubscription
@@ -137,7 +137,8 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     }
   }
 
-  private runWithEffect(extraPropsCreator: RunExtraPropsCreator<T>, ...args: any[]): AbortFn {
+  private runWithEffect(
+    extraPropsCreator: RunExtraPropsCreator<T>, ...args: any[]): AbortFn {
 
     const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
 
@@ -326,7 +327,10 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     return clone as AsyncStateInterface<T>;
   }
 
-  replaceState(newValue: T | StateFunctionUpdater<T>, status = AsyncStateStatus.success): void {
+  replaceState(
+    newValue: T | StateFunctionUpdater<T>,
+    status = AsyncStateStatus.success
+  ): void {
     if (!StateBuilder[status]) {
       throw new Error(`Couldn't replace state to status ${status}, because it is unknown.`);
     }
