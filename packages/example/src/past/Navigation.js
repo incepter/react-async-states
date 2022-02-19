@@ -61,6 +61,12 @@ export default function Navigation() {
       <li>
         <Link to="/demo">Demo</Link>
       </li>
+      <li>
+        <Link to="/emit">Emit</Link>
+      </li>
+      <li>
+        <Link to="/broker">Broker</Link>
+      </li>
     </ul>
   );
 }

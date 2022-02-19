@@ -7,7 +7,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'React async states',
-  tagline: 'A tiny decentralized state management React library',
+  tagline: 'A multi-paradigm state management library for React',
   url: 'https://incepter.github.io',
   baseUrl: '/react-async-states/',
   onBrokenLinks: 'throw',

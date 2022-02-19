@@ -36,6 +36,9 @@ export function useAsyncStateSelector<T>(
 
   React.useEffect(onWatchedKeysChange, watchedKeys);
 
+
+  return selectedValue;
+
   function watchUnmount() {
     return function markUnmount() {
       manager.didUnmount = true;
@@ -48,6 +51,9 @@ export function useAsyncStateSelector<T>(
 
     const unwatchGlobal = contextValue.watchAll(onAsyncStateChange);
 
+    // may be this on update should only be called when we missed a notification
+    // about a pending instance change
+    onUpdate();
     return cleanup;
 
     // used to update the state selected value
@@ -114,7 +120,6 @@ export function useAsyncStateSelector<T>(
           asyncStateSubscription.cleanup = contextValue.watch(key, onAsyncStateChange);
         }
         manager.subscriptions[key] = asyncStateSubscription;
-        return;
       } else {
         const asyncState: AsyncStateInterface<any> = contextValue.get(key);
         const existing: SelectorSubscription<any> = manager.subscriptions[key];
@@ -153,8 +158,6 @@ export function useAsyncStateSelector<T>(
   function readKeys(): string[] {
     return readSelectorKeys(keys, contextValue.getAllKeys);
   }
-
-  return selectedValue;
 }
 
 function readSelectorKeys(

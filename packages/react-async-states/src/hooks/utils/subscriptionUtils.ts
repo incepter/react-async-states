@@ -3,11 +3,11 @@ import AsyncState, {
   AsyncStateInterface,
   AsyncStateKey,
   AsyncStateSource,
+  AsyncStateStatus,
   State
 } from "async-state";
 import {
   __DEV__,
-  AsyncStateStatus,
   oneObjectIdentity,
   readProducerConfigFromSubscriptionConfig,
   shallowClone,
@@ -24,6 +24,7 @@ import {
   UseAsyncStateReturnValue,
   UseAsyncStateSubscriptionInfo
 } from "../../types.internal";
+import {standaloneRunExtraPropsCreator} from "../../helpers/run-props-creator";
 
 export function inferSubscriptionMode<T, E>(
   contextValue: UseAsyncStateContextType,
@@ -226,7 +227,7 @@ export function makeUseAsyncStateReturnValue<T, E>(
     runAsyncState,
     abort: asyncState.abort.bind(asyncState),
     replaceState: asyncState.replaceState.bind(asyncState),
-    run: typeof run === "function" ? run : asyncState.run.bind(asyncState),
+    run: typeof run === "function" ? run : asyncState.run.bind(asyncState, standaloneRunExtraPropsCreator),
   });
 }
 

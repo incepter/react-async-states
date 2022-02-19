@@ -5,8 +5,9 @@ import {
   AsyncStateSource,
   ForkConfig,
   Producer,
-  ProducerConfig,
+  ProducerConfig, ProducerProps,
   ProducerRunEffects,
+  RunExtraProps, RunExtraPropsCreator,
   State,
   StateUpdater
 } from "../../async-state";
@@ -151,6 +152,8 @@ export type AsyncStateManagerInterface = {
   getAllKeys(): AsyncStateKey[],
   watchAll(cb: ManagerWatchCallback<any>),
   setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[],
+
+  runExtraPropsCreator<T>(props: ProducerProps<T>): RunExtraProps,
 }
 
 // end manager types
@@ -188,6 +191,8 @@ export type AsyncStateContextValue = {
   ): AbortFn,
   getAllKeys(): AsyncStateKey[],
   watchAll(cb: ManagerWatchCallback<any>),
+
+  runExtraPropsCreator<T>(props: ProducerProps<T>): RunExtraProps,
 }
 
 

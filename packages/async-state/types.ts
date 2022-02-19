@@ -1,3 +1,5 @@
+import {AsyncStateKeyOrSource} from "react-async-states/src";
+
 export enum AsyncStateStatus {
   error = "error",
   pending = "pending",
@@ -25,15 +27,17 @@ export type State<T> = {
 
 export type AbortFn = ((reason?: any) => void) | undefined;
 
-export type OnAbortFn = (cb: () => void) => void;
+export type OnAbortFn = (cb: ((reason?: any) => void)) => void;
 
-export type ProducerProps<T> = {
+export interface ProducerProps<T> extends RunExtraProps {
   abort: AbortFn,
   aborted: boolean,
   onAbort: OnAbortFn,
+  emit: StateUpdater<T>,
 
   args: any[],
   payload: any,
+  cleared?: boolean,
   fulfilled?: boolean,
   lastSuccess: State<T>
 }
@@ -61,7 +65,7 @@ export type StateFunctionUpdater<T> = (updater: State<T>) => T;
 
 export type StateUpdater<T> = (
   updater: T | StateFunctionUpdater<T>,
-  notify: boolean
+  status?: AsyncStateStatus
 ) => void;
 
 export type AsyncStateSource<T> = {
@@ -97,9 +101,9 @@ export interface AsyncStateInterface<T> {
   // prototype functions
   dispose: () => boolean,
   abort: (reason: any) => void,
-  run: (...args: any[]) => AbortFn,
   replaceState: StateUpdater<T>,
   setState: (newState: State<T>, notify?: boolean) => void,
+  run: (extraPropsCreator: RunExtraPropsCreator<T>, ...args: any[]) => AbortFn,
   fork: (forkConfig?: { keepState: boolean }) => AsyncStateInterface<T>,
   subscribe: (cb: Function, subscriptionKey?: AsyncStateKey) => AbortFn,
 }
@@ -116,3 +120,19 @@ export type ForkConfig = {
   keepState: boolean,
   key?: AsyncStateKey,
 }
+
+export interface RunExtraProps {
+  run: <T>(input: ProducerPropsRunInput<T>, config: ProducerPropsRunConfig | null, ...args: any[] ) => AbortFn,
+  runp: <T>(input: ProducerPropsRunInput<T>, config: ProducerPropsRunConfig | null, ...args: any[] ) => Promise<State<T>> | undefined,
+
+  select: <T>(input: AsyncStateKeyOrSource<T>) => State<T> | undefined,
+}
+
+export type RunExtraPropsCreator<T> = (props: ProducerProps<T>) => RunExtraProps;
+
+export type ProducerPropsRunInput<T> = AsyncStateKeyOrSource<T> | Producer<T>;
+
+export type ProducerPropsRunConfig = {
+  fork?: boolean,
+  payload?: { [id: string]: any } | null,
+};

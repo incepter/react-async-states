@@ -13,7 +13,7 @@ import {
 } from "shared";
 import {
   createAsyncStateEntry,
-  createInitialAsyncStatesReducer
+  createInitialAsyncStatesReducer,
 } from "./providerUtils";
 import {isAsyncStateSource} from "async-state/AsyncState";
 import {readAsyncStateFromSource} from "async-state/utils";
@@ -27,13 +27,14 @@ import {
   AsyncStateSelectorKeys,
   AsyncStateWatchKey,
   FunctionSelector,
+  InitialStates,
   ManagerHoistConfig,
   ManagerWatchCallback,
   ManagerWatchCallbackValue,
   ManagerWatchers,
-  InitialStates,
   WatcherType
 } from "../../types.internal";
+import {createRunExtraPropsCreator} from "../../helpers/run-props-creator";
 
 const listenersKey = Symbol();
 
@@ -48,13 +49,16 @@ export function AsyncStateManager(
     .values(initializer ?? EMPTY_OBJECT)
     .reduce(
       createInitialAsyncStatesReducer,
-      Object.create(null) as AsyncStateEntries
-    );
+      Object.create(null)
+    ) as AsyncStateEntries;
 
   // stores all listeners/watchers about an async state
   let watchers: ManagerWatchers = Object.create(null);
 
-  return {
+  // @ts-ignore
+  // ts is yelling at runExtraPropsCreator property which will be assigned
+  // in the next statement.
+  const output: AsyncStateManagerInterface = {
     entries: asyncStateEntries,
     run,
     get,
@@ -70,14 +74,17 @@ export function AsyncStateManager(
     notifyWatchers,
     setInitialStates
   };
+  output.runExtraPropsCreator = createRunExtraPropsCreator(output);
+
+  return output;
 
   function setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[] {
     const newInitialStates: AsyncStateEntries = Object
       .values(initialStates ?? EMPTY_OBJECT)
       .reduce(
         createInitialAsyncStatesReducer,
-        Object.create(null) as AsyncStateEntries
-      );
+        Object.create(null)
+      ) as AsyncStateEntries;
 
     // we should remove the states that were initially hoisted
     // but do no-longer exist in provider.
@@ -106,7 +113,7 @@ export function AsyncStateManager(
     asyncState: AsyncStateInterface<T>,
     ...args: any[]
   ): AbortFn {
-    return asyncState.run(...args);
+    return asyncState.run(output.runExtraPropsCreator, ...args);
   }
 
   function runAsyncState<T>(

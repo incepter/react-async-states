@@ -11,41 +11,17 @@ import {
 } from "../types.internal";
 import useProviderDevtools from "devtools/useProviderDevtools";
 
-/**
- * Provider v2
- *
- * accepts:
- * - initialStates
- * - payload
- * - children (the actual tree)
- *
- * hooks:
- * 1 x useMemo : the manager
- * 1 x useMemo [initialStates] : mutate the manager and gets dirty states
- * 1 x useEffect [stateEntries] : dispose states that are no longer used
- *
- */
-
 export function AsyncStateProvider(
   {
     children,
     payload,
-    initialStates,
-    initialAsyncStates
+    initialStates
   }: StateProviderProps) {
 
-  if (initialAsyncStates) {
-    console.log(
-      "initialAsyncStates is no longer supported in AsyncStateProvider." +
-      "Please use initialState instead."
-    );
-  }
-
   // manager per provider
-  // this manager lives with the provider
-  // the initialize function should create a mutable manager instance
+  // this manager lives with the provider and will never change
+  // the initialize function creates a mutable manager instance
   const manager = React.useMemo<AsyncStateManagerInterface>(initialize, []);
-
 
   useProviderDevtools(manager.entries);
 
@@ -53,7 +29,7 @@ export function AsyncStateProvider(
   // of items he has and the new ones
   // we need to figure out a way to un-reference these dirty states
   const dirtyStates = React
-    .useMemo<AsyncStateEntry<any>[]>(onInitialStatesChange, [initialStates]);
+    .useMemo<{ data: AsyncStateEntry<any>[] }>(onInitialStatesChange, [initialStates]);
 
   // this will serve to dispose old async states that were hoisted
   // since initialStates changed
@@ -77,14 +53,19 @@ export function AsyncStateProvider(
     return AsyncStateManager(initialStates);
   }
 
-  function onInitialStatesChange() {
-    return manager.setInitialStates(initialStates);
+  function onInitialStatesChange(): { data: AsyncStateEntry<any>[] } {
+    const output = Object.create(null);
+    output.data = manager.setInitialStates(initialStates);
+    return output;
   }
 
   function onDirtyStatesChange() {
-    for (const entry of dirtyStates) {
+    for (const entry of dirtyStates.data) {
       manager.dispose(entry.value);
     }
+    // mutating this object here means un-referencing these entries
+    // which should throw them to gc.
+    dirtyStates.data = [];
   }
 
   function onPayloadChange() {
@@ -110,6 +91,7 @@ export function AsyncStateProvider(
       getAllKeys: manager.getAllKeys,
       runAsyncState: manager.runAsyncState,
       notifyWatchers: manager.notifyWatchers,
+      runExtraPropsCreator: manager.runExtraPropsCreator,
     };
   }
 

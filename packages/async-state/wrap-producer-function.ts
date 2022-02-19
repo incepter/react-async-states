@@ -5,16 +5,15 @@ import {ProducerFunction, ProducerProps} from "./types";
 import AsyncState from "./AsyncState";
 
 export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunction<T> {
-  // this allows the developer to omit the producer attribute.
-  // and replaces state when there is no producer
-  if (typeof asyncState.originalProducer !== "function") {
-    return function delegateToReplaceState(props: ProducerProps<T>): undefined {
+  // this is the real deal
+  return function producerFuncImpl(props: ProducerProps<T>): undefined {
+    // this allows the developer to omit the producer attribute.
+    // and replaces state when there is no producer
+    if (typeof asyncState.originalProducer !== "function") {
+      props.fulfilled = true;
       asyncState.replaceState(props.args[0]);
       return; // makes ts happy
     }
-  }
-  // this is the real deal
-  return function producerFuncImpl(props: ProducerProps<T>): undefined {
     // the running promise is used to pass the status to pending and as suspender in react18+
     let runningPromise;
     // the execution value is the return of the initial producer function
@@ -27,6 +26,7 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
     }
     try {
       executionValue = asyncState.originalProducer(props);
+
     } catch (e) {
       if (__DEV__) devtools.emitRunSync(asyncState, props);
       props.fulfilled = true;
@@ -110,8 +110,20 @@ function wrapStartedGenerator(
       resolve,
       reject
     ) => {
-      const abortGenerator = stepAsyncAndContinueStartedGenerator(generatorInstance, lastGeneratorValue, resolve, reject);
-      props.onAbort(abortGenerator);
+      const abortGenerator = stepAsyncAndContinueStartedGenerator(
+        generatorInstance,
+        lastGeneratorValue,
+        resolve,
+        reject
+      );
+
+      function abortFn() {
+        if (!props.fulfilled && !props.aborted) {
+          abortGenerator();
+        }
+      }
+
+      props.onAbort(abortFn);
     });
   }
 }

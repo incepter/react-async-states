@@ -24,7 +24,14 @@ yourFunction({
 
   aborted,
   onAbort,
-  abort
+  abort,
+
+
+  run,
+  runp,
+  emit,
+  
+  select
 });
 ```
 
@@ -38,6 +45,10 @@ where:
 |`aborted`           | If the request have been cancelled (by dependency change, unmount or user action) |
 |`abort`             | Imperatively abort the producer while processing it, this may be helpful only if you are working with generators |
 |`onAbort`           | Registers a callback that will be fired when the abort is invoked (like aborting a fetch request if the user aborts or component unmounts) |
+|`run`               | runs an async state or a producer and returns the abort fn of that run|
+|`runp`              | runs an async state or a producer and returns a promise of its state |
+|`emit`              | set the state from the producer after its resolve, this to support intervals and incoming events from an external system (like ws, sse...) |
+|`select`            | returns the state of the desired async state, by key or source |
 
 We believe that these properties will solve all sort of possible use cases, in fact, your function will run while having
 access to payload from the render, from either the provider and subscription, and can be merged imperatively anytime
@@ -129,3 +140,133 @@ The supported configuration is:
 |`initialValue`        |`T`                                       | The initial value or the initializer of the state (status = `initial`) |
 |`runEffect`           |`oneOf('debounce', 'throttle', undefined)`| An effect to apply when running the producer, can be used to debounce or throttle |
 |`runEffectDurationMs` |`number > 0`, `undefined`                 | The debounce/throttle duration |
+
+
+### Run from producer
+The producer function may select a state or run another async state, and either
+care about its resolve value or not (same applies for the abort fn).
+
+This open us new horizons for the library as you can combine these features
+for a more control in your app. 
+
+#### props.run
+Signature:
+
+```typescript
+run: <T>(input: ProducerPropsRunInput<T>, config: ProducerPropsRunConfig | null, ...args: any[] ) => AbortFn
+```
+
+Where:
+- `ProducerPropsRunInput` may be a string (if inside provider), a source object,
+ or a producer.
+- `ProducerPropsRunConfig` a configuration object containing `payload` and `fork`
+properties. The `payload` is only relevant (for now) when passing a producer function
+, and the `fork` is only relevant working with source or by a string key.
+- `...args`, the `props.args` of the resulting running producer.
+
+The `props.run` function returns its `AbortFn`, so you can register it (if you care)
+in `props.onAbort(props.run(...))`.
+
+:::note
+Running an async state by key or source will result in an update to all its
+subscribers.
+:::
+
+
+#### props.runp
+
+Signature:
+
+```typescript
+runp: <T>(input: ProducerPropsRunInput<T>, config: ProducerPropsRunConfig | null, ...args: any[] ) => Promise<State<T>> | undefined
+```
+
+The `runp` function takes the same parameters as the `run`, but returns a promise
+to the resulting state.
+
+```javascript
+async function weatherProducer(props) {
+  const location = await props.runp(fetchCurrentLocationProducer);
+  const weather = await props.runp(fetchWeather, null, location.data);
+  props.run(sendUsageDataProducer, {weather, location}); // <- props.run
+  return {weather, location};
+}
+
+```
+
+#### props.emit
+
+The emit function changes the state from the producer, but only works after the
+producer resolves (or else you get a warning, without effect).
+
+It was built to support subscriptions from the producer, to websocket, a worker....
+
+Its signature is the same as useAsyncState's `replaceState`. It changes the state
+instantly and imperatively to the desired value.
+
+Signature:
+
+```typescript
+emit: (updater: T | StateFunctionUpdater<T>, status: AsyncStateStatus) => void
+```
+
+This feature allows the following easily:
+
+```javascript
+// this is a producer that updates each second
+// Why adding an onAbort even if the producer itself is synchronous ?
+// The abort functions are garanteed to be run, if it is aborted, or the next time you run
+// or when you call abort directly
+function intervalProducer(props) {
+  let intervalId = setInterval(() => props.emit(old => old.data + 1), 1000);
+  props.onAbort(() => clearInterval(intervalId));
+  return props.args[0] ?? 0;
+}
+```
+
+And this is what it takes to implement a websocket gateway in your client application
+
+```javascript
+function brokerProducer(props) {
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket("ws://localhost:9091");
+    ws.addEventListener("error", (message) => {
+      reject({connected: false, error: message}); // <- first fulfillement with a rejection
+    });
+    ws.addEventListener("open", () => {
+      resolve({ws, connected: true}); // <- first resolve, props.emit doesn't work until this is called
+    });
+    ws.addEventListener("close", message => {
+      props.emit(message, "error"); // <- transition to error state 
+    });
+    ws.addEventListener("message", (message) => {
+      const jsonData = JSON.parse(message.data);
+      const {to} = jsonData;
+      if (to) {
+        props.run(to, null, jsonData); // run another producer with the received message
+      }
+    });
+    props.onAbort(() => ws.close());
+  });
+}
+```
+
+#### props.select
+Signature:
+
+```typescript
+select: <T>(input: AsyncStateKeyOrSource<T>) => State<T> | undefined
+```
+
+Simply decodes your source object, or retrieves your async state from the provider
+(if inside any) and gives you its actual state, a pure read mode, no subscription.
+
+:::note
+The props runners scope is cascaded:
+
+- If you run a producer from inside an async state provider,
+`props.run|runp|select` will also be able to select from the provider,
+- and all cascading calls will be granted the same power.
+- If you run from outside the context provider, your producers will only be able
+to run a source object or a bare producer function.
+:::

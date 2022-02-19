@@ -3,12 +3,13 @@ import {
   cloneProducerProps,
   invokeIfPresent,
   numberOrZero,
-  shallowClone
+  shallowClone,
+  warning
 } from "shared";
 import {wrapProducerFunction} from "./wrap-producer-function";
 import {
-  StateBuilder,
   constructAsyncStateSource,
+  StateBuilder,
   warnDevAboutAsyncStateKey
 } from "./utils";
 import devtools from "devtools";
@@ -18,16 +19,17 @@ import {
   AsyncStateInterface,
   AsyncStateKey,
   AsyncStateSource,
-  StateFunctionUpdater,
   AsyncStateStatus,
-  StateSubscription,
   ForkConfig,
   Producer,
   ProducerConfig,
   ProducerFunction,
   ProducerProps,
   ProducerRunEffects,
-  State
+  RunExtraPropsCreator,
+  State,
+  StateFunctionUpdater,
+  StateSubscription
 } from "./types";
 
 export default class AsyncState<T> implements AsyncStateInterface<T> {
@@ -97,7 +99,6 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
     if (this.currentState.status !== AsyncStateStatus.pending) {
       this.suspender = undefined;
-      this.currentAborter = undefined;
     }
     if (__DEV__) devtools.emitUpdate(this);
 
@@ -126,17 +127,19 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     return true;
   }
 
-  run(...args: any[]) {
+  run(extraPropsCreator: RunExtraPropsCreator<T>, ...args: any[]) {
     const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
 
     if (!areRunEffectsSupported() || !this.config.runEffect || effectDurationMs === 0) {
-      return this.runImmediately(...args);
+      return this.runImmediately(extraPropsCreator, ...args);
     } else {
-      return this.runWithEffect(...args);
+      return this.runWithEffect(extraPropsCreator, ...args);
     }
   }
 
-  private runWithEffect(...args: any[]): AbortFn {
+  private runWithEffect(
+    extraPropsCreator: RunExtraPropsCreator<T>, ...args: any[]): AbortFn {
+
     const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
 
     const that = this;
@@ -149,7 +152,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
         const timeoutId = setTimeout(function realRun() {
           that.pendingTimeout = null;
-          runAbortCallback = that.runImmediately(...args);
+          runAbortCallback = that.runImmediately(extraPropsCreator, ...args);
         }, effectDurationMs);
 
         that.pendingTimeout = {
@@ -195,20 +198,30 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
         }
       }
     }
-    return this.runImmediately(...args);
+    return this.runImmediately(extraPropsCreator, ...args);
   }
 
-  private runImmediately(...execArgs: any[]): AbortFn {
+  private runImmediately(
+    extraPropsCreator: RunExtraPropsCreator<T>,
+    ...execArgs: any[]
+  ): AbortFn {
     if (this.currentState.status === AsyncStateStatus.pending) {
       this.abort();
       this.currentAborter = undefined;
+    } else if (typeof this.currentAborter === "function") {
+      this.abort();
     }
 
     const that = this;
 
     let onAbortCallbacks: AbortFn[] = [];
 
+    // @ts-ignore
+    // ts yelling to add a run, runp and select functions
+    // but run and runp will require access to this props object,
+    // so they are constructed later, and appended to the same object.
     const props: ProducerProps<T> = {
+      emit,
       abort,
       args: execArgs,
       aborted: false,
@@ -218,16 +231,39 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
         if (typeof cb === "function") {
           onAbortCallbacks.push(cb);
         }
-      }
+      },
     };
+    Object.assign(props, extraPropsCreator(props));
 
-    function abort(reason: any): AbortFn | undefined {
-      if (props.aborted || props.fulfilled) {
-        // already aborted or fulfilled in this closure!!!
+    function emit(
+      updater: T | StateFunctionUpdater<T>,
+      status: AsyncStateStatus
+    ): void {
+      if (props.cleared && that.currentState.status === AsyncStateStatus.aborted) {
+        warning("You are emitting while your producer is passing to aborted state." +
+          "This has no effect and not supported by the library. The next " +
+          "state value on aborted state is the reason of the abort.");
         return;
       }
-      props.aborted = true;
-      that.setState(StateBuilder.aborted(reason, cloneProducerProps(props)));
+      if (!props.fulfilled) {
+        warning("Called props.emit before the producer resolves. This is" +
+          " not supported in the library and will have no effect");
+        return;
+      }
+      that.replaceState(updater, status);
+    }
+
+    function abort(reason: any): AbortFn | undefined {
+      if (props.aborted || props.cleared) {
+        return;
+      }
+
+      if (!props.fulfilled) {
+        props.aborted = true;
+        that.setState(StateBuilder.aborted(reason, cloneProducerProps(props)));
+      }
+
+      props.cleared = true;
       onAbortCallbacks.forEach(function clean(func) {
         invokeIfPresent(func, reason);
       });
@@ -291,7 +327,13 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     return clone as AsyncStateInterface<T>;
   }
 
-  replaceState(newValue: T | StateFunctionUpdater<T>): void {
+  replaceState(
+    newValue: T | StateFunctionUpdater<T>,
+    status = AsyncStateStatus.success
+  ): void {
+    if (!StateBuilder[status]) {
+      throw new Error(`Couldn't replace state to status ${status}, because it is unknown.`);
+    }
     if (this.currentState.status === AsyncStateStatus.pending) {
       this.abort();
       this.currentAborter = undefined;
@@ -302,6 +344,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       effectiveValue = (newValue as StateFunctionUpdater<T>)(this.currentState);
     }
 
+
     if (__DEV__) devtools.emitReplaceState(this);
     // @ts-ignore
     const savedProps = cloneProducerProps({
@@ -309,7 +352,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       lastSuccess: this.lastSuccess,
       payload: shallowClone(this.payload),
     });
-    this.setState(StateBuilder.success(effectiveValue, savedProps));
+    this.setState(StateBuilder[status](effectiveValue, savedProps));
   }
 }
 
