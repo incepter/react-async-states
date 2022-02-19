@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "author": "incepter",
   "sideEffects": false,
-  "version": "0.1.0-beta-14",
+  "version": "0.1.1-beta-1",
   "name": "react-async-states",
   "repository": "incepter/react-async-states",
   "description": "A hooks-based lightweight React library for state management",

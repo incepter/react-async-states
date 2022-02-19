@@ -7,7 +7,7 @@ import {
   makeUseAsyncStateReturnValue,
   shouldRecalculateInstance
 } from "./utils/subscriptionUtils";
-import {nextKey, readUserConfiguration} from "./utils/readConfig";
+import {readUserConfiguration} from "./utils/readConfig";
 import {
   disposeAsyncStateSubscriptionFn,
   runAsyncStateSubscriptionFn
@@ -27,6 +27,7 @@ import {
   AsyncStateSource,
   State
 } from "../../../async-state";
+import {nextKey} from "./utils/key-gen";
 
 const defaultDependencies = [];
 
