@@ -66,17 +66,35 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
     [guard, ...dependencies]
   );
 
-  if (memoizedRef.subscriptionInfo !== subscriptionInfo) {
-    memoizedRef.subscriptionInfo = subscriptionInfo;
-  }
-
   const {run, mode, asyncState, configuration, dispose} = subscriptionInfo;
   const {selector, areEqual} = configuration;
+
 
   // declare a state snapshot initialized by the initial selected value
   // useState
   const [selectedValue, setSelectedValue] = React
     .useState<Readonly<UseAsyncStateReturnValue<T, E>>>(initialize);
+
+  if (memoizedRef.subscriptionInfo !== subscriptionInfo) {
+    if (asyncState && asyncState !== memoizedRef?.subscriptionInfo?.asyncState) {
+      const newState = readStateFromAsyncState(asyncState, selector);
+
+      setSelectedValue(old => {
+        return areEqual(old.state, newState)
+          ? old
+          :
+          makeUseAsyncStateReturnValue(
+            asyncState,
+            newState,
+            configuration.key as AsyncStateKey,
+            run,
+            runAsyncState,
+            mode
+          )
+      });
+    }
+    memoizedRef.subscriptionInfo = subscriptionInfo;
+  }
 
   // subscribe to async state
   // useEffect: [asyncState, selector, areEqual]
@@ -84,7 +102,6 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
 
   // run automatically, if necessary
   // useEffect: [...dependencies]
-
   React.useEffect(autoRunAsyncState, dependencies);
 
   // dispose
