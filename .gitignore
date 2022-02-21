@@ -11,3 +11,5 @@ npm-debug.log
 .idea
 
 package-lock.json
+
+__tests__/async-state

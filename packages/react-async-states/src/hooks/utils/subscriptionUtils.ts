@@ -186,7 +186,7 @@ export function applyWaitingReturnValue<T, E>(
 
 export function makeUseAsyncStateReturnValue<T, E>(
   asyncState: AsyncStateInterface<T>,
-  stateValue: E | undefined,
+  stateValue: E,
   configurationKey: AsyncStateKey,
   run: (...args: any[]) => AbortFn,
   runAsyncState: (<F>(
@@ -204,6 +204,19 @@ export function makeUseAsyncStateReturnValue<T, E>(
       state: stateValue as E,
 
       runAsyncState,
+      abort() {
+      },
+      run(...args: any[]): AbortFn {
+        return undefined;
+      },
+      read() {
+        return stateValue;
+      },
+      replaceState() {
+      },
+      mergePayload() {
+      },
+      payload: {},
     });
   }
 

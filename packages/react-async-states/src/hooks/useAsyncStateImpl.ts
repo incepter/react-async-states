@@ -29,7 +29,7 @@ import {
 } from "../../../async-state";
 import {nextKey} from "./utils/key-gen";
 
-const defaultDependencies = [];
+const defaultDependencies: any[] = [];
 
 // 2 x useMemo
 // 1 x useContext
@@ -128,7 +128,7 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
   function initialize(): Readonly<UseAsyncStateReturnValue<T, E>> {
     return makeUseAsyncStateReturnValue(
       asyncState,
-      asyncState ? readStateFromAsyncState(asyncState, selector) : undefined,
+      (asyncState ? readStateFromAsyncState(asyncState, selector) : undefined) as E,
       configuration.key as AsyncStateKey,
       run,
       runAsyncState,

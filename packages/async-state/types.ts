@@ -104,7 +104,7 @@ export interface AsyncStateInterface<T> {
   replaceState: StateUpdater<T>,
   setState: (newState: State<T>, notify?: boolean) => void,
   run: (extraPropsCreator: RunExtraPropsCreator<T>, ...args: any[]) => AbortFn,
-  fork: (forkConfig?: { keepState: boolean }) => AsyncStateInterface<T>,
+  fork: (forkConfig?: ForkConfig) => AsyncStateInterface<T>,
   subscribe: (cb: Function, subscriptionKey?: AsyncStateKey) => AbortFn,
 }
 
@@ -117,8 +117,8 @@ export interface StateBuilderInterface {
 }
 
 export type ForkConfig = {
-  keepState: boolean,
   key?: AsyncStateKey,
+  keepState?: boolean,
 }
 
 export interface RunExtraProps {

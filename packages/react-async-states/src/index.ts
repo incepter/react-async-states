@@ -1,4 +1,4 @@
-export {AsyncStateStatus} from "./types";
+export type {AsyncStateStatus} from "./types";
 export {useAsyncState} from "./hooks/useAsyncState";
 export {useRunAsyncState} from "./hooks/useRunAsyncState";
 export {createSource} from "./helpers/create-async-state";

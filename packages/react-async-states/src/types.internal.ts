@@ -200,21 +200,21 @@ export type AsyncStateContextValue = {
 
 export type UseAsyncStateReturnValue<T, E> = {
   state: E,
-  key?: AsyncStateKey,
+  key: AsyncStateKey,
 
   source?: AsyncStateSource<T>,
   mode: AsyncStateSubscriptionMode,
   lastSuccess?: State<T>,
 
-  payload?: { [id: string]: any } | null,
+  payload: { [id: string]: any } | null,
 
 
-  abort?: AbortFn,
-  run?: (...args: any[]) => AbortFn,
-  replaceState?: StateUpdater<T>,
+  abort: AbortFn,
+  run: (...args: any[]) => AbortFn,
+  replaceState: StateUpdater<T>,
   mergePayload?: (argv: { [id: string]: any }) => void,
 
-  read?: () => E,
+  read: () => E,
   runAsyncState?: <D>(
     key: AsyncStateKeyOrSource<D>,
     ...args: any[]
@@ -299,7 +299,8 @@ export type ExtendedUseAsyncStateConfiguration<T, E> =
   string
   | Producer<T>
   | AsyncStateSource<T>
-  | UseAsyncStateConfiguration<T, E>;
+  | UseAsyncStateConfiguration<T, E>
+  | Partial<UseAsyncStateConfiguration<T, E>>;
 
 export type InitialStatesObject = { [id: string]: ExtendedInitialAsyncState<any> };
 

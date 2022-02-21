@@ -1,4 +1,4 @@
-export {
+export type {
   Producer,
   ForkConfig,
   ProducerConfig,
@@ -7,7 +7,7 @@ export {
   ProducerRunEffects,
 } from "../../async-state/types";
 
-export {
+export type {
   InitialStates,
   InitialStatesObject,
 

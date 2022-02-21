@@ -237,7 +237,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
     function emit(
       updater: T | StateFunctionUpdater<T>,
-      status: AsyncStateStatus
+      status?: AsyncStateStatus
     ): void {
       if (props.cleared && that.currentState.status === AsyncStateStatus.aborted) {
         warning("You are emitting while your producer is passing to aborted state." +
@@ -305,7 +305,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     return cleanup;
   }
 
-  fork(forkConfig?: { keepState: boolean, key: AsyncStateKey }) {
+  fork(forkConfig?: ForkConfig) {
     const mergedConfig: ForkConfig = shallowClone(defaultForkConfig, forkConfig);
 
     let {key} = mergedConfig;

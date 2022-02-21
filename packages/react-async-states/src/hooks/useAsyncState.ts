@@ -19,7 +19,7 @@ import {
 // default
 function useAsyncStateExport<T, E>(
   subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
-  dependencies: any[]
+  dependencies?: any[]
 ): UseAsyncStateReturnValue<T, E> {
   return useAsyncStateImpl(
     subscriptionConfig,
@@ -244,5 +244,5 @@ useAsyncStateExport.builder = BuilderImpl;
 
 export const useAsyncState: <T, E>(
   subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
-  dependencies: readonly any[]
+  dependencies?: any[]
 ) => UseAsyncStateReturnValue<T, E> = Object.freeze(useAsyncStateExport);
