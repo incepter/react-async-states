@@ -131,7 +131,7 @@ The following properties are needed when declaring a production function, either
 |----------------|---------------------|-------------------------|
 |`key`           |`string`             | The unique identifier of the async state |
 |`producer`      |`producer function`  | Returns the state value of type `T` |
-|`configuration` |`AsyncStateConfig`   | The argument object that the producer was ran with |
+|`configuration` |`ProducerProps`      | The argument object that the producer was ran with |
 
 The supported configuration is:
 

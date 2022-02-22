@@ -15,7 +15,7 @@ import {
 import {
   AsyncStateSubscriptionMode,
   CleanupFn,
-  ExtendedUseAsyncStateConfiguration,
+  UseAsyncStateConfig,
   MemoizedUseAsyncStateRef,
   PartialUseAsyncStateConfiguration,
   UseSelectedAsyncState,
@@ -37,7 +37,7 @@ const defaultDependencies: any[] = [];
 // 3 x useEffect
 // 1 x useEffect (inside provider)
 export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
-  subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+  subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies: any[] = defaultDependencies,
   configOverrides?: PartialUseAsyncStateConfiguration<T, E>,
 ): UseSelectedAsyncState<T, E> {

@@ -25,4 +25,5 @@ export type {
 
   InitialAsyncState,
   AsyncStateInitializer,
+  UseSimpleAsyncStateConfig,
 } from "./types.internal";

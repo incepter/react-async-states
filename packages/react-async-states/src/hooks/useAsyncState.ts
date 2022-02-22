@@ -2,7 +2,7 @@ import {oneObjectIdentity, shallowClone, shallowEqual} from "../../../shared";
 import {useAsyncStateImpl} from "./useAsyncStateImpl";
 import {
   EqualityFn,
-  ExtendedUseAsyncStateConfiguration,
+  UseAsyncStateConfig,
   HoistToProviderConfig,
   PartialUseAsyncStateConfiguration,
   UseSelectedAsyncState
@@ -18,7 +18,7 @@ import {
 
 // default
 function useAsyncStateExport<T, E>(
-  subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+  subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
 ): UseSelectedAsyncState<T, E> {
   return useAsyncStateImpl(
@@ -31,7 +31,7 @@ function useAsyncStateExport<T, E>(
 const autoConfigOverrides = Object.freeze({lazy: false});
 
 function useAutoAsyncState<T, E>(
-  subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+  subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies: any[]
 ): UseSelectedAsyncState<T, E> {
   return useAsyncStateImpl(
@@ -45,7 +45,7 @@ function useAutoAsyncState<T, E>(
 const lazyConfigOverrides = Object.freeze({lazy: true});
 
 function useLazyAsyncState<T, E>(
-  subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+  subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies: any[]
 ): UseSelectedAsyncState<T, E> {
   return useAsyncStateImpl(
@@ -59,7 +59,7 @@ function useLazyAsyncState<T, E>(
 const forkConfigOverrides = Object.freeze({fork: true});
 
 function useForkAsyncState<T, E>(
-  subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+  subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies: any[]
 ): UseSelectedAsyncState<T, E> {
   return useAsyncStateImpl(
@@ -73,7 +73,7 @@ function useForkAsyncState<T, E>(
 const forkAutoConfigOverrides = Object.freeze({fork: true, lazy: false});
 
 function useForkAutoAsyncState<T, E>(
-  subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+  subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies: any[]
 ): UseSelectedAsyncState<T, E> {
   return useAsyncStateImpl(
@@ -87,7 +87,7 @@ function useForkAutoAsyncState<T, E>(
 const hoistConfigOverrides = Object.freeze({hoistToProvider: true});
 
 function useHoistAsyncState<T, E>(
-  subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+  subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies: any[]
 ): UseSelectedAsyncState<T, E> {
   return useAsyncStateImpl(
@@ -104,7 +104,7 @@ const hoistAutoConfigOverrides = Object.freeze({
 });
 
 function useHoistAutoAsyncState<T, E>(
-  subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+  subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies: any[]
 ): UseSelectedAsyncState<T, E> {
   return useAsyncStateImpl(
@@ -186,7 +186,7 @@ type Builder<T, E> = {
   areEqual: (areEqual: EqualityFn<E>) => Builder<T, E>,
 
   build: (
-    subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+    subscriptionConfig: UseAsyncStateConfig<T, E>,
     dependencies: any[]
   ) => UseSelectedAsyncState<T, E>
 }
@@ -201,7 +201,7 @@ function BuilderImpl<T, E>(): Builder<T, E> {
   }
 
   function build(
-    subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+    subscriptionConfig: UseAsyncStateConfig<T, E>,
     dependencies: any[]
   ) {
     return useAsyncStateImpl(subscriptionConfig, dependencies, overrides);
@@ -243,6 +243,6 @@ useAsyncStateExport.condition = curryProperty(conditionArgsToOverrides);
 useAsyncStateExport.builder = BuilderImpl;
 
 export const useAsyncState: <T, E>(
-  subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+  subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
 ) => UseSelectedAsyncState<T, E> = Object.freeze(useAsyncStateExport);

@@ -5,10 +5,11 @@ import {
   UseSelectedAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../hooks/useAsyncState";
-import {AsyncStateStatus, State} from "../../../../../../../async-state";
+import {AsyncStateStatus} from "../../../../../../../async-state";
 
 describe('should subscribe -- sync', () => {
-  it('should subscribe and get initial value, increment and decrement sync via run and replace state', async () => {
+  it('should subscribe and get initial value, ' +
+    'increment and decrement sync via run and replace state', async () => {
     // given
     function Component() {
       const {
@@ -138,7 +139,7 @@ describe('should subscribe -- async', () => {
     expect(screen.getByTestId("result").innerHTML).toEqual("");
     expect(screen.getByTestId("pending").innerHTML).toEqual(pendingText);
 
-    await act(async () =>{
+    await act(async () => {
       await jest.advanceTimersByTime(100);
     });
 

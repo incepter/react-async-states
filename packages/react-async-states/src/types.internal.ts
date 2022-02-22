@@ -297,12 +297,14 @@ export type UseAsyncStateRefsFactory<T, E> = {
 
 export type UseAsyncStateContextType = AsyncStateContextValue | null;
 
-export type ExtendedUseAsyncStateConfiguration<T, E> =
+export type UseAsyncStateConfig<T, E> =
   string
   | Producer<T>
   | AsyncStateSource<T>
   | UseAsyncStateConfiguration<T, E>
   | Partial<UseAsyncStateConfiguration<T, E>>;
+
+export type UseSimpleAsyncStateConfig<T> = UseAsyncStateConfig<T, State<T>>;
 
 export type InitialStatesObject = { [id: string]: ExtendedInitialAsyncState<any> };
 
