@@ -1,6 +1,10 @@
 import * as React from "react";
-import {UseAsyncStateConfig} from "../../../types.internal";
+import {
+  UseAsyncStateConfig,
+  UseSelectedAsyncState, UseSimpleAsyncStateConfig
+} from "../../../types.internal";
 import {useAsyncState} from "../../../hooks/useAsyncState";
+import {State} from "../../../../../async-state";
 
 const defaultDeps = [];
 
@@ -10,9 +14,9 @@ export default function AsyncStateComponent<T, E>({
   dependencies = defaultDeps
 }: {
   config: UseAsyncStateConfig<T, E>,
-  children: React.ReactNode,
+  children: (props: UseSelectedAsyncState<T, E>) => React.ReactNode,
   dependencies?: any[],
-}): React.ReactNode {
+}): any {
   if (typeof children !== "function") {
     throw new Error("AsyncStateComponent supports only render props.");
   }

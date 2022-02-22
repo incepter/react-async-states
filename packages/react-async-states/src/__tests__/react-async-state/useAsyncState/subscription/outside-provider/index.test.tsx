@@ -91,8 +91,7 @@ describe('should subscribe -- async', () => {
     function Component() {
       const {
         state: {status, data},
-        run,
-        replaceState
+        run
       }: UseAsyncState<number> = useAsyncState({
         producer(props): Promise<number> {
           return new Promise<number>((resolve => {

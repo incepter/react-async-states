@@ -1,8 +1,9 @@
 import * as React from "react";
-import {act, fireEvent, render, screen} from "@testing-library/react";
+import {fireEvent, render, screen} from "@testing-library/react";
 import {createSource} from "../../../../../helpers/create-async-state";
 import {UseAsyncState} from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../hooks/useAsyncState";
+import AsyncStateComponent from "../../../utils/AsyncStateComponent";
 
 describe('should subscribe to a module level source object', () => {
   it('should share state by source between two components', () => {
@@ -12,12 +13,6 @@ describe('should subscribe to a module level source object', () => {
       null,
       {initialValue: 0}
     );
-
-    function Component({source, alias}) {
-      const {state}: UseAsyncState<number> = useAsyncState(source);
-
-      return <span data-testid={`count-${alias}`}>{state.data}</span>;
-    }
 
     function Controls() {
       const {run}: UseAsyncState<number> = useAsyncState(source);
@@ -38,19 +33,27 @@ describe('should subscribe to a module level source object', () => {
       return (
         <>
           <Controls/>
-          <Component source={source} alias="a"/>
-          <Component source={source} alias="b"/>
+          <AsyncStateComponent config={source}>
+            {({state}: UseAsyncState<number>) => (
+              <span data-testid="count-a">{state.data}</span>
+            )}
+          </AsyncStateComponent>
+          <AsyncStateComponent config={source}>
+            {({state}: UseAsyncState<number>) => (
+              <span data-testid="count-b">{state.data}</span>
+            )}
+          </AsyncStateComponent>
         </>
       );
     }
 
     // when
     jest.useFakeTimers();
-    render(<Test />);
+    render(<Test/>);
     const incrementBtn = screen.getByTestId("increment");
     const decrementBtn = screen.getByTestId("decrement");
-    // then
 
+    // then
     expect(screen.getByTestId("count-a").innerHTML).toEqual("0");
     expect(screen.getByTestId("count-b").innerHTML).toEqual("0");
 
@@ -65,5 +68,66 @@ describe('should subscribe to a module level source object', () => {
 
     expect(screen.getByTestId("count-a").innerHTML).toEqual("0");
     expect(screen.getByTestId("count-b").innerHTML).toEqual("0");
+  });
+  it('should fork a source async state', () => {
+    // given
+    const source = createSource<number>(
+      "counter",
+      null,
+      {initialValue: 0}
+    );
+
+    function Test() {
+      return (
+        <>
+          <AsyncStateComponent config={source}>
+            {({state, run}: UseAsyncState<number>) => (
+              <>
+                <button
+                  data-testid="increment-a"
+                  onClick={() => run(old => old.data + 1)}
+                >
+                  increment b
+                </button>
+                <span data-testid="count-a">{state.data}</span>
+              </>
+            )}
+          </AsyncStateComponent>
+          <AsyncStateComponent config={{source, fork: true}}>
+            {({state, run}: UseAsyncState<number>) => (
+              <>
+                <button
+                  data-testid="increment-b"
+                  onClick={() => run(old => old.data + 1)}
+                >
+                  increment b
+                </button>
+                <span data-testid="count-b">{state.data}</span>
+              </>
+            )}
+          </AsyncStateComponent>
+        </>
+      );
+    }
+
+    // when
+    jest.useFakeTimers();
+    render(<Test/>);
+    const incrementABtn = screen.getByTestId("increment-a");
+    const incrementBBtn = screen.getByTestId("increment-b");
+
+    // then
+    expect(screen.getByTestId("count-a").innerHTML).toEqual("0");
+    expect(screen.getByTestId("count-b").innerHTML).toEqual("0");
+
+    fireEvent.click(incrementABtn);
+
+    expect(screen.getByTestId("count-a").innerHTML).toEqual("1");
+    expect(screen.getByTestId("count-b").innerHTML).toEqual("0");
+
+    fireEvent.click(incrementBBtn);
+
+    expect(screen.getByTestId("count-a").innerHTML).toEqual("1");
+    expect(screen.getByTestId("count-b").innerHTML).toEqual("1");
   });
 });
