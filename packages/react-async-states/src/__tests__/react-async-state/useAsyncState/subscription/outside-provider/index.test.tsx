@@ -16,7 +16,7 @@ describe('should subscribe -- sync', () => {
         run,
         replaceState
       }: UseSelectedAsyncState<number, number> = useAsyncState({
-        producer(props): number {
+        producer(props) {
           return props.args[0];
         },
         initialValue: 0,

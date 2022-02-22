@@ -59,14 +59,14 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   constructor(
     key: AsyncStateKey,
-    producer: Producer<T> | undefined,
-    config: ProducerConfig<T>
+    producer: Producer<T> | undefined | null,
+    config?: ProducerConfig<T>
   ) {
     warnDevAboutAsyncStateKey(key);
 
     this.key = key;
     this.config = shallowClone(config);
-    this.originalProducer = producer;
+    this.originalProducer = producer ?? undefined;
 
     const initialValue = typeof this.config.initialValue === "function" ? this.config.initialValue() : this.config.initialValue;
     this.currentState = StateBuilder.initial(initialValue);

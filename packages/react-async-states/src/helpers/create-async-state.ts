@@ -7,8 +7,8 @@ import AsyncState, {
 
 export const createSource = function createSource<T>(
   key: AsyncStateKey,
-  producer: Producer<T>,
-  config: ProducerConfig<T>
+  producer?: Producer<T> | undefined | null,
+  config?: ProducerConfig<T>
 ): AsyncStateSource<T> {
   return new AsyncState(
     key,
