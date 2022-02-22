@@ -198,7 +198,7 @@ export type AsyncStateContextValue = {
 
 // use async state
 
-export type UseAsyncStateReturnValue<T, E> = {
+export type UseSelectedAsyncState<T, E> = {
   state: E,
   key: AsyncStateKey,
 
@@ -220,6 +220,8 @@ export type UseAsyncStateReturnValue<T, E> = {
     ...args: any[]
   ) => AbortFn,
 }
+
+export type UseAsyncState<T> = UseSelectedAsyncState<T, State<T>>
 
 export type EqualityFn<T> = (
   prev: T,
@@ -289,7 +291,7 @@ export type UseAsyncStateSubscriptionInfo<T, E> = {
 }
 
 export type UseAsyncStateRefsFactory<T, E> = {
-  returnValue?: UseAsyncStateReturnValue<T, E>,
+  returnValue?: UseSelectedAsyncState<T, E>,
   subscriptionInfo?: UseAsyncStateSubscriptionInfo<T, E>
 };
 

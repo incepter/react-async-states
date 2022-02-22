@@ -12,7 +12,8 @@ export type {
   InitialStatesObject,
 
   EqualityFn,
-  UseAsyncStateReturnValue,
+  UseAsyncState,
+  UseSelectedAsyncState,
   ExtendedInitialAsyncState,
   UseAsyncStateConfiguration,
 

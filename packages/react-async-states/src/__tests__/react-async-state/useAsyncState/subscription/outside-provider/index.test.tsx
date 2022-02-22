@@ -1,6 +1,9 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
-import {UseAsyncStateReturnValue} from "../../../../../types.internal";
+import {
+  UseAsyncState,
+  UseSelectedAsyncState
+} from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../hooks/useAsyncState";
 import {AsyncStateStatus, State} from "../../../../../../../async-state";
 
@@ -12,7 +15,7 @@ describe('should subscribe -- sync', () => {
         state,
         run,
         replaceState
-      }: UseAsyncStateReturnValue<number, number> = useAsyncState({
+      }: UseSelectedAsyncState<number, number> = useAsyncState({
         producer(props): number {
           return props.args[0];
         },
@@ -89,7 +92,7 @@ describe('should subscribe -- async', () => {
         state: {status, data},
         run,
         replaceState
-      }: UseAsyncStateReturnValue<number, State<number>> = useAsyncState({
+      }: UseAsyncState<number> = useAsyncState({
         producer(props): Promise<number> {
           return new Promise<number>((resolve => {
             let id = setTimeout(() => resolve(props.args[0]), 100);

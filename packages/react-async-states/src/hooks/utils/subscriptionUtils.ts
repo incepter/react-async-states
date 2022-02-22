@@ -21,7 +21,7 @@ import {
   AsyncStateSubscriptionMode,
   UseAsyncStateConfiguration,
   UseAsyncStateContextType,
-  UseAsyncStateReturnValue,
+  UseSelectedAsyncState,
   UseAsyncStateSubscriptionInfo
 } from "../../types.internal";
 import {standaloneRunExtraPropsCreator} from "../../helpers/run-props-creator";
@@ -168,7 +168,7 @@ export function calculateSelectedState<T, E>(
 let didWarnAboutUnsupportedConcurrentFeatures = false;
 
 export function applyWaitingReturnValue<T, E>(
-  returnValue: UseAsyncStateReturnValue<T, E>,
+  returnValue: UseSelectedAsyncState<T, E>,
   key: AsyncStateKey,
   runAsyncState: (<F>(
     key: AsyncStateKeyOrSource<F>,
@@ -194,7 +194,7 @@ export function makeUseAsyncStateReturnValue<T, E>(
     ...args: any[]
   ) => AbortFn) | undefined,
   mode: AsyncStateSubscriptionMode
-): Readonly<UseAsyncStateReturnValue<T, E>> {
+): Readonly<UseSelectedAsyncState<T, E>> {
 
   if (!asyncState) {
     return Object.freeze({
