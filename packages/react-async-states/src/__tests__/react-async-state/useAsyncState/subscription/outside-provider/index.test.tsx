@@ -7,14 +7,14 @@ import {
 import {useAsyncState} from "../../../../../hooks/useAsyncState";
 import {AsyncStateStatus} from "../../../../../../../async-state";
 
-describe('should subscribe -- sync', () => {
-  it('should subscribe and get initial value, ' +
+describe('should do basic subscription to an async state', () => {
+  it('should subscribe and get initial value -- sync ' +
     'increment and decrement sync via run and replace state', async () => {
     // given
     function Component() {
       const {
-        state,
         run,
+        state,
         replaceState
       }: UseSelectedAsyncState<number, number> = useAsyncState({
         producer(props) {
@@ -81,9 +81,7 @@ describe('should subscribe -- sync', () => {
     fireEvent.click(decrementRBtn);
     expect(screen.getByTestId("result").innerHTML).toEqual("0");
   });
-});
 
-describe('should subscribe -- async', () => {
   it('should subscribe and get initial value, and perform async call', async () => {
     // given
     const pendingText = "loading...";

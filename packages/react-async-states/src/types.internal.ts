@@ -315,7 +315,6 @@ export type StateProviderProps = {
   children: any,
   initialStates?: InitialStates,
   payload?: { [id: string]: any },
-  initialAsyncStates?: InitialStates,
 }
 
 export type CleanupFn = AbortFn

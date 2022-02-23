@@ -167,23 +167,6 @@ export function calculateSelectedState<T, E>(
 
 let didWarnAboutUnsupportedConcurrentFeatures = false;
 
-export function applyWaitingReturnValue<T, E>(
-  returnValue: UseSelectedAsyncState<T, E>,
-  key: AsyncStateKey,
-  runAsyncState: (<F>(
-    key: AsyncStateKeyOrSource<F>,
-    ...args: any[]
-  ) => AbortFn) | undefined,
-  mode: AsyncStateSubscriptionMode
-): void {
-  returnValue.key = key;
-  returnValue.mode = mode;
-
-  if (!returnValue.runAsyncState) {
-    returnValue.runAsyncState = runAsyncState;
-  }
-}
-
 export function makeUseAsyncStateReturnValue<T, E>(
   asyncState: AsyncStateInterface<T>,
   stateValue: E,
