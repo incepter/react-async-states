@@ -30,10 +30,18 @@ describe('should auto run async state', () => {
     expect(screen.getByTestId("result").innerHTML).toEqual("0");
   });
 
-  it('should auto run -- async ', async () => {
+  it('should auto run async with payload', async () => {
     // given
     jest.useFakeTimers();
 
+    function producer(props): Promise<number> {
+      return new Promise<number>((resolve => {
+        let id = setTimeout(() => resolve(props.payload.content), 100);
+        props.onAbort(() => clearTimeout(id));
+      }));
+    }
+
+    const mockedProducer = jest.fn().mockImplementation(producer);
     function Component() {
       const {
         state,
@@ -41,13 +49,8 @@ describe('should auto run async state', () => {
         payload: {
           content: "Hello",
         },
-        producer(props): Promise<number> {
-          return new Promise<number>((resolve => {
-            let id = setTimeout(() => resolve(props.payload.content), 100);
-            props.onAbort(() => clearTimeout(id));
-          }));
-        },
         lazy: false,
+        producer: mockedProducer,
       });
 
       return (
@@ -71,6 +74,8 @@ describe('should auto run async state', () => {
     // then
     expect(screen.getByTestId("status").innerHTML)
       .toEqual(AsyncStateStatus.success);
+
     expect(screen.getByTestId("result").innerHTML).toEqual("Hello");
+    expect(mockedProducer.mock.calls[0][0].payload).toEqual({content: "Hello"});
   });
 });
