@@ -68,6 +68,9 @@
     "webpack-hot-middleware": "2.25.0"
   },
   "jest": {
+    "coveragePathIgnorePatterns": [
+      "__tests__"
+    ],
     "testMatch": [
       "**/*.test.js",
       "**/*.test.ts",

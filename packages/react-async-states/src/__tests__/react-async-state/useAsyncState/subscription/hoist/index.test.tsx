@@ -52,8 +52,6 @@ describe('should hoist an async state to provider', () => {
         state,
       }: UseAsyncState<number> = useAsyncState(subscribesTo);
 
-      console.log('test render', mode);
-
       return (
         <div>
           <span data-testid={`mode-${subscribesTo}`}>{mode}</span>
