@@ -3,8 +3,7 @@ import AsyncState, {
   AsyncStateInterface,
   AsyncStateKey,
   AsyncStateSource,
-  AsyncStateStatus,
-  State
+  AsyncStateStatus
 } from "async-state";
 import {
   __DEV__,
@@ -21,8 +20,8 @@ import {
   AsyncStateSubscriptionMode,
   UseAsyncStateConfiguration,
   UseAsyncStateContextType,
-  UseSelectedAsyncState,
-  UseAsyncStateSubscriptionInfo
+  UseAsyncStateSubscriptionInfo,
+  UseSelectedAsyncState
 } from "../../types.internal";
 import {standaloneRunExtraPropsCreator} from "../../helpers/run-props-creator";
 
@@ -152,18 +151,6 @@ export const defaultUseASConfig = Object.freeze({
   areEqual: shallowEqual,
   selector: oneObjectIdentity,
 });
-
-export function calculateSelectedState<T, E>(
-  newState: State<T>,
-  lastSuccess: State<T>,
-  configuration: UseAsyncStateConfiguration<T, E>
-): E {
-  const {selector} = configuration;
-  return selector(
-    newState,
-    lastSuccess
-  );
-}
 
 let didWarnAboutUnsupportedConcurrentFeatures = false;
 
