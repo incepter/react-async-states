@@ -71,12 +71,6 @@
     "coveragePathIgnorePatterns": [
       "__tests__"
     ],
-    "collectCoverageFrom": [
-      "**/*.{js,jsx,ts,tsx}",
-      "!**/node_modules/**",
-      "../async-state/**",
-      "../shared/**"
-    ],
     "testMatch": [
       "**/*.test.js",
       "**/*.test.ts",
