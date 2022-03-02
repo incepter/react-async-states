@@ -1,5 +1,5 @@
 import { act } from "@testing-library/react-hooks";
-import AsyncState from "async-state";
+import AsyncState from "../../async-state";
 import { AsyncStateStatus } from "shared";
 import { rejectionTimeout, timeout } from "./test-utils";
 
@@ -25,7 +25,7 @@ describe('AsyncState - run - abort', () => {
       status: AsyncStateStatus.initial,
     });
 
-    const abort = myAsyncState.run();
+    const abort = myAsyncState.run(() => {});
 
     await act(async () => {
       await jest.advanceTimersByTime(50);
@@ -99,7 +99,7 @@ describe('AsyncState - run - abort', () => {
     myAsyncState.subscribe(subscription);
     // then
 
-    const abort = myAsyncState.run();
+    const abort = myAsyncState.run(() => {});
 
     await act(async () => {
       await jest.advanceTimersByTime(50);
@@ -147,7 +147,7 @@ describe('AsyncState - run - abort', () => {
     myAsyncState.subscribe(subscription);
     // then
 
-    myAsyncState.run();
+    myAsyncState.run(() => {});
 
     await act(async () => {
       await jest.advanceTimersByTime(50);
@@ -157,7 +157,7 @@ describe('AsyncState - run - abort', () => {
 
     // rerun while pending should interrupt previous
     subscription.mockClear();
-    myAsyncState.run();
+    myAsyncState.run(() => {});
 
     expect(subscription.mock.calls[0][0].status).toBe(AsyncStateStatus.aborted);
     expect(subscription.mock.calls[1][0].status).toBe(AsyncStateStatus.pending);

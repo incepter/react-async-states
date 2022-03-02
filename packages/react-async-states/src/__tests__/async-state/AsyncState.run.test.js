@@ -1,5 +1,5 @@
 import { act } from "@testing-library/react-hooks";
-import AsyncState from "async-state";
+import AsyncState from "../../async-state";
 import { AsyncStateStatus } from "shared";
 import { rejectionTimeout, timeout } from "./test-utils";
 
@@ -23,7 +23,7 @@ describe('AsyncState - run', () => {
       status: AsyncStateStatus.initial,
     });
 
-    myAsyncState.run();
+    myAsyncState.run(() => {});
     // should transition synchronously to pending state
     expect(myAsyncState.currentState).toEqual({
       props: {
@@ -79,7 +79,7 @@ describe('AsyncState - run', () => {
     let myAsyncState = new AsyncState(key, producer, myConfig);
 
     // then
-    myAsyncState.run();
+    myAsyncState.run(() => {});
     await act(async () => {
       await jest.advanceTimersByTime(50);
     });

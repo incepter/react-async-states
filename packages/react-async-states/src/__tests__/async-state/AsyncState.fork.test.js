@@ -1,4 +1,4 @@
-import AsyncState from "async-state";
+import AsyncState from "../../async-state";
 import { AsyncStateStatus, shallowClone } from "shared";
 import { act } from "@testing-library/react-hooks";
 import { timeout } from "./test-utils";
@@ -45,7 +45,7 @@ describe('AsyncState - fork', () => {
 
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
-    myAsyncState.run();
+    myAsyncState.run(() => {});
 
     await act(async () => {
       await jest.advanceTimersByTime(100);
@@ -72,7 +72,7 @@ describe('AsyncState - fork', () => {
 
     let forkedAsyncState = myAsyncState.fork({keepSubscriptions: true, keepState: true});
 
-    forkedAsyncState.run();
+    forkedAsyncState.run(() => {});
 
     await act(async () => {
       await jest.advanceTimersByTime(100);

@@ -1,5 +1,5 @@
 import { act } from "@testing-library/react-hooks";
-import AsyncState from "async-state";
+import AsyncState from "../../async-state";
 import { AsyncStateStatus } from "shared";
 import { timeout } from "./test-utils";
 
@@ -22,7 +22,7 @@ describe('AsyncState - subscriptions', () => {
     let unsubscribe = myAsyncState.subscribe(subscriptionFn);
     expect(typeof unsubscribe).toBe("function");
 
-    myAsyncState.run();
+    myAsyncState.run(() => {});
     await act(async () => {
       await jest.advanceTimersByTime(50);
     });
@@ -76,7 +76,7 @@ describe('AsyncState - subscriptions', () => {
 
     // then
 
-    myAsyncState.run();
+    myAsyncState.run(() => {});
     await act(async () => {
       await jest.advanceTimersByTime(49);
     });
@@ -123,7 +123,7 @@ describe('AsyncState - subscriptions', () => {
 
     // then
 
-    myAsyncState.run();
+    myAsyncState.run(() => {});
     await act(async () => {
       await jest.advanceTimersByTime(50);
     });
