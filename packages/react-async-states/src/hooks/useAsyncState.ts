@@ -14,7 +14,7 @@ import {
   Producer,
   ProducerRunEffects,
   State
-} from "../../../async-state";
+} from "../async-state";
 
 // default
 function useAsyncStateExport<T, E>(

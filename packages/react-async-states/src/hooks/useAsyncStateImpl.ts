@@ -26,7 +26,7 @@ import {
   AsyncStateKey,
   AsyncStateSource,
   State
-} from "../../../async-state";
+} from "../async-state";
 import {nextKey} from "./utils/key-gen";
 
 const defaultDependencies: any[] = [];

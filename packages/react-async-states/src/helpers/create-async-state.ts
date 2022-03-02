@@ -3,7 +3,7 @@ import AsyncState, {
   AsyncStateSource,
   Producer,
   ProducerConfig
-} from "../../../async-state";
+} from "../async-state";
 
 export const createSource = function createSource<T>(
   key: AsyncStateKey,

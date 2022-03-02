@@ -8,7 +8,7 @@ import {
   SelectorManager,
   SelectorSubscription
 } from "../types.internal";
-import {AsyncStateInterface, AsyncStateKey} from "../../../async-state";
+import {AsyncStateInterface, AsyncStateKey} from "../async-state";
 import useAsyncStateContext from "./useAsyncStateContext";
 
 export function useAsyncStateSelector<T>(

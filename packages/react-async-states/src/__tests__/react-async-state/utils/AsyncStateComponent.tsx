@@ -4,7 +4,7 @@ import {
   UseSelectedAsyncState, UseSimpleAsyncStateConfig
 } from "../../../types.internal";
 import {useAsyncState} from "../../../hooks/useAsyncState";
-import {State} from "../../../../../async-state";
+import {State} from "../../../async-state";
 
 const defaultDeps = [];
 

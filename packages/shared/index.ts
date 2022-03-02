@@ -2,7 +2,7 @@ import {
   ProducerConfig,
   ProducerProps,
   ProducerSavedProps
-} from "../async-state";
+} from "../react-async-states/src/async-state";
 import {PartialUseAsyncStateConfiguration} from "react-async-states/src/types.internal";
 
 export const __DEV__ = process.env.NODE_ENV !== "production";

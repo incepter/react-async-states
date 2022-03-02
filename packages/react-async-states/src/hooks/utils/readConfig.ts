@@ -2,12 +2,12 @@ import {
   defaultUseASConfig,
   sourceConfigurationSecretSymbol
 } from "./subscriptionUtils";
-import {isAsyncStateSource} from "async-state/AsyncState";
 import {
   UseAsyncStateConfig,
   PartialUseAsyncStateConfiguration,
   UseAsyncStateConfiguration
 } from "../../types.internal";
+import {isAsyncStateSource} from "../../async-state/AsyncState";
 
 // userConfig is the config the developer wrote
 export function readUserConfiguration<T, E>(

@@ -5,7 +5,7 @@ import {
   AsyncStateStatus,
   Producer,
   ProducerProps
-} from "../../../../../../async-state";
+} from "../../../../async-state";
 import AsyncStateComponent from "../../utils/AsyncStateComponent";
 import {AsyncStateProvider} from "../../../../provider/AsyncStateProvider";
 import {UseAsyncState} from "../../../../types.internal";

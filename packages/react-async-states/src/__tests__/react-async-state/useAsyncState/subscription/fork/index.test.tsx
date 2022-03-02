@@ -8,7 +8,7 @@ import {useAsyncState} from "../../../../../hooks/useAsyncState";
 import {AsyncStateProvider} from "../../../../../provider/AsyncStateProvider";
 import {flushPromises} from "../../../utils/test-utils";
 import {createSource} from "../../../../../helpers/create-async-state";
-import {ForkConfig} from "../../../../../../../async-state";
+import {ForkConfig} from "../../../../../async-state";
 
 describe('should fork an initially hoisted async state', () => {
   it('should fork and update both states ', async () => {

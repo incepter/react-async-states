@@ -1,4 +1,4 @@
-import {AsyncStateKeyOrSource} from "react-async-states/src";
+import {AsyncStateKeyOrSource} from "../types.internal";
 
 export enum AsyncStateStatus {
   error = "error",

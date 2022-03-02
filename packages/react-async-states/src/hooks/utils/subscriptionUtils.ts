@@ -1,10 +1,4 @@
-import AsyncState, {
-  AbortFn,
-  AsyncStateInterface,
-  AsyncStateKey,
-  AsyncStateSource,
-  AsyncStateStatus
-} from "async-state";
+
 import {
   __DEV__,
   oneObjectIdentity,
@@ -12,7 +6,6 @@ import {
   shallowClone,
   shallowEqual
 } from "shared";
-import {readAsyncStateFromSource} from "async-state/utils";
 import {supportsConcurrentMode} from "../../helpers/supports-concurrent-mode";
 import {enableComponentSuspension} from "shared/features";
 import {
@@ -24,6 +17,13 @@ import {
   UseSelectedAsyncState
 } from "../../types.internal";
 import {standaloneRunExtraPropsCreator} from "../../helpers/run-props-creator";
+import AsyncState, {
+  AbortFn,
+  AsyncStateInterface,
+  AsyncStateKey,
+  AsyncStateSource, AsyncStateStatus
+} from "../../async-state";
+import {readAsyncStateFromSource} from "../../async-state/utils";
 
 export function inferSubscriptionMode<T, E>(
   contextValue: UseAsyncStateContextType,

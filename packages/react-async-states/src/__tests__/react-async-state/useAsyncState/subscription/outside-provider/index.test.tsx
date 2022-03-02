@@ -5,7 +5,7 @@ import {
   UseSelectedAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../hooks/useAsyncState";
-import {AsyncStateStatus} from "../../../../../../../async-state";
+import {AsyncStateStatus} from "../../../../../async-state";
 
 describe('should do basic subscription to an async state', () => {
   it('should subscribe and get initial value -- sync ' +

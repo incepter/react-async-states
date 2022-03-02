@@ -10,7 +10,7 @@ import {
   RunExtraProps, RunExtraPropsCreator,
   State,
   StateUpdater
-} from "../../async-state";
+} from "./async-state";
 
 export type Reducer<T> = (
   T,

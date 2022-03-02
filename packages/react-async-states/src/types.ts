@@ -5,7 +5,7 @@ export type {
   AsyncStateSource,
   AsyncStateStatus,
   ProducerRunEffects,
-} from "../../async-state/types";
+} from "./async-state/types";
 
 export type {
   InitialStates,

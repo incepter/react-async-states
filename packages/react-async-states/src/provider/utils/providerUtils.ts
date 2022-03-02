@@ -1,13 +1,13 @@
 import {readProducerConfigFromSubscriptionConfig} from "shared";
-import AsyncState, {AsyncStateInterface, AsyncStateSource} from "async-state";
-import {isAsyncStateSource} from "async-state/AsyncState";
-import {readAsyncStateFromSource} from "async-state/utils";
 import {
   AsyncStateEntries,
   AsyncStateEntry,
   ExtendedInitialAsyncState,
   InitialAsyncState
 } from "../../types.internal";
+import AsyncState, {AsyncStateInterface, AsyncStateSource} from "../../async-state";
+import {readAsyncStateFromSource} from "../../async-state/utils";
+import {isAsyncStateSource} from "../../async-state/AsyncState";
 
 export function createAsyncStateEntry<T>(
   asyncState: AsyncStateInterface<T>
