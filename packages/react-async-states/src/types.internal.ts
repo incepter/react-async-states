@@ -212,7 +212,7 @@ export type UseSelectedAsyncState<T, E> = {
   abort: ((reason?: any) => void),
   run: (...args: any[]) => AbortFn,
   replaceState: StateUpdater<T>,
-  mergePayload?: (argv: { [id: string]: any }) => void,
+  mergePayload: (argv: { [id: string]: any }) => void,
 
   read: () => E,
   runAsyncState?: <D>(

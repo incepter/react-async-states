@@ -66,4 +66,36 @@ describe('should declare a standalone producer inside a provider', () => {
     fireEvent.click(decrementBtn);
     expect(screen.getByTestId("result").innerHTML).toEqual("0");
   });
+  it('should declare a standalone producer inside a provider with key ', async () => {
+    // given
+    function Test() {
+      return (
+        <AsyncStateProvider>
+          <Component/>
+        </AsyncStateProvider>
+      );
+    }
+
+    function Component() {
+      const {
+        mode,
+      }: UseSelectedAsyncState<number, number> = useAsyncState({
+        key: "standalone",
+        producer(props) {
+          return props.args[0];
+        },
+        initialValue: 0,
+        selector: d => d.data,
+      });
+      return <span data-testid="mode">{mode}</span>;
+    }
+
+    // when
+
+    render(<Test/>)
+
+    // then
+    expect(screen.getByTestId("mode").innerHTML)
+      .toEqual(AsyncStateSubscriptionMode.STANDALONE);
+  });
 });
