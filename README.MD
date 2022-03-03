@@ -87,8 +87,7 @@ const {state: username} = useAsyncState({
 const currentUserPosts = useAsyncStateSelector(
   ["current-user", "posts"],
   (user, posts) => posts.data.filter(t => t.data.userId === user.id),
-  areEqual,
-  initialValue
+  areEqual
 );
 ```
 6. **Select from multiple states**: This is possible via `useAsyncStateSelector` that allows to subscribe to multiple

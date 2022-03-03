@@ -4,7 +4,7 @@ import {
   UseAsyncStateConfiguration,
   UseAsyncStateContextType
 } from "../../types.internal";
-import {AbortFn, AsyncStateInterface} from "../../../../async-state";
+import {AbortFn, AsyncStateInterface} from "../../async-state";
 import {standaloneRunExtraPropsCreator} from "../../helpers/run-props-creator";
 
 export function runAsyncStateSubscriptionFn<T, E>(

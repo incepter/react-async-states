@@ -10,7 +10,7 @@ import {
   RunExtraProps, RunExtraPropsCreator,
   State,
   StateUpdater
-} from "../../async-state";
+} from "./async-state";
 
 export type Reducer<T> = (
   T,
@@ -19,6 +19,7 @@ export type Reducer<T> = (
 
 export type ExtendedInitialAsyncState<T> =
   InitialAsyncState<T>
+  | Partial<InitialAsyncState<T>>
   | AsyncStateSource<T>;
 
 export type InitialAsyncState<T> = {
@@ -31,13 +32,6 @@ export interface AsyncStateInitializer<T> {
   producer?: Producer<T>,
   key?: AsyncStateKey,
   config?: ProducerConfig<T>
-}
-
-export type AsyncStateBuilderFunction<T> = {
-  build: () => AsyncStateInitializer<T>;
-  key: (key: AsyncStateKey) => AsyncStateBuilderFunction<T>,
-  producer: (producer: Producer<T>) => AsyncStateBuilderFunction<T>,
-  config: (config: ProducerConfig<T>) => AsyncStateBuilderFunction<T>,
 }
 
 export enum AsyncStateSubscriptionMode {
@@ -198,28 +192,30 @@ export type AsyncStateContextValue = {
 
 // use async state
 
-export type UseAsyncStateReturnValue<T, E> = {
+export type UseSelectedAsyncState<T, E> = {
   state: E,
-  key?: AsyncStateKey,
+  key: AsyncStateKey,
 
   source?: AsyncStateSource<T>,
   mode: AsyncStateSubscriptionMode,
   lastSuccess?: State<T>,
 
-  payload?: { [id: string]: any } | null,
+  payload: { [id: string]: any } | null,
 
 
-  abort?: AbortFn,
-  run?: (...args: any[]) => AbortFn,
-  replaceState?: StateUpdater<T>,
-  mergePayload?: (argv: { [id: string]: any }) => void,
+  abort: ((reason?: any) => void),
+  run: (...args: any[]) => AbortFn,
+  replaceState: StateUpdater<T>,
+  mergePayload: (argv: { [id: string]: any }) => void,
 
-  read?: () => E,
+  read: () => E,
   runAsyncState?: <D>(
     key: AsyncStateKeyOrSource<D>,
     ...args: any[]
   ) => AbortFn,
 }
+
+export type UseAsyncState<T> = UseSelectedAsyncState<T, State<T>>
 
 export type EqualityFn<T> = (
   prev: T,
@@ -289,17 +285,20 @@ export type UseAsyncStateSubscriptionInfo<T, E> = {
 }
 
 export type UseAsyncStateRefsFactory<T, E> = {
-  returnValue?: UseAsyncStateReturnValue<T, E>,
+  returnValue?: UseSelectedAsyncState<T, E>,
   subscriptionInfo?: UseAsyncStateSubscriptionInfo<T, E>
 };
 
 export type UseAsyncStateContextType = AsyncStateContextValue | null;
 
-export type ExtendedUseAsyncStateConfiguration<T, E> =
+export type UseAsyncStateConfig<T, E> =
   string
   | Producer<T>
   | AsyncStateSource<T>
-  | UseAsyncStateConfiguration<T, E>;
+  | UseAsyncStateConfiguration<T, E>
+  | Partial<UseAsyncStateConfiguration<T, E>>;
+
+export type UseSimpleAsyncStateConfig<T> = UseAsyncStateConfig<T, State<T>>;
 
 export type InitialStatesObject = { [id: string]: ExtendedInitialAsyncState<any> };
 
@@ -310,7 +309,6 @@ export type StateProviderProps = {
   children: any,
   initialStates?: InitialStates,
   payload?: { [id: string]: any },
-  initialAsyncStates?: InitialStates,
 }
 
 export type CleanupFn = AbortFn
@@ -334,4 +332,15 @@ export type SelectorSubscriptionsMap = {
 export type SelectorSubscription<T> = {
   cleanup: CleanupFn,
   asyncState: AsyncStateInterface<T>,
+}
+
+export interface UseAsyncStateType<T, E> {
+  (subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
+
+  auto(subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
+  lazy(subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
+  fork(subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
+  hoist(subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
+  forkAuto(subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
+  hoistAuto(subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
 }

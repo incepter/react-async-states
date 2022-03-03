@@ -2,16 +2,16 @@ import {
   defaultUseASConfig,
   sourceConfigurationSecretSymbol
 } from "./subscriptionUtils";
-import {isAsyncStateSource} from "async-state/AsyncState";
 import {
-  ExtendedUseAsyncStateConfiguration,
+  UseAsyncStateConfig,
   PartialUseAsyncStateConfiguration,
   UseAsyncStateConfiguration
 } from "../../types.internal";
+import {isAsyncStateSource} from "../../async-state/AsyncState";
 
 // userConfig is the config the developer wrote
 export function readUserConfiguration<T, E>(
-  userConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+  userConfig: UseAsyncStateConfig<T, E>,
   overrides?: PartialUseAsyncStateConfiguration<T, E>
 ): UseAsyncStateConfiguration<T, E> {
   // this is direct anonymous producer configuration

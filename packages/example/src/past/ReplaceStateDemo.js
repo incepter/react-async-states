@@ -28,7 +28,7 @@ function producerB(props) {
 }
 
 export default function Demo() {
-  const {state, abort, run} = useAsyncState.payload({userId: 1}).auto(producerA);
+  const {state, abort, run} = useAsyncState.auto({producer: producerA, payload: {userId: 1}});
   console.log('state#####', state);
   return (
     <div>

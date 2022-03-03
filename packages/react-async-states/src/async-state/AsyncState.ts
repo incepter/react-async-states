@@ -59,14 +59,14 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   constructor(
     key: AsyncStateKey,
-    producer: Producer<T> | undefined,
-    config: ProducerConfig<T>
+    producer: Producer<T> | undefined | null,
+    config?: ProducerConfig<T>
   ) {
     warnDevAboutAsyncStateKey(key);
 
     this.key = key;
     this.config = shallowClone(config);
-    this.originalProducer = producer;
+    this.originalProducer = producer ?? undefined;
 
     const initialValue = typeof this.config.initialValue === "function" ? this.config.initialValue() : this.config.initialValue;
     this.currentState = StateBuilder.initial(initialValue);
@@ -237,7 +237,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
     function emit(
       updater: T | StateFunctionUpdater<T>,
-      status: AsyncStateStatus
+      status?: AsyncStateStatus
     ): void {
       if (props.cleared && that.currentState.status === AsyncStateStatus.aborted) {
         warning("You are emitting while your producer is passing to aborted state." +
@@ -305,7 +305,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     return cleanup;
   }
 
-  fork(forkConfig?: { keepState: boolean, key: AsyncStateKey }) {
+  fork(forkConfig?: ForkConfig) {
     const mergedConfig: ForkConfig = shallowClone(defaultForkConfig, forkConfig);
 
     let {key} = mergedConfig;

@@ -3,12 +3,26 @@
     "outDir": "./ts-dist/",
     "sourceMap": true,
     "strictNullChecks": true,
-    "module": "es6",
+    "module": "esnext",
     "jsx": "react",
     "target": "es3",
     "allowJs": true,
     "moduleResolution": "Node",
-
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "strict": false,
+    "noEmit": true
   },
   "include": [
     "./src/"

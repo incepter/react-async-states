@@ -12,13 +12,13 @@ const userPayloadSource = createSource("userPayload", props => fetchUser(props.p
 const name = s => s.data?.name;
 
 export default function NextDemo() {
-  const {state: user1} = useAsyncState.selector(s => s.data).auto(user1Source);
+  const {state: user1} = useAsyncState.auto({source: user1Source, selector: s => s.data});
 
-  const {state: user2} = useAsyncState.selector(name).auto(user2Source);
+  const {state: user2} = useAsyncState.auto({source: user2Source, selector: name});
 
-  const {state: user3} = useAsyncState.payload({userId: 3}).selector(name).hoistAuto(userPayloadSource)
+  const {state: user3} = useAsyncState.hoistAuto({source: userPayloadSource, payload: {userId: 3}, selector: name})
 
-  const {state: user4} = useAsyncState.selector(name).payload({userId: 4}).forkAuto(userPayloadSource)
+  const {state: user4} = useAsyncState.forkAuto({source: userPayloadSource, payload: {userId: 4}, selector: name})
 
   return <>
     <div style={{display: "flex"}}>

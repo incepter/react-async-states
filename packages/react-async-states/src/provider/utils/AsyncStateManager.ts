@@ -1,11 +1,3 @@
-import AsyncState, {
-  AbortFn,
-  AsyncStateInterface,
-  AsyncStateKey,
-  AsyncStateSource,
-  ForkConfig,
-  State
-} from "async-state";
 import {
   asyncify,
   EMPTY_OBJECT,
@@ -15,8 +7,6 @@ import {
   createAsyncStateEntry,
   createInitialAsyncStatesReducer,
 } from "./providerUtils";
-import {isAsyncStateSource} from "async-state/AsyncState";
-import {readAsyncStateFromSource} from "async-state/utils";
 import {
   ArraySelector,
   AsyncStateEntries,
@@ -35,6 +25,14 @@ import {
   WatcherType
 } from "../../types.internal";
 import {createRunExtraPropsCreator} from "../../helpers/run-props-creator";
+import AsyncState, {
+  AbortFn,
+  AsyncStateInterface,
+  AsyncStateKey,
+  AsyncStateSource, ForkConfig, State
+} from "../../async-state";
+import {isAsyncStateSource} from "../../async-state/AsyncState";
+import {readAsyncStateFromSource} from "../../async-state/utils";
 
 const listenersKey = Symbol();
 

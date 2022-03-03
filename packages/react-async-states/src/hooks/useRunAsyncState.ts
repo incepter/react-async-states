@@ -1,4 +1,4 @@
-import {AbortFn} from "../../../async-state";
+import {AbortFn} from "../async-state";
 import useAsyncStateContext from "./useAsyncStateContext";
 import {AsyncStateKeyOrSource} from "../types.internal";
 

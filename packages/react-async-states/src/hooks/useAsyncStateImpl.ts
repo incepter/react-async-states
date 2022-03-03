@@ -15,10 +15,10 @@ import {
 import {
   AsyncStateSubscriptionMode,
   CleanupFn,
-  ExtendedUseAsyncStateConfiguration,
+  UseAsyncStateConfig,
   MemoizedUseAsyncStateRef,
   PartialUseAsyncStateConfiguration,
-  UseAsyncStateReturnValue,
+  UseSelectedAsyncState,
   UseAsyncStateSubscriptionInfo
 } from "../types.internal";
 import {
@@ -26,10 +26,10 @@ import {
   AsyncStateKey,
   AsyncStateSource,
   State
-} from "../../../async-state";
+} from "../async-state";
 import {nextKey} from "./utils/key-gen";
 
-const defaultDependencies = [];
+const defaultDependencies: any[] = [];
 
 // 2 x useMemo
 // 1 x useContext
@@ -37,10 +37,10 @@ const defaultDependencies = [];
 // 3 x useEffect
 // 1 x useEffect (inside provider)
 export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
-  subscriptionConfig: ExtendedUseAsyncStateConfiguration<T, E>,
+  subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies: any[] = defaultDependencies,
   configOverrides?: PartialUseAsyncStateConfiguration<T, E>,
-): UseAsyncStateReturnValue<T, E> {
+): UseSelectedAsyncState<T, E> {
 
   // need a guard to trigger re-renders
   const [guard, setGuard] = React.useState<number>(0);
@@ -73,7 +73,7 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
   // declare a state snapshot initialized by the initial selected value
   // useState
   const [selectedValue, setSelectedValue] = React
-    .useState<Readonly<UseAsyncStateReturnValue<T, E>>>(initialize);
+    .useState<Readonly<UseSelectedAsyncState<T, E>>>(initialize);
 
   if (memoizedRef.subscriptionInfo !== subscriptionInfo) {
     if (asyncState && asyncState !== memoizedRef?.subscriptionInfo?.asyncState) {
@@ -125,10 +125,10 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
 
   return selectedValue;
 
-  function initialize(): Readonly<UseAsyncStateReturnValue<T, E>> {
+  function initialize(): Readonly<UseSelectedAsyncState<T, E>> {
     return makeUseAsyncStateReturnValue(
       asyncState,
-      asyncState ? readStateFromAsyncState(asyncState, selector) : undefined,
+      (asyncState ? readStateFromAsyncState(asyncState, selector) : undefined) as E,
       configuration.key as AsyncStateKey,
       run,
       runAsyncState,

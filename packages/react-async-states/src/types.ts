@@ -1,18 +1,19 @@
-export {
+export type {
   Producer,
   ForkConfig,
   ProducerConfig,
   AsyncStateSource,
   AsyncStateStatus,
   ProducerRunEffects,
-} from "../../async-state/types";
+} from "./async-state/types";
 
-export {
+export type {
   InitialStates,
   InitialStatesObject,
 
   EqualityFn,
-  UseAsyncStateReturnValue,
+  UseAsyncState,
+  UseSelectedAsyncState,
   ExtendedInitialAsyncState,
   UseAsyncStateConfiguration,
 
@@ -24,4 +25,5 @@ export {
 
   InitialAsyncState,
   AsyncStateInitializer,
+  UseSimpleAsyncStateConfig,
 } from "./types.internal";

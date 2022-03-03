@@ -1,11 +1,4 @@
-import AsyncState, {
-  AbortFn,
-  AsyncStateInterface,
-  AsyncStateKey,
-  AsyncStateSource,
-  AsyncStateStatus,
-  State
-} from "async-state";
+
 import {
   __DEV__,
   oneObjectIdentity,
@@ -13,7 +6,6 @@ import {
   shallowClone,
   shallowEqual
 } from "shared";
-import {readAsyncStateFromSource} from "async-state/utils";
 import {supportsConcurrentMode} from "../../helpers/supports-concurrent-mode";
 import {enableComponentSuspension} from "shared/features";
 import {
@@ -21,10 +13,17 @@ import {
   AsyncStateSubscriptionMode,
   UseAsyncStateConfiguration,
   UseAsyncStateContextType,
-  UseAsyncStateReturnValue,
-  UseAsyncStateSubscriptionInfo
+  UseAsyncStateSubscriptionInfo,
+  UseSelectedAsyncState
 } from "../../types.internal";
 import {standaloneRunExtraPropsCreator} from "../../helpers/run-props-creator";
+import AsyncState, {
+  AbortFn,
+  AsyncStateInterface,
+  AsyncStateKey,
+  AsyncStateSource, AsyncStateStatus
+} from "../../async-state";
+import {readAsyncStateFromSource} from "../../async-state/utils";
 
 export function inferSubscriptionMode<T, E>(
   contextValue: UseAsyncStateContextType,
@@ -153,40 +152,11 @@ export const defaultUseASConfig = Object.freeze({
   selector: oneObjectIdentity,
 });
 
-export function calculateSelectedState<T, E>(
-  newState: State<T>,
-  lastSuccess: State<T>,
-  configuration: UseAsyncStateConfiguration<T, E>
-): E {
-  const {selector} = configuration;
-  return selector(
-    newState,
-    lastSuccess
-  );
-}
-
 let didWarnAboutUnsupportedConcurrentFeatures = false;
-
-export function applyWaitingReturnValue<T, E>(
-  returnValue: UseAsyncStateReturnValue<T, E>,
-  key: AsyncStateKey,
-  runAsyncState: (<F>(
-    key: AsyncStateKeyOrSource<F>,
-    ...args: any[]
-  ) => AbortFn) | undefined,
-  mode: AsyncStateSubscriptionMode
-): void {
-  returnValue.key = key;
-  returnValue.mode = mode;
-
-  if (!returnValue.runAsyncState) {
-    returnValue.runAsyncState = runAsyncState;
-  }
-}
 
 export function makeUseAsyncStateReturnValue<T, E>(
   asyncState: AsyncStateInterface<T>,
-  stateValue: E | undefined,
+  stateValue: E,
   configurationKey: AsyncStateKey,
   run: (...args: any[]) => AbortFn,
   runAsyncState: (<F>(
@@ -194,7 +164,7 @@ export function makeUseAsyncStateReturnValue<T, E>(
     ...args: any[]
   ) => AbortFn) | undefined,
   mode: AsyncStateSubscriptionMode
-): Readonly<UseAsyncStateReturnValue<T, E>> {
+): Readonly<UseSelectedAsyncState<T, E>> {
 
   if (!asyncState) {
     return Object.freeze({
@@ -204,6 +174,19 @@ export function makeUseAsyncStateReturnValue<T, E>(
       state: stateValue as E,
 
       runAsyncState,
+      abort() {
+      },
+      run(...args: any[]): AbortFn {
+        return undefined;
+      },
+      read() {
+        return stateValue;
+      },
+      replaceState() {
+      },
+      mergePayload() {
+      },
+      payload: {},
     });
   }
 

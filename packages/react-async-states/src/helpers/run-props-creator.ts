@@ -13,9 +13,9 @@ import AsyncState, {
   ProducerPropsRunInput,
   RunExtraProps,
   State
-} from "../../../async-state";
-import {isAsyncStateSource} from "../../../async-state/AsyncState";
-import {readAsyncStateFromSource} from "../../../async-state/utils";
+} from "../async-state";
+import {isAsyncStateSource} from "../async-state/AsyncState";
+import {readAsyncStateFromSource} from "../async-state/utils";
 import {invokeIfPresent, shallowClone} from "../../../shared";
 import {nextKey} from "../hooks/utils/key-gen";
 

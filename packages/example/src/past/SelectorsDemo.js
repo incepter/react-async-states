@@ -1,5 +1,9 @@
 import React from "react";
-import { createReducerProducer, useAsyncState, useAsyncStateSelector } from "react-async-states";
+import {
+  createReducerProducer,
+  useAsyncState,
+  useAsyncStateSelector
+} from "react-async-states";
 
 function reducer(old, name, value) {
   console.log('running', name, value);
@@ -52,7 +56,8 @@ function DynamicForm({initialSize}) {
   return (
     <div>
       <div style={{display: "flex", flexWrap: "wrap"}}>
-        {fields.map(field => <RealInput key={field.name} name={field.name} type={field.type}/>)}
+        {fields.map(field => <RealInput key={field.name} name={field.name}
+                                        type={field.type}/>)}
       </div>
       <hr/>
       <input ref={name} placeholder="name"/>
@@ -66,10 +71,12 @@ function DynamicForm({initialSize}) {
 
 function Input({name}) {
   const {state, run} = useAsyncState
-    .selector(state => state.data[name])
-    .lazy("login-form", [name]);
+    .lazy({
+      key: "login-form",
+      selector: state => state.data[name]
+    }, [name]);
 
-  React.useEffect(() => run(name, "init"+ name), [])
+  React.useEffect(() => run(name, "init" + name), [])
 
   return (<input
     value={state || ""}

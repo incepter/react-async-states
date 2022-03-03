@@ -34,8 +34,8 @@ export default function DemoDemo() {
   return (
     <>
       <BuilderDemo/>
-      <br />
-      <br />
+      <br/>
+      <br/>
       <input onChange={e => {
         console.log('onchange, running');
         // startTransition(run);
@@ -54,23 +54,25 @@ export default function DemoDemo() {
 function timeout(delay, value, cb) {
   return new Promise(res => cb(setTimeout(() => res(value), delay)));
 }
+
 function interval(delay, value, cb) {
   return new Promise(res => cb(setTimeout(() => res(value), delay)));
 }
 
 function BuilderDemo() {
-  const {state} = useAsyncState.builder()
-    .lazy(false)
-    .initialValue(0)
-    .runEffect("delay")
-    .runEffectDurationMs(2000)
-    .selector(s => s.status === "pending" ? "pending...": JSON.stringify(s.data))
-    .build(function producer(props) {
+  const {state} = useAsyncState({
+    lazy: false,
+    initialValue: 0,
+    runEffect: "delay",
+    runEffectDurationMs: 2000,
+    selector: s => s.status === "pending" ? "pending..." : JSON.stringify(s.data),
+    producer: function producer(props) {
       let timeoutId;
       props.onAbort(() => clearTimeout(timeoutId));
 
       return timeout(2000, props.lastSuccess.data + 1, id => timeoutId = id);
-    });
+    },
+  });
 
   return `state value is: ${state}`;
 }
