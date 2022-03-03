@@ -31,9 +31,7 @@ function MiniApp() {
     run,
     state: { status, data }
   } = useAsyncState
-    .condition(!!value)
-    .payload({ userId: value })
-    .auto(currentUser, [value]);
+    .auto({source: currentUser, payload: { userId: value }, condition: !!value}, [value]);
 
   const myref = React.useRef();
   return (

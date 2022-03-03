@@ -214,26 +214,19 @@ The following are all hooks with the same signature as `useAsyncState`, but each
 - `useAsyncState.hoistAuto`: adds `lazy: false, hoistToProvider: true` to configuration
 - `useAsyncState.forkAudo`: adds `lazy: false, fork: true` to configuration
 
-These are functions produce hooks with the same signature as `useAsyncState` (and hooks shortcuts with it)
-while injecting specific properties. They do not work like the other shortcuts because they need an input for 
-the property from the developer:
-- `useAsyncState.payload`: adds `payload` to configuration
-- `useAsyncState.selector`: adds a selector
-- `useAsyncState.condition`: make the run conditional
-
 The following snippets results from the previous hooks:
 
 ```javascript
 // automatically fetches the user's list when the search url changes
 const {state: {status, data}, run, abort} = useAsyncState.auto(DOMAIN_USER_PRODUCERS.list.key, [search]);
 // automatically fetches user 1 and selects data
-const {state} = useAsyncState.selector(s => s.data).auto(user1Source);
+const {state: user1} = useAsyncState.auto({source: user1Source, selector: s => s.data});
 // automatically fetches user 2 and selects its name
-const {state} = useAsyncState.selector(name).auto(user2Source);
+const {state: user2} = useAsyncState.auto({source: user2Source, selector: name});
 // automatically fetches user 3 and hoists it to provider and selects its name
-const {state} = useAsyncState.payload({userId: 3}).selector(name).hoistAuto(userPayloadSource);
+const {state: user3} = useAsyncState.hoistAuto({source: userPayloadSource, payload: {userId: 3}, selector: name})
 // forks userPayloadSource and runs it automatically with a new payload and selects the name from result
-const {state} = useAsyncState.selector(name).payload({userId: 4}).forkAuto(userPayloadSource);
+const {state: user4} = useAsyncState.forkAuto({source: userPayloadSource, payload: {userId: 4}, selector: name})
 ```
 
 :::tip

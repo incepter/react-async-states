@@ -69,7 +69,9 @@
   },
   "jest": {
     "coveragePathIgnorePatterns": [
-      "__tests__"
+      "__tests__",
+      "index-prod.js",
+      "type*.ts"
     ],
     "testMatch": [
       "**/*.test.js",

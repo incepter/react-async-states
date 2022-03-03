@@ -23,10 +23,9 @@ describe('should hoist an async state to provider', () => {
     }
 
     function Hoister<T>() {
-      const {mode} = useAsyncState({
+      const {mode} = useAsyncState.hoist({
         key: "counter",
         initialValue: 0,
-        hoistToProvider: true,
       });
       return <span data-testid="hoister-mode">{mode}</span>;
     }

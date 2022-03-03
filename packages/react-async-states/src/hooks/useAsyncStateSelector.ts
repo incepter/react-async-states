@@ -14,8 +14,7 @@ import useAsyncStateContext from "./useAsyncStateContext";
 export function useAsyncStateSelector<T>(
   keys: SelectorKeysArg,
   selector: AsyncStateSelector<T> = identity,
-  areEqual: EqualityFn<T> = shallowEqual,
-  initialValue?: T
+  areEqual: EqualityFn<T> = shallowEqual
 ): T {
 
   const contextValue = useAsyncStateContext();

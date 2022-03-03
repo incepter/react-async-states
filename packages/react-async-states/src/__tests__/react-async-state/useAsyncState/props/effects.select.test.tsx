@@ -19,10 +19,7 @@ describe('should select from another async state', () => {
     }, {});
 
     function Test() {
-      const {state}: UseAsyncState<string> = useAsyncState({
-        source: loggerSource,
-        lazy: false
-      });
+      const {state}: UseAsyncState<string> = useAsyncState.auto(loggerSource);
 
       return (
         <>

@@ -19,6 +19,7 @@ export type Reducer<T> = (
 
 export type ExtendedInitialAsyncState<T> =
   InitialAsyncState<T>
+  | Partial<InitialAsyncState<T>>
   | AsyncStateSource<T>;
 
 export type InitialAsyncState<T> = {
@@ -31,13 +32,6 @@ export interface AsyncStateInitializer<T> {
   producer?: Producer<T>,
   key?: AsyncStateKey,
   config?: ProducerConfig<T>
-}
-
-export type AsyncStateBuilderFunction<T> = {
-  build: () => AsyncStateInitializer<T>;
-  key: (key: AsyncStateKey) => AsyncStateBuilderFunction<T>,
-  producer: (producer: Producer<T>) => AsyncStateBuilderFunction<T>,
-  config: (config: ProducerConfig<T>) => AsyncStateBuilderFunction<T>,
 }
 
 export enum AsyncStateSubscriptionMode {
@@ -338,4 +332,15 @@ export type SelectorSubscriptionsMap = {
 export type SelectorSubscription<T> = {
   cleanup: CleanupFn,
   asyncState: AsyncStateInterface<T>,
+}
+
+export interface UseAsyncStateType<T, E> {
+  (subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
+
+  auto(subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
+  lazy(subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
+  fork(subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
+  hoist(subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
+  forkAuto(subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
+  hoistAuto(subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
 }

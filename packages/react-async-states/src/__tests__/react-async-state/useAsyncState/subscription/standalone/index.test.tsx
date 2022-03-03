@@ -1,7 +1,7 @@
 import * as React from "react";
 import {fireEvent, render, screen} from "@testing-library/react";
 import {
-  AsyncStateSubscriptionMode,
+  AsyncStateSubscriptionMode, UseAsyncState,
   UseSelectedAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../hooks/useAsyncState";
@@ -24,12 +24,12 @@ describe('should declare a standalone producer inside a provider', () => {
         mode,
         state,
       }: UseSelectedAsyncState<number, number> = useAsyncState({
-        producer(props) {
-          return props.args[0];
-        },
-        initialValue: 0,
-        selector: d => d.data,
-      });
+          selector: d => d.data,
+          producer(props) {
+            return props.args[0];
+          },
+          initialValue: 0,
+        });
 
       function increment() {
         run(state + 1);

@@ -50,7 +50,9 @@ export type ProducerSavedProps<T> = {
   lastSuccess?: State<T>
 }
 
-export type Producer<T> = (props: ProducerProps<T>) => (T | Promise<T>);
+export type Producer<T> =
+  ((props: ProducerProps<T>) => (T | Promise<T> | Generator<any, T, any>));
+
 export type ProducerFunction<T> = (props: ProducerProps<T>) => AbortFn;
 
 export type ProducerConfig<T> = {

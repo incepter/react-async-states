@@ -19,10 +19,7 @@ describe('should emit from producer', () => {
     }
 
     function Component() {
-      const {state}: UseAsyncState<any> = useAsyncState({
-        producer,
-        lazy: false
-      });
+      const {state}: UseAsyncState<any> = useAsyncState.auto(producer);
 
       return <span data-testid="result">{state.data}</span>;
     }
@@ -56,10 +53,7 @@ describe('should emit from producer', () => {
     }
 
     function Component() {
-      const {state}: UseAsyncState<any> = useAsyncState({
-        producer,
-        lazy: false
-      });
+      const {state}: UseAsyncState<any> = useAsyncState.auto(producer);
 
       return <span data-testid="result">{state.data}</span>;
     }

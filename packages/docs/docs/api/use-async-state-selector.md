@@ -9,7 +9,7 @@ from multiple states at once, and derive its data. Let's get back to `useAsyncSt
 
 ```javascript
 // keys: string or array (or function: not yet)
-function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual, initialValue = undefined) {
+function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual) {
   // returns whathever the selector returns (or initialValue)
 }
 // where

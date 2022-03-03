@@ -138,7 +138,7 @@ return (
 
 ```javascript
 // keys: string | source | array of string|source | function returning source | string | array of source|string
-function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual, initialValue = undefined) {
+function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual) {
   // returns whathever the selector returns (or initialValue)
 }
 
@@ -147,7 +147,7 @@ function usePermissions(allowedPermissions) {
     // this code is not optimized.
     return allowedPermissions.some(t => state.data.permissions.includes(t));
   }, [allowedPermissions]);
-  return useAsyncStateSelector("current-user", selector, isEqual, false);
+  return useAsyncStateSelector("current-user", selector, isEqual);
 }
 
 const canSeeWeather = usePermissions(WEATHER_PERMISSIONS);
