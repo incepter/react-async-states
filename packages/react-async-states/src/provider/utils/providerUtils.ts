@@ -5,9 +5,13 @@ import {
   ExtendedInitialAsyncState,
   InitialAsyncState
 } from "../../types.internal";
-import AsyncState, {AsyncStateInterface, AsyncStateSource} from "../../async-state";
-import {readAsyncStateFromSource} from "../../async-state/utils";
+import AsyncState, {
+  AsyncStateInterface,
+  AsyncStateKey,
+  AsyncStateSource
+} from "../../async-state";
 import {isAsyncStateSource} from "../../async-state/AsyncState";
+import {readAsyncStateFromSource} from "../../async-state/read-source";
 
 export function createAsyncStateEntry<T>(
   asyncState: AsyncStateInterface<T>

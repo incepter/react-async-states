@@ -23,7 +23,7 @@ import AsyncState, {
   AsyncStateKey,
   AsyncStateSource, AsyncStateStatus
 } from "../../async-state";
-import {readAsyncStateFromSource} from "../../async-state/utils";
+import {readAsyncStateFromSource} from "../../async-state/read-source";
 
 export function inferSubscriptionMode<T, E>(
   contextValue: UseAsyncStateContextType,

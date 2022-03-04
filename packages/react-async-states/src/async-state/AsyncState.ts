@@ -7,11 +7,7 @@ import {
   warning
 } from "shared";
 import {wrapProducerFunction} from "./wrap-producer-function";
-import {
-  constructAsyncStateSource,
-  StateBuilder,
-  warnDevAboutAsyncStateKey
-} from "./utils";
+import {StateBuilder} from "./utils";
 import devtools from "devtools";
 import {areRunEffectsSupported} from "shared/features";
 import {
@@ -31,6 +27,7 @@ import {
   StateFunctionUpdater,
   StateSubscription
 } from "./types";
+import {constructAsyncStateSource} from "./construct-source";
 
 export default class AsyncState<T> implements AsyncStateInterface<T> {
   //region properties
@@ -62,7 +59,10 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     producer: Producer<T> | undefined | null,
     config?: ProducerConfig<T>
   ) {
-    warnDevAboutAsyncStateKey(key);
+    if (typeof key !== "string") {
+      throw new Error("An async state must be initialized with a string key." +
+        ` Provider = '${key}' of type '${typeof key}'`);
+    }
 
     this.key = key;
     this.config = shallowClone(config);

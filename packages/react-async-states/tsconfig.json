@@ -22,7 +22,7 @@
       "esnext"
     ],
     "strict": false,
-    "noEmit": true
+    "noEmit": false
   },
   "include": [
     "./src/"

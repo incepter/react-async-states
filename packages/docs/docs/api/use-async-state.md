@@ -62,6 +62,7 @@ Let's see in details the supported configuration:
 |`selector`             |`function`   |`identity`          |     x    |   x    | receives state (`{data, args, status}`) as unique parameter and whatever it returns it is put in the state return |
 |`areEqual`             |`function`   |`shallowEqual`      |     x    |   x    | `(prevValue, nextValue) => areEqual(prevValue, nextValue)` if it returns true, the render is skipped |
 |`condition`            |`boolean`    |`true`              |     x    |   x    | If this condition is falsy, run will not be granted |
+|`postSubscribe`        |`function`   |`undefined`         |     x    |   x    | invoked when we subscribe to an async state instance |
 |`forkConfig`           |`ForkConfig` |`{keepState: false}`|          |   x    | defines whether to keep state when forking or not |
 |`initialValue`         |`any`        |`null`              |     x    |        | The initial producer value, useful only if working as standalone(ie defining own producer) |
 |`rerenderStats`        |`object`     |`{<status>: true}`  |     x    |   x    | Defines whether to register in the provider or not |
@@ -232,3 +233,43 @@ const {state: user4} = useAsyncState.forkAuto({source: userPayloadSource, payloa
 :::tip
 To suspend a component in concurrent mode, just call the `read` function returned by `useAsyncState`
 :::
+
+
+### `postSubscribe`
+
+This function is triggered once a subscription to an async state instance occurs.
+
+This should be mainly used to attach event listeners that may `run` the producer.
+
+```javascript
+// this is how the library invokes the postSubscribe function.
+postUnsubscribe = configuration.postSubscribe({
+    run,
+    mode,
+    getState: () => asyncState.currentState,
+})
+```
+
+This functions returns its cleanup (if available.)
+
+Here is an example of how to use it to run your producer once your window gets focused:
+
+```javascript
+const {state: {status, data}, lastSuccess, abort} = useAsyncState({
+    lazy: false,
+    payload: {matchParams: params},
+    key: demoAsyncStates.getUser.key,
+    postSubscribe({getState, run}) {
+      const state = getState();
+      // !state is WAITING mode
+      if (!state || state.status === "pending") {
+        return;
+      }
+      function onFocus() {
+        run();
+      }
+      window.addEventListener("focus", onFocus);
+      return () => window.removeEventListener("focus", onFocus);
+    }
+  }, [params]);
+```

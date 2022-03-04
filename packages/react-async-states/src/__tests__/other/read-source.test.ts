@@ -1,6 +1,6 @@
 import {createSource} from "../../helpers/create-async-state";
 import {useAsyncState} from "../../hooks/useAsyncState";
-import {readAsyncStateFromSource} from "../../async-state/utils";
+import {readAsyncStateFromSource} from "../../async-state/read-source";
 
 describe('readSource', () => {
   it('should correctly read the source', () => {

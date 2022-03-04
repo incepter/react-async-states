@@ -19,13 +19,12 @@ export type Reducer<T> = (
 
 export type ExtendedInitialAsyncState<T> =
   InitialAsyncState<T>
-  | Partial<InitialAsyncState<T>>
   | AsyncStateSource<T>;
 
 export type InitialAsyncState<T> = {
   key: AsyncStateKey,
-  producer: Producer<T>,
-  config: ProducerConfig<T>
+  producer?: Producer<T>,
+  config?: ProducerConfig<T>
 }
 
 export interface AsyncStateInitializer<T> {

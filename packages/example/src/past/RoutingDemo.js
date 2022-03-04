@@ -12,6 +12,17 @@ export default function Demo() {
     lazy: false,
     payload: {matchParams: params},
     key: demoAsyncStates.getUser.key,
+    postSubscribe({getState, run}) {
+      const state = getState();
+      if (!state || state.status === "pending") {
+        return;
+      }
+      function onFocus() {
+        run();
+      }
+      window.addEventListener("focus", onFocus);
+      return () => window.removeEventListener("focus", onFocus);
+    }
   }, [params]);
   console.log('render', params, status, ++React.useRef(0).current)
 

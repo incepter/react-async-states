@@ -15,9 +15,9 @@ import AsyncState, {
   State
 } from "../async-state";
 import {isAsyncStateSource} from "../async-state/AsyncState";
-import {readAsyncStateFromSource} from "../async-state/utils";
 import {invokeIfPresent, shallowClone} from "../../../shared";
 import {nextKey} from "../hooks/utils/key-gen";
+import {readAsyncStateFromSource} from "../async-state/read-source";
 
 function createRunFunction<T>(
   manager: AsyncStateManagerInterface | null, props: ProducerProps<T>) {
