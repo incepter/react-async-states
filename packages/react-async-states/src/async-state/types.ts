@@ -57,6 +57,7 @@ export type ProducerFunction<T> = (props: ProducerProps<T>) => AbortFn;
 
 export type ProducerConfig<T> = {
   initialValue?: T,
+  cacheConfig?: CacheConfig<T>,
   runEffectDurationMs?: number,
   runEffect?: ProducerRunEffects,
 }
@@ -81,6 +82,18 @@ export type StateSubscription<T> = {
   callback: (newState: State<T>) => void,
 };
 
+export type CacheConfig<T> = {
+  enabled: boolean,
+  getDeadline(currentState: State<T>): number,
+  hash(args?: any[], payload?: {[id: string]: any} | null): string,
+}
+
+export type CachedState<T> = {
+  state: State<T>,
+  addedAt: number,
+  deadline: number,
+}
+
 export interface AsyncStateInterface<T> {
   // new (key: AsyncStateKey, producer: Producer<T>, config: ProducerConfig<T>) : {},
   // properties
@@ -90,6 +103,8 @@ export interface AsyncStateInterface<T> {
 
   currentState: State<T>,
   lastSuccess: State<T>,
+
+  cache: {[id: AsyncStateKey]: CachedState<T>}
 
   payload: { [id: string]: any } | null,
   config: ProducerConfig<T>,

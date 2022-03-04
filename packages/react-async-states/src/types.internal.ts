@@ -2,7 +2,7 @@ import {
   AbortFn,
   AsyncStateInterface,
   AsyncStateKey,
-  AsyncStateSource,
+  AsyncStateSource, CacheConfig,
   ForkConfig,
   Producer,
   ProducerConfig, ProducerProps,
@@ -90,6 +90,7 @@ export type ManagerHoistConfig<T> = {
 
   key: AsyncStateKey,
   hoistToProviderConfig?: HoistToProviderConfig,
+  cacheConfig?: CacheConfig<T>,
 }
 
 export type ManagerWatchCallbackValue<T> = AsyncStateInterface<T> | null;
@@ -248,6 +249,8 @@ export type UseAsyncStateConfiguration<T, E> = {
   areEqual: EqualityFn<E>,
 
   postSubscribe?: (props: PostSubscribeProps<T>) => CleanupFn,
+
+  cacheConfig?: CacheConfig<T>,
 }
 
 export type PostSubscribeProps<T> = {
@@ -281,6 +284,8 @@ export type PartialUseAsyncStateConfiguration<T, E> = {
   areEqual?: EqualityFn<E>,
 
   postSubscribe?: (props: PostSubscribeProps<T>) => CleanupFn,
+
+  cacheConfig?: CacheConfig<T>,
 }
 
 export type UseAsyncStateSubscriptionInfo<T, E> = {

@@ -1,14 +1,29 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import { AsyncStateProvider, createSource } from 'react-async-states';
-import { getUserProducer, postsProducer, timeoutProducer, usersProducer } from "./producers";
+import {
+  getUserProducer,
+  postsProducer,
+  timeoutProducer,
+  usersProducer
+} from "./producers";
 
 export const demoAsyncStates = {
   timeout: {key: "timeout", producer: timeoutProducer(4000)},
 
-  users: createSource("users", usersProducer, {runEffect: "throttle", runEffectDurationMs: 1}),
+  users: createSource("users", usersProducer, {
+    runEffect: "throttle",
+    runEffectDurationMs: 1
+  }),
 
-  posts: {key: "posts", producer: postsProducer},
+  posts: {
+    key: "posts", producer: postsProducer, config: {
+      cacheConfig: {
+        enabled: true,
+        deadline: 5000,
+      }
+    }
+  },
 
   getUser: {key: "get-user", producer: getUserProducer},
 }

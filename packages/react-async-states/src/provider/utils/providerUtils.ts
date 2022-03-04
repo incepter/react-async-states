@@ -1,4 +1,7 @@
-import {readProducerConfigFromSubscriptionConfig} from "shared";
+import {
+  readProducerConfigFromProducerConfig,
+  readProducerConfigFromSubscriptionConfig
+} from "shared";
 import {
   AsyncStateEntries,
   AsyncStateEntry,
@@ -53,7 +56,7 @@ export function createInitialAsyncStatesReducer(
       new AsyncState(
         key,
         producer,
-        readProducerConfigFromSubscriptionConfig(current)
+        readProducerConfigFromProducerConfig((current as InitialAsyncState<any>).config)
       )
     );
     result[key].initiallyHoisted = true;

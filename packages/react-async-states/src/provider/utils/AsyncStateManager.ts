@@ -29,7 +29,9 @@ import AsyncState, {
   AbortFn,
   AsyncStateInterface,
   AsyncStateKey,
-  AsyncStateSource, ForkConfig, State
+  AsyncStateSource,
+  ForkConfig,
+  State
 } from "../../async-state";
 import {isAsyncStateSource} from "../../async-state/AsyncState";
 import {readAsyncStateFromSource} from "../../async-state/read-source";
@@ -271,7 +273,12 @@ export function AsyncStateManager(
   }
 
   function hoist<T>(config: ManagerHoistConfig<T>): AsyncStateInterface<T> {
-    const {key, hoistToProviderConfig = {override: false}, producer} = config;
+    const {
+      key,
+      hoistToProviderConfig = {override: false},
+      producer,
+      cacheConfig
+    } = config;
 
     const existing = get(key);
     if (existing && !hoistToProviderConfig.override) {

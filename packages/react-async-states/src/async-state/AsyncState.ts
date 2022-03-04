@@ -7,7 +7,7 @@ import {
   warning
 } from "shared";
 import {wrapProducerFunction} from "./wrap-producer-function";
-import {StateBuilder} from "./utils";
+import {didExpire, hash, StateBuilder} from "./utils";
 import devtools from "devtools";
 import {areRunEffectsSupported} from "shared/features";
 import {
@@ -16,6 +16,7 @@ import {
   AsyncStateKey,
   AsyncStateSource,
   AsyncStateStatus,
+  CachedState,
   ForkConfig,
   Producer,
   ProducerConfig,
@@ -39,6 +40,9 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
   lastSuccess: State<T>;
 
   config: ProducerConfig<T>;
+
+  cache: { [id: AsyncStateKey]: CachedState<T> } = {};
+
   private locks: number = 0;
   private forkCount: number = 0;
   payload: { [id: string]: any } | null = null;
@@ -95,6 +99,14 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
     if (this.currentState.status === AsyncStateStatus.success) {
       this.lastSuccess = this.currentState;
+      const runHash = hash(this.currentState.props?.args, this.currentState.props?.payload);
+      if (this.config.cacheConfig?.enabled) {
+        this.cache[runHash] = {
+          state: this.currentState,
+          deadline: this.config.cacheConfig?.getDeadline?.(this.currentState) || Infinity,
+          addedAt: Date.now(),
+        };
+      }
     }
 
     if (this.currentState.status !== AsyncStateStatus.pending) {
@@ -212,10 +224,25 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       this.abort();
     }
 
-    const that = this;
 
     let onAbortCallbacks: AbortFn[] = [];
 
+    if (this.config.cacheConfig?.enabled) {
+      const runHash = hash(execArgs, this.payload);
+      const cachedState = this.cache[runHash];
+
+      if (cachedState) {
+
+        if (!didExpire(cachedState)) {
+          this.setState(cachedState.state);
+          return;
+        } else {
+          delete this.cache[runHash];
+        }
+      }
+    }
+
+    const that = this;
     // @ts-ignore
     // ts yelling to add a run, runp and select functions
     // but run and runp will require access to this props object,

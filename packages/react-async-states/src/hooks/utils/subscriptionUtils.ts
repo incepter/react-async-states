@@ -1,4 +1,3 @@
-
 import {
   __DEV__,
   oneObjectIdentity,
@@ -102,6 +101,7 @@ export function inferAsyncStateInstance<T, E>(
         key,
         producer,
         runEffect,
+        cacheConfig,
         initialValue,
         runEffectDurationMs,
         hoistToProviderConfig
@@ -112,6 +112,7 @@ export function inferAsyncStateInstance<T, E>(
         key: key as AsyncStateKey,
         producer,
         runEffect,
+        cacheConfig,
         initialValue,
         runEffectDurationMs,
         hoistToProviderConfig,

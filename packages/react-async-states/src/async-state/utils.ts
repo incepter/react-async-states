@@ -1,5 +1,6 @@
 import {
-  AsyncStateStatus,
+  AsyncStateInterface,
+  AsyncStateStatus, CacheConfig, CachedState,
   ProducerSavedProps,
   State,
   StateBuilderInterface
@@ -31,3 +32,19 @@ export const StateBuilder = Object.freeze({
     props
   ) => state(AsyncStateStatus.aborted, reason, props),
 }) as StateBuilderInterface;
+
+export function hash<T>(
+  args?: any[],
+  payload?: {[id: string]: any} | null,
+  config?: CacheConfig<T>): string {
+  const hashFn = config?.hash || defaultHash;
+  return hashFn(args, payload);
+}
+
+export function defaultHash(args?: any[], payload?: {[id: string]: any} | null): string {
+  return JSON.stringify({args, payload});
+}
+
+export function didExpire<T>(cachedState: CachedState<T>) {
+  return Date.now() >= cachedState.addedAt + cachedState.deadline;
+}

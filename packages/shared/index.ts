@@ -77,10 +77,14 @@ export function cloneProducerProps<T>(props: ProducerProps<T>): ProducerSavedPro
 
   if (Array.isArray(props.args) && props.args.length) {
     output.args = [...props.args];
+  } else {
+    output.args = emptyArray;
   }
 
   return output;
 }
+
+const emptyArray = [];
 
 export function readProducerConfigFromSubscriptionConfig<T>(
   configuration: PartialUseAsyncStateConfiguration<T, any>
@@ -88,8 +92,23 @@ export function readProducerConfigFromSubscriptionConfig<T>(
   return {
     initialValue: configuration.initialValue,
 
+    cacheConfig: configuration.cacheConfig,
+
     runEffect: configuration.runEffect,
     runEffectDurationMs: configuration.runEffectDurationMs,
+  };
+}
+
+export function readProducerConfigFromProducerConfig<T>(
+  configuration?: ProducerConfig<T>
+): ProducerConfig<T> {
+  return {
+    initialValue: configuration?.initialValue,
+
+    cacheConfig: configuration?.cacheConfig,
+
+    runEffect: configuration?.runEffect,
+    runEffectDurationMs: configuration?.runEffectDurationMs,
   };
 }
 

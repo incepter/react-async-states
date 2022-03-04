@@ -2,9 +2,9 @@ import React from "react";
 import { demoAsyncStates } from "./Provider";
 import { useAsyncState, useAsyncStateSelector } from "react-async-states";
 
-function SimpleSub({source, asyncStateKey, displayValue, lazy = false, suspend = false}) {
+function SimpleSub({source, asyncStateKey, displayValue, lazy = false, suspend = false, cacheConfig = null}) {
   // console.log('inside simple sub', asyncStateKey, source);
-  const {key, state, read, run, abort, mode} = useAsyncState({source, key: asyncStateKey, lazy});
+  const {key, state, read, run, abort, mode} = useAsyncState({source, key: asyncStateKey, lazy, cacheConfig});
 
   if (!key) {
     return "waiting...";
