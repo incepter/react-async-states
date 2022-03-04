@@ -259,8 +259,17 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
       },
       configuration.subscriptionKey
     );
+    let postUnsubscribe;
+    if (configuration.postSubscribe) {
+      postUnsubscribe = configuration.postSubscribe({
+        run,
+        mode,
+        getState: () => asyncState.currentState,
+      });
+    }
     return function cleanup() {
       didClean = true;
+      invokeIfPresent(postUnsubscribe);
       (unsubscribe as () => void)();
     }
   }

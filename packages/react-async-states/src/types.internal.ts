@@ -222,6 +222,8 @@ export type EqualityFn<T> = (
   next: T
 ) => boolean;
 
+
+
 export type UseAsyncStateConfiguration<T, E> = {
   key?: AsyncStateKey,
   source?: AsyncStateSource<T>,
@@ -245,6 +247,14 @@ export type UseAsyncStateConfiguration<T, E> = {
     lastSuccess: State<T>
   ) => E,
   areEqual: EqualityFn<E>,
+
+  postSubscribe?: (props: PostSubscribeProps<T>) => CleanupFn,
+}
+
+export type PostSubscribeProps<T> = {
+  getState: () => State<T>,
+  run: (...args: any[]) => AbortFn,
+  mode: AsyncStateSubscriptionMode,
 }
 
 export type PartialUseAsyncStateConfiguration<T, E> = {
@@ -270,6 +280,8 @@ export type PartialUseAsyncStateConfiguration<T, E> = {
     lastSuccess: State<T>
   ) => E,
   areEqual?: EqualityFn<E>,
+
+  postSubscribe?: (props: PostSubscribeProps<T>) => CleanupFn,
 }
 
 export type UseAsyncStateSubscriptionInfo<T, E> = {
