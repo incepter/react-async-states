@@ -45,6 +45,8 @@ export function defaultHash(args?: any[], payload?: {[id: string]: any} | null):
   return JSON.stringify({args, payload});
 }
 
-export function didExpire<T>(cachedState: CachedState<T>) {
-  return Date.now() >= cachedState.addedAt + cachedState.deadline;
+export function didNotExpire<T>(cachedState: CachedState<T>) {
+  const {addedAt, deadline} = cachedState;
+
+  return addedAt + deadline >= Date.now();
 }

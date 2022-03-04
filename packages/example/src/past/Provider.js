@@ -17,10 +17,12 @@ export const demoAsyncStates = {
   }),
 
   posts: {
-    key: "posts", producer: postsProducer, config: {
+    key: "posts",
+    producer: postsProducer,
+    config: {
       cacheConfig: {
         enabled: true,
-        deadline: 5000,
+        getDeadline: () => 5000,
       }
     }
   },

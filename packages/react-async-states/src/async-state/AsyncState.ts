@@ -7,7 +7,7 @@ import {
   warning
 } from "shared";
 import {wrapProducerFunction} from "./wrap-producer-function";
-import {didExpire, hash, StateBuilder} from "./utils";
+import {didNotExpire, hash, StateBuilder} from "./utils";
 import devtools from "devtools";
 import {areRunEffectsSupported} from "shared/features";
 import {
@@ -99,8 +99,8 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
     if (this.currentState.status === AsyncStateStatus.success) {
       this.lastSuccess = this.currentState;
-      const runHash = hash(this.currentState.props?.args, this.currentState.props?.payload);
       if (this.config.cacheConfig?.enabled) {
+        const runHash = hash(this.currentState.props?.args, this.currentState.props?.payload);
         this.cache[runHash] = {
           state: this.currentState,
           deadline: this.config.cacheConfig?.getDeadline?.(this.currentState) || Infinity,
@@ -232,9 +232,10 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       const cachedState = this.cache[runHash];
 
       if (cachedState) {
-
-        if (!didExpire(cachedState)) {
-          this.setState(cachedState.state);
+        if (didNotExpire(cachedState)) {
+          if (cachedState.state !== this.currentState) {
+            this.setState(cachedState.state);
+          }
           return;
         } else {
           delete this.cache[runHash];
