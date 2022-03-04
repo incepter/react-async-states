@@ -7,6 +7,7 @@ import {
   ProducerSavedProps,
   State
 } from "./types";
+import AsyncState from "./AsyncState";
 
 export function warnDevAboutAsyncStateKey(key) {
   if (__DEV__) {
@@ -58,11 +59,13 @@ export function constructAsyncStateSource<T>(asyncState: AsyncStateInterface<T>)
 
 export function readAsyncStateFromSource<T>(possiblySource: AsyncStateSource<T>): AsyncStateInterface<T> {
   try {
-    return possiblySource.constructor(asyncStatesKey); // async state instance
+    const candidate = possiblySource.constructor(asyncStatesKey);
+    if (!(candidate instanceof AsyncState)) {
+      throw new Error("");
+    }
+    return candidate; // async state instance
   } catch (e) {
-    const errorString = "You ve passed an incompatible source object. Please make sure to pass the received source object.";
-    console.error(errorString);
-    throw new Error(errorString);
+    throw new Error("You ve passed an incompatible source object. Please make sure to pass the received source object.");
   }
 }
 
