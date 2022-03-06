@@ -1,5 +1,5 @@
 import {
-  __DEV__,
+  __DEV__, isFn,
   oneObjectIdentity,
   readProducerConfigFromSubscriptionConfig,
   shallowClone,
@@ -212,7 +212,7 @@ export function makeUseAsyncStateReturnValue<T, E>(
     runAsyncState,
     abort: asyncState.abort.bind(asyncState),
     replaceState: asyncState.replaceState.bind(asyncState),
-    run: typeof run === "function" ? run : asyncState.run.bind(asyncState, standaloneRunExtraPropsCreator),
+    run: isFn(run) ? run : asyncState.run.bind(asyncState, standaloneRunExtraPropsCreator),
     invalidateCache: asyncState.invalidateCache.bind(asyncState),
   });
 }

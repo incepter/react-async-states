@@ -1,7 +1,7 @@
 import {
   __DEV__,
   cloneProducerProps,
-  invokeIfPresent,
+  invokeIfPresent, isFn,
   numberOrZero,
   shallowClone,
   warning
@@ -238,7 +238,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     if (this.currentState.status === AsyncStateStatus.pending) {
       this.abort();
       this.currentAborter = undefined;
-    } else if (typeof this.currentAborter === "function") {
+    } else if (isFn(this.currentAborter)) {
       this.abort();
     }
 
@@ -274,7 +274,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       lastSuccess: that.lastSuccess,
       payload: shallowClone(that.payload),
       onAbort(cb: AbortFn) {
-        if (typeof cb === "function") {
+        if (isFn(cb)) {
           onAbortCallbacks.push(cb);
         }
       },
@@ -386,7 +386,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     }
 
     let effectiveValue = newValue;
-    if (typeof newValue === "function") {
+    if (isFn(newValue)) {
       effectiveValue = (newValue as StateFunctionUpdater<T>)(this.currentState);
     }
 

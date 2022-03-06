@@ -1,5 +1,7 @@
+import {isFn} from "./index";
+
 export const enableComponentSuspension = true;
 
 export function areRunEffectsSupported() {
-  return typeof setTimeout === "function";
+  return isFn(setTimeout);
 }

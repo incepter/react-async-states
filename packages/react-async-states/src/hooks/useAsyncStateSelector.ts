@@ -1,5 +1,11 @@
 import * as React from "react";
-import {EMPTY_ARRAY, identity, invokeIfPresent, shallowEqual} from "shared";
+import {
+  EMPTY_ARRAY,
+  identity,
+  invokeIfPresent,
+  isFn,
+  shallowEqual
+} from "shared";
 import {
   AsyncStateSelector,
   AsyncStateSelectorKeys,
@@ -149,7 +155,7 @@ export function useAsyncStateSelector<T>(
   }
 
   function selectValue(): T {
-    const shouldReduceToObject = typeof keys === "function";
+    const shouldReduceToObject = isFn(keys);
 
     return contextValue.select(watchedKeys, selector, shouldReduceToObject);
   }

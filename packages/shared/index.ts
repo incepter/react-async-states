@@ -38,7 +38,7 @@ export function invokeIfPresent(
   fn,
   ...args
 ) {
-  if (typeof fn === "function") {
+  if (isFn(fn)) {
     return fn(...args);
   }
   return undefined;
@@ -118,4 +118,8 @@ export function numberOrZero(maybeNumber) {
 
 export function warning(...args) {
   console.error(...args);
+}
+
+export function isFn(fn) {
+  return typeof fn === "function";
 }

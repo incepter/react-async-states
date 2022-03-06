@@ -1,6 +1,7 @@
 import * as React from "react";
+import {isFn} from "../../../shared";
 
 export function supportsConcurrentMode(): boolean {
   // @ts-ignore
-  return typeof React.useSyncExternalStore === "function";
+  return isFn(React.useSyncExternalStore);
 }

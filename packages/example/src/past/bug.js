@@ -33,10 +33,6 @@ function randomColor() {
   return `rgb(${randomInt()}, ${randomInt()},${randomInt()})`;
 }
 
-function invokeIfPresent(fn, ...args) {
-  return typeof fn === "function" ? fn(...args) : undefined;
-}
-
 function AppWrapped() {
   const {
     state: { status, data, props },
