@@ -125,7 +125,7 @@ const {read} = useAsyncState(asyncFunction);
 // this either suspends on react 18+ or give you the selected state after warning you
 const selectedState = read();
 ```
-12. **Powerful producers**: The producer concept is  a more generic way to grap
+12. **Powerful producers**: The producer concept is  a more generic way to grab
 state from a function, the library tries to give the producers more power to have
 more control in your app. Like
 - Running a producer from a producer
@@ -134,6 +134,16 @@ more control in your app. Like
 - Select from other async states
 - Run and wait
 - Run while forking...
+- Update state after resolve (optimization for SSE and websockets and intervals and workers)
+
+13. **Cache support**: The library supports caching the producer's result
+from the `args` and `payload` that was ran with.
+The cache may be invalidated via `invalidateCache`, persisted via `persist` and
+loaded via `load`.
+
+14. **Post subscription callback**: When a subscription occurs to an async state,
+a `postSubscribe` may be useful to attach some platform specific event handlers
+like focus, resize... etc
 
 ## Motivations
 Managing state using React native APIs or third party libraries ain't an easy task. Let's talk about the parts we miss:

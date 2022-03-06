@@ -380,6 +380,9 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       clone.currentState = shallowClone(this.currentState);
       clone.lastSuccess = shallowClone(this.lastSuccess);
     }
+    if (mergedConfig.keepCache) {
+      clone.cache = this.cache;
+    }
 
     return clone as AsyncStateInterface<T>;
   }

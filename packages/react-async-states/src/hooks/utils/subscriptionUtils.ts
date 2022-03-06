@@ -160,10 +160,6 @@ export function makeUseAsyncStateReturnValue<T, E>(
   stateValue: E,
   configurationKey: AsyncStateKey,
   run: (...args: any[]) => AbortFn,
-  runAsyncState: (<F>(
-    key: AsyncStateKeyOrSource<F>,
-    ...args: any[]
-  ) => AbortFn) | undefined,
   mode: AsyncStateSubscriptionMode
 ): Readonly<UseSelectedAsyncState<T, E>> {
 
@@ -174,7 +170,6 @@ export function makeUseAsyncStateReturnValue<T, E>(
 
       state: stateValue as E,
 
-      runAsyncState,
       abort() {
       },
       run(...args: any[]): AbortFn {
@@ -209,7 +204,6 @@ export function makeUseAsyncStateReturnValue<T, E>(
       );
     },
 
-    runAsyncState,
     abort: asyncState.abort.bind(asyncState),
     replaceState: asyncState.replaceState.bind(asyncState),
     run: isFn(run) ? run : asyncState.run.bind(asyncState, standaloneRunExtraPropsCreator),

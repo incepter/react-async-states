@@ -202,7 +202,6 @@ export type UseSelectedAsyncState<T, E> = {
 
   payload: { [id: string]: any } | null,
 
-
   abort: ((reason?: any) => void),
   run: (...args: any[]) => AbortFn,
   replaceState: StateUpdater<T>,
@@ -211,10 +210,6 @@ export type UseSelectedAsyncState<T, E> = {
   invalidateCache: (cacheKey?: string) => void,
 
   read: () => E,
-  runAsyncState?: <D>(
-    key: AsyncStateKeyOrSource<D>,
-    ...args: any[]
-  ) => AbortFn,
 }
 
 export type UseAsyncState<T> = UseSelectedAsyncState<T, State<T>>

@@ -47,7 +47,6 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
 
   // subscribe to context
   const contextValue = React.useContext(AsyncStateContext);
-  const runAsyncState = contextValue?.runAsyncState;
   const isInsideProvider = contextValue !== null;
 
   // this is similar to a ref, but will never get reset
@@ -88,7 +87,6 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
             newState,
             configuration.key as AsyncStateKey,
             run,
-            runAsyncState,
             mode
           )
       });
@@ -131,7 +129,6 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
       (asyncState ? readStateFromAsyncState(asyncState, selector) : undefined) as E,
       configuration.key as AsyncStateKey,
       run,
-      runAsyncState,
       mode
     );
 
@@ -252,7 +249,6 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
               newState,
               configuration.key as AsyncStateKey,
               run,
-              runAsyncState,
               mode
             )
         });

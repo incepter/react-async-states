@@ -140,6 +140,7 @@ export interface StateBuilderInterface {
 export type ForkConfig = {
   key?: AsyncStateKey,
   keepState?: boolean,
+  keepCache?: boolean,
 }
 
 export interface RunExtraProps {
