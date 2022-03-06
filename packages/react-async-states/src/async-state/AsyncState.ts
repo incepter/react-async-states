@@ -1,7 +1,8 @@
 import {
   __DEV__,
   cloneProducerProps,
-  invokeIfPresent, isFn,
+  invokeIfPresent,
+  isFn,
   numberOrZero,
   shallowClone,
   warning
@@ -116,14 +117,16 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
           this.currentState.props?.payload,
           this.config.cacheConfig
         );
-        this.cache[runHash] = {
-          state: this.currentState,
-          deadline: this.config.cacheConfig?.getDeadline?.(this.currentState) || Infinity,
-          addedAt: Date.now(),
-        };
+        if (this.cache[runHash]?.state !== this.currentState) {
+          this.cache[runHash] = {
+            state: this.currentState,
+            deadline: this.config.cacheConfig?.getDeadline?.(this.currentState) || Infinity,
+            addedAt: Date.now(),
+          };
 
-        if (typeof this.config.cacheConfig?.persist === "function") {
-          this.config.cacheConfig.persist(this.cache);
+          if (typeof this.config.cacheConfig?.persist === "function") {
+            this.config.cacheConfig.persist(this.cache);
+          }
         }
       }
     }

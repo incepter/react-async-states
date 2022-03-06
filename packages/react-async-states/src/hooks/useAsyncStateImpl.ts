@@ -15,27 +15,22 @@ import {
 import {
   AsyncStateSubscriptionMode,
   CleanupFn,
-  UseAsyncStateConfig,
   MemoizedUseAsyncStateRef,
   PartialUseAsyncStateConfiguration,
-  UseSelectedAsyncState,
-  UseAsyncStateSubscriptionInfo
+  UseAsyncStateConfig,
+  UseAsyncStateSelector,
+  UseAsyncStateSubscriptionInfo,
+  UseSelectedAsyncState
 } from "../types.internal";
 import {
   AsyncStateInterface,
   AsyncStateKey,
-  AsyncStateSource,
-  State
+  AsyncStateSource
 } from "../async-state";
 import {nextKey} from "./utils/key-gen";
 
 const defaultDependencies: any[] = [];
 
-// 2 x useMemo
-// 1 x useContext
-// 2 x useState
-// 3 x useEffect
-// 1 x useEffect (inside provider)
 export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies: any[] = defaultDependencies,
@@ -95,11 +90,9 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
   }
 
   // subscribe to async state
-  // useEffect: [asyncState, selector, areEqual]
   React.useEffect(subscribeToAsyncState, [asyncState, selector, areEqual]);
 
   // run automatically, if necessary
-  // useEffect: [...dependencies]
   React.useEffect(autoRunAsyncState, dependencies);
 
   // dispose
@@ -355,9 +348,9 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
 
 function readStateFromAsyncState<T, E>(
   asyncState: AsyncStateInterface<T>,
-  selector: (currentState: State<T>, lastSuccess: State<T>) => E
+  selector: UseAsyncStateSelector<T, E>
 ): E {
-  return selector(asyncState.currentState, asyncState.lastSuccess);
+  return selector(asyncState.currentState, asyncState.lastSuccess, asyncState.cache);
 }
 
 // remote async state

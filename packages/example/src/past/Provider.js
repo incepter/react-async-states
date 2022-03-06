@@ -49,7 +49,27 @@ export const demoAsyncStates = {
     }
   },
 
-  getUser: {key: "get-user", producer: getUserProducer},
+  getUser: {
+    key: "get-user",
+    producer: getUserProducer,
+    config: {
+      cacheConfig: {
+        enabled: true,
+        hash(args, payload) {
+          return `user-${payload?.matchParams?.userId}`;
+        },
+        getDeadline: () => 1000 * 60 * 5,
+        load() {
+          // console.log('loading users cache!', JSON.parse(localStorage.getItem("users-cache")));
+          return JSON.parse(localStorage.getItem("users-cache"));
+        },
+        persist(st) {
+          // console.log('saving users cache!', st);
+          localStorage.setItem("users-cache", JSON.stringify(st));
+        }
+      },
+    }
+  },
 }
 const asyncStatesDemo = Object.values(demoAsyncStates);
 
