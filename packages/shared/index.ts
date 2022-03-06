@@ -120,6 +120,6 @@ export function warning(...args) {
   console.error(...args);
 }
 
-export function isFn(fn) {
+export function isFn(fn: Function | any): boolean {
   return typeof fn === "function";
 }

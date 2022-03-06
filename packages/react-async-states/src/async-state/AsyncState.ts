@@ -86,6 +86,13 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
     Object.preventExtensions(this);
 
+    if (typeof this.config.cacheConfig?.load === "function") {
+      const loadedCache = this.config.cacheConfig.load();
+      if (loadedCache) {
+        this.cache = loadedCache;
+      }
+    }
+
     if (__DEV__) devtools.emitCreation(this);
   }
 
@@ -114,6 +121,10 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
           deadline: this.config.cacheConfig?.getDeadline?.(this.currentState) || Infinity,
           addedAt: Date.now(),
         };
+
+        if (typeof this.config.cacheConfig?.persist === "function") {
+          this.config.cacheConfig.persist(this.cache);
+        }
       }
     }
 

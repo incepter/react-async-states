@@ -13,7 +13,20 @@ export const demoAsyncStates = {
 
   users: createSource("users", usersProducer, {
     runEffect: "throttle",
-    runEffectDurationMs: 1
+    runEffectDurationMs: 1000,
+    cacheConfig: {
+      enabled: true,
+      hash(args, payload) {
+        return "users";
+      },
+      getDeadline: () => 50000,
+      load() {
+        return JSON.parse(localStorage.getItem("users-cache"));
+      },
+      persist(st) {
+        localStorage.setItem("users-cache", JSON.stringify(st));
+      }
+    }
   }),
 
   posts: {
@@ -25,7 +38,13 @@ export const demoAsyncStates = {
         hash(args, payload) {
           return "posts";
         },
-        getDeadline: () => 5000,
+        getDeadline: () => 50000,
+        load() {
+          return JSON.parse(localStorage.getItem("posts-cache"));
+        },
+        persist(st) {
+          localStorage.setItem("posts-cache", JSON.stringify(st));
+        }
       }
     }
   },
