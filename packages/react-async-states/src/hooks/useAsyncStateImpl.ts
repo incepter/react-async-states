@@ -261,6 +261,7 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
         run,
         mode,
         getState: () => asyncState.currentState,
+        invalidateCache: asyncState.invalidateCache.bind(asyncState),
       });
     }
     return function cleanup() {

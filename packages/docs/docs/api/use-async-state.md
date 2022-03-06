@@ -247,6 +247,7 @@ postUnsubscribe = configuration.postSubscribe({
     run,
     mode,
     getState: () => asyncState.currentState,
+    invalidateCache,
 })
 ```
 

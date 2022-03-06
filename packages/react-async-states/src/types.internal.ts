@@ -254,6 +254,7 @@ export type PostSubscribeProps<T> = {
   getState: () => State<T>,
   run: (...args: any[]) => AbortFn,
   mode: AsyncStateSubscriptionMode,
+  invalidateCache: (cacheKey?: string) => void,
 }
 
 export type PartialUseAsyncStateConfiguration<T, E> = {
