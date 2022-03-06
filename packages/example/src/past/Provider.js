@@ -22,6 +22,9 @@ export const demoAsyncStates = {
     config: {
       cacheConfig: {
         enabled: true,
+        hash(args, payload) {
+          return "posts";
+        },
         getDeadline: () => 5000,
       }
     }

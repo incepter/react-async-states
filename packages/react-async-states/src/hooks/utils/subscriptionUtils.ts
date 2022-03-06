@@ -183,6 +183,7 @@ export function makeUseAsyncStateReturnValue<T, E>(
       read() {
         return stateValue;
       },
+      invalidateCache() {},
       replaceState() {
       },
       mergePayload() {
@@ -212,6 +213,7 @@ export function makeUseAsyncStateReturnValue<T, E>(
     abort: asyncState.abort.bind(asyncState),
     replaceState: asyncState.replaceState.bind(asyncState),
     run: typeof run === "function" ? run : asyncState.run.bind(asyncState, standaloneRunExtraPropsCreator),
+    invalidateCache: asyncState.invalidateCache.bind(asyncState),
   });
 }
 

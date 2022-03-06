@@ -208,6 +208,8 @@ export type UseSelectedAsyncState<T, E> = {
   replaceState: StateUpdater<T>,
   mergePayload: (argv: { [id: string]: any }) => void,
 
+  invalidateCache: (cacheKey?: string) => void,
+
   read: () => E,
   runAsyncState?: <D>(
     key: AsyncStateKeyOrSource<D>,

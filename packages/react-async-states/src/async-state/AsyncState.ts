@@ -41,7 +41,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   config: ProducerConfig<T>;
 
-  cache: { [id: AsyncStateKey]: CachedState<T> } = {};
+  cache: { [id: AsyncStateKey]: CachedState<T> } = Object.create(null);
 
   private locks: number = 0;
   private forkCount: number = 0;
@@ -89,6 +89,10 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     if (__DEV__) devtools.emitCreation(this);
   }
 
+  isCacheEnabled(): boolean {
+    return !!this.config.cacheConfig?.enabled;
+  }
+
   setState(
     newState: State<T>,
     notify: boolean = true
@@ -99,8 +103,12 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
     if (this.currentState.status === AsyncStateStatus.success) {
       this.lastSuccess = this.currentState;
-      if (this.config.cacheConfig?.enabled) {
-        const runHash = hash(this.currentState.props?.args, this.currentState.props?.payload);
+      if (this.isCacheEnabled()) {
+        const runHash = hash(
+          this.currentState.props?.args,
+          this.currentState.props?.payload,
+          this.config.cacheConfig
+        );
         this.cache[runHash] = {
           state: this.currentState,
           deadline: this.config.cacheConfig?.getDeadline?.(this.currentState) || Infinity,
@@ -121,6 +129,16 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   abort(reason: any = undefined) {
     invokeIfPresent(this.currentAborter, reason);
+  }
+
+  invalidateCache(cacheKey?: string) {
+    if (this.isCacheEnabled()) {
+      if (!cacheKey) {
+        this.cache = Object.create(null);
+      } else {
+        delete this.cache[cacheKey];
+      }
+    }
   }
 
   dispose() {
@@ -227,8 +245,8 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
     let onAbortCallbacks: AbortFn[] = [];
 
-    if (this.config.cacheConfig?.enabled) {
-      const runHash = hash(execArgs, this.payload);
+    if (this.isCacheEnabled()) {
+      const runHash = hash(execArgs, this.payload, this.config.cacheConfig);
       const cachedState = this.cache[runHash];
 
       if (cachedState) {

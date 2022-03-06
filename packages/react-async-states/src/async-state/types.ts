@@ -105,6 +105,7 @@ export interface AsyncStateInterface<T> {
   lastSuccess: State<T>,
 
   cache: {[id: AsyncStateKey]: CachedState<T>}
+  invalidateCache: (cacheKey?: string) => void,
 
   payload: { [id: string]: any } | null,
   config: ProducerConfig<T>,
