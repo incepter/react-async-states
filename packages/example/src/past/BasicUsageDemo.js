@@ -78,7 +78,7 @@ export default function Demo() {
             <hr/>
             <React.Suspense fallback="pending...posts">
               <SimpleSub
-                lazy={false}
+                lazy
                 asyncStateKey={demoAsyncStates.posts.key}
                 displayValue={data => data.map(post => <li
                   key={post.id}>{post.id} -

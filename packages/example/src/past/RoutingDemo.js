@@ -9,9 +9,10 @@ export default function Demo() {
   const history = useHistory();
   const params = useParams();
 
-  const {state: {status, data}, lastSuccess, abort} = useAsyncState({
+  const {mode, state: {status, data}, lastSuccess, abort, source} = useAsyncState({
     lazy: false,
     payload: {matchParams: params},
+    key: demoAsyncStates.getUser.key,
     // this function does not depend on render and may be static
     producer(props) {
       const cancelToken = bindAbortAndCancelToken(props);
@@ -53,7 +54,9 @@ export default function Demo() {
     }
   }, [params]);
 
-  console.log('render!!', status)
+  const meter = React.useRef(0);
+  meter.current += 1;
+  console.log('render!!', {status, meter: meter.current, uniqueId: source.uniqueId})
 
   function navigate(e) {
     e.preventDefault();
