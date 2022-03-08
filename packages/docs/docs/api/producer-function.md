@@ -131,7 +131,7 @@ The following properties are needed when declaring a production function, either
 |----------------|---------------------|-------------------------|
 |`key`           |`string`             | The unique identifier of the async state |
 |`producer`      |`producer function`  | Returns the state value of type `T` |
-|`configuration` |`ProducerProps`      | The argument object that the producer was ran with |
+|`configuration` |`ProducerConfig`     | The argument object that the producer was ran with |
 
 The supported configuration is:
 
@@ -140,16 +140,56 @@ The supported configuration is:
 |`initialValue`        |`T`                                       | The initial value or the initializer of the state (status = `initial`) |
 |`runEffect`           |`oneOf('debounce', 'throttle', undefined)`| An effect to apply when running the producer, can be used to debounce or throttle |
 |`runEffectDurationMs` |`number > 0`, `undefined`                 | The debounce/throttle duration |
+|`cacheConfig`         |`CacheConfig`                             | The cache config |
+
+Where the supported cache config is:
+
+|Property              |Type                                                              |Description               |
+|----------------------|------------------------------------------------------------------|-------------------------|
+|`enabled`             | `boolean`                                                        |  Whether to enable cache or not |
+|`hash`                | `(args?: any[], payload?: {[id: string]: any} or null) => string`| a function to calculate a hash for a producer run (from args and payload) |
+|`getDeadline`         | `(currentState: State<T>) => number`                             | returns the deadline after which the cache is invalid |
+|`load`                | `() => {[id: AsyncStateKey]: CachedState<T>}`                    | loads the cached data when the async state instance is created |
+|`persist`             | `(cache: {[id: AsyncStateKey]: CachedState<T>}) => void`         | a function to persist the whole cache, called when state is updated to success |
+
+Here is a small example of the usage of cache config:
+
+```javascript
+  // Creates a producer that will fetch cities by country
+  // and caches them
+  createSource("cities", citiesProducer, {
+    cacheConfig: {
+      enabled: true,
+      hash: (args, payload) =>  `cities-${args[0]}`, // args[0] = countryId
+      getDeadline: (state) => state.data.headers.expiresAt || 5000,
+      load: () => JSON.parse(localStorage.getItem("cities-cache")),
+      persist : cache => localStorage.setItem("cities-cache", JSON.stringify(cache)),
+    }
+  });
+
+  const posts = {
+    key: "posts",
+    producer: postsProducer,
+    config: {
+      cacheConfig: {
+        enabled: true, getDeadline: () => 50000,
+        hash: (args, payload) => "posts",
+        load: () => JSON.parse(localStorage.getItem("posts-cache")),
+        persist: cache => localStorage.setItem("posts-cache", JSON.stringify(cache)),
+      }
+    }
+  };
+```
 
 
-### Run from producer
+## Run from producer props
 The producer function may select a state or run another async state, and either
 care about its resolve value or not (same applies for the abort fn).
 
 This open us new horizons for the library as you can combine these features
 for a more control in your app. 
 
-#### props.run
+### props.run
 Signature:
 
 ```typescript
@@ -173,7 +213,7 @@ subscribers.
 :::
 
 
-#### props.runp
+### props.runp
 
 Signature:
 
@@ -194,7 +234,7 @@ async function weatherProducer(props) {
 
 ```
 
-#### props.emit
+### props.emit
 
 The emit function changes the state from the producer, but only works after the
 producer resolves (or else you get a warning, without effect).
@@ -251,7 +291,7 @@ function brokerProducer(props) {
 }
 ```
 
-#### props.select
+### props.select
 Signature:
 
 ```typescript

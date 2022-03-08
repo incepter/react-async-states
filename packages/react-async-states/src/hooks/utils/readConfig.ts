@@ -8,6 +8,7 @@ import {
   UseAsyncStateConfiguration
 } from "../../types.internal";
 import {isAsyncStateSource} from "../../async-state/AsyncState";
+import {isFn} from "../../../../shared";
 
 // userConfig is the config the developer wrote
 export function readUserConfiguration<T, E>(
@@ -15,7 +16,7 @@ export function readUserConfiguration<T, E>(
   overrides?: PartialUseAsyncStateConfiguration<T, E>
 ): UseAsyncStateConfiguration<T, E> {
   // this is direct anonymous producer configuration
-  if (typeof userConfig === "function") {
+  if (isFn(userConfig)) {
     return Object.assign(
       {},
       defaultUseASConfig,

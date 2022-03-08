@@ -24,7 +24,89 @@ describe('should run async state with generator', () => {
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("3");
   });
-  it('should run async generator', async () => {
+  it('should run sync generator and throw', async () => {
+    // given
+    function Component() {
+      const {state}: UseAsyncState<number> = useAsyncState.auto(function* producer() {
+        yield 1;
+        yield 2;
+        throw new Error("Error there!")
+      });
+
+      return (
+        <div>
+          <span data-testid="status">{state.status}</span>
+          <span data-testid="result">{state.data?.toString()}</span>
+        </div>
+      );
+    }
+
+    // when
+
+    render(<Component/>)
+
+    // then
+    expect(screen.getByTestId("status").innerHTML).toEqual(AsyncStateStatus.error);
+    expect(screen.getByTestId("result").innerHTML).toEqual("Error: Error there!");
+  });
+  it('should run sync generator try and catch', async () => {
+    // given
+    function Component() {
+      const {state}: UseAsyncState<number> = useAsyncState.auto(function* producer() {
+        try {
+          yield 1;
+          yield 2;
+          throw new Error("Error there!")
+        } catch (e) {
+          return yield 15;
+        }
+      });
+
+      return (
+        <div>
+          <span data-testid="status">{state.status}</span>
+          <span data-testid="result">{state.data?.toString()}</span>
+        </div>
+      );
+    }
+
+    // when
+    render(<Component/>)
+
+    // then
+    expect(screen.getByTestId("status").innerHTML).toEqual(AsyncStateStatus.success);
+    expect(screen.getByTestId("result").innerHTML).toEqual("15");
+  });
+  it('should run async generator and throw', async () => {
+    // given
+    jest.useFakeTimers();
+    function Component() {
+      const {state}: UseAsyncState<number> = useAsyncState.auto(function* producer() {
+        yield 1;
+        yield new Promise(res => setTimeout(res, 100));
+        throw new Error("Error there!!")
+      });
+
+      return (
+        <div>
+          <span data-testid="status">{state.status}</span>
+          <span data-testid="result">{state.data?.toString()}</span>
+        </div>
+      );
+    }
+
+    // when
+    render(<Component/>)
+
+    await act(async () => {
+      await jest.advanceTimersByTime(100);
+    });
+
+    // then
+    expect(screen.getByTestId("status").innerHTML).toEqual(AsyncStateStatus.error);
+    expect(screen.getByTestId("result").innerHTML).toEqual("Error: Error there!!");
+  });
+  it('should run async generator and abort it and make sure it doesnt continute', async () => {
     // given
     jest.useFakeTimers();
     const mockedFn = jest.fn();

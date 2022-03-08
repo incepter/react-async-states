@@ -29,8 +29,6 @@ function useAsyncState(configuration, dependencies = []) {
     abort,
     replaceState,
     mergePayload,
-
-    runAsyncState,
   };
 }
 ```
@@ -58,7 +56,7 @@ const value = useAsyncState({
   hoistToProvider: false,
   hoistToProviderConfig: {override: false},
   fork: false,
-  forkConfig: {keepState: true, key: "new-key"},
+  forkConfig: {keepState: true, key: "new-key", keepCache: false},
 
   selector: (currentState, lastSuccess) => currentState,
   areEqual: (prev, next) => prev === next,

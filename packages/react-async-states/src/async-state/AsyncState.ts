@@ -2,16 +2,13 @@ import {
   __DEV__,
   cloneProducerProps,
   invokeIfPresent,
+  isFn,
   numberOrZero,
   shallowClone,
   warning
 } from "shared";
 import {wrapProducerFunction} from "./wrap-producer-function";
-import {
-  constructAsyncStateSource,
-  StateBuilder,
-  warnDevAboutAsyncStateKey
-} from "./utils";
+import {didNotExpire, hash, StateBuilder} from "./utils";
 import devtools from "devtools";
 import {areRunEffectsSupported} from "shared/features";
 import {
@@ -20,6 +17,7 @@ import {
   AsyncStateKey,
   AsyncStateSource,
   AsyncStateStatus,
+  CachedState,
   ForkConfig,
   Producer,
   ProducerConfig,
@@ -31,6 +29,7 @@ import {
   StateFunctionUpdater,
   StateSubscription
 } from "./types";
+import {constructAsyncStateSource} from "./construct-source";
 
 export default class AsyncState<T> implements AsyncStateInterface<T> {
   //region properties
@@ -42,6 +41,9 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
   lastSuccess: State<T>;
 
   config: ProducerConfig<T>;
+
+  cache: { [id: AsyncStateKey]: CachedState<T> } = Object.create(null);
+
   private locks: number = 0;
   private forkCount: number = 0;
   payload: { [id: string]: any } | null = null;
@@ -62,7 +64,10 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     producer: Producer<T> | undefined | null,
     config?: ProducerConfig<T>
   ) {
-    warnDevAboutAsyncStateKey(key);
+    if (typeof key !== "string") {
+      throw new Error("An async state must be initialized with a string key." +
+        ` Provider = '${key}' of type '${typeof key}'`);
+    }
 
     this.key = key;
     this.config = shallowClone(config);
@@ -82,7 +87,18 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
     Object.preventExtensions(this);
 
+    if (this.isCacheEnabled() && typeof this.config.cacheConfig?.load === "function") {
+      const loadedCache = this.config.cacheConfig.load();
+      if (loadedCache) {
+        this.cache = loadedCache;
+      }
+    }
+
     if (__DEV__) devtools.emitCreation(this);
+  }
+
+  isCacheEnabled(): boolean {
+    return !!this.config.cacheConfig?.enabled;
   }
 
   setState(
@@ -95,6 +111,24 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
     if (this.currentState.status === AsyncStateStatus.success) {
       this.lastSuccess = this.currentState;
+      if (this.isCacheEnabled()) {
+        const runHash = hash(
+          this.currentState.props?.args,
+          this.currentState.props?.payload,
+          this.config.cacheConfig
+        );
+        if (this.cache[runHash]?.state !== this.currentState) {
+          this.cache[runHash] = {
+            state: this.currentState,
+            deadline: this.config.cacheConfig?.getDeadline?.(this.currentState) || Infinity,
+            addedAt: Date.now(),
+          };
+
+          if (typeof this.config.cacheConfig?.persist === "function") {
+            this.config.cacheConfig.persist(this.cache);
+          }
+        }
+      }
     }
 
     if (this.currentState.status !== AsyncStateStatus.pending) {
@@ -109,6 +143,16 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   abort(reason: any = undefined) {
     invokeIfPresent(this.currentAborter, reason);
+  }
+
+  invalidateCache(cacheKey?: string) {
+    if (this.isCacheEnabled()) {
+      if (!cacheKey) {
+        this.cache = Object.create(null);
+      } else {
+        delete this.cache[cacheKey];
+      }
+    }
   }
 
   dispose() {
@@ -208,14 +252,31 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     if (this.currentState.status === AsyncStateStatus.pending) {
       this.abort();
       this.currentAborter = undefined;
-    } else if (typeof this.currentAborter === "function") {
+    } else if (isFn(this.currentAborter)) {
       this.abort();
     }
 
-    const that = this;
 
     let onAbortCallbacks: AbortFn[] = [];
 
+    if (this.isCacheEnabled()) {
+      console.log('inside!')
+      const runHash = hash(execArgs, this.payload, this.config.cacheConfig);
+      const cachedState = this.cache[runHash];
+
+      if (cachedState) {
+        if (didNotExpire(cachedState)) {
+          if (cachedState.state !== this.currentState) {
+            this.setState(cachedState.state);
+          }
+          return;
+        } else {
+          delete this.cache[runHash];
+        }
+      }
+    }
+
+    const that = this;
     // @ts-ignore
     // ts yelling to add a run, runp and select functions
     // but run and runp will require access to this props object,
@@ -228,7 +289,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       lastSuccess: that.lastSuccess,
       payload: shallowClone(that.payload),
       onAbort(cb: AbortFn) {
-        if (typeof cb === "function") {
+        if (isFn(cb)) {
           onAbortCallbacks.push(cb);
         }
       },
@@ -323,6 +384,9 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       clone.currentState = shallowClone(this.currentState);
       clone.lastSuccess = shallowClone(this.lastSuccess);
     }
+    if (mergedConfig.keepCache) {
+      clone.cache = this.cache;
+    }
 
     return clone as AsyncStateInterface<T>;
   }
@@ -340,7 +404,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     }
 
     let effectiveValue = newValue;
-    if (typeof newValue === "function") {
+    if (isFn(newValue)) {
       effectiveValue = (newValue as StateFunctionUpdater<T>)(this.currentState);
     }
 

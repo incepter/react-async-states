@@ -1,13 +1,20 @@
-import {readProducerConfigFromSubscriptionConfig} from "shared";
+import {
+  readProducerConfigFromProducerConfig,
+  readProducerConfigFromSubscriptionConfig
+} from "shared";
 import {
   AsyncStateEntries,
   AsyncStateEntry,
   ExtendedInitialAsyncState,
   InitialAsyncState
 } from "../../types.internal";
-import AsyncState, {AsyncStateInterface, AsyncStateSource} from "../../async-state";
-import {readAsyncStateFromSource} from "../../async-state/utils";
+import AsyncState, {
+  AsyncStateInterface,
+  AsyncStateKey,
+  AsyncStateSource
+} from "../../async-state";
 import {isAsyncStateSource} from "../../async-state/AsyncState";
+import {readAsyncStateFromSource} from "../../async-state/read-source";
 
 export function createAsyncStateEntry<T>(
   asyncState: AsyncStateInterface<T>
@@ -49,7 +56,7 @@ export function createInitialAsyncStatesReducer(
       new AsyncState(
         key,
         producer,
-        readProducerConfigFromSubscriptionConfig(current)
+        readProducerConfigFromProducerConfig((current as InitialAsyncState<any>).config)
       )
     );
     result[key].initiallyHoisted = true;

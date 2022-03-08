@@ -2,9 +2,24 @@ import React from "react";
 import { demoAsyncStates } from "./Provider";
 import { useAsyncState, useAsyncStateSelector } from "react-async-states";
 
-function SimpleSub({source, asyncStateKey, displayValue, lazy = false, suspend = false}) {
+function SimpleSub({
+                     source,
+                     asyncStateKey,
+                     displayValue,
+                     lazy = false,
+                     suspend = false,
+                     cacheConfig = null
+                   }) {
   // console.log('inside simple sub', asyncStateKey, source);
-  const {key, state, read, run, abort, mode} = useAsyncState({source, key: asyncStateKey, lazy});
+  const {
+    key,
+    invalidateCache,
+    state,
+    read,
+    run,
+    abort,
+    mode
+  } = useAsyncState({source, key: asyncStateKey, lazy, cacheConfig});
 
   if (!key) {
     return "waiting...";
@@ -23,7 +38,11 @@ function SimpleSub({source, asyncStateKey, displayValue, lazy = false, suspend =
       <br/>
       <span>Run: <button onClick={() => run()}>Run {key}</button></span>
       <br/>
-      <span>Abort: <button onClick={() => abort()} disabled={status !== "pending"}>Abort {key}</button></span>
+      <span>Run: <button
+        onClick={() => invalidateCache()}>Invalidate cache</button></span>
+      <br/>
+      <span>Abort: <button onClick={() => abort()}
+                           disabled={status !== "pending"}>Abort {key}</button></span>
       <br/>
       {status === "success" && (
         <div>
@@ -61,7 +80,8 @@ export default function Demo() {
               <SimpleSub
                 lazy
                 asyncStateKey={demoAsyncStates.posts.key}
-                displayValue={data => data.map(post => <li key={post.id}>{post.id} -
+                displayValue={data => data.map(post => <li
+                  key={post.id}>{post.id} -
                   userId: {post.userId} - {post.title}</li>)}
               />
             </React.Suspense>
@@ -103,7 +123,8 @@ function UndefinedProducerDemoHoister() {
 function UndefinedProducerDemoConsumer() {
   const {state: {data}, run} = useAsyncState("user_input");
   return (
-    <input style={{backgroundColor: "gray", border: "2px solid red"}} onChange={e => run(e.target.value)}
+    <input style={{backgroundColor: "gray", border: "2px solid red"}}
+           onChange={e => run(e.target.value)}
            value={data} placeholder="type something"/>
   );
 }

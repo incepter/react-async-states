@@ -1,6 +1,5 @@
-
 import {
-  __DEV__,
+  __DEV__, isFn,
   oneObjectIdentity,
   readProducerConfigFromSubscriptionConfig,
   shallowClone,
@@ -23,7 +22,7 @@ import AsyncState, {
   AsyncStateKey,
   AsyncStateSource, AsyncStateStatus
 } from "../../async-state";
-import {readAsyncStateFromSource} from "../../async-state/utils";
+import {readAsyncStateFromSource} from "../../async-state/read-source";
 
 export function inferSubscriptionMode<T, E>(
   contextValue: UseAsyncStateContextType,
@@ -102,6 +101,7 @@ export function inferAsyncStateInstance<T, E>(
         key,
         producer,
         runEffect,
+        cacheConfig,
         initialValue,
         runEffectDurationMs,
         hoistToProviderConfig
@@ -112,6 +112,7 @@ export function inferAsyncStateInstance<T, E>(
         key: key as AsyncStateKey,
         producer,
         runEffect,
+        cacheConfig,
         initialValue,
         runEffectDurationMs,
         hoistToProviderConfig,
@@ -159,10 +160,6 @@ export function makeUseAsyncStateReturnValue<T, E>(
   stateValue: E,
   configurationKey: AsyncStateKey,
   run: (...args: any[]) => AbortFn,
-  runAsyncState: (<F>(
-    key: AsyncStateKeyOrSource<F>,
-    ...args: any[]
-  ) => AbortFn) | undefined,
   mode: AsyncStateSubscriptionMode
 ): Readonly<UseSelectedAsyncState<T, E>> {
 
@@ -173,7 +170,6 @@ export function makeUseAsyncStateReturnValue<T, E>(
 
       state: stateValue as E,
 
-      runAsyncState,
       abort() {
       },
       run(...args: any[]): AbortFn {
@@ -182,6 +178,7 @@ export function makeUseAsyncStateReturnValue<T, E>(
       read() {
         return stateValue;
       },
+      invalidateCache() {},
       replaceState() {
       },
       mergePayload() {
@@ -207,10 +204,10 @@ export function makeUseAsyncStateReturnValue<T, E>(
       );
     },
 
-    runAsyncState,
     abort: asyncState.abort.bind(asyncState),
     replaceState: asyncState.replaceState.bind(asyncState),
-    run: typeof run === "function" ? run : asyncState.run.bind(asyncState, standaloneRunExtraPropsCreator),
+    run: isFn(run) ? run : asyncState.run.bind(asyncState, standaloneRunExtraPropsCreator),
+    invalidateCache: asyncState.invalidateCache.bind(asyncState),
   });
 }
 

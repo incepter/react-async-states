@@ -3,11 +3,14 @@ import {
   AsyncStateInterface,
   AsyncStateKey,
   AsyncStateSource,
+  CacheConfig,
+  CachedState,
   ForkConfig,
   Producer,
-  ProducerConfig, ProducerProps,
+  ProducerConfig,
+  ProducerProps,
   ProducerRunEffects,
-  RunExtraProps, RunExtraPropsCreator,
+  RunExtraProps,
   State,
   StateUpdater
 } from "./async-state";
@@ -19,13 +22,12 @@ export type Reducer<T> = (
 
 export type ExtendedInitialAsyncState<T> =
   InitialAsyncState<T>
-  | Partial<InitialAsyncState<T>>
   | AsyncStateSource<T>;
 
 export type InitialAsyncState<T> = {
   key: AsyncStateKey,
-  producer: Producer<T>,
-  config: ProducerConfig<T>
+  producer?: Producer<T>,
+  config?: ProducerConfig<T>
 }
 
 export interface AsyncStateInitializer<T> {
@@ -91,6 +93,7 @@ export type ManagerHoistConfig<T> = {
 
   key: AsyncStateKey,
   hoistToProviderConfig?: HoistToProviderConfig,
+  cacheConfig?: CacheConfig<T>,
 }
 
 export type ManagerWatchCallbackValue<T> = AsyncStateInterface<T> | null;
@@ -202,17 +205,14 @@ export type UseSelectedAsyncState<T, E> = {
 
   payload: { [id: string]: any } | null,
 
-
   abort: ((reason?: any) => void),
   run: (...args: any[]) => AbortFn,
   replaceState: StateUpdater<T>,
   mergePayload: (argv: { [id: string]: any }) => void,
 
+  invalidateCache: (cacheKey?: string) => void,
+
   read: () => E,
-  runAsyncState?: <D>(
-    key: AsyncStateKeyOrSource<D>,
-    ...args: any[]
-  ) => AbortFn,
 }
 
 export type UseAsyncState<T> = UseSelectedAsyncState<T, State<T>>
@@ -221,6 +221,7 @@ export type EqualityFn<T> = (
   prev: T,
   next: T
 ) => boolean;
+
 
 export type UseAsyncStateConfiguration<T, E> = {
   key?: AsyncStateKey,
@@ -240,12 +241,31 @@ export type UseAsyncStateConfiguration<T, E> = {
   subscriptionKey?: AsyncStateKey,
 
   producer?: Producer<T>,
-  selector: (
-    currentState: State<T>,
-    lastSuccess: State<T>
-  ) => E,
+  selector: UseAsyncStateSelector<T, E>,
   areEqual: EqualityFn<E>,
+
+  postSubscribe?: (props: PostSubscribeProps<T>) => CleanupFn,
+
+  cacheConfig?: CacheConfig<T>,
 }
+
+export type PostSubscribeProps<T> = {
+  getState: () => State<T>,
+  run: (...args: any[]) => AbortFn,
+  mode: AsyncStateSubscriptionMode,
+  invalidateCache: (cacheKey?: string) => void,
+}
+
+export type UseAsyncStateSelector<T, E> = (
+  ((currentState: State<T>) => E)
+  |
+  ((currentState: State<T>, lastSuccess: State<T>) => E)
+  |
+  ((
+    currentState: State<T>, lastSuccess: State<T>,
+    cache: { [id: string]: CachedState<T> }
+  ) => E))
+  ;
 
 export type PartialUseAsyncStateConfiguration<T, E> = {
   key?: AsyncStateKey,
@@ -265,11 +285,12 @@ export type PartialUseAsyncStateConfiguration<T, E> = {
   subscriptionKey?: AsyncStateKey,
 
   producer?: Producer<T>,
-  selector?: (
-    currentState: State<T>,
-    lastSuccess: State<T>
-  ) => E,
+  selector?: UseAsyncStateSelector<T, E>,
   areEqual?: EqualityFn<E>,
+
+  postSubscribe?: (props: PostSubscribeProps<T>) => CleanupFn,
+
+  cacheConfig?: CacheConfig<T>,
 }
 
 export type UseAsyncStateSubscriptionInfo<T, E> = {
@@ -335,12 +356,38 @@ export type SelectorSubscription<T> = {
 }
 
 export interface UseAsyncStateType<T, E> {
-  (subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
+  (
+    subscriptionConfig: UseAsyncStateConfig<T, E>,
+    dependencies?: any[]
+  ): UseSelectedAsyncState<T, E>,
 
-  auto(subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
-  lazy(subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
-  fork(subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
-  hoist(subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
-  forkAuto(subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
-  hoistAuto(subscriptionConfig: UseAsyncStateConfig<T, E>, dependencies?: any[]): UseSelectedAsyncState<T, E>,
+  auto(
+    subscriptionConfig: UseAsyncStateConfig<T, E>,
+    dependencies?: any[]
+  ): UseSelectedAsyncState<T, E>,
+
+  lazy(
+    subscriptionConfig: UseAsyncStateConfig<T, E>,
+    dependencies?: any[]
+  ): UseSelectedAsyncState<T, E>,
+
+  fork(
+    subscriptionConfig: UseAsyncStateConfig<T, E>,
+    dependencies?: any[]
+  ): UseSelectedAsyncState<T, E>,
+
+  hoist(
+    subscriptionConfig: UseAsyncStateConfig<T, E>,
+    dependencies?: any[]
+  ): UseSelectedAsyncState<T, E>,
+
+  forkAuto(
+    subscriptionConfig: UseAsyncStateConfig<T, E>,
+    dependencies?: any[]
+  ): UseSelectedAsyncState<T, E>,
+
+  hoistAuto(
+    subscriptionConfig: UseAsyncStateConfig<T, E>,
+    dependencies?: any[]
+  ): UseSelectedAsyncState<T, E>,
 }

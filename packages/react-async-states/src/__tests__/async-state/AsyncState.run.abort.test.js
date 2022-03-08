@@ -35,6 +35,7 @@ describe('AsyncState - run - abort', () => {
     expect(subscription).toHaveBeenCalledTimes(1);
     expect(subscription).toHaveBeenCalledWith({
       props: {
+        args: [],
         payload: {},
         lastSuccess: {
           data: null, status: AsyncStateStatus.initial,
@@ -50,6 +51,7 @@ describe('AsyncState - run - abort', () => {
     expect(subscription).toHaveBeenCalledTimes(1);
     expect(subscription).toHaveBeenCalledWith({
       props: {
+        args: [],
         lastSuccess: {
           data: null,  status: AsyncStateStatus.initial
         },
@@ -61,6 +63,7 @@ describe('AsyncState - run - abort', () => {
 
     expect(myAsyncState.currentState).toEqual({
       props: {
+        args: [],
         lastSuccess: {
           data: null, status: AsyncStateStatus.initial
         },
@@ -77,6 +80,7 @@ describe('AsyncState - run - abort', () => {
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
       props: {
+        args: [],
         lastSuccess: {
           data: null, status: AsyncStateStatus.initial
         },
@@ -124,6 +128,7 @@ describe('AsyncState - run - abort', () => {
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
       props: {
+        args: [],
         payload: {},
         lastSuccess: {
           data: null,
@@ -172,6 +177,7 @@ describe('AsyncState - run - abort', () => {
     // async state should be in success state with data
     expect(myAsyncState.currentState).toEqual({
       props: {
+        args: [],
         lastSuccess: {
           data: null, status: AsyncStateStatus.initial
         },

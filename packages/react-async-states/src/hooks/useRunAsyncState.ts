@@ -6,5 +6,5 @@ export function useRunAsyncState<T>(): (
   keyOrSource: AsyncStateKeyOrSource<T>,
   ...args: any[]
 ) => AbortFn {
-  return useAsyncStateContext()?.runAsyncState;
+  return useAsyncStateContext().runAsyncState;
 }

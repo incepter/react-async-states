@@ -156,7 +156,7 @@ describe('should runp another producer from producer', () => {
       .toEqual(JSON.stringify({
         "status": "success",
         "data": {"source2Data": 3},
-        "props": {"lastSuccess": {"status": "initial"}, "payload": {}}
+        "props": {"lastSuccess": {"status": "initial"}, "payload": {}, "args": []}
       }));
   });
   it('should runp producer by function', async () => {

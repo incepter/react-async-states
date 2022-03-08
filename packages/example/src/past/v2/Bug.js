@@ -1,117 +1,77 @@
+import {
+  AsyncStateProvider,
+  createSource,
+  useAsyncState
+} from "react-async-states";
 import React from "react";
-import { useAsyncState, AsyncStateProvider, createReducerProducer } from "react-async-states";
 
-export default function Bug() {
+function load() {
+  if (typeof window !== "undefined" && typeof window.localStorage !== "undefined") {
+    console.log('loading', localStorage?.getItem("remix-cache-users"));
+    return localStorage.getItem("remix-cache-users");
+  }
+}
+function persist(cache) {
+  console.log('persisting!!', cache);
+  if (typeof window !== "undefined" && typeof window.localStorage !== "undefined") {
+    localStorage?.setItem("remix-cache-users", JSON.stringify(cache))
+  }
+}
+
+const timeout = createSource(
+  'timeout',
+  producer,
+  {
+    cacheConfig: {
+      load,
+      persist,
+      enabled: true,
+      hash: () => !console.log('hashing') && "users",
+      getDeadline: () => 5000,
+    }
+  });
+
+
+// @ts-ignore
+function usersProducer(props) {
+  const controller = new AbortController();
+  const {signal} = controller;
+  props.onAbort(function abortSignal() {
+    controller.abort();
+  });
+  return fetch('https://jsonplaceholder.typicode.com/users', {signal})
+    .then(res => res.json())
+}
+
+
+// @ts-ignore
+function producer(props) {
+  return new Promise(res => {
+    let id = setTimeout(() => res("12"), 2000);
+    props.onAbort(() => clearInterval(id));
+  });
+}
+
+export default function Index() {
   return (
-    <AsyncStateProvider>
-      <h2>From Here we are inside the provider</h2>
-      <CounterReducerExample />
-      <CounterReducerExampleSub />
-      {/*<CounterReducerExampleFork />*/}
+    <AsyncStateProvider initialStates={[timeout]}>
+      <Test />
     </AsyncStateProvider>
   );
 }
 
+function Test() {
+  const {run, mode, state, source} = useAsyncState.auto("users");
 
-function counterReducer(oldValue, action) {
-  console.log("action", action, oldValue);
-  return (oldValue || 0) + (action === "increment" ? 1 : -1);
-}
-
-// you can create a source by this producer and share it at module level
-const counterReducerProducer = createReducerProducer(counterReducer);
-
-export function CounterReducerExample() {
-  const { key, state, run } = useAsyncState.hoist({
-    key: "reducerCounter",
-    producer: counterReducerProducer
-  });
-
-  return (
-    <Counter
-      value={state.data || 0}
-      label={"counterReducer example, this component hoists this state: " + key}
-      increment={() => run("increment")}
-      decrement={() => run("decrement")}
-    />
-  );
-}
-
-export function CounterReducerExampleSub() {
-  const { key, state, run } = useAsyncState("reducerCounter");
-
-  if (!state) {
-    return (
-      <>
-        <hr />
-        "waiting..."
-      </>
-    );
-  }
-  return (
-    <Counter
-      value={state?.data || 0}
-      label={"counterReducer example, this component will wait for the state: "+key}
-      increment={() => run("increment")}
-      decrement={() => run("decrement")}
-    />
-  );
-}
-
-export function CounterReducerExampleFork() {
-  const { key, state, run } = useAsyncState.fork("reducerCounter");
-
-  if (!state) {
-    return (
-      <>
-        <hr />
-        "waiting..."
-      </>
-    );
-  }
-  console.log('===>')
-  return (
-    <>
-      <ForkedCounterByKey counterKey={key} />
-      <Counter
-        value={state.data || 0}
-        label={"counterReducer example, this component forks the counterReducer state: " + key}
-        increment={() => run("increment")}
-        decrement={() => run("decrement")}
-      />
-    </>
-  );
-}
-export function ForkedCounterByKey({counterKey}) {
-  const { key, state, run } = useAsyncState(counterKey);
-  console.log('counter reducer');
-
-  if (!state) {
-    return (
-      <>
-        <hr />
-        "waiting..."
-      </>
-    );
-  }
-  return (
-    <>
-      <Counter
-        value={state.data || 0}
-        label={"counterReducer example, this component subscribes to the forked counterReducer states: " + key}
-        increment={() => run("increment")}
-        decrement={() => run("decrement")}
-      />
-    </>
-  );
-}
-function Counter({ label, value, increment, decrement }) {
+  console.log(++React.useRef(0).current, mode, state?.status, source?.uniqueId);
   return (
     <div>
-      <h3>{label}</h3>
-      <button onClick={decrement}>-</button>
-      <span>{value}</span>
-      <button onClick={increment}>+</button>
+      <button onClick={() => run()}>reload</button>
+      <details open>
+        <pre>
+          {JSON.stringify(state, null, 4)}
+        </pre>
+      </details>
     </div>
   );
 }

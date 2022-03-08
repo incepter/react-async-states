@@ -31,6 +31,7 @@ describe('AsyncState - subscriptions', () => {
       [
         [{
           props: {
+            args: [],
             payload: {},
             lastSuccess: {
               data: null, status: AsyncStateStatus.initial
@@ -41,6 +42,7 @@ describe('AsyncState - subscriptions', () => {
         }],
         [{
           props: {
+            args: [],
             payload: {},
             lastSuccess: {
               data: null, status: AsyncStateStatus.initial
@@ -54,6 +56,7 @@ describe('AsyncState - subscriptions', () => {
     expect(subscriptionFn).toHaveBeenCalledTimes(2);
     expect(myAsyncState.currentState).toEqual({
       props: {
+        args: [],
         payload: {},
         lastSuccess: {
           data: null, status: AsyncStateStatus.initial
@@ -89,6 +92,7 @@ describe('AsyncState - subscriptions', () => {
       [
         [{
           props: {
+            args: [],
             payload: {},
             lastSuccess: {
               data: null, status: AsyncStateStatus.initial
@@ -100,6 +104,7 @@ describe('AsyncState - subscriptions', () => {
     expect(subscriptionFn).toHaveBeenCalledTimes(1);
     expect(myAsyncState.currentState).toEqual({
       props: {
+        args: [],
         payload: {},
         lastSuccess: {
           data: null, status: AsyncStateStatus.initial
@@ -132,6 +137,7 @@ describe('AsyncState - subscriptions', () => {
     expect(subscriptionFn).toHaveBeenCalledTimes(0);
     expect(myAsyncState.currentState).toEqual({ // original async state resolved, but we got notified neither by pending nor success
       props: {
+        args: [],
         payload: {},
         lastSuccess: {
           data: null, status: AsyncStateStatus.initial

@@ -7,7 +7,7 @@ import AsyncState, {
   AsyncStateInterface,
   AsyncStateKey,
   AsyncStateSource,
-  AsyncStateStatus,
+  AsyncStateStatus, Producer,
   ProducerProps,
   ProducerPropsRunConfig,
   ProducerPropsRunInput,
@@ -15,9 +15,9 @@ import AsyncState, {
   State
 } from "../async-state";
 import {isAsyncStateSource} from "../async-state/AsyncState";
-import {readAsyncStateFromSource} from "../async-state/utils";
-import {invokeIfPresent, shallowClone} from "../../../shared";
+import {invokeIfPresent, isFn, shallowClone} from "../../../shared";
 import {nextKey} from "../hooks/utils/key-gen";
+import {readAsyncStateFromSource} from "../async-state/read-source";
 
 function createRunFunction<T>(
   manager: AsyncStateManagerInterface | null, props: ProducerProps<T>) {
@@ -32,8 +32,8 @@ function createRunFunction<T>(
 
     if (isAsyncStateSource(input)) {
       asyncState = readAsyncStateFromSource(input as AsyncStateSource<T>);
-    } else if (typeof input === "function") {
-      asyncState = new AsyncState(nextKey(), input, {});
+    } else if (isFn(input)) {
+      asyncState = new AsyncState(nextKey(), input as Producer<T>, {});
       if (config?.payload) {
         asyncState.payload = shallowClone(Object.create(null), config.payload);
       }
@@ -63,8 +63,8 @@ function createRunPFunction(manager, props) {
 
     if (isAsyncStateSource(input)) {
       asyncState = readAsyncStateFromSource(input as AsyncStateSource<T>);
-    } else if (typeof input === "function") {
-      asyncState = new AsyncState(nextKey(), input, {});
+    } else if (isFn(input)) {
+      asyncState = new AsyncState(nextKey(), input as Producer<T>, {});
       if (config?.payload) {
         asyncState.payload = shallowClone(Object.create(null), config.payload);
       }

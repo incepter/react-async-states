@@ -38,7 +38,7 @@ export function invokeIfPresent(
   fn,
   ...args
 ) {
-  if (typeof fn === "function") {
+  if (isFn(fn)) {
     return fn(...args);
   }
   return undefined;
@@ -77,10 +77,14 @@ export function cloneProducerProps<T>(props: ProducerProps<T>): ProducerSavedPro
 
   if (Array.isArray(props.args) && props.args.length) {
     output.args = [...props.args];
+  } else {
+    output.args = emptyArray;
   }
 
   return output;
 }
+
+const emptyArray = [];
 
 export function readProducerConfigFromSubscriptionConfig<T>(
   configuration: PartialUseAsyncStateConfiguration<T, any>
@@ -88,8 +92,23 @@ export function readProducerConfigFromSubscriptionConfig<T>(
   return {
     initialValue: configuration.initialValue,
 
+    cacheConfig: configuration.cacheConfig,
+
     runEffect: configuration.runEffect,
     runEffectDurationMs: configuration.runEffectDurationMs,
+  };
+}
+
+export function readProducerConfigFromProducerConfig<T>(
+  configuration?: ProducerConfig<T>
+): ProducerConfig<T> {
+  return {
+    initialValue: configuration?.initialValue,
+
+    cacheConfig: configuration?.cacheConfig,
+
+    runEffect: configuration?.runEffect,
+    runEffectDurationMs: configuration?.runEffectDurationMs,
   };
 }
 
@@ -99,4 +118,8 @@ export function numberOrZero(maybeNumber) {
 
 export function warning(...args) {
   console.error(...args);
+}
+
+export function isFn(fn: Function | any): boolean {
+  return typeof fn === "function";
 }

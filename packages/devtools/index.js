@@ -42,7 +42,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
 
   function emit(message, saveToQueue = true) {
     if (connected) {
-      window.postMessage(JSON.parse(JSON.stringify(message)), "*");
+      window && window.postMessage(JSON.parse(JSON.stringify(message)), "*");
     }
     if (saveToQueue && message.type !== toDevtoolsEvents.provider) {
       queue.push(message);

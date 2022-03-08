@@ -22,8 +22,8 @@ To define an async state for the provider, you need the following:
 |Property      | Type                  | Default value| Description            |
 |--------------|-----------------------|--------------|------------------------|
 |`key`         |`string`               |`undefined`   |The unique identifier or the name of the async state|
-|`producer`     |`function or undefined`|`undefined`   |The producer function|
-|`initialValue`|`any`                  |`null`        |The state value when the status is `initial`|
+|`producer`    |`function or undefined`|`undefined`   |The producer function|
+|`config`      |`ProducerConfig`       |`undefined`   |The configuration of the producer|
 
 The `initialStates`, like stated, is an array of objects or a map; let's create some:
 ```javascript

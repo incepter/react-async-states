@@ -19,11 +19,11 @@ export default function useProviderDevtools(entries) {
       }
     }
 
-    window.addEventListener("message", listener);
+    window && window.addEventListener("message", listener);
 
     return () => {
       devtools.disconnect();
-      window.removeEventListener("message", listener);
+      window && window.removeEventListener("message", listener);
     };
   }, [entries]);
 }

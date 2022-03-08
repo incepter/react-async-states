@@ -15,27 +15,22 @@ import {
 import {
   AsyncStateSubscriptionMode,
   CleanupFn,
-  UseAsyncStateConfig,
   MemoizedUseAsyncStateRef,
   PartialUseAsyncStateConfiguration,
-  UseSelectedAsyncState,
-  UseAsyncStateSubscriptionInfo
+  UseAsyncStateConfig,
+  UseAsyncStateSelector,
+  UseAsyncStateSubscriptionInfo,
+  UseSelectedAsyncState
 } from "../types.internal";
 import {
   AsyncStateInterface,
   AsyncStateKey,
-  AsyncStateSource,
-  State
+  AsyncStateSource
 } from "../async-state";
 import {nextKey} from "./utils/key-gen";
 
 const defaultDependencies: any[] = [];
 
-// 2 x useMemo
-// 1 x useContext
-// 2 x useState
-// 3 x useEffect
-// 1 x useEffect (inside provider)
 export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies: any[] = defaultDependencies,
@@ -47,7 +42,6 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
 
   // subscribe to context
   const contextValue = React.useContext(AsyncStateContext);
-  const runAsyncState = contextValue?.runAsyncState;
   const isInsideProvider = contextValue !== null;
 
   // this is similar to a ref, but will never get reset
@@ -88,7 +82,6 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
             newState,
             configuration.key as AsyncStateKey,
             run,
-            runAsyncState,
             mode
           )
       });
@@ -97,11 +90,9 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
   }
 
   // subscribe to async state
-  // useEffect: [asyncState, selector, areEqual]
   React.useEffect(subscribeToAsyncState, [asyncState, selector, areEqual]);
 
   // run automatically, if necessary
-  // useEffect: [...dependencies]
   React.useEffect(autoRunAsyncState, dependencies);
 
   // dispose
@@ -131,7 +122,6 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
       (asyncState ? readStateFromAsyncState(asyncState, selector) : undefined) as E,
       configuration.key as AsyncStateKey,
       run,
-      runAsyncState,
       mode
     );
 
@@ -252,15 +242,24 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
               newState,
               configuration.key as AsyncStateKey,
               run,
-              runAsyncState,
               mode
             )
         });
       },
       configuration.subscriptionKey
     );
+    let postUnsubscribe;
+    if (configuration.postSubscribe) {
+      postUnsubscribe = configuration.postSubscribe({
+        run,
+        mode,
+        getState: () => asyncState.currentState,
+        invalidateCache: asyncState.invalidateCache.bind(asyncState),
+      });
+    }
     return function cleanup() {
       didClean = true;
+      invokeIfPresent(postUnsubscribe);
       (unsubscribe as () => void)();
     }
   }
@@ -349,9 +348,9 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
 
 function readStateFromAsyncState<T, E>(
   asyncState: AsyncStateInterface<T>,
-  selector: (currentState: State<T>, lastSuccess: State<T>) => E
+  selector: UseAsyncStateSelector<T, E>
 ): E {
-  return selector(asyncState.currentState, asyncState.lastSuccess);
+  return selector(asyncState.currentState, asyncState.lastSuccess, asyncState.cache);
 }
 
 // remote async state

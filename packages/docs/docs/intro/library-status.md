@@ -21,12 +21,12 @@ Here is the road map and the list of things that should be added before talking 
 - [x] support `selector` keys to be a function receiving available keys in provider(regex usage against keys may be used in this function)
 - [x] enhance logging and add dev tools to visualize states transitions
 - [x] support concurrent mode to add a special mode with suspending abilities
+- [x] writing tests: only the core part is tested atm, not the react parts (although we kept a huge separation of concerns and the react fingerprint should be minimal)
+- [x] add types for a better development experience
 - [ ] writing better docs
 - [ ] writing codesandbox usage examples
 - [ ] support passive listen mode without running async state on deps change
 - [ ] investigate supporting REMOTE async states
-- [ ] writing tests: only the core part is tested atm, not the react parts (although we kept a huge separation of concerns and the react fingerprint should be minimal)
-- [ ] add types for a better development experience
 - [ ] performance tests and optimizations
 - [ ] support config at provider level for all async states to inherit it (we must define supported config)
 - [ ] support server side rendering

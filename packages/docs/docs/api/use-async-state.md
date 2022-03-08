@@ -52,21 +52,22 @@ If an object is provided, it may act like a simple subscription or a registratio
 
 Let's see in details the supported configuration:
 
-|Property               |Type         |Default Value       |Standalone|Provider|Description
-|-----------------------|-------------|--------------------|----------|--------|------------------------------------------------|
-|`key`                  |`string`     |`string`            |     x    |   x    | The unique key, either for definition or subscription |
-|`lazy`                 |`boolean`    |`true`              |     x    |   x    | If false, the subscription will re-run every dependency change |
-|`fork`                 |`boolean`    |`false`             |          |   x    | If true, subscription will fork own async state |
-|`source`               |`object`     |`undefined`         |     x    |   x    | Subscribes to the hidden instance of async state in this special object |
-|`producer`             |`function`   |`undefined`         |     x    |   x    | Our producer function |
-|`selector`             |`function`   |`identity`          |     x    |   x    | receives state (`{data, args, status}`) as unique parameter and whatever it returns it is put in the state return |
-|`areEqual`             |`function`   |`shallowEqual`      |     x    |   x    | `(prevValue, nextValue) => areEqual(prevValue, nextValue)` if it returns true, the render is skipped |
-|`condition`            |`boolean`    |`true`              |     x    |   x    | If this condition is falsy, run will not be granted |
-|`forkConfig`           |`ForkConfig` |`{keepState: false}`|          |   x    | defines whether to keep state when forking or not |
-|`initialValue`         |`any`        |`null`              |     x    |        | The initial producer value, useful only if working as standalone(ie defining own producer) |
-|`rerenderStats`        |`object`     |`{<status>: true}`  |     x    |   x    | Defines whether to register in the provider or not |
-|`hoistToProvider`      |`boolean`    |`false`             |          |   x    | Defines whether to register in the provider or not |
-|`hoistToProviderConfig`|`HoistConfig`|`{override: false}` |          |   x    | Defines whether to override an existing async state in provider while hoisting |
+|Property               |Type         |Default Value                         |Standalone|Provider|Description
+|-----------------------|-------------|--------------------------------------|----------|--------|------------------------------------------------|
+|`key`                  |`string`     |`string`                              |     x    |   x    | The unique key, either for definition or subscription |
+|`lazy`                 |`boolean`    |`true`                                |     x    |   x    | If false, the subscription will re-run every dependency change |
+|`fork`                 |`boolean`    |`false`                               |          |   x    | If true, subscription will fork own async state |
+|`source`               |`object`     |`undefined`                           |     x    |   x    | Subscribes to the hidden instance of async state in this special object |
+|`producer`             |`function`   |`undefined`                           |     x    |   x    | Our producer function |
+|`selector`             |`function`   |`identity`                            |     x    |   x    | receives state (`{data, args, status}`) as unique parameter and whatever it returns it is put in the state return |
+|`areEqual`             |`function`   |`shallowEqual`                        |     x    |   x    | `(prevValue, nextValue) => areEqual(prevValue, nextValue)` if it returns true, the render is skipped |
+|`condition`            |`boolean`    |`true`                                |     x    |   x    | If this condition is falsy, run will not be granted |
+|`forkConfig`           |`ForkConfig` |`{keepState: false, keepCache: false}`|          |   x    | defines whether to keep state and/or the cache when forking or not |
+|`cacheConfig`          |`CacheConfig`|`undefined`                           |     x    |   x    | defines the cache config for the producer |
+|`initialValue`         |`any`        |`null`                                |     x    |        | The initial producer value, useful only if working as standalone(ie defining own producer) |
+|`postSubscribe`        |`function`   |`undefined`                           |     x    |   x    | invoked when we subscribe to an async state instance |
+|`hoistToProvider`      |`boolean`    |`false`                               |          |   x    | Defines whether to register in the provider or not |
+|`hoistToProviderConfig`|`HoistConfig`|`{override: false}`                   |          |   x    | Defines whether to override an existing async state in provider while hoisting |
 
 The returned object from useAsyncState contains the following properties:
 
@@ -83,23 +84,23 @@ The returned object from useAsyncState contains the following properties:
 |`lastSuccess`       | The last registered success |
 |`replaceState`      | Imperatively and instantly replace state with the given value (accepts a callback receiving the old state), the status may be specified as a second parameter, it defaults to `success`|
 |`mergePayload`      | Imperatively merge the payload of the subscribed async state instance with the object in first parameter |
-|`runAsyncState`     | If inside provider, `runAsyncState(key, ...args)` runs the given async state by key with the later execution args |
+|`invalidateCache`   | Invalidates the cache with this producer, `invalidateCache(cacheKey?: string) => void`, it either removes the cached key data or the whole cache if this parameter is undefined |
 
 We bet in this shape because it provides the key for further subscriptions, the current state with status, data and the
 arguments that produced it. `run` runs the subscribed async state, to abort it invoke `abort`. The `lastSuccess`
 holds for you the last succeeded value.
 
 `replaceState` instantly gives a new value to the state with the desired status.
-`runAsyncState` works only in provider, and was added as convenience to trigger some side effect after
-the current async producer did something, for example, reload users list after updating a user successfully.
 
 The `selector` as config in for `useAsyncState` allows you to subscribe to just a small portion of the state while
 choosing when to trigger a rerender, this is an important feature and the probably the most important of this library.
 It was not designed from the start, but the benefits from having it are noticeable and allowed new extensions for
 the library itself.
 
-Note :
-- Calling the `run` function, if it is still `pending` the previous run, it aborts it instantly, and start a new cycle.
+:::note 
+Calling the `run` function when the status is `pending` will result in aborting
+the previous instantly, and start a new cycle.
+:::
 
 ### Examples
 
@@ -232,3 +233,44 @@ const {state: user4} = useAsyncState.forkAuto({source: userPayloadSource, payloa
 :::tip
 To suspend a component in concurrent mode, just call the `read` function returned by `useAsyncState`
 :::
+
+
+### `postSubscribe`
+
+This function is triggered once a subscription to an async state instance occurs.
+
+This should be mainly used to attach event listeners that may `run` the producer.
+
+```javascript
+// this is how the library invokes the postSubscribe function.
+postUnsubscribe = configuration.postSubscribe({
+    run,
+    mode,
+    getState: () => asyncState.currentState,
+    invalidateCache,
+})
+```
+
+This functions returns its cleanup (if available.)
+
+Here is an example of how to use it to run your producer once your window gets focused:
+
+```javascript
+const {state: {status, data}, lastSuccess, abort} = useAsyncState({
+    lazy: false,
+    payload: {matchParams: params},
+    key: demoAsyncStates.getUser.key,
+    postSubscribe({getState, run}) {
+      const state = getState();
+      // !state is WAITING mode
+      if (!state || state.status === "pending") {
+        return;
+      }
+      function onFocus() {
+        run();
+      }
+      window.addEventListener("focus", onFocus);
+      return () => window.removeEventListener("focus", onFocus);
+    }
+  }, [params]);
+```
