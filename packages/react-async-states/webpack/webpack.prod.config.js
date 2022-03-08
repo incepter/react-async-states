@@ -80,6 +80,7 @@ function umdBuild() {
   return buildFor(
     path.join(process.cwd(), "src/index.ts"),
     {
+      globalObject: 'this',
       libraryTarget: "umd",
       library: "ReactAsyncState",
       path: path.resolve(process.cwd(), `dist`),
@@ -94,6 +95,7 @@ function devBuild() {
   return buildFor(
     path.join(process.cwd(), "src/index.ts"),
     {
+      globalObject: 'this',
       libraryTarget: "umd",
       library: "ReactAsyncState",
       path: path.resolve(process.cwd(), `dist`),
