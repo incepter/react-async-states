@@ -87,7 +87,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
     Object.preventExtensions(this);
 
-    if (typeof this.config.cacheConfig?.load === "function") {
+    if (this.isCacheEnabled() && typeof this.config.cacheConfig?.load === "function") {
       const loadedCache = this.config.cacheConfig.load();
       if (loadedCache) {
         this.cache = loadedCache;
@@ -260,6 +260,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     let onAbortCallbacks: AbortFn[] = [];
 
     if (this.isCacheEnabled()) {
+      console.log('inside!')
       const runHash = hash(execArgs, this.payload, this.config.cacheConfig);
       const cachedState = this.cache[runHash];
 
