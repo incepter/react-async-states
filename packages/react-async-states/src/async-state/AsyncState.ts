@@ -2,7 +2,7 @@ import {
   __DEV__,
   cloneProducerProps,
   invokeIfPresent,
-  isFn,
+  isFn, isPromise,
   numberOrZero,
   shallowClone,
   warning
@@ -90,7 +90,12 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     if (this.isCacheEnabled() && typeof this.config.cacheConfig?.load === "function") {
       const loadedCache = this.config.cacheConfig.load();
       if (loadedCache) {
-        this.cache = loadedCache;
+        if (isPromise(loadedCache)) {
+          (loadedCache as Promise<{[id: AsyncStateKey]: CachedState<T>}>)
+            .then(asyncCache => this.cache = asyncCache)
+        } else {
+          this.cache = loadedCache as {[id: AsyncStateKey]: CachedState<T>};
+        }
       }
     }
 
@@ -260,7 +265,6 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     let onAbortCallbacks: AbortFn[] = [];
 
     if (this.isCacheEnabled()) {
-      console.log('inside!')
       const runHash = hash(execArgs, this.payload, this.config.cacheConfig);
       const cachedState = this.cache[runHash];
 

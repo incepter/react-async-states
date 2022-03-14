@@ -430,4 +430,58 @@ function readStateFromAsyncState<T, E>(
  * })
  *
  *
+
+function myConnectFn() {
+}
+
+type RemoteConnectContext<T> = {
+  data: T | any,
+  subscribe: (t: StateUpdater<T>) => void,
+}
+
+function createRemoteProducer(connect) {
+  function remoteProducer<T>(props: ProducerProps<T>) {
+    return new Promise((resolve, reject) => {
+      // ctx = { data: T, subscribe: StateUpdater<T> => void, disconnect }
+      function onConnect(ctx: RemoteConnectContext<T>) {
+        resolve(ctx.data);
+        ctx.subscribe(props.emit);
+      }
+
+      const disconnect = connect(
+        props,
+        onConnect,
+        reject,
+      );
+
+      props.onAbort(disconnect);
+    });
+  }
+}
+
+function connectToMyWs(props, onConnect, onError) {
+  function onFail(message) {
+    onError({connected: false, error: message});
+  }
+
+  const ws = new WebSocket("ws://localhost:9091");
+  ws.addEventListener("open", () => {
+    onConnect({
+      data: {ws, connected: true, messages: []},
+      subscribe(fn) {
+        ws.addEventListener("message", msg => {
+          fn(old => ({...old, messages: [...old.messages, msg]}));
+        });
+      }
+    });
+  });
+  ws.addEventListener("error", onFail);
+  ws.addEventListener("close", onFail);
+
+  return () => ws.close();
+}
+
+function connectToMyWorker(props, onConnect) {
+
+}
  */

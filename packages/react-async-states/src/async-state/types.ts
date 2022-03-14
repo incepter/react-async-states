@@ -87,7 +87,7 @@ export type CacheConfig<T> = {
   getDeadline(currentState: State<T>): number,
   hash(args?: any[], payload?: {[id: string]: any} | null): string,
 
-  load(): {[id: AsyncStateKey]: CachedState<T>},
+  load(): {[id: AsyncStateKey]: CachedState<T>} | Promise<{[id: AsyncStateKey]: CachedState<T>}>,
   persist(cache: {[id: AsyncStateKey]: CachedState<T>}): void,
 }
 

@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 
 import './index.css'
-import App from './past/v2/Bug';
+import App from './past/App';
 // import App2 from './past/App2';
 
 

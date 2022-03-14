@@ -123,3 +123,11 @@ export function warning(...args) {
 export function isFn(fn: Function | any): boolean {
   return typeof fn === "function";
 }
+
+export function isPromise(candidate) {
+  return !!candidate && isFn(candidate.then);
+}
+
+export function isGenerator(candidate) {
+  return !!candidate && isFn(candidate.next) && isFn(candidate.throw);
+}

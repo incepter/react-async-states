@@ -21,8 +21,8 @@ function SimpleSub({
     mode
   } = useAsyncState({source, key: asyncStateKey, lazy, cacheConfig});
 
-  if (!key) {
-    return "waiting...";
+    if (!key) {
+      return "waiting...";
   }
   // console.log('later,', {key, state, mode})
   const {status, data} = state;

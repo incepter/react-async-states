@@ -1,4 +1,4 @@
-import {__DEV__, cloneProducerProps, isFn} from "shared";
+import {__DEV__, cloneProducerProps, isGenerator, isPromise} from "shared";
 import devtools from "devtools";
 import {StateBuilder} from "./utils";
 import {ProducerFunction, ProducerProps} from "./types";
@@ -82,14 +82,6 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
         }
       });
   };
-}
-
-function isPromise(candidate) {
-  return !!candidate && isFn(candidate.then);
-}
-
-function isGenerator(candidate) {
-  return !!candidate && isFn(candidate.next) && isFn(candidate.throw);
 }
 
 function wrapStartedGenerator(
