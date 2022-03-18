@@ -6,9 +6,12 @@ export type {
   State,
   Producer,
   ForkConfig,
+  RunExtraProps,
+  ProducerProps,
   ProducerConfig,
   AsyncStateSource,
   ProducerRunEffects,
+  ProducerSavedProps,
 } from "./async-state/types";
 
 export type {
@@ -16,7 +19,6 @@ export type {
   InitialStatesObject,
 
   EqualityFn,
-  UseAsyncState,
   UseAsyncState,
   ExtendedInitialAsyncState,
   UseAsyncStateConfiguration,

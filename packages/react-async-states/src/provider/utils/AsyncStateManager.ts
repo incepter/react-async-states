@@ -84,7 +84,7 @@ export function AsyncStateManager(
       .reduce(
         createInitialAsyncStatesReducer,
         asyncStateEntries,
-      ) as AsyncStateEntries;
+      );
 
     // we should remove the states that were initially hoisted
     // but do no-longer exist in provider.
