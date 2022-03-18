@@ -1,8 +1,8 @@
 import * as React from "react";
 import {fireEvent, render, screen} from "@testing-library/react";
 import {
-  AsyncStateSubscriptionMode, UseAsyncState,
-  UseSelectedAsyncState
+  AsyncStateSubscriptionMode,
+  UseAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../hooks/useAsyncState";
 import {AsyncStateProvider} from "../../../../../provider/AsyncStateProvider";
@@ -23,7 +23,7 @@ describe('should declare a standalone producer inside a provider', () => {
         run,
         mode,
         state,
-      }: UseSelectedAsyncState<number, number> = useAsyncState({
+      }: UseAsyncState<number, number> = useAsyncState({
           selector: d => d.data,
           producer(props) {
             return props.args[0];
@@ -79,7 +79,7 @@ describe('should declare a standalone producer inside a provider', () => {
     function Component() {
       const {
         mode,
-      }: UseSelectedAsyncState<number, number> = useAsyncState({
+      }: UseAsyncState<number, number> = useAsyncState({
         key: "standalone",
         producer(props) {
           return props.args[0];

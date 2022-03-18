@@ -102,7 +102,7 @@ function createSelectFunction<T>(manager: AsyncStateManagerInterface | null) {
       return readAsyncStateFromSource(input as AsyncStateSource<T>)
         .currentState;
     }
-    return manager?.get(input as AsyncStateKey)?.currentState;
+    return manager?.get(input as AsyncStateKey)?.currentState as (State<T> | undefined);
   }
 }
 

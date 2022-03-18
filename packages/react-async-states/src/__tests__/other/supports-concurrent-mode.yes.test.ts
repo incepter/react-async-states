@@ -1,10 +1,9 @@
-import {createReducerProducer} from "../../helpers/create-producer";
-import {AsyncStateStatus} from "../../async-state";
 import {supportsConcurrentMode} from "../../helpers/supports-concurrent-mode";
 
 jest.mock("react", () => ({
   ...jest.requireActual("react"),
-  useSyncExternalStore : () => {},
+  useSyncExternalStore: () => {
+  },
 }));
 describe('supportsConcurrentMode', () => {
   it('should say yes', () => {

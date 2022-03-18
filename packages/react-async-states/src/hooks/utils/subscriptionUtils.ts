@@ -13,7 +13,7 @@ import {
   UseAsyncStateConfiguration,
   UseAsyncStateContextType,
   UseAsyncStateSubscriptionInfo,
-  UseSelectedAsyncState
+  UseAsyncState
 } from "../../types.internal";
 import {standaloneRunExtraPropsCreator} from "../../helpers/run-props-creator";
 import AsyncState, {
@@ -161,7 +161,7 @@ export function makeUseAsyncStateReturnValue<T, E>(
   configurationKey: AsyncStateKey,
   run: (...args: any[]) => AbortFn,
   mode: AsyncStateSubscriptionMode
-): Readonly<UseSelectedAsyncState<T, E>> {
+): Readonly<UseAsyncState<T, E>> {
 
   if (!asyncState) {
     return Object.freeze({

@@ -2,7 +2,6 @@ import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {
   UseAsyncState,
-  UseSelectedAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../hooks/useAsyncState";
 import {AsyncStateStatus} from "../../../../../async-state";
@@ -16,7 +15,7 @@ describe('should do basic subscription to an async state', () => {
         run,
         state,
         replaceState
-      }: UseSelectedAsyncState<number, number> = useAsyncState({
+      }: UseAsyncState<number, number> = useAsyncState({
         producer(props) {
           return props.args[0];
         },

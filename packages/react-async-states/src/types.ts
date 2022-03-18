@@ -1,9 +1,13 @@
+export {
+  AsyncStateStatus
+} from "./async-state/types";
+
 export type {
+  State,
   Producer,
   ForkConfig,
   ProducerConfig,
   AsyncStateSource,
-  AsyncStateStatus,
   ProducerRunEffects,
 } from "./async-state/types";
 
@@ -13,7 +17,7 @@ export type {
 
   EqualityFn,
   UseAsyncState,
-  UseSelectedAsyncState,
+  UseAsyncState,
   ExtendedInitialAsyncState,
   UseAsyncStateConfiguration,
 

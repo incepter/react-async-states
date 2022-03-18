@@ -1,7 +1,7 @@
 import {__DEV__, cloneProducerProps, isGenerator, isPromise} from "shared";
 import devtools from "devtools";
 import {StateBuilder} from "./utils";
-import {ProducerFunction, ProducerProps} from "./types";
+import {ProducerFunction, ProducerProps, State} from "./types";
 import AsyncState from "./AsyncState";
 
 export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunction<T> {
@@ -52,13 +52,13 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
       } else {
         runningPromise = generatorResult;
         asyncState.suspender = runningPromise;
-        asyncState.setState(StateBuilder.pending(savedProps));
+        asyncState.setState(StateBuilder.pending(savedProps) as State<any>);
       }
     } else if (isPromise(executionValue)) {
       if (__DEV__) devtools.emitRunPromise(asyncState, props);
       runningPromise = executionValue;
       asyncState.suspender = runningPromise;
-      asyncState.setState(StateBuilder.pending(savedProps));
+      asyncState.setState(StateBuilder.pending(savedProps) as State<any>);
     } else { // final value
       if (__DEV__) devtools.emitRunSync(asyncState, props);
       props.fulfilled = true;

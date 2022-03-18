@@ -20,7 +20,7 @@ import {
   UseAsyncStateConfig,
   UseAsyncStateSelector,
   UseAsyncStateSubscriptionInfo,
-  UseSelectedAsyncState
+  UseAsyncState
 } from "../types.internal";
 import {
   AsyncStateInterface,
@@ -35,7 +35,7 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies: any[] = defaultDependencies,
   configOverrides?: PartialUseAsyncStateConfiguration<T, E>,
-): UseSelectedAsyncState<T, E> {
+): UseAsyncState<T, E> {
 
   // need a guard to trigger re-renders
   const [guard, setGuard] = React.useState<number>(0);
@@ -67,7 +67,7 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
   // declare a state snapshot initialized by the initial selected value
   // useState
   const [selectedValue, setSelectedValue] = React
-    .useState<Readonly<UseSelectedAsyncState<T, E>>>(initialize);
+    .useState<Readonly<UseAsyncState<T, E>>>(initialize);
 
   if (memoizedRef.subscriptionInfo !== subscriptionInfo) {
     if (asyncState && asyncState !== memoizedRef?.subscriptionInfo?.asyncState) {
@@ -116,7 +116,7 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
 
   return selectedValue;
 
-  function initialize(): Readonly<UseSelectedAsyncState<T, E>> {
+  function initialize(): Readonly<UseAsyncState<T, E>> {
     return makeUseAsyncStateReturnValue(
       asyncState,
       (asyncState ? readStateFromAsyncState(asyncState, selector) : undefined) as E,

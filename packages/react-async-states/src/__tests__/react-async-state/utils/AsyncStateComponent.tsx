@@ -1,7 +1,7 @@
 import * as React from "react";
 import {
   UseAsyncStateConfig,
-  UseSelectedAsyncState, UseSimpleAsyncStateConfig
+  UseAsyncState, UseSimpleAsyncStateConfig
 } from "../../../types.internal";
 import {useAsyncState} from "../../../hooks/useAsyncState";
 import {State} from "../../../async-state";
@@ -14,7 +14,7 @@ export default function AsyncStateComponent<T, E>({
   dependencies = defaultDeps
 }: {
   config: UseAsyncStateConfig<T, E>,
-  children: (props: UseSelectedAsyncState<T, E>) => React.ReactNode,
+  children: (props: UseAsyncState<T, E>) => React.ReactNode,
   dependencies?: any[],
 }): any {
   if (typeof children !== "function") {

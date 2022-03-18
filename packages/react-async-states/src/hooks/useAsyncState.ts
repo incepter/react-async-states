@@ -4,14 +4,14 @@ import {
   PartialUseAsyncStateConfiguration,
   UseAsyncStateConfig,
   UseAsyncStateType,
-  UseSelectedAsyncState
+  UseAsyncState
 } from "../types.internal";
 
 // default
 function useAsyncStateExport<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
-): UseSelectedAsyncState<T, E> {
+): UseAsyncState<T, E> {
   return useAsyncStateImpl(
     subscriptionConfig,
     dependencies
@@ -24,7 +24,7 @@ const autoConfigOverrides = Object.freeze({lazy: false});
 function useAutoAsyncState<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
-): UseSelectedAsyncState<T, E> {
+): UseAsyncState<T, E> {
   return useAsyncStateImpl(
     subscriptionConfig,
     dependencies,
@@ -38,7 +38,7 @@ const lazyConfigOverrides = Object.freeze({lazy: true});
 function useLazyAsyncState<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
-): UseSelectedAsyncState<T, E> {
+): UseAsyncState<T, E> {
   return useAsyncStateImpl(
     subscriptionConfig,
     dependencies,
@@ -52,7 +52,7 @@ const forkConfigOverrides = Object.freeze({fork: true});
 function useForkAsyncState<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
-): UseSelectedAsyncState<T, E> {
+): UseAsyncState<T, E> {
   return useAsyncStateImpl(
     subscriptionConfig,
     dependencies,
@@ -66,7 +66,7 @@ const forkAutoConfigOverrides = Object.freeze({fork: true, lazy: false});
 function useForkAutoAsyncState<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
-): UseSelectedAsyncState<T, E> {
+): UseAsyncState<T, E> {
   return useAsyncStateImpl(
     subscriptionConfig,
     dependencies,
@@ -80,7 +80,7 @@ const hoistConfigOverrides = Object.freeze({hoistToProvider: true});
 function useHoistAsyncState<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
-): UseSelectedAsyncState<T, E> {
+): UseAsyncState<T, E> {
   return useAsyncStateImpl(
     subscriptionConfig,
     dependencies,
@@ -97,7 +97,7 @@ const hoistAutoConfigOverrides = Object.freeze({
 function useHoistAutoAsyncState<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
-): UseSelectedAsyncState<T, E> {
+): UseAsyncState<T, E> {
   return useAsyncStateImpl(
     subscriptionConfig,
     dependencies,
