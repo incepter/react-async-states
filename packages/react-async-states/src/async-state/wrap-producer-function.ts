@@ -1,7 +1,7 @@
 import {__DEV__, cloneProducerProps, isGenerator, isPromise} from "shared";
 import devtools from "devtools";
 import {StateBuilder} from "./utils";
-import {ProducerFunction, ProducerProps, State} from "./types";
+import {ProducerFunction, ProducerProps, ProducerType, State} from "./types";
 import AsyncState from "./AsyncState";
 
 export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunction<T> {
@@ -21,9 +21,6 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
     // it is important to clone to capture properties and save only serializable stuff
     const savedProps = cloneProducerProps(props);
 
-    if (typeof asyncState.originalProducer !== "function") {
-      throw new Error("a producer should be a function to be ran. This indicates a bug in the library.");
-    }
     try {
       executionValue = asyncState.originalProducer(props);
 
@@ -35,6 +32,7 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
     }
 
     if (isGenerator(executionValue)) {
+      asyncState.producerType = ProducerType.generator;
       if (__DEV__) devtools.emitRunGenerator(asyncState, props);
       // generatorResult is either {done, value} or a promise
       let generatorResult;
@@ -55,6 +53,7 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
         asyncState.setState(StateBuilder.pending(savedProps) as State<any>);
       }
     } else if (isPromise(executionValue)) {
+      asyncState.producerType = ProducerType.promise;
       if (__DEV__) devtools.emitRunPromise(asyncState, props);
       runningPromise = executionValue;
       asyncState.suspender = runningPromise;
@@ -62,6 +61,7 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
     } else { // final value
       if (__DEV__) devtools.emitRunSync(asyncState, props);
       props.fulfilled = true;
+      asyncState.producerType = ProducerType.sync;
       asyncState.setState(StateBuilder.success(executionValue, savedProps));
       return;
     }

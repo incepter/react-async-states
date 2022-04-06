@@ -2,7 +2,8 @@ import {
   __DEV__,
   cloneProducerProps,
   invokeIfPresent,
-  isFn, isPromise,
+  isFn,
+  isPromise,
   numberOrZero,
   shallowClone,
   warning
@@ -24,6 +25,7 @@ import {
   ProducerFunction,
   ProducerProps,
   ProducerRunEffects,
+  ProducerType,
   RunExtraPropsCreator,
   State,
   StateFunctionUpdater,
@@ -39,6 +41,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   currentState: State<T>;
   lastSuccess: State<T>;
+  producerType: ProducerType;
 
   config: ProducerConfig<T>;
 
@@ -64,11 +67,6 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     producer: Producer<T> | undefined | null,
     config?: ProducerConfig<T>
   ) {
-    if (typeof key !== "string") {
-      throw new Error("An async state must be initialized with a string key." +
-        ` Provider = '${key}' of type '${typeof key}'`);
-    }
-
     this.key = key;
     this.config = shallowClone(config);
     this.originalProducer = producer ?? undefined;
@@ -78,6 +76,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     this.lastSuccess = this.currentState;
 
     this.producer = wrapProducerFunction(this);
+    this.producerType = ProducerType.indeterminate;
 
     if (__DEV__) {
       this.uniqueId = nextUniqueId();

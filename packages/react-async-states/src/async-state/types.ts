@@ -55,6 +55,13 @@ export type Producer<T> =
 
 export type ProducerFunction<T> = (props: ProducerProps<T>) => AbortFn;
 
+export enum ProducerType {
+  indeterminate = 0,
+  sync = 1,
+  promise = 2,
+  generator = 3,
+}
+
 export type ProducerConfig<T> = {
   initialValue?: T,
   cacheConfig?: CacheConfig<T>,
@@ -117,6 +124,7 @@ export interface AsyncStateInterface<T> {
 
   suspender: Promise<T> | undefined,
   producer: ProducerFunction<T>,
+  producerType: ProducerType,
   readonly originalProducer: Producer<T> | undefined,
 
   // prototype functions
