@@ -72,7 +72,6 @@ export function cloneProducerProps<T>(props: ProducerProps<T>): ProducerSavedPro
     delete output.lastSuccess.props;
   }
 
-
   output.payload = shallowClone(props.payload);
 
   if (Array.isArray(props.args) && props.args.length) {

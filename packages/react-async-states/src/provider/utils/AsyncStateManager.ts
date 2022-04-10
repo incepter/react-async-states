@@ -276,8 +276,7 @@ export function AsyncStateManager(
     const {
       key,
       hoistToProviderConfig = {override: false},
-      producer,
-      cacheConfig
+      producer
     } = config;
 
     const existing = get(key);

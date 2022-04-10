@@ -194,7 +194,6 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     if (areRunEffectsSupported() && this.config.runEffect) {
       const now = Date.now();
 
-      // @ts-ignore
       function registerTimeout() {
         let runAbortCallback: AbortFn | null = null;
 
@@ -399,7 +398,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     status = AsyncStateStatus.success
   ): void {
     if (!StateBuilder[status]) {
-      throw new Error(`Couldn't replace state to status ${status}, because it is unknown.`);
+      throw new Error(`Couldn't replace state to unknown status ${status}.`);
     }
     if (this.currentState.status === AsyncStateStatus.pending) {
       this.abort();
