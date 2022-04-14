@@ -27,7 +27,7 @@ export function useRunAsyncState<T> () :
           return runBySource(keyOrSource)(...args);
         }
       }
-      return contextValue.runAsyncState;
+      return contextValue.runAsyncState(keyOrSource, ...args);
     }
   }, []);
 }
