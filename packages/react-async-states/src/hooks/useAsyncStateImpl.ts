@@ -70,7 +70,7 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
     .useState<Readonly<UseAsyncState<T, E>>>(initialize);
 
   if (memoizedRef.subscriptionInfo !== subscriptionInfo) {
-    if (asyncState && asyncState !== memoizedRef?.subscriptionInfo?.asyncState) {
+    if (asyncState && memoizedRef.subscriptionInfo && asyncState !== memoizedRef.subscriptionInfo.asyncState) {
       const newState = readStateFromAsyncState(asyncState, selector);
 
       setSelectedValue(old => {

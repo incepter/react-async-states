@@ -62,6 +62,11 @@ export enum ProducerType {
   generator = 3,
 }
 
+export enum RenderStrategy {
+  FetchOnRender = 0,
+  FetchThenRender = 1,
+}
+
 export type ProducerConfig<T> = {
   initialValue?: T,
   cacheConfig?: CacheConfig<T>,
