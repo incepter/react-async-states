@@ -21,6 +21,7 @@ export enum ProducerRunEffects {
 
 export type State<T> = {
   data: T,
+  timestamp: number,
   status: AsyncStateStatus,
   props?: ProducerSavedProps<T> | null,
 };

@@ -2,7 +2,6 @@ import * as React from "react";
 import {act, render, screen} from "@testing-library/react";
 import {createSource} from "../../../../helpers/create-async-state";
 import {
-  AsyncStateSource,
   AsyncStateStatus,
   Producer,
   ProducerProps
@@ -11,7 +10,9 @@ import AsyncStateComponent from "../../utils/AsyncStateComponent";
 import {AsyncStateProvider} from "../../../../provider/AsyncStateProvider";
 import {UseAsyncState} from "../../../../types.internal";
 import {flushPromises} from "../../utils/test-utils";
+import {mockDateNow, TESTS_TS} from "../../utils/setup";
 
+mockDateNow();
 describe('should runp another producer from producer', () => {
   jest.useFakeTimers();
   it('should runp producer by source', async () => {
@@ -157,7 +158,12 @@ describe('should runp another producer from producer', () => {
       .toEqual(JSON.stringify({
         "status": "success",
         "data": {"source2Data": 3},
-        "props": {"lastSuccess": {"status": "initial"}, "payload": {}, "args": []}
+        "props": {
+          "lastSuccess": {"status": "initial", "timestamp": TESTS_TS,},
+          "payload": {},
+          "args": []
+        },
+        "timestamp": TESTS_TS,
       }));
   });
   it('should runp producer by function', async () => {

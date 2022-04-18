@@ -7,7 +7,10 @@ import {
 import {useAsyncState} from "../../../../../hooks/useAsyncState";
 import {AsyncStateProvider} from "../../../../../provider/AsyncStateProvider";
 import {flushPromises} from "../../../utils/test-utils";
+import {mockDateNow, TESTS_TS} from "../../../utils/setup";
 
+
+mockDateNow();
 describe('should hoist an async state to provider', () => {
   it('should wait for an async state to be hoisted and listen ', async () => {
     // given
@@ -85,7 +88,8 @@ describe('should hoist an async state to provider', () => {
       .toEqual(JSON.stringify({
         "status": "initial",
         "data": 0,
-        "props": null
+        "props": null,
+        "timestamp": TESTS_TS,
       }));
   });
 });
