@@ -4,7 +4,14 @@ sidebar_label: The producer function
 ---
 # The producer function
 
-The producer function is the function that returns the state's value, it may be:
+The producer function is the function that returns the state's value, here is its declaration:
+
+```typescript
+export type Producer<T> =
+  ((props: ProducerProps<T>) => (T | Promise<T> | Generator<any, T, any>));
+```
+
+So it can be:
 
 - A regular function returning a value.
 - A pure function returning a value based on the previous value (aka reducer).
@@ -13,10 +20,11 @@ The producer function is the function that returns the state's value, it may be:
 - A regular function returning a `Promise` object.
 - `undefined`.
 
-The main goal and purpose is to run your function, it receives a single argument like this:
+The main goal and purpose is to `run` your function,
+so it will receive a single argument like this:
 ```javascript
 // somewhere in the code, simplified:
-yourFunction({
+producer({
   lastSuccess,
 
   args,
@@ -37,18 +45,18 @@ yourFunction({
 
 where:
 
-|Property            |Description              |
-|--------------------|-------------------------|
-|`payload`           | The merged payload from provider and all subscribers |
-|`lastSuccess`       | The last success value that was registered |
-|`args`              | Whatever arguments that the `run` function received when it was invoked |
-|`aborted`           | If the request have been cancelled (by dependency change, unmount or user action) |
-|`abort`             | Imperatively abort the producer while processing it, this may be helpful only if you are working with generators |
+|Property            | Description                                                                                                                                |
+|--------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+|`payload`           | The merged payload from provider and all subscribers. This allows the producer to gather data from multiple places.                        |
+|`lastSuccess`       | The last success state                                                                                                                     |
+|`args`              | The arguments that the `run` function was given when ran                                                                                   |
+|`aborted`           | If the request have been cancelled (by dependency change, unmount or user action)                                                          |
+|`abort`             | Imperatively abort the producer while processing it, this may be helpful only if you are working with generators                           |
 |`onAbort`           | Registers a callback that will be fired when the abort is invoked (like aborting a fetch request if the user aborts or component unmounts) |
-|`run`               | runs an async state or a producer and returns the abort fn of that run|
-|`runp`              | runs an async state or a producer and returns a promise of its state |
+|`run`               | runs an async state or a producer and returns the abort function of that run                                                               |
+|`runp`              | runs an async state or a producer and returns a promise of its state                                                                       |
 |`emit`              | set the state from the producer after its resolve, this to support intervals and incoming events from an external system (like ws, sse...) |
-|`select`            | returns the state of the desired async state, by key or source |
+|`select`            | returns the state of the desired async state, by key or source                                                                             |
 
 We believe that these properties will solve all sort of possible use cases, in fact, your function will run while having
 access to payload from the render, from either the provider and subscription, and can be merged imperatively anytime

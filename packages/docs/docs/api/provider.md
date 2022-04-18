@@ -11,19 +11,19 @@ The main purpose of the provider is:
 
 It accepts the following props:
 
-|Prop                | PropType                                                     | Default value| Usage            |
-|--------------------|--------------------------------------------------------------|--------------|------------------|
-|`payload`           | `Map<any, any>`                                              | `{}`         | Payload at provider level, will be accessible to all hoisted async states |
-|`initialStates`     | `AsyncStateDefinition[] or Map<string, AsyncStateDefinition>`| `[]`         | The initial Map or array of definitions of async states |
-|`children`          | `ReactElement`                                               | `undefined`  | The React tree inside this provider |
+|Prop                | PropType                                                 | Default value | Usage                                                             |
+|--------------------|----------------------------------------------------------|---------------|-------------------------------------------------------------------|
+|`payload`           | `{ [id: string]: any }`                                  | `{}`          | Payload at provider level, will be accessible to all async states |
+|`initialStates`     | `record or array of ({key, producer, config} or source)` | `[]`          | The initial record or array of definitions of async states        |
+|`children`          | `ReactElement`                                           | `undefined`   | The React tree inside this provider                               |
 
 To define an async state for the provider, you need the following:
 
-|Property      | Type                  | Default value| Description            |
-|--------------|-----------------------|--------------|------------------------|
-|`key`         |`string`               |`undefined`   |The unique identifier or the name of the async state|
-|`producer`    |`function or undefined`|`undefined`   |The producer function|
-|`config`      |`ProducerConfig`       |`undefined`   |The configuration of the producer|
+|Property      | Type             | Default value| Description                                          |
+|--------------|------------------|--------------|------------------------------------------------------|
+|`key`         | `string`         |`undefined`   | The unique identifier or the name of the async state |
+|`producer`    | `Producer<T>`    |`undefined`   | The producer function                                |
+|`config`      | `ProducerConfig` |`undefined`   | The configuration of the producer                    |
 
 The `initialStates`, like stated, is an array of objects or a map; let's create some:
 ```javascript
@@ -36,12 +36,12 @@ let demoAsyncStates = {
       return await fetchUsers(props.payload.queryString);
     },
   },
-  currentUser: {
-    key: "currentUser",
+  currentUser: createSource(
+    "currentUser",
     // generators are the recommended way to go!
     // because they allow to abort between yields! unlike promises and async-await!
-    producer: getCurrentUserGenerator,
-  },
+    getCurrentUserGenerator,
+  ),
   // with undefined producer, you will be calling `replaceState` to change the state
   somethingOpen: {
     key: "somethingOpen",
@@ -56,5 +56,5 @@ let demoAsyncStates = {
     }
   },
 }
-const initialAsyncState = Object.values(demoAsyncStates); // or pass this to provider
+const initialAsyncStates = Object.values(demoAsyncStates); // or pass this to provider
 ```
