@@ -35,6 +35,7 @@ export function AsyncStateProvider(
   // since initialStates changed
   React.useEffect(onDirtyStatesChange, [dirtyStates]);
 
+
   // this should synchronously change the payload held by hoisted items
   // why not until effect? because all children may benefit from this in their
   // effects
@@ -45,10 +46,11 @@ export function AsyncStateProvider(
     [manager, payload]
   );
 
-  // there is no point of having an onUnmount effect that disposes all entries
-  // because if this unmounts, all the tree inside will be thrown to gc
-  // and thus, the whole manager is unreferenced and its memory will be cleared
-
+  return (
+    <AsyncStateContext.Provider value={contextValue}>
+      {children}
+    </AsyncStateContext.Provider>
+  );
   function initialize() {
     return AsyncStateManager(initialStates);
   }
@@ -95,10 +97,5 @@ export function AsyncStateProvider(
     };
   }
 
-  return (
-    <AsyncStateContext.Provider value={contextValue}>
-      {children}
-    </AsyncStateContext.Provider>
-  );
 
 }

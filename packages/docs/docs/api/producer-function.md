@@ -45,18 +45,18 @@ producer({
 
 where:
 
-|Property            | Description                                                                                                                                |
-|--------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
-|`payload`           | The merged payload from provider and all subscribers. This allows the producer to gather data from multiple places.                        |
-|`lastSuccess`       | The last success state                                                                                                                     |
-|`args`              | The arguments that the `run` function was given when ran                                                                                   |
-|`aborted`           | If the request have been cancelled (by dependency change, unmount or user action)                                                          |
-|`abort`             | Imperatively abort the producer while processing it, this may be helpful only if you are working with generators                           |
-|`onAbort`           | Registers a callback that will be fired when the abort is invoked (like aborting a fetch request if the user aborts or component unmounts) |
-|`run`               | runs an async state or a producer and returns the abort function of that run                                                               |
-|`runp`              | runs an async state or a producer and returns a promise of its state                                                                       |
-|`emit`              | set the state from the producer after its resolve, this to support intervals and incoming events from an external system (like ws, sse...) |
-|`select`            | returns the state of the desired async state, by key or source                                                                             |
+| Property      | Description                                                                                                                                |
+|---------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| `payload`     | The merged payload from provider and all subscribers. This allows the producer to gather data from multiple places.                        |
+| `lastSuccess` | The last success state                                                                                                                     |
+| `args`        | The arguments that the `run` function was given when ran                                                                                   |
+| `aborted`     | If the request have been cancelled (by dependency change, unmount or user action)                                                          |
+| `abort`       | Imperatively abort the producer while processing it, this may be helpful only if you are working with generators                           |
+| `onAbort`     | Registers a callback that will be fired when the abort is invoked (like aborting a fetch request if the user aborts or component unmounts) |
+| `run`         | runs an async state or a producer and returns the abort function of that run                                                               |
+| `runp`        | runs an async state or a producer and returns a promise of its state                                                                       |
+| `emit`        | set the state from the producer after its resolve, this to support intervals and incoming events from an external system (like ws, sse...) |
+| `select`      | returns the state of the desired async state, by key or source                                                                             |
 
 We believe that these properties will solve all sort of possible use cases, in fact, your function will run while having
 access to payload from the render, from either the provider and subscription, and can be merged imperatively anytime
@@ -131,34 +131,37 @@ You can even omit the producer function, it was supported along the with the `re
 If you attempt to run it, it will delegate to replaceState while passing the arguments.
 
 
-### What do you need to declare a producer function:
+### What do you need to declare an asynchronous state ?
 
-The following properties are needed when declaring a production function, either at module scope or via `useAsyncState`:
+An AsyncState is an instance holding the state and wraps your producer function. 
 
-|Property        |Type                 |Description              |
-|----------------|---------------------|-------------------------|
-|`key`           |`string`             | The unique identifier of the async state |
-|`producer`      |`producer function`  | Returns the state value of type `T` |
-|`configuration` |`ProducerConfig`     | The argument object that the producer was ran with |
+The following properties are needed when using a production function,
+either at module scope or via `useAsyncState`:
+
+| Property        | Type                | Description                                        |
+|-----------------|---------------------|----------------------------------------------------|
+| `key`           | `string`            | The unique identifier of the async state           |
+| `producer`      | `producer function` | Returns the state value of type `T`                |
+| `configuration` | `ProducerConfig`    | The argument object that the producer was ran with |
 
 The supported configuration is:
 
-|Property              |Type                                      |Description               |
-|----------------------|------------------------------------------|-------------------------|
-|`initialValue`        |`T`                                       | The initial value or the initializer of the state (status = `initial`) |
-|`runEffect`           |`oneOf('debounce', 'throttle', undefined)`| An effect to apply when running the producer, can be used to debounce or throttle |
-|`runEffectDurationMs` |`number > 0`, `undefined`                 | The debounce/throttle duration |
-|`cacheConfig`         |`CacheConfig`                             | The cache config |
+| Property              | Type                                       | Description                                                                       |
+|-----------------------|--------------------------------------------|-----------------------------------------------------------------------------------|
+| `initialValue`        | `T`                                        | The initial value or the initializer of the state (status = `initial`)            |
+| `runEffect`           | `oneOf('debounce', 'throttle', undefined)` | An effect to apply when running the producer, can be used to debounce or throttle |
+| `runEffectDurationMs` | `number > 0`, `undefined`                  | The debounce/throttle duration                                                    |
+| `cacheConfig`         | `CacheConfig`                              | The cache config                                                                  |
 
 Where the supported cache config is:
 
-|Property              |Type                                                              |Description               |
-|----------------------|------------------------------------------------------------------|-------------------------|
-|`enabled`             | `boolean`                                                        |  Whether to enable cache or not |
-|`hash`                | `(args?: any[], payload?: {[id: string]: any} or null) => string`| a function to calculate a hash for a producer run (from args and payload) |
-|`getDeadline`         | `(currentState: State<T>) => number`                             | returns the deadline after which the cache is invalid |
-|`load`                | `() => {[id: AsyncStateKey]: CachedState<T>}`                    | loads the cached data when the async state instance is created |
-|`persist`             | `(cache: {[id: AsyncStateKey]: CachedState<T>}) => void`         | a function to persist the whole cache, called when state is updated to success |
+| Property      | Type                                                              | Description                                                                    |
+|---------------|-------------------------------------------------------------------|--------------------------------------------------------------------------------|
+| `enabled`     | `boolean`                                                         | Whether to enable cache or not                                                 |
+| `hash`        | `(args?: any[], payload?: {[id: string]: any} or null) => string` | a function to calculate a hash for a producer run (from args and payload)      |
+| `getDeadline` | `(currentState: State<T>) => number`                              | returns the deadline after which the cache is invalid                          |
+| `load`        | `() => {[id: AsyncStateKey]: CachedState<T>}`                     | loads the cached data when the async state instance is created                 |
+| `persist`     | `(cache: {[id: AsyncStateKey]: CachedState<T>}) => void`          | a function to persist the whole cache, called when state is updated to success |
 
 Here is a small example of the usage of cache config:
 
