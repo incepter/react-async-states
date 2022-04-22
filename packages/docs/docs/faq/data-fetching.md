@@ -4,13 +4,14 @@ sidebar_label: Data fetching
 ---
 
 # Data fetching
-# How to fetch data using the library:
 The library offers plenty of ways to fetch data:
 
 Let's say you are designing a search page where the user fills a form to search
-and a list of data:
+and a list of data.
 
-## If you only need that data once in a component
+Using the library you have a lot of options, let's explore them:
+
+## You need the data in one component
 
 In this case, you only need to use the `useAsyncState(producer)` signature.
 This is the most basic usage, but if you need later to change the behavior and
@@ -45,9 +46,8 @@ function MyComponent() {
 }
 ```
 
-## If you want to share that state
-### If you want to have the data at provider level
-#### If you want to initially hoist it at provider
+## You need to share the fetched data
+### You need data at provider level initially
 
 Then you need to wrap your tree in an `AsyncStateProvider` with the needed
 props.
@@ -85,7 +85,7 @@ const initialState = [
 </AsyncStateProvider>
 ```
 
-#### If you want to hoist it dynamically to provider
+### You need data at provider dynamically
 
 ```typescript
 import {UseAsyncState, useAsyncState, ProducerProps} from "react-async-states";
@@ -109,7 +109,7 @@ The above snippet makes a state accessible in the provider dynamically
 on demand (that's called hoisting in the library.).
 
 
-### If you want to have the data at module level
+### You need the data at module level
 
 ```typescript
 import {UseAsyncState, useAsyncState, ProducerProps, createSource} from "react-async-states";

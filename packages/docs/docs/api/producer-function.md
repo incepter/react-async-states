@@ -4,6 +4,7 @@ sidebar_label: The producer function
 ---
 # The producer function
 
+## What is a producer function?
 The producer function is the function that returns the state's value,
 here is its declaration:
 
@@ -137,7 +138,7 @@ You can even omit the producer function, it was supported along the with the `re
 If you attempt to run it, it will delegate to replaceState while passing the arguments.
 
 
-### What do you need to declare an asynchronous state ?
+### What do you need with the producer ?
 
 An AsyncState is an instance holding the state and wraps your producer function. 
 
