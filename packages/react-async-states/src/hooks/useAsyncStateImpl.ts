@@ -191,7 +191,6 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
       dispose: disposeAsyncStateSubscriptionFn(
         newMode,
         newAsyncState,
-        newConfig,
         contextValue
       )
     };
@@ -225,13 +224,13 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
           return;
         }
         // when we get an update from this async state, we recalculate
-        // the snapshot value.
+        // the selected value.
         const newState = readStateFromAsyncState(asyncState, selector);
 
         // the as E used here is to bypass the warning about old may be undefined
         // in fact, it may be undefined in two cases: mode is Waiting or Noop
         // this means we aren't connected to an async state,
-        // we will add a warning here telling that the selector will receive
+        // todo: add a warning here telling that the selector will receive
         // undefined values in these modes
         setSelectedValue(old => {
           return areEqual(old.state, newState)
