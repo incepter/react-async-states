@@ -52,29 +52,43 @@ const value = useAsyncState({
   source: null,
   key: "my-key",
   initialValue: 0, // value or function
+  
+  subscriptionKey: "some subscription",
+  postSubscribe() {},
 
   hoistToProvider: false,
   hoistToProviderConfig: {override: false},
   fork: false,
   forkConfig: {keepState: true, key: "new-key", keepCache: false},
 
+  runEffect: "debounce",
+  runEffectDurationMs: 200,
+  
   selector: (currentState, lastSuccess) => currentState,
   areEqual: (prev, next) => prev === next,
 
-  producer (props) {}
+  producer (props) {},
+  
+  cacheConfig: {
+    enabled: true,
+    getDeadline: s => s.data.headers.maxAge,
+    hash: (args, payload) => uniqueFromArgsAndPayload(args, payload),
+  }
 }, []);
 ```
 
-This allows us to easily manage [a]synchronous state while having the ability to share it in all directions of a react app.
+This allows us to easily manage [a]synchronous state while having the ability 
+to share it in all directions of a react app.
 
 :::tip
 The first argument of `useAsyncState` may be a:
-- string
-- source object
-- a producer function
-- an object of configuration
+- `string`
+- `Source` object
+- a `Producer` function
+- a `configuration object`
 
 The following snippets are all valid use cases of useAsyncState hook:
+
 ```javascript
 import {useAsyncState} from "react-async-states";
 
@@ -82,6 +96,7 @@ useAsyncState("current-user"); // subscribes or waits for the async state 'curre
 useAsyncState(() => fetchStoreData(storeId), [storeId]);// fetches store data whenever the store id changes
 useAsyncState(async () => await fetchUserPosts(userId), [userId]);// fetches user posts
 
+useAsyncState(getCurrentUser);
 useAsyncState(function* getCurrentUser(props) {
   const user = yield fetchCurrentUser();
   const [permissions, stores] = yield Promise.all([fetchUserPermissions(user.id), fetchUserStores(user.id)]);
@@ -130,9 +145,10 @@ return (
 );
 ````
 
-
-
 ## useAsyncStateSelector
+
+`useAsyncStateSelector` is responsible for selecting data from one or many
+AsyncStates. It can be used like this:
 
 ```javascript
 // keys: string | source | array of string|source | function returning source | string | array of source|string

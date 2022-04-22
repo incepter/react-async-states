@@ -3,11 +3,13 @@ sidebar_position: 2
 sidebar_label: Create source
 ---
 # createSource
-`createSource` is an utility provided by the library that creates instances
-of asynchronous states.
+`createSource` is a utility provided by the library that creates instances
+of shared states.
 
 If used at a module level, it will give you a state that is accessible from
 all over your application.
+
+If you are curious how it works, you can read [it here](/docs/faq/how-the-library-works#how-source-works-).
 
 ```typescript
 import {createSource, useAsyncState, useRunAsyncState} from "react-async-states";
@@ -21,7 +23,7 @@ useAsyncState({source: connectedUser, ...otherConfig});
 
 // and you can even controle it like this:
 const run = useRunAsyncState();
-// from anywhere:
+// from anywhere down in the tree:
 run(connectedUser, ...args);
 
 // or even from inside another producer:
@@ -39,27 +41,27 @@ async function getUserProducer(props) {
 
 `createSource` accepts three parameters:
 
-|Property        |Type                 | Description                                        |
-|----------------|---------------------|----------------------------------------------------|
-|`key`           |`string`             | The unique identifier of the async state           |
-|`producer`      |`producer function`  | Returns the state value of type `T`                |
-|`configuration` |`ProducerConfig`     | The argument object that the producer was ran with |
+| Property        | Type                | Description                                        |
+|-----------------|---------------------|----------------------------------------------------|
+| `key`           | `string`            | The unique identifier of the async state           |
+| `producer`      | `producer function` | Returns the state value of type `T`                |
+| `configuration` | `ProducerConfig`    | The argument object that the producer was ran with |
 
 The supported configuration is:
 
-|Property              |Type                                      | Description                                                                       |
-|----------------------|------------------------------------------|-----------------------------------------------------------------------------------|
-|`initialValue`        |`T`                                       | The initial value or the initializer of the state (status = `initial`)            |
-|`runEffect`           |`oneOf('debounce', 'throttle', undefined)`| An effect to apply when running the producer, can be used to debounce or throttle |
-|`runEffectDurationMs` |`number > 0`, `undefined`                 | The debounce/throttle duration                                                    |
-|`cacheConfig`         |`CacheConfig`                             | The cache config                                                                  |
+| Property              | Type                                       | Description                                                                       |
+|-----------------------|--------------------------------------------|-----------------------------------------------------------------------------------|
+| `initialValue`        | `T`                                        | The initial value or the initializer of the state (status = `initial`)            |
+| `runEffect`           | `oneOf('debounce', 'throttle', undefined)` | An effect to apply when running the producer, can be used to debounce or throttle |
+| `runEffectDurationMs` | `number > 0`, `undefined`                  | The debounce/throttle duration                                                    |
+| `cacheConfig`         | `CacheConfig`                              | The cache config                                                                  |
 
 Where the supported cache config is:
 
-|Property              |Type                                                              | Description                                                                    |
-|----------------------|------------------------------------------------------------------|--------------------------------------------------------------------------------|
-|`enabled`             | `boolean`                                                        | Whether to enable cache or not                                                 |
-|`hash`                | `(args?: any[], payload?: {[id: string]: any} or null) => string`| a function to calculate a hash for a producer run (from args and payload)      |
-|`getDeadline`         | `(currentState: State<T>) => number`                             | returns the deadline after which the cache is invalid                          |
-|`load`                | `() => {[id: AsyncStateKey]: CachedState<T>}`                    | loads the cached data when the async state instance is created                 |
-|`persist`             | `(cache: {[id: AsyncStateKey]: CachedState<T>}) => void`         | a function to persist the whole cache, called when state is updated to success |
+| Property      | Type                                                              | Description                                                                    |
+|---------------|-------------------------------------------------------------------|--------------------------------------------------------------------------------|
+| `enabled`     | `boolean`                                                         | Whether to enable cache or not                                                 |
+| `hash`        | `(args?: any[], payload?: {[id: string]: any} or null) => string` | a function to calculate a hash for a producer run (from args and payload)      |
+| `getDeadline` | `(currentState: State<T>) => number`                              | returns the deadline after which the cache is invalid                          |
+| `load`        | `() => {[id: AsyncStateKey]: CachedState<T>}`                     | loads the cached data when the async state instance is created                 |
+| `persist`     | `(cache: {[id: AsyncStateKey]: CachedState<T>}) => void`          | a function to persist the whole cache, called when state is updated to success |

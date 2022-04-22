@@ -5,17 +5,21 @@ sidebar_label: How the library works ?
 
 # How the library works ?
 
+## How this section works ?
+
 This section should be relevant only if you wish to contribute to the library,
 or you are looking for inspiration, or may be a curious guys that wants to know
 the under the hood of things.
 
+It will describe how the core and main features of the library are working.
+
 ## How `AsyncState` works ?
 
 The library, like so many others, uses the publisher/subscriber design pattern
-naively without any intelligence (for now).
-
-The library stores the state in an object from a constructor called `AsyncState`
-, when the state updates, the subscribed components schedule a rerender.
+naively without any intelligence (for now): It stores the state in an object 
+created by a constructor called `AsyncState`, when the state updates,
+the subscribed components schedule a rerender (if it is not a component, the
+subscriber gets notified).
 
 Here is the whole `AsyncStateInterface` definition:
 
@@ -441,6 +445,10 @@ if it occurs in a sync way it would break the react's mental model. So we wait
 until react unlocks to give us control, and then we schedule updates.
 
 ## How `useAsyncState` works ?
+The `async` part of its name doesn't represent its true nature, and it exists
+just because the main goal is to subscribe to the `AsyncState` instacne.
+If I were to rename it anew, I would rather choose `useSharedState` or `useBetterState`.  
+
 `useAsyncState` is by no doubts an interesting hook, in fact, that's what it does:
 - Declare a state guard to force updates
 - Determines whether it is in provider (this grant the props run extra props)
@@ -474,8 +482,7 @@ And of course, it subscribes or waits for the `AsyncState`'s instance that's
 holding our state, then it renders whenever that state notifies us to update
 (it always notifies!).
 
-`useAsyncState` also exposes a little of the power of `AsyncState`: replaceState,
-abort... and so on.
+`useAsyncState` also exposes some power of `AsyncState`: replaceState, abort... and so on.
 
 When the subscription occurs, `postSubscribe` is called which receives a
 `getState` and `run` methods along with the subscription mode and invalidateCache.

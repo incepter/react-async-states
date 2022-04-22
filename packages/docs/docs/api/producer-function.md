@@ -4,7 +4,8 @@ sidebar_label: The producer function
 ---
 # The producer function
 
-The producer function is the function that returns the state's value, here is its declaration:
+The producer function is the function that returns the state's value,
+here is its declaration:
 
 ```typescript
 export type Producer<T> =
@@ -58,16 +59,21 @@ where:
 | `emit`        | set the state from the producer after its resolve, this to support intervals and incoming events from an external system (like ws, sse...) |
 | `select`      | returns the state of the desired async state, by key or source                                                                             |
 
-We believe that these properties will solve all sort of possible use cases, in fact, your function will run while having
-access to payload from the render, from either the provider and subscription, and can be merged imperatively anytime
-using `mergePayload` obtained from `useAsyncstate`. And also, execution args if you run it manually (not automatic).
+We believe that these properties will solve all sort of possible use cases.
+In fact, your function will run while having access to payload from the render,
+from either the provider and subscriptions, and can be merged imperatively anytime
+using `mergePayload` obtained from `useAsyncstate` and also execution args if
+you run it manually (not automatic).
 
 So basically you have three entry-points to your function (provider + subscription + exec args).
 
-Your function will be notified with the cancellation by registering an `onAbort` callback, you can exploit this to abort
-an `AbortController` which will lead your fetches to be cancelled, or to clear a timeout, for example.
-The `aborted` property is a boolean that's truthy if this current run is aborted, you may want to use it before calling
-a callback received from payload or execution arguments. If using a generator, only yielding is sufficient, since the
+Your function will be notified with the cancellation by registering an `onAbort`
+callback, you can exploit this to abort an `AbortController` which will lead
+your fetches to be cancelled, or to clear a timeout, for example.
+
+The `aborted` property is a boolean that's truthy if this current run is aborted,
+you may want to use it before calling a callback received from payload or
+execution arguments. If using a generator, only yielding is sufficient, since the
 library internally checks on cancellation before stepping any further in the generator.
 
 The following functions are all supported by the library:
@@ -192,15 +198,62 @@ Here is a small example of the usage of cache config:
   };
 ```
 
+## Producer `props`:
+The producer receives a single argument (called either `props` or `argv`).
 
-## Run from producer props
-The producer function may select a state or run another async state, and either
+### `payload`
+The payload is gathered from the following:
+- from `AsyncStateProvider` if inside it
+- from all subscribers
+  - Either from `useAsyncState` configuration object
+  - Or from `useAsyncState().mergePayload({...})`
+
+So it gives the producer the power of grabbing something from the provider,
+or from a static context or even from the render phase or event handlers.
+
+### `lastSuccess`
+This represents the last success `State` registered by the library.
+
+This is useful to use `reducers` by the library or if you want to append
+the last data with the new one (like infinite list etc)
+
+### `args`
+The `args` property is array of `arguments` that the `run` function received
+when invoked.
+
+### `aborted`
+A boolean indicating whether this run was aborted and not relevant anymore.
+
+This boolean will be removed in favor of a `isAborted` function.
+
+### `abort`
+The same as `useAsyncState().abort` function. Its goal is to mark the current
+run as aborted (also invokes registered abort callbacks).
+
+### `onAbort`
+This allows the producer to be notified when the run is being aborted.
+
+This can be used for all types of asynchronous cancellations:
+- Cancel fetch requests
+- Cancel timeouts and intervals
+- Cancel workers ..
+
+## Run from producer: `Producer effects`
+The producer function may select a state or run another, and either
 care about its resolve value or not (same applies for the abort fn).
 
 This open us new horizons for the library as you can combine these features
 for a more control in your app. 
 
-### props.run
+### `props.run`
+This function runs the given producer/async state. It can run:
+- A `Source` object
+- A plain `Producer`
+- If inside provider, any state by `string` key.
+
+This function returns the `AbortFn` of the execution, so it can be chained and
+registered via `props.onAbort(props.run(...))` for cascading cancellations.
+
 Signature:
 
 ```typescript
@@ -219,21 +272,21 @@ The `props.run` function returns its `AbortFn`, so you can register it (if you c
 in `props.onAbort(props.run(...))`.
 
 :::note
-Running an async state by key or source will result in an update to all its
-subscribers.
+Running an async state by key or source or key will result in an update to 
+all its subscribers.
 :::
 
 
-### props.runp
+### `props.runp`
+`props.runp` is similar to `props.run`, but rather than returning the abort
+function, it will return a `Promise` of the resulting state so you can wait it
+in the caller producer.
 
 Signature:
 
 ```typescript
 runp: <T>(input: ProducerPropsRunInput<T>, config: ProducerPropsRunConfig | null, ...args: any[] ) => Promise<State<T>> | undefined
 ```
-
-The `runp` function takes the same parameters as the `run`, but returns a promise
-to the resulting state.
 
 ```javascript
 async function weatherProducer(props) {
@@ -245,12 +298,12 @@ async function weatherProducer(props) {
 
 ```
 
-### props.emit
+### `props.emit`
 
 The emit function changes the state from the producer, but only works after the
 producer resolves (or else you get a warning, without effect).
 
-It was built to support subscriptions from the producer, to websocket, a worker....
+It was built to support subscriptions from the producer, to websocket and/or workers
 
 Its signature is the same as useAsyncState's `replaceState`. It changes the state
 instantly and imperatively to the desired value.
@@ -302,7 +355,7 @@ function brokerProducer(props) {
 }
 ```
 
-### props.select
+### `props.select`
 Signature:
 
 ```typescript
