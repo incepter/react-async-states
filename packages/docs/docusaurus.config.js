@@ -38,7 +38,7 @@ const config = {
     ({
       googleAnalytics: {
         anonymizeIP: true,
-        trackingID: 'G-DLET2KL2BE',
+        trackingID: 'G-WT8TFH0HBF',
       },
       navbar: {
         title: 'react-async-states',

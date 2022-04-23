@@ -2,9 +2,12 @@
 sidebar_position: 3
 sidebar_label: useAsyncState
 ---
-
 # `useAsyncState`
-This hook allows subscription to an async state, and represents the API that you will be interacting with the most.
+
+## The `useAsyncState` hook
+This hook allows subscription to an async state, and represents the API that 
+you will be interacting with the most.
+
 Its signature is:
 
 ```javascript
@@ -18,18 +21,27 @@ This hooks may be used inside and outside the provider and has almost the same b
 For example, you can use this hook to fetch the current user from your api before mounting the provider and pass the user
 information to payload.
 
-While being outside provider, it will expect you to use a producer function as configuration, or with an object defining
-the producer and all other necessary information.
+When outside provider, it will expect you to use a producer function as configuration, or with an object defining
+the producer and all other necessary information, or eventually a `Source` object..
 
 ### Subscription modes
-Many subscription modes are possible. You won't have to use them, but you should essentially
-know what they mean and how your configuration impacts them for any debugging purposes.
+`useAsyncState` hooks performs a subscription to an object from a constructor
+called `AsyncState`, that's why it has this on its name. But in reality it may
+be synchronous, so if I were to give it a new name, it would be `useSharedState`
+or `useBetterState`.
+
+Many subscription modes are possible. You won't have to use them,
+but you should essentially know what they mean and how your configuration
+impacts them for debugging purposes.
 
 What is a subscription mode already ?
-When you call `useAsyncState` -every time your component renders- this hook reacts to the given configuration
-synchronized by your dependencies. Then, tries to get the async state instance from the provider.
+When you call `useAsyncState` -every time your component renders- this hook 
+reacts to the given configuration synchronized by your dependencies.
+Then, tries to get the async state instance from the provider or the source,
+or create a new one.
 
-If not found, it may wait for it if you did not provide a `producer` function in your configuration, or fallback with a noop mode for example.
+If not found, it may wait for it if you did not provide a `producer` function
+in your configuration, or fallback with a noop mode for example.
 
 The possible subscription mode are:
 - `LISTEN`: Listens to an existing async state from its key
@@ -42,67 +54,69 @@ The possible subscription mode are:
 - `OUTSIDE_PROVIDER`: When you call it outside the async state context provider
 - `NOOP`: If none of the above matches, should not happen
 
-If you are curious about how the subscription mode is inferred, please refer to the `inferSubscriptionMode` function.
 
-### Configuration and manipulation
-The configuration argument may be a string, an object with supported properties, or a producer function (you won't be able to share it by this signature).
-If it is a string, it is used inside provider to only listen on an async state, without automatically triggering the run
-(but you can do it programmatically using what this hooks returns).
-If an object is provided, it may act like a simple subscription or a registration of a new async state (with fork/hoist).
+Read more in [this link](/docs/faq/how-the-library-works#how-useasyncstate-subscription-mode-works-).
+
+## Configuration and manipulation
+The configuration argument may be a string, an object with supported properties,
+or a producer function.
+
+If it is a string, it is used inside provider to only listen on an async state.
+
+If an object is provided, it may act like a simple subscription or a
+registration of a new async state (with fork/hoist).
 
 Let's see in details the supported configuration:
 
-|Property               |Type         |Default Value                         |Standalone|Provider|Description
-|-----------------------|-------------|--------------------------------------|----------|--------|------------------------------------------------|
-|`key`                  |`string`     |`string`                              |     x    |   x    | The unique key, either for definition or subscription |
-|`lazy`                 |`boolean`    |`true`                                |     x    |   x    | If false, the subscription will re-run every dependency change |
-|`fork`                 |`boolean`    |`false`                               |          |   x    | If true, subscription will fork own async state |
-|`source`               |`object`     |`undefined`                           |     x    |   x    | Subscribes to the hidden instance of async state in this special object |
-|`producer`             |`function`   |`undefined`                           |     x    |   x    | Our producer function |
-|`selector`             |`function`   |`identity`                            |     x    |   x    | receives state (`{data, args, status}`) as unique parameter and whatever it returns it is put in the state return |
-|`areEqual`             |`function`   |`shallowEqual`                        |     x    |   x    | `(prevValue, nextValue) => areEqual(prevValue, nextValue)` if it returns true, the render is skipped |
-|`condition`            |`boolean`    |`true`                                |     x    |   x    | If this condition is falsy, run will not be granted |
-|`forkConfig`           |`ForkConfig` |`{keepState: false, keepCache: false}`|          |   x    | defines whether to keep state and/or the cache when forking or not |
-|`cacheConfig`          |`CacheConfig`|`undefined`                           |     x    |   x    | defines the cache config for the producer |
-|`initialValue`         |`any`        |`null`                                |     x    |        | The initial producer value, useful only if working as standalone(ie defining own producer) |
-|`postSubscribe`        |`function`   |`undefined`                           |     x    |   x    | invoked when we subscribe to an async state instance |
-|`hoistToProvider`      |`boolean`    |`false`                               |          |   x    | Defines whether to register in the provider or not |
-|`hoistToProviderConfig`|`HoistConfig`|`{override: false}`                   |          |   x    | Defines whether to override an existing async state in provider while hoisting |
+| Property                | Type          | Default Value                          | Standalone | Provider | Description                                                                                                          |
+|-------------------------|---------------|----------------------------------------|------------|----------|----------------------------------------------------------------------------------------------------------------------|
+| `key`                   | `string`      | `string`                               | x          | x        | The key of the async state we are defining, subscribing to or forking from                                           |
+| `lazy`                  | `boolean`     | `true`                                 | x          | x        | If false, the subscription will re-run every dependency change                                                       |
+| `fork`                  | `boolean`     | `false`                                |            | x        | If true, subscription will fork the state                                                                            |
+| `source`                | `object`      | `undefined`                            | x          | x        | A source object, similar to the one created by `createSource`                                                        |
+| `producer`              | `function`    | `undefined`                            | x          | x        | The producer function                                                                                                |
+| `selector`              | `function`    | `identity`                             | x          | x        | receives state (`{data, args, status}`, `lastSuccess`, `cache`) and returns the `state` property of the result value |
+| `areEqual`              | `function`    | `shallowEqual`                         | x          | x        | `(prevState, nextState) => areEqual(prevState, nextState)` determines whether the subscription should update or not  |
+| `condition`             | `boolean`     | `true`                                 | x          | x        | If this condition is falsy, the automatic run isn't granted. this works only when `lazy = false`                     |
+| `forkConfig`            | `ForkConfig`  | `{keepState: false, keepCache: false}` |            | x        | The fork configuration in case of `fork = true`                                                                      |
+| `cacheConfig`           | `CacheConfig` | `undefined`                            | x          | x        | Defines the cache config for the producer                                                                            |
+| `initialValue`          | `any`         | `null`                                 | x          |          | The initial producer value, useful only if working as standalone(ie defining own producer)                           |
+| `postSubscribe`         | `function`    | `undefined`                            | x          | x        | Invoked when we subscription to an async state is performed                                                          |
+| `hoistToProvider`       | `boolean`     | `false`                                |            | x        | Defines whether to hoist this state to the provider or not                                                           |
+| `hoistToProviderConfig` | `HoistConfig` | `{override: false}`                    |            | x        | Defines the configuration associated with `hoistToProvider = true`                                                   |
 
-The returned object from useAsyncState contains the following properties:
+The returned object from `useAsyncState` contains the following properties:
 
-|Property            |Description              |
-|--------------------|-------------------------|
-|`key`               | The key of the async state instance, if forked, it is different from the given one |
-|`run`               | Imperatively trigger the run, arguments to this function are received as array in the execution args |
-|`mode`              | The subscription mode |
-|`read`              | This function supports React's concurrent mode and suspends the component if its status is `pending` |
-|`state`             | The current selected portion of state, by default, the selector is `identity` and so the state is of shape `{status, args, data}` |
-|`abort`             | Imperatively abort the current run if running |
-|`source`            | The special source object of the subscribed async state instance, could be reused for further subscription without passing by provider or key |
-|`payload`           | The async state instance payload (could be removed in the future) |
-|`lastSuccess`       | The last registered success |
-|`replaceState`      | Imperatively and instantly replace state with the given value (accepts a callback receiving the old state), the status may be specified as a second parameter, it defaults to `success`|
-|`mergePayload`      | Imperatively merge the payload of the subscribed async state instance with the object in first parameter |
-|`invalidateCache`   | Invalidates the cache with this producer, `invalidateCache(cacheKey?: string) => void`, it either removes the cached key data or the whole cache if this parameter is undefined |
+| Property          | Description                                                                                                                                                                             |
+|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `key`             | The key of the async state subscribed instance                                                                                                                                          |
+| `run`             | Runs the `Producer` associated with the subscription                                                                                                                                    |
+| `mode`            | The subscription mode                                                                                                                                                                   |
+| `read`            | This function supports React's concurrent suspense and suspends the component if its status is `pending`                                                                                |
+| `state`           | The current selected portion of state, by default, the selector is `identity` and so the state is of shape `{status, args, data, timestamp}`                                            |
+| `abort`           | Abort the current pending run                                                                                                                                                           |
+| `source`          | The `Source` object of the subscribed async state instance, could be reused for further subscription or run                                                                             |
+| <s>`payload`</s>  | The async state instance's payload (should be removed in the future, because there is no point of exposing this property)                                                               |
+| `lastSuccess`     | The last registered success                                                                                                                                                             |
+| `replaceState`    | Imperatively and instantly replace state with the given value (accepts a callback receiving the old state), the status may be specified as a second parameter, it defaults to `success` |
+| `mergePayload`    | Imperatively merge the payload of the subscribed async state instance with the object in first parameter                                                                                |
+| `invalidateCache` | Invalidates the cache with this producer, `invalidateCache(cacheKey?: string) => void`, it either removes the cached key data or the whole cache if this parameter is undefined         |
 
-We bet in this shape because it provides the key for further subscriptions, the current state with status, data and the
+We bet in this shape because it provides the key for further subscriptions,
+the current state with status, data and the
 arguments that produced it. `run` runs the subscribed async state, to abort it invoke `abort`. The `lastSuccess`
 holds for you the last succeeded value.
 
-`replaceState` instantly gives a new value to the state with the desired status.
-
-The `selector` as config in for `useAsyncState` allows you to subscribe to just a small portion of the state while
-choosing when to trigger a rerender, this is an important feature and the probably the most important of this library.
-It was not designed from the start, but the benefits from having it are noticeable and allowed new extensions for
-the library itself.
+The `selector` as config in for `useAsyncState` allows you to subscribe to just 
+a small portion of the state while choosing when to trigger a rerender,
+this is an important feature to be at the core of the library.
 
 :::note 
 Calling the `run` function when the status is `pending` will result in aborting
-the previous instantly, and start a new cycle.
+the previous instantly, and start a new one.
 :::
 
-### Examples
+## Examples
 
 Let's now make some examples using `useAsyncState`:
 
@@ -203,38 +217,24 @@ function Input({name, ...rest}) {
 
 ```
 
-### Other hooks
-For convenience, we've added many other hooks with `useAsyncState` to help inline most of the situations: They inject
-a configuration property which may facilitate using the library:
-
-The following are all hooks with the same signature as `useAsyncState`, but each predefines something in the configuration:
-- `useAsyncState.auto`: adds `lazy: false` to configuration
-- `useAsyncState.lazy`: adds `lazy: true` to configuration
-- `useAsyncState.fork`: adds `fork: true` to configuration
-- `useAsyncState.hoist`: adds `hoistToProvider: true` to configuration
-- `useAsyncState.hoistAuto`: adds `lazy: false, hoistToProvider: true` to configuration
-- `useAsyncState.forkAudo`: adds `lazy: false, fork: true` to configuration
-
-The following snippets results from the previous hooks:
-
-```javascript
-// automatically fetches the user's list when the search url changes
-const {state: {status, data}, run, abort} = useAsyncState.auto(DOMAIN_USER_PRODUCERS.list.key, [search]);
-// automatically fetches user 1 and selects data
-const {state: user1} = useAsyncState.auto({source: user1Source, selector: s => s.data});
-// automatically fetches user 2 and selects its name
-const {state: user2} = useAsyncState.auto({source: user2Source, selector: name});
-// automatically fetches user 3 and hoists it to provider and selects its name
-const {state: user3} = useAsyncState.hoistAuto({source: userPayloadSource, payload: {userId: 3}, selector: name})
-// forks userPayloadSource and runs it automatically with a new payload and selects the name from result
-const {state: user4} = useAsyncState.forkAuto({source: userPayloadSource, payload: {userId: 4}, selector: name})
-```
-
-:::tip
-To suspend a component in concurrent mode, just call the `read` function returned by `useAsyncState`
-:::
-
-
+## `useAsyncState` configuration
+### `string` as the `key`
+### `Source` object
+### `Producer` function
+## `configuration` object
+### `key`
+### `lazy`
+### `fork`
+### `source`
+### `producer`
+### `selector`
+### `areEqual`
+### `condition`
+### `forkConfig`
+### `cacheConfig`
+### `initialValue`
+### `hoistToProvider`
+### `hoistToProviderConfig`
 ### `postSubscribe`
 
 This function is triggered once a subscription to an async state instance occurs.
@@ -274,3 +274,49 @@ const {state: {status, data}, lastSuccess, abort} = useAsyncState({
     }
   }, [params]);
 ```
+
+## `useAsyncState` return value
+### `key`
+### `source`
+### `uniqueId`
+### `mode`
+### `state`
+### `read`
+### `run`
+### `abort`
+### `invalidateCache`
+### `mergePayload`
+### `replaceState`
+### `lastSuccess`
+
+## Other hooks
+For convenience, we've added many other hooks with `useAsyncState` to help inline most of the situations: They inject
+a configuration property which may facilitate using the library:
+
+The following are all hooks with the same signature as `useAsyncState`, but each predefines something in the configuration:
+- `useAsyncState.auto`: adds `lazy: false` to configuration
+- `useAsyncState.lazy`: adds `lazy: true` to configuration
+- `useAsyncState.fork`: adds `fork: true` to configuration
+- `useAsyncState.hoist`: adds `hoistToProvider: true` to configuration
+- `useAsyncState.hoistAuto`: adds `lazy: false, hoistToProvider: true` to configuration
+- `useAsyncState.forkAudo`: adds `lazy: false, fork: true` to configuration
+
+The following snippets results from the previous hooks:
+
+```javascript
+// automatically fetches the user's list when the search url changes
+const {state: {status, data}, run, abort} = useAsyncState.auto(DOMAIN_USER_PRODUCERS.list.key, [search]);
+// automatically fetches user 1 and selects data
+const {state: user1} = useAsyncState.auto({source: user1Source, selector: s => s.data});
+// automatically fetches user 2 and selects its name
+const {state: user2} = useAsyncState.auto({source: user2Source, selector: name});
+// automatically fetches user 3 and hoists it to provider and selects its name
+const {state: user3} = useAsyncState.hoistAuto({source: userPayloadSource, payload: {userId: 3}, selector: name})
+// forks userPayloadSource and runs it automatically with a new payload and selects the name from result
+const {state: user4} = useAsyncState.forkAuto({source: userPayloadSource, payload: {userId: 4}, selector: name})
+```
+
+:::tip
+To suspend a component in concurrent mode, just call the `read` function returned by `useAsyncState`
+:::
+
