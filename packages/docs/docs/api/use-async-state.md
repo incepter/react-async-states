@@ -68,22 +68,22 @@ registration of a new async state (with fork/hoist).
 
 Let's see in details the supported configuration:
 
-| Property                | Type          | Default Value                          | Standalone | Provider | Description                                                                                                          |
-|-------------------------|---------------|----------------------------------------|------------|----------|----------------------------------------------------------------------------------------------------------------------|
-| `key`                   | `string`      | `string`                               | x          | x        | The key of the async state we are defining, subscribing to or forking from                                           |
-| `lazy`                  | `boolean`     | `true`                                 | x          | x        | If false, the subscription will re-run every dependency change                                                       |
-| `fork`                  | `boolean`     | `false`                                |            | x        | If true, subscription will fork the state                                                                            |
-| `source`                | `object`      | `undefined`                            | x          | x        | A source object, similar to the one created by `createSource`                                                        |
-| `producer`              | `function`    | `undefined`                            | x          | x        | The producer function                                                                                                |
-| `selector`              | `function`    | `identity`                             | x          | x        | receives state (`{data, args, status}`, `lastSuccess`, `cache`) and returns the `state` property of the result value |
-| `areEqual`              | `function`    | `shallowEqual`                         | x          | x        | `(prevState, nextState) => areEqual(prevState, nextState)` determines whether the subscription should update or not  |
-| `condition`             | `boolean`     | `true`                                 | x          | x        | If this condition is falsy, the automatic run isn't granted. this works only when `lazy = false`                     |
-| `forkConfig`            | `ForkConfig`  | `{keepState: false, keepCache: false}` |            | x        | The fork configuration in case of `fork = true`                                                                      |
-| `cacheConfig`           | `CacheConfig` | `undefined`                            | x          | x        | Defines the cache config for the producer                                                                            |
-| `initialValue`          | `any`         | `null`                                 | x          |          | The initial producer value, useful only if working as standalone(ie defining own producer)                           |
-| `postSubscribe`         | `function`    | `undefined`                            | x          | x        | Invoked when we subscription to an async state is performed                                                          |
-| `hoistToProvider`       | `boolean`     | `false`                                |            | x        | Defines whether to hoist this state to the provider or not                                                           |
-| `hoistToProviderConfig` | `HoistConfig` | `{override: false}`                    |            | x        | Defines the configuration associated with `hoistToProvider = true`                                                   |
+| Property                | Type          | Default Value                          | Description                                                                                                          |
+|-------------------------|---------------|----------------------------------------|----------------------------------------------------------------------------------------------------------------------|
+| `key`                   | `string`      | `string`                               | The key of the async state we are defining, subscribing to or forking from                                           |
+| `lazy`                  | `boolean`     | `true`                                 | If false, the subscription will re-run every dependency change                                                       |
+| `fork`                  | `boolean`     | `false`                                | If true, subscription will fork the state                                                                            |
+| `source`                | `object`      | `undefined`                            | A source object, similar to the one created by `createSource`                                                        |
+| `producer`              | `function`    | `undefined`                            | The producer function                                                                                                |
+| `selector`              | `function`    | `identity`                             | receives state (`{data, args, status}`, `lastSuccess`, `cache`) and returns the `state` property of the result value |
+| `areEqual`              | `function`    | `shallowEqual`                         | `(prevState, nextState) => areEqual(prevState, nextState)` determines whether the subscription should update or not  |
+| `condition`             | `boolean`     | `true`                                 | If this condition is falsy, the automatic run isn't granted. this works only when `lazy = false`                     |
+| `forkConfig`            | `ForkConfig`  | `{keepState: false, keepCache: false}` | The fork configuration in case of `fork = true`                                                                      |
+| `cacheConfig`           | `CacheConfig` | `undefined`                            | Defines the cache config for the producer                                                                            |
+| `initialValue`          | `any`         | `null`                                 | The initial producer value, useful only if working as standalone(ie defining own producer)                           |
+| `postSubscribe`         | `function`    | `undefined`                            | Invoked when we subscription to an async state is performed                                                          |
+| `hoistToProvider`       | `boolean`     | `false`                                | Defines whether to hoist this state to the provider or not                                                           |
+| `hoistToProviderConfig` | `HoistConfig` | `{override: false}`                    | Defines the configuration associated with `hoistToProvider = true`                                                   |
 
 The returned object from `useAsyncState` contains the following properties:
 
@@ -219,25 +219,353 @@ function Input({name, ...rest}) {
 
 ## `useAsyncState` configuration
 ### `string` as the `key`
-### `Source` object
-### `Producer` function
-## `configuration` object
-### `key`
-### `lazy`
-### `fork`
-### `source`
-### `producer`
-### `selector`
-### `areEqual`
-### `condition`
-### `forkConfig`
-### `cacheConfig`
-### `initialValue`
-### `hoistToProvider`
-### `hoistToProviderConfig`
-### `postSubscribe`
+You may use a `string` as the first parameter to `useAsyncState`.
 
-This function is triggered once a subscription to an async state instance occurs.
+The key is detailed [here](#key).
+
+### `Source` object
+`useAsyncState` accepts a `Source` object as first parameter.
+
+Read about it [here](#source).
+
+### `Producer` function
+`useAsyncState` accepts a `Producer` function as first parameter.
+
+Read about it [here](#/docs/api/producer-function).
+
+You can use it like this:
+
+```typescript
+// creates a new non shared state with myProducer as producer
+useAsyncState(myProducer, [...deps]);
+
+// creates a new non shared state from the given function
+useAsyncState(function() {
+  // do something
+  // return state value or promise or thenable
+}, [...deps]);
+
+// creates a new non shared state from the given async/await function
+useAsyncState(async function() {
+  // do something
+  await stuff;
+  // return state value or promise or thenable
+  
+  // or even
+  return await stuff;
+}, [...deps]);
+
+// creates a new non shared state from the given generator
+useAsyncState(function* myProducer() {
+  // do something
+  yield stuff;
+  // return state value or promise or thenable
+
+  // or even
+  return yield stuff;
+  
+  // or
+  throw e;
+}, [...deps]);
+```
+
+
+## `Configuration` object
+### `key`
+The key received by `useAsyncState` works as the following:
+- If inside a provider
+  - If the `key` matches something in the provider
+    - If neither `hoistToProvider` nor `fork` is truthy,
+      then we are `listening` to a state
+    - If `hoistToProvider = true`, attempts to override it with a new
+      created state from given `producer` and `hositToProviderConfiguration`.
+    - If `fork = true`, forks from the matched state.
+  - If there is no such a `key` in the provider
+    - If `hoistToProvider = true`, hoists the created state with the given
+      `producer` and other related properties.
+- If outside the provider, a new state is created.
+
+So as a recap, the key is needed:
+- When defining a state
+- When trying to subscribe to a state (while adding hoist, listen or fork)
+
+:::note
+The previous assumptions are related to `key` only. If a `Source` object is
+provided, it would just perform `subscription` to it.
+:::
+
+The following snippets will give you a good idea of how to `useAsyncState`:
+
+```typescript
+import {useAsyncState} from "react-async-states";
+
+// ASSUMING YOU ARE INSIDE PROVIDER
+
+// creates a state with `my-key` as key and undefined as producer
+useAsyncState("my-key");
+
+// creates a state with `my-key` as key and undefined as myProducer
+useAsyncState({
+  key: "my-key",
+  producer: myProducer,
+});
+
+```
+
+```typescript
+import {useAsyncState} from "react-async-states";
+
+// ASSUMING YOU ARE OUTSIDE PROVIDER
+
+// listens or waits to the state with `my-key` as key
+// if not found, it will return empty data and wait for it given key to be hoisted
+useAsyncState("my-key");
+
+// listens or waits to the state with `my-key` as key, plus
+// the `producer` property is ignored
+useAsyncState({
+  key: "my-key",
+  producer: myProducer,
+});
+
+// listens or waits to the state with `my-key` as key, plus
+// if not found, it will create it with the given producer and hoists it
+// to provider
+useAsyncState({
+  key: "my-key",
+  producer: myProducer,
+  hoistToProvider: true,
+});
+
+// defines a new state with the given producer and hoists it to provider
+// if an async state exists with the same key, it tries to dispose it
+//    if the dispose passes, the old state is overrided 
+//  or else, the a new instance is created and given `my-key` and added to
+// provider, and then its watchers are notified (components waiting).
+useAsyncState({
+  key: "my-key",
+  producer: myProducer,
+  hoistToProvider: true,
+  hoistToProviderConfig: {
+    override: true,
+  }
+});
+
+// the key property is completely ignored
+useAsyncState({
+  key: "my-key",
+  source: mySource, // assuming this is a valid source object, or else it is like undefined
+});
+
+```
+
+### `producer`
+The production has its [own detailed documentation in this link](/docs/api/producer-function).
+
+If the hook is used like this: `useAsyncState(producer)` it will create a new
+non-shared state with the given producer and subscribes to it.
+
+It can be used like this:
+```typescript
+import {useAsyncState} from "react-async-states";
+
+useAsyncState({
+  // the producer property can take any of the supported forms
+  producer: async function (props) {...},
+});
+```
+
+### `initialValue`
+This property is relevant each time creating a new state, and serves as
+the initializing value of the state (either a value or a function).
+
+```typescript
+import {useAsyncState} from "react-async-states";
+
+useAsyncState({
+  initialValue: 0,
+  producer: counterProducer,
+});
+```
+
+### `source`
+The `Source` objects are retrieved either from [`createSource`](/docs/api/create-source)
+or from the return value of `useAsyncState`.
+
+It may be used like this:
+
+```typescript
+import {createSource, useAsyncState} from "react-async-states";
+
+const mySource = createSource("my-key", myProducer, myConfig);
+
+// later
+
+// subscribes to the given state
+useAsyncState(mySource);
+
+// subscribes to the given state
+// all other creation/listen properties are ignored, like key, producer, hoist
+useAsyncState({source: mySource});
+
+// forks the given state
+// all other creation/listen properties are ignored, like key, producer, hoist
+useAsyncState({source: mySource, fork: true});
+```
+
+### `condition`
+This property is used only when `lazy` is `falsy`.
+If the `condition` is truthy, the `producer` 
+associated with the subscription will run.
+
+### `lazy`
+If this property is set to `true`, when the dependencies change,
+the `producer` will run if condition is `truthy`.
+
+:::caution
+If several subscriptions are made to the same state and all of them set `lazy`
+to false, then they may `abort` each other if they have the same dependencies.
+
+Pay close attention to this exact use case.
+:::
+
+### `fork`
+If this property is true, it will fork the subscribed state with the given `forkConfig`.
+
+### `forkConfig`
+
+A configuration object containing the following:
+
+| Property    | Type      | Default Value | Description                                                      |
+|-------------|-----------|---------------|------------------------------------------------------------------|
+| `key        | `string`  | `undefined`   | The key that will be given to the created state (the forked one) |
+| `keepState` | `boolean` | `undefined`   | Whether to keep the state from the original while forking        |
+| `keepCache` | `boolean` | `undefined`   | Whether to keep the cache from the original while forking        |
+
+```typescript
+import {useAsyncState} from "react-async-states";
+
+// forks from a Source object and copies its cache
+useAsyncState({
+  fork: true,
+  source: mySource,
+  forkConfig: {
+    keepCache: true,
+  }
+})
+
+// forks from the subscribed state (by key constraints)
+useAsyncState({
+  fork: true,
+  key: "some-key",
+  forkConfig: {
+    key: "my-key",
+  }
+})
+```
+
+### `hoistToProvider`
+This property is relevant only if inside a provider,
+If set to true, it will `hoist` the state with the given `hoistToProviderConfig`.
+
+### `hoistToProviderConfig`
+A configuration object containing the following:
+
+| Property   | Type      | Default Value | Description                                              |
+|------------|-----------|---------------|----------------------------------------------------------|
+| `override` | `boolean` | `undefined`   | Whether to override the existing state with the same key |
+
+
+### `selector`
+The selector that selects data from your state.
+It is a function with the following in order parameters:
+
+| Parameter     | Type       | Description                                                                       |
+|---------------|------------|-----------------------------------------------------------------------------------|
+| `state`       | `State<T>` | The current state                                                                 |
+| `lastSuccess` | `State<T>` | The last registered state (may be equal to state if the current state is success) |
+| `cache`       | `Cache<T>` | The cache associated to this state                                                |
+
+```typescript
+// extend the given state
+import {State, AsyncStateStatus, useAsyncState, UseAsyncState} from "react-async-states";
+
+// syncSelector
+// if you want that your state is always synchronous
+// you may be interested only by the data inside the state
+function syncSelector(state: State<T>): E {
+  return state.data;
+}
+
+// this selector throws if the state is error so it is leveraged to the nearest
+// error boundary
+function errorBoundarySelector(state: State<T>): E {
+  // assuming you have an error boundary
+  if (state.status === AsyncStateStatus.error) {
+    throw state.data;
+  }
+  return state;
+}
+
+// this selector gives the last success data
+function keepPreviousDataSelector(state: State<T>, lastSuccess): E {
+  if (state.status === AsyncStateStatus.pending) {
+    return {
+      ...state,
+      data: lastSuccess.data,
+    };
+  }
+  return state;
+}
+
+// select from cache selector
+function errorBoundarySelector(state, lastSuccess, cache): E {
+  // this requires the cache to be enabled
+  if (cache['user-1-details']) {
+    return cache['user-1-details']; // or cache['user-1-details'].data depending or your needs
+  }
+  return state;
+}
+
+function lazyDeveloperSelector(state: State<T>) {
+  return {
+    ...state,
+    isError: state.status === AsyncStateStatus.error,
+    isPending: state.status === AsyncStateStatus.pending,
+    isWeird: false,
+    ...
+  }
+}
+
+const result: UseAsyncState<T, E> = useAsyncState({
+  key,
+  selector: mySelector,
+})
+
+```
+
+### `areEqual`
+`areEqual` function is used to determine whether the previous state value equals
+the selected value from the new state.
+This comparison occurs in a callback from React's `useState`. If they are equal
+based on this function, the old value is used (so react won't trigger an update).
+If they are different, the new value is used and react will perform a rerender.
+
+### `cacheConfig`
+This property is only relevant when `creating` a new state (along with hoist...).
+
+It determines the cache configurations:
+
+| Property      | Type                                                              | Description                                                                    |
+|---------------|-------------------------------------------------------------------|--------------------------------------------------------------------------------|
+| `enabled`     | `boolean`                                                         | Whether to enable cache or not                                                 |
+| `hash`        | `(args?: any[], payload?: {[id: string]: any} or null) => string` | a function to calculate a hash for a producer run (from args and payload)      |
+| `getDeadline` | `(currentState: State<T>) => number`                              | returns the deadline after which the cache is invalid                          |
+| `load`        | `() => {[id: AsyncStateKey]: CachedState<T>}`                     | loads the cached data when the async state instance is created                 |
+| `persist`     | `(cache: {[id: AsyncStateKey]: CachedState<T>}) => void`          | a function to persist the whole cache, called when state is updated to success |
+
+### `postSubscribe`
+This function is triggered once a subscription to a state occurs.
 
 This should be mainly used to attach event listeners that may `run` the producer.
 
@@ -274,6 +602,44 @@ const {state: {status, data}, lastSuccess, abort} = useAsyncState({
     }
   }, [params]);
 ```
+
+## `useAsyncState` dependencies
+`useAsyncState` accepts a second parameter that corresponds to the array of its
+dependencies.
+The default value is empty array rather that undefined.
+
+The dependencies are the secure vault over closure variables that you make, so
+always be sure to add them responsibly.
+
+```typescript
+import {useAsyncState} from "react-async-states";
+
+const params = useParams;
+useAsyncState(function getUserDetails(props) {
+  doSomethingWith(params)
+  return stateValue;
+}, [
+  params,// whenever params change, recreate the state
+]);
+
+// OR USING PAYLOAD
+function callback() {}
+useAsyncState({
+  payload: {params, callback},
+  producer(props) {
+    const {params} = props.payload;
+    callback();
+  },
+}, [
+  params,
+  callback,
+]);
+```
+
+:::warning
+Be sure to add relevant component variables used in the subscription as
+dependencies or you will have unwanted behavior and hard to debug/spot bugs.
+:::
 
 ## `useAsyncState` return value
 ### `key`
