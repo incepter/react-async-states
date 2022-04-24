@@ -80,6 +80,8 @@ Let's see in details the supported configuration:
 | `condition`             | `boolean`     | `true`                                 | If this condition is falsy, the automatic run isn't granted. this works only when `lazy = false`                     |
 | `forkConfig`            | `ForkConfig`  | `{keepState: false, keepCache: false}` | The fork configuration in case of `fork = true`                                                                      |
 | `cacheConfig`           | `CacheConfig` | `undefined`                            | Defines the cache config for the producer                                                                            |
+| `runEffect`             | `RunEffect`   | `undefined`                            | Defines run effect to decorate the producer with: debounce, throttle, delay...                                       |
+| `runEffectDurationMs`   | `number > 0`  | `undefined`                            | The duration of the effect in milliseconds                                                                           |
 | `initialValue`          | `any`         | `null`                                 | The initial producer value, useful only if working as standalone(ie defining own producer)                           |
 | `postSubscribe`         | `function`    | `undefined`                            | Invoked when we subscription to an async state is performed                                                          |
 | `hoistToProvider`       | `boolean`     | `false`                                | Defines whether to hoist this state to the provider or not                                                           |
@@ -438,7 +440,7 @@ A configuration object containing the following:
 
 | Property    | Type      | Default Value | Description                                                      |
 |-------------|-----------|---------------|------------------------------------------------------------------|
-| `key        | `string`  | `undefined`   | The key that will be given to the created state (the forked one) |
+| `key`       | `string`  | `undefined`   | The key that will be given to the created state (the forked one) |
 | `keepState` | `boolean` | `undefined`   | Whether to keep the state from the original while forking        |
 | `keepCache` | `boolean` | `undefined`   | Whether to keep the cache from the original while forking        |
 
@@ -551,6 +553,35 @@ This comparison occurs in a callback from React's `useState`. If they are equal
 based on this function, the old value is used (so react won't trigger an update).
 If they are different, the new value is used and react will perform a rerender.
 
+### `runEffect`
+Defines the effect to apply on the producer while running.
+
+This property is only relevant when creating a new state.
+
+There are two types of run effects:
+- `debouce`: or `delay`, `takeLast` or `takeLatest` and means take the last
+  registered run in the configured duration.
+- `throttle`: or `takeFirst` or `takeLeading` and means take the first ever run
+  in the duration.
+
+### `runEffectDurationMs`
+`runEffectDurationMs` : the duration of the effect.
+
+Here is a working example of debouncing the `getClientProducer` while typing:
+
+```typescript
+const { run, state } = useAsyncState({
+  producer: getClientProducer,
+
+  runEffect: "debounce",
+  runEffectDurationMs: 500,
+});
+
+// later:
+<input placeholder="User id 1-10" onChange={(e) => run(e.target.value)} />
+
+```
+
 ### `cacheConfig`
 This property is only relevant when `creating` a new state (along with hoist...).
 
@@ -643,17 +674,311 @@ dependencies or you will have unwanted behavior and hard to debug/spot bugs.
 
 ## `useAsyncState` return value
 ### `key`
+
+Corresponds to the key of the `AsyncState` instance that you subscribed to.
+
+For example, if you choose to fork a state while omitting the fork key, an
+automatic key will be given. You'll need that `key` or the `source` to be able
+to subscribe to it.
+
+```typescript
+import {useAsyncState} from "react-async-states";
+
+const {key} = useAsyncState();
+```
 ### `source`
+This is the same object given by [`createSource`](/docs/api/create-source)
+and it shall allow further subscription to the state.
+
+Why does source and key both exist:
+
+The library doesn't use any global store to keep a reference towards created
+states, so they will be garbage collected immediately after loosing developer
+reference towards them. THe source object contains the instance of state,
+by providing it back to the library, it knows how unwrap it and perform
+subscription and/or run it.
+
+Plus, `createSource` doesn't need react to work, so it will allow creating
+module level states. Also, the library support running producers and states
+from almost everywhere in your code base, and it would just work if you provid
+a `Source` object.
+
+```typescript
+import {useAsyncState} from "react-async-states";
+
+const {source} = useAsyncState();
+```
 ### `uniqueId`
+This is only used in development mode and was originally added with the devtools.
+
 ### `mode`
+This corresponds to `AsyncStateSubscriptionMode`
+
+Here is the full list:
+
+```typescript
+
+enum AsyncStateSubscriptionMode {
+  LISTEN = "LISTEN",
+  HOIST = "HOIST",
+  STANDALONE = "STANDALONE",
+  WAITING = "WAITING",
+  FORK = "FORK",
+  NOOP = "NOOP",
+  SOURCE = "SOURCE",
+  SOURCE_FORK = "SOURCE_FORK",
+  OUTSIDE_PROVIDER = "OUTSIDE_PROVIDER",
+}
+
+```
+
+Read more about it [here](/docs/faq/how-the-library-works#how-useasyncstate-subscription-mode-works-).
+
+In general, you would never use this (unless you are a contributor and debugging things).
+
 ### `state`
+This is whatever the selector returns:
+
+The selector is described in [its own section](#selector).
+
+The default selector of the library returns the `State` identity, which is
+composed of:
+
+
+| Property    | Type                                    | Description                                                      |
+|-------------|-----------------------------------------|------------------------------------------------------------------|
+| `data`      | `T`                                     | The returned data from the `producer function`                   |
+| `status`    | `initial,pending,success,error,aborted` | The status of the state                                          |
+| `props`     | `ProducerProps`                         | The argument object that the producer was ran with (the `props`) |
+| `timestamp` | `number`                                | the time (`Date.now()`) where the state was constructed          |
+
+
+```typescript
+import {State, UseAsyncState, useAsyncState} from "react-async-states";
+
+type User
+{
+  name: string,
+}
+
+function myProducer(): Promise<User> {
+  return fetch(url).then(r => r.json());
+}
+
+function userNameSelector(state: State<User>): string | null {
+  return state.status === "success" ? state.data.name : null;
+}
+
+// later:
+const {state}: UseAsyncState<User> = useAsyncState(myProducer);
+
+
+// state in this case is a string
+const {state: userName}: UseAsyncState<User, string> = useAsyncState({
+  producer: myProducer,
+  selector: mySelector,
+})
+
+
+function defaultLibrarySelector(...args): State<T> {
+  return args[0];
+}
+
+```
 ### `read`
+This function enable the react's concurrent feature: `Component suspension`.
+That works with `Suspense`. So calling read requires you to have a `Suspense`
+up in your tree.
+
+This function warns if the used react version doesn't support concurrent features.
+
+You can pass this function to a child component that will read the data and
+suspend if pending.
+
+```tsx
+import {Suspense} from "react";
+import {useAsyncState} from "react-async-states";
+
+
+function UserDetails({userId}) {
+  
+  const {read, state} = useAsyncState({
+    lazy: false,
+    payload: {userId},
+    source: userDetailsPageSource,
+  }, [userId]);
+  
+  
+  return (
+    <Suspense fallback={<Skeleton userId={userId} />}>
+      <ErrorBoundary>
+        <UserDetails read={read} />
+      </ErrorBoundary>
+    </Suspense>
+  );
+}
+
+function UserDetails({read}) {
+  // when pending, this line will throw a Promise that react will catch
+  // and display Suspense's fallback until present
+  const {data, status} = read();
+  
+  const isError = status === "error";
+  const isSuccess = status === "success";
+  const isInitial = status === "initial";
+  const isAborted = status === "success";
+  if (isError && shouldThrowFromError(data)) {
+    throw data;
+  }
+  
+  return (
+    // build the UI based on the statuses you need
+  );
+}
+
+```
+
 ### `run`
+This function triggers the producer run.
+
+It gives to the producer whatever it was called with as `args`.
+
+```typescript
+
+// calling run like this
+run(1, 2, 3);
+// should be reflected like this for the producer when running:
+props = {
+  // ...
+  args: [1, 2, 3]
+  // ...
+}
+        
+// calling run like this
+run(1, 2, 3);
+// should be reflected like this for the producer when running:
+props = {
+  // ...
+  args: [1, 2, 3]
+  // ...
+}
+
+// calling run like this
+run();
+// should be reflected like this for the producer when running:
+props = {
+  // ...
+  args: []
+  // ...
+}
+
+// calling run like this
+run("increment", 1);
+// should be reflected like this for the producer when running:
+props = {
+  // ...
+  args: ["increment", 1]
+  // ...
+}
+
+// calling run like this
+run(1, {name: "John"});
+// should be reflected like this for the producer when running:
+props = {
+  // ...
+  args: [1, {name: "John"}]
+  // ...
+}
+
+```
+
 ### `abort`
+the `abort` function when called, if the status is pending, it would trigger
+the abort, and execute all registered abort callbacks.
+
+```tsx
+import {useAsyncState} from "react-async-states";
+
+const {state: {status}, abort} = useAsyncState("my-key");
+
+{status === "pending" && <Button onClick={() => abort("user_action")}>Abort</Button>}
+```
+
 ### `invalidateCache`
+```typescript
+invalidateCache: (cacheKey?: string) => void
+```
+Takes an optional `cacheKey` parameter that:
+- If provided, will delete the cache entry from cache.
+- If not provided, will delete the whole cache.
+
+```tsx
+import {useAsyncState} from "react-async-states";
+
+const {invalidateCache} =  useAsyncState({
+  source: usersPageSource,
+});
+
+<Button onClick={() => {
+  invalidateCache();
+  run()
+}}>Reset search</Button>
+```
+
 ### `mergePayload`
+The payload that the producer returns is the payload issued from all subscribers,
+and the one from provider, and the one that this function adds:
+
+```typescript
+import {useAsyncState} from "react-async-states/src";
+
+const {mergePayload} = useAsyncState();
+
+mergePayload({userId: 1, isNew: false});
+
+// payload is {userId: 1, isNew: false}
+
+mergePayload({count: 3, userId: 5});
+
+// payload is {count: 3, userId: 5, isNew: fale}
+```
+
 ### `replaceState`
+replaceState is of type : `StateUpdater`:
+
+```typescript
+type StateUpdater<T> = (
+  updater: T | StateFunctionUpdater<T>,
+  status?: AsyncStateStatus
+) => void;
+```
+
+It just puts a value as the current state.
+
+We don't believe you will use it.
+
 ### `lastSuccess`
+This points to the last state with status `success`.
+
+So if state is actually with a success state, they are the same object.
+
+You can use it if you want to be sure in a component that you interact with
+a state of type success all the time:
+
+```tsx
+import {useAsyncState} from "react-async-states";
+
+const {state: {status, props, data}, lastSuccess} = useAsyncState(myConfig);
+
+// You can think of the following UI, that
+// always display the data in the background
+// when pending or error it just displays an error on top of it
+<MyContainer >
+  <MyData data={lastSuccess} />
+  <ErrorOverlay data={data} visible={status === "error"} />
+  <PendingOverlay data={props} visible={status === "pending"} />
+< /MyContainer>
+```
 
 ## Other hooks
 For convenience, we've added many other hooks with `useAsyncState` to help inline most of the situations: They inject
@@ -683,6 +1008,7 @@ const {state: user4} = useAsyncState.forkAuto({source: userPayloadSource, payloa
 ```
 
 :::tip
-To suspend a component in concurrent mode, just call the `read` function returned by `useAsyncState`
+To suspend a component in concurrent mode, 
+just call the `read` function returned by `useAsyncState`
 :::
 
