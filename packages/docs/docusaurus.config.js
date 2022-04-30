@@ -106,6 +106,8 @@ const config = {
         darkTheme: darkCodeTheme,
       },
     }),
+
+  themes: ['@docusaurus/theme-live-codeblock']
 };
 
 module.exports = config;
