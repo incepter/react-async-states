@@ -32,15 +32,19 @@ export type OnAbortFn = (cb: ((reason?: any) => void)) => void;
 
 export interface ProducerProps<T> extends RunExtraProps {
   abort: AbortFn,
-  aborted: boolean,
   onAbort: OnAbortFn,
   emit: StateUpdater<T>,
 
   args: any[],
   payload: any,
-  cleared?: boolean,
-  fulfilled?: boolean,
-  lastSuccess: State<T>
+  lastSuccess: State<T>,
+  isAborted: () => boolean,
+}
+
+export type RunIndicators = {
+  cleared: boolean,
+  aborted: boolean,
+  fulfilled: boolean,
 }
 
 export type ProducerSavedProps<T> = {
@@ -54,7 +58,10 @@ export type ProducerSavedProps<T> = {
 export type Producer<T> =
   ((props: ProducerProps<T>) => (T | Promise<T> | Generator<any, T, any>));
 
-export type ProducerFunction<T> = (props: ProducerProps<T>) => AbortFn;
+export type ProducerFunction<T> = (
+  props: ProducerProps<T>,
+  runIndicators: RunIndicators
+) => AbortFn;
 
 export enum ProducerType {
   indeterminate = 0,

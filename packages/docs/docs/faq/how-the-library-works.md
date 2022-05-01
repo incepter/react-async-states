@@ -115,7 +115,6 @@ function runImmediately(
     emit,
     abort,
     args: execArgs,
-    aborted: false,
     lastSuccess: that.lastSuccess,
     payload: shallowClone(that.payload),
     onAbort(cb: AbortFn) {
@@ -123,6 +122,9 @@ function runImmediately(
         onAbortCallbacks.push(cb);
       }
     },
+    isAborted() {
+      return indicators.aborted;
+    }
   };
   Object.assign(props, extraPropsCreator(props));
 
@@ -187,7 +189,7 @@ await and promises and generators, and even a falsy value, which falls back
 to `replaceState`
 ```typescript
 export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunction<T> {
-  return function producerFuncImpl(props: ProducerProps<T>): undefined {
+  return function producerFuncImpl(props: ProducerProps<T>, indicators: RunIndicators): undefined {
     if (typeof asyncState.originalProducer !== "function") {
       replaceState(props.args[0]);
       return;
@@ -209,16 +211,16 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
 
     runningPromise
       .then(stateData => {
-        let aborted = props.aborted;
+        let aborted = indicators.aborted;
         if (!aborted) {
-          props.fulfilled = true;
+          indicators.fulfilled = true;
           setState(StateBuilder.success(stateData, savedProps));
         }
       })
       .catch(stateError => {
-        let aborted = props.aborted;
+        let aborted = indicators.aborted;
         if (!aborted) {
-          props.fulfilled = true;
+          indicators.fulfilled = true;
           setState(StateBuilder.error(stateError, savedProps));
         }
       });

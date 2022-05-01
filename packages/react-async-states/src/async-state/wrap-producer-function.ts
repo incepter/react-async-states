@@ -1,18 +1,24 @@
 import {__DEV__, cloneProducerProps, isGenerator, isPromise} from "shared";
 import devtools from "devtools";
 import {StateBuilder} from "./utils";
-import {ProducerFunction, ProducerProps, ProducerType, State} from "./types";
+import {
+  ProducerFunction,
+  ProducerProps,
+  ProducerType,
+  RunIndicators,
+  State
+} from "./types";
 import AsyncState from "./AsyncState";
 
 export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunction<T> {
   // this is the real deal
-  return function producerFuncImpl(props: ProducerProps<T>): undefined {
+  return function producerFuncImpl(props: ProducerProps<T>, indicators: RunIndicators): undefined {
     // this allows the developer to omit the producer attribute.
     // and replaces state when there is no producer
     if (typeof asyncState.originalProducer !== "function") {
-      props.fulfilled = true;
-      asyncState.replaceState(props.args[0]);
-      return; // makes ts happy
+      indicators.fulfilled = true;
+      asyncState.replaceState(props.args[0], props.args[1]);
+      return;
     }
     // the running promise is used to pass the status to pending and as suspender in react18+
     let runningPromise;
@@ -26,7 +32,7 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
 
     } catch (e) {
       if (__DEV__) devtools.emitRunSync(asyncState, props);
-      props.fulfilled = true;
+      indicators.fulfilled = true;
       asyncState.setState(StateBuilder.error(e, savedProps));
       return;
     }
@@ -37,14 +43,14 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
       // generatorResult is either {done, value} or a promise
       let generatorResult;
       try {
-        generatorResult = wrapStartedGenerator(executionValue, props);
+        generatorResult = wrapStartedGenerator(executionValue, props, indicators);
       } catch (e) {
-        props.fulfilled = true;
+        indicators.fulfilled = true;
         asyncState.setState(StateBuilder.error(e, savedProps));
         return;
       }
       if (generatorResult.done) {
-        props.fulfilled = true;
+        indicators.fulfilled = true;
         asyncState.setState(StateBuilder.success(generatorResult.value, savedProps));
         return;
       } else {
@@ -60,7 +66,7 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
       asyncState.setState(StateBuilder.pending(savedProps) as State<any>);
     } else { // final value
       if (__DEV__) devtools.emitRunSync(asyncState, props);
-      props.fulfilled = true;
+      indicators.fulfilled = true;
       asyncState.producerType = ProducerType.sync;
       asyncState.setState(StateBuilder.success(executionValue, savedProps));
       return;
@@ -68,16 +74,16 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
 
     runningPromise
       .then(stateData => {
-        let aborted = props.aborted;
+        let aborted = indicators.aborted;
         if (!aborted) {
-          props.fulfilled = true;
+          indicators.fulfilled = true;
           asyncState.setState(StateBuilder.success(stateData, savedProps));
         }
       })
       .catch(stateError => {
-        let aborted = props.aborted;
+        let aborted = indicators.aborted;
         if (!aborted) {
-          props.fulfilled = true;
+          indicators.fulfilled = true;
           asyncState.setState(StateBuilder.error(stateError, savedProps));
         }
       });
@@ -86,7 +92,8 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
 
 function wrapStartedGenerator(
   generatorInstance,
-  props
+  props,
+  indicators
 ) {
   let lastGeneratorValue = generatorInstance.next();
 
@@ -110,7 +117,7 @@ function wrapStartedGenerator(
       );
 
       function abortFn() {
-        if (!props.fulfilled && !props.aborted) {
+        if (!indicators.fulfilled && !indicators.aborted) {
           abortGenerator();
         }
       }

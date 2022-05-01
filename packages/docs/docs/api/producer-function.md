@@ -32,7 +32,7 @@ producer({
   args,
   payload,
 
-  aborted,
+  isAborted,
   onAbort,
   abort,
 
@@ -52,7 +52,7 @@ where:
 | `payload`     | The merged payload from provider and all subscribers. This allows the producer to gather data from multiple places.                        |
 | `lastSuccess` | The last success state                                                                                                                     |
 | `args`        | The arguments that the `run` function was given when ran                                                                                   |
-| `aborted`     | If the request have been cancelled (by dependency change, unmount or user action)                                                          |
+| `isAborted`   | A function returns a boolean indicating whether the current run has been cancelled (by dependency change, unmount or user action)          |
 | `abort`       | Imperatively abort the producer while processing it, this may be helpful only if you are working with generators                           |
 | `onAbort`     | Registers a callback that will be fired when the abort is invoked (like aborting a fetch request if the user aborts or component unmounts) |
 | `run`         | runs an async state or a producer and returns the abort function of that run                                                               |
@@ -72,7 +72,7 @@ Your function will be notified with the cancellation by registering an `onAbort`
 callback, you can exploit this to abort an `AbortController` which will lead
 your fetches to be cancelled, or to clear a timeout, for example.
 
-The `aborted` property is a boolean that's truthy if this current run is aborted,
+The `isAborted` function that returns a boolean that's truthy if this current run is aborted,
 you may want to use it before calling a callback received from payload or
 execution arguments. If using a generator, only yielding is sufficient, since the
 library internally checks on cancellation before stepping any further in the generator.
@@ -222,10 +222,9 @@ the last data with the new one (like infinite list etc)
 The `args` property is array of `arguments` that the `run` function received
 when invoked.
 
-### `aborted`
-A boolean indicating whether this run was aborted and not relevant anymore.
-
-This boolean will be removed in favor of a `isAborted` function.
+### `isAborted`
+A function returning a boolean indicating whether this run was aborted and not
+relevant anymore (dependencies change/unmount).
 
 ### `abort`
 The same as `useAsyncState().abort` function. Its goal is to mark the current

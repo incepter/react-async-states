@@ -179,7 +179,7 @@ useAsyncState({
   producer(props) {
     timeout(props.payload.delay)
     .then(function callSuccess() {
-      if (!props.aborted) {
+      if (!props.isAborted()) {
         // notice that we are taking onSuccess from payload, not from component's closure
         // that's the way to go, this creates a separation of concerns
         // and your producer may be extracted outisde this file, and will be easier to test
