@@ -15,6 +15,12 @@ We will be building an application for users management, but we will go
 incrementally, so you can have an overall idea on how the library is flexible
 and its way of state management.
 
+In this section you will learn how to deal with the following using the library:
+- Manually trigger data fetch
+- Trigger data fetching based on dependencies
+- Search while typing (+ concurrency & debounce)
+- URL based automatic data fetching (via the query string)
+
 
 ## Fetching the users list
 ### Trigger the fetch on button's click
@@ -85,7 +91,7 @@ export default function App() {
 
 </Tabs>
 
-Here is a codesandbox demo about it:
+Here is a codesandbox demo with the previous code snippet:
 
 <details open>
 <summary>Fetching users list codesandbox demo</summary>
@@ -99,7 +105,8 @@ sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-ori
 
 </details>
 
-This may be familiar to you if you already know `react-query`.
+This example was chosen on purpose so it may be familiar to you if you already
+know `react-query` or any other library using the same paradigm.
 
 ### Make it automatic on mount
 
@@ -126,7 +133,7 @@ To make it run automatically on mount, let's mark it as `lazy: false`:
 
 See it here:
 <details>
-<summary>Fetching users list automatically on mount  codesandbox demo</summary>
+<summary>Fetching users list automatically on mount codesandbox demo</summary>
 
 <iframe
 style={{width: '100%', height: '500px', border: 0, borderRadius: 4, overflow: 'hidden'}}
@@ -137,5 +144,96 @@ sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-ori
 
 </details>
 
+### React to dependencies with condition
+
+Now, let's fetch the user details when typing his id.
+
+This time, we will be:
+- storing the `userId` in a state variable using react's `useState`.
+- Pass the userId to our `producer` in the `payload`.
+- Only fetch if the userId is `truthy`.
+- Fetch everytime the `userId` changes.
+- Abort the previous call if a second is done while `pending`.
+
+Here is a full working example:
 
 
+<Tabs>
+<TabItem value="ts" label="Typescript">
+
+```tsx
+async function fetchUser(props: ProducerProps<User>): Promise<User> {
+  const controller = new AbortController();
+  props.onAbort(() => controller.abort());
+
+  const { userId } = props.payload;
+
+  const usersResponse = await API.get("/users/" + userId, {
+    signal: controller.signal
+  });
+  return usersResponse.data;
+}
+
+export default function App() {
+  const [userId, setUserId] = React.useState("");
+  const { state }: UseAsyncState<User> = useAsyncState(
+    {
+      lazy: false,
+      condition: !!userId,
+      producer: fetchUser,
+      payload: {
+        userId
+      }
+    },
+    [userId]
+  );
+  const { status, data, props } = state;
+
+  return (
+    <div className="App">
+      <input onChange={(e) => setUserId(e.target.value)} />
+      <h3>Status is: {status}</h3>
+      {status === "success" && (
+        <details open>
+          <pre>{JSON.stringify(data, null, 4)}</pre>
+        </details>
+      )}
+      {status === "error" && (
+        <div>
+          error while retrieving user with id: {props?.payload.userId}
+          <pre>{data.toString()}</pre>
+        </div>
+      )}
+    </div>
+  );
+}
+
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```javascript
+
+```
+
+</TabItem>
+
+
+</Tabs>
+
+Try it here, notice the cancellation of previous requests, also, you can
+remove the abort callback and/or the signal to make concurrency chaos, and make
+sure to observe the consistency in the UI.
+
+<details>
+<summary>react to dependencies change with condition codesandbox demo</summary>
+
+<iframe
+style={{width: '100%', height: '500px', border: 0, borderRadius: 4, overflow: 'hidden'}}
+src="https://codesandbox.io/embed/react-typescript-forked-qr44ti?fontsize=14&hidenavigation=1&theme=dark"
+allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+/>
+
+</details>
