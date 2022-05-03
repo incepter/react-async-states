@@ -39,6 +39,8 @@ export interface ProducerProps<T> extends RunExtraProps {
   payload: any,
   lastSuccess: State<T>,
   isAborted: () => boolean,
+
+  getState: () => State<T>,
 }
 
 export type RunIndicators = {

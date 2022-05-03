@@ -31,7 +31,7 @@ import {nextKey} from "./utils/key-gen";
 
 const defaultDependencies: any[] = [];
 
-export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
+export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies: any[] = defaultDependencies,
   configOverrides?: PartialUseAsyncStateConfiguration<T, E>,

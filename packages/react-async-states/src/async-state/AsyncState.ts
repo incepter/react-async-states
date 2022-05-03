@@ -303,6 +303,9 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       },
       isAborted() {
         return runIndicators.aborted;
+      },
+      getState() {
+        return that.currentState;
       }
     };
     Object.assign(props, extraPropsCreator(props));

@@ -1,18 +1,12 @@
-import {oneObjectIdentity, shallowClone, shallowEqual} from "../../../shared";
-import {useAsyncStateImpl} from "./useAsyncStateImpl";
-import {
-  PartialUseAsyncStateConfiguration,
-  UseAsyncStateConfig,
-  UseAsyncStateType,
-  UseAsyncState
-} from "../types.internal";
+import {useAsyncStateBase} from "./useAsyncStateBase";
+import {UseAsyncState, UseAsyncStateConfig} from "../types.internal";
 
 // default
 function useAsyncStateExport<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
 ): UseAsyncState<T, E> {
-  return useAsyncStateImpl(
+  return useAsyncStateBase(
     subscriptionConfig,
     dependencies
   );
@@ -25,7 +19,7 @@ function useAutoAsyncState<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
 ): UseAsyncState<T, E> {
-  return useAsyncStateImpl(
+  return useAsyncStateBase(
     subscriptionConfig,
     dependencies,
     autoConfigOverrides
@@ -39,7 +33,7 @@ function useLazyAsyncState<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
 ): UseAsyncState<T, E> {
-  return useAsyncStateImpl(
+  return useAsyncStateBase(
     subscriptionConfig,
     dependencies,
     lazyConfigOverrides
@@ -53,7 +47,7 @@ function useForkAsyncState<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
 ): UseAsyncState<T, E> {
-  return useAsyncStateImpl(
+  return useAsyncStateBase(
     subscriptionConfig,
     dependencies,
     forkConfigOverrides
@@ -67,7 +61,7 @@ function useForkAutoAsyncState<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
 ): UseAsyncState<T, E> {
-  return useAsyncStateImpl(
+  return useAsyncStateBase(
     subscriptionConfig,
     dependencies,
     forkAutoConfigOverrides
@@ -81,7 +75,7 @@ function useHoistAsyncState<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
 ): UseAsyncState<T, E> {
-  return useAsyncStateImpl(
+  return useAsyncStateBase(
     subscriptionConfig,
     dependencies,
     hoistConfigOverrides
@@ -98,7 +92,7 @@ function useHoistAutoAsyncState<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
 ): UseAsyncState<T, E> {
-  return useAsyncStateImpl(
+  return useAsyncStateBase(
     subscriptionConfig,
     dependencies,
     hoistAutoConfigOverrides

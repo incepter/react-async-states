@@ -499,7 +499,7 @@ function useAsyncStateExport<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
 ): UseAsyncState<T, E> {
-  return useAsyncStateImpl(
+  return useAsyncStateBase(
     subscriptionConfig,
     dependencies
   );
