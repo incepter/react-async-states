@@ -4,7 +4,16 @@ sidebar_label: The producer function
 ---
 # The producer function
 
-The producer function is the function that returns the state's value, it may be:
+## What is a producer function?
+The producer function is the function that returns the state's value,
+here is its declaration:
+
+```typescript
+export type Producer<T> =
+  ((props: ProducerProps<T>) => (T | Promise<T> | Generator<any, T, any>));
+```
+
+So it can be:
 
 - A regular function returning a value.
 - A pure function returning a value based on the previous value (aka reducer).
@@ -13,16 +22,17 @@ The producer function is the function that returns the state's value, it may be:
 - A regular function returning a `Promise` object.
 - `undefined`.
 
-The main goal and purpose is to run your function, it receives a single argument like this:
+The main goal and purpose is to `run` your function,
+so it will receive a single argument like this:
 ```javascript
 // somewhere in the code, simplified:
-yourFunction({
+producer({
   lastSuccess,
 
   args,
   payload,
 
-  aborted,
+  isAborted,
   onAbort,
   abort,
 
@@ -37,29 +47,34 @@ yourFunction({
 
 where:
 
-|Property            |Description              |
-|--------------------|-------------------------|
-|`payload`           | The merged payload from provider and all subscribers |
-|`lastSuccess`       | The last success value that was registered |
-|`args`              | Whatever arguments that the `run` function received when it was invoked |
-|`aborted`           | If the request have been cancelled (by dependency change, unmount or user action) |
-|`abort`             | Imperatively abort the producer while processing it, this may be helpful only if you are working with generators |
-|`onAbort`           | Registers a callback that will be fired when the abort is invoked (like aborting a fetch request if the user aborts or component unmounts) |
-|`run`               | runs an async state or a producer and returns the abort fn of that run|
-|`runp`              | runs an async state or a producer and returns a promise of its state |
-|`emit`              | set the state from the producer after its resolve, this to support intervals and incoming events from an external system (like ws, sse...) |
-|`select`            | returns the state of the desired async state, by key or source |
+| Property      | Description                                                                                                                                |
+|---------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| `payload`     | The merged payload from provider and all subscribers. This allows the producer to gather data from multiple places.                        |
+| `lastSuccess` | The last success state                                                                                                                     |
+| `args`        | The arguments that the `run` function was given when ran                                                                                   |
+| `isAborted`   | A function returns a boolean indicating whether the current run has been cancelled (by dependency change, unmount or user action)          |
+| `abort`       | Imperatively abort the producer while processing it, this may be helpful only if you are working with generators                           |
+| `onAbort`     | Registers a callback that will be fired when the abort is invoked (like aborting a fetch request if the user aborts or component unmounts) |
+| `run`         | runs an async state or a producer and returns the abort function of that run                                                               |
+| `runp`        | runs an async state or a producer and returns a promise of its state                                                                       |
+| `emit`        | set the state from the producer after its resolve, this to support intervals and incoming events from an external system (like ws, sse...) |
+| `select`      | returns the state of the desired async state, by key or source                                                                             |
 
-We believe that these properties will solve all sort of possible use cases, in fact, your function will run while having
-access to payload from the render, from either the provider and subscription, and can be merged imperatively anytime
-using `mergePayload` obtained from `useAsyncstate`. And also, execution args if you run it manually (not automatic).
+We believe that these properties will solve all sort of possible use cases.
+In fact, your function will run while having access to payload from the render,
+from either the provider and subscriptions, and can be merged imperatively anytime
+using `mergePayload` obtained from `useAsyncstate` and also execution args if
+you run it manually (not automatic).
 
 So basically you have three entry-points to your function (provider + subscription + exec args).
 
-Your function will be notified with the cancellation by registering an `onAbort` callback, you can exploit this to abort
-an `AbortController` which will lead your fetches to be cancelled, or to clear a timeout, for example.
-The `aborted` property is a boolean that's truthy if this current run is aborted, you may want to use it before calling
-a callback received from payload or execution arguments. If using a generator, only yielding is sufficient, since the
+Your function will be notified with the cancellation by registering an `onAbort`
+callback, you can exploit this to abort an `AbortController` which will lead
+your fetches to be cancelled, or to clear a timeout, for example.
+
+The `isAborted` function that returns a boolean that's truthy if this current run is aborted,
+you may want to use it before calling a callback received from payload or
+execution arguments. If using a generator, only yielding is sufficient, since the
 library internally checks on cancellation before stepping any further in the generator.
 
 The following functions are all supported by the library:
@@ -123,34 +138,37 @@ You can even omit the producer function, it was supported along the with the `re
 If you attempt to run it, it will delegate to replaceState while passing the arguments.
 
 
-### What do you need to declare a producer function:
+### What do you need with the producer ?
 
-The following properties are needed when declaring a production function, either at module scope or via `useAsyncState`:
+An AsyncState is an instance holding the state and wraps your producer function. 
 
-|Property        |Type                 |Description              |
-|----------------|---------------------|-------------------------|
-|`key`           |`string`             | The unique identifier of the async state |
-|`producer`      |`producer function`  | Returns the state value of type `T` |
-|`configuration` |`ProducerConfig`     | The argument object that the producer was ran with |
+The following properties are needed when using a production function,
+either at module scope or via `useAsyncState`:
+
+| Property        | Type                | Description                                        |
+|-----------------|---------------------|----------------------------------------------------|
+| `key`           | `string`            | The unique identifier of the async state           |
+| `producer`      | `producer function` | Returns the state value of type `T`                |
+| `configuration` | `ProducerConfig`    | The argument object that the producer was ran with |
 
 The supported configuration is:
 
-|Property              |Type                                      |Description               |
-|----------------------|------------------------------------------|-------------------------|
-|`initialValue`        |`T`                                       | The initial value or the initializer of the state (status = `initial`) |
-|`runEffect`           |`oneOf('debounce', 'throttle', undefined)`| An effect to apply when running the producer, can be used to debounce or throttle |
-|`runEffectDurationMs` |`number > 0`, `undefined`                 | The debounce/throttle duration |
-|`cacheConfig`         |`CacheConfig`                             | The cache config |
+| Property              | Type                                       | Description                                                                       |
+|-----------------------|--------------------------------------------|-----------------------------------------------------------------------------------|
+| `initialValue`        | `T`                                        | The initial value or the initializer of the state (status = `initial`)            |
+| `runEffect`           | `oneOf('debounce', 'throttle', undefined)` | An effect to apply when running the producer, can be used to debounce or throttle |
+| `runEffectDurationMs` | `number > 0`, `undefined`                  | The debounce/throttle duration                                                    |
+| `cacheConfig`         | `CacheConfig`                              | The cache config                                                                  |
 
 Where the supported cache config is:
 
-|Property              |Type                                                              |Description               |
-|----------------------|------------------------------------------------------------------|-------------------------|
-|`enabled`             | `boolean`                                                        |  Whether to enable cache or not |
-|`hash`                | `(args?: any[], payload?: {[id: string]: any} or null) => string`| a function to calculate a hash for a producer run (from args and payload) |
-|`getDeadline`         | `(currentState: State<T>) => number`                             | returns the deadline after which the cache is invalid |
-|`load`                | `() => {[id: AsyncStateKey]: CachedState<T>}`                    | loads the cached data when the async state instance is created |
-|`persist`             | `(cache: {[id: AsyncStateKey]: CachedState<T>}) => void`         | a function to persist the whole cache, called when state is updated to success |
+| Property      | Type                                                              | Description                                                                    |
+|---------------|-------------------------------------------------------------------|--------------------------------------------------------------------------------|
+| `enabled`     | `boolean`                                                         | Whether to enable cache or not                                                 |
+| `hash`        | `(args?: any[], payload?: {[id: string]: any} or null) => string` | a function to calculate a hash for a producer run (from args and payload)      |
+| `getDeadline` | `(currentState: State<T>) => number`                              | returns the deadline after which the cache is invalid                          |
+| `load`        | `() => {[id: AsyncStateKey]: CachedState<T>}`                     | loads the cached data when the async state instance is created                 |
+| `persist`     | `(cache: {[id: AsyncStateKey]: CachedState<T>}) => void`          | a function to persist the whole cache, called when state is updated to success |
 
 Here is a small example of the usage of cache config:
 
@@ -181,15 +199,61 @@ Here is a small example of the usage of cache config:
   };
 ```
 
+## Producer `props`:
+The producer receives a single argument (called either `props` or `argv`).
 
-## Run from producer props
-The producer function may select a state or run another async state, and either
+### `payload`
+The payload is gathered from the following:
+- from `AsyncStateProvider` if inside it
+- from all subscribers
+  - Either from `useAsyncState` configuration object
+  - Or from `useAsyncState().mergePayload({...})`
+
+So it gives the producer the power of grabbing something from the provider,
+or from a static context or even from the render phase or event handlers.
+
+### `lastSuccess`
+This represents the last success `State` registered by the library.
+
+This is useful to use `reducers` by the library or if you want to append
+the last data with the new one (like infinite list etc)
+
+### `args`
+The `args` property is array of `arguments` that the `run` function received
+when invoked.
+
+### `isAborted`
+A function returning a boolean indicating whether this run was aborted and not
+relevant anymore (dependencies change/unmount).
+
+### `abort`
+The same as `useAsyncState().abort` function. Its goal is to mark the current
+run as aborted (also invokes registered abort callbacks).
+
+### `onAbort`
+This allows the producer to be notified when the run is being aborted.
+
+This can be used for all types of asynchronous cancellations:
+- Cancel fetch requests
+- Cancel timeouts and intervals
+- Cancel workers ..
+
+## Run from producer: `Producer effects`
+The producer function may select a state or run another, and either
 care about its resolve value or not (same applies for the abort fn).
 
 This open us new horizons for the library as you can combine these features
 for a more control in your app. 
 
-### props.run
+### `props.run`
+This function runs the given producer/async state. It can run:
+- A `Source` object
+- A plain `Producer`
+- If inside provider, any state by `string` key.
+
+This function returns the `AbortFn` of the execution, so it can be chained and
+registered via `props.onAbort(props.run(...))` for cascading cancellations.
+
 Signature:
 
 ```typescript
@@ -208,21 +272,21 @@ The `props.run` function returns its `AbortFn`, so you can register it (if you c
 in `props.onAbort(props.run(...))`.
 
 :::note
-Running an async state by key or source will result in an update to all its
-subscribers.
+Running an async state by key or source or key will result in an update to 
+all its subscribers.
 :::
 
 
-### props.runp
+### `props.runp`
+`props.runp` is similar to `props.run`, but rather than returning the abort
+function, it will return a `Promise` of the resulting state so you can wait it
+in the caller producer.
 
 Signature:
 
 ```typescript
 runp: <T>(input: ProducerPropsRunInput<T>, config: ProducerPropsRunConfig | null, ...args: any[] ) => Promise<State<T>> | undefined
 ```
-
-The `runp` function takes the same parameters as the `run`, but returns a promise
-to the resulting state.
 
 ```javascript
 async function weatherProducer(props) {
@@ -234,12 +298,12 @@ async function weatherProducer(props) {
 
 ```
 
-### props.emit
+### `props.emit`
 
 The emit function changes the state from the producer, but only works after the
 producer resolves (or else you get a warning, without effect).
 
-It was built to support subscriptions from the producer, to websocket, a worker....
+It was built to support subscriptions from the producer, to websocket and/or workers
 
 Its signature is the same as useAsyncState's `replaceState`. It changes the state
 instantly and imperatively to the desired value.
@@ -291,7 +355,7 @@ function brokerProducer(props) {
 }
 ```
 
-### props.select
+### `props.select`
 Signature:
 
 ```typescript

@@ -2,8 +2,10 @@ import { act } from "@testing-library/react-hooks";
 import AsyncState from "../../async-state";
 import { AsyncStateStatus } from "shared";
 import { rejectionTimeout, timeout } from "./test-utils";
+import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
 
 jest.useFakeTimers("modern");
+mockDateNow();
 
 describe('AsyncState - run - abort', () => {
 
@@ -22,10 +24,12 @@ describe('AsyncState - run - abort', () => {
     expect(myAsyncState.currentState).toEqual({
       props: null,
       data: null,
+      timestamp: TESTS_TS,
       status: AsyncStateStatus.initial,
     });
 
-    const abort = myAsyncState.run(() => {});
+    const abort = myAsyncState.run(() => {
+    });
 
     await act(async () => {
       await jest.advanceTimersByTime(50);
@@ -38,10 +42,12 @@ describe('AsyncState - run - abort', () => {
         args: [],
         payload: {},
         lastSuccess: {
+          timestamp: TESTS_TS,
           data: null, status: AsyncStateStatus.initial,
         },
       },
       data: null,
+      timestamp: TESTS_TS,
       status: AsyncStateStatus.pending,
     });
 
@@ -53,11 +59,12 @@ describe('AsyncState - run - abort', () => {
       props: {
         args: [],
         lastSuccess: {
-          data: null,  status: AsyncStateStatus.initial
+          data: null, status: AsyncStateStatus.initial, timestamp: TESTS_TS,
+
         },
         payload: {}
       },
-      data: "reason",
+      data: "reason", timestamp: TESTS_TS,
       status: AsyncStateStatus.aborted,
     });
 
@@ -65,10 +72,12 @@ describe('AsyncState - run - abort', () => {
       props: {
         args: [],
         lastSuccess: {
+          timestamp: TESTS_TS,
           data: null, status: AsyncStateStatus.initial
         },
         payload: {}
       },
+      timestamp: TESTS_TS,
       data: "reason",
       status: AsyncStateStatus.aborted,
     });
@@ -82,10 +91,12 @@ describe('AsyncState - run - abort', () => {
       props: {
         args: [],
         lastSuccess: {
+          timestamp: TESTS_TS,
           data: null, status: AsyncStateStatus.initial
         },
         payload: {}
       },
+      timestamp: TESTS_TS,
       status: AsyncStateStatus.aborted,
       data: "reason",
     });
@@ -103,7 +114,8 @@ describe('AsyncState - run - abort', () => {
     myAsyncState.subscribe(subscription);
     // then
 
-    const abort = myAsyncState.run(() => {});
+    const abort = myAsyncState.run(() => {
+    });
 
     await act(async () => {
       await jest.advanceTimersByTime(50);
@@ -132,9 +144,11 @@ describe('AsyncState - run - abort', () => {
         payload: {},
         lastSuccess: {
           data: null,
+          timestamp: TESTS_TS,
           status: AsyncStateStatus.initial,
         },
       },
+      timestamp: TESTS_TS,
       status: AsyncStateStatus.aborted,
       data: "reason",
     });
@@ -152,7 +166,8 @@ describe('AsyncState - run - abort', () => {
     myAsyncState.subscribe(subscription);
     // then
 
-    myAsyncState.run(() => {});
+    myAsyncState.run(() => {
+    });
 
     await act(async () => {
       await jest.advanceTimersByTime(50);
@@ -162,7 +177,8 @@ describe('AsyncState - run - abort', () => {
 
     // rerun while pending should interrupt previous
     subscription.mockClear();
-    myAsyncState.run(() => {});
+    myAsyncState.run(() => {
+    });
 
     expect(subscription.mock.calls[0][0].status).toBe(AsyncStateStatus.aborted);
     expect(subscription.mock.calls[1][0].status).toBe(AsyncStateStatus.pending);
@@ -179,10 +195,12 @@ describe('AsyncState - run - abort', () => {
       props: {
         args: [],
         lastSuccess: {
+          timestamp: TESTS_TS,
           data: null, status: AsyncStateStatus.initial
         },
         payload: {}
       },
+      timestamp: TESTS_TS,
       status: AsyncStateStatus.success,
       data: "value",
     });

@@ -20,7 +20,8 @@ export enum ProducerRunEffects {
 }
 
 export type State<T> = {
-  data: T | any,
+  data: T,
+  timestamp: number,
   status: AsyncStateStatus,
   props?: ProducerSavedProps<T> | null,
 };
@@ -31,15 +32,21 @@ export type OnAbortFn = (cb: ((reason?: any) => void)) => void;
 
 export interface ProducerProps<T> extends RunExtraProps {
   abort: AbortFn,
-  aborted: boolean,
   onAbort: OnAbortFn,
   emit: StateUpdater<T>,
 
   args: any[],
   payload: any,
-  cleared?: boolean,
-  fulfilled?: boolean,
-  lastSuccess: State<T>
+  lastSuccess: State<T>,
+  isAborted: () => boolean,
+
+  getState: () => State<T>,
+}
+
+export type RunIndicators = {
+  cleared: boolean,
+  aborted: boolean,
+  fulfilled: boolean,
 }
 
 export type ProducerSavedProps<T> = {
@@ -53,7 +60,22 @@ export type ProducerSavedProps<T> = {
 export type Producer<T> =
   ((props: ProducerProps<T>) => (T | Promise<T> | Generator<any, T, any>));
 
-export type ProducerFunction<T> = (props: ProducerProps<T>) => AbortFn;
+export type ProducerFunction<T> = (
+  props: ProducerProps<T>,
+  runIndicators: RunIndicators
+) => AbortFn;
+
+export enum ProducerType {
+  indeterminate = 0,
+  sync = 1,
+  promise = 2,
+  generator = 3,
+}
+
+export enum RenderStrategy {
+  FetchOnRender = 0,
+  FetchThenRender = 1,
+}
 
 export type ProducerConfig<T> = {
   initialValue?: T,
@@ -87,7 +109,7 @@ export type CacheConfig<T> = {
   getDeadline(currentState: State<T>): number,
   hash(args?: any[], payload?: {[id: string]: any} | null): string,
 
-  load(): {[id: AsyncStateKey]: CachedState<T>},
+  load(): {[id: AsyncStateKey]: CachedState<T>} | Promise<{[id: AsyncStateKey]: CachedState<T>}>,
   persist(cache: {[id: AsyncStateKey]: CachedState<T>}): void,
 }
 
@@ -117,6 +139,7 @@ export interface AsyncStateInterface<T> {
 
   suspender: Promise<T> | undefined,
   producer: ProducerFunction<T>,
+  producerType: ProducerType,
   readonly originalProducer: Producer<T> | undefined,
 
   // prototype functions

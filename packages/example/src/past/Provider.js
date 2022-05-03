@@ -40,7 +40,11 @@ export const demoAsyncStates = {
         },
         getDeadline: () => 50000,
         load() {
-          return JSON.parse(localStorage.getItem("posts-cache"));
+          return new Promise((res) => {
+            setTimeout(() => {
+              res(JSON.parse(localStorage.getItem("posts-cache")))
+            }, 5000)
+          });
         },
         persist(st) {
           localStorage.setItem("posts-cache", JSON.stringify(st));

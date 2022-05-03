@@ -22,7 +22,7 @@ describe('createReducerProducer', () => {
     expect(
       // @ts-ignore
       producer({
-        lastSuccess: {data: 0, status: AsyncStateStatus.success},
+        lastSuccess: {data: 0, status: AsyncStateStatus.success, timestamp: 0},
         args: [1]
       })
     ).toEqual(1);

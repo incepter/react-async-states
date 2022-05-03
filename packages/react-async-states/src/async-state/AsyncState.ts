@@ -3,6 +3,7 @@ import {
   cloneProducerProps,
   invokeIfPresent,
   isFn,
+  isPromise,
   numberOrZero,
   shallowClone,
   warning
@@ -24,6 +25,7 @@ import {
   ProducerFunction,
   ProducerProps,
   ProducerRunEffects,
+  ProducerType,
   RunExtraPropsCreator,
   State,
   StateFunctionUpdater,
@@ -39,6 +41,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   currentState: State<T>;
   lastSuccess: State<T>;
+  producerType: ProducerType;
 
   config: ProducerConfig<T>;
 
@@ -64,11 +67,6 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     producer: Producer<T> | undefined | null,
     config?: ProducerConfig<T>
   ) {
-    if (typeof key !== "string") {
-      throw new Error("An async state must be initialized with a string key." +
-        ` Provider = '${key}' of type '${typeof key}'`);
-    }
-
     this.key = key;
     this.config = shallowClone(config);
     this.originalProducer = producer ?? undefined;
@@ -78,6 +76,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     this.lastSuccess = this.currentState;
 
     this.producer = wrapProducerFunction(this);
+    this.producerType = ProducerType.indeterminate;
 
     if (__DEV__) {
       this.uniqueId = nextUniqueId();
@@ -90,7 +89,12 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     if (this.isCacheEnabled() && typeof this.config.cacheConfig?.load === "function") {
       const loadedCache = this.config.cacheConfig.load();
       if (loadedCache) {
-        this.cache = loadedCache;
+        if (isPromise(loadedCache)) {
+          (loadedCache as Promise<{[id: AsyncStateKey]: CachedState<T>}>)
+            .then(asyncCache => this.cache = asyncCache)
+        } else {
+          this.cache = loadedCache as {[id: AsyncStateKey]: CachedState<T>};
+        }
       }
     }
 
@@ -190,7 +194,6 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     if (areRunEffectsSupported() && this.config.runEffect) {
       const now = Date.now();
 
-      // @ts-ignore
       function registerTimeout() {
         let runAbortCallback: AbortFn | null = null;
 
@@ -260,7 +263,6 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     let onAbortCallbacks: AbortFn[] = [];
 
     if (this.isCacheEnabled()) {
-      console.log('inside!')
       const runHash = hash(execArgs, this.payload, this.config.cacheConfig);
       const cachedState = this.cache[runHash];
 
@@ -277,6 +279,13 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     }
 
     const that = this;
+
+    const runIndicators = {
+      cleared: false,
+      aborted: false,
+      fulfilled: false,
+    };
+
     // @ts-ignore
     // ts yelling to add a run, runp and select functions
     // but run and runp will require access to this props object,
@@ -285,7 +294,6 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       emit,
       abort,
       args: execArgs,
-      aborted: false,
       lastSuccess: that.lastSuccess,
       payload: shallowClone(that.payload),
       onAbort(cb: AbortFn) {
@@ -293,6 +301,12 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
           onAbortCallbacks.push(cb);
         }
       },
+      isAborted() {
+        return runIndicators.aborted;
+      },
+      getState() {
+        return that.currentState;
+      }
     };
     Object.assign(props, extraPropsCreator(props));
 
@@ -300,13 +314,13 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       updater: T | StateFunctionUpdater<T>,
       status?: AsyncStateStatus
     ): void {
-      if (props.cleared && that.currentState.status === AsyncStateStatus.aborted) {
+      if (runIndicators.cleared && that.currentState.status === AsyncStateStatus.aborted) {
         warning("You are emitting while your producer is passing to aborted state." +
           "This has no effect and not supported by the library. The next " +
           "state value on aborted state is the reason of the abort.");
         return;
       }
-      if (!props.fulfilled) {
+      if (!runIndicators.fulfilled) {
         warning("Called props.emit before the producer resolves. This is" +
           " not supported in the library and will have no effect");
         return;
@@ -315,16 +329,16 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     }
 
     function abort(reason: any): AbortFn | undefined {
-      if (props.aborted || props.cleared) {
+      if (runIndicators.aborted || runIndicators.cleared) {
         return;
       }
 
-      if (!props.fulfilled) {
-        props.aborted = true;
+      if (!runIndicators.fulfilled) {
+        runIndicators.aborted = true;
         that.setState(StateBuilder.aborted(reason, cloneProducerProps(props)));
       }
 
-      props.cleared = true;
+      runIndicators.cleared = true;
       onAbortCallbacks.forEach(function clean(func) {
         invokeIfPresent(func, reason);
       });
@@ -332,7 +346,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     }
 
     this.currentAborter = abort;
-    this.producer(props);
+    this.producer(props, runIndicators);
     return abort;
   }
 
@@ -396,7 +410,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     status = AsyncStateStatus.success
   ): void {
     if (!StateBuilder[status]) {
-      throw new Error(`Couldn't replace state to status ${status}, because it is unknown.`);
+      throw new Error(`Couldn't replace state to unknown status ${status}.`);
     }
     if (this.currentState.status === AsyncStateStatus.pending) {
       this.abort();

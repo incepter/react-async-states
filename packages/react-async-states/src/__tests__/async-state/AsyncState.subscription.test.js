@@ -2,8 +2,10 @@ import { act } from "@testing-library/react-hooks";
 import AsyncState from "../../async-state";
 import { AsyncStateStatus } from "shared";
 import { timeout } from "./test-utils";
+import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
 
 jest.useFakeTimers("modern");
+mockDateNow();
 
 describe('AsyncState - subscriptions', () => {
   it('should subscribe to async-state and get notified', async () => {
@@ -22,7 +24,8 @@ describe('AsyncState - subscriptions', () => {
     let unsubscribe = myAsyncState.subscribe(subscriptionFn);
     expect(typeof unsubscribe).toBe("function");
 
-    myAsyncState.run(() => {});
+    myAsyncState.run(() => {
+    });
     await act(async () => {
       await jest.advanceTimersByTime(50);
     });
@@ -34,10 +37,12 @@ describe('AsyncState - subscriptions', () => {
             args: [],
             payload: {},
             lastSuccess: {
+              timestamp: TESTS_TS,
               data: null, status: AsyncStateStatus.initial
             },
           },
           data: null,
+          timestamp: TESTS_TS,
           status: AsyncStateStatus.pending
         }],
         [{
@@ -45,10 +50,12 @@ describe('AsyncState - subscriptions', () => {
             args: [],
             payload: {},
             lastSuccess: {
+              timestamp: TESTS_TS,
               data: null, status: AsyncStateStatus.initial
             },
           },
           data: "Some Value",
+          timestamp: TESTS_TS,
           status: AsyncStateStatus.success
         }]
       ]
@@ -59,11 +66,13 @@ describe('AsyncState - subscriptions', () => {
         args: [],
         payload: {},
         lastSuccess: {
+          timestamp: TESTS_TS,
           data: null, status: AsyncStateStatus.initial
         },
       },
       status: AsyncStateStatus.success,
       data: "Some Value",
+      timestamp: TESTS_TS,
     });
   });
   it('should subscribe to async-state and unsubscribe before success', async () => {
@@ -79,7 +88,8 @@ describe('AsyncState - subscriptions', () => {
 
     // then
 
-    myAsyncState.run(() => {});
+    myAsyncState.run(() => {
+    });
     await act(async () => {
       await jest.advanceTimersByTime(49);
     });
@@ -95,9 +105,10 @@ describe('AsyncState - subscriptions', () => {
             args: [],
             payload: {},
             lastSuccess: {
+              timestamp: TESTS_TS,
               data: null, status: AsyncStateStatus.initial
             },
-          }, data: null, status: AsyncStateStatus.pending
+          }, data: null, status: AsyncStateStatus.pending, timestamp: TESTS_TS,
         }],
       ]
     );
@@ -107,11 +118,13 @@ describe('AsyncState - subscriptions', () => {
         args: [],
         payload: {},
         lastSuccess: {
+          timestamp: TESTS_TS,
           data: null, status: AsyncStateStatus.initial
         },
       },
       status: AsyncStateStatus.success,
       data: "Some Value",
+      timestamp: TESTS_TS,
     });
   });
   it('should subscribe to async-state and unsubscribe before running', async () => {
@@ -128,7 +141,8 @@ describe('AsyncState - subscriptions', () => {
 
     // then
 
-    myAsyncState.run(() => {});
+    myAsyncState.run(() => {
+    });
     await act(async () => {
       await jest.advanceTimersByTime(50);
     });
@@ -140,11 +154,13 @@ describe('AsyncState - subscriptions', () => {
         args: [],
         payload: {},
         lastSuccess: {
+          timestamp: TESTS_TS,
           data: null, status: AsyncStateStatus.initial
         },
       },
       status: AsyncStateStatus.success,
       data: "Some Value",
+      timestamp: TESTS_TS,
     });
   });
 });

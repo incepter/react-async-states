@@ -83,7 +83,7 @@ export function AsyncStateManager(
       .values(initialStates ?? EMPTY_OBJECT)
       .reduce(
         createInitialAsyncStatesReducer,
-        Object.create(null)
+        asyncStateEntries,
       ) as AsyncStateEntries;
 
     // we should remove the states that were initially hoisted
@@ -276,8 +276,7 @@ export function AsyncStateManager(
     const {
       key,
       hoistToProviderConfig = {override: false},
-      producer,
-      cacheConfig
+      producer
     } = config;
 
     const existing = get(key);

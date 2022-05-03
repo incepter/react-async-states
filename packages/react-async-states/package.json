@@ -1,10 +1,11 @@
 {
   "private": false,
   "license": "MIT",
-  "main": "dist/index.js",
+  "main": "dist/index",
+  "types": "dist/react-async-states/src/index",
   "author": "incepter",
   "sideEffects": false,
-  "version": "0.2.0-beta-2",
+  "version": "0.2.0-beta-3",
   "name": "react-async-states",
   "repository": "incepter/react-async-states",
   "description": "A hooks-based lightweight React library for state management",

@@ -2,8 +2,10 @@ import { act } from "@testing-library/react-hooks";
 import AsyncState from "../../async-state";
 import { AsyncStateStatus } from "shared";
 import { rejectionTimeout, timeout } from "./test-utils";
+import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
 
 jest.useFakeTimers("modern");
+mockDateNow();
 
 describe('AsyncState - run', () => {
   it('should run an async state successfully with no subscribers', async () => {
@@ -20,6 +22,7 @@ describe('AsyncState - run', () => {
     expect(myAsyncState.currentState).toEqual({
       props: null,
       data: null,
+      timestamp: TESTS_TS,
       status: AsyncStateStatus.initial,
     });
 
@@ -31,10 +34,12 @@ describe('AsyncState - run', () => {
         payload: {},
         lastSuccess: {
           data: null,
+          timestamp: TESTS_TS,
           status: AsyncStateStatus.initial,
         },
       },
       data: null,
+      timestamp: TESTS_TS,
       status: AsyncStateStatus.pending,
     });
 
@@ -48,10 +53,12 @@ describe('AsyncState - run', () => {
         payload: {},
         lastSuccess: {
           data: null,
+          timestamp: TESTS_TS,
           status: AsyncStateStatus.initial,
         },
       },
       data: null,
+      timestamp: TESTS_TS,
       status: AsyncStateStatus.pending,
     });
 
@@ -65,9 +72,11 @@ describe('AsyncState - run', () => {
         payload: {},
         lastSuccess: {
           data: null,
+          timestamp: TESTS_TS,
           status: AsyncStateStatus.initial,
         },
       },
+      timestamp: TESTS_TS,
       status: AsyncStateStatus.success,
       data: [{id: 1, description: "value"}],
     });
@@ -93,9 +102,11 @@ describe('AsyncState - run', () => {
         payload: {},
         lastSuccess: {
           data: null,
+          timestamp: TESTS_TS,
           status: AsyncStateStatus.initial,
         },
       },
+      timestamp: TESTS_TS,
       status: AsyncStateStatus.error,
       data: "Some Error",
     });

@@ -195,7 +195,7 @@ export type AsyncStateContextValue = {
 
 // use async state
 
-export type UseSelectedAsyncState<T, E> = {
+export type UseAsyncState<T, E = State<T>> = {
   state: E,
   key: AsyncStateKey,
 
@@ -214,8 +214,6 @@ export type UseSelectedAsyncState<T, E> = {
 
   read: () => E,
 }
-
-export type UseAsyncState<T> = UseSelectedAsyncState<T, State<T>>
 
 export type EqualityFn<T> = (
   prev: T,
@@ -306,7 +304,7 @@ export type UseAsyncStateSubscriptionInfo<T, E> = {
 }
 
 export type UseAsyncStateRefsFactory<T, E> = {
-  returnValue?: UseSelectedAsyncState<T, E>,
+  returnValue?: UseAsyncState<T, E>,
   subscriptionInfo?: UseAsyncStateSubscriptionInfo<T, E>
 };
 
@@ -359,35 +357,35 @@ export interface UseAsyncStateType<T, E> {
   (
     subscriptionConfig: UseAsyncStateConfig<T, E>,
     dependencies?: any[]
-  ): UseSelectedAsyncState<T, E>,
+  ): UseAsyncState<T, E>,
 
   auto(
     subscriptionConfig: UseAsyncStateConfig<T, E>,
     dependencies?: any[]
-  ): UseSelectedAsyncState<T, E>,
+  ): UseAsyncState<T, E>,
 
   lazy(
     subscriptionConfig: UseAsyncStateConfig<T, E>,
     dependencies?: any[]
-  ): UseSelectedAsyncState<T, E>,
+  ): UseAsyncState<T, E>,
 
   fork(
     subscriptionConfig: UseAsyncStateConfig<T, E>,
     dependencies?: any[]
-  ): UseSelectedAsyncState<T, E>,
+  ): UseAsyncState<T, E>,
 
   hoist(
     subscriptionConfig: UseAsyncStateConfig<T, E>,
     dependencies?: any[]
-  ): UseSelectedAsyncState<T, E>,
+  ): UseAsyncState<T, E>,
 
   forkAuto(
     subscriptionConfig: UseAsyncStateConfig<T, E>,
     dependencies?: any[]
-  ): UseSelectedAsyncState<T, E>,
+  ): UseAsyncState<T, E>,
 
   hoistAuto(
     subscriptionConfig: UseAsyncStateConfig<T, E>,
     dependencies?: any[]
-  ): UseSelectedAsyncState<T, E>,
+  ): UseAsyncState<T, E>,
 }

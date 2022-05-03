@@ -20,7 +20,7 @@ import {
   UseAsyncStateConfig,
   UseAsyncStateSelector,
   UseAsyncStateSubscriptionInfo,
-  UseSelectedAsyncState
+  UseAsyncState
 } from "../types.internal";
 import {
   AsyncStateInterface,
@@ -31,11 +31,11 @@ import {nextKey} from "./utils/key-gen";
 
 const defaultDependencies: any[] = [];
 
-export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
+export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies: any[] = defaultDependencies,
   configOverrides?: PartialUseAsyncStateConfiguration<T, E>,
-): UseSelectedAsyncState<T, E> {
+): UseAsyncState<T, E> {
 
   // need a guard to trigger re-renders
   const [guard, setGuard] = React.useState<number>(0);
@@ -67,10 +67,10 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
   // declare a state snapshot initialized by the initial selected value
   // useState
   const [selectedValue, setSelectedValue] = React
-    .useState<Readonly<UseSelectedAsyncState<T, E>>>(initialize);
+    .useState<Readonly<UseAsyncState<T, E>>>(initialize);
 
   if (memoizedRef.subscriptionInfo !== subscriptionInfo) {
-    if (asyncState && asyncState !== memoizedRef?.subscriptionInfo?.asyncState) {
+    if (asyncState && memoizedRef.subscriptionInfo && asyncState !== memoizedRef.subscriptionInfo.asyncState) {
       const newState = readStateFromAsyncState(asyncState, selector);
 
       setSelectedValue(old => {
@@ -116,7 +116,7 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
 
   return selectedValue;
 
-  function initialize(): Readonly<UseSelectedAsyncState<T, E>> {
+  function initialize(): Readonly<UseAsyncState<T, E>> {
     return makeUseAsyncStateReturnValue(
       asyncState,
       (asyncState ? readStateFromAsyncState(asyncState, selector) : undefined) as E,
@@ -191,7 +191,6 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
       dispose: disposeAsyncStateSubscriptionFn(
         newMode,
         newAsyncState,
-        newConfig,
         contextValue
       )
     };
@@ -225,13 +224,13 @@ export const useAsyncStateImpl = function useAsyncStateImpl<T, E>(
           return;
         }
         // when we get an update from this async state, we recalculate
-        // the snapshot value.
+        // the selected value.
         const newState = readStateFromAsyncState(asyncState, selector);
 
         // the as E used here is to bypass the warning about old may be undefined
         // in fact, it may be undefined in two cases: mode is Waiting or Noop
         // this means we aren't connected to an async state,
-        // we will add a warning here telling that the selector will receive
+        // todo: add a warning here telling that the selector will receive
         // undefined values in these modes
         setSelectedValue(old => {
           return areEqual(old.state, newState)
@@ -430,4 +429,58 @@ function readStateFromAsyncState<T, E>(
  * })
  *
  *
+
+function myConnectFn() {
+}
+
+type RemoteConnectContext<T> = {
+  data: T | any,
+  subscribe: (t: StateUpdater<T>) => void,
+}
+
+function createRemoteProducer(connect) {
+  function remoteProducer<T>(props: ProducerProps<T>) {
+    return new Promise((resolve, reject) => {
+      // ctx = { data: T, subscribe: StateUpdater<T> => void, disconnect }
+      function onConnect(ctx: RemoteConnectContext<T>) {
+        resolve(ctx.data);
+        ctx.subscribe(props.emit);
+      }
+
+      const disconnect = connect(
+        props,
+        onConnect,
+        reject,
+      );
+
+      props.onAbort(disconnect);
+    });
+  }
+}
+
+function connectToMyWs(props, onConnect, onError) {
+  function onFail(message) {
+    onError({connected: false, error: message});
+  }
+
+  const ws = new WebSocket("ws://localhost:9091");
+  ws.addEventListener("open", () => {
+    onConnect({
+      data: {ws, connected: true, messages: []},
+      subscribe(fn) {
+        ws.addEventListener("message", msg => {
+          fn(old => ({...old, messages: [...old.messages, msg]}));
+        });
+      }
+    });
+  });
+  ws.addEventListener("error", onFail);
+  ws.addEventListener("close", onFail);
+
+  return () => ws.close();
+}
+
+function connectToMyWorker(props, onConnect) {
+
+}
  */

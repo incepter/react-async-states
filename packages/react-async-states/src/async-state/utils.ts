@@ -13,7 +13,7 @@ function state<T>(
   data: T | any,
   props: ProducerSavedProps<T> | null
 ): State<T> {
-  return Object.freeze({status, data, props});
+  return Object.freeze({status, data, props, timestamp: Date.now()});
 }
 
 export const StateBuilder = Object.freeze({

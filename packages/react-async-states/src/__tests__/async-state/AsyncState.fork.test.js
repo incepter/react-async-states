@@ -2,9 +2,10 @@ import AsyncState from "../../async-state";
 import { AsyncStateStatus, shallowClone } from "shared";
 import { act } from "@testing-library/react-hooks";
 import { timeout } from "./test-utils";
+import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
 
 jest.useFakeTimers("modern");
-
+mockDateNow();
 describe('AsyncState - fork', () => {
   it('should simulate async state and check fork count', () => {
     // given
@@ -21,8 +22,8 @@ describe('AsyncState - fork', () => {
     expect(myAsyncState.subscriptions).toEqual({});
     expect(typeof myAsyncState.run).toBe("function");
     expect(myAsyncState.config).toEqual(shallowClone(myConfig));
-    expect(myAsyncState.lastSuccess).toEqual({props: null, data: null, status: AsyncStateStatus.initial});
-    expect(myAsyncState.currentState).toEqual({data: null, status: AsyncStateStatus.initial, props: null});
+    expect(myAsyncState.lastSuccess).toEqual({props: null, data: null, status: AsyncStateStatus.initial, timestamp: TESTS_TS});
+    expect(myAsyncState.currentState).toEqual({data: null, status: AsyncStateStatus.initial, props: null, timestamp: TESTS_TS});
 
     let forkedAsyncState = myAsyncState.fork();
     expect(myAsyncState.forkCount).toBe(1);

@@ -1,18 +1,24 @@
-import {__DEV__, cloneProducerProps, isFn} from "shared";
+import {__DEV__, cloneProducerProps, isGenerator, isPromise} from "shared";
 import devtools from "devtools";
 import {StateBuilder} from "./utils";
-import {ProducerFunction, ProducerProps} from "./types";
+import {
+  ProducerFunction,
+  ProducerProps,
+  ProducerType,
+  RunIndicators,
+  State
+} from "./types";
 import AsyncState from "./AsyncState";
 
 export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunction<T> {
   // this is the real deal
-  return function producerFuncImpl(props: ProducerProps<T>): undefined {
+  return function producerFuncImpl(props: ProducerProps<T>, indicators: RunIndicators): undefined {
     // this allows the developer to omit the producer attribute.
     // and replaces state when there is no producer
     if (typeof asyncState.originalProducer !== "function") {
-      props.fulfilled = true;
-      asyncState.replaceState(props.args[0]);
-      return; // makes ts happy
+      indicators.fulfilled = true;
+      asyncState.replaceState(props.args[0], props.args[1]);
+      return;
     }
     // the running promise is used to pass the status to pending and as suspender in react18+
     let runningPromise;
@@ -21,80 +27,73 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
     // it is important to clone to capture properties and save only serializable stuff
     const savedProps = cloneProducerProps(props);
 
-    if (typeof asyncState.originalProducer !== "function") {
-      throw new Error("a producer should be a function to be ran. This indicates a bug in the library.");
-    }
     try {
       executionValue = asyncState.originalProducer(props);
 
     } catch (e) {
       if (__DEV__) devtools.emitRunSync(asyncState, props);
-      props.fulfilled = true;
+      indicators.fulfilled = true;
       asyncState.setState(StateBuilder.error(e, savedProps));
       return;
     }
 
     if (isGenerator(executionValue)) {
+      asyncState.producerType = ProducerType.generator;
       if (__DEV__) devtools.emitRunGenerator(asyncState, props);
       // generatorResult is either {done, value} or a promise
       let generatorResult;
       try {
-        generatorResult = wrapStartedGenerator(executionValue, props);
+        generatorResult = wrapStartedGenerator(executionValue, props, indicators);
       } catch (e) {
-        props.fulfilled = true;
+        indicators.fulfilled = true;
         asyncState.setState(StateBuilder.error(e, savedProps));
         return;
       }
       if (generatorResult.done) {
-        props.fulfilled = true;
+        indicators.fulfilled = true;
         asyncState.setState(StateBuilder.success(generatorResult.value, savedProps));
         return;
       } else {
         runningPromise = generatorResult;
         asyncState.suspender = runningPromise;
-        asyncState.setState(StateBuilder.pending(savedProps));
+        asyncState.setState(StateBuilder.pending(savedProps) as State<any>);
       }
     } else if (isPromise(executionValue)) {
+      asyncState.producerType = ProducerType.promise;
       if (__DEV__) devtools.emitRunPromise(asyncState, props);
       runningPromise = executionValue;
       asyncState.suspender = runningPromise;
-      asyncState.setState(StateBuilder.pending(savedProps));
+      asyncState.setState(StateBuilder.pending(savedProps) as State<any>);
     } else { // final value
       if (__DEV__) devtools.emitRunSync(asyncState, props);
-      props.fulfilled = true;
+      indicators.fulfilled = true;
+      asyncState.producerType = ProducerType.sync;
       asyncState.setState(StateBuilder.success(executionValue, savedProps));
       return;
     }
 
     runningPromise
       .then(stateData => {
-        let aborted = props.aborted;
+        let aborted = indicators.aborted;
         if (!aborted) {
-          props.fulfilled = true;
+          indicators.fulfilled = true;
           asyncState.setState(StateBuilder.success(stateData, savedProps));
         }
       })
       .catch(stateError => {
-        let aborted = props.aborted;
+        let aborted = indicators.aborted;
         if (!aborted) {
-          props.fulfilled = true;
+          indicators.fulfilled = true;
           asyncState.setState(StateBuilder.error(stateError, savedProps));
         }
       });
   };
 }
 
-function isPromise(candidate) {
-  return !!candidate && isFn(candidate.then);
-}
-
-function isGenerator(candidate) {
-  return !!candidate && isFn(candidate.next) && isFn(candidate.throw);
-}
-
 function wrapStartedGenerator(
   generatorInstance,
-  props
+  props,
+  indicators
 ) {
   let lastGeneratorValue = generatorInstance.next();
 
@@ -118,7 +117,7 @@ function wrapStartedGenerator(
       );
 
       function abortFn() {
-        if (!props.fulfilled && !props.aborted) {
+        if (!indicators.fulfilled && !indicators.aborted) {
           abortGenerator();
         }
       }

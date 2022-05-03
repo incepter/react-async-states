@@ -7,7 +7,9 @@ import {
 import {useAsyncState} from "../../../../../hooks/useAsyncState";
 import {AsyncStateProvider} from "../../../../../provider/AsyncStateProvider";
 import {createSource} from "../../../../../helpers/create-async-state";
+import {mockDateNow, TESTS_TS} from "../../../utils/setup";
 
+mockDateNow();
 describe('should subscribe to an async state in provider', () => {
   it('should subscribe by string key and listen or wait ', async () => {
     // given
@@ -63,13 +65,15 @@ describe('should subscribe to an async state in provider', () => {
       .toEqual(JSON.stringify({
         "status": "initial",
         "data": [{"title": "Do homework", "completed": false}],
-        "props": null
+        "props": null,
+        "timestamp": TESTS_TS,
       }));
     expect(screen.getByTestId("result-counter").innerHTML)
       .toEqual(JSON.stringify({
         "status": "initial",
         "data": 0,
-        "props": null
+        "props": null,
+        "timestamp": TESTS_TS,
       }));
     expect(screen.getByTestId("result-doesntExist").innerHTML)
       .toEqual("");

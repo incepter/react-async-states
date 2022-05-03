@@ -47,7 +47,6 @@ export function runAsyncStateSubscriptionFn<T, E>(
 export function disposeAsyncStateSubscriptionFn<T, E>(
   mode: AsyncStateSubscriptionMode,
   asyncState: AsyncStateInterface<T>,
-  configuration: UseAsyncStateConfiguration<T, E>,
   contextValue: UseAsyncStateContextType
 ): () => (boolean | undefined) {
   return function dispose() {

@@ -1,11 +1,10 @@
 {
   "compilerOptions": {
-    "outDir": "./ts-dist/",
     "sourceMap": true,
     "strictNullChecks": true,
     "module": "esnext",
     "jsx": "react",
-    "target": "es3",
+    "target": "es6",
     "allowJs": true,
     "moduleResolution": "Node",
     "noImplicitAny": false,
@@ -16,6 +15,8 @@
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "declaration": true,
+    "declarationDir": "dist",
     "lib": [
       "dom",
       "dom.iterable",
@@ -25,6 +26,6 @@
     "noEmit": false
   },
   "include": [
-    "./src/"
+    "src"
   ]
 }

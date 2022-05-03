@@ -1,26 +1,26 @@
 import {
-  __DEV__, isFn,
+  __DEV__,
+  isFn,
   oneObjectIdentity,
   readProducerConfigFromSubscriptionConfig,
   shallowClone,
   shallowEqual
 } from "shared";
 import {supportsConcurrentMode} from "../../helpers/supports-concurrent-mode";
-import {enableComponentSuspension} from "shared/features";
 import {
-  AsyncStateKeyOrSource,
   AsyncStateSubscriptionMode,
+  UseAsyncState,
   UseAsyncStateConfiguration,
   UseAsyncStateContextType,
-  UseAsyncStateSubscriptionInfo,
-  UseSelectedAsyncState
+  UseAsyncStateSubscriptionInfo
 } from "../../types.internal";
 import {standaloneRunExtraPropsCreator} from "../../helpers/run-props-creator";
 import AsyncState, {
   AbortFn,
   AsyncStateInterface,
   AsyncStateKey,
-  AsyncStateSource, AsyncStateStatus
+  AsyncStateSource,
+  AsyncStateStatus
 } from "../../async-state";
 import {readAsyncStateFromSource} from "../../async-state/read-source";
 
@@ -161,7 +161,7 @@ export function makeUseAsyncStateReturnValue<T, E>(
   configurationKey: AsyncStateKey,
   run: (...args: any[]) => AbortFn,
   mode: AsyncStateSubscriptionMode
-): Readonly<UseSelectedAsyncState<T, E>> {
+): Readonly<UseAsyncState<T, E>> {
 
   if (!asyncState) {
     return Object.freeze({
@@ -178,7 +178,8 @@ export function makeUseAsyncStateReturnValue<T, E>(
       read() {
         return stateValue;
       },
-      invalidateCache() {},
+      invalidateCache() {
+      },
       replaceState() {
       },
       mergePayload() {
@@ -237,26 +238,24 @@ function createReadInConcurrentMode<T, E>(
   stateValue: E
 ) {
   return function readInConcurrentMode() {
-    if (enableComponentSuspension) {
-      if (supportsConcurrentMode()) {
-        if (
-          AsyncStateStatus.pending === asyncState.currentState?.status &&
-          asyncState.suspender
-        ) {
-          throw asyncState.suspender;
-        }
-      } else {
-        if (__DEV__) {
-          if (!didWarnAboutUnsupportedConcurrentFeatures) {
-            console.error(
-              "[Warning] You are calling useAsyncState().read() without having" +
-              " react 18 or above. If the library throws, you will get an error" +
-              " in your app. You will be receiving the state value without" +
-              " any suspension.Please consider upgrading to " +
-              "react 18 or above to use concurrent features."
-            );
-            didWarnAboutUnsupportedConcurrentFeatures = true;
-          }
+    if (supportsConcurrentMode()) {
+      if (
+        AsyncStateStatus.pending === asyncState.currentState?.status &&
+        asyncState.suspender
+      ) {
+        throw asyncState.suspender;
+      }
+    } else {
+      if (__DEV__) {
+        if (!didWarnAboutUnsupportedConcurrentFeatures) {
+          console.error(
+            "[Warning] You are calling useAsyncState().read() without having" +
+            " react 18 or above. If the library throws, you will get an error" +
+            " in your app. You will be receiving the state value without" +
+            " any suspension.Please consider upgrading to " +
+            "react 18 or above to use concurrent features."
+          );
+          didWarnAboutUnsupportedConcurrentFeatures = true;
         }
       }
     }

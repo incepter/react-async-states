@@ -1,8 +1,10 @@
 import { AsyncStateStatus } from "shared";
 import AsyncState, { StateBuilder } from "../../async-state";
 import { timeout } from "./test-utils";
+import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
 
 jest.useFakeTimers("modern");
+mockDateNow();
 
 describe('AsyncState - setState', () => {
   // given
@@ -24,6 +26,7 @@ describe('AsyncState - setState', () => {
     let expectedState = {
       props: {},
       data: null,
+      timestamp: TESTS_TS,
       status: AsyncStateStatus.pending,
     };
     expect(myAsyncState.currentState).toEqual(expectedState);

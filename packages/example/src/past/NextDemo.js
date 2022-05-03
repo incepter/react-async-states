@@ -1,40 +1,92 @@
 import React from "react";
-import { createSource, useAsyncState } from "react-async-states";
+import {
+  createSource,
+  AsyncStateComponent,
+  useAsyncState
+} from "react-async-states";
 
-function* fetchUser(id) {
-  return yield fetch(`https://jsonplaceholder.typicode.com/users/${id}`).then(s => s.json());
+function fetchUser(id) {
+  return fetch(`https://jsonplaceholder.typicode.com/users`)
+    .then(s => {
+      if (Math.random() < 0.5) {
+        throw new Error('RANDOM ERROR');
+      }
+      if (s.status !== 200) {
+        throw "user not found";
+      }
+      return s;
+    })
+    .then(s => s.json());
 }
 
-const user1Source = createSource("user1", () => fetchUser(1));
+const user1Source = createSource("user1", () => fetchUser(12));
 const user2Source = createSource("user2", () => fetchUser(2));
 const userPayloadSource = createSource("userPayload", props => fetchUser(props.payload.userId));
 
-const name = s => s.data?.name;
+function timeout(delay) {
+  return new Promise(res => {
+    setTimeout(res, delay)
+  });
+}
 
-export default function NextDemo() {
-  const {state: user1} = useAsyncState.auto({source: user1Source, selector: s => s.data});
+const usersList = createSource("global", () => timeout(400).then(() => fetchUser(11)))
 
-  const {state: user2} = useAsyncState.auto({source: user2Source, selector: name});
+export default function Demo() {
+  return (
+    <AsyncStateComponent
+      strategy={1}
+      error={Error}
+      fallback={Loading}
+      children={UsersList}
+      config={{source: usersList, lazy: false}}
+    />
+  );
+}
 
-  const {state: user3} = useAsyncState.hoistAuto({source: userPayloadSource, payload: {userId: 3}, selector: name})
+function Log({alias}) {
+  console.log('async state component child', alias)
+  return null
+}
 
-  const {state: user4} = useAsyncState.forkAuto({source: userPayloadSource, payload: {userId: 4}, selector: name})
+function Error({state, run}) {
+  console.log('state ERROR COMPO', state)
+  return (
+    <button onClick={() => run()}>Oops...
+      Some
+      error: {state?.data?.toString()}</button>
+  );
+}
 
+function Loading({state: {status}, abort, run}) {
+  if (status === "aborted") {
+    return <button onClick={() => run()}>ABORTED...</button>;
+  }
+  return <button onClick={() => abort()}>Loading...!! click to abort</button>;
+}
+
+function UsersList() {
+  const result = useAsyncState(usersList);
+  const {state, run} = result;
+
+  console.log('LIST', result.state)
+  return <details open>
+    <button onClick={() => run()}>run</button>
+    <pre>{JSON.stringify(state.data, null, 4)}</pre>
+  </details>
+}
+
+function NextDemo() {
   return <>
-    <div style={{display: "flex"}}>
-      <pre>user1: {JSON.stringify(user1?.name, null, 4)}</pre>
-      <pre>user2: {JSON.stringify(user2, null, 4)}</pre>
-      <pre>user3: {JSON.stringify(user3, null, 4)}</pre>
-      <pre>user4: {JSON.stringify(user4, null, 4)}</pre>
-    </div>
-    <hr/>
-    <div>
-      <RunEffectsDemo/>
-    </div>
-    <hr/>
-    <div>
-      <TearingDemo />
-    </div>
+    <AsyncStateComponent error="errooooooorrrr" strategy={1}
+                         config={{source: user1Source, lazy: false}}
+                         fallback="loading...">
+      {(state) => (
+        <div>
+          success!
+          {JSON.stringify(state, null, 2)}
+        </div>
+      )}
+    </AsyncStateComponent>
   </>;
 }
 
@@ -49,13 +101,19 @@ function producer(props) {
 
 function RunEffectsDemo() {
 
-  const {run: runDebounced, state: {status: debouncedRunning, data: debounceIndexState}} = useAsyncState({
+  const {
+    run: runDebounced,
+    state: {status: debouncedRunning, data: debounceIndexState}
+  } = useAsyncState({
     producer,
     initialValue: 0,
     runEffect: "delay",
     runEffectDurationMs: 1000
   });
-  const {run: runThrottled, state: {status: throttledRunning, data: throttleIndexState}} = useAsyncState({
+  const {
+    run: runThrottled,
+    state: {status: throttledRunning, data: throttleIndexState}
+  } = useAsyncState({
     producer,
     initialValue: 0,
     runEffect: "throttle",
@@ -82,10 +140,10 @@ function TearingDemo() {
 
   return (
     <>
-      <TearingExample title="1" />
-      <TearingExample title="2" />
-      <TearingExample title="3" />
-      <TearingExample title="4" />
+      <TearingExample title="1"/>
+      <TearingExample title="2"/>
+      <TearingExample title="3"/>
+      <TearingExample title="4"/>
     </>
   );
 }
@@ -95,6 +153,7 @@ function tearingProducer(props) {
     function listener(e) {
       props.emit({x: e.clientX, y: e.clientY});
     }
+
     document.addEventListener("mousemove", listener);
     props.onAbort(() => document.removeEventListener("mousemove", listener));
 
@@ -118,7 +177,7 @@ function TearingExample({title}) {
       <pre>
         {JSON.stringify((data ?? {}), null, 4)}
       </pre>
-      <br />
+      <br/>
     </div>
   );
 }

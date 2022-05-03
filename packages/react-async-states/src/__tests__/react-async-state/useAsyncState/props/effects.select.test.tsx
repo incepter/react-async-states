@@ -4,13 +4,18 @@ import {createSource} from "../../../../helpers/create-async-state";
 import {useAsyncState} from "../../../../hooks/useAsyncState";
 import {UseAsyncState} from "../../../../types.internal";
 import {AsyncStateProvider} from "../../../../provider/AsyncStateProvider";
+import {AsyncStateSource} from "../../../../async-state";
+import {State} from "../../../../types";
 
 describe('should select from another async state', () => {
   it('should select by source', () => {
     // given
     const counterSource = createSource("counter", null, {initialValue: 30});
-    const loggerSource = createSource("logger", props => {
+    const loggerSource: AsyncStateSource<string> = createSource("logger", props => {
       const state = props.select(counterSource);
+      if (!state?.data) {
+        return "does not exist.";
+      }
       if (state?.data > 20) {
         return "Greater than 20!";
       } else {
@@ -38,8 +43,11 @@ describe('should select from another async state', () => {
   it('should select by key', () => {
     // given
     const counterSource = createSource("counter", null, {initialValue: 15});
-    const loggerSource = createSource("logger", props => {
-      const state = props.select("counter");
+    const loggerSource: AsyncStateSource<string> = createSource("logger", props => {
+      const state = props.select("counter") as State<number>;
+      if (!state?.data) {
+        return "does not exist.";
+      }
       if (state?.data > 20) {
         return "Greater than 20!";
       } else {

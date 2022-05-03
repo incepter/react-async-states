@@ -20,20 +20,26 @@ const config = {
     [
       '@docusaurus/preset-classic',
       /** @type {import('@docusaurus/preset-classic').Options} */
-      ({
+      {
+
         docs: {
-          sidebarPath: require.resolve('./sidebars.js')
+          sidebarPath: require.resolve('./sidebars.js'),
+          editUrl: 'https://github.com/incepter/react-async-states/edit/main/packages/docs',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
-      }),
+      },
     ],
   ],
 
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      googleAnalytics: {
+        anonymizeIP: true,
+        trackingID: 'G-WT8TFH0HBF',
+      },
       navbar: {
         title: 'react-async-states',
         logo: {
@@ -100,6 +106,8 @@ const config = {
         darkTheme: darkCodeTheme,
       },
     }),
+
+  themes: ['@docusaurus/theme-live-codeblock']
 };
 
 module.exports = config;
