@@ -8,9 +8,9 @@
     "axios": "^0.21.1",
     "lodash": "^4.17.21",
     "prop-types": "^15.6.2",
-    "react": "16.13.0",
-    "react-async-states": "0.2.0-beta-4",
-    "react-dom": "16.13.0",
+    "react": "18.1.0",
+    "react-async-states": "0.2.0-beta-5",
+    "react-dom": "18.1.0",
     "react-router-dom": "^5.2.0",
     "react-scripts": "4.0.3"
   },

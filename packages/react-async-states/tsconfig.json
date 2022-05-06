@@ -3,7 +3,7 @@
     "sourceMap": true,
     "strictNullChecks": true,
     "module": "esnext",
-    "jsx": "react",
+    "jsx": "react-jsx",
     "target": "es6",
     "allowJs": true,
     "moduleResolution": "Node",

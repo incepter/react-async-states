@@ -360,7 +360,6 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
       const unwatch = contextValue.watch(
         watchedKey as AsyncStateKey,
         function notify(mayBeNewAsyncState) {
-          console.log('GOT NOTIFIED!!!', mode, watchedKey, mayBeNewAsyncState)
           if (didClean) {
             return;
           }
