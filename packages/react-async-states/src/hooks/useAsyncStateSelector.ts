@@ -94,7 +94,7 @@ export function useAsyncStateSelector<T>(
       }
 
       // if the previous instance changed
-      if (newValue !== existingSubscription.asyncState) {
+      if (newValue && newValue !== existingSubscription.asyncState) {
         invokeIfPresent(existingSubscription.cleanup);
         delete manager.subscriptions[key];
 
@@ -103,7 +103,10 @@ export function useAsyncStateSelector<T>(
         manager.subscriptions[key].cleanup = newValue.subscribe(onUpdate);
 
         onUpdate();
-        return;
+      }
+
+      if (!newValue) {
+        onUpdate();
       }
     }
 

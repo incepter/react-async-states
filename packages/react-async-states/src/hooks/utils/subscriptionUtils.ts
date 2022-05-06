@@ -194,6 +194,8 @@ export function makeUseAsyncStateReturnValue<T, E>(
     source: asyncState._source,
     payload: asyncState.payload,
 
+    uniqueId: asyncState.uniqueId,
+
     state: stateValue as E,
     lastSuccess: asyncState.lastSuccess,
     read: createReadInConcurrentMode(asyncState, stateValue as E),

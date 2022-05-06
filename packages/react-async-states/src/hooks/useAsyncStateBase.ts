@@ -1,5 +1,5 @@
 import * as React from "react";
-import {invokeIfPresent} from "shared";
+import {invokeIfPresent, shallowClone} from "shared";
 import {AsyncStateContext} from "../context";
 import {
   inferAsyncStateInstance,
@@ -28,6 +28,7 @@ import {
   AsyncStateSource
 } from "../async-state";
 import {nextKey} from "./utils/key-gen";
+// import {readAsyncStateFromSource} from "../async-state/read-source";
 
 const defaultDependencies: any[] = [];
 
@@ -95,14 +96,6 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
   // run automatically, if necessary
   React.useEffect(autoRunAsyncState, dependencies);
 
-  // dispose
-  // async state
-  // useEffect: [the dispose function related to async state instance]
-  // this is important to be separate from the subscribe
-  // because mentally, they do not have same dependencies
-  // this means, we dispose only when we no longer want to use the async state
-  React.useEffect(disposeOldAsyncState, [dispose]);
-
   // if inside provider: watch over the async state
   // useEffect: [mode, key]
   // check if the effect should do a no-op early
@@ -113,6 +106,34 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
       [mode, configuration.key]
     )
   }
+  //
+  // if (__DEV__) {
+  //   if (selectedValue?.source) {
+  //     const returnedAsyncState = readAsyncStateFromSource(selectedValue.source);
+  //     if (returnedAsyncState !== asyncState) {
+  //       console.warn("RENDERING WITH A DIFFERENT ASYNC STATE", {
+  //         returnedAsyncState,
+  //         asyncState
+  //       });
+  //     }
+  //   }
+  //
+  //
+  //   const renderValue = selectedValue?.state;
+  //   const newState = readStateFromAsyncState(asyncState, selector)
+  //   const actualValue = makeUseAsyncStateReturnValue(
+  //     asyncState,
+  //     newState,
+  //     configuration.key as AsyncStateKey,
+  //     run,
+  //     mode
+  //   )
+  //
+  //   if (!areEqual(renderValue, actualValue.state)) {
+  //     console.log("rendering with something wrong!", {renderValue, actualState: actualValue.state})
+  //   }
+  //
+  // }
 
   return selectedValue;
 
@@ -270,13 +291,6 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
     return shouldAutoRun ? run() : undefined;
   }
 
-  function disposeOldAsyncState(): CleanupFn {
-    // dispose is a function that disconnects from the async state
-    // and tell is to dispose; it then checks if it has no subscribers and resets
-    // it to its initial state
-    return dispose;
-  }
-
   function watchOverAsyncState() {
     if (contextValue === null) {
       throw new Error("watchOverAsyncState is called outside the provider." +
@@ -291,13 +305,16 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
     // that should watch over a state.
     // This means that we will miss the notification about the awaited state
     // so, if we are waiting without an asyncState, recalculate the memo
-    if (mode === AsyncStateSubscriptionMode.WAITING && !asyncState) {
+    if (mode === AsyncStateSubscriptionMode.WAITING) {
       let candidate = contextValue.get(configuration.key as AsyncStateKey);
       if (candidate) {
-        // schedule the recalculation of the memo
-        setGuard(old => old + 1);
-        return;
+        if (!asyncState || candidate !== asyncState) {
+          // schedule the recalculation of the memo
+          setGuard(old => old + 1);
+          return;
+        }
       }
+
     }
 
     // if this component is the one hoisting a state,
@@ -306,10 +323,28 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
     // but this is like a safety check that notify the watchers
     // and quit because i don't think the hoister should watch over itself
     if (mode === AsyncStateSubscriptionMode.HOIST) {
-      contextValue.notifyWatchers(
-        asyncState.key,
-        asyncState
+      // when we are hoisting, since we notify again, better execute
+      // the whole hoist again without overriding it
+      // and make sure the returned one is the subscribed
+      const newHoist = inferAsyncStateInstance(
+        mode,
+        shallowClone(
+          configuration,
+          {
+            hoistToProviderConfig:
+              shallowClone(
+                configuration.hoistToProviderConfig, {override: false}
+              )
+          }),
+        contextValue
       );
+      if (newHoist !== asyncState) {
+        setGuard(old => old + 1);
+      } else {
+        return function disposeOld() {
+          dispose();
+        }
+      }
       return;
     }
 
@@ -325,6 +360,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
       const unwatch = contextValue.watch(
         watchedKey as AsyncStateKey,
         function notify(mayBeNewAsyncState) {
+          console.log('GOT NOTIFIED!!!', mode, watchedKey, mayBeNewAsyncState)
           if (didClean) {
             return;
           }

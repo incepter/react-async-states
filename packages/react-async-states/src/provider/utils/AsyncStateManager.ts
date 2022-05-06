@@ -137,23 +137,15 @@ export function AsyncStateManager(
     asyncState: AsyncStateInterface<T>
   ): boolean {
     const {key} = asyncState;
-    const asyncStateEntry = asyncStateEntries[key];
 
-    // either a mistake/bug, or subscription was via source
-    if (!asyncStateEntry) {
-      return asyncState.dispose();
-    }
-
-    const didDispose = asyncStateEntry.value.dispose();
-
-    // delete only if it was not initially hoisted and the dispose is successful (no locks)
-    if (!asyncStateEntry.initiallyHoisted && didDispose) {
+    // delete only if it was not initially hoisted
+    if (asyncStateEntries[key] && !asyncStateEntries[key].initiallyHoisted) {
       delete asyncStateEntries[key];
       // notify watchers about disappearance
       notifyWatchers(key, null);
     }
 
-    return didDispose;
+    return true;
   }
 
   // the fork registers in the provider automatically
@@ -244,21 +236,21 @@ export function AsyncStateManager(
     key: AsyncStateKey,
     value: ManagerWatchCallbackValue<T>
   ): void {
-    // it is important to close over the notifications to be sent
-    // to avoid sending notifications to old closures that aren't relevant anymore
-    // if this occurs, the component will receive a false notification
-    // that may let him enter an infinite loop
-    let notifications: WatcherType[] = [];
-
-    if (watchers[listenersKey]?.watchers) {
-      notifications = Object.values(watchers[listenersKey].watchers);
-    }
-    if (watchers[key]) {
-      notifications = notifications.concat(
-        Object.values(watchers[key].watchers));
-    }
-
     function cb() {
+      // it is important to close over the notifications to be sent
+      // to avoid sending notifications to old closures that aren't relevant anymore
+      // if this occurs, the component will receive a false notification
+      // that may let him enter an infinite loop
+      let notifications: WatcherType[] = [];
+
+      if (watchers[listenersKey]?.watchers) {
+        notifications = Object.values(watchers[listenersKey].watchers);
+      }
+      if (watchers[key]) {
+        notifications = notifications.concat(
+          Object.values(watchers[key].watchers));
+      }
+
       notifications.forEach(function notifyWatcher(watcher) {
         watcher.notify(value, key);
       });

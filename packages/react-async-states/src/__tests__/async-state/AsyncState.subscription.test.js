@@ -75,7 +75,7 @@ describe('AsyncState - subscriptions', () => {
       timestamp: TESTS_TS,
     });
   });
-  it('should subscribe to async-state and unsubscribe before success', async () => {
+  it('should subscribe to async-state and unsubscribe before success and dispose when no subscribers', async () => {
     // given
     let key = "simulated";
     let subscriptionFn = jest.fn();
@@ -114,16 +114,9 @@ describe('AsyncState - subscriptions', () => {
     );
     expect(subscriptionFn).toHaveBeenCalledTimes(1);
     expect(myAsyncState.currentState).toEqual({
-      props: {
-        args: [],
-        payload: {},
-        lastSuccess: {
-          timestamp: TESTS_TS,
-          data: null, status: AsyncStateStatus.initial
-        },
-      },
-      status: AsyncStateStatus.success,
-      data: "Some Value",
+      props: null,
+      status: AsyncStateStatus.initial,
+      data: null,
       timestamp: TESTS_TS,
     });
   });

@@ -1,6 +1,5 @@
 import {
   readProducerConfigFromProducerConfig,
-  readProducerConfigFromSubscriptionConfig
 } from "shared";
 import {
   AsyncStateEntries,
@@ -10,7 +9,6 @@ import {
 } from "../../types.internal";
 import AsyncState, {
   AsyncStateInterface,
-  AsyncStateKey,
   AsyncStateSource
 } from "../../async-state";
 import {isAsyncStateSource} from "../../async-state/AsyncState";

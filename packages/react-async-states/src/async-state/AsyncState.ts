@@ -165,7 +165,6 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     }
 
     this.abort();
-    clearSubscribers(this as AsyncStateInterface<T>);
 
     this.locks = 0;
     const initialValue = typeof this.config.initialValue === "function" ? this.config.initialValue() : this.config.initialValue;
@@ -367,6 +366,9 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       that.locks -= 1;
       delete that.subscriptions[subscriptionKey];
       if (__DEV__) devtools.emitUnsubscription(that, subscriptionKey);
+      if (Object.values(that.subscriptions).filter(Boolean).length === 0) {
+        that.dispose();
+      }
     }
 
     this.subscriptions[subscriptionKey] = {
@@ -461,19 +463,11 @@ function makeSource<T>(asyncState: AsyncStateInterface<T>) {
   return Object.freeze(source);
 }
 
-
 function notifySubscribers(asyncState: AsyncStateInterface<any>) {
   Object.values(asyncState.subscriptions).forEach(subscription => {
     subscription.callback(asyncState.currentState);
   });
 }
-
-function clearSubscribers(asyncState: AsyncStateInterface<any>) {
-  Object.values(asyncState.subscriptions).forEach(subscription => {
-    subscription.cleanup();
-  });
-}
-
 
 export function isAsyncStateSource(possiblySource: any) {
   return possiblySource && possiblySource[sourceIsSourceSymbol] === true;
