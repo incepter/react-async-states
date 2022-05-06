@@ -15,7 +15,7 @@ import {
   AsyncStateManagerInterface,
   AsyncStateSelector,
   AsyncStateSelectorKeys,
-  AsyncStateWatchKey,
+  AsyncStateWatchKey, ExtendedInitialAsyncState,
   FunctionSelector,
   InitialStates,
   ManagerHoistConfig,
@@ -79,8 +79,16 @@ export function AsyncStateManager(
   return output;
 
   function setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[] {
-    const newInitialStates: AsyncStateEntries = Object
-      .values(initialStates ?? EMPTY_OBJECT)
+    const newStatesMap: {[id: AsyncStateKey]: ExtendedInitialAsyncState<any>} =
+      Object
+        .values(initialStates ?? EMPTY_OBJECT)
+        .reduce((result, current) => {
+          result[current.key] = current;
+          return result;
+        }, {});
+
+    Object
+      .values(newStatesMap)
       .reduce(
         createInitialAsyncStatesReducer,
         asyncStateEntries,
@@ -92,13 +100,14 @@ export function AsyncStateManager(
     // in this case, we should mark them as not initially hoisted
     const entriesToRemove: AsyncStateEntry<any>[] = [];
     for (const [key, entry] of Object.entries(asyncStateEntries)) {
-      if (!newInitialStates[key]) {
+      if (newStatesMap[key]) {
+        notifyWatchers(key, entry.value);
+      }
+      if (!newStatesMap[key] && entry.initiallyHoisted) {
         entry.initiallyHoisted = false;
         entriesToRemove.push(entry);
       }
     }
-
-    Object.assign(asyncStateEntries, newInitialStates);
 
     return entriesToRemove;
   }
@@ -160,7 +169,7 @@ export function AsyncStateManager(
 
     const forkedAsyncState = asyncState.fork(forkConfig);
     asyncStateEntries[forkedAsyncState.key] = createAsyncStateEntry(
-      forkedAsyncState);
+      forkedAsyncState, false);
 
     notifyWatchers(
       forkedAsyncState.key,
@@ -288,7 +297,8 @@ export function AsyncStateManager(
         key,
         producer,
         readProducerConfigFromSubscriptionConfig(config)
-      )
+      ),
+      false
     );
 
     const returnValue: AsyncStateInterface<T> = get(key);

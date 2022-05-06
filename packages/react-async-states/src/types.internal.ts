@@ -53,7 +53,7 @@ export type AsyncStateWatchKey = string | symbol;
 // manager types
 
 export type AsyncStateEntry<T> = {
-  initiallyHoisted?: boolean,
+  initiallyHoisted: boolean,
   value: AsyncStateInterface<T>,
 }
 
