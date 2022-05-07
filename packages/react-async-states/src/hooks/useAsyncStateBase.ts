@@ -71,13 +71,23 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
     .useState<Readonly<UseAsyncState<T, E>>>(initialize);
 
   if (memoizedRef.subscriptionInfo !== subscriptionInfo) {
-    if (asyncState && memoizedRef.subscriptionInfo && asyncState !== memoizedRef.subscriptionInfo.asyncState) {
-      const newState = readStateFromAsyncState(asyncState, selector);
 
-      setSelectedValue(old => {
-        return areEqual(old.state, newState)
-          ? old
-          :
+    if (asyncState) {
+      const renderValue = selectedValue?.state;
+      const newState = readStateFromAsyncState(asyncState, selector)
+      const actualValue = makeUseAsyncStateReturnValue(
+        asyncState,
+        newState,
+        configuration.key as AsyncStateKey,
+        run,
+        mode
+      )
+
+      if (
+        !areEqual(renderValue, actualValue.state) ||
+        memoizedRef.subscriptionInfo?.asyncState !== subscriptionInfo.asyncState
+      ) {
+        setSelectedValue(
           makeUseAsyncStateReturnValue(
             asyncState,
             newState,
@@ -85,7 +95,9 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
             run,
             mode
           )
-      });
+        );
+      }
+
     }
     memoizedRef.subscriptionInfo = subscriptionInfo;
   }
@@ -182,6 +194,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
       guard,
       memoizedRef.subscriptionInfo
     );
+
 
     let newAsyncState: AsyncStateInterface<T>;
 

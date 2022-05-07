@@ -156,6 +156,10 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       } else {
         delete this.cache[cacheKey];
       }
+
+      if (typeof this.config.cacheConfig?.persist === "function") {
+        this.config.cacheConfig.persist(this.cache);
+      }
     }
   }
 

@@ -148,13 +148,19 @@ export function AsyncStateManager(
     const {key} = asyncState;
 
     // delete only if it was not initially hoisted
-    if (asyncStateEntries[key] && !asyncStateEntries[key].initiallyHoisted) {
+    if (
+      asyncStateEntries[key] &&
+      !asyncStateEntries[key].initiallyHoisted &&
+      Object.values(asyncStateEntries[key].value.subscriptions).length === 0
+    ) {
       delete asyncStateEntries[key];
       // notify watchers about disappearance
       notifyWatchers(key, null);
+
+      return true;
     }
 
-    return true;
+    return false;
   }
 
   // the fork registers in the provider automatically
@@ -287,6 +293,7 @@ export function AsyncStateManager(
     }
     if (existing) {
       let didDispose = dispose(existing);
+
       if (!didDispose) {
         return existing as AsyncStateInterface<T>;
       }

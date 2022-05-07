@@ -13,7 +13,7 @@ export const demoAsyncStates = {
 
   users: createSource("users", usersProducer, {
     runEffect: "throttle",
-    runEffectDurationMs: 1000,
+    runEffectDurationMs: 3000,
     cacheConfig: {
       enabled: true,
       hash(args, payload) {

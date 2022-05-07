@@ -42,7 +42,6 @@ export default function App() {
     }
   }
 
-  console.log('initial states', asyncStates)
   return (
     <>
       <section>
@@ -53,6 +52,8 @@ export default function App() {
       </section>
       <AsyncStateProvider initialStates={asyncStates}>
         <Wrapper>
+          {/*{Object.keys(asyncStates).map((t, i) => <SimpleSub key={`${t}-${i}`}*/}
+          {/*                                                    subKey={t}/>)}*/}
           <br/>
           <Father/>
           <Sibling/>
@@ -74,31 +75,16 @@ function Father() {
     initialValue: 0,
     hoistToProvider: true
   });
-  console.log({father: true, mode, state, uniqueId});
   return <button onClick={() => run((old) => old.data + 1)}>
-    FATHER - {state.data}
+    FATHER - {state.data} - {uniqueId} - {mode}
   </button>;
-}
-
-function ShowId() {
-  const {run, mode, state, uniqueId} = useAsyncState("counter");
-  console.log('show id', mode, uniqueId)
-  return (
-    <span>
-      mode: {mode} -- value: {state.data}{" "}
-      <button onClick={() => run((old) => old.data + 1)}>
-        Run - {state.data}
-      </button>
-    </span>
-  );
 }
 
 function Sibling() {
   const {run, mode, state, uniqueId} = useAsyncState("counter");
-  console.log({child: true, mode, state, uniqueId});
   return (
     <button onClick={() => run((old) => old.data + 1)}>
-      Run - {state.data}
+      Run - {state.data} - {uniqueId} - {mode}
     </button>
   );
 }
@@ -108,13 +94,11 @@ function DynamicSubscribe() {
   const [asyncStates, setAsyncStates] = React.useState([]);
 
   function onClick() {
-    console.log(inputRef.current)
     if (inputRef.current?.value) {
       setAsyncStates(old => ([...old, inputRef.current?.value]))
     }
   }
 
-  console.log('subscribing to', asyncStates)
   return (
     <section>
       <input ref={inputRef}/>
@@ -139,7 +123,7 @@ function SimpleSub({subKey}) {
 
   return (
     <p>
-      <button onClick={onClick}> {subKey} - {mode} - {state?.data}</button>
+      <button onClick={onClick}> {subKey} - {mode} - {state?.data} - ok!</button>
     </p>
   )
 }

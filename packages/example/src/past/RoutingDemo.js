@@ -1,12 +1,12 @@
 import React from "react";
-import { useHistory, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAsyncState } from "react-async-states";
 import { demoAsyncStates } from "./Provider";
 import { API_JPH, bindAbortAndCancelToken } from "./v2/shared/utils";
 
 export default function Demo() {
   const ref = React.useRef();
-  const history = useHistory();
+  const navigate = useNavigate();
   const params = useParams();
 
   const {mode, state: {status, data}, lastSuccess, abort, source} = useAsyncState({
@@ -58,14 +58,14 @@ export default function Demo() {
   meter.current += 1;
   console.log('render!!', {status, meter: meter.current, uniqueId: source.uniqueId})
 
-  function navigate(e) {
+  function onSubmit(e) {
     e.preventDefault();
-    history.push(`/users/${ref.current.value}`)
+    navigate(`/users/${ref.current.value}`)
   }
 
   return (
     <div>
-      <form onSubmit={navigate}>
+      <form onSubmit={onSubmit}>
         <input defaultValue={params.userId} ref={ref}
                style={{backgroundColor: "red"}} placeholder="user id"/>
       </form>

@@ -210,6 +210,7 @@ export type UseAsyncState<T, E = State<T>> = {
   replaceState: StateUpdater<T>,
   mergePayload: (argv: { [id: string]: any }) => void,
 
+  uniqueId: number | undefined,
   invalidateCache: (cacheKey?: string) => void,
 
   read: () => E,

@@ -1,6 +1,6 @@
 import React from "react";
 import { useAsyncState } from "react-async-states";
-import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import BasicUsageDemo from "./BasicUsageDemo";
 import RoutingDemo from "./RoutingDemo";
 import SelectorsDemo from "./SelectorsDemo";
@@ -81,41 +81,38 @@ export default function App() {
         <div>
           <Navigation/>
           <hr/>
-          <Switch>
-            <Route exact path="/">
-              <BasicUsageDemo/>
+          <Routes>
+            <Route exact path="/" element={<BasicUsageDemo/>}>
             </Route>
-            <Route path="/users/:userId">
-              <RoutingDemo/>
+            <Route path="/users/:userId" element={<RoutingDemo/>}>
             </Route>
-            <Route path="/reducers">
-              <ReducersDemo/>
+            <Route path="/reducers" element={<ReducersDemo/>}>
             </Route>
-            <Route path="/broker">
-              <BrokerDemo/>
+            <Route path="/broker" element={<BrokerDemo/>}>
+
             </Route>
-            <Route path="/replace-state">
-              <ReplaceStateDemo/>
+            <Route path="/replace-state" element={<ReplaceStateDemo/>}>
+
             </Route>
-            <Route path="/standalone">
-              <StandaloneDemo/>
+            <Route path="/standalone" element={<StandaloneDemo/>}>
+
             </Route>
-            <Route path="/selectors">
-              <SelectorsDemo/>
+            <Route path="/selectors" element={<SelectorsDemo/>}>
+
             </Route>
-            <Route path="/redux">
-              <ReduxDemo/>
+            <Route path="/redux" element={<ReduxDemo/>}>
+
             </Route>
-            <Route path="/next">
-              <NextDemo/>
+            <Route path="/next" element={<NextDemo/>}>
+
             </Route>
-            <Route path="/demo">
-              <DemoDemo/>
+            <Route path="/demo" element={<DemoDemo/>}>
+
             </Route>
-            <Route path="/emit">
-              <EmitDemo/>
+            <Route path="/emit" element={<EmitDemo/>}>
+
             </Route>
-          </Switch>
+          </Routes>
         </div>
         <ShowCounter/>
       </DemoProvider>

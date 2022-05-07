@@ -85,7 +85,7 @@ export function useAsyncStateSelector<T>(
       }
 
       // if we were waiting for this async state
-      if (existingSubscription && !existingSubscription.asyncState) {
+      if (existingSubscription && !existingSubscription.asyncState && newValue) {
         existingSubscription.asyncState = newValue;
         manager.subscriptions[key].cleanup = newValue.subscribe(onUpdate);
 

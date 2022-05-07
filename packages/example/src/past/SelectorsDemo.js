@@ -22,7 +22,7 @@ export default function Demo() {
 
   return (
     <div>
-      <h3>This is a controlled dynamic login form of size: {size}</h3>
+      <h3>This is a controlled dynamic form of size: {size}</h3>
       <DynamicForm initialSize={size}/>
       <hr/>
       {/*<div>*/}
@@ -70,16 +70,19 @@ function DynamicForm({initialSize}) {
 }
 
 function Input({name}) {
-  const {state, run} = useAsyncState
+  const {mode, state, run, uniqueId} = useAsyncState
     .lazy({
       key: "login-form",
-      selector: state => state.data[name]
+      // selector: state => state.data[name]
     }, [name]);
 
   React.useEffect(() => run(name, "init" + name), [])
 
+  const data = state.data[name];
+
+  console.log('real input!', uniqueId, state, name, ++React.useRef(0).current, mode, data)
   return (<input
-    value={state || ""}
+    value={data || ""}
     name={name}
     placeholder={name}
     style={{maxWidth: "250px"}}
