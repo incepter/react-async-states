@@ -12,7 +12,7 @@ all over your application.
 If you are curious how it works, you can read [it here](/docs/faq/how-the-library-works#how-source-works-).
 
 ```typescript
-import {createSource, useAsyncState, useRunAsyncState} from "react-async-states";
+import {createSource, useAsyncState, useRun} from "react-async-states";
 
 const connectedUser = createSource("principal", getUserProducer);
 
@@ -22,7 +22,7 @@ useAsyncState(connectedUser);
 useAsyncState({source: connectedUser, ...otherConfig});
 
 // and you can even controle it like this:
-const run = useRunAsyncState();
+const run = useRun();
 // from anywhere down in the tree:
 run(connectedUser, ...args);
 

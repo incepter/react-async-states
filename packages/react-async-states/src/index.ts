@@ -1,9 +1,9 @@
 export {useAsyncState} from "./hooks/useAsyncState";
-export {useRunAsyncState} from "./hooks/useRunAsyncState";
+export {useRun} from "./hooks/useRun";
 export {createSource} from "./helpers/create-async-state";
 export {createReducerProducer} from "./helpers/create-producer";
 export {AsyncStateProvider} from "./provider/AsyncStateProvider";
 export {AsyncStateComponent} from "./components/AsyncStateComponent";
-export {useAsyncStateSelector} from "./hooks/useAsyncStateSelector";
+export {useSelector} from "./hooks/useSelector";
 
 export * from "./types";

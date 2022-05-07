@@ -1,9 +1,9 @@
 ---
 sidebar_position: 5
-sidebar_label: useRunAsyncState
+sidebar_label: useRun
 ---
 
-# `useRunAsyncState`
+# `useRun`
 
 This hooks returns a `run(keyOrSource, ...args)` function that
 runs the given async state by:
@@ -15,8 +15,8 @@ You can think of it as a dispatch function that works inside and outside the pro
 Signature:
 
 ```typescript
-import {useRunAsyncState} from "react-async-states";
+import {useRun} from "react-async-states";
 
 const run: ((keyOrSource: AsyncStateKeyOrSource<T>, ...args: any[]) => AbortFn)
-  = useRunAsyncState();
+  = useRun();
 ```

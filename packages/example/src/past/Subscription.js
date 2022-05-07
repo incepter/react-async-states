@@ -1,6 +1,6 @@
 import React from "react";
 import { isEqual } from "lodash";
-import { useAsyncState, useAsyncStateSelector } from 'react-async-states';
+import { useAsyncState, useSelector } from 'react-async-states';
 import DemoProvider from "./Provider";
 
 
@@ -43,7 +43,7 @@ function usersSelector(usersState, postsState) {
 }
 
 function SelectorDemo() {
-  const selectedValue = useAsyncStateSelector(["users", "posts"], usersSelector, isEqual);
+  const selectedValue = useSelector(["users", "posts"], usersSelector, isEqual);
 
   return <div>SELECTOR VALUE: <pre>{JSON.stringify(selectedValue ?? {}, null, "  ")}</pre></div>
 }

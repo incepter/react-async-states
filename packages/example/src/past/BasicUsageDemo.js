@@ -1,6 +1,6 @@
 import React from "react";
 import { demoAsyncStates } from "./Provider";
-import { useAsyncState, useAsyncStateSelector } from "react-async-states";
+import { useAsyncState, useSelector } from "react-async-states";
 
 function SimpleSub({
                      source,
@@ -134,7 +134,7 @@ function selectCurrentValue(state) {
 }
 
 function UndefinedProducerDemoSelector() {
-  const data = useAsyncStateSelector("user_input", selectCurrentValue);
+  const data = useSelector("user_input", selectCurrentValue);
   return (
 
     <div>

@@ -1,15 +1,15 @@
 ---
 sidebar_position: 4
-sidebar_label: useAsyncStateSelector
+sidebar_label: useSelector
 ---
 
-# `useAsyncStateSelector`
+# `useSelector`
 Now that we know how to define and share asynchronous states (or states in general), what about selecting values
-from multiple states at once, and derive its data. Let's get back to `useAsyncStateSelector` signature:
+from multiple states at once, and derive its data. Let's get back to `useSelector` signature:
 
 ```javascript
 // keys: string or array (or function: not yet)
-function useAsyncStateSelector(keys, selector = identity, areEqual = shallowEqual) {
+function useSelector(keys, selector = identity, areEqual = shallowEqual) {
   // returns whathever the selector returns (or initialValue)
 }
 // where
