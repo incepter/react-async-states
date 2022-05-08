@@ -18,7 +18,7 @@ import {
   MemoizedUseAsyncStateRef,
   PartialUseAsyncStateConfiguration,
   UseAsyncStateConfig,
-  UseAsyncStateSelector,
+  useSelector,
   UseAsyncStateSubscriptionInfo,
   UseAsyncState
 } from "../types.internal";
@@ -376,7 +376,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
 
 function readStateFromAsyncState<T, E>(
   asyncState: AsyncStateInterface<T>,
-  selector: UseAsyncStateSelector<T, E>
+  selector: useSelector<T, E>
 ): E {
   return selector(asyncState.currentState, asyncState.lastSuccess, asyncState.cache);
 }

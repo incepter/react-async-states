@@ -11,7 +11,7 @@ function runBySource<T>(src: AsyncStateSource<T>) {
   return asyncState.run.bind(asyncState, standaloneRunExtraPropsCreator);
 }
 
-export function useRunAsyncState<T> () :
+export function useRun<T> () :
   ((keyOrSource: AsyncStateKeyOrSource<T>, ...args: any[]) => AbortFn) {
   const contextValue = React.useContext(AsyncStateContext);
 

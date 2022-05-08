@@ -186,7 +186,7 @@ export function AsyncStateManager(
   }
 
   // there is two types of watchers: per key, and watching everything
-  // the everything watcher is the useAsyncStateSelector with a function selecting keys
+  // the everything watcher is the useSelector with a function selecting keys
   // (cannot statically predict them, so it needs to be notified about everything happening)
   // watch: watches only a key
   // watchAll: watches everything and uses a special key to watch (a symbol)
@@ -342,7 +342,7 @@ export function AsyncStateManager(
     return (selector as ArraySelector<T>)(...statesArray);
   }
 
-  // used in function selector in useAsyncStateSelector
+  // used in function selector in useSelector
   function getAllKeys(): AsyncStateKey[] {
     return Object.keys(asyncStateEntries);
   }

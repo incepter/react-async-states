@@ -2,16 +2,16 @@ import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {AsyncStateProvider} from "../../../provider/AsyncStateProvider";
 import {createSource} from "../../../helpers/create-async-state";
-import {useAsyncStateSelector} from "../../../hooks/useAsyncStateSelector";
-import {useRunAsyncState} from "../../../hooks/useRunAsyncState";
+import {useSelector} from "../../../hooks/useSelector";
+import {useRun} from "../../../hooks/useRun";
 
-describe('useAsyncStateSelector', () => {
+describe('useSelector', () => {
   it('should do basic selection', () => {
     // given
 
     const dataSource = createSource("data", null, {initialValue: "hello!"});
     function Component() {
-      const data = useAsyncStateSelector("data", d => d.data);
+      const data = useSelector("data", d => d.data);
       return <span data-testid="result">{data}</span>
     }
     function Test() {
@@ -32,14 +32,14 @@ describe('useAsyncStateSelector', () => {
     // given
 
     function Component() {
-      const data = useAsyncStateSelector("data", d => d.data);
+      const data = useSelector("data", d => d.data);
       return <span data-testid="result">{data}</span>
     }
 
     const oldError = console.error;
     console.error = () => {};
     expect(() => render(<Component />))
-      .toThrow("to use useAsyncStateSelector you must be inside a <AsyncStateProvider/>");
+      .toThrow("to use useSelector you must be inside a <AsyncStateProvider/>");
     console.error = oldError;
   });
   it('should throw when no keys', () => {
@@ -52,7 +52,7 @@ describe('useAsyncStateSelector', () => {
       );
     }
     function Component() {
-      const data = useAsyncStateSelector([], d => d.data);
+      const data = useSelector([], d => d.data);
       return <span data-testid="result">{data}</span>;
     }
 
@@ -71,11 +71,11 @@ describe('useAsyncStateSelector', () => {
     const dataSource = createSource("data", producer, {initialValue: "hello!"});
     const dataSource2 = createSource("data2", null, {initialValue: "hello!!"});
     function Component() {
-      const data = useAsyncStateSelector(
+      const data = useSelector(
         ["data", "data2"],
         (data1, data2) => `${data1?.data}-${data2?.data}`
       );
-      const run = useRunAsyncState();
+      const run = useRun();
 
 
       return (
@@ -108,7 +108,7 @@ describe('useAsyncStateSelector', () => {
     const dataSource = createSource("data", null, {initialValue: "hello!"});
     const dataSource2 = createSource("data2", null, {initialValue: "hello!!"});
     function Component() {
-      const data = useAsyncStateSelector(
+      const data = useSelector(
         allKeys => allKeys.filter(t => t === "data"),
         ({ data: state }) => state.data,
         (prev, next) => prev === next

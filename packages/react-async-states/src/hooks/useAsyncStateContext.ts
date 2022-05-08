@@ -6,7 +6,7 @@ export default function useAsyncStateContext(): AsyncStateContextValue {
   const contextValue = React.useContext(AsyncStateContext);
   if (!contextValue) {
     throw new Error(
-      "to use useAsyncStateSelector you must be inside a <AsyncStateProvider/>");
+      "to use useSelector you must be inside a <AsyncStateProvider/>");
   }
   return contextValue;
 }

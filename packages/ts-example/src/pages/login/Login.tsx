@@ -1,10 +1,10 @@
 import * as React from "react";
 import {FormEvent} from "react";
-import {useRunAsyncState} from "react-async-states";
+import {useRun} from "react-async-states";
 import {currentUserConfig, principalSource} from "./producers";
 
 export default function LoginPage() {
-  const run = useRunAsyncState();
+  const run = useRun();
 
   function submit(e: FormEvent) {
     e.preventDefault();

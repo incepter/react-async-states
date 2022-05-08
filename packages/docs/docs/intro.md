@@ -104,7 +104,7 @@ In general, here how you will be using the library:
   It needs from you for every async state entry the following:
   `key`, `producer` and `initialValue` or a source object.
 - Later, from any point in your app, you can use `useAsyncState(key)`
-  or `useAsyncStateSelector(key)` to get the state
+  or `useSelector(key)` to get the state
   based on your needs.
 
 After mounting your app, it will more likely appear like this:

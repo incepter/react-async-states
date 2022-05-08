@@ -70,13 +70,13 @@ const {state: username} = useAsyncState({
   areEqual: (prev, next) => prev === next, // the default equality check is by Object.is
 })
 // or can be used like this:
-const currentUserPosts = useAsyncStateSelector(
+const currentUserPosts = useSelector(
   ["current-user", "posts"],
   (user, posts) => posts.data.filter(t => t.data.userId === user.id),
   areEqual
 );
 ```
-6. **Select from multiple states**: This is possible via `useAsyncStateSelector` that allows to subscribe to multiple
+6. **Select from multiple states**: This is possible via `useSelector` that allows to subscribe to multiple
    states and select the needed information. It also allows you to write a function receiving all registered states in
    the provider and subscribe to only relevant ones based on your needs (may be targeting via regex?).
 7. **Work with or without AsyncStateProvider**: Sharing state can be done via provider, and then you only need the

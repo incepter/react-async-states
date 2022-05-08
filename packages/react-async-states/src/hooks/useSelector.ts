@@ -17,7 +17,7 @@ import {
 import {AsyncStateInterface, AsyncStateKey} from "../async-state";
 import useAsyncStateContext from "./useAsyncStateContext";
 
-export function useAsyncStateSelector<T>(
+export function useSelector<T>(
   keys: SelectorKeysArg,
   selector: AsyncStateSelector<T> = identity,
   areEqual: EqualityFn<T> = shallowEqual

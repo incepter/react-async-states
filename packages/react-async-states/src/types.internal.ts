@@ -240,7 +240,7 @@ export type UseAsyncStateConfiguration<T, E> = {
   subscriptionKey?: AsyncStateKey,
 
   producer?: Producer<T>,
-  selector: UseAsyncStateSelector<T, E>,
+  selector: useSelector<T, E>,
   areEqual: EqualityFn<E>,
 
   postSubscribe?: (props: PostSubscribeProps<T>) => CleanupFn,
@@ -255,7 +255,7 @@ export type PostSubscribeProps<T> = {
   invalidateCache: (cacheKey?: string) => void,
 }
 
-export type UseAsyncStateSelector<T, E> = (
+export type useSelector<T, E> = (
   ((currentState: State<T>) => E)
   |
   ((currentState: State<T>, lastSuccess: State<T>) => E)
@@ -284,7 +284,7 @@ export type PartialUseAsyncStateConfiguration<T, E> = {
   subscriptionKey?: AsyncStateKey,
 
   producer?: Producer<T>,
-  selector?: UseAsyncStateSelector<T, E>,
+  selector?: useSelector<T, E>,
   areEqual?: EqualityFn<E>,
 
   postSubscribe?: (props: PostSubscribeProps<T>) => CleanupFn,
