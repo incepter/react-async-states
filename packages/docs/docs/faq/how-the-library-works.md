@@ -399,7 +399,7 @@ It holds the wired async states and manages their change, it holds two types
 of watchers, watchers that watch over an exact async state, and watchers that
 watch anything happening to the async states (hoisting and removal).
 
-The watchAll method is used by `useAsyncStateSelector` when its argument is a
+The watchAll method is used by `useSelector` when its argument is a
 function, that function may want to select from any possible async state
 that passes through the provider, so it needs to be notified when something
 is added (`hoisted`), that's why `watchAll` exists in a nutshell.

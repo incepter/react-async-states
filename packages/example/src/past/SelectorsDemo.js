@@ -2,7 +2,7 @@ import React from "react";
 import {
   createReducerProducer,
   useAsyncState,
-  useAsyncStateSelector
+  useSelector
 } from "react-async-states";
 
 function reducer(old, name, value) {
@@ -43,7 +43,7 @@ function selectorFunctionDemo(states) {
 }
 
 function FunctionSelectorDemo() {
-  const t = useAsyncStateSelector(keysSelector, selectorFunctionDemo);
+  const t = useSelector(keysSelector, selectorFunctionDemo);
 
   return <pre>{JSON.stringify(t, null, "    ")}</pre>;
 }

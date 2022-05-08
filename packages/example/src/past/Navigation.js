@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { useAsyncState, useAsyncStateSelector } from "react-async-states";
+import { useAsyncState, useSelector } from "react-async-states";
 
 function Resume() {
   const {state} = useAsyncState({
@@ -22,7 +22,7 @@ function keysSelector() {
 }
 
 function ResumeS() {
-  const [state, ui] = useAsyncStateSelector(keysSelector, exampleSelector);
+  const [state, ui] = useSelector(keysSelector, exampleSelector);
 
   // console.log('________', state, ui)
   return <span>{state} - {ui}</span>;
