@@ -29,6 +29,10 @@ const config = {
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
+        googleAnalytics: {
+          anonymizeIP: true,
+          trackingID: 'G-WT8TFH0HBF',
+        },
       },
     ],
   ],
@@ -36,10 +40,6 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      googleAnalytics: {
-        anonymizeIP: true,
-        trackingID: 'G-WT8TFH0HBF',
-      },
       navbar: {
         title: 'react-async-states',
         logo: {
