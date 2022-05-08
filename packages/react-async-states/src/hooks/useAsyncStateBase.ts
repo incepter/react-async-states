@@ -69,11 +69,23 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
   const [selectedValue, setSelectedValue] = React
     .useState<Readonly<UseAsyncState<T, E>>>(initialize);
 
-  console.log('._ render _.', asyncState?.currentState.status, selectedValue)
+  // this memo reference inequality means that
+  // the memo has a new configuration, because either
+  // dependencies changed, or guard changed.
   if (memoizedRef.subscriptionInfo !== subscriptionInfo) {
+    // this means:
+    // if we already rendered, but this time, the async state instance changed
+    // for some of many possible reasons.
+    if (
+      memoizedRef.subscriptionInfo &&
+      memoizedRef.subscriptionInfo.asyncState !== subscriptionInfo.asyncState
+    ) {
+      setGuard(old => old + 1);
+    } else if (asyncState) {
 
-    console.log('._ inside condition!! _.', selectedValue)
-    if (asyncState) {
+      // whenever we have an async state instance,
+      // we will check if the calculated state from the new one
+      // is in conflict with the last updated value. if yes set it
       const renderValue = selectedValue?.state;
       const newState = readStateFromAsyncState(asyncState, selector)
       const actualValue = makeUseAsyncStateReturnValue(
@@ -95,17 +107,8 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
           )
         );
       }
-      // this means:
-      // if we already rendered, but this time, the async state instance changed
-      // for some of many possible reasons.
-      if (
-        memoizedRef.subscriptionInfo &&
-        memoizedRef.subscriptionInfo.asyncState !== subscriptionInfo.asyncState
-      ) {
-        setGuard(old => old + 1);
-      }
-
     }
+
     memoizedRef.subscriptionInfo = subscriptionInfo;
   }
 
@@ -122,38 +125,8 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
   // subscribe to async state
   React.useEffect(subscribeToAsyncState, [asyncState, selector, areEqual]);
 
-
   // run automatically, if necessary
   React.useEffect(autoRunAsyncState, dependencies);
-
-  //
-  // if (__DEV__) {
-  //   if (selectedValue?.source) {
-  //     const returnedAsyncState = readAsyncStateFromSource(selectedValue.source);
-  //     if (returnedAsyncState !== asyncState) {
-  //       console.warn("RENDERING WITH A DIFFERENT ASYNC STATE", {
-  //         returnedAsyncState,
-  //         asyncState
-  //       });
-  //     }
-  //   }
-  //
-  //
-  //   const renderValue = selectedValue?.state;
-  //   const newState = readStateFromAsyncState(asyncState, selector)
-  //   const actualValue = makeUseAsyncStateReturnValue(
-  //     asyncState,
-  //     newState,
-  //     configuration.key as AsyncStateKey,
-  //     run,
-  //     mode
-  //   )
-  //
-  //   if (!areEqual(renderValue, actualValue.state)) {
-  //     console.log("rendering with something wrong!", {renderValue, actualState: actualValue.state})
-  //   }
-  //
-  // }
 
   return selectedValue;
 
