@@ -6,12 +6,17 @@ import {
 } from "react-async-states";
 
 function reducer(old, name, value) {
-  console.log('running', name, value);
+  // console.log('running', name, value);
   return {...old, [name]: value};
 }
 
 const size = 5;
 export default function Demo() {
+  // console.log('___________APP_____________')
+  // React.useEffect(() => {
+  //   console.log('---------App effect----------')
+  //   return () => console.log('----------App cleanup------------')
+  // })
   useAsyncState({
     lazy: true,
     key: "login-form",
@@ -22,7 +27,7 @@ export default function Demo() {
 
   return (
     <div>
-      <h3>This is a controlled dynamic login form of size: {size}</h3>
+      <h3>This is a controlled dynamic form of size: {size}</h3>
       <DynamicForm initialSize={size}/>
       <hr/>
       {/*<div>*/}
@@ -38,7 +43,7 @@ function keysSelector(allKeys) {
 }
 
 function selectorFunctionDemo(states) {
-  console.log('function selector, from', states);
+  // console.log('function selector, from', states);
   return states;
 }
 
@@ -53,6 +58,7 @@ function DynamicForm({initialSize}) {
   const name = React.useRef();
 
   const [fields, setFields] = React.useState(() => [...Array(initialSize).keys()].map(t => ({name: `name_${t}`})));
+  // console.log('___________________dynamic form____________________')
   return (
     <div>
       <div style={{display: "flex", flexWrap: "wrap"}}>
@@ -70,16 +76,19 @@ function DynamicForm({initialSize}) {
 }
 
 function Input({name}) {
-  const {state, run} = useAsyncState
+  const {mode, state, run, uniqueId} = useAsyncState
     .lazy({
       key: "login-form",
-      selector: state => state.data[name]
+      selector: s => s.data[name]
     }, [name]);
 
-  React.useEffect(() => run(name, "init" + name), [])
+  React.useEffect(() => run(name, "init_" + name), [])
 
+  const data = state; // .data[name];
+
+  // console.log('____________INPUT_____ss_______', name, data, uniqueId, mode)
   return (<input
-    value={state || ""}
+    value={data || ""}
     name={name}
     placeholder={name}
     style={{maxWidth: "250px"}}
@@ -87,4 +96,4 @@ function Input({name}) {
   />);
 }
 
-const RealInput = React.memo(Input);
+const RealInput = React.memo(Input, () => true);

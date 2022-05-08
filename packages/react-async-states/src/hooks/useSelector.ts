@@ -85,7 +85,7 @@ export function useSelector<T>(
       }
 
       // if we were waiting for this async state
-      if (existingSubscription && !existingSubscription.asyncState) {
+      if (existingSubscription && !existingSubscription.asyncState && newValue) {
         existingSubscription.asyncState = newValue;
         manager.subscriptions[key].cleanup = newValue.subscribe(onUpdate);
 
@@ -94,7 +94,7 @@ export function useSelector<T>(
       }
 
       // if the previous instance changed
-      if (newValue !== existingSubscription.asyncState) {
+      if (newValue && newValue !== existingSubscription.asyncState) {
         invokeIfPresent(existingSubscription.cleanup);
         delete manager.subscriptions[key];
 
@@ -103,7 +103,10 @@ export function useSelector<T>(
         manager.subscriptions[key].cleanup = newValue.subscribe(onUpdate);
 
         onUpdate();
-        return;
+      }
+
+      if (!newValue) {
+        onUpdate();
       }
     }
 

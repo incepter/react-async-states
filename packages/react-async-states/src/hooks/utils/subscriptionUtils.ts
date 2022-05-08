@@ -166,6 +166,7 @@ export function makeUseAsyncStateReturnValue<T, E>(
   if (!asyncState) {
     return Object.freeze({
       mode,
+      uniqueId: undefined,
       key: configurationKey,
 
       state: stateValue as E,
@@ -193,6 +194,8 @@ export function makeUseAsyncStateReturnValue<T, E>(
     key: asyncState.key,
     source: asyncState._source,
     payload: asyncState.payload,
+
+    uniqueId: asyncState.uniqueId,
 
     state: stateValue as E,
     lastSuccess: asyncState.lastSuccess,

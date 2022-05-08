@@ -15,7 +15,7 @@ import {
   AsyncStateManagerInterface,
   AsyncStateSelector,
   AsyncStateSelectorKeys,
-  AsyncStateWatchKey,
+  AsyncStateWatchKey, ExtendedInitialAsyncState,
   FunctionSelector,
   InitialStates,
   ManagerHoistConfig,
@@ -79,8 +79,16 @@ export function AsyncStateManager(
   return output;
 
   function setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[] {
-    const newInitialStates: AsyncStateEntries = Object
-      .values(initialStates ?? EMPTY_OBJECT)
+    const newStatesMap: {[id: AsyncStateKey]: ExtendedInitialAsyncState<any>} =
+      Object
+        .values(initialStates ?? EMPTY_OBJECT)
+        .reduce((result, current) => {
+          result[current.key] = current;
+          return result;
+        }, {});
+
+    Object
+      .values(newStatesMap)
       .reduce(
         createInitialAsyncStatesReducer,
         asyncStateEntries,
@@ -92,13 +100,14 @@ export function AsyncStateManager(
     // in this case, we should mark them as not initially hoisted
     const entriesToRemove: AsyncStateEntry<any>[] = [];
     for (const [key, entry] of Object.entries(asyncStateEntries)) {
-      if (!newInitialStates[key]) {
+      if (newStatesMap[key]) {
+        notifyWatchers(key, entry.value);
+      }
+      if (!newStatesMap[key] && entry.initiallyHoisted) {
         entry.initiallyHoisted = false;
         entriesToRemove.push(entry);
       }
     }
-
-    Object.assign(asyncStateEntries, newInitialStates);
 
     return entriesToRemove;
   }
@@ -137,23 +146,21 @@ export function AsyncStateManager(
     asyncState: AsyncStateInterface<T>
   ): boolean {
     const {key} = asyncState;
-    const asyncStateEntry = asyncStateEntries[key];
 
-    // either a mistake/bug, or subscription was via source
-    if (!asyncStateEntry) {
-      return asyncState.dispose();
-    }
-
-    const didDispose = asyncStateEntry.value.dispose();
-
-    // delete only if it was not initially hoisted and the dispose is successful (no locks)
-    if (!asyncStateEntry.initiallyHoisted && didDispose) {
+    // delete only if it was not initially hoisted
+    if (
+      asyncStateEntries[key] &&
+      !asyncStateEntries[key].initiallyHoisted &&
+      Object.values(asyncStateEntries[key].value.subscriptions).length === 0
+    ) {
       delete asyncStateEntries[key];
       // notify watchers about disappearance
       notifyWatchers(key, null);
+
+      return true;
     }
 
-    return didDispose;
+    return false;
   }
 
   // the fork registers in the provider automatically
@@ -168,7 +175,7 @@ export function AsyncStateManager(
 
     const forkedAsyncState = asyncState.fork(forkConfig);
     asyncStateEntries[forkedAsyncState.key] = createAsyncStateEntry(
-      forkedAsyncState);
+      forkedAsyncState, false);
 
     notifyWatchers(
       forkedAsyncState.key,
@@ -244,21 +251,21 @@ export function AsyncStateManager(
     key: AsyncStateKey,
     value: ManagerWatchCallbackValue<T>
   ): void {
-    // it is important to close over the notifications to be sent
-    // to avoid sending notifications to old closures that aren't relevant anymore
-    // if this occurs, the component will receive a false notification
-    // that may let him enter an infinite loop
-    let notifications: WatcherType[] = [];
-
-    if (watchers[listenersKey]?.watchers) {
-      notifications = Object.values(watchers[listenersKey].watchers);
-    }
-    if (watchers[key]) {
-      notifications = notifications.concat(
-        Object.values(watchers[key].watchers));
-    }
-
     function cb() {
+      // it is important to close over the notifications to be sent
+      // to avoid sending notifications to old closures that aren't relevant anymore
+      // if this occurs, the component will receive a false notification
+      // that may let him enter an infinite loop
+      let notifications: WatcherType[] = [];
+
+      if (watchers[listenersKey]?.watchers) {
+        notifications = Object.values(watchers[listenersKey].watchers);
+      }
+      if (watchers[key]) {
+        notifications = notifications.concat(
+          Object.values(watchers[key].watchers));
+      }
+
       notifications.forEach(function notifyWatcher(watcher) {
         watcher.notify(value, key);
       });
@@ -286,6 +293,7 @@ export function AsyncStateManager(
     }
     if (existing) {
       let didDispose = dispose(existing);
+
       if (!didDispose) {
         return existing as AsyncStateInterface<T>;
       }
@@ -296,7 +304,8 @@ export function AsyncStateManager(
         key,
         producer,
         readProducerConfigFromSubscriptionConfig(config)
-      )
+      ),
+      false
     );
 
     const returnValue: AsyncStateInterface<T> = get(key);

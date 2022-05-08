@@ -35,7 +35,6 @@ export function AsyncStateProvider(
   // since initialStates changed
   React.useEffect(onDirtyStatesChange, [dirtyStates]);
 
-
   // this should synchronously change the payload held by hoisted items
   // why not until effect? because all children may benefit from this in their
   // effects
@@ -45,6 +44,11 @@ export function AsyncStateProvider(
     makeContextValue,
     [manager, payload]
   );
+
+  // React.useEffect(() => {
+  //   let id = setInterval(() => console.log('manager', manager.entries), 5000);
+  //   return () => clearInterval(id);
+  // }, []);
 
   return (
     <AsyncStateContext.Provider value={contextValue}>

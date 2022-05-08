@@ -51,22 +51,15 @@ export function disposeAsyncStateSubscriptionFn<T, E>(
 ): () => (boolean | undefined) {
   return function dispose() {
     switch (mode) {
-      case AsyncStateSubscriptionMode.SOURCE:
-      case AsyncStateSubscriptionMode.SOURCE_FORK: {
-        return contextValue !== null
-          ?
-          contextValue.dispose(asyncState)
-          :
-          asyncState.dispose();
-      }
-      case AsyncStateSubscriptionMode.STANDALONE:
-      case AsyncStateSubscriptionMode.OUTSIDE_PROVIDER:
-        return asyncState.dispose();
-      case AsyncStateSubscriptionMode.FORK:
       case AsyncStateSubscriptionMode.HOIST:
-      case AsyncStateSubscriptionMode.LISTEN:
         return (contextValue as AsyncStateContextValue).dispose(asyncState);
       // NoOp
+      case AsyncStateSubscriptionMode.SOURCE:
+      case AsyncStateSubscriptionMode.SOURCE_FORK:
+      case AsyncStateSubscriptionMode.LISTEN:
+      case AsyncStateSubscriptionMode.FORK:
+      case AsyncStateSubscriptionMode.STANDALONE:
+      case AsyncStateSubscriptionMode.OUTSIDE_PROVIDER:
       case AsyncStateSubscriptionMode.NOOP:
       case AsyncStateSubscriptionMode.WAITING:
       default:

@@ -1,5 +1,5 @@
 import * as React from "react";
-import {invokeIfPresent} from "shared";
+import {invokeIfPresent, shallowClone} from "shared";
 import {AsyncStateContext} from "../context";
 import {
   inferAsyncStateInstance,
@@ -69,14 +69,35 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
   const [selectedValue, setSelectedValue] = React
     .useState<Readonly<UseAsyncState<T, E>>>(initialize);
 
+  // this memo reference inequality means that
+  // the memo has a new configuration, because either
+  // dependencies changed, or guard changed.
   if (memoizedRef.subscriptionInfo !== subscriptionInfo) {
-    if (asyncState && memoizedRef.subscriptionInfo && asyncState !== memoizedRef.subscriptionInfo.asyncState) {
-      const newState = readStateFromAsyncState(asyncState, selector);
+    // this means:
+    // if we already rendered, but this time, the async state instance changed
+    // for some of many possible reasons.
+    if (
+      memoizedRef.subscriptionInfo &&
+      memoizedRef.subscriptionInfo.asyncState !== subscriptionInfo.asyncState
+    ) {
+      setGuard(old => old + 1);
+    } else if (asyncState) {
 
-      setSelectedValue(old => {
-        return areEqual(old.state, newState)
-          ? old
-          :
+      // whenever we have an async state instance,
+      // we will check if the calculated state from the new one
+      // is in conflict with the last updated value. if yes set it
+      const renderValue = selectedValue?.state;
+      const newState = readStateFromAsyncState(asyncState, selector)
+      const actualValue = makeUseAsyncStateReturnValue(
+        asyncState,
+        newState,
+        configuration.key as AsyncStateKey,
+        run,
+        mode
+      )
+
+      if (!areEqual(renderValue, actualValue.state)) {
+        setSelectedValue(
           makeUseAsyncStateReturnValue(
             asyncState,
             newState,
@@ -84,9 +105,21 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
             run,
             mode
           )
-      });
+        );
+      }
     }
+
     memoizedRef.subscriptionInfo = subscriptionInfo;
+  }
+
+  // if inside provider: watch over the async state
+  // useEffect: [mode, key]
+  // check if the effect should do a no-op early
+  if (isInsideProvider) {
+    React.useEffect(
+      watchOverAsyncState,
+      [mode, configuration.key]
+    )
   }
 
   // subscribe to async state
@@ -94,25 +127,6 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
 
   // run automatically, if necessary
   React.useEffect(autoRunAsyncState, dependencies);
-
-  // dispose
-  // async state
-  // useEffect: [the dispose function related to async state instance]
-  // this is important to be separate from the subscribe
-  // because mentally, they do not have same dependencies
-  // this means, we dispose only when we no longer want to use the async state
-  React.useEffect(disposeOldAsyncState, [dispose]);
-
-  // if inside provider: watch over the async state
-  // useEffect: [mode, key]
-  // check if the effect should do a no-op early
-
-  if (isInsideProvider) {
-    React.useEffect(
-      watchOverAsyncState,
-      [mode, configuration.key]
-    )
-  }
 
   return selectedValue;
 
@@ -161,6 +175,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
       guard,
       memoizedRef.subscriptionInfo
     );
+
 
     let newAsyncState: AsyncStateInterface<T>;
 
@@ -270,13 +285,6 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
     return shouldAutoRun ? run() : undefined;
   }
 
-  function disposeOldAsyncState(): CleanupFn {
-    // dispose is a function that disconnects from the async state
-    // and tell is to dispose; it then checks if it has no subscribers and resets
-    // it to its initial state
-    return dispose;
-  }
-
   function watchOverAsyncState() {
     if (contextValue === null) {
       throw new Error("watchOverAsyncState is called outside the provider." +
@@ -291,13 +299,16 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
     // that should watch over a state.
     // This means that we will miss the notification about the awaited state
     // so, if we are waiting without an asyncState, recalculate the memo
-    if (mode === AsyncStateSubscriptionMode.WAITING && !asyncState) {
+    if (mode === AsyncStateSubscriptionMode.WAITING) {
       let candidate = contextValue.get(configuration.key as AsyncStateKey);
       if (candidate) {
-        // schedule the recalculation of the memo
-        setGuard(old => old + 1);
-        return;
+        if (!asyncState || candidate !== asyncState) {
+          // schedule the recalculation of the memo
+          setGuard(old => old + 1);
+          return;
+        }
       }
+
     }
 
     // if this component is the one hoisting a state,
@@ -306,10 +317,28 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
     // but this is like a safety check that notify the watchers
     // and quit because i don't think the hoister should watch over itself
     if (mode === AsyncStateSubscriptionMode.HOIST) {
-      contextValue.notifyWatchers(
-        asyncState.key,
-        asyncState
+      // when we are hoisting, since we notify again, better execute
+      // the whole hoist again without overriding it
+      // and make sure the returned one is the subscribed
+      const newHoist = inferAsyncStateInstance(
+        mode,
+        shallowClone(
+          configuration,
+          {
+            hoistToProviderConfig:
+              shallowClone(
+                configuration.hoistToProviderConfig, {override: false}
+              )
+          }),
+        contextValue
       );
+      if (newHoist !== asyncState) {
+        setGuard(old => old + 1);
+      } else {
+        return function disposeOld() {
+          dispose();
+        }
+      }
       return;
     }
 
@@ -430,15 +459,15 @@ function readStateFromAsyncState<T, E>(
  *
  *
 
-function myConnectFn() {
+ function myConnectFn() {
 }
 
-type RemoteConnectContext<T> = {
+ type RemoteConnectContext<T> = {
   data: T | any,
   subscribe: (t: StateUpdater<T>) => void,
 }
 
-function createRemoteProducer(connect) {
+ function createRemoteProducer(connect) {
   function remoteProducer<T>(props: ProducerProps<T>) {
     return new Promise((resolve, reject) => {
       // ctx = { data: T, subscribe: StateUpdater<T> => void, disconnect }
@@ -458,7 +487,7 @@ function createRemoteProducer(connect) {
   }
 }
 
-function connectToMyWs(props, onConnect, onError) {
+ function connectToMyWs(props, onConnect, onError) {
   function onFail(message) {
     onError({connected: false, error: message});
   }
@@ -480,7 +509,7 @@ function connectToMyWs(props, onConnect, onError) {
   return () => ws.close();
 }
 
-function connectToMyWorker(props, onConnect) {
+ function connectToMyWorker(props, onConnect) {
 
 }
  */
