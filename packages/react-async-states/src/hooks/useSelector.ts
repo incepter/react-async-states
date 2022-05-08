@@ -197,3 +197,14 @@ function newSelectorManager() {
 
   return output;
 }
+
+export function useAsyncStateSelector<T>(
+  keys: SelectorKeysArg,
+  selector: AsyncStateSelector<T> = identity,
+  areEqual: EqualityFn<T> = shallowEqual
+): T {
+  console.error('[Deprecation warning] : useAsyncStateSelector is deprecated and ' +
+    'will be removed before the v1. Please use useSelector instead.' +
+    'Like this: import { useSelector } from "react-async-states"');
+  return useSelector(keys, selector, areEqual);
+}

@@ -15,3 +15,35 @@ export function createReducerProducer<T>(reducerFn: Reducer<T>): Producer<T> {
     );
   }
 }
+
+// export function createFetchProducer<T>(producer) {
+//   return function wrapperProducer(props: ProducerProps<T>) {
+//     const controller = new AbortController();
+//     props.onAbort(() => controller.abort());
+//     return producer({...props, signal: controller.signal});
+//   }
+// }
+//
+// export function createRetryableProducer<T>(producer, config) {
+//   return function wrapperProducer(props: ProducerProps<T>) {
+//
+//     let {maxRetries, isRetryable} = config;
+//
+//     let result;
+//     let retryIndex = 0;
+//
+//     while(retryIndex < maxRetries) {
+//
+//       retryIndex += 1;
+//       try {
+//         result = producer(props);
+//       } catch (e) {
+//         if (!isRetryable(e) || retryIndex >= maxRetries) {
+//           throw e;
+//         }
+//       }
+//
+//     }
+//     return result;
+//   }
+// }

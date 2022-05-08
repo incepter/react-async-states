@@ -11,7 +11,7 @@ function runBySource<T>(src: AsyncStateSource<T>) {
   return asyncState.run.bind(asyncState, standaloneRunExtraPropsCreator);
 }
 
-export function useRun<T> () :
+export function useRun<T>():
   ((keyOrSource: AsyncStateKeyOrSource<T>, ...args: any[]) => AbortFn) {
   const contextValue = React.useContext(AsyncStateContext);
 
@@ -30,4 +30,12 @@ export function useRun<T> () :
       return contextValue.runAsyncState(keyOrSource, ...args);
     }
   }, []);
+}
+
+export function useRunAsyncState<T>():
+  ((keyOrSource: AsyncStateKeyOrSource<T>, ...args: any[]) => AbortFn) {
+  console.error('[Deprecation warning] : useRunAsyncState is deprecated and ' +
+    'will be removed before the v1. Please use useRun instead.' +
+    'Like this: import { useRun } from "react-async-states"');
+  return useRun();
 }
