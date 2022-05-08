@@ -6,7 +6,7 @@ import {
 } from "react-async-states";
 
 function reducer(old, name, value) {
-  console.log('running', name, value);
+  // console.log('running', name, value);
   return {...old, [name]: value};
 }
 
@@ -43,7 +43,7 @@ function keysSelector(allKeys) {
 }
 
 function selectorFunctionDemo(states) {
-  console.log('function selector, from', states);
+  // console.log('function selector, from', states);
   return states;
 }
 
@@ -58,6 +58,7 @@ function DynamicForm({initialSize}) {
   const name = React.useRef();
 
   const [fields, setFields] = React.useState(() => [...Array(initialSize).keys()].map(t => ({name: `name_${t}`})));
+  // console.log('___________________dynamic form____________________')
   return (
     <div>
       <div style={{display: "flex", flexWrap: "wrap"}}>
@@ -78,14 +79,14 @@ function Input({name}) {
   const {mode, state, run, uniqueId} = useAsyncState
     .lazy({
       key: "login-form",
-      selector: state => state.data[name]
+      selector: s => s.data[name]
     }, [name]);
 
-  React.useEffect(() => run(name, "init" + name), [])
+  React.useEffect(() => run(name, "init_" + name), [])
 
   const data = state; // .data[name];
 
-  console.log(name, '__input__', data, uniqueId, mode, ++React.useRef(0).current)
+  // console.log('____________INPUT_____ss_______', name, data, uniqueId, mode)
   return (<input
     value={data || ""}
     name={name}

@@ -8,11 +8,11 @@ import App from './past/App';
 
 ReactDOM.createRoot(document.getElementById('root'))
   .render(
-    <React.StrictMode>
+    // <React.StrictMode>
       <React.Suspense fallback="app suspended">
         <App/>
       </React.Suspense>
-    </React.StrictMode>
+    // </React.StrictMode>
   );
 // ReactDOM.render(
 //   <React.StrictMode><App/></React.StrictMode>, document.getElementById('root'));
