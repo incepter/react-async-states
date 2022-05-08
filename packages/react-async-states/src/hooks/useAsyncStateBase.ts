@@ -28,7 +28,6 @@ import {
   AsyncStateSource
 } from "../async-state";
 import {nextKey} from "./utils/key-gen";
-// import {readAsyncStateFromSource} from "../async-state/read-source";
 
 const defaultDependencies: any[] = [];
 
@@ -70,8 +69,10 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
   const [selectedValue, setSelectedValue] = React
     .useState<Readonly<UseAsyncState<T, E>>>(initialize);
 
+  console.log('._ render _.', asyncState?.currentState.status, selectedValue)
   if (memoizedRef.subscriptionInfo !== subscriptionInfo) {
 
+    console.log('._ inside condition!! _.', selectedValue)
     if (asyncState) {
       const renderValue = selectedValue?.state;
       const newState = readStateFromAsyncState(asyncState, selector)
@@ -83,10 +84,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
         mode
       )
 
-      if (
-        !areEqual(renderValue, actualValue.state) ||
-        memoizedRef.subscriptionInfo?.asyncState !== subscriptionInfo.asyncState
-      ) {
+      if (!areEqual(renderValue, actualValue.state)) {
         setSelectedValue(
           makeUseAsyncStateReturnValue(
             asyncState,
@@ -97,27 +95,37 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
           )
         );
       }
+      // this means:
+      // if we already rendered, but this time, the async state instance changed
+      // for some of many possible reasons.
+      if (
+        memoizedRef.subscriptionInfo &&
+        memoizedRef.subscriptionInfo.asyncState !== subscriptionInfo.asyncState
+      ) {
+        setGuard(old => old + 1);
+      }
 
     }
     memoizedRef.subscriptionInfo = subscriptionInfo;
   }
 
-  // subscribe to async state
-  React.useEffect(subscribeToAsyncState, [asyncState, selector, areEqual]);
-
-  // run automatically, if necessary
-  React.useEffect(autoRunAsyncState, dependencies);
-
   // if inside provider: watch over the async state
   // useEffect: [mode, key]
   // check if the effect should do a no-op early
-
   if (isInsideProvider) {
     React.useEffect(
       watchOverAsyncState,
       [mode, configuration.key]
     )
   }
+
+  // subscribe to async state
+  React.useEffect(subscribeToAsyncState, [asyncState, selector, areEqual]);
+
+
+  // run automatically, if necessary
+  React.useEffect(autoRunAsyncState, dependencies);
+
   //
   // if (__DEV__) {
   //   if (selectedValue?.source) {
@@ -478,15 +486,15 @@ function readStateFromAsyncState<T, E>(
  *
  *
 
-function myConnectFn() {
+ function myConnectFn() {
 }
 
-type RemoteConnectContext<T> = {
+ type RemoteConnectContext<T> = {
   data: T | any,
   subscribe: (t: StateUpdater<T>) => void,
 }
 
-function createRemoteProducer(connect) {
+ function createRemoteProducer(connect) {
   function remoteProducer<T>(props: ProducerProps<T>) {
     return new Promise((resolve, reject) => {
       // ctx = { data: T, subscribe: StateUpdater<T> => void, disconnect }
@@ -506,7 +514,7 @@ function createRemoteProducer(connect) {
   }
 }
 
-function connectToMyWs(props, onConnect, onError) {
+ function connectToMyWs(props, onConnect, onError) {
   function onFail(message) {
     onError({connected: false, error: message});
   }
@@ -528,7 +536,7 @@ function connectToMyWs(props, onConnect, onError) {
   return () => ws.close();
 }
 
-function connectToMyWorker(props, onConnect) {
+ function connectToMyWorker(props, onConnect) {
 
 }
  */

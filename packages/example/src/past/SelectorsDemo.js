@@ -12,6 +12,11 @@ function reducer(old, name, value) {
 
 const size = 5;
 export default function Demo() {
+  // console.log('___________APP_____________')
+  // React.useEffect(() => {
+  //   console.log('---------App effect----------')
+  //   return () => console.log('----------App cleanup------------')
+  // })
   useAsyncState({
     lazy: true,
     key: "login-form",
@@ -73,14 +78,14 @@ function Input({name}) {
   const {mode, state, run, uniqueId} = useAsyncState
     .lazy({
       key: "login-form",
-      // selector: state => state.data[name]
+      selector: state => state.data[name]
     }, [name]);
 
   React.useEffect(() => run(name, "init" + name), [])
 
-  const data = state.data[name];
+  const data = state; // .data[name];
 
-  console.log('real input!', uniqueId, state, name, ++React.useRef(0).current, mode, data)
+  console.log(name, '__input__', data, uniqueId, mode, ++React.useRef(0).current)
   return (<input
     value={data || ""}
     name={name}
@@ -90,4 +95,4 @@ function Input({name}) {
   />);
 }
 
-const RealInput = React.memo(Input);
+const RealInput = React.memo(Input, () => true);

@@ -52,8 +52,8 @@ export default function App() {
       </section>
       <AsyncStateProvider initialStates={asyncStates}>
         <Wrapper>
-          {/*{Object.keys(asyncStates).map((t, i) => <SimpleSub key={`${t}-${i}`}*/}
-          {/*                                                    subKey={t}/>)}*/}
+          {Object.keys(asyncStates).map((t, i) => <SimpleSub key={`${t}-${i}`}
+                                                              subKey={t}/>)}
           <br/>
           <Father/>
           <Sibling/>
