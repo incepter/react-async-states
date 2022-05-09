@@ -246,6 +246,21 @@ export type UseAsyncStateConfiguration<T, E> = {
   postSubscribe?: (props: PostSubscribeProps<T>) => CleanupFn,
 
   cacheConfig?: CacheConfig<T>,
+
+  events?: UseAsyncStateEvents<T>
+}
+
+export type UseAsyncStateEventProps<T> = {
+  state: State<T>,
+};
+
+export type UseAsyncStateEventFn<T> = (props: UseAsyncStateEventProps<T>) => {};
+
+export type UseAsyncStateEventSubscribe<T> = ((props: PostSubscribeProps<T>) => CleanupFn) | ((props: PostSubscribeProps<T>) => CleanupFn)[]
+
+export type UseAsyncStateEvents<T> = {
+  change?: UseAsyncStateEventFn<T> | UseAsyncStateEventFn<T>[],
+  subscribe?: UseAsyncStateEventSubscribe<T>,
 }
 
 export type PostSubscribeProps<T> = {
@@ -261,8 +276,7 @@ export type useSelector<T, E> = (
   ((currentState: State<T>, lastSuccess: State<T>) => E)
   |
   ((
-    currentState: State<T>, lastSuccess: State<T>,
-    cache: { [id: string]: CachedState<T> }
+    currentState: State<T>, lastSuccess: State<T>, cache: { [id: string]: CachedState<T> }
   ) => E))
   ;
 

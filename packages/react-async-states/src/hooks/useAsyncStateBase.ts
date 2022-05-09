@@ -1,5 +1,5 @@
 import * as React from "react";
-import {invokeIfPresent, shallowClone} from "shared";
+import {invokeIfPresent, isFn, shallowClone} from "shared";
 import {AsyncStateContext} from "../context";
 import {
   inferAsyncStateInstance,
@@ -20,7 +20,10 @@ import {
   UseAsyncStateConfig,
   useSelector,
   UseAsyncStateSubscriptionInfo,
-  UseAsyncState
+  UseAsyncState,
+  PostSubscribeProps,
+  UseAsyncStateEventSubscribe,
+  UseAsyncStateEventFn
 } from "../types.internal";
 import {
   AsyncStateInterface,
@@ -61,7 +64,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
   );
 
   const {run, mode, asyncState, configuration, dispose} = subscriptionInfo;
-  const {selector, areEqual} = configuration;
+  const {selector, areEqual, events} = configuration;
 
 
   // declare a state snapshot initialized by the initial selected value
@@ -123,7 +126,14 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
   }
 
   // subscribe to async state
-  React.useEffect(subscribeToAsyncState, [asyncState, selector, areEqual]);
+  React.useEffect(subscribeToAsyncState, [
+    areEqual,
+    selector,
+    asyncState,
+    events?.change,
+    events?.subscribe,
+    configuration.subscriptionKey
+  ]);
 
   // run automatically, if necessary
   React.useEffect(autoRunAsyncState, dependencies);
@@ -234,7 +244,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
     let didClean = false;
     // the subscribe function returns the unsubscribe function
     const unsubscribe = asyncState.subscribe(
-      function onUpdate() {
+      function onUpdate(nextState) {
         if (didClean) {
           return;
         }
@@ -259,21 +269,53 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
               mode
             )
         });
+
+        // if there are any change listeners: invoke them
+        if (events?.change) {
+
+          let changeHandlers: UseAsyncStateEventFn<T>[];
+          if (Array.isArray(events.change)) {
+            changeHandlers = events.change;
+          } else {
+            changeHandlers = [events.change];
+          }
+
+          const eventProps = { state: nextState };
+
+          changeHandlers.forEach(event => {
+            event(eventProps);
+          });
+        }
       },
       configuration.subscriptionKey
     );
-    let postUnsubscribe;
-    if (configuration.postSubscribe) {
-      postUnsubscribe = configuration.postSubscribe({
+
+    let postUnsubscribe: CleanupFn[] | undefined;
+    if (events?.subscribe) {
+      postUnsubscribe = [];
+
+      let subscribeHandlers: ((props: PostSubscribeProps<T>) => CleanupFn)[];
+
+      if (Array.isArray(events.subscribe)) {
+        subscribeHandlers = events.subscribe;
+      } else {
+        subscribeHandlers = [events.subscribe];
+      }
+
+      postUnsubscribe = subscribeHandlers.map(ev => ev({
         run,
         mode,
         getState: () => asyncState.currentState,
         invalidateCache: asyncState.invalidateCache.bind(asyncState),
-      });
+      }));
+
     }
+
     return function cleanup() {
       didClean = true;
-      invokeIfPresent(postUnsubscribe);
+      if (postUnsubscribe) {
+        postUnsubscribe.forEach(cleanup => invokeIfPresent(cleanup))
+      }
       (unsubscribe as () => void)();
     }
   }

@@ -2,13 +2,15 @@ import {AsyncStateInterface, AsyncStateSource} from "./types";
 import {asyncStatesKey} from "./utils";
 
 function Secret() {
-  const vault = new WeakMap();
-  return function Source() {
-    if (arguments.length === 1) {
-      return vault.get(arguments[0]);
+  let key = null;
+  let value = null;
+  return function Source(...args) {
+    if (args.length === 1 && args[0] && args[0] === key) {
+      return value;
     }
-    if (arguments.length === 2) {
-      vault.set(arguments[0], arguments[1]);
+    if (args.length === 2 && !key && !value) {
+      key = args[0];
+      value = args[1];
     }
   };
 }

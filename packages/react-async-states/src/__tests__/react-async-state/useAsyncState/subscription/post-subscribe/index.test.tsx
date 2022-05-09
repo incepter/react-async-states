@@ -37,7 +37,9 @@ describe('should post subscribe', () => {
       }
     });
     const config = {
-      postSubscribe,
+      events: {
+        subscribe: postSubscribe,
+      },
       source: counterSource,
     };
 
