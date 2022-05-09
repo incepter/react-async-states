@@ -9,7 +9,7 @@ export default function Demo() {
   const navigate = useNavigate();
   const params = useParams();
 
-  const {mode, state: {status, data}, lastSuccess, abort, source} = useAsyncState({
+  const {state: {status, data}, lastSuccess, abort} = useAsyncState({
     lazy: false,
     payload: {matchParams: params},
     key: demoAsyncStates.getUser.key,
@@ -51,12 +51,16 @@ export default function Demo() {
       load: () => JSON.parse(localStorage.getItem("users-cache-demo")),
       hash: (args, payload) => `user-${payload?.matchParams?.userId}`,
       persist: cache => localStorage.setItem("users-cache-demo", JSON.stringify(cache))
+    },
+    events: {
+      subscribe() {
+        console.log('did subscribe perfectly!', arguments);
+      },
+      change({state}) {
+        console.log("state changed!", state)
+      }
     }
   }, [params]);
-
-  const meter = React.useRef(0);
-  meter.current += 1;
-  console.log('render!!', {status, meter: meter.current, uniqueId: source.uniqueId})
 
   function onSubmit(e) {
     e.preventDefault();
