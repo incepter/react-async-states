@@ -243,8 +243,6 @@ export type UseAsyncStateConfiguration<T, E> = {
   selector: useSelector<T, E>,
   areEqual: EqualityFn<E>,
 
-  postSubscribe?: (props: PostSubscribeProps<T>) => CleanupFn,
-
   cacheConfig?: CacheConfig<T>,
 
   events?: UseAsyncStateEvents<T>
@@ -256,14 +254,14 @@ export type UseAsyncStateEventProps<T> = {
 
 export type UseAsyncStateEventFn<T> = (props: UseAsyncStateEventProps<T>) => {};
 
-export type UseAsyncStateEventSubscribe<T> = ((props: PostSubscribeProps<T>) => CleanupFn) | ((props: PostSubscribeProps<T>) => CleanupFn)[]
+export type UseAsyncStateEventSubscribe<T> = ((props: SubscribeEventProps<T>) => CleanupFn) | ((props: SubscribeEventProps<T>) => CleanupFn)[]
 
 export type UseAsyncStateEvents<T> = {
   change?: UseAsyncStateEventFn<T> | UseAsyncStateEventFn<T>[],
   subscribe?: UseAsyncStateEventSubscribe<T>,
 }
 
-export type PostSubscribeProps<T> = {
+export type SubscribeEventProps<T> = {
   getState: () => State<T>,
   run: (...args: any[]) => AbortFn,
   mode: AsyncStateSubscriptionMode,
@@ -300,8 +298,6 @@ export type PartialUseAsyncStateConfiguration<T, E> = {
   producer?: Producer<T>,
   selector?: useSelector<T, E>,
   areEqual?: EqualityFn<E>,
-
-  postSubscribe?: (props: PostSubscribeProps<T>) => CleanupFn,
 
   cacheConfig?: CacheConfig<T>,
 }

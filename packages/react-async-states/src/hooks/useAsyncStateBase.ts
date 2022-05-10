@@ -21,8 +21,7 @@ import {
   useSelector,
   UseAsyncStateSubscriptionInfo,
   UseAsyncState,
-  PostSubscribeProps,
-  UseAsyncStateEventSubscribe,
+  SubscribeEventProps,
   UseAsyncStateEventFn
 } from "../types.internal";
 import {
@@ -294,7 +293,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
     if (events?.subscribe) {
       postUnsubscribe = [];
 
-      let subscribeHandlers: ((props: PostSubscribeProps<T>) => CleanupFn)[];
+      let subscribeHandlers: ((props: SubscribeEventProps<T>) => CleanupFn)[];
 
       if (Array.isArray(events.subscribe)) {
         subscribeHandlers = events.subscribe;

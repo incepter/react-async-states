@@ -29,15 +29,6 @@ export default function Demo() {
         });
     },
     // this function does not depend on render and may be static
-    postSubscribe({getState, run}) {
-      const state = getState();
-      if (!state || state.status === "pending") {
-        return;
-      }
-      const onFocus = () => run();
-      window.addEventListener("focus", onFocus);
-      return () => window.removeEventListener("focus", onFocus);
-    },
     selector(current, lastSuccess, cache) {
       if (cache[`user-${params.userId}`]) {
         return cache[`user-${params.userId}`].state;
@@ -52,9 +43,16 @@ export default function Demo() {
       hash: (args, payload) => `user-${payload?.matchParams?.userId}`,
       persist: cache => localStorage.setItem("users-cache-demo", JSON.stringify(cache))
     },
+    // this function does not depend on render and may be static
     events: {
-      subscribe() {
-        console.log('did subscribe perfectly!', arguments);
+      subscribe({getState, run}) {
+        const state = getState();
+        if (!state || state.status === "pending") {
+          return;
+        }
+        const onFocus = () => run();
+        window.addEventListener("focus", onFocus);
+        return () => window.removeEventListener("focus", onFocus);
       },
       change({state}) {
         console.log("state changed!", state)

@@ -24,7 +24,7 @@ describe('should post subscribe', () => {
     const onUnsubscribe = jest.fn();
 
     const mocked = jest.fn();
-    const postSubscribe = jest.fn().mockImplementation(({
+    const onSubscribe = jest.fn().mockImplementation(({
       run,
       mode,
       getState
@@ -38,7 +38,7 @@ describe('should post subscribe', () => {
     });
     const config = {
       events: {
-        subscribe: postSubscribe,
+        subscribe: onSubscribe,
       },
       source: counterSource,
     };
@@ -77,7 +77,7 @@ describe('should post subscribe', () => {
     render(<Test/>);
     expect(mocked).toHaveBeenCalledTimes(1);
     expect(producer).toHaveBeenCalledTimes(1);
-    expect(postSubscribe).toHaveBeenCalledTimes(1);
+    expect(onSubscribe).toHaveBeenCalledTimes(1);
 
     await act(async () => {
       await jest.advanceTimersByTime(10);
