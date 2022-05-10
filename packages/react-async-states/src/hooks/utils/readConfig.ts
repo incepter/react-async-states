@@ -57,6 +57,11 @@ export function readUserConfiguration<T, E>(
       }
     );
   }
+  // @ts-ignore
+  if (isFn(userConfig?.postSubscribe)) {
+    console.error("[Deprecation warning] - postSubscribe was removed from the library." +
+      " Please use events.subscribe instead.");
+  }
   return Object.assign(
     {},
     defaultUseASConfig,
