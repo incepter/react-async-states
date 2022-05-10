@@ -1,5 +1,4 @@
 import {
-  AsyncStateInterface,
   AsyncStateStatus, CacheConfig, CachedState,
   ProducerSavedProps,
   State,
@@ -50,3 +49,10 @@ export function didNotExpire<T>(cachedState: CachedState<T>) {
 
   return addedAt + deadline >= Date.now();
 }
+
+export const sourceIsSourceSymbol: symbol = Symbol();
+
+export function isAsyncStateSource(possiblySource: any) {
+  return possiblySource && possiblySource[sourceIsSourceSymbol] === true;
+}
+

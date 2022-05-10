@@ -14,10 +14,10 @@ import AsyncState, {
   RunExtraProps,
   State
 } from "../async-state";
-import {isAsyncStateSource} from "../async-state/AsyncState";
 import {invokeIfPresent, isFn, shallowClone} from "../../../shared";
 import {nextKey} from "../hooks/utils/key-gen";
 import {readAsyncStateFromSource} from "../async-state/read-source";
+import {isAsyncStateSource} from "../async-state/utils";
 
 function createRunFunction<T>(
   manager: AsyncStateManagerInterface | null, props: ProducerProps<T>) {

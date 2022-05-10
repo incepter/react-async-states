@@ -11,8 +11,8 @@ import AsyncState, {
   AsyncStateInterface,
   AsyncStateSource
 } from "../../async-state";
-import {isAsyncStateSource} from "../../async-state/AsyncState";
 import {readAsyncStateFromSource} from "../../async-state/read-source";
+import {isAsyncStateSource} from "../../async-state/utils";
 
 export function createAsyncStateEntry<T>(
   asyncState: AsyncStateInterface<T>,
@@ -62,5 +62,4 @@ export function createInitialAsyncStatesReducer(
     result[key].initiallyHoisted = true;
     return result;
   }
-
 }
