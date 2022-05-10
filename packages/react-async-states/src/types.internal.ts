@@ -89,6 +89,7 @@ export type ManagerHoistConfig<T> = {
   initialValue?: T,
   runEffect?: ProducerRunEffects,
   runEffectDurationMs?: number,
+  skipPendingDelayMs?: number,
   producer?: Producer<T>,
 
   key: AsyncStateKey,
@@ -227,6 +228,7 @@ export type UseAsyncStateConfiguration<T, E> = {
   source?: AsyncStateSource<T>,
   initialValue?: T,
   runEffect?: ProducerRunEffects,
+  skipPendingDelayMs?: number,
   runEffectDurationMs?: number,
   payload?: { [id: string]: any },
 
@@ -284,6 +286,7 @@ export type PartialUseAsyncStateConfiguration<T, E> = {
   initialValue?: T,
   runEffect?: ProducerRunEffects,
   runEffectDurationMs?: number,
+  skipPendingDelayMs?: number,
   payload?: { [id: string]: any },
 
   lazy?: boolean,

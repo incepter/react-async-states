@@ -95,6 +95,8 @@ export function readProducerConfigFromSubscriptionConfig<T>(
 
     runEffect: configuration.runEffect,
     runEffectDurationMs: configuration.runEffectDurationMs,
+
+    skipPendingDelayMs: configuration.skipPendingDelayMs,
   };
 }
 

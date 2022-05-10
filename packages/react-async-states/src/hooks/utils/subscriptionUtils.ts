@@ -103,6 +103,7 @@ export function inferAsyncStateInstance<T, E>(
         runEffect,
         cacheConfig,
         initialValue,
+        skipPendingDelayMs,
         runEffectDurationMs,
         hoistToProviderConfig
       } = configuration;
@@ -114,6 +115,7 @@ export function inferAsyncStateInstance<T, E>(
         runEffect,
         cacheConfig,
         initialValue,
+        skipPendingDelayMs,
         runEffectDurationMs,
         hoistToProviderConfig,
       });
