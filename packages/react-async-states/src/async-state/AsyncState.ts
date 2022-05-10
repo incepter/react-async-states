@@ -285,6 +285,11 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     extraPropsCreator: RunExtraPropsCreator<T>,
     ...execArgs: any[]
   ): AbortFn {
+    if (this.pendingUpdate) {
+      clearTimeout(this.pendingUpdate.timeoutId);
+      // this.pendingUpdate.callback(); skip the callback!
+      this.pendingUpdate = null;
+    }
     if (this.currentState.status === AsyncStateStatus.pending) {
       this.abort();
       this.currentAborter = undefined;
