@@ -1,28 +1,60 @@
+import axios from "axios";
 import React from "react";
-import { useAsyncState } from "react-async-states";
+import {
+  useAsyncState,
+  UseAsyncState,
+} from "react-async-states";
 
-const request = () =>
-  fetch("https://jsonplakceholder.typicode.com/posts/1")
-    .then((response) => response.json());
+const API = axios.create({
+  baseURL: "https://jsonplaceholder.typicode.com"
+});
 
-const requestok = () =>
-  fetch("https://jsonplaceholder.typicode.com/posts/1")
-    .then((response) => response.json());
 
-function* producer() {
-  try {
-    yield 4;
-    yield 2;
-    yield requestok();
-    return yield request();
-  } catch (e) {
-    console.log("generator catch");
-    return 12;
-  }
+async function fetchUser(props){
+  const controller = new AbortController();
+  props.onAbort(() => controller.abort());
+
+  const { userId } = props.payload;
+
+  const usersResponse = await API.get("/users/" + userId, {
+    signal: controller.signal
+  });
+  return usersResponse.data;
 }
 
 export default function App() {
-  const { state } = useAsyncState.auto(producer);
-  console.log("state =>", state);
-  return <div className="App"><pre>{JSON.stringify(state, null, 4)}</pre></div>;
+  const [userId, setUserId] = React.useState("");
+  const { state } = useAsyncState(
+    {
+      lazy: false,
+      condition: !!userId,
+      producer: fetchUser,
+      skipPendingDelayMs: 1000,
+      // runEffect: "debounce",
+      // runEffectDurationMs: 400,
+      payload: {
+        userId
+      }
+    },
+    [userId]
+  );
+  const { status, data, props } = state;
+
+  return (
+    <div className="App">
+      <input onChange={(e) => setUserId(e.target.value)} />
+      <h3>Status is: {status}</h3>
+      {status === "success" && (
+        <details open>
+          <pre>{JSON.stringify(data, null, 4)}</pre>
+        </details>
+      )}
+      {status === "error" && (
+        <div>
+          error while retrieving user with id: {props?.payload.userId}
+          <pre>{data.toString()}</pre>
+        </div>
+      )}
+    </div>
+  );
 }
