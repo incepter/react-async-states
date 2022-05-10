@@ -101,13 +101,19 @@ export function readProducerConfigFromSubscriptionConfig<T>(
 export function readProducerConfigFromProducerConfig<T>(
   configuration?: ProducerConfig<T>
 ): ProducerConfig<T> {
+  if (!configuration) {
+    return EMPTY_OBJECT;
+  }
   return {
-    initialValue: configuration?.initialValue,
+    initialValue: configuration.initialValue,
 
-    cacheConfig: configuration?.cacheConfig,
+    cacheConfig: configuration.cacheConfig,
 
-    runEffect: configuration?.runEffect,
-    runEffectDurationMs: configuration?.runEffectDurationMs,
+    runEffect: configuration.runEffect,
+    runEffectDurationMs: configuration.runEffectDurationMs,
+
+    runOnCreation: configuration.runOnCreation,
+    skipPendingDelayMs: configuration.skipPendingDelayMs,
   };
 }
 

@@ -105,11 +105,41 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     return !!this.config.cacheConfig?.enabled;
   }
 
+  pendingUpdate: {timeoutId: ReturnType<typeof setTimeout>, callback: () => void} | null = null;
+
   setState(
     newState: State<T>,
     notify: boolean = true
   ): void {
     if (__DEV__) devtools.startUpdate(this);
+
+    if (this.pendingUpdate) {
+      clearTimeout(this.pendingUpdate.timeoutId);
+      // this.pendingUpdate.callback(); skip the callback!
+      this.pendingUpdate = null;
+    }
+
+    if (newState.status === AsyncStateStatus.pending) {
+      if (
+        areRunEffectsSupported()
+          && this.config.skipPendingDelayMs
+          && this.config.skipPendingDelayMs > 0
+      ) {
+        const that = this;
+        function callback() {
+          that.currentState = newState;
+          that.pendingUpdate = null;
+
+          if (notify) {
+            notifySubscribers(that as AsyncStateInterface<any>);
+          }
+        }
+
+        const timeoutId = setTimeout(callback, this.config.skipPendingDelayMs);
+        this.pendingUpdate = {callback, timeoutId};
+        return;
+      }
+    }
 
     this.currentState = newState;
 

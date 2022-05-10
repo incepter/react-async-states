@@ -82,6 +82,8 @@ export type ProducerConfig<T> = {
   cacheConfig?: CacheConfig<T>,
   runEffectDurationMs?: number,
   runEffect?: ProducerRunEffects,
+  skipPendingDelayMs?: number,
+  runOnCreation?: boolean,
 }
 
 export type AsyncStateKey = string;
@@ -120,7 +122,6 @@ export type CachedState<T> = {
 }
 
 export interface AsyncStateInterface<T> {
-  // new (key: AsyncStateKey, producer: Producer<T>, config: ProducerConfig<T>) : {},
   // properties
   key: AsyncStateKey,
   uniqueId: number | undefined,

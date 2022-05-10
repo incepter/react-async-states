@@ -14,8 +14,9 @@ export const demoAsyncStates = {
   users: createSource("users", usersProducer, {
     runEffect: "throttle",
     runEffectDurationMs: 3000,
+    skipPendingDelayMs: 300,
     cacheConfig: {
-      enabled: true,
+      enabled: false,
       hash(args, payload) {
         return "users";
       },
@@ -57,8 +58,9 @@ export const demoAsyncStates = {
     key: "get-user",
     producer: getUserProducer,
     config: {
+      skipPendingDelayMs: 200,
       cacheConfig: {
-        enabled: true,
+        enabled: false,
         hash(args, payload) {
           return `user-${payload?.matchParams?.userId}`;
         },
