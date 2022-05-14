@@ -34,7 +34,11 @@ describe('should select from another async state', () => {
     }
 
     // when
-    render(<Test/>);
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
 
     // then
     expect(screen.getByTestId("result").innerHTML)
@@ -73,7 +77,11 @@ describe('should select from another async state', () => {
     }
 
     // when
-    render(<Test/>);
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
 
     // then
     expect(screen.getByTestId("result").innerHTML)

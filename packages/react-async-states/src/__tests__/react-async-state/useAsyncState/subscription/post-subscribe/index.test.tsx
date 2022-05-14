@@ -74,10 +74,14 @@ describe('should post subscribe', () => {
     }
 
     // when
-    render(<Test/>);
-    expect(mocked).toHaveBeenCalledTimes(1);
-    expect(producer).toHaveBeenCalledTimes(1);
-    expect(onSubscribe).toHaveBeenCalledTimes(1);
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
+    expect(mocked).toHaveBeenCalledTimes(2); // 1 strict mode
+    expect(producer).toHaveBeenCalledTimes(2); // 1 strict mode
+    expect(onSubscribe).toHaveBeenCalledTimes(2); // 1 strict mode
 
     await act(async () => {
       await jest.advanceTimersByTime(10);
@@ -106,7 +110,7 @@ describe('should post subscribe', () => {
       fireEvent.click(screen.getByTestId("toggler"));
     });
     expect(onAbort).toHaveBeenCalledTimes(1);
-    expect(onUnsubscribe).toHaveBeenCalledTimes(1);
+    expect(onUnsubscribe).toHaveBeenCalledTimes(2); // 1 strict mode
   });
 
 });

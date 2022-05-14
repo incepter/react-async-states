@@ -25,7 +25,11 @@ describe('should run producer', () => {
     }
 
     // when
-    render(<Test/>);
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
     expect(screen.getByTestId("result").innerHTML).toEqual("0");
 
     // then
@@ -70,7 +74,11 @@ describe('should run producer', () => {
     }
 
     // when
-    render(<Test/>);
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
     expect(screen.getByTestId("result").innerHTML).toEqual("abc");
 
     // then
@@ -117,7 +125,11 @@ describe('should run producer', () => {
     }
 
     // when
-    render(<Test/>);
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
     expect(screen.getByTestId("status").innerHTML)
       .toEqual(AsyncStateStatus.initial);
     expect(screen.getByTestId("result").innerHTML).toEqual("");
@@ -166,7 +178,11 @@ describe('should run producer', () => {
     }
 
     // when
-    render(<Test/>);
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
 
     // then
     act(() => {

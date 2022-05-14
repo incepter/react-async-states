@@ -45,11 +45,15 @@ describe('should runp another producer from producer', () => {
     }
 
     // when
-    render(<Test/>)
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
 
     // then
-    expect(source1Producer).toHaveBeenCalledTimes(1);
-    expect(source2Producer).toHaveBeenCalledTimes(1);
+    expect(source1Producer).toHaveBeenCalledTimes(2); // 1 strict mode
+    expect(source2Producer).toHaveBeenCalledTimes(2); // 1 strict mode
     expect(screen.getByTestId("status").innerHTML)
       .toEqual(AsyncStateStatus.pending);
 
@@ -92,11 +96,15 @@ describe('should runp another producer from producer', () => {
     }
 
     // when
-    render(<Test/>)
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
 
     // then
-    expect(source1Producer).toHaveBeenCalledTimes(1);
-    expect(source2Producer).toHaveBeenCalledTimes(1);
+    expect(source1Producer).toHaveBeenCalledTimes(2); // 1 strict mode
+    expect(source2Producer).toHaveBeenCalledTimes(2); // 1 strict mode
     expect(screen.getByTestId("status").innerHTML)
       .toEqual(AsyncStateStatus.pending);
 
@@ -144,15 +152,19 @@ describe('should runp another producer from producer', () => {
     }
 
     // when
-    render(<Test/>)
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
 
     await act(async () => {
       await flushPromises();
     });
 
     // then
-    expect(source1Producer).toHaveBeenCalledTimes(1);
-    expect(source2Producer).toHaveBeenCalledTimes(1);
+    expect(source1Producer).toHaveBeenCalledTimes(2); // 1 strict mode
+    expect(source2Producer).toHaveBeenCalledTimes(2); // 1 strict mode
     expect(source2Producer.mock.calls[0][0].args[0]).toBe(3);
     expect(screen.getByTestId("result").innerHTML)
       .toEqual(JSON.stringify({
@@ -186,15 +198,19 @@ describe('should runp another producer from producer', () => {
     }
 
     // when
-    render(<Test/>)
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
 
     await act(async () => {
       await flushPromises();
     });
 
     // then
-    expect(source1Producer).toHaveBeenCalledTimes(1);
-    expect(source2Producer).toHaveBeenCalledTimes(1);
+    expect(source1Producer).toHaveBeenCalledTimes(2); // 1 strict mode
+    expect(source2Producer).toHaveBeenCalledTimes(2); // 1 strict mode
     expect(source2Producer.mock.calls[0][0].args[0]).toBe(4);
     expect(source2Producer.mock.calls[0][0].payload).toEqual({hello: "world"});
     expect(screen.getByTestId("result").innerHTML).toEqual("5");
@@ -222,15 +238,19 @@ describe('should runp another producer from producer', () => {
     }
 
     // when
-    render(<Test/>)
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
 
     await act(async () => {
       await flushPromises();
     });
 
     // then
-    expect(source1Producer).toHaveBeenCalledTimes(1);
-    expect(source2Producer).toHaveBeenCalledTimes(1);
+    expect(source1Producer).toHaveBeenCalledTimes(2); // 1 strict mode
+    expect(source2Producer).toHaveBeenCalledTimes(2); // 1 strict mode
     expect(source2Producer.mock.calls[0][0].args[0]).toBe(66);
     expect(screen.getByTestId("result").innerHTML).toEqual("7");
   });
