@@ -79,11 +79,10 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
     // if we already rendered, but this time, the async state instance changed
     // for some of many possible reasons.
     if (
+      asyncState &&
       memoizedRef.subscriptionInfo &&
       memoizedRef.subscriptionInfo.asyncState !== subscriptionInfo.asyncState
     ) {
-      setGuard(old => old + 1);
-    } else if (asyncState) {
 
       // whenever we have an async state instance,
       // we will check if the calculated state from the new one

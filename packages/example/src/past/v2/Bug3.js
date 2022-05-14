@@ -23,22 +23,39 @@ async function fetchUser(props){
 
   const userId = id ?? 1;
 
-  let timeoutId;
-  await new Promise((res) => {timeoutId = setTimeout(res, 500)})
-  props.onAbort(() => clearTimeout(timeoutId))
+  // let timeoutId;
+  // await new Promise((res) => {timeoutId = setTimeout(res, 500)})
+  // props.onAbort(() => clearTimeout(timeoutId))
 
-  const usersResponse = await API.get("/users/" + userId, {
+  const promise = API.get("/users/" + userId, {
     signal: controller.signal
   });
+  // debugger;
+  const usersResponse = await promise;
   return usersResponse.data;
 }
 
 const source = createSource("source", fetchUser, { resetStateOnDispose: false });
 runSource(source);
 
+function DebouncedSpinner() {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    const id = setTimeout(() => setMounted(true), 400);
+    return () => clearTimeout(id);
+  }, [])
+
+
+  if (mounted) {
+    return "Loading...";
+  }
+  return null;
+}
+
 export default function App() {
   return (
-    <AsyncStateBoundary fallback="hahahaha" config={source}>
+    <AsyncStateBoundary fallback={<DebouncedSpinner />} config={source}>
       <SuspenseComponentTest />
     </AsyncStateBoundary>
   );

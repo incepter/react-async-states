@@ -8,6 +8,11 @@ export default function Component() {
   return (
     <div>
       Im a component!!
+      <details open>
+        <pre>
+          {JSON.stringify(result, null, 4)}
+        </pre>
+      </details>
     </div>
   )
 }

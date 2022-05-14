@@ -231,6 +231,7 @@ export function shouldRecalculateInstance<T, E>(
     newGuard !== oldSubscriptionInfo.guard ||
     newMode !== oldSubscriptionInfo.mode ||
     newConfig.producer !== oldSubscriptionInfo.configuration.producer ||
+    newConfig.key !== oldSubscriptionInfo.configuration.key ||
     newConfig.source !== oldSubscriptionInfo.configuration.source ||
 
     newConfig.fork !== oldSubscriptionInfo.configuration.fork ||
