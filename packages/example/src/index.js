@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 
 import './index.css'
-import App from './past/v2/Bug';
+import App from './past/v2/Bug3';
 // import App2 from './past/App2';
 
 
