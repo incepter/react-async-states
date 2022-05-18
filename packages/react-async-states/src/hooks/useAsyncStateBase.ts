@@ -130,15 +130,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
     )
 
     if (!areEqual(renderValue, actualValue.state)) {
-      setSelectedValue(
-        makeUseAsyncStateReturnValue(
-          asyncState,
-          newState,
-          configuration.key as AsyncStateKey,
-          run,
-          mode
-        )
-      );
+      setSelectedValue(actualValue);
     }
   }
 
