@@ -55,7 +55,11 @@ describe('should do basic subscription to an async state', () => {
 
     // when
 
-    render(<Component/>)
+    render(
+      <React.StrictMode>
+        <Component/>
+      </React.StrictMode>
+    )
 
     const incrementBtn = screen.getByTestId("increment");
     const decrementBtn = screen.getByTestId("decrement");
@@ -121,8 +125,11 @@ describe('should do basic subscription to an async state', () => {
 
     // when
 
-    jest.useFakeTimers();
-    render(<Component/>)
+    jest.useFakeTimers();render(
+      <React.StrictMode>
+        <Component/>
+      </React.StrictMode>
+    )
 
     const incrementBtn = screen.getByTestId("increment");
     const decrementBtn = screen.getByTestId("decrement");

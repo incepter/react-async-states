@@ -7,8 +7,8 @@ import {
   PartialUseAsyncStateConfiguration,
   UseAsyncStateConfiguration
 } from "../../types.internal";
-import {isAsyncStateSource} from "../../async-state/AsyncState";
 import {isFn} from "../../../../shared";
+import {isAsyncStateSource} from "../../async-state/utils";
 
 // userConfig is the config the developer wrote
 export function readUserConfiguration<T, E>(

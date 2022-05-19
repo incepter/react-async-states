@@ -19,7 +19,11 @@ describe('should run async state with generator', () => {
 
     // when
 
-    render(<Component/>)
+    render(
+      <React.StrictMode>
+        <Component/>
+      </React.StrictMode>
+    )
 
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("3");
@@ -43,7 +47,11 @@ describe('should run async state with generator', () => {
 
     // when
 
-    render(<Component/>)
+    render(
+      <React.StrictMode>
+        <Component/>
+      </React.StrictMode>
+    )
 
     // then
     expect(screen.getByTestId("status").innerHTML).toEqual(AsyncStateStatus.error);
@@ -71,7 +79,11 @@ describe('should run async state with generator', () => {
     }
 
     // when
-    render(<Component/>)
+    render(
+      <React.StrictMode>
+        <Component/>
+      </React.StrictMode>
+    )
 
     // then
     expect(screen.getByTestId("status").innerHTML).toEqual(AsyncStateStatus.success);
@@ -96,7 +108,11 @@ describe('should run async state with generator', () => {
     }
 
     // when
-    render(<Component/>)
+    render(
+      <React.StrictMode>
+        <Component/>
+      </React.StrictMode>
+    )
 
     await act(async () => {
       await jest.advanceTimersByTime(100);
@@ -142,7 +158,11 @@ describe('should run async state with generator', () => {
     }
 
     // when
-    render(<Component/>);
+    render(
+      <React.StrictMode>
+        <Component/>
+      </React.StrictMode>
+    )
 
     await act(async () => {
       await jest.advanceTimersByTime(100);
@@ -151,7 +171,7 @@ describe('should run async state with generator', () => {
     });
 
     // then
-    expect(mockedFn).toHaveBeenCalledTimes(1);
+    expect(mockedFn).toHaveBeenCalledTimes(2); // 1 strict mode
     expect(screen.getByTestId("status").innerHTML).toEqual(AsyncStateStatus.success);
     expect(screen.getByTestId("result").innerHTML).toEqual(JSON.stringify({
       "a": {},

@@ -43,7 +43,11 @@ describe('should add static payload to async state', () => {
 
     // when
 
-    render(<Component/>)
+    render(
+      <React.StrictMode>
+        <Component/>
+      </React.StrictMode>
+    )
 
     const incrementBtn = screen.getByTestId("increment");
     // then

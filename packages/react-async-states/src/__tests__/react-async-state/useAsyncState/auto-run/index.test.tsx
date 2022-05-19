@@ -24,7 +24,11 @@ describe('should auto run async state', () => {
     }
 
     // when
-    render(<Component/>)
+    render(
+      <React.StrictMode>
+        <Component/>
+      </React.StrictMode>
+    )
 
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("0");
@@ -42,6 +46,7 @@ describe('should auto run async state', () => {
     }
 
     const mockedProducer = jest.fn().mockImplementation(producer);
+
     function Component() {
       const {
         state,
@@ -62,7 +67,11 @@ describe('should auto run async state', () => {
     }
 
     // when
-    render(<Component/>)
+    render(
+      <React.StrictMode>
+        <Component />
+      </React.StrictMode>
+    )
 
     expect(screen.getByTestId("status").innerHTML)
       .toEqual(AsyncStateStatus.pending);
