@@ -486,7 +486,7 @@ holding our state, then it renders whenever that state notifies us to update
 
 `useAsyncState` also exposes some power of `AsyncState`: replaceState, abort... and so on.
 
-When the subscription occurs, `postSubscribe` is called which receives a
+When the subscription occurs, `events.subscribe` is called which receives a
 `getState` and `run` methods along with the subscription mode and invalidateCache.
 
 This should allow all platforms to bind specific event listeners and/or perform
@@ -584,14 +584,24 @@ function subscribeToAsyncState(): CleanupFn {
     },
     configuration.subscriptionKey
   );
-  let postUnsubscribe;
-  if (configuration.postSubscribe) {
-    postUnsubscribe = configuration.postSubscribe({
+  let postUnsubscribe: CleanupFn[] | undefined;
+  if (events?.subscribe) {
+    postUnsubscribe = [];
+
+    let subscribeHandlers: ((props: SubscribeEventProps<T>) => CleanupFn)[];
+
+    if (Array.isArray(events.subscribe)) {
+      subscribeHandlers = events.subscribe;
+    } else {
+      subscribeHandlers = [events.subscribe];
+    }
+
+    postUnsubscribe = subscribeHandlers.map(ev => ev({
       run,
       mode,
       getState: () => asyncState.currentState,
       invalidateCache: asyncState.invalidateCache.bind(asyncState),
-    });
+    }));
   }
   return function cleanup() {
     didClean = true;

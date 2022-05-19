@@ -69,6 +69,7 @@ export default function Demo() {
           <div style={{display: "flex"}}>
             <React.Suspense fallback="pending...users">
               <SimpleSub
+                lazy
                 suspend
                 source={demoAsyncStates.users}
                 displayValue={data => data.map(user => <li

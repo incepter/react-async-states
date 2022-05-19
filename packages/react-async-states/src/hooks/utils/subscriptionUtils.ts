@@ -103,7 +103,10 @@ export function inferAsyncStateInstance<T, E>(
         runEffect,
         cacheConfig,
         initialValue,
+
+        skipPendingDelayMs,
         runEffectDurationMs,
+        resetStateOnDispose,
         hoistToProviderConfig
       } = configuration;
       // @ts-ignore
@@ -114,6 +117,8 @@ export function inferAsyncStateInstance<T, E>(
         runEffect,
         cacheConfig,
         initialValue,
+        skipPendingDelayMs,
+        resetStateOnDispose,
         runEffectDurationMs,
         hoistToProviderConfig,
       });
@@ -226,9 +231,11 @@ export function shouldRecalculateInstance<T, E>(
     newGuard !== oldSubscriptionInfo.guard ||
     newMode !== oldSubscriptionInfo.mode ||
     newConfig.producer !== oldSubscriptionInfo.configuration.producer ||
+    newConfig.key !== oldSubscriptionInfo.configuration.key ||
     newConfig.source !== oldSubscriptionInfo.configuration.source ||
 
     newConfig.fork !== oldSubscriptionInfo.configuration.fork ||
+    newConfig.resetStateOnDispose !== oldSubscriptionInfo.configuration.resetStateOnDispose ||
     newConfig.forkConfig?.keepState !== oldSubscriptionInfo.configuration.forkConfig?.keepState ||
 
     newConfig.hoistToProvider !== oldSubscriptionInfo.configuration.hoistToProvider ||

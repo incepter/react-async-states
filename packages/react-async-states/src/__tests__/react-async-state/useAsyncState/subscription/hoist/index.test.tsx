@@ -64,7 +64,11 @@ describe('should hoist an async state to provider', () => {
 
     // when
 
-    render(<Test/>)
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
 
     // then
     expect(screen.getByTestId("mode-counter").innerHTML)

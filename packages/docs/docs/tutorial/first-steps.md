@@ -439,3 +439,63 @@ allow-same-origin allow-scripts"
 </details>
 
 
+
+### Skip the pending state
+
+To skip the pending state, the `skipPendingDelayMs` is used.
+
+It means that when state turns to pending, and then changes under that delay,
+the pending update shall be skipped.
+
+```typescript
+// highlit-next-line
+const {userId} = useParams();
+const {state}: UseAsyncState<User> = useAsyncState(
+  {
+    lazy: false,
+    condition: !!userId,
+    producer: fetchUser,
+    skipPendingDelayMs: 400,
+    payload: {
+      userId
+    }
+  },
+  [userId]
+);
+const {status, data, props} = state;
+
+
+// AND
+
+const navigate = useNavigate();
+
+function onChange(e) {
+  const id = e.target.value;
+  if (id) {
+    navigate(`/users/${id}`);
+  }
+}
+<input onChange={onChange} />;
+
+```
+
+See it in action here, and notice that when having a good internet connexion
+that the experience feels instantaneous.
+
+
+<details>
+<summary>Skip the pending state</summary>
+
+<iframe style={{width: '100%', height: '500px', border: 0, borderRadius: 4,
+overflow: 'hidden'}}
+src="https://codesandbox.io/embed/react-typescript-forked-dphucp?fontsize=14&hidenavigation=1&theme=dark"
+allow="accelerometer; ambient-light-sensor; camera; encrypted-media;
+geolocation; gyroscope; hid; microphone; midi; payment; usb; vr;
+xr-spatial-tracking"
+sandbox="allow-forms allow-modals allow-popups allow-presentation
+allow-same-origin allow-scripts"
+/>
+
+</details>
+
+

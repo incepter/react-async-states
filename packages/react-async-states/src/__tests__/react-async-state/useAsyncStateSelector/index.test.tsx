@@ -10,20 +10,26 @@ describe('useSelector', () => {
     // given
 
     const dataSource = createSource("data", null, {initialValue: "hello!"});
+
     function Component() {
       const data = useSelector("data", d => d.data);
       return <span data-testid="result">{data}</span>
     }
+
     function Test() {
       return (
         <AsyncStateProvider initialStates={[dataSource]}>
-          <Component />
+          <Component/>
         </AsyncStateProvider>
       );
     }
 
     // when
-    render(<Test />);
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    );
 
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("hello!");
@@ -37,8 +43,13 @@ describe('useSelector', () => {
     }
 
     const oldError = console.error;
-    console.error = () => {};
-    expect(() => render(<Component />))
+    console.error = () => {
+    };
+    expect(() => render(
+      <React.StrictMode>
+        <Component />
+      </React.StrictMode>
+    ))
       .toThrow("to use useSelector you must be inside a <AsyncStateProvider/>");
     console.error = oldError;
   });
@@ -47,18 +58,24 @@ describe('useSelector', () => {
     function Test() {
       return (
         <AsyncStateProvider>
-          <Component />
+          <Component/>
         </AsyncStateProvider>
       );
     }
+
     function Component() {
       const data = useSelector([], d => d.data);
       return <span data-testid="result">{data}</span>;
     }
 
     const oldError = console.error;
-    console.error = () => {};
-    expect(() => render(<Test />))
+    console.error = () => {
+    };
+    expect(() => render(
+      <React.StrictMode>
+        <Test />
+      </React.StrictMode>
+    ))
       .toThrow("A selector cannot have 0 watched keys.");
     console.error = oldError;
   });
@@ -68,8 +85,10 @@ describe('useSelector', () => {
     function producer(props) {
       return props.args[0];
     }
+
     const dataSource = createSource("data", producer, {initialValue: "hello!"});
     const dataSource2 = createSource("data2", null, {initialValue: "hello!!"});
+
     function Component() {
       const data = useSelector(
         ["data", "data2"],
@@ -80,21 +99,27 @@ describe('useSelector', () => {
 
       return (
         <div>
-          <button data-testid="run" onClick={() => run("data", "update")}>run</button>
+          <button data-testid="run" onClick={() => run("data", "update")}>run
+          </button>
           <span data-testid="result">{data}</span>
         </div>
       );
     }
+
     function Test() {
       return (
         <AsyncStateProvider initialStates={[dataSource, dataSource2]}>
-          <Component />
+          <Component/>
         </AsyncStateProvider>
       );
     }
 
     // when
-    render(<Test />);
+    render(
+      <React.StrictMode>
+        <Test />
+      </React.StrictMode>
+    );
 
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("hello!-hello!!");
@@ -107,24 +132,30 @@ describe('useSelector', () => {
     // given
     const dataSource = createSource("data", null, {initialValue: "hello!"});
     const dataSource2 = createSource("data2", null, {initialValue: "hello!!"});
+
     function Component() {
       const data = useSelector(
         allKeys => allKeys.filter(t => t === "data"),
-        ({ data: state }) => state.data,
+        ({data: state}) => state.data,
         (prev, next) => prev === next
       );
       return <span data-testid="result">{data}</span>
     }
+
     function Test() {
       return (
         <AsyncStateProvider initialStates={[dataSource, dataSource2]}>
-          <Component />
+          <Component/>
         </AsyncStateProvider>
       );
     }
 
     // when
-    render(<Test />);
+    render(
+      <React.StrictMode>
+        <Test />
+      </React.StrictMode>
+    );
 
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("hello!");

@@ -24,7 +24,7 @@ describe('should post subscribe', () => {
     const onUnsubscribe = jest.fn();
 
     const mocked = jest.fn();
-    const postSubscribe = jest.fn().mockImplementation(({
+    const onSubscribe = jest.fn().mockImplementation(({
       run,
       mode,
       getState
@@ -37,7 +37,9 @@ describe('should post subscribe', () => {
       }
     });
     const config = {
-      postSubscribe,
+      events: {
+        subscribe: onSubscribe,
+      },
       source: counterSource,
     };
 
@@ -72,10 +74,14 @@ describe('should post subscribe', () => {
     }
 
     // when
-    render(<Test/>);
-    expect(mocked).toHaveBeenCalledTimes(1);
-    expect(producer).toHaveBeenCalledTimes(1);
-    expect(postSubscribe).toHaveBeenCalledTimes(1);
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
+    expect(mocked).toHaveBeenCalledTimes(2); // 1 strict mode
+    expect(producer).toHaveBeenCalledTimes(2); // 1 strict mode
+    expect(onSubscribe).toHaveBeenCalledTimes(2); // 1 strict mode
 
     await act(async () => {
       await jest.advanceTimersByTime(10);
@@ -104,7 +110,7 @@ describe('should post subscribe', () => {
       fireEvent.click(screen.getByTestId("toggler"));
     });
     expect(onAbort).toHaveBeenCalledTimes(1);
-    expect(onUnsubscribe).toHaveBeenCalledTimes(1);
+    expect(onUnsubscribe).toHaveBeenCalledTimes(2); // 1 strict mode
   });
 
 });

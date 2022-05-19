@@ -32,4 +32,10 @@ export type {
   InitialAsyncState,
   AsyncStateInitializer,
   UseSimpleAsyncStateConfig,
+
+
+  UseAsyncStateEvents,
+  UseAsyncStateEventFn,
+  UseAsyncStateEventProps,
+
 } from "./types.internal";

@@ -155,7 +155,10 @@ The library supports caching the producer's result from the `args` and
 The cache may be invalidated via `invalidateCache`, persisted via `persist` and
 loaded via `load`.
 
-## **Post subscription callback**
-When a subscription occurs to an async state, a `postSubscribe` may be useful
+## **Events for side effects support**
+When a subscription occurs to an async state, a `events.subscribe` may be useful
 to attach some platform specific event handlers like focus, resize... etc
+
+And `events.change` let you define side effects that should be executed when a
+state change occurs.
 

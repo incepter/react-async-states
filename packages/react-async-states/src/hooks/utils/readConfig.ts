@@ -7,8 +7,8 @@ import {
   PartialUseAsyncStateConfiguration,
   UseAsyncStateConfiguration
 } from "../../types.internal";
-import {isAsyncStateSource} from "../../async-state/AsyncState";
 import {isFn} from "../../../../shared";
+import {isAsyncStateSource} from "../../async-state/utils";
 
 // userConfig is the config the developer wrote
 export function readUserConfiguration<T, E>(
@@ -56,6 +56,11 @@ export function readUserConfiguration<T, E>(
         [sourceConfigurationSecretSymbol]: true
       }
     );
+  }
+  // @ts-ignore
+  if (isFn(userConfig?.postSubscribe)) {
+    console.error("[Deprecation warning] - postSubscribe was removed from the library." +
+      " Please use events.subscribe instead.");
   }
   return Object.assign(
     {},

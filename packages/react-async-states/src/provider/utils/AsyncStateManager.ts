@@ -33,8 +33,8 @@ import AsyncState, {
   ForkConfig,
   State
 } from "../../async-state";
-import {isAsyncStateSource} from "../../async-state/AsyncState";
 import {readAsyncStateFromSource} from "../../async-state/read-source";
+import {isAsyncStateSource} from "../../async-state/utils";
 
 const listenersKey = Symbol();
 
@@ -83,9 +83,10 @@ export function AsyncStateManager(
       Object
         .values(initialStates ?? EMPTY_OBJECT)
         .reduce((result, current) => {
+          // @ts-ignore
           result[current.key] = current;
           return result;
-        }, {});
+        }, Object.create(null)) as {[id: AsyncStateKey]: ExtendedInitialAsyncState<any>};
 
     Object
       .values(newStatesMap)

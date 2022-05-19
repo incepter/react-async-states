@@ -89,6 +89,8 @@ export type ManagerHoistConfig<T> = {
   initialValue?: T,
   runEffect?: ProducerRunEffects,
   runEffectDurationMs?: number,
+  resetStateOnDispose?: boolean,
+  skipPendingDelayMs?: number,
   producer?: Producer<T>,
 
   key: AsyncStateKey,
@@ -227,7 +229,9 @@ export type UseAsyncStateConfiguration<T, E> = {
   source?: AsyncStateSource<T>,
   initialValue?: T,
   runEffect?: ProducerRunEffects,
+  skipPendingDelayMs?: number,
   runEffectDurationMs?: number,
+  resetStateOnDispose?: boolean,
   payload?: { [id: string]: any },
 
   lazy?: boolean,
@@ -243,12 +247,25 @@ export type UseAsyncStateConfiguration<T, E> = {
   selector: useSelector<T, E>,
   areEqual: EqualityFn<E>,
 
-  postSubscribe?: (props: PostSubscribeProps<T>) => CleanupFn,
-
   cacheConfig?: CacheConfig<T>,
+
+  events?: UseAsyncStateEvents<T>
 }
 
-export type PostSubscribeProps<T> = {
+export type UseAsyncStateEventProps<T> = {
+  state: State<T>,
+};
+
+export type UseAsyncStateEventFn<T> = (props: UseAsyncStateEventProps<T>) => {};
+
+export type UseAsyncStateEventSubscribe<T> = ((props: SubscribeEventProps<T>) => CleanupFn) | ((props: SubscribeEventProps<T>) => CleanupFn)[]
+
+export type UseAsyncStateEvents<T> = {
+  change?: UseAsyncStateEventFn<T> | UseAsyncStateEventFn<T>[],
+  subscribe?: UseAsyncStateEventSubscribe<T>,
+}
+
+export type SubscribeEventProps<T> = {
   getState: () => State<T>,
   run: (...args: any[]) => AbortFn,
   mode: AsyncStateSubscriptionMode,
@@ -261,8 +278,7 @@ export type useSelector<T, E> = (
   ((currentState: State<T>, lastSuccess: State<T>) => E)
   |
   ((
-    currentState: State<T>, lastSuccess: State<T>,
-    cache: { [id: string]: CachedState<T> }
+    currentState: State<T>, lastSuccess: State<T>, cache: { [id: string]: CachedState<T> }
   ) => E))
   ;
 
@@ -272,6 +288,8 @@ export type PartialUseAsyncStateConfiguration<T, E> = {
   initialValue?: T,
   runEffect?: ProducerRunEffects,
   runEffectDurationMs?: number,
+  resetStateOnDispose?: boolean,
+  skipPendingDelayMs?: number,
   payload?: { [id: string]: any },
 
   lazy?: boolean,
@@ -286,8 +304,6 @@ export type PartialUseAsyncStateConfiguration<T, E> = {
   producer?: Producer<T>,
   selector?: useSelector<T, E>,
   areEqual?: EqualityFn<E>,
-
-  postSubscribe?: (props: PostSubscribeProps<T>) => CleanupFn,
 
   cacheConfig?: CacheConfig<T>,
 }

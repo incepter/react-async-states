@@ -55,7 +55,11 @@ describe('should do basic subscription to an async state', () => {
 
     // when
 
-    render(<Component/>)
+    render(
+      <React.StrictMode>
+        <Component/>
+      </React.StrictMode>
+    )
 
     const incrementBtn = screen.getByTestId("increment");
     const decrementBtn = screen.getByTestId("decrement");
@@ -81,7 +85,7 @@ describe('should do basic subscription to an async state', () => {
     expect(screen.getByTestId("result").innerHTML).toEqual("0");
   });
 
-  it('should subscribe and get initial value, and perform async call', async () => {
+  it('should subscribe and get initial value, and perform async call while skipping pending status', async () => {
     // given
     const pendingText = "loading...";
 
@@ -96,6 +100,7 @@ describe('should do basic subscription to an async state', () => {
             props.onAbort(() => clearTimeout(id));
           }));
         },
+        skipPendingDelayMs: 80,
         initialValue: 0,
       });
 
@@ -113,14 +118,18 @@ describe('should do basic subscription to an async state', () => {
           <button data-testid="increment" onClick={increment}>increment</button>
           <button data-testid="decrement" onClick={decrement}>decrement</button>
           <span data-testid="pending">{isPending ? pendingText : ""}</span>
+          <span data-testid="status">{status}</span>
           <span data-testid="result">{data}</span>
         </div>);
     }
 
     // when
 
-    jest.useFakeTimers();
-    render(<Component/>)
+    jest.useFakeTimers();render(
+      <React.StrictMode>
+        <Component/>
+      </React.StrictMode>
+    )
 
     const incrementBtn = screen.getByTestId("increment");
     const decrementBtn = screen.getByTestId("decrement");
@@ -132,28 +141,26 @@ describe('should do basic subscription to an async state', () => {
     act(() => {
       fireEvent.click(incrementBtn);
     });
-    expect(screen.getByTestId("result").innerHTML).toEqual("");
-    expect(screen.getByTestId("pending").innerHTML).toEqual(pendingText);
-
-    await act(async () => {
-      await jest.advanceTimersByTime(100);
-    });
-
-    expect(screen.getByTestId("result").innerHTML).toEqual("1");
+    // pending state is now skipped!
+    expect(screen.getByTestId("status").innerHTML).toEqual(AsyncStateStatus.initial);
+    expect(screen.getByTestId("result").innerHTML).toEqual("0");
     expect(screen.getByTestId("pending").innerHTML).toEqual("");
 
-    // -1
-    act(() => {
-      fireEvent.click(decrementBtn)
+    await act(async () => {
+      await jest.advanceTimersByTime(90);
     });
+
+    // pending state is now !!
+    expect(screen.getByTestId("status").innerHTML).toEqual(AsyncStateStatus.pending);
     expect(screen.getByTestId("result").innerHTML).toEqual("");
     expect(screen.getByTestId("pending").innerHTML).toEqual(pendingText);
 
     await act(async () => {
-      await jest.advanceTimersByTime(100);
+      await jest.advanceTimersByTime(10);
     });
 
-    expect(screen.getByTestId("result").innerHTML).toEqual("0");
+    expect(screen.getByTestId("status").innerHTML).toEqual(AsyncStateStatus.success);
+    expect(screen.getByTestId("result").innerHTML).toEqual("1");
     expect(screen.getByTestId("pending").innerHTML).toEqual("");
   });
 });

@@ -1,4 +1,5 @@
 import {AsyncStateKeyOrSource} from "../types.internal";
+import {createRunExtraPropsCreator} from "../helpers/run-props-creator";
 
 export enum AsyncStateStatus {
   error = "error",
@@ -50,8 +51,6 @@ export type RunIndicators = {
 }
 
 export type ProducerSavedProps<T> = {
-  aborted?: boolean,
-
   payload?: any,
   args?: any[],
   lastSuccess?: State<T>
@@ -82,6 +81,8 @@ export type ProducerConfig<T> = {
   cacheConfig?: CacheConfig<T>,
   runEffectDurationMs?: number,
   runEffect?: ProducerRunEffects,
+  skipPendingDelayMs?: number,
+  resetStateOnDispose?: boolean,
 }
 
 export type AsyncStateKey = string;
@@ -120,7 +121,6 @@ export type CachedState<T> = {
 }
 
 export interface AsyncStateInterface<T> {
-  // new (key: AsyncStateKey, producer: Producer<T>, config: ProducerConfig<T>) : {},
   // properties
   key: AsyncStateKey,
   uniqueId: number | undefined,
@@ -154,7 +154,7 @@ export interface AsyncStateInterface<T> {
 
 export interface StateBuilderInterface {
   initial: <T> (initialValue: T) => State<T>,
-  pending: <T>(props: ProducerSavedProps<T>) => State<null>,
+  pending: <T>(props: ProducerSavedProps<T>) => State<T>,
   success: <T>(data: T, props: ProducerSavedProps<T>) => State<T>,
   error: <T>(data: any, props: ProducerSavedProps<T>) => State<any>,
   aborted: <T>(reason: any, props: ProducerSavedProps<T>) => State<any>,

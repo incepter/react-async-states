@@ -95,19 +95,29 @@ export function readProducerConfigFromSubscriptionConfig<T>(
 
     runEffect: configuration.runEffect,
     runEffectDurationMs: configuration.runEffectDurationMs,
+
+    skipPendingDelayMs: configuration.skipPendingDelayMs,
+    resetStateOnDispose: configuration.resetStateOnDispose,
   };
 }
 
 export function readProducerConfigFromProducerConfig<T>(
   configuration?: ProducerConfig<T>
 ): ProducerConfig<T> {
+  if (!configuration) {
+    return EMPTY_OBJECT;
+  }
   return {
-    initialValue: configuration?.initialValue,
+    initialValue: configuration.initialValue,
 
-    cacheConfig: configuration?.cacheConfig,
+    cacheConfig: configuration.cacheConfig,
 
-    runEffect: configuration?.runEffect,
-    runEffectDurationMs: configuration?.runEffectDurationMs,
+    runEffect: configuration.runEffect,
+    runEffectDurationMs: configuration.runEffectDurationMs,
+
+    resetStateOnDispose: configuration.resetStateOnDispose,
+
+    skipPendingDelayMs: configuration.skipPendingDelayMs,
   };
 }
 
