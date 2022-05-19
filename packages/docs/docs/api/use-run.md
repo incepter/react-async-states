@@ -20,3 +20,10 @@ import {useRun} from "react-async-states";
 const run: ((keyOrSource: AsyncStateKeyOrSource<T>, ...args: any[]) => AbortFn)
   = useRun();
 ```
+
+:::caution
+
+Please note that the returned function **should work** only in effects or
+event handlers, this function should not be called during render.
+
+:::

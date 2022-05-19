@@ -23,3 +23,10 @@ level or in effects or event handlers, this function should not be called during
 render.
 
 :::
+
+:::tip
+`runSource` after `createSource` will result in the component if rendered
+immediately receiving a `pending` status, thus, if used with `read()` and
+inside a `Suspense` boundary, will suspend the current tree. If used also
+with `lazy` components, will result on fetching data and code in parallel.
+:::
