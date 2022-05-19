@@ -52,7 +52,11 @@ describe('should fork an initially hoisted async state', () => {
     }
 
     // when
-    render(<Test/>)
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
 
     // then
     expect(screen.getByTestId("mode-counter").innerHTML)

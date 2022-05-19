@@ -9,7 +9,7 @@ import {
   warning
 } from "shared";
 import {wrapProducerFunction} from "./wrap-producer-function";
-import {didNotExpire, hash, StateBuilder} from "./utils";
+import {didNotExpire, hash, sourceIsSourceSymbol, StateBuilder} from "./utils";
 import devtools from "devtools";
 import {areRunEffectsSupported} from "shared/features";
 import {
@@ -90,10 +90,10 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       const loadedCache = this.config.cacheConfig.load();
       if (loadedCache) {
         if (isPromise(loadedCache)) {
-          (loadedCache as Promise<{[id: AsyncStateKey]: CachedState<T>}>)
+          (loadedCache as Promise<{ [id: AsyncStateKey]: CachedState<T> }>)
             .then(asyncCache => this.cache = asyncCache)
         } else {
-          this.cache = loadedCache as {[id: AsyncStateKey]: CachedState<T>};
+          this.cache = loadedCache as { [id: AsyncStateKey]: CachedState<T> };
         }
       }
     }
@@ -105,7 +105,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     return !!this.config.cacheConfig?.enabled;
   }
 
-  pendingUpdate: {timeoutId: ReturnType<typeof setTimeout>, callback: () => void} | null = null;
+  pendingUpdate: { timeoutId: ReturnType<typeof setTimeout>, callback: () => void } | null = null;
 
   setState(
     newState: State<T>,
@@ -122,10 +122,11 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     if (newState.status === AsyncStateStatus.pending) {
       if (
         areRunEffectsSupported()
-          && this.config.skipPendingDelayMs
-          && this.config.skipPendingDelayMs > 0
+        && this.config.skipPendingDelayMs
+        && this.config.skipPendingDelayMs > 0
       ) {
         const that = this;
+
         function callback() {
           that.currentState = newState;
           that.pendingUpdate = null;
@@ -405,8 +406,10 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       that.locks -= 1;
       delete that.subscriptions[subscriptionKey];
       if (__DEV__) devtools.emitUnsubscription(that, subscriptionKey);
-      if (Object.values(that.subscriptions).filter(Boolean).length === 0) {
-        that.dispose();
+      if (that.config.resetStateOnDispose !== false) {
+        if (Object.values(that.subscriptions).filter(Boolean).length === 0) {
+          that.dispose();
+        }
       }
     }
 
@@ -480,7 +483,6 @@ function nextUniqueId() {
 }
 
 let uniqueId: number = 0;
-const sourceIsSourceSymbol: symbol = Symbol();
 
 const defaultForkConfig: ForkConfig = Object.freeze({keepState: false});
 
@@ -506,8 +508,4 @@ function notifySubscribers(asyncState: AsyncStateInterface<any>) {
   Object.values(asyncState.subscriptions).forEach(subscription => {
     subscription.callback(asyncState.currentState);
   });
-}
-
-export function isAsyncStateSource(possiblySource: any) {
-  return possiblySource && possiblySource[sourceIsSourceSymbol] === true;
 }

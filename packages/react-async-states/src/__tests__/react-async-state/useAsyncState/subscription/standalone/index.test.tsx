@@ -50,7 +50,11 @@ describe('should declare a standalone producer inside a provider', () => {
 
     // when
 
-    render(<Test/>)
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
 
     const incrementBtn = screen.getByTestId("increment");
     const decrementBtn = screen.getByTestId("decrement");
@@ -92,7 +96,11 @@ describe('should declare a standalone producer inside a provider', () => {
 
     // when
 
-    render(<Test/>)
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
 
     // then
     expect(screen.getByTestId("mode").innerHTML)

@@ -97,6 +97,7 @@ export function readProducerConfigFromSubscriptionConfig<T>(
     runEffectDurationMs: configuration.runEffectDurationMs,
 
     skipPendingDelayMs: configuration.skipPendingDelayMs,
+    resetStateOnDispose: configuration.resetStateOnDispose,
   };
 }
 
@@ -114,7 +115,8 @@ export function readProducerConfigFromProducerConfig<T>(
     runEffect: configuration.runEffect,
     runEffectDurationMs: configuration.runEffectDurationMs,
 
-    runOnCreation: configuration.runOnCreation,
+    resetStateOnDispose: configuration.resetStateOnDispose,
+
     skipPendingDelayMs: configuration.skipPendingDelayMs,
   };
 }

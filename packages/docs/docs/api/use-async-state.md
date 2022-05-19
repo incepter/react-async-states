@@ -68,25 +68,26 @@ registration of a new async state (with fork/hoist).
 
 Let's see in details the supported configuration:
 
-| Property                | Type                  | Default Value                          | Description                                                                                                                                                               |
-|-------------------------|-----------------------|----------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `key`                   | `string`              | `string`                               | The key of the async state we are defining, subscribing to or forking from                                                                                                |
-| `lazy`                  | `boolean`             | `true`                                 | If false, the subscription will re-run every dependency change                                                                                                            |
-| `fork`                  | `boolean`             | `false`                                | If true, subscription will fork the state                                                                                                                                 |
-| `source`                | `object`              | `undefined`                            | A source object, similar to the one created by `createSource`                                                                                                             |
-| `producer`              | `function`            | `undefined`                            | The producer function                                                                                                                                                     |
-| `selector`              | `function`            | `identity`                             | receives state (`{data, args, status}`, `lastSuccess`, `cache`) and returns the `state` property of the result value                                                      |
-| `areEqual`              | `function`            | `shallowEqual`                         | `(prevState, nextState) => areEqual(prevState, nextState)` determines whether the subscription should update or not                                                       |
-| `condition`             | `boolean`             | `true`                                 | If this condition is falsy, the automatic run isn't granted. this works only when `lazy = false`                                                                          |
-| `forkConfig`            | `ForkConfig`          | `{keepState: false, keepCache: false}` | The fork configuration in case of `fork = true`                                                                                                                           |
-| `cacheConfig`           | `CacheConfig`         | `undefined`                            | Defines the cache config for the producer                                                                                                                                 |
-| `runEffect`             | `RunEffect`           | `undefined`                            | Defines run effect to decorate the producer with: debounce, throttle, delay...                                                                                            |
-| `runEffectDurationMs`   | `number > 0`          | `undefined`                            | The duration of the effect in milliseconds                                                                                                                                |
+| Property                | Type                  | Default Value                          | Description                                                                                                                                                                                        |
+|-------------------------|-----------------------|----------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `key`                   | `string`              | `string`                               | The key of the async state we are defining, subscribing to or forking from                                                                                                                         |
+| `lazy`                  | `boolean`             | `true`                                 | If false, the subscription will re-run every dependency change                                                                                                                                     |
+| `fork`                  | `boolean`             | `false`                                | If true, subscription will fork the state                                                                                                                                                          |
+| `source`                | `object`              | `undefined`                            | A source object, similar to the one created by `createSource`                                                                                                                                      |
+| `producer`              | `function`            | `undefined`                            | The producer function                                                                                                                                                                              |
+| `selector`              | `function`            | `identity`                             | receives state (`{data, args, status}`, `lastSuccess`, `cache`) and returns the `state` property of the result value                                                                               |
+| `areEqual`              | `function`            | `shallowEqual`                         | `(prevState, nextState) => areEqual(prevState, nextState)` determines whether the subscription should update or not                                                                                |
+| `condition`             | `boolean`             | `true`                                 | If this condition is falsy, the automatic run isn't granted. this works only when `lazy = false`                                                                                                   |
+| `forkConfig`            | `ForkConfig`          | `{keepState: false, keepCache: false}` | The fork configuration in case of `fork = true`                                                                                                                                                    |
+| `cacheConfig`           | `CacheConfig`         | `undefined`                            | Defines the cache config for the producer                                                                                                                                                          |
+| `runEffect`             | `RunEffect`           | `undefined`                            | Defines run effect to decorate the producer with: debounce, throttle, delay...                                                                                                                     |
+| `runEffectDurationMs`   | `number > 0`          | `undefined`                            | The duration of the effect in milliseconds                                                                                                                                                         |
+| `resetStateOnDispose`   | `boolean`             | `true`                                 | Whether to reset the state to its initial state when all subscribers unsubscribe or to keep it. Default to `true`.                                                                                 |
 | `skipPendingDelayMs`    | `number > 0`          | `undefined`                            | The duration under which a state update with a pending status may be skipped. The component in this case won't render with a pending status if it gets updated to something else under that delay. |
-| `initialValue`          | `any`                 | `null`                                 | The initial producer value, useful only if working as standalone(ie defining own producer)                                                                                |
-| `events`                | `UseAsyncStateEvents` | `undefined`                            | Defines events that will be invoked with this subscription.                                                                                                               |
-| `hoistToProvider`       | `boolean`             | `false`                                | Defines whether to hoist this state to the provider or not                                                                                                                |
-| `hoistToProviderConfig` | `HoistConfig`         | `{override: false}`                    | Defines the configuration associated with `hoistToProvider = true`                                                                                                        |
+| `initialValue`          | `any`                 | `null`                                 | The initial producer value, useful only if working as standalone(ie defining own producer)                                                                                                         |
+| `events`                | `UseAsyncStateEvents` | `undefined`                            | Defines events that will be invoked with this subscription.                                                                                                                                        |
+| `hoistToProvider`       | `boolean`             | `false`                                | Defines whether to hoist this state to the provider or not                                                                                                                                         |
+| `hoistToProviderConfig` | `HoistConfig`         | `{override: false}`                    | Defines the configuration associated with `hoistToProvider = true`                                                                                                                                 |
 
 The returned object from `useAsyncState` contains the following properties:
 
@@ -597,6 +598,26 @@ const { run, state } = useAsyncState({
   producer: getClientProducer,
 });
 
+```
+
+### `resetStateOnDispose`
+`resetStateOnDispose` : Defines whether to reset the state to the initial value
+when all subscribers unsubcribe, or to keep the current value.
+
+The default value is `true` and the library will reset the state to its initial
+value by default.
+
+```typescript
+// the state won't go to pending if the fetch goes under 300ms!
+const { run, state } = useAsyncState({
+  resetStateOnDispose: false,
+  producer: getClientProducer,
+});
+
+
+// or
+
+createSource(key, producer, {resetStateOnDispose: false});
 ```
 
 ### `cacheConfig`

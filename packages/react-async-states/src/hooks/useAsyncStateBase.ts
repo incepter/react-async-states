@@ -1,5 +1,5 @@
 import * as React from "react";
-import {invokeIfPresent, isFn, shallowClone} from "shared";
+import {invokeIfPresent, shallowClone} from "shared";
 import {AsyncStateContext} from "../context";
 import {
   inferAsyncStateInstance,
@@ -79,36 +79,15 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
     // if we already rendered, but this time, the async state instance changed
     // for some of many possible reasons.
     if (
+      asyncState &&
       memoizedRef.subscriptionInfo &&
       memoizedRef.subscriptionInfo.asyncState !== subscriptionInfo.asyncState
     ) {
-      setGuard(old => old + 1);
-    } else if (asyncState) {
 
       // whenever we have an async state instance,
       // we will check if the calculated state from the new one
       // is in conflict with the last updated value. if yes set it
-      const renderValue = selectedValue?.state;
-      const newState = readStateFromAsyncState(asyncState, selector)
-      const actualValue = makeUseAsyncStateReturnValue(
-        asyncState,
-        newState,
-        configuration.key as AsyncStateKey,
-        run,
-        mode
-      )
-
-      if (!areEqual(renderValue, actualValue.state)) {
-        setSelectedValue(
-          makeUseAsyncStateReturnValue(
-            asyncState,
-            newState,
-            configuration.key as AsyncStateKey,
-            run,
-            mode
-          )
-        );
-      }
+      ensureStateIsLatest();
     }
 
     memoizedRef.subscriptionInfo = subscriptionInfo;
@@ -138,6 +117,22 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
   React.useEffect(autoRunAsyncState, dependencies);
 
   return selectedValue;
+
+  function ensureStateIsLatest() {
+    const renderValue = selectedValue?.state;
+    const newState = readStateFromAsyncState(asyncState, selector)
+    const actualValue = makeUseAsyncStateReturnValue(
+      asyncState,
+      newState,
+      configuration.key as AsyncStateKey,
+      run,
+      mode
+    )
+
+    if (!areEqual(renderValue, actualValue.state)) {
+      setSelectedValue(actualValue);
+    }
+  }
 
   function initialize(): Readonly<UseAsyncState<T, E>> {
     return makeUseAsyncStateReturnValue(
@@ -310,10 +305,11 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
 
     }
 
+    ensureStateIsLatest();
     return function cleanup() {
       didClean = true;
       if (postUnsubscribe) {
-        postUnsubscribe.forEach(cleanup => invokeIfPresent(cleanup))
+        postUnsubscribe.forEach(fn => invokeIfPresent(fn))
       }
       (unsubscribe as () => void)();
     }

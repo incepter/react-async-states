@@ -2,7 +2,7 @@ import React from "react";
 import {
   AsyncStateProvider,
   useAsyncState,
-  useAsyncStateSelector
+  useSelector
 } from "react-async-states";
 
 function Wrapper({children}) {
@@ -63,6 +63,7 @@ export default function App() {
           <br/>
           <br/>
           <EveryThingInsideProvider/>
+          <SubscribeToWithInput />
         </Wrapper>
       </AsyncStateProvider>
     </>
@@ -115,7 +116,7 @@ function DynamicSubscribe() {
 }
 
 function SimpleSub({subKey}) {
-  const {mode, state, run} = useAsyncState(subKey);
+  const {mode, state, run} = useAsyncState({key: subKey, selector: t => ({...t})}, [subKey]);
 
   function onClick() {
     run(old => old.data + 1)
@@ -133,7 +134,7 @@ function selectAll(all) {
 }
 
 function EveryThingInsideProvider() {
-  const everything = useAsyncStateSelector(() => "counter");
+  const everything = useSelector(() => "counter");
 
 
   return (
@@ -145,4 +146,23 @@ function EveryThingInsideProvider() {
       ))}
     </ul>
   )
+}
+
+function SubscribeToWithInput() {
+  const [key, setKey] = React.useState('');
+  const result = useAsyncState(key, [key])
+  console.log('result', result.mode, result.uniqueId, result.state);
+
+  return (
+    <div>
+      <br />
+      <br />
+      <input value={key} onChange={e => setKey(e.target.value)} />
+      <details open>
+        <pre>{JSON.stringify(result, null, 4)}</pre>
+      </details>
+      <br />
+      <SimpleSub subKey={key} />
+    </div>
+  );
 }

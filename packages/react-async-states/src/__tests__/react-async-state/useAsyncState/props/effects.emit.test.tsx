@@ -25,7 +25,11 @@ describe('should emit from producer', () => {
     }
 
     // when
-    render(<Component/>);
+    render(
+      <React.StrictMode>
+        <Component />
+      </React.StrictMode>
+    );
 
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("0");
@@ -59,7 +63,11 @@ describe('should emit from producer', () => {
     }
 
     // when
-    render(<Component/>);
+    render(
+      <React.StrictMode>
+        <Component />
+      </React.StrictMode>
+    );
 
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("");
@@ -109,7 +117,11 @@ describe('should emit from producer', () => {
     }
 
     // when
-    render(<Component/>);
+    render(
+      <React.StrictMode>
+        <Component />
+      </React.StrictMode>
+    );
 
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("0");
@@ -122,7 +134,7 @@ describe('should emit from producer', () => {
     await act(async () => {
       fireEvent.click(screen.getByTestId("abort"));
     });
-    expect(abortFn).toHaveBeenCalledTimes(1);
+    expect(abortFn).toHaveBeenCalledTimes(2); // 1 strict mode
     expect(abortFn).toHaveBeenCalledWith("tt");
     expect(screen.getByTestId("status").innerHTML)
       .toEqual(AsyncStateStatus.success);
@@ -158,12 +170,16 @@ describe('should emit from producer', () => {
     const mockedErrorLog = jest.fn();
     console.error = mockedErrorLog;
     // when
-    render(<Component/>);
+    render(
+      <React.StrictMode>
+        <Component />
+      </React.StrictMode>
+    );
 
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("0");
     expect(mockedFn).not.toHaveBeenCalled();
-    expect(mockedErrorLog).toHaveBeenCalledTimes(1);
+    expect(mockedErrorLog).toHaveBeenCalledTimes(2); // 1 strict mode
     expect(mockedErrorLog).toHaveBeenCalledWith("Called props.emit before the producer resolves. This is not supported in the library and will have no effect")
 
     console.error = globalErrorLog;

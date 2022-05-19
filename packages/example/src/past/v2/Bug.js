@@ -11,6 +11,7 @@ function load() {
     return localStorage.getItem("remix-cache-users");
   }
 }
+
 function persist(cache) {
   console.log('persisting!!', cache);
   if (typeof window !== "undefined" && typeof window.localStorage !== "undefined") {
@@ -54,16 +55,27 @@ function producer(props) {
 
 export default function Index() {
   return (
-    <AsyncStateProvider initialStates={[timeout]}>
-      <Test />
-    </AsyncStateProvider>
+    <Test/>
   );
 }
 
 function Test() {
-  const {run, mode, state, source} = useAsyncState.auto("users");
+  const {run, mode, state, source} = useAsyncState.auto({
+    key: "users",
+    skipPendingDelayMs: 500,
+    producer(props) {
+      return fetch(`https://jsonplaceholder.typicode.com/users`)
+        .then(s => {
+          if (s.status !== 200) {
+            throw "user not found";
+          }
+          return s;
+        })
+        .then(s => s.json());
+    },
+  });
 
-  console.log(++React.useRef(0).current, mode, state?.status, source?.uniqueId);
+  console.log(mode, state?.status, source?.uniqueId);
   return (
     <div>
       <button onClick={() => run()}>reload</button>

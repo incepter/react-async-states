@@ -33,8 +33,8 @@ import AsyncState, {
   ForkConfig,
   State
 } from "../../async-state";
-import {isAsyncStateSource} from "../../async-state/AsyncState";
 import {readAsyncStateFromSource} from "../../async-state/read-source";
+import {isAsyncStateSource} from "../../async-state/utils";
 
 const listenersKey = Symbol();
 

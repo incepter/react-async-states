@@ -49,7 +49,11 @@ describe('should subscribe to a module level source object', () => {
 
     // when
     jest.useFakeTimers();
-    render(<Test/>);
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
     const incrementBtn = screen.getByTestId("increment");
     const decrementBtn = screen.getByTestId("decrement");
 
@@ -112,7 +116,11 @@ describe('should subscribe to a module level source object', () => {
 
     // when
     jest.useFakeTimers();
-    render(<Test/>);
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
     const incrementABtn = screen.getByTestId("increment-a");
     const incrementBBtn = screen.getByTestId("increment-b");
 

@@ -34,11 +34,15 @@ describe('should run another producer from producer', () => {
 
     // when
 
-    render(<Test/>)
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
     // then
 
-    expect(source1Producer).toHaveBeenCalledTimes(1);
-    expect(source2Producer).toHaveBeenCalledTimes(1);
+    expect(source1Producer).toHaveBeenCalledTimes(2); // 1 strict mode
+    expect(source2Producer).toHaveBeenCalledTimes(2); // 1 strict mode
     expect(source1Producer.mock.calls[0][0].args[0]).toBe(2);
   });
   it('should run producer by source inside provider', () => {
@@ -69,11 +73,14 @@ describe('should run another producer from producer', () => {
 
     // when
 
-    render(<Test/>)
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>)
     // then
 
-    expect(source1Producer).toHaveBeenCalledTimes(1);
-    expect(source2Producer).toHaveBeenCalledTimes(1);
+    expect(source1Producer).toHaveBeenCalledTimes(2); // 1 strict mode
+    expect(source2Producer).toHaveBeenCalledTimes(2); // 1 strict mode
     expect(source1Producer.mock.calls[0][0].args[0]).toBe(1);
   });
   it('should run producer by key', () => {
@@ -105,11 +112,15 @@ describe('should run another producer from producer', () => {
 
     // when
 
-    render(<Test/>)
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
     // then
 
-    expect(source1Producer).toHaveBeenCalledTimes(1);
-    expect(source2Producer).toHaveBeenCalledTimes(1);
+    expect(source1Producer).toHaveBeenCalledTimes(2); // 1 strict mode
+    expect(source2Producer).toHaveBeenCalledTimes(2); // 1 strict mode
     expect(source2Producer.mock.calls[0][0].args[0]).toBe(3);
   });
   it('should run producer by function', () => {
@@ -134,11 +145,15 @@ describe('should run another producer from producer', () => {
 
     // when
 
-    render(<Test/>)
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
     // then
 
-    expect(source1Producer).toHaveBeenCalledTimes(1);
-    expect(source2Producer).toHaveBeenCalledTimes(1);
+    expect(source1Producer).toHaveBeenCalledTimes(2); // 1 strict mode
+    expect(source2Producer).toHaveBeenCalledTimes(2); // 1 strict mode
     expect(source2Producer.mock.calls[0][0].args[0]).toBe(4);
     expect(source2Producer.mock.calls[0][0].payload).toEqual({hello: "world"});
   });
@@ -165,11 +180,15 @@ describe('should run another producer from producer', () => {
 
     // when
 
-    render(<Test/>)
+    render(
+      <React.StrictMode>
+        <Test/>
+      </React.StrictMode>
+    )
     // then
 
-    expect(source1Producer).toHaveBeenCalledTimes(1);
-    expect(source2Producer).toHaveBeenCalledTimes(1);
+    expect(source1Producer).toHaveBeenCalledTimes(2); // 1 strict mode
+    expect(source2Producer).toHaveBeenCalledTimes(2); // 1 strict mode
     expect(source2Producer.mock.calls[0][0].args[0]).toBe(5);
   });
 });
