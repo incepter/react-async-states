@@ -17,23 +17,24 @@ import {
   CleanupFn,
   MemoizedUseAsyncStateRef,
   PartialUseAsyncStateConfiguration,
-  UseAsyncStateConfig,
-  useSelector,
-  UseAsyncStateSubscriptionInfo,
-  UseAsyncState,
   SubscribeEventProps,
-  UseAsyncStateEventFn
+  UseAsyncState,
+  UseAsyncStateConfig,
+  UseAsyncStateEventFn,
+  UseAsyncStateSubscriptionInfo,
+  useSelector
 } from "../types.internal";
 import {
   AsyncStateInterface,
   AsyncStateKey,
-  AsyncStateSource
+  AsyncStateSource,
+  State
 } from "../async-state";
 import {nextKey} from "./utils/key-gen";
 
 const defaultDependencies: any[] = [];
 
-export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
+export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies: any[] = defaultDependencies,
   configOverrides?: PartialUseAsyncStateConfiguration<T, E>,
@@ -274,7 +275,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E>(
             changeHandlers = [events.change];
           }
 
-          const eventProps = { state: nextState };
+          const eventProps = {state: nextState};
 
           changeHandlers.forEach(event => {
             event(eventProps);

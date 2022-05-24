@@ -224,7 +224,7 @@ export type EqualityFn<T> = (
 ) => boolean;
 
 
-export type UseAsyncStateConfiguration<T, E> = {
+export type UseAsyncStateConfiguration<T, E = State<T>> = {
   key?: AsyncStateKey,
   source?: AsyncStateSource<T>,
   initialValue?: T,
@@ -272,41 +272,12 @@ export type SubscribeEventProps<T> = {
   invalidateCache: (cacheKey?: string) => void,
 }
 
-export type useSelector<T, E> = (
-  ((currentState: State<T>) => E)
-  |
-  ((currentState: State<T>, lastSuccess: State<T>) => E)
-  |
-  ((
+export type useSelector<T, E> =
+  (
     currentState: State<T>, lastSuccess: State<T>, cache: { [id: string]: CachedState<T> }
-  ) => E))
-  ;
+  ) => E;
 
-export type PartialUseAsyncStateConfiguration<T, E> = {
-  key?: AsyncStateKey,
-  source?: AsyncStateSource<T>,
-  initialValue?: T,
-  runEffect?: ProducerRunEffects,
-  runEffectDurationMs?: number,
-  resetStateOnDispose?: boolean,
-  skipPendingDelayMs?: number,
-  payload?: { [id: string]: any },
-
-  lazy?: boolean,
-  fork?: boolean,
-  condition?: boolean,
-  hoistToProvider?: boolean,
-  forkConfig?: ForkConfig,
-  hoistToProviderConfig?: HoistToProviderConfig,
-
-  subscriptionKey?: AsyncStateKey,
-
-  producer?: Producer<T>,
-  selector?: useSelector<T, E>,
-  areEqual?: EqualityFn<E>,
-
-  cacheConfig?: CacheConfig<T>,
-}
+export type PartialUseAsyncStateConfiguration<T, E> = Partial<UseAsyncStateConfiguration<T, E>>
 
 export type UseAsyncStateSubscriptionInfo<T, E> = {
   mode: AsyncStateSubscriptionMode,
@@ -327,7 +298,7 @@ export type UseAsyncStateRefsFactory<T, E> = {
 
 export type UseAsyncStateContextType = AsyncStateContextValue | null;
 
-export type UseAsyncStateConfig<T, E> =
+export type UseAsyncStateConfig<T, E = State<T>> =
   string
   | Producer<T>
   | AsyncStateSource<T>
