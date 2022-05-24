@@ -10,8 +10,11 @@ export type {
   ProducerProps,
   ProducerConfig,
   AsyncStateSource,
-  ProducerRunEffects,
   ProducerSavedProps,
+} from "./async-state/types";
+
+export {
+  ProducerRunEffects,
 } from "./async-state/types";
 
 export type {
