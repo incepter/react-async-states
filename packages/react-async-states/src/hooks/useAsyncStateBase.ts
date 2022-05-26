@@ -1,5 +1,5 @@
 import * as React from "react";
-import {invokeIfPresent, shallowClone} from "shared";
+import {__DEV__, invokeIfPresent, shallowClone} from "shared";
 import {AsyncStateContext} from "../context";
 import {
   inferAsyncStateInstance,
@@ -31,6 +31,9 @@ import {
   State
 } from "../async-state";
 import {nextKey} from "./utils/key-gen";
+import {
+  warnInDevAboutIrrelevantUseAsyncStateConfiguration
+} from "../helpers/configuration-warn";
 
 const defaultDependencies: any[] = [];
 
@@ -150,7 +153,6 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
     return Object.create(null);
   }
 
-
   function parseConfiguration(): UseAsyncStateSubscriptionInfo<T, E> {
 
     // read the new used configuration
@@ -171,6 +173,11 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
         newConfig.key = nextKey();
       }
     }
+
+    if (__DEV__) {
+      warnInDevAboutIrrelevantUseAsyncStateConfiguration(newMode, newConfig);
+    }
+
 
     // in most of cases, the AsyncStateInterface could be reused and a new one
     // is not necessary.

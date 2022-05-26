@@ -223,31 +223,33 @@ export type EqualityFn<T> = (
   next: T
 ) => boolean;
 
-
 export type UseAsyncStateConfiguration<T, E = State<T>> = {
+  subscriptionKey?: AsyncStateKey,
+
   key?: AsyncStateKey,
   source?: AsyncStateSource<T>,
+
+  producer?: Producer<T>,
   initialValue?: T,
+
+  lazy?: boolean,
+  condition?: boolean,
+  payload?: { [id: string]: any },
+
   runEffect?: ProducerRunEffects,
   skipPendingDelayMs?: number,
   runEffectDurationMs?: number,
   resetStateOnDispose?: boolean,
-  payload?: { [id: string]: any },
+  cacheConfig?: CacheConfig<T>,
 
-  lazy?: boolean,
   fork?: boolean,
-  condition?: boolean,
-  hoistToProvider?: boolean,
   forkConfig?: ForkConfig,
+
+  hoistToProvider?: boolean,
   hoistToProviderConfig?: HoistToProviderConfig,
 
-  subscriptionKey?: AsyncStateKey,
-
-  producer?: Producer<T>,
   selector: useSelector<T, E>,
   areEqual: EqualityFn<E>,
-
-  cacheConfig?: CacheConfig<T>,
 
   events?: UseAsyncStateEvents<T>
 }
@@ -258,7 +260,9 @@ export type UseAsyncStateEventProps<T> = {
 
 export type UseAsyncStateEventFn<T> = (props: UseAsyncStateEventProps<T>) => {};
 
-export type UseAsyncStateEventSubscribe<T> = ((props: SubscribeEventProps<T>) => CleanupFn) | ((props: SubscribeEventProps<T>) => CleanupFn)[]
+export type UseAsyncStateEventSubscribe<T> =
+  ((props: SubscribeEventProps<T>) => CleanupFn)
+  | ((props: SubscribeEventProps<T>) => CleanupFn)[]
 
 export type UseAsyncStateEvents<T> = {
   change?: UseAsyncStateEventFn<T> | UseAsyncStateEventFn<T>[],
@@ -274,7 +278,8 @@ export type SubscribeEventProps<T> = {
 
 export type useSelector<T, E> =
   (
-    currentState: State<T>, lastSuccess: State<T>, cache: { [id: string]: CachedState<T> }
+    currentState: State<T>, lastSuccess: State<T>,
+    cache: { [id: string]: CachedState<T> }
   ) => E;
 
 export type PartialUseAsyncStateConfiguration<T, E> = Partial<UseAsyncStateConfiguration<T, E>>
