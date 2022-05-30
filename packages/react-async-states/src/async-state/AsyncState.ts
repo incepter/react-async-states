@@ -60,6 +60,9 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
   readonly originalProducer: Producer<T> | undefined;
   private currentAborter: AbortFn = undefined;
 
+  private pendingUpdate:
+    { timeoutId: ReturnType<typeof setTimeout>, callback: () => void } | null = null;
+
   //endregion
 
   constructor(
@@ -104,8 +107,6 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
   isCacheEnabled(): boolean {
     return !!this.config.cacheConfig?.enabled;
   }
-
-  pendingUpdate: { timeoutId: ReturnType<typeof setTimeout>, callback: () => void } | null = null;
 
   setState(
     newState: State<T>,

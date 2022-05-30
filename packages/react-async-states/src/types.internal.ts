@@ -2,7 +2,7 @@ import {
   AbortFn,
   AsyncStateInterface,
   AsyncStateKey,
-  AsyncStateSource,
+  AsyncStateSource, AsyncStateStatus,
   CacheConfig,
   CachedState,
   ForkConfig,
@@ -258,7 +258,18 @@ export type UseAsyncStateEventProps<T> = {
   state: State<T>,
 };
 
-export type UseAsyncStateEventFn<T> = (props: UseAsyncStateEventProps<T>) => {};
+type UseAsyncStateChangeEventHandler<T> =
+  ((props: UseAsyncStateEventProps<T>) => void)
+
+export type UseAsyncStateEventFn<T> =
+  UseAsyncStateChangeEvent<T>
+  |
+  UseAsyncStateChangeEventHandler<T>;
+
+export type UseAsyncStateChangeEvent<T> = {
+  status: AsyncStateStatus
+  handler: UseAsyncStateChangeEventHandler<T>,
+}
 
 export type UseAsyncStateEventSubscribe<T> =
   ((props: SubscribeEventProps<T>) => CleanupFn)
