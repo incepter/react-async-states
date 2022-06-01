@@ -251,7 +251,8 @@ export type UseAsyncStateConfiguration<T, E = State<T>> = {
   selector: useSelector<T, E>,
   areEqual: EqualityFn<E>,
 
-  events?: UseAsyncStateEvents<T>
+  events?: UseAsyncStateEvents<T>,
+  lane?: string,
 }
 
 export type UseAsyncStateEventProps<T> = {

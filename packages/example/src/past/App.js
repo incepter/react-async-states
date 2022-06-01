@@ -11,7 +11,7 @@ import EmitDemo from "./EmitDemo";
 import ReduxDemo from "./ReduxDemo";
 import BrokerDemo from "./BrokerDemo";
 import NextDemo from "./NextDemo";
-import ReplaceStateDemo from "./ReplaceStateDemo";
+import LanesDemo from "./LanesDemo";
 import Navigation from "./Navigation";
 import DemoProvider from "./Provider";
 
@@ -91,7 +91,7 @@ export default function App() {
             <Route path="/broker" element={<BrokerDemo/>}>
 
             </Route>
-            <Route path="/replace-state" element={<ReplaceStateDemo/>}>
+            <Route path="/lanes" element={<LanesDemo/>}>
 
             </Route>
             <Route path="/standalone" element={<StandaloneDemo/>}>

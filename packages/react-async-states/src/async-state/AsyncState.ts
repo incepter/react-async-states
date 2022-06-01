@@ -47,6 +47,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   cache: { [id: AsyncStateKey]: CachedState<T> } = Object.create(null);
 
+  private lanes: Record<string, AsyncStateInterface<T>> = {};
   private locks: number = 0;
   private forkCount: number = 0;
   payload: { [id: string]: any } | null = null;
@@ -103,6 +104,23 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
     if (__DEV__) devtools.emitCreation(this);
   }
+
+  getLane(laneKey?: string): AsyncStateInterface<T> {
+    if (!laneKey) {
+      return this;
+    }
+    if (this.lanes[laneKey]) {
+      return this.lanes[laneKey];
+    }
+
+    this.lanes[laneKey] = this.fork({
+      key: laneKey,
+      keepCache: true,
+      keepState: false,
+    });
+    return this.lanes[laneKey];
+  }
+
 
   isCacheEnabled(): boolean {
     return !!this.config.cacheConfig?.enabled;

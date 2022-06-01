@@ -480,6 +480,10 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
     newAsyncState = memoizedRef.subscriptionInfo.asyncState;
   }
 
+  if (newConfig.lane) {
+    newAsyncState = newAsyncState.getLane(newConfig.lane);
+  }
+
   let output: UseAsyncStateSubscriptionInfo<T, E> = {
     guard,
     mode: newMode,

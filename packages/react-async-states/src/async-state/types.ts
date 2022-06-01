@@ -1,5 +1,4 @@
 import {AsyncStateKeyOrSource} from "../types.internal";
-import {createRunExtraPropsCreator} from "../helpers/run-props-creator";
 
 export enum AsyncStateStatus {
   error = "error",
@@ -150,6 +149,8 @@ export interface AsyncStateInterface<T> {
   run: (extraPropsCreator: RunExtraPropsCreator<T>, ...args: any[]) => AbortFn,
   fork: (forkConfig?: ForkConfig) => AsyncStateInterface<T>,
   subscribe: (cb: Function, subscriptionKey?: AsyncStateKey) => AbortFn,
+
+  getLane(laneKey?: string): AsyncStateInterface<T>,
 }
 
 export interface StateBuilderInterface {
