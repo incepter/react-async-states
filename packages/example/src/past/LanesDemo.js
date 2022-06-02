@@ -14,7 +14,19 @@ function getUserDetails({onAbort, payload: {id}}) {
   ).then(r => r.json());
 }
 
-const userDetailsSource = createSource("user-details", getUserDetails);
+const userDetailsSource = createSource(
+  "user-details",
+  getUserDetails,
+  {
+    cacheConfig: {
+      enabled: true,
+      getDeadline: () => 2000,
+      hash: (_, payload) => payload.id,
+      load: () => JSON.parse(localStorage.getItem("haha")),
+      persist: c => localStorage.setItem("haha", JSON.stringify(c)),
+    }
+  }
+);
 
 export default function LanesDemo() {
   const ref = React.useRef();

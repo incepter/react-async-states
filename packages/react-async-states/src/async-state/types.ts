@@ -150,6 +150,8 @@ export interface AsyncStateInterface<T> {
   fork: (forkConfig?: ForkConfig) => AsyncStateInterface<T>,
   subscribe: (cb: Function, subscriptionKey?: AsyncStateKey) => AbortFn,
 
+  parent: AsyncStateInterface<T> | null,
+  lanes: Record<string, AsyncStateInterface<T>>,
   getLane(laneKey?: string): AsyncStateInterface<T>,
 }
 

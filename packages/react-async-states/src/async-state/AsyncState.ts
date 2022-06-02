@@ -47,7 +47,9 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   cache: { [id: AsyncStateKey]: CachedState<T> } = Object.create(null);
 
-  private lanes: Record<string, AsyncStateInterface<T>> = {};
+  parent: AsyncStateInterface<T> | null;
+  lanes: Record<string, AsyncStateInterface<T>>;
+
   private locks: number = 0;
   private forkCount: number = 0;
   payload: { [id: string]: any } | null = null;
@@ -86,18 +88,30 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       this.uniqueId = nextUniqueId();
     }
 
+    this.parent = null;
+    this.lanes = Object.create(null);
+
     this._source = makeSource(this);
 
     Object.preventExtensions(this);
 
-    if (this.isCacheEnabled() && typeof this.config.cacheConfig?.load === "function") {
-      const loadedCache = this.config.cacheConfig.load();
-      if (loadedCache) {
-        if (isPromise(loadedCache)) {
-          (loadedCache as Promise<{ [id: AsyncStateKey]: CachedState<T> }>)
-            .then(asyncCache => this.cache = asyncCache)
-        } else {
-          this.cache = loadedCache as { [id: AsyncStateKey]: CachedState<T> };
+    if (
+      this.isCacheEnabled() &&
+      typeof this.config.cacheConfig?.load === "function"
+    ) {
+      // if there is a parent (set with lane), take its cache
+      if (this.parent !== null) {
+        const topLevelParent: AsyncStateInterface<T> = getTopLevelParent(this);
+        this.cache = topLevelParent.cache;
+      } else {
+        const loadedCache = this.config.cacheConfig.load();
+        if (loadedCache) {
+          if (isPromise(loadedCache)) {
+            (loadedCache as Promise<{ [id: AsyncStateKey]: CachedState<T> }>)
+              .then(asyncCache => this.cache = asyncCache)
+          } else {
+            this.cache = loadedCache as { [id: AsyncStateKey]: CachedState<T> };
+          }
         }
       }
     }
@@ -109,16 +123,20 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     if (!laneKey) {
       return this;
     }
+    console.log('getting lane with key', laneKey)
     if (this.lanes[laneKey]) {
       return this.lanes[laneKey];
     }
 
-    this.lanes[laneKey] = this.fork({
+    const newLane = this.fork({
       key: laneKey,
       keepCache: true,
       keepState: false,
     });
-    return this.lanes[laneKey];
+    newLane.parent = this;
+
+    this.lanes[laneKey] = newLane;
+    return newLane;
   }
 
 
@@ -172,15 +190,19 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
           this.config.cacheConfig
         );
         if (this.cache[runHash]?.state !== this.currentState) {
-          this.cache[runHash] = {
+          const topLevelParent: AsyncStateInterface<T> = getTopLevelParent(this);
+
+          topLevelParent.cache[runHash] = {
             state: this.currentState,
             deadline: this.config.cacheConfig?.getDeadline?.(this.currentState) || Infinity,
             addedAt: Date.now(),
           };
 
-          if (typeof this.config.cacheConfig?.persist === "function") {
-            this.config.cacheConfig.persist(this.cache);
+          if (typeof topLevelParent.config.cacheConfig?.persist === "function") {
+            topLevelParent.config.cacheConfig.persist(topLevelParent.cache);
           }
+
+          spreadCacheChangeOnLanes(topLevelParent);
         }
       }
     }
@@ -201,15 +223,19 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   invalidateCache(cacheKey?: string) {
     if (this.isCacheEnabled()) {
+      const topLevelParent:AsyncStateInterface<T> = getTopLevelParent(this);
+
       if (!cacheKey) {
-        this.cache = Object.create(null);
+        topLevelParent.cache = Object.create(null);
       } else {
-        delete this.cache[cacheKey];
+        delete topLevelParent.cache[cacheKey];
       }
 
-      if (typeof this.config.cacheConfig?.persist === "function") {
-        this.config.cacheConfig.persist(this.cache);
+      if (typeof topLevelParent.config.cacheConfig?.persist === "function") {
+        topLevelParent.config.cacheConfig.persist(topLevelParent.cache);
       }
+
+      spreadCacheChangeOnLanes(topLevelParent);
     }
   }
 
@@ -331,7 +357,9 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
           }
           return;
         } else {
-          delete this.cache[runHash];
+          const topLevelParent: AsyncStateInterface<T> = getTopLevelParent(this);
+          delete topLevelParent.cache[runHash];
+          spreadCacheChangeOnLanes(topLevelParent);
         }
       }
     }
@@ -527,4 +555,20 @@ function notifySubscribers(asyncState: AsyncStateInterface<any>) {
   Object.values(asyncState.subscriptions).forEach(subscription => {
     subscription.callback(asyncState.currentState);
   });
+}
+
+function getTopLevelParent<T>(base: AsyncStateInterface<T>): AsyncStateInterface<T> {
+  let current = base;
+  while (current.parent !== null) {
+    current = current.parent;
+  }
+  return current;
+}
+
+function spreadCacheChangeOnLanes<T>(topLevelParent: AsyncStateInterface<T>) {
+  Object.values(topLevelParent.lanes)
+    .forEach(lane => {
+      lane.cache = topLevelParent.cache;
+      spreadCacheChangeOnLanes(lane);
+    });
 }
