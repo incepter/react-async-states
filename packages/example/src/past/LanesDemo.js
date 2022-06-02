@@ -1,5 +1,5 @@
 import React from "react";
-import { createSource, useAsyncState } from "react-async-states";
+import { createSource, useAsyncState, AsyncStateProvider } from "react-async-states";
 
 function getUserDetails({onAbort, payload: {id}}) {
   const controller = new AbortController();
@@ -33,7 +33,7 @@ export default function LanesDemo() {
   const [state, setState] = React.useState([]);
 
   return (
-    <div>
+    <AsyncStateProvider initialStates={[userDetailsSource]}>
       <input ref={ref}/>
       <button
         onClick={() => setState(old => ([...old, ref.current.value]))}>Add
@@ -43,7 +43,15 @@ export default function LanesDemo() {
       <hr/>
       {state.map((userId, i) => <UserDetails key={`${userId}-${i}`}
                                              userId={userId}/>)}
-    </div>
+
+
+      <br />
+      <br />
+      <br />
+      <br />
+      <hr />
+      <PropsRunsDemo />
+    </AsyncStateProvider>
   );
 }
 
@@ -82,6 +90,36 @@ function UserDetailsRoot() {
           {JSON.stringify(state, null, 4)}
         </pre>
       </details>
+    </div>
+  );
+}
+
+
+function runProducer(props) {
+  const {args: [lane]} = props;
+
+  props.run('user-details', {lane})
+}
+
+async function runpProducer(props) {
+  const {args: [lane]} = props;
+
+  const result = await props.runp('user-details', {lane})
+  return 1;
+}
+
+function PropsRunsDemo() {
+  const ref = React.useRef();
+
+  const {run} = useAsyncState(runProducer)
+  const {run: runp} = useAsyncState(runpProducer)
+
+
+  return (
+    <div>
+    <input ref={ref} />
+      <button onClick={() => run(ref.current.value)}>run</button>
+      <button onClick={() => runp(ref.current.value)}>runp</button>
     </div>
   );
 }

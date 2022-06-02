@@ -181,6 +181,7 @@ export type RunExtraPropsCreator<T> = (props: ProducerProps<T>) => RunExtraProps
 export type ProducerPropsRunInput<T> = AsyncStateKeyOrSource<T> | Producer<T>;
 
 export type ProducerPropsRunConfig = {
+  lane?: string,
   fork?: boolean,
   payload?: { [id: string]: any } | null,
 };

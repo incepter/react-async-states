@@ -58,7 +58,6 @@ export function AsyncStateComponent<T, E>({
     }
 
     if (asyncState.currentState.status === AsyncStateStatus.error) {
-      console.log('here', props)
       return render(error, props);
     }
 

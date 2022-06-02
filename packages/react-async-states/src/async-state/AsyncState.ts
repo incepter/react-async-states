@@ -123,7 +123,6 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     if (!laneKey) {
       return this;
     }
-    console.log('getting lane with key', laneKey)
     if (this.lanes[laneKey]) {
       return this.lanes[laneKey];
     }
