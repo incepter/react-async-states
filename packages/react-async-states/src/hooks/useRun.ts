@@ -1,5 +1,11 @@
 import * as React from "react";
-import {AbortFn, AsyncStateSource} from "../async-state";
+import {
+  AbortFn,
+  AsyncStateSource,
+  AsyncStateStatus,
+  State
+} from "../async-state";
+import {invokeIfPresent} from "../../../shared";
 import {AsyncStateKeyOrSource} from "../types.internal";
 import {AsyncStateContext} from "../context";
 import {readAsyncStateFromSource} from "../async-state/read-source";
@@ -13,6 +19,27 @@ function runBySource<T>(src: AsyncStateSource<T>, lane?: string) {
 
 export function runSource<T>(src: AsyncStateSource<T>, ...args) {
   return runBySource(src)(...args);
+}
+
+export function runpSourceLane<T>(src: AsyncStateSource<T>, lane: string | undefined, ...args) {
+  let asyncState = readAsyncStateFromSource(src).getLane(lane);
+  return new Promise(resolve => {
+    let unsubscribe = asyncState.subscribe(subscription);
+
+    function subscription(newState: State<T>) {
+      if (newState.status === AsyncStateStatus.success
+        || newState.status === AsyncStateStatus.error) {
+        invokeIfPresent(unsubscribe);
+        resolve(newState);
+      }
+    }
+
+    asyncState.run(standaloneRunExtraPropsCreator, ...args);
+  });
+}
+
+export function runpSource<T>(src: AsyncStateSource<T>, ...args) {
+  return runpSourceLane(src, undefined, ...args);
 }
 
 export function runSourceLane<T>(src: AsyncStateSource<T>, lane: string | undefined, ...args) {

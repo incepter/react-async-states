@@ -95,6 +95,12 @@ function createRunPFunction(manager, props) {
     }
 
     return new Promise(resolve => {
+      let unsubscribe = asyncState.subscribe(subscription);
+      props.onAbort(unsubscribe);
+
+      let abort = asyncState.run(runExtraPropsCreator, ...args);
+      props.onAbort(abort);
+
       function subscription(newState: State<T>) {
         if (newState.status === AsyncStateStatus.success
           || newState.status === AsyncStateStatus.error) {
@@ -102,12 +108,6 @@ function createRunPFunction(manager, props) {
           resolve(newState);
         }
       }
-
-      let unsubscribe = asyncState.subscribe(subscription);
-      props.onAbort(unsubscribe);
-
-      let abort = asyncState.run(runExtraPropsCreator, ...args);
-      props.onAbort(abort);
     });
   }
 }

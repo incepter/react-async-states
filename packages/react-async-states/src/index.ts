@@ -3,7 +3,13 @@ export {createSource} from "./helpers/create-async-state";
 export {createReducerProducer} from "./helpers/create-producer";
 export {AsyncStateProvider} from "./provider/AsyncStateProvider";
 export {
-  runSource, useRun, useRunLane, runSourceLane, useRunAsyncState
+  useRun,
+  runSource,
+  useRunLane,
+  runpSource,
+  runSourceLane,
+  runpSourceLane,
+  useRunAsyncState,
 } from "./hooks/useRun";
 export {AsyncStateComponent} from "./components/AsyncStateComponent";
 export {useSelector, useAsyncStateSelector} from "./hooks/useSelector";
