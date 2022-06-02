@@ -46,7 +46,7 @@ describe('subscribe to lane and operate on it', () => {
   }
 
   function CounterSub({counterKey = "default", alias = "default"}) {
-    const {state: {data}, run} = useAsyncState({
+    const {state: {data}, run} = useAsyncState.lazy({
       lane: counterKey,
       source: countersSource,
     });
