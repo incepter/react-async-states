@@ -6,13 +6,17 @@ import {readAsyncStateFromSource} from "../async-state/read-source";
 import {standaloneRunExtraPropsCreator} from "../helpers/run-props-creator";
 
 
-function runBySource<T>(src: AsyncStateSource<T>) {
-  const asyncState = readAsyncStateFromSource(src);
+function runBySource<T>(src: AsyncStateSource<T>, lane?: string) {
+  let asyncState = readAsyncStateFromSource(src).getLane(lane);
   return asyncState.run.bind(asyncState, standaloneRunExtraPropsCreator);
 }
 
 export function runSource<T>(src: AsyncStateSource<T>, ...args) {
   return runBySource(src)(...args);
+}
+
+export function runSourceLane<T>(src: AsyncStateSource<T>, lane: string | undefined, ...args) {
+  return runBySource(src, lane)(...args);
 }
 
 export function useRun<T>():
@@ -31,7 +35,29 @@ export function useRun<T>():
           return runBySource(keyOrSource)(...args);
         }
       }
-      return contextValue.runAsyncState(keyOrSource, ...args);
+      return contextValue.runAsyncState(keyOrSource, undefined, ...args);
+    }
+  }, []);
+}
+
+export function useRunLane<T>():
+  ((keyOrSource: AsyncStateKeyOrSource<T>, ...args: any[]) => AbortFn) {
+  const contextValue = React.useContext(AsyncStateContext);
+
+  return React.useMemo(() => {
+    return function runLane(
+      keyOrSource: AsyncStateKeyOrSource<T>,
+      lane: string | undefined,
+      ...args: any[]
+    ): AbortFn {
+      if (contextValue === null) {
+        if (typeof keyOrSource === "string") {
+          return undefined;
+        } else {
+          return runBySource(keyOrSource, lane)(...args);
+        }
+      }
+      return contextValue.runAsyncState(keyOrSource, lane, ...args);
     }
   }, []);
 }

@@ -1,5 +1,11 @@
 import React from "react";
-import { createSource, useAsyncState, AsyncStateProvider } from "react-async-states";
+import {
+  createSource,
+  useAsyncState,
+  AsyncStateProvider,
+  useRunLane,
+  runSourceLane
+} from "react-async-states";
 
 function getUserDetails({onAbort, payload: {id}}) {
   const controller = new AbortController();
@@ -45,12 +51,12 @@ export default function LanesDemo() {
                                              userId={userId}/>)}
 
 
-      <br />
-      <br />
-      <br />
-      <br />
-      <hr />
-      <PropsRunsDemo />
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <hr/>
+      <PropsRunsDemo/>
     </AsyncStateProvider>
   );
 }
@@ -68,7 +74,9 @@ function UserDetails({userId}) {
       <details>
         <summary style={{
           backgroundColor: state.status === "pending" ? "cyan" : "transparent",
-        }}>User {userId} details -- status is {state.status} <button onClick={() => run()}>run</button></summary>
+        }}>User {userId} details -- status is {state.status}
+          <button onClick={() => run()}>run</button>
+        </summary>
         <pre>
           {JSON.stringify(state, null, 4)}
         </pre>
@@ -111,15 +119,20 @@ async function runpProducer(props) {
 function PropsRunsDemo() {
   const ref = React.useRef();
 
-  const {run} = useAsyncState(runProducer)
-  const {run: runp} = useAsyncState(runpProducer)
+  const runLane = useRunLane();
+  // const {run} = useAsyncState(runProducer)
+  // const {run: runp} = useAsyncState(runpProducer)
 
 
   return (
     <div>
-    <input ref={ref} />
-      <button onClick={() => run(ref.current.value)}>run</button>
-      <button onClick={() => runp(ref.current.value)}>runp</button>
+      <input ref={ref}/>
+      <button
+        onClick={() => runLane('user-details', ref.current.value, ref.current.value)}
+      >runLane</button>
+      <button
+        onClick={() => runSourceLane(userDetailsSource, ref.current.value, ref.current.value)}
+      >runSourceLane</button>
     </div>
   );
 }

@@ -148,6 +148,11 @@ export type AsyncStateManagerInterface = {
     keyOrSource: AsyncStateKeyOrSource<T>,
     ...args: any[]
   ): AbortFn,
+  runAsyncStateLane<T>(
+    keyOrSource: AsyncStateKeyOrSource<T>,
+    lane: string | undefined,
+    ...args: any[]
+  ): AbortFn,
   getAllKeys(): AsyncStateKey[],
   watchAll(cb: ManagerWatchCallback<any>),
   setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[],
@@ -186,6 +191,7 @@ export type AsyncStateContextValue = {
   ): void,
   runAsyncState<T>(
     keyOrSource: AsyncStateKeyOrSource<T>,
+    lane: string | undefined,
     ...args: any[]
   ): AbortFn,
   getAllKeys(): AsyncStateKey[],
