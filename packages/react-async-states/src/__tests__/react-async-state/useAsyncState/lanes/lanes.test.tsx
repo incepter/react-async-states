@@ -3,7 +3,11 @@ import {act, fireEvent, render, screen} from "@testing-library/react";
 import {mockDateNow} from "../../utils/setup";
 import {createSource} from "../../../../helpers/create-async-state";
 import {useAsyncState} from "../../../../hooks/useAsyncState";
-import {runpSourceLane, runSourceLane} from "../../../../hooks/useRun";
+import {
+  runpSourceLane,
+  runSource,
+  runSourceLane
+} from "../../../../hooks/useRun";
 
 mockDateNow();
 
@@ -32,16 +36,16 @@ describe('subscribe to lane and operate on it', () => {
       <div>
         <CounterSub/>
         <CounterSub alias="1"/>
-        <CounterSub alias="1" counterKey="counter-1"/>
-        <CounterSub alias="1" counterKey="counter-2"/>
-        <CounterSub alias="2" counterKey="counter-2"/>
         <CounterSub counterKey="counter-3"/>
         <CounterSub counterKey="counter-4"/>
+        <CounterSub counterKey="counter-2-extra"/>
+        <CounterSub alias="1" counterKey="counter-1"/>
+        <CounterSub alias="2" counterKey="counter-2"/>
       </div>
     );
   }
 
-  function CounterSub({counterKey = "default", alias="default"}) {
+  function CounterSub({counterKey = "default", alias = "default"}) {
     const {state: {data}, run} = useAsyncState({
       lane: counterKey,
       source: countersSource,
@@ -51,7 +55,8 @@ describe('subscribe to lane and operate on it', () => {
         <button
           data-testid={`counter-sub-${counterKey}-${alias}-run`}
           onClick={() => run()}
-        >Run</button>
+        >Run
+        </button>
         <span
           data-testid={`counter-sub-${counterKey}-${alias}-data`}
         >
@@ -83,8 +88,6 @@ describe('subscribe to lane and operate on it', () => {
       .toEqual("counter-counter-4-default-0");
     expect(screen.getByTestId("counter-sub-counter-1-1-data").innerHTML)
       .toEqual("counter-counter-1-1-0");
-    expect(screen.getByTestId("counter-sub-counter-2-1-data").innerHTML)
-      .toEqual("counter-counter-2-1-0");
     expect(screen.getByTestId("counter-sub-counter-2-2-data").innerHTML)
       .toEqual("counter-counter-2-2-0");
 
@@ -95,7 +98,6 @@ describe('subscribe to lane and operate on it', () => {
     // then
     act(() => {
       fireEvent.click(runDefaultCounter);
-      fireEvent.click(runCounter2);
     });
 
     await act(async () => {
@@ -111,7 +113,7 @@ describe('subscribe to lane and operate on it', () => {
     expect(screen.getByTestId("counter-sub-counter-1-1-data").innerHTML)
       .toEqual("counter-counter-1-1-0"); // was not ran
     expect(screen.getByTestId("counter-sub-counter-2-2-data").innerHTML)
-      .toEqual("counter-counter-2-2-1");
+      .toEqual("counter-counter-2-2-0");
 
 
     act(() => {
@@ -131,7 +133,7 @@ describe('subscribe to lane and operate on it', () => {
     expect(screen.getByTestId("counter-sub-counter-1-1-data").innerHTML)
       .toEqual("counter-counter-1-1-3");
     expect(screen.getByTestId("counter-sub-counter-2-2-data").innerHTML)
-      .toEqual("counter-counter-2-2-4");
+      .toEqual("counter-counter-2-2-0");
     expect(screen.getByTestId("counter-sub-counter-3-default-data").innerHTML)
       .toEqual("counter-counter-3-default-0"); // not ran
     expect(screen.getByTestId("counter-sub-counter-4-default-data").innerHTML)
@@ -167,6 +169,37 @@ describe('subscribe to lane and operate on it', () => {
       .toEqual("counter-counter-3-default-2");
     expect(screen.getByTestId("counter-sub-counter-4-default-data").innerHTML)
       .toEqual("counter-counter-4-default-1");
+
+
+    // now let's run lanes from producers
+
+    // counter-{counterKey}-{alias}-{data}
+    expect(screen.getByTestId("counter-sub-counter-2-2-data").innerHTML)
+      .toEqual("counter-counter-2-2-0");
+    expect(screen.getByTestId("counter-sub-counter-2-extra-default-data").innerHTML)
+      .toEqual("counter-counter-2-extra-default-0");
+    act(() => {
+      runSource(
+        createSource(
+          "temporary-will-run-counter-2",
+          async function (props) {
+            props.run(countersSource, {lane: "counter-2-extra"})
+            props.runp(countersSource, {lane: "counter-2"})
+          }
+        )
+      )
+    });
+
+    await act(async () => {
+      await jest.advanceTimersByTime(1000);
+    });
+
+    // counter-{counterKey}-{alias}-{data}
+    expect(screen.getByTestId("counter-sub-counter-2-2-data").innerHTML)
+      .toEqual("counter-counter-2-2-1");
+    expect(screen.getByTestId("counter-sub-counter-2-extra-default-data").innerHTML)
+      .toEqual("counter-counter-2-extra-default-1");
+
   });
 });
 

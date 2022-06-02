@@ -69,6 +69,7 @@
     "coveragePathIgnorePatterns": [
       "__tests__",
       "index-prod.js",
+      "configuration-warn",
       "type*.ts"
     ],
     "testMatch": [

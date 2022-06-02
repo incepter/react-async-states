@@ -493,7 +493,6 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
     run: runAsyncStateSubscriptionFn(
       newMode,
       newAsyncState,
-      newConfig,
       contextValue
     ),
     dispose: disposeAsyncStateSubscriptionFn(

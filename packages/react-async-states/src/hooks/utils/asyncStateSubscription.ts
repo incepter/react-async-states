@@ -10,7 +10,6 @@ import {standaloneRunExtraPropsCreator} from "../../helpers/run-props-creator";
 export function runAsyncStateSubscriptionFn<T, E>(
   mode: AsyncStateSubscriptionMode,
   asyncState: AsyncStateInterface<T>,
-  configuration: UseAsyncStateConfiguration<T, E>,
   contextValue: UseAsyncStateContextType
 ): (...args: any[]) => AbortFn {
   return function run(...args) {
@@ -35,7 +34,7 @@ export function runAsyncStateSubscriptionFn<T, E>(
           ...args
         );
       }
-      // NoOp
+      // NoOp - should not happen
       case AsyncStateSubscriptionMode.NOOP:
       case AsyncStateSubscriptionMode.WAITING:
       default:
@@ -53,7 +52,7 @@ export function disposeAsyncStateSubscriptionFn<T, E>(
     switch (mode) {
       case AsyncStateSubscriptionMode.HOIST:
         return (contextValue as AsyncStateContextValue).dispose(asyncState);
-      // NoOp
+      // NoOp - should not happen
       case AsyncStateSubscriptionMode.SOURCE:
       case AsyncStateSubscriptionMode.SOURCE_FORK:
       case AsyncStateSubscriptionMode.LISTEN:
