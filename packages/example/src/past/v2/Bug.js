@@ -63,6 +63,8 @@ function Test() {
   const {run, mode, state, source} = useAsyncState.auto({
     key: "users",
     skipPendingDelayMs: 500,
+    hoistToProvider: true,
+    hoistToProviderConfig: {},
     producer(props) {
       return fetch(`https://jsonplaceholder.typicode.com/users`)
         .then(s => {

@@ -2,7 +2,7 @@ import {
   AbortFn,
   AsyncStateInterface,
   AsyncStateKey,
-  AsyncStateSource,
+  AsyncStateSource, AsyncStateStatus,
   CacheConfig,
   CachedState,
   ForkConfig,
@@ -148,6 +148,11 @@ export type AsyncStateManagerInterface = {
     keyOrSource: AsyncStateKeyOrSource<T>,
     ...args: any[]
   ): AbortFn,
+  runAsyncStateLane<T>(
+    keyOrSource: AsyncStateKeyOrSource<T>,
+    lane: string | undefined,
+    ...args: any[]
+  ): AbortFn,
   getAllKeys(): AsyncStateKey[],
   watchAll(cb: ManagerWatchCallback<any>),
   setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[],
@@ -186,6 +191,7 @@ export type AsyncStateContextValue = {
   ): void,
   runAsyncState<T>(
     keyOrSource: AsyncStateKeyOrSource<T>,
+    lane: string | undefined,
     ...args: any[]
   ): AbortFn,
   getAllKeys(): AsyncStateKey[],
@@ -223,42 +229,58 @@ export type EqualityFn<T> = (
   next: T
 ) => boolean;
 
+export type UseAsyncStateConfiguration<T, E = State<T>> = {
+  subscriptionKey?: AsyncStateKey,
 
-export type UseAsyncStateConfiguration<T, E> = {
   key?: AsyncStateKey,
   source?: AsyncStateSource<T>,
+
+  producer?: Producer<T>,
   initialValue?: T,
+
+  lazy?: boolean,
+  condition?: boolean,
+  payload?: { [id: string]: any },
+
   runEffect?: ProducerRunEffects,
   skipPendingDelayMs?: number,
   runEffectDurationMs?: number,
   resetStateOnDispose?: boolean,
-  payload?: { [id: string]: any },
+  cacheConfig?: CacheConfig<T>,
 
-  lazy?: boolean,
   fork?: boolean,
-  condition?: boolean,
-  hoistToProvider?: boolean,
   forkConfig?: ForkConfig,
+
+  hoistToProvider?: boolean,
   hoistToProviderConfig?: HoistToProviderConfig,
 
-  subscriptionKey?: AsyncStateKey,
-
-  producer?: Producer<T>,
   selector: useSelector<T, E>,
   areEqual: EqualityFn<E>,
 
-  cacheConfig?: CacheConfig<T>,
-
-  events?: UseAsyncStateEvents<T>
+  events?: UseAsyncStateEvents<T>,
+  lane?: string,
 }
 
 export type UseAsyncStateEventProps<T> = {
   state: State<T>,
 };
 
-export type UseAsyncStateEventFn<T> = (props: UseAsyncStateEventProps<T>) => {};
+type UseAsyncStateChangeEventHandler<T> =
+  ((props: UseAsyncStateEventProps<T>) => void)
 
-export type UseAsyncStateEventSubscribe<T> = ((props: SubscribeEventProps<T>) => CleanupFn) | ((props: SubscribeEventProps<T>) => CleanupFn)[]
+export type UseAsyncStateEventFn<T> =
+  UseAsyncStateChangeEvent<T>
+  |
+  UseAsyncStateChangeEventHandler<T>;
+
+export type UseAsyncStateChangeEvent<T> = {
+  status: AsyncStateStatus
+  handler: UseAsyncStateChangeEventHandler<T>,
+}
+
+export type UseAsyncStateEventSubscribe<T> =
+  ((props: SubscribeEventProps<T>) => CleanupFn)
+  | ((props: SubscribeEventProps<T>) => CleanupFn)[]
 
 export type UseAsyncStateEvents<T> = {
   change?: UseAsyncStateEventFn<T> | UseAsyncStateEventFn<T>[],
@@ -272,41 +294,13 @@ export type SubscribeEventProps<T> = {
   invalidateCache: (cacheKey?: string) => void,
 }
 
-export type useSelector<T, E> = (
-  ((currentState: State<T>) => E)
-  |
-  ((currentState: State<T>, lastSuccess: State<T>) => E)
-  |
-  ((
-    currentState: State<T>, lastSuccess: State<T>, cache: { [id: string]: CachedState<T> }
-  ) => E))
-  ;
+export type useSelector<T, E> =
+  (
+    currentState: State<T>, lastSuccess: State<T>,
+    cache: { [id: string]: CachedState<T> }
+  ) => E;
 
-export type PartialUseAsyncStateConfiguration<T, E> = {
-  key?: AsyncStateKey,
-  source?: AsyncStateSource<T>,
-  initialValue?: T,
-  runEffect?: ProducerRunEffects,
-  runEffectDurationMs?: number,
-  resetStateOnDispose?: boolean,
-  skipPendingDelayMs?: number,
-  payload?: { [id: string]: any },
-
-  lazy?: boolean,
-  fork?: boolean,
-  condition?: boolean,
-  hoistToProvider?: boolean,
-  forkConfig?: ForkConfig,
-  hoistToProviderConfig?: HoistToProviderConfig,
-
-  subscriptionKey?: AsyncStateKey,
-
-  producer?: Producer<T>,
-  selector?: useSelector<T, E>,
-  areEqual?: EqualityFn<E>,
-
-  cacheConfig?: CacheConfig<T>,
-}
+export type PartialUseAsyncStateConfiguration<T, E> = Partial<UseAsyncStateConfiguration<T, E>>
 
 export type UseAsyncStateSubscriptionInfo<T, E> = {
   mode: AsyncStateSubscriptionMode,
@@ -327,7 +321,7 @@ export type UseAsyncStateRefsFactory<T, E> = {
 
 export type UseAsyncStateContextType = AsyncStateContextValue | null;
 
-export type UseAsyncStateConfig<T, E> =
+export type UseAsyncStateConfig<T, E = State<T>> =
   string
   | Producer<T>
   | AsyncStateSource<T>

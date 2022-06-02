@@ -44,7 +44,7 @@ export default function Navigation() {
         <Link to="/reducers">Reducers</Link>
       </li>
       <li>
-        <Link to="/replace-state">Replace state</Link>
+        <Link to="/lanes">Lanes</Link>
       </li>
       <li>
         <Link to="/standalone">Standalone</Link>

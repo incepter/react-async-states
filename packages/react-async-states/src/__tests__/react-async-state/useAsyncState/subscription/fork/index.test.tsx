@@ -6,7 +6,6 @@ import {
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../hooks/useAsyncState";
 import {AsyncStateProvider} from "../../../../../provider/AsyncStateProvider";
-import {flushPromises} from "../../../utils/test-utils";
 import {createSource} from "../../../../../helpers/create-async-state";
 import {ForkConfig} from "../../../../../async-state";
 
@@ -26,7 +25,7 @@ describe('should fork an initially hoisted async state', () => {
 
     function Component({
       subKey,
-      fork = false,
+      fork = undefined,
       forkConfig = undefined,
     }: { subKey: string, fork?: boolean, forkConfig?: ForkConfig }) {
       const {

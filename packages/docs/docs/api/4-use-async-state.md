@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 sidebar_label: useAsyncState
 ---
 # `useAsyncState`
@@ -72,6 +72,7 @@ Let's see in details the supported configuration:
 |-------------------------|-----------------------|----------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `key`                   | `string`              | `string`                               | The key of the async state we are defining, subscribing to or forking from                                                                                                                         |
 | `lazy`                  | `boolean`             | `true`                                 | If false, the subscription will re-run every dependency change                                                                                                                                     |
+| `lane`                  | `string`              | `undefined`                            | If provided, the subscription will occur to a state Lane, and not the default state                                                                                                                |
 | `fork`                  | `boolean`             | `false`                                | If true, subscription will fork the state                                                                                                                                                          |
 | `source`                | `object`              | `undefined`                            | A source object, similar to the one created by `createSource`                                                                                                                                      |
 | `producer`              | `function`            | `undefined`                            | The producer function                                                                                                                                                                              |
@@ -421,6 +422,53 @@ useAsyncState({source: mySource, fork: true});
 This property is used only when `lazy` is `falsy`.
 If the `condition` is truthy, the `producer` 
 associated with the subscription will run.
+
+### `lane`
+Lanes are a concept in the library that let's you group states with same producer:
+
+A lane is a totally separate state instance, with own pending state,
+and own payload and subscribers,  and with the same `config` and `producer` and `cache`.
+It is very similar to forks, but forking means a separated state instance
+not sharing anything and don't belong to anything.
+
+A lane may have multiple subscribers and its own lifecycle.
+
+You can manipulate lanes from all the places in the library.
+
+```typescript
+import {useAsyncState} from "react-async-states";
+
+// subscribes to `city-casablanca` lane in the state defined in `weatherSource`
+useAsyncState({
+  source: weatherSource,
+  payload: { lat, lng },
+  lane: "city-casablanca"
+});
+
+
+// subscribes to `user-details-me` lane in the state defined in `userDetails`
+useAsyncState({
+  source: userDetails,
+  payload: { userId: "me" },
+  lane: "user-details-me"
+});
+
+
+// subscribes to `user-details-123` lane in the state defined in `userDetails`
+useAsyncState({
+  source: userDetails,
+  payload: { userId: "123" },
+  lane: "user-details-123"
+});
+
+// subscribes to `references-company-types` lane in the state defined in `references`
+useAsyncState({
+  source: references,
+  payload: { userId: "123" },
+  lane: "references-company-types"
+});
+
+```
 
 ### `lazy`
 If this property is set to `true`, when the dependencies change,

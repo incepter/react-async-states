@@ -1,7 +1,6 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAsyncState } from "react-async-states";
-import { API_JPH, bindAbortAndCancelToken } from "./v2/shared/utils";
 import { demoAsyncStates } from "./Provider";
 
 export default function Demo() {
@@ -13,9 +12,11 @@ export default function Demo() {
     mode,
     uniqueId,
     state: {status, data},
-    lastSuccess,
     abort
   } = useAsyncState({
+    fork: true,
+    subscriptionKey: "hahaha",
+    producer: () => 5,
     lazy: false,
     payload: {matchParams: params},
     key: demoAsyncStates.getUser.key,

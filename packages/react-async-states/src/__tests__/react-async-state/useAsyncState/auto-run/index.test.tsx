@@ -14,9 +14,8 @@ describe('should auto run async state', () => {
     function Component() {
       const {
         state,
-      }: UseAsyncState<number> = useAsyncState({
+      }: UseAsyncState<number> = useAsyncState.auto({
         producer,
-        lazy: false,
         initialValue: 99,
       });
 
@@ -50,11 +49,10 @@ describe('should auto run async state', () => {
     function Component() {
       const {
         state,
-      }: UseAsyncState<number> = useAsyncState({
+      }: UseAsyncState<number> = useAsyncState.auto({
         payload: {
           content: "Hello",
         },
-        lazy: false,
         producer: mockedProducer,
       });
 

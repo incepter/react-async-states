@@ -43,11 +43,13 @@ function remoteProducer(props) {
 
 function wsProducer(props) {
   const ws = new WebSocket("ws://localhost:9090");
-  ws.addEventListener("open", () => props.emit([]));
 
-
-  props.onAbort(() => ws.close());
-  return [];
+  return new Promise((res, rej) => {
+    ws.addEventListener("open", () => res([]));
+    ws.addEventListener("error", () => props.emit(new Error("error"), "error"));
+    ws.addEventListener("close", () => rej(new Error("close")));
+    props.onAbort(() => ws.close());
+  });
 }
 
 function WsDemo() {
@@ -56,13 +58,14 @@ function WsDemo() {
     state: {status, data},
     run,
     abort
-  } = useAsyncState.auto(wsProducer);
+  } = useAsyncState.auto(remoteProducer);
   return (
     <div>
       <h1>Ws demo</h1>
       <h3>status is {status}</h3>
       <h2>State value is: <pre>{JSON.stringify(data ?? [], null, 4)}</pre>
       </h2>
+      {status === "error" && <h2>State error is: <pre>{data?.toString()}</pre></h2>}
       <button onClick={() => run("connect")}>connect</button>
       <br/>
       <input ref={ref}/>

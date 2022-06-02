@@ -1,8 +1,9 @@
 import {useAsyncStateBase} from "./useAsyncStateBase";
 import {UseAsyncState, UseAsyncStateConfig} from "../types.internal";
+import {State} from "../async-state";
 
 // default
-function useAsyncStateExport<T, E>(
+function useAsyncStateExport<T, E = State<T>>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
 ): UseAsyncState<T, E> {
@@ -15,7 +16,7 @@ function useAsyncStateExport<T, E>(
 // auto runs
 const autoConfigOverrides = Object.freeze({lazy: false});
 
-function useAutoAsyncState<T, E>(
+function useAutoAsyncState<T, E = State<T>>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
 ): UseAsyncState<T, E> {
@@ -29,7 +30,7 @@ function useAutoAsyncState<T, E>(
 // lazy
 const lazyConfigOverrides = Object.freeze({lazy: true});
 
-function useLazyAsyncState<T, E>(
+function useLazyAsyncState<T, E = State<T>>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
 ): UseAsyncState<T, E> {
@@ -43,7 +44,7 @@ function useLazyAsyncState<T, E>(
 // fork
 const forkConfigOverrides = Object.freeze({fork: true});
 
-function useForkAsyncState<T, E>(
+function useForkAsyncState<T, E = State<T>>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
 ): UseAsyncState<T, E> {
@@ -57,7 +58,7 @@ function useForkAsyncState<T, E>(
 // fork auto
 const forkAutoConfigOverrides = Object.freeze({fork: true, lazy: false});
 
-function useForkAutoAsyncState<T, E>(
+function useForkAutoAsyncState<T, E = State<T>>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
 ): UseAsyncState<T, E> {
@@ -71,7 +72,7 @@ function useForkAutoAsyncState<T, E>(
 // hoist
 const hoistConfigOverrides = Object.freeze({hoistToProvider: true});
 
-function useHoistAsyncState<T, E>(
+function useHoistAsyncState<T, E = State<T>>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
 ): UseAsyncState<T, E> {
@@ -88,7 +89,7 @@ const hoistAutoConfigOverrides = Object.freeze({
   lazy: false
 });
 
-function useHoistAutoAsyncState<T, E>(
+function useHoistAutoAsyncState<T, E = State<T>>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   dependencies?: any[]
 ): UseAsyncState<T, E> {
