@@ -34,7 +34,7 @@ const userDetailsSource = createSource(
   }
 );
 
-export default function LanesDemo() {
+export function LanesDemo() {
   const ref = React.useRef();
   const [state, setState] = React.useState([]);
 
@@ -129,10 +129,57 @@ function PropsRunsDemo() {
       <input ref={ref}/>
       <button
         onClick={() => runLane('user-details', ref.current.value, ref.current.value)}
-      >runLane</button>
+      >runLane
+      </button>
       <button
         onClick={() => runSourceLane(userDetailsSource, ref.current.value, ref.current.value)}
-      >runSourceLane</button>
+      >runSourceLane
+      </button>
+    </div>
+  );
+}
+
+function countersProducer(props) {
+  let intervalId = setInterval(() => props.emit(old => old.data + 1), 1000);
+  props.onAbort(() => clearInterval(intervalId));
+  return props.lastSuccess.data;
+}
+
+const countersSource = createSource(
+  "counters",
+  countersProducer,
+  {initialValue: 0},
+);
+
+export default function LanesIntervalDemo() {
+  return (
+    <div>
+      <CounterSub/>
+      <CounterSub counterKey="counter-1"/>
+      <CounterSub counterKey="counter-2"/>
+    </div>
+  );
+}
+
+function CounterSub({counterKey = "default"}) {
+  const {state: {data}, run, abort} = useAsyncState({
+    lane: counterKey,
+    source: countersSource,
+  });
+  return (
+    <div>
+      <button
+        data-testid={`counter-sub-${counterKey}-run`}
+        onClick={() => run()}
+      >Run</button>
+      <button
+        data-testid={`counter-sub-${counterKey}-abort`}
+        onClick={() => abort()}>Abort</button>
+      <span
+        data-testid={`counter-sub-${counterKey}-data`}
+      >
+        counter-{counterKey}-{data}
+      </span>
     </div>
   );
 }
