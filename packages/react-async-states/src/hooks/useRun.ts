@@ -17,11 +17,11 @@ function runBySource<T>(src: AsyncStateSource<T>, lane?: string) {
   return asyncState.run.bind(asyncState, standaloneRunExtraPropsCreator);
 }
 
-export function runSource<T>(src: AsyncStateSource<T>, ...args) {
+export function runSource<T>(src: AsyncStateSource<T>, ...args): AbortFn {
   return runBySource(src)(...args);
 }
 
-export function runpSourceLane<T>(src: AsyncStateSource<T>, lane: string | undefined, ...args) {
+export function runpSourceLane<T>(src: AsyncStateSource<T>, lane: string | undefined, ...args): Promise<State<T>> {
   let asyncState = readAsyncStateFromSource(src).getLane(lane);
   return new Promise(resolve => {
     let unsubscribe = asyncState.subscribe(subscription);
@@ -38,11 +38,11 @@ export function runpSourceLane<T>(src: AsyncStateSource<T>, lane: string | undef
   });
 }
 
-export function runpSource<T>(src: AsyncStateSource<T>, ...args) {
+export function runpSource<T>(src: AsyncStateSource<T>, ...args): Promise<State<T>> {
   return runpSourceLane(src, undefined, ...args);
 }
 
-export function runSourceLane<T>(src: AsyncStateSource<T>, lane: string | undefined, ...args) {
+export function runSourceLane<T>(src: AsyncStateSource<T>, lane: string | undefined, ...args): AbortFn {
   return runBySource(src, lane)(...args);
 }
 

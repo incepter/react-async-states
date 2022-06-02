@@ -9,8 +9,7 @@ The producer function is the function that returns the state's value,
 here is its declaration:
 
 ```typescript
-export type Producer<T> =
-  ((props: ProducerProps<T>) => (T | Promise<T> | Generator<any, T, any>));
+export type Producer<T> = ((props: ProducerProps<T>) => (T | Promise<T> | Generator<any, T, any>));
 ```
 
 So it can be:
@@ -265,9 +264,13 @@ run: <T>(input: ProducerPropsRunInput<T>, config: ProducerPropsRunConfig | null,
 Where:
 - `ProducerPropsRunInput` may be a string (if inside provider), a source object,
  or a producer.
-- `ProducerPropsRunConfig` a configuration object containing `payload` and `fork`
-properties. The `payload` is only relevant (for now) when passing a producer function
-, and the `fork` is only relevant working with source or by a string key.
+- `ProducerPropsRunConfig` a configuration object:
+
+| Prop      | Type                    | Default value | Usage                                                                 |
+|-----------|-------------------------|---------------|-----------------------------------------------------------------------|
+| `lane`    | `string`                | `undefined`   | Describes the [lane](/docs/api/use-async-state#lane) that will be ran |
+| `fork`    | `boolean`               | `undefined`   | `fork` is only relevant working with source or by a string key        |
+| `payload` | `{ [id: string]: any }` | `null`        | `payload` is only relevant (for now) when passing a producer function |
 - `...args`, the `props.args` of the resulting running producer.
 
 The `props.run` function returns its `AbortFn`, so you can register it (if you care)
@@ -294,7 +297,7 @@ runp: <T>(input: ProducerPropsRunInput<T>, config: ProducerPropsRunConfig | null
 async function weatherProducer(props) {
   const location = await props.runp(fetchCurrentLocationProducer);
   const weather = await props.runp(fetchWeather, null, location.data);
-  props.run(sendUsageDataProducer, {weather, location}); // <- props.run
+  props.run(sendUsageDataProducer, null, {weather, location}); // <- props.run
   return {weather, location};
 }
 
