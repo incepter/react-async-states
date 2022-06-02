@@ -128,6 +128,7 @@ export function AsyncStateManager(
 
   function runAsyncState<T>(
     key: AsyncStateKeyOrSource<T>,
+    lane: string | undefined,
     ...args: any[]
   ): AbortFn {
     let asyncState: AsyncStateInterface<T>;
@@ -137,9 +138,15 @@ export function AsyncStateManager(
     } else {
       asyncState = get(key as AsyncStateKey);
     }
+
     if (!asyncState) {
       return undefined;
     }
+
+    if (lane) {
+      asyncState = asyncState.getLane(lane);
+    }
+
     return run(asyncState, ...args);
   }
 

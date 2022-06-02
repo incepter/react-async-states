@@ -20,7 +20,9 @@ import {readAsyncStateFromSource} from "../async-state/read-source";
 import {isAsyncStateSource} from "../async-state/utils";
 
 function createRunFunction<T>(
-  manager: AsyncStateManagerInterface | null, props: ProducerProps<T>) {
+  manager: AsyncStateManagerInterface | null,
+  props: ProducerProps<T>
+) {
   return function run<T>(
     input: ProducerPropsRunInput<T>,
     config: ProducerPropsRunConfig | null,
@@ -32,13 +34,21 @@ function createRunFunction<T>(
 
     if (isAsyncStateSource(input)) {
       asyncState = readAsyncStateFromSource(input as AsyncStateSource<T>);
+
+      if (config?.lane) {
+        asyncState = asyncState.getLane(config.lane);
+      }
     } else if (isFn(input)) {
-      asyncState = new AsyncState(nextKey(), input as Producer<T>, {});
+      asyncState = new AsyncState(nextKey(), input as Producer<T>);
       if (config?.payload) {
         asyncState.payload = shallowClone(Object.create(null), config.payload);
       }
     } else if (manager !== null) {
       asyncState = manager?.get(input as AsyncStateKey);
+
+      if (config?.lane) {
+        asyncState = asyncState.getLane(config.lane);
+      }
     } else {
       asyncState = undefined;
     }
@@ -63,6 +73,10 @@ function createRunPFunction(manager, props) {
 
     if (isAsyncStateSource(input)) {
       asyncState = readAsyncStateFromSource(input as AsyncStateSource<T>);
+
+      if (config?.lane) {
+        asyncState = asyncState.getLane(config.lane);
+      }
     } else if (isFn(input)) {
       asyncState = new AsyncState(nextKey(), input as Producer<T>, {});
       if (config?.payload) {
@@ -70,6 +84,10 @@ function createRunPFunction(manager, props) {
       }
     } else {
       asyncState = manager?.get(input as AsyncStateKey);
+
+      if (config?.lane) {
+        asyncState = asyncState.getLane(config.lane);
+      }
     }
 
     if (!asyncState) {
@@ -96,13 +114,30 @@ function createRunPFunction(manager, props) {
 
 function createSelectFunction<T>(manager: AsyncStateManagerInterface | null) {
   return function select(
-    input: AsyncStateKeyOrSource<T>
+    input: AsyncStateKeyOrSource<T>,
+    lane?: string,
   ): State<T> | undefined {
+    let asyncState: AsyncStateInterface<T>;
+
     if (isAsyncStateSource(input)) {
-      return readAsyncStateFromSource(input as AsyncStateSource<T>)
-        .currentState;
+      asyncState = readAsyncStateFromSource(input as AsyncStateSource<T>);
+      if (lane) {
+        asyncState = asyncState.getLane(lane);
+      }
+      return asyncState.currentState;
     }
-    return manager?.get(input as AsyncStateKey)?.currentState as (State<T> | undefined);
+
+    let managerAsyncState = manager?.get(input as AsyncStateKey);
+    if (!managerAsyncState) {
+      return undefined;
+    }
+    if (lane) {
+      asyncState = (managerAsyncState as AsyncStateInterface<T>).getLane(lane);
+    } else {
+      asyncState = managerAsyncState  as AsyncStateInterface<T>;
+    }
+
+    return asyncState.currentState;
   }
 }
 
