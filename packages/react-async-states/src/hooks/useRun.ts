@@ -21,6 +21,10 @@ export function runSource<T>(src: AsyncStateSource<T>, ...args): AbortFn {
   return runBySource(src)(...args);
 }
 
+export function invalidateCache<T>(src: AsyncStateSource<T>, cacheKey?: string): void {
+  readAsyncStateFromSource(src).invalidateCache(cacheKey);
+}
+
 export function runpSourceLane<T>(src: AsyncStateSource<T>, lane: string | undefined, ...args): Promise<State<T>> {
   let asyncState = readAsyncStateFromSource(src).getLane(lane);
   return new Promise(resolve => {
