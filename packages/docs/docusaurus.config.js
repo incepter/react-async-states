@@ -16,6 +16,15 @@ const config = {
   organizationName: 'incepter', // Usually your GitHub org/user name.
   projectName: 'react-async-states', // Usually your repo name.
 
+  plugins: [
+    [
+      '@docusaurus/plugin-google-analytics',
+      {
+        anonymizeIP: true,
+        trackingID: 'G-WT8TFH0HBF',
+      },
+    ],
+  ],
   presets: [
     [
       '@docusaurus/preset-classic',
@@ -28,10 +37,6 @@ const config = {
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
-        },
-        googleAnalytics: {
-          anonymizeIP: true,
-          trackingID: 'G-WT8TFH0HBF',
         },
       },
     ],
@@ -107,7 +112,7 @@ const config = {
       },
     }),
 
-  themes: ['@docusaurus/theme-live-codeblock']
+  themes: ['@docusaurus/theme-live-codeblock'],
 };
 
 module.exports = config;
