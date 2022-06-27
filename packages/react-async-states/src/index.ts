@@ -9,6 +9,7 @@ export {
   runpSource,
   runSourceLane,
   runpSourceLane,
+  invalidateCache,
   useRunAsyncState,
 } from "./hooks/useRun";
 export {AsyncStateComponent} from "./components/AsyncStateComponent";

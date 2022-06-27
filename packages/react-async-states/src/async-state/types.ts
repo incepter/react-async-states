@@ -106,11 +106,11 @@ export type StateSubscription<T> = {
 
 export type CacheConfig<T> = {
   enabled: boolean,
-  getDeadline(currentState: State<T>): number,
-  hash(args?: any[], payload?: {[id: string]: any} | null): string,
+  getDeadline?(currentState: State<T>): number,
+  hash?(args?: any[], payload?: {[id: string]: any} | null): string,
 
-  load(): {[id: AsyncStateKey]: CachedState<T>} | Promise<{[id: AsyncStateKey]: CachedState<T>}>,
-  persist(cache: {[id: AsyncStateKey]: CachedState<T>}): void,
+  load?(): {[id: AsyncStateKey]: CachedState<T>} | Promise<{[id: AsyncStateKey]: CachedState<T>}>,
+  persist?(cache: {[id: AsyncStateKey]: CachedState<T>}): void,
 }
 
 export type CachedState<T> = {
