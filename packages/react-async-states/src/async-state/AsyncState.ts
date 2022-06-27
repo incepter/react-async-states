@@ -81,7 +81,14 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     this.currentState = StateBuilder.initial(initialValue);
     this.lastSuccess = this.currentState;
 
-    this.producer = wrapProducerFunction(this);
+    this.producer = wrapProducerFunction(
+      producer,
+      this.setState.bind(this),
+      this.replaceState.bind(this),
+      type => this.producerType = type,
+      suspender => this.suspender = suspender,
+    );
+
     this.producerType = ProducerType.indeterminate;
 
     if (__DEV__) {
