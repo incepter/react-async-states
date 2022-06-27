@@ -34,8 +34,7 @@ when to re-render.
 ## Get started
 
 To get started using the library, please make sure to read [the docs](https://incepter.github.io/react-async-states/docs/intro).
-
-[The tutorial section](https://incepter.github.io/react-async-states/docs/tutorial/first-steps) is a good starting point.
+[The tutorial section](https://incepter.github.io/react-async-states/docs/tutorial/first-steps) is a good starting point to get your hands dirty.
 
 The library is available as a package on NPM for use with a module bundler or in a Node application:
 
