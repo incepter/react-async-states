@@ -12,7 +12,13 @@ export {
   invalidateCache,
   useRunAsyncState,
 } from "./hooks/useRun";
-export {AsyncStateComponent} from "./components/AsyncStateComponent";
+export {
+  StateBoundary,
+  useCurrentState,
+  FetchThenRenderBoundary,
+  RenderThenFetchBoundary,
+  FetchAsYouRenderBoundary,
+} from "./components/StateBoundary";
 export {useSelector, useAsyncStateSelector} from "./hooks/useSelector";
 
 export * from "./types";

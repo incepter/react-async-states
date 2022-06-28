@@ -71,8 +71,9 @@ export enum ProducerType {
 }
 
 export enum RenderStrategy {
-  FetchOnRender = 0,
+  FetchAsYouRender = 0,
   FetchThenRender = 1,
+  RenderThenFetch = 2,
 }
 
 export type ProducerConfig<T> = {

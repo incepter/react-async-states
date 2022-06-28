@@ -26,7 +26,7 @@ export function AsyncStateComponent<T, E>({
   children = null,
   fallback = null,
   dependencies = defaultDeps,
-  strategy = RenderStrategy.FetchOnRender,
+  strategy = RenderStrategy.FetchAsYouRender,
 }: {
   suspend?: boolean,
   dependencies?: any[],

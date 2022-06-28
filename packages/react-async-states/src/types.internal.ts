@@ -1,3 +1,4 @@
+import * as React from "react";
 import {
   AbortFn,
   AsyncStateInterface,
@@ -9,7 +10,7 @@ import {
   Producer,
   ProducerConfig,
   ProducerProps,
-  ProducerRunEffects,
+  ProducerRunEffects, RenderStrategy,
   RunExtraProps,
   State,
   StateUpdater
@@ -260,6 +261,15 @@ export type UseAsyncStateConfiguration<T, E = State<T>> = {
   events?: UseAsyncStateEvents<T>,
   lane?: string,
 }
+
+export type StateBoundaryProps<T, E> = {
+  children: React.ReactNode,
+  config: UseAsyncStateConfig<T, E>,
+
+  dependencies?: any[],
+  strategy?: RenderStrategy,
+}
+
 
 export type UseAsyncStateEventProps<T> = {
   state: State<T>,
