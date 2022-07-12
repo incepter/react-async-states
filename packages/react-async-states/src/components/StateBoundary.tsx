@@ -6,9 +6,9 @@ import {
   State
 } from "../async-state";
 import {
-  AsyncStateSubscriptionMode, StateBoundaryProps,
+  AsyncStateSubscriptionMode,
+  StateBoundaryProps,
   UseAsyncState,
-  UseAsyncStateConfig
 } from "../types.internal";
 import {useAsyncState} from "../hooks/useAsyncState";
 import {readAsyncStateFromSource} from "../async-state/read-source";
@@ -25,20 +25,35 @@ export function StateBoundary<T, E>(props: StateBoundaryProps<T, E>) {
 
 function StateBoundaryImpl<T, E>(props: StateBoundaryProps<T, E>) {
   if (props.strategy === RenderStrategy.FetchThenRender) {
-    return render(FetchThenRenderBoundary, props);
+    return React.createElement(FetchThenRenderBoundary, props);
   }
   if (props.strategy === RenderStrategy.FetchAsYouRender) {
-    return render(FetchAsYouRenderBoundary, props);
+    return React.createElement(FetchAsYouRenderBoundary, props);
   }
-  return render(RenderThenFetchBoundary, props);
+  return React.createElement(RenderThenFetchBoundary, props);
+}
+
+function inferBoundaryChildren<T, E = State<T>>(
+  result: UseAsyncState<T, E>,
+  props: StateBoundaryProps<T, E>
+) {
+  if (!props.render || !result.source) {
+    return props.children;
+  }
+
+  const asyncState = readAsyncStateFromSource(result.source);
+  const {status} = asyncState.currentState;
+
+  return props.render[status] ? props.render[status] : props.children;
 }
 
 export function RenderThenFetchBoundary<T, E>(props: StateBoundaryProps<T, E>) {
   const result = useAsyncState(props.config, props.dependencies);
 
+  const children = inferBoundaryChildren(result, props);
   return (
     <StateBoundaryContext.Provider value={result}>
-      {props.children}
+      {children}
     </StateBoundaryContext.Provider>
   );
 }
@@ -46,21 +61,17 @@ export function RenderThenFetchBoundary<T, E>(props: StateBoundaryProps<T, E>) {
 export function FetchAsYouRenderBoundary<T, E>(props: StateBoundaryProps<T, E>) {
   const result = useAsyncState.auto(props.config, props.dependencies);
   result.read(); // throws
+  const children = inferBoundaryChildren(result, props);
   return (
     <StateBoundaryContext.Provider value={result}>
-      {props.children}
+      {children}
     </StateBoundaryContext.Provider>
   );
-}
-
-function render(create, props) {
-  return typeof create === "function" ? React.createElement(create, props) : create;
 }
 
 type FetchThenRenderSelf = {
   didLoad: boolean,
 }
-
 
 export function FetchThenRenderBoundary<T, E>(props: StateBoundaryProps<T, E>) {
   const result = useAsyncState.auto(props.config, props.dependencies);
@@ -75,25 +86,27 @@ export function FetchThenRenderBoundary<T, E>(props: StateBoundaryProps<T, E>) {
     const {source} = result;
     const asyncState = readAsyncStateFromSource(source as AsyncStateSource<T>);
 
-    const {currentState: {status}} = asyncState;
+    const {status} = asyncState.currentState;
 
     if (status === AsyncStateStatus.error || status === AsyncStateStatus.success) {
       self.didLoad = true;
+      const children = inferBoundaryChildren(result, props);
       return (
         <StateBoundaryContext.Provider value={result}>
-          {props.children}
+          {children}
         </StateBoundaryContext.Provider>
       );
     }
 
     return null;
+  } else {
+    const children = inferBoundaryChildren(result, props);
+    return (
+      <StateBoundaryContext.Provider value={result}>
+        {children}
+      </StateBoundaryContext.Provider>
+    );
   }
-
-  return (
-    <StateBoundaryContext.Provider value={result}>
-      {props.children}
-    </StateBoundaryContext.Provider>
-  );
 
   function constructSelf() {
     return {

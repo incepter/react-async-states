@@ -15,6 +15,7 @@ import {
   State,
   StateUpdater
 } from "./async-state";
+import {ReactNode} from "react";
 
 export type Reducer<T> = (
   T,
@@ -268,8 +269,11 @@ export type StateBoundaryProps<T, E> = {
 
   dependencies?: any[],
   strategy?: RenderStrategy,
+
+  render?: StateBoundaryRenderProp,
 }
 
+export type StateBoundaryRenderProp = Record<AsyncStateStatus, ReactNode>
 
 export type UseAsyncStateEventProps<T> = {
   state: State<T>,

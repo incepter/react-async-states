@@ -2,13 +2,17 @@ import React from "react";
 import {
   RenderStrategy,
   StateBoundary,
-  useCurrentState
+  useCurrentState,
+  AsyncStateStatus
 } from "react-async-states";
 
 const config = {
   lazy: false,
   producer: async function () {
-    const response = await fetch('https://jsonplaceholder.typicode.com/users/1');
+    const response = await fetch('https://jsonplaceholder.typicode.com/users/12');
+    if (!response.ok) {
+      throw new Error(response.status);
+    }
     return response.json();
   }
 }
@@ -24,13 +28,30 @@ function Wrapper({children}) {
   )
 }
 
+function MyError() {
+  const {state: {data: error}} = useCurrentState();
+
+  return <div>This error is happening: {error?.toString?.()}</div>
+}
+
+function MyPending() {
+  const {state: {props}} = useCurrentState();
+
+  return <div>PENDING WITH PROPS: {JSON.stringify(props, null, 4)}</div>
+}
+
 export default function App2() {
   return (
     <Wrapper>
       <h1>Result!</h1>
-      <StateBoundary config={config} strategy={RenderStrategy.FetchAsYouRender}>
-        <CurrentState/>
-      </StateBoundary>
+      <StateBoundary
+        config={config}
+        strategy={RenderStrategy.FetchThenRender}
+        render={{
+          [AsyncStateStatus.error]: <MyError/>,
+          [AsyncStateStatus.success]: <CurrentState/>,
+        }}
+      />
     </Wrapper>
   );
 }
