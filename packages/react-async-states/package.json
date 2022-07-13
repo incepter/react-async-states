@@ -5,7 +5,7 @@
   "types": "dist/react-async-states/src/index",
   "author": "incepter",
   "sideEffects": false,
-  "version": "1.0.0-rc-1.1",
+  "version": "1.0.0-rc-2",
   "name": "react-async-states",
   "repository": "incepter/react-async-states",
   "description": "A hooks-based lightweight React library for state management",

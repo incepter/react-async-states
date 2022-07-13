@@ -14,6 +14,7 @@ export type {
 } from "./async-state/types";
 
 export {
+  RenderStrategy,
   ProducerRunEffects,
 } from "./async-state/types";
 
@@ -40,5 +41,7 @@ export type {
   UseAsyncStateEvents,
   UseAsyncStateEventFn,
   UseAsyncStateEventProps,
+
+  StateBoundaryProps,
 
 } from "./types.internal";

@@ -1,3 +1,4 @@
+import * as React from "react";
 import {
   AbortFn,
   AsyncStateInterface,
@@ -9,11 +10,12 @@ import {
   Producer,
   ProducerConfig,
   ProducerProps,
-  ProducerRunEffects,
+  ProducerRunEffects, RenderStrategy,
   RunExtraProps,
   State,
   StateUpdater
 } from "./async-state";
+import {ReactNode} from "react";
 
 export type Reducer<T> = (
   T,
@@ -260,6 +262,18 @@ export type UseAsyncStateConfiguration<T, E = State<T>> = {
   events?: UseAsyncStateEvents<T>,
   lane?: string,
 }
+
+export type StateBoundaryProps<T, E> = {
+  children: React.ReactNode,
+  config: UseAsyncStateConfig<T, E>,
+
+  dependencies?: any[],
+  strategy?: RenderStrategy,
+
+  render?: StateBoundaryRenderProp,
+}
+
+export type StateBoundaryRenderProp = Record<AsyncStateStatus, ReactNode>
 
 export type UseAsyncStateEventProps<T> = {
   state: State<T>,

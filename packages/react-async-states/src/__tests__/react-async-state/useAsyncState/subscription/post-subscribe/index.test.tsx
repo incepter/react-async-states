@@ -6,12 +6,11 @@ import {UseAsyncState} from "../../../../../types.internal";
 import {AsyncStateStatus} from "../../../../../async-state";
 import {mockDateNow, TESTS_TS} from "../../../utils/setup";
 
-jest.useFakeTimers();
 mockDateNow();
-
 describe('should post subscribe', () => {
   it('should invoke post subscribe when present and run producer' +
     ' and run post unsubscribe', async () => {
+    jest.useFakeTimers();
     // given
     const onAbort = jest.fn();
     const producer = jest.fn().mockImplementation(props => {
