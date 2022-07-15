@@ -85,6 +85,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
     // if we already rendered, but this time, the async state instance changed
     // for some of many possible reasons.
     if (
+      !asyncState ||
       asyncState &&
       memoizedRef.subscriptionInfo &&
       memoizedRef.subscriptionInfo.asyncState !== subscriptionInfo.asyncState
@@ -93,7 +94,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
       // whenever we have an async state instance,
       // we will check if the calculated state from the new one
       // is in conflict with the last updated value. if yes set it
-      makeSureSubscriptionStateIsLatest(
+      ensureSubscriptionStateIsLatest(
         asyncState,
         mode,
         configuration,
@@ -340,7 +341,7 @@ function useAsyncStateSubscribeFn<T, E = State<T>>(
     );
   }
 
-  makeSureSubscriptionStateIsLatest(
+  ensureSubscriptionStateIsLatest(
     asyncState,
     mode,
     configuration,
@@ -397,7 +398,7 @@ function invokeSubscribeEvents<T>(
   return handlers.map(handler => handler(eventProps));
 }
 
-function makeSureSubscriptionStateIsLatest<T, E = State<T>>(
+function ensureSubscriptionStateIsLatest<T, E = State<T>>(
   asyncState: AsyncStateInterface<T>,
   mode: AsyncStateSubscriptionMode,
   configuration: UseAsyncStateConfiguration<T, E>,
@@ -408,7 +409,7 @@ function makeSureSubscriptionStateIsLatest<T, E = State<T>>(
   const {key, selector, areEqual} = configuration;
 
   const renderValue = oldValue?.state;
-  const newState = readStateFromAsyncState(asyncState, selector)
+  const newState = (asyncState ? readStateFromAsyncState(asyncState, selector) : undefined) as E;
 
   const actualValue = makeUseAsyncStateReturnValue(
     asyncState,

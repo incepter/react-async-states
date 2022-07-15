@@ -88,6 +88,7 @@ export function AsyncStateManager(
           return result;
         }, Object.create(null)) as {[id: AsyncStateKey]: ExtendedInitialAsyncState<any>};
 
+    const previousStates = {...asyncStateEntries};
     Object
       .values(newStatesMap)
       .reduce(
@@ -101,7 +102,8 @@ export function AsyncStateManager(
     // in this case, we should mark them as not initially hoisted
     const entriesToRemove: AsyncStateEntry<any>[] = [];
     for (const [key, entry] of Object.entries(asyncStateEntries)) {
-      if (newStatesMap[key]) {
+      // notify only if new!
+      if (newStatesMap[key] && !previousStates[key]) {
         notifyWatchers(key, entry.value);
       }
       if (!newStatesMap[key] && entry.initiallyHoisted) {
