@@ -11,7 +11,7 @@ function principalProducer(props: ProducerProps<UserType>) {
     .then(r => r.json());
 }
 
-export const principalSource = createSource("principal", principalProducer, {skipPendingDelayMs: 200});
+export const principalSource = createSource("principal", principalProducer, {skipPendingDelayMs: 400});
 
 export type CurrentUserConfig = {
   id: number | string,

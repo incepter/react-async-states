@@ -1,7 +1,13 @@
 import * as React from "react";
-import {__DEV__, invokeIfPresent, shallowClone} from "shared";
+import {
+  __DEV__,
+  invokeIfPresent,
+  oneObjectIdentity,
+  shallowClone
+} from "shared";
 import {AsyncStateContext} from "../context";
 import {
+  defaultUseASConfig,
   inferAsyncStateInstance,
   inferSubscriptionMode,
   makeUseAsyncStateReturnValue,
@@ -20,8 +26,11 @@ import {
   PartialUseAsyncStateConfiguration,
   SubscribeEventProps,
   UseAsyncState,
-  UseAsyncStateConfig, UseAsyncStateConfiguration,
-  UseAsyncStateEventFn, UseAsyncStateEvents, UseAsyncStateEventSubscribe,
+  UseAsyncStateConfig,
+  UseAsyncStateConfiguration,
+  UseAsyncStateEventFn,
+  UseAsyncStateEvents,
+  UseAsyncStateEventSubscribe,
   UseAsyncStateSubscriptionInfo,
   useSelector
 } from "../types.internal";
@@ -36,6 +45,7 @@ import {nextKey} from "./utils/key-gen";
 import {
   warnInDevAboutIrrelevantUseAsyncStateConfiguration
 } from "../helpers/configuration-warn";
+import {readAsyncStateFromSource} from "../async-state/read-source";
 
 const defaultDependencies: any[] = [];
 
@@ -99,12 +109,16 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
         mode,
         configuration,
         run,
-        selectedValue,
+        selectedValue.state,
         setSelectedValue,
       );
     }
 
     memoizedRef.subscriptionInfo = subscriptionInfo;
+  }
+
+  if (memoizedRef.latestData !== selectedValue.state) {
+    memoizedRef.latestData = selectedValue.state;
   }
 
   // if inside provider: watch over the async state
@@ -159,7 +173,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
       asyncState,
       mode,
       configuration,
-      selectedValue,
+      () => memoizedRef.latestData,
       setSelectedValue,
       run,
     );
@@ -287,7 +301,7 @@ function useAsyncStateSubscribeFn<T, E = State<T>>(
   asyncState: AsyncStateInterface<T>,
   mode: AsyncStateSubscriptionMode,
   configuration: UseAsyncStateConfiguration<T, E>,
-  actualValue: Readonly<UseAsyncState<T, E>>,
+  getCurrentValue: () => E,
   update: (value: React.SetStateAction<Readonly<UseAsyncState<T, E>>>) => void,
   run: (...args: any[]) => AbortFn,
 ): CleanupFn {
@@ -346,7 +360,7 @@ function useAsyncStateSubscribeFn<T, E = State<T>>(
     mode,
     configuration,
     run,
-    actualValue,
+    getCurrentValue(),
     update,
   );
 
@@ -403,12 +417,12 @@ function ensureSubscriptionStateIsLatest<T, E = State<T>>(
   mode: AsyncStateSubscriptionMode,
   configuration: UseAsyncStateConfiguration<T, E>,
   run: (...args: any[]) => AbortFn,
-  oldValue: Readonly<UseAsyncState<T, E>>,
+  oldValue: E,
   update: (value: React.SetStateAction<Readonly<UseAsyncState<T, E>>>) => void,
 ) {
   const {key, selector, areEqual} = configuration;
 
-  const renderValue = oldValue?.state;
+  const renderValue = oldValue;
   const newState = (asyncState ? readStateFromAsyncState(asyncState, selector) : undefined) as E;
 
   const actualValue = makeUseAsyncStateReturnValue(
@@ -519,7 +533,7 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
   return output;
 }
 
-function readStateFromAsyncState<T, E>(
+function readStateFromAsyncState<T, E = State<T>>(
   asyncState: AsyncStateInterface<T>,
   selector: useSelector<T, E>
 ): E {
@@ -527,6 +541,67 @@ function readStateFromAsyncState<T, E>(
 }
 
 
-// remote async state
-// subscribes to external source of events, or sets up a connexion (context) so that future
-// producer runs will have that context; and also have a post connect handler to
+// useContext
+// useRef
+// useState
+// useEffect
+export function useSource<T>(
+  source: AsyncStateSource<T>
+): UseAsyncState<T, State<T>> {
+  const contextValue = React.useContext(AsyncStateContext);
+  const asyncState = readAsyncStateFromSource(source);
+  const latestState = React.useRef<State<T>>()
+
+
+  // declare a state snapshot initialized by the initial selected value
+  // useState
+  const [selectedValue, setSelectedValue] = React
+    .useState<Readonly<UseAsyncState<T, State<T>>>>(initialize);
+
+  if (latestState.current !== selectedValue.state) {
+    latestState.current = selectedValue.state;
+  }
+
+  // subscribe to async state
+  React.useEffect(subscribeToAsyncState, [asyncState]);
+
+  return selectedValue;
+
+  function initialize(): Readonly<UseAsyncState<T, State<T>>> {
+    return makeUseAsyncStateReturnValue(
+      asyncState,
+      readStateFromAsyncState(asyncState, oneObjectIdentity),
+      source.key,
+      runAsyncStateSubscriptionFn(
+        AsyncStateSubscriptionMode.SOURCE,
+        asyncState,
+        contextValue
+      ),
+      AsyncStateSubscriptionMode.SOURCE
+    );
+
+  }
+
+  function subscribeToAsyncState() {
+    let runFn = runAsyncStateSubscriptionFn(
+      AsyncStateSubscriptionMode.SOURCE,
+      asyncState,
+      contextValue
+    );
+    const configuration = constructUseSourceDefaultConfig(source);
+    return useAsyncStateSubscribeFn(
+      asyncState,
+      AsyncStateSubscriptionMode.SOURCE,
+      configuration,
+      () => latestState.current,
+      setSelectedValue,
+      runFn,
+    );
+  }
+}
+
+function constructUseSourceDefaultConfig<T>(
+  source: AsyncStateSource<T>,
+): UseAsyncStateConfiguration<T, State<T>> {
+  return Object.freeze(Object.assign({key: source.key,}, defaultUseASConfig));
+}

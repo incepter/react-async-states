@@ -359,8 +359,9 @@ export type CleanupFn = AbortFn
   | (() => void)
   | undefined;
 
-export type MemoizedUseAsyncStateRef<T, E> = {
-  subscriptionInfo: UseAsyncStateSubscriptionInfo<T, E>
+export type MemoizedUseAsyncStateRef<T, E = State<T>> = {
+  latestData: E,
+  subscriptionInfo: UseAsyncStateSubscriptionInfo<T, E>,
 }
 
 export type SelectorManager = {

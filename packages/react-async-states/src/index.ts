@@ -1,4 +1,5 @@
 export {useAsyncState} from "./hooks/useAsyncState";
+export {useSource} from "./hooks/useAsyncStateBase";
 export {createSource} from "./helpers/create-async-state";
 export {createReducerProducer} from "./helpers/create-producer";
 export {AsyncStateProvider} from "./provider/AsyncStateProvider";
