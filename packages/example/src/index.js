@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 
 import './index.css'
-import App from "./App2";
+import App from "./past/App";
 
 import App2 from './past/v2/Bug2';
 
@@ -10,7 +10,7 @@ ReactDOM.createRoot(document.getElementById('root'))
   .render(
     <React.StrictMode>
       <React.Suspense fallback="app suspended">
-        <App2/>
+        <App/>
       </React.Suspense>
     </React.StrictMode>
   );

@@ -20,7 +20,6 @@ export {
   RenderThenFetchBoundary,
   FetchAsYouRenderBoundary,
 } from "./components/StateBoundary";
-export {useSelector, useAsyncStateSelector} from "./hooks/useSelector";
-export {default as useSelectorV2} from "./hooks/useSelectorV2";
+export {useSelector} from "./hooks/useSelector";
 
 export * from "./types";

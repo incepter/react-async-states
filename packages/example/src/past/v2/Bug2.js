@@ -3,7 +3,6 @@ import {
   AsyncStateProvider,
   useAsyncState,
   useSelector,
-  useSelectorV2
 } from "react-async-states";
 
 function Wrapper({children, initialValue = false}) {
@@ -196,7 +195,7 @@ function SelectorV2Example() {
   return (
     <details open>
       <pre>
-        {JSON.stringify(useSelectorV2(id), null, 4)}
+        {JSON.stringify(useSelector(id), null, 4)}
       </pre>
     </details>
   );
