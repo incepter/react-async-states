@@ -1,17 +1,15 @@
 import * as React from "react";
 import {FormEvent} from "react";
-import {useRun} from "react-async-states";
+import {runSource} from "react-async-states";
 import {currentUserConfig, principalSource} from "./producers";
 
 export default function LoginPage() {
-  const run = useRun();
-
   function submit(e: FormEvent) {
     e.preventDefault();
     // @ts-ignore
     const userId = document.forms["login"].elements.userId.value;
-    run(currentUserConfig, {id: userId});
-    run(principalSource);
+    runSource(currentUserConfig, {id: userId});
+    runSource(principalSource);
   }
 
   return (

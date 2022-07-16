@@ -66,6 +66,9 @@ export default function App() {
           {/*<DynamicSubscribe/>*/}
           <br/>
           <br/>
+          <Wrapper initialValue={false}>
+            <HoistSomething/>
+          </Wrapper>
           {/*<EveryThingInsideProvider/>*/}
           <SubscribeToWithInput/>
         </Wrapper>
@@ -92,6 +95,14 @@ function Sibling() {
       Run - {state.data} - {uniqueId} - {mode}
     </button>
   );
+}
+
+function HoistSomething() {
+  useAsyncState.hoist({
+    key: "atyuu",
+    initialValue: 15,
+  })
+  return "I did hoist something";
 }
 
 function DynamicSubscribe() {
@@ -185,7 +196,7 @@ function SelectorV2Example() {
   return (
     <details open>
       <pre>
-        {JSON.stringify(useSelectorV2(["aa"]), null, 4)}
+        {JSON.stringify(useSelectorV2(id), null, 4)}
       </pre>
     </details>
   );
