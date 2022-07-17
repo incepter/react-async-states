@@ -6,7 +6,7 @@ export function readAsyncStateFromSource<T>(possiblySource: AsyncStateSource<T>)
   try {
     const candidate = possiblySource.constructor(asyncStatesKey);
     if (!(candidate instanceof AsyncState)) {
-      throw new Error("");
+      throw new Error("");// this error is thrown to trigger the catch block
     }
     return candidate; // async state instance
   } catch (e) {
