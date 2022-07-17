@@ -203,6 +203,16 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
 // useRef
 // useState
 // useEffect
+// this is a mini version of useAsyncState
+// this hook uses less hooks and has fewer capabilities that useAsyncState
+// its usage should be when you want to have control over a source
+// and you do not entend to have it auto run, dependencies, manage payload
+// etc etc.
+// this is like useSyncExternalStore, but returns an object with several
+// functions that allows controlling the external source. So, may be better ?
+// this hook can use directly useSES on the asyncState instance
+// but this will require additional memoization to add the other properties
+// that UseAsyncState has (abort, mergePayload, invalidateCache, run, replaceState ...)
 export function useSource<T>(
   source: AsyncStateSource<T>
 ): UseAsyncState<T, State<T>> {

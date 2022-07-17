@@ -11,18 +11,37 @@ import {AsyncStateContext} from "../context";
 import {readAsyncStateFromSource} from "../async-state/read-source";
 import {standaloneRunExtraPropsCreator} from "../helpers/run-props-creator";
 
-
-function runBySource<T>(src: AsyncStateSource<T>, lane?: string) {
-  let asyncState = readAsyncStateFromSource(src).getLane(lane);
-  return asyncState.run.bind(asyncState, standaloneRunExtraPropsCreator);
-}
-
 export function runSource<T>(src: AsyncStateSource<T>, ...args): AbortFn {
-  return runBySource(src)(...args);
+  return runSourceLane(src, undefined, ...args);
 }
 
-export function invalidateCache<T>(src: AsyncStateSource<T>, cacheKey?: string): void {
-  readAsyncStateFromSource(src).invalidateCache(cacheKey);
+export function runSourceLane<T>(src: AsyncStateSource<T>, lane: string | undefined, ...args): AbortFn {
+  let asyncState = readAsyncStateFromSource(src).getLane(lane);
+  return asyncState.run.call(asyncState, standaloneRunExtraPropsCreator, ...args);
+}
+
+export function useRun<T>():
+  ((keyOrSource: AsyncStateKeyOrSource<T>, ...args: any[]) => AbortFn) {
+  const contextValue = React.useContext(AsyncStateContext);
+
+  return React.useMemo(() => {
+    if (contextValue === null) {
+      return outsideContextRunFn;
+    }
+    return insideContextRunFn(contextValue);
+  }, []);
+}
+
+export function useRunLane<T>():
+  ((keyOrSource: AsyncStateKeyOrSource<T>, lane: string, ...args: any[]) => AbortFn) {
+  const contextValue = React.useContext(AsyncStateContext);
+
+  return React.useMemo(() => {
+    if (contextValue === null) {
+      return outsideContextRunLaneFn;
+    }
+    return insideContextRunLaneFn(contextValue);
+  }, []);
 }
 
 export function runpSourceLane<T>(src: AsyncStateSource<T>, lane: string | undefined, ...args): Promise<State<T>> {
@@ -46,57 +65,48 @@ export function runpSource<T>(src: AsyncStateSource<T>, ...args): Promise<State<
   return runpSourceLane(src, undefined, ...args);
 }
 
-export function runSourceLane<T>(src: AsyncStateSource<T>, lane: string | undefined, ...args): AbortFn {
-  return runBySource(src, lane)(...args);
+export function invalidateCache<T>(src: AsyncStateSource<T>, cacheKey?: string): void {
+  readAsyncStateFromSource(src).invalidateCache(cacheKey);
 }
 
-export function useRun<T>():
-  ((keyOrSource: AsyncStateKeyOrSource<T>, ...args: any[]) => AbortFn) {
-  const contextValue = React.useContext(AsyncStateContext);
-
-  return React.useMemo(() => {
-    return function run(
-      keyOrSource: AsyncStateKeyOrSource<T>,
-      ...args: any[]
-    ): AbortFn {
-      if (contextValue === null) {
-        if (typeof keyOrSource === "string") {
-          return undefined;
-        } else {
-          return runBySource(keyOrSource)(...args);
-        }
-      }
-      return contextValue.runAsyncState(keyOrSource, undefined, ...args);
-    }
-  }, []);
+function outsideContextRunFn<T>(
+  keyOrSource: AsyncStateKeyOrSource<T>,
+  ...args: any[]
+) {
+  if (typeof keyOrSource === "string") {
+    return undefined;
+  } else {
+    return runSource(keyOrSource, undefined, ...args);
+  }
 }
 
-export function useRunLane<T>():
-  ((keyOrSource: AsyncStateKeyOrSource<T>, ...args: any[]) => AbortFn) {
-  const contextValue = React.useContext(AsyncStateContext);
-
-  return React.useMemo(() => {
-    return function runLane(
-      keyOrSource: AsyncStateKeyOrSource<T>,
-      lane: string | undefined,
-      ...args: any[]
-    ): AbortFn {
-      if (contextValue === null) {
-        if (typeof keyOrSource === "string") {
-          return undefined;
-        } else {
-          return runBySource(keyOrSource, lane)(...args);
-        }
-      }
-      return contextValue.runAsyncState(keyOrSource, lane, ...args);
-    }
-  }, []);
+function outsideContextRunLaneFn<T>(
+  keyOrSource: AsyncStateKeyOrSource<T>,
+  lane: string,
+  ...args: any[]
+) {
+  if (typeof keyOrSource === "string") {
+    return undefined;
+  } else {
+    return runSource(keyOrSource, lane, ...args);
+  }
 }
 
-export function useRunAsyncState<T>():
-  ((keyOrSource: AsyncStateKeyOrSource<T>, ...args: any[]) => AbortFn) {
-  console.error('[Deprecation warning] : useRunAsyncState is deprecated and ' +
-    'will be removed before the v1. Please use useRun instead.' +
-    'Like this: import { useRun } from "react-async-states"');
-  return useRun();
+function insideContextRunFn<T>(context) {
+  return function runImpl(
+    keyOrSource: AsyncStateKeyOrSource<T>,
+    ...args: any[]
+  ): AbortFn {
+    return context.runAsyncState(keyOrSource, undefined, ...args);
+  }
+}
+
+function insideContextRunLaneFn<T>(context) {
+  return function runImpl(
+    keyOrSource: AsyncStateKeyOrSource<T>,
+    lane: string,
+    ...args: any[]
+  ): AbortFn {
+    return context.runAsyncState(keyOrSource, lane, ...args);
+  }
 }
