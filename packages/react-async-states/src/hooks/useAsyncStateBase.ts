@@ -61,14 +61,20 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   // this is similar to a ref, but will never get reset
   // it is used a mutable object between renders
   // and we only read/mutate it during render
-  // this to grand old configuration to the parseConfiguration
+  // this to grant old configuration to the parseConfiguration
+  // because of hoisting, you can know the previous value of a memo
+  // when recalculating it, you should either use a ref or a mutable memo for that
+  // or even state. I prefer using useMemo because it s the most lightweight and sure
+  // this ref contains two things: the previous configuration (references
+  // the current asyncState instance and its config) + the latest state
+  // we only mutate this during render, and we only assign a value to it if different
   const memoizedRef = React.useMemo<MemoizedUseAsyncStateRef<T, E>>(
     createMemoizedRef,
     []
   );
   // read configuration
   // useMemo: [...dependencies]
-  // infer async state instance
+  // infer async state instance, the subscription mode and other things
   const subscriptionInfo = React.useMemo<UseAsyncStateSubscriptionInfo<T, E>>(
     parseConfiguration,
     [guard, ...dependencies]
@@ -91,10 +97,9 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
     // if we already rendered, but this time, the async state instance changed
     // for some of many possible reasons.
     if (
-      !asyncState ||
-      asyncState &&
-      memoizedRef.subscriptionInfo &&
-      memoizedRef.subscriptionInfo.asyncState !== subscriptionInfo.asyncState
+      !asyncState || // means we dont have yet the instance, mostly waiting for it
+      memoizedRef.subscriptionInfo && // means we already had something
+      memoizedRef.subscriptionInfo.asyncState !== subscriptionInfo.asyncState // the subscribed instance changed
     ) {
 
       // whenever we have an async state instance,
@@ -123,7 +128,14 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   if (isInsideProvider) {
     React.useEffect(
       watchAsyncState,
-      [mode, configuration.key]
+      // omitting context because we only manipulate get, dispose and some other
+      // functions which are safe to be excluded from dependencies and never change
+      // omitting dispose fn because it depends on from the mode and whether inside provider
+      [
+        mode,
+        asyncState,
+        configuration
+      ]
     )
   }
 
@@ -283,7 +295,9 @@ const defaultUseASConfig = Object.freeze({
 
 // userConfig is the config the developer wrote
 function readUserConfiguration<T, E>(
+  // the configuration that the developer emitted, can be of many forms
   userConfig: UseAsyncStateConfig<T, E>,
+  // overrides that the library may use to control something
   overrides?: PartialUseAsyncStateConfiguration<T, E>
 ): UseAsyncStateConfiguration<T, E> {
   // this is direct anonymous producer configuration
@@ -348,11 +362,17 @@ function constructUseSourceDefaultConfig<T>(
 }
 
 function parseUseAsyncStateConfiguration<T, E = State<T>>(
+  // the configuration that the developer emitted, can be of many forms
   subscriptionConfig: UseAsyncStateConfig<T, E>,
+  // the context value, nullable
   contextValue: AsyncStateContextValue | null,
+  // the current version of the external calculation
   guard: number,
+  // the ref holding previous configuration
   memoizedRef: MemoizedUseAsyncStateRef<T, E>,
+  // the hook dependencies
   dependencies: any[],
+  // overrides that the library may use to control something
   configOverrides?: PartialUseAsyncStateConfiguration<T, E>,
 ): UseAsyncStateSubscriptionInfo<T, E> {
 
@@ -442,9 +462,19 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
   return output;
 }
 
+// this function returns a run function that's used to run the asyncState
+// what different from AsyncState.run ?
+// AsyncState.run expects a producerEffectsCreator to be able to add
+// select, run and runp as members of ProducerProps.
+// when inside provider, the producerEffectsCreator has much more capabilities
+// it allows run, runp and select to have access to provider via string keys
+// and cascade down this power
 function runAsyncStateSubscriptionFn<T, E>(
+  // the subscription mode
   mode: AsyncStateSubscriptionMode,
+  // the instance
   asyncState: AsyncStateInterface<T>,
+  // the context value, if applicable
   contextValue: UseAsyncStateContextType
 ): (...args: any[]) => AbortFn {
   return function run(...args) {
@@ -478,6 +508,8 @@ function runAsyncStateSubscriptionFn<T, E>(
   };
 }
 
+// we only dispose what we hoist, other states are disposed
+// automatically when their subscribers go to 0
 function disposeAsyncStateSubscriptionFn<T, E>(
   mode: AsyncStateSubscriptionMode,
   asyncState: AsyncStateInterface<T>,
@@ -502,10 +534,13 @@ function disposeAsyncStateSubscriptionFn<T, E>(
   };
 }
 
-
+// this functions search for the instance that you desire to subscribe to
 function inferAsyncStateInstance<T, E>(
+  // the subscription mode
   mode: AsyncStateSubscriptionMode,
+  // the configuration
   configuration: UseAsyncStateConfiguration<T, E>,
+  // the context, if applicable
   contextValue: UseAsyncStateContextType
 ): AsyncStateInterface<T> {
   const candidate = contextValue
@@ -879,11 +914,17 @@ function invokeSubscribeEvents<T>(
 }
 
 function ensureSubscriptionStateIsLatest<T, E = State<T>>(
+  // the subscribed async state
   asyncState: AsyncStateInterface<T>,
+  // the subscription mode, passed because its part of the return value
   mode: AsyncStateSubscriptionMode,
+  // reading key, selector and areEqual
   configuration: UseAsyncStateConfiguration<T, E>,
+  // run is returned as part of the return object
   run: (...args: any[]) => AbortFn,
+  // the latest value that the subscriber has
   oldValue: E,
+  // trigger a state update for the subscriber
   update: (value: React.SetStateAction<Readonly<UseAsyncState<T, E>>>) => void,
 ) {
   const {key, selector, areEqual} = configuration;
