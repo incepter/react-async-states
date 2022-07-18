@@ -5,12 +5,10 @@ export {createReducerProducer} from "./helpers/create-producer";
 export {AsyncStateProvider} from "./provider/AsyncStateProvider";
 export {
   useRun,
-  runSource,
   useRunLane,
-  runpSource,
-  runSourceLane,
-  runpSourceLane,
-  invalidateCache,
+
+
+
 } from "./hooks/useRun";
 export {
   StateBoundary,
@@ -22,3 +20,8 @@ export {
 export {useSelector} from "./hooks/useSelector";
 
 export * from "./types";
+export {invalidateCache} from "./helpers/run-source";
+export {runpSource} from "./helpers/run-source";
+export {runpSourceLane} from "./helpers/run-source";
+export {runSourceLane} from "./helpers/run-source";
+export {runSource} from "./helpers/run-source";
