@@ -1,12 +1,8 @@
 import {
   asyncify,
-  EMPTY_OBJECT,
+  EMPTY_OBJECT, readProducerConfigFromProducerConfig,
   readProducerConfigFromSubscriptionConfig
 } from "shared";
-import {
-  createAsyncStateEntry,
-  createInitialAsyncStatesReducer,
-} from "./providerUtils";
 import {
   ArraySelector,
   AsyncStateEntries,
@@ -16,15 +12,15 @@ import {
   AsyncStateSelector,
   AsyncStateSelectorKeys,
   AsyncStateWatchKey, ExtendedInitialAsyncState,
-  FunctionSelector,
+  FunctionSelector, InitialAsyncState,
   InitialStates,
   ManagerHoistConfig,
   ManagerWatchCallback,
   ManagerWatchCallbackValue,
   ManagerWatchers,
   WatcherType
-} from "../../types.internal";
-import {createRunExtraPropsCreator} from "../../helpers/run-props-creator";
+} from "../types.internal";
+import {createProducerEffectsCreator} from "../helpers/producer-effects";
 import AsyncState, {
   AbortFn,
   AsyncStateInterface,
@@ -32,9 +28,9 @@ import AsyncState, {
   AsyncStateSource,
   ForkConfig,
   State
-} from "../../async-state";
-import {readAsyncStateFromSource} from "../../async-state/read-source";
-import {isAsyncStateSource} from "../../async-state/utils";
+} from "../async-state";
+import {readAsyncStateFromSource} from "../async-state/read-source";
+import {isAsyncStateSource} from "../async-state/utils";
 
 const listenersKey = Symbol();
 
@@ -56,7 +52,7 @@ export function AsyncStateManager(
   let watchers: ManagerWatchers = Object.create(null);
 
   // @ts-ignore
-  // ts is yelling at runExtraPropsCreator property which will be assigned
+  // ts is yelling at producerEffectsCreator property which will be assigned
   // in the next statement.
   const output: AsyncStateManagerInterface = {
     entries: asyncStateEntries,
@@ -74,7 +70,7 @@ export function AsyncStateManager(
     notifyWatchers,
     setInitialStates
   };
-  output.runExtraPropsCreator = createRunExtraPropsCreator(output);
+  output.producerEffectsCreator = createProducerEffectsCreator(output);
 
   return output;
 
@@ -88,6 +84,7 @@ export function AsyncStateManager(
           return result;
         }, Object.create(null)) as {[id: AsyncStateKey]: ExtendedInitialAsyncState<any>};
 
+    const previousStates = {...asyncStateEntries};
     Object
       .values(newStatesMap)
       .reduce(
@@ -101,7 +98,8 @@ export function AsyncStateManager(
     // in this case, we should mark them as not initially hoisted
     const entriesToRemove: AsyncStateEntry<any>[] = [];
     for (const [key, entry] of Object.entries(asyncStateEntries)) {
-      if (newStatesMap[key]) {
+      // notify only if new!
+      if (newStatesMap[key] && !previousStates[key]) {
         notifyWatchers(key, entry.value);
       }
       if (!newStatesMap[key] && entry.initiallyHoisted) {
@@ -123,7 +121,7 @@ export function AsyncStateManager(
     asyncState: AsyncStateInterface<T>,
     ...args: any[]
   ): AbortFn {
-    return asyncState.run(output.runExtraPropsCreator, ...args);
+    return asyncState.run(output.producerEffectsCreator, ...args);
   }
 
   function runAsyncState<T>(
@@ -353,5 +351,55 @@ export function AsyncStateManager(
   // used in function selector in useSelector
   function getAllKeys(): AsyncStateKey[] {
     return Object.keys(asyncStateEntries);
+  }
+}
+
+function createAsyncStateEntry<T>(
+  asyncState: AsyncStateInterface<T>,
+  initiallyHoisted: boolean,
+): AsyncStateEntry<T> {
+  return {value: asyncState, initiallyHoisted };
+}
+
+
+function createInitialAsyncStatesReducer(
+  result: AsyncStateEntries,
+  current: ExtendedInitialAsyncState<any>
+): AsyncStateEntries {
+  if (isAsyncStateSource(current)) {
+    const key = current.key;
+    const existingEntry = result[key];
+    const asyncState = readAsyncStateFromSource(
+      current as AsyncStateSource<any>);
+
+    if (!existingEntry || asyncState !== existingEntry.value) {
+      result[key] = createAsyncStateEntry(asyncState, true);
+      result[key].initiallyHoisted = true;
+    }
+
+    return result;
+  } else {
+    const {key, producer, config} = current as InitialAsyncState<any>;
+    const initialValue = config?.initialValue;
+    const existingEntry = result[key];
+    if (existingEntry) {
+      const asyncState = existingEntry.value;
+      if (
+        asyncState.originalProducer === producer &&
+        asyncState.config.initialValue === initialValue
+      ) {
+        return result;
+      }
+    }
+    result[key] = createAsyncStateEntry(
+      new AsyncState(
+        key,
+        producer,
+        readProducerConfigFromProducerConfig((current as InitialAsyncState<any>).config)
+      ),
+      true
+    );
+    result[key].initiallyHoisted = true;
+    return result;
   }
 }

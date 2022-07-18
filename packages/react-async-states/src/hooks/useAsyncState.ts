@@ -2,6 +2,8 @@ import {useAsyncStateBase} from "./useAsyncStateBase";
 import {UseAsyncState, UseAsyncStateConfig} from "../types.internal";
 import {State} from "../async-state";
 
+// the real implementation is in useAsyncStateBase.tsx
+
 // default
 function useAsyncStateExport<T, E = State<T>>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,

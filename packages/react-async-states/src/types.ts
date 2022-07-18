@@ -6,9 +6,9 @@ export type {
   State,
   Producer,
   ForkConfig,
-  RunExtraProps,
   ProducerProps,
   ProducerConfig,
+  ProducerEffects,
   AsyncStateSource,
   ProducerSavedProps,
 } from "./async-state/types";

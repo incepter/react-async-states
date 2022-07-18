@@ -25,7 +25,7 @@ export function createReducerProducer<T>(reducerFn: Reducer<T>): Producer<T> {
 // }
 //
 // export function createRetryableProducer<T>(producer, config) {
-//   return function wrapperProducer(props: ProducerProps<T>) {
+//   return async function wrapperProducer(props: ProducerProps<T>) {
 //
 //     let {maxRetries, isRetryable} = config;
 //
@@ -36,7 +36,7 @@ export function createReducerProducer<T>(reducerFn: Reducer<T>): Producer<T> {
 //
 //       retryIndex += 1;
 //       try {
-//         result = producer(props);
+//         result = await props.runp(producer, {payload: props.payload}, ...props.args);
 //       } catch (e) {
 //         if (!isRetryable(e) || retryIndex >= maxRetries) {
 //           throw e;

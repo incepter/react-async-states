@@ -1,210 +1,231 @@
 import * as React from "react";
+import {identity, isFn, shallowEqual} from "shared";
+import {AsyncStateContext} from "../context";
 import {
-  EMPTY_ARRAY,
-  identity,
-  invokeIfPresent,
-  isFn,
-  shallowEqual
-} from "shared";
-import {
-  AsyncStateSelector,
-  AsyncStateSelectorKeys,
+  AsyncStateContextValue,
   EqualityFn,
-  SelectorKeysArg,
-  SelectorManager,
-  SelectorSubscription
+  ManagerWatchCallbackValue,
 } from "../types.internal";
-import {AsyncStateInterface, AsyncStateKey} from "../async-state";
-import useAsyncStateContext from "./useAsyncStateContext";
+import {isAsyncStateSource} from "../async-state/utils";
+import {readAsyncStateFromSource} from "../async-state/read-source";
+import {
+  AsyncStateInterface,
+  AsyncStateKey,
+  AsyncStateSource,
+  CachedState,
+  State
+} from "../async-state";
 
-export function useSelector<T>(
-  keys: SelectorKeysArg,
-  selector: AsyncStateSelector<T> = identity,
-  areEqual: EqualityFn<T> = shallowEqual
-): T {
+type BaseSelectorKey = AsyncStateKey | AsyncStateSource<any>
 
-  const contextValue = useAsyncStateContext();
+type UseSelectorFunctionKeys = ((allKeys: AsyncStateKey[]) => BaseSelectorKey[]);
 
-  // read actual keys as a memo, will be used as dependencies
-  const watchedKeys: string[] = React.useMemo<string[]>(readKeys, [keys]);
+export type SelectorV2KeysArg =
+  BaseSelectorKey
+  | BaseSelectorKey[]
+  | UseSelectorFunctionKeys
 
-  if (watchedKeys.length === 0) {
-    throw new Error("A selector cannot have 0 watched keys.");
-  }
-
-  const manager = React.useMemo<SelectorManager>(newSelectorManager, EMPTY_ARRAY);
-
-  React.useEffect(watchUnmount, EMPTY_ARRAY);
-
-  // this is the returned value
-  const [selectedValue, setSelectedValue] = React.useState<T>(selectValue);
-
-  React.useEffect(onWatchedKeysChange, watchedKeys);
-
-
-  return selectedValue;
-
-  function watchUnmount() {
-    return function markUnmount() {
-      manager.didUnmount = true;
-    }
-  }
-
-  function onWatchedKeysChange() {
-    const watchedKeysMap = Object.create(null);
-    watchedKeys.forEach(subscribeToAsyncState);
-
-    const unwatchGlobal = contextValue.watchAll(onAsyncStateChange);
-
-    // may be this on update should only be called when we missed a notification
-    // about a pending instance change
-    onUpdate();
-    return cleanup;
-
-    // used to update the state selected value
-    // it maps over watchedKeys to select them from context
-    // and conclude with a value
-    function onUpdate() {
-      const newValue = selectValue();
-      setSelectedValue(old => areEqual(old, newValue) ? old : newValue);
-    }
-
-    // if a hoist occurs with an already existing key and overrides it
-    // or also if a new thing that may not interest us has been hoisted
-    // this is necessary in case the used keys are a dynamic function's return
-    function onAsyncStateChange(newValue: AsyncStateInterface<any>, key) {
-      // we are not interested in anything we aren't expecting
-      if (!watchedKeysMap[key]) {
-        return;
-      }
-
-      const existingSubscription = manager.subscriptions[key];
-
-      if (!existingSubscription) {
-        return;
-      }
-
-      // if we were waiting for this async state
-      if (existingSubscription && !existingSubscription.asyncState && newValue) {
-        existingSubscription.asyncState = newValue;
-        manager.subscriptions[key].cleanup = newValue.subscribe(onUpdate);
-
-        onUpdate();
-        return;
-      }
-
-      // if the previous instance changed
-      if (newValue && newValue !== existingSubscription.asyncState) {
-        invokeIfPresent(existingSubscription.cleanup);
-        delete manager.subscriptions[key];
-
-        manager.subscriptions[key] = Object.create(null);
-        manager.subscriptions[key].asyncState = newValue;
-        manager.subscriptions[key].cleanup = newValue.subscribe(onUpdate);
-
-        onUpdate();
-      }
-
-      if (!newValue) {
-        onUpdate();
-      }
-    }
-
-    function subscribeToAsyncState(key) {
-      watchedKeysMap[key] = true;
-      // if we start watching a key
-      // we should check if it exists in the context,
-      // if existing, we simply subscribe to it;
-      // or else, we watch over it until it becomes available
-      if (!manager.subscriptions[key]) {
-        const asyncStateSubscription: SelectorSubscription<any> = Object.create(null);
-
-        const asyncState: AsyncStateInterface<any> = contextValue.get(key);
-        asyncStateSubscription.asyncState = asyncState;
-
-        if (asyncState) {
-          asyncStateSubscription.cleanup = asyncState.subscribe(onUpdate);
-        } else {
-          asyncStateSubscription.cleanup = contextValue.watch(key, onAsyncStateChange);
-        }
-        manager.subscriptions[key] = asyncStateSubscription;
-      } else {
-        const asyncState: AsyncStateInterface<any> = contextValue.get(key);
-        const existing: SelectorSubscription<any> = manager.subscriptions[key];
-
-        if (asyncState !== existing.asyncState) {
-          invokeIfPresent(existing.cleanup);
-          delete manager.subscriptions[key];
-
-          manager.subscriptions[key] = Object.create(null);
-          manager.subscriptions[key].asyncState = asyncState;
-          manager.subscriptions[key].cleanup = asyncState.subscribe(onUpdate);
-        }
-      }
-    }
-
-    function cleanup() {
-      unwatchGlobal();
-
-      Object
-        .entries(manager.subscriptions)
-        .forEach(([key, subscription]) => {
-          if (manager.didUnmount || !watchedKeysMap[key]) {
-            invokeIfPresent(subscription.cleanup);
-            delete manager.subscriptions[key];
-          }
-        });
-    }
-  }
-
-  function selectValue(): T {
-    const shouldReduceToObject = isFn(keys);
-
-    return contextValue.select(watchedKeys, selector, shouldReduceToObject);
-  }
-
-  function readKeys(): string[] {
-    return readSelectorKeys(keys, contextValue.getAllKeys);
-  }
+interface FunctionSelectorItem<T> extends Partial<State<T>> {
+  key: AsyncStateKey,
+  lastSuccess?: State<T>,
+  cache?: Record<string, CachedState<T>>,
 }
 
-function readSelectorKeys(
-  keys: SelectorKeysArg,
-  availableKeysGetter: () => AsyncStateKey[]
-): AsyncStateSelectorKeys {
-  if (typeof keys === "string") {
-    return [keys]; // optimize this
+export type FunctionSelectorArgument = Record<AsyncStateKey, FunctionSelectorItem<any> | undefined>;
+
+export type FunctionSelector<T> = (arg: FunctionSelectorArgument) => T;
+
+export type SimpleSelector<T, E> = (props: FunctionSelectorItem<T> | undefined) => E;
+export type ArraySelector<T> = (...states: (FunctionSelectorItem<any> | undefined)[]) => T;
+
+type SelectorSelf<T> = {
+  currentValue: T,
+  currentKeys: (string | AsyncStateSource<any>)[],
+  currentInstances: Record<AsyncStateKey, AsyncStateInterface<any> | undefined>,
+}
+
+export function useSelector<T>(
+  keys: BaseSelectorKey,
+  selector: SimpleSelector<any, T>,
+  areEqual?: EqualityFn<T>
+): T
+export function useSelector<T>(
+  keys: BaseSelectorKey[],
+  selector: ArraySelector<T>,
+  areEqual?: EqualityFn<T>,
+): T
+export function useSelector<T>(
+  keys: UseSelectorFunctionKeys,
+  selector: FunctionSelector<T>,
+  areEqual?: EqualityFn<T>,
+): T
+export function useSelector<T>(
+  keys: BaseSelectorKey | BaseSelectorKey[] | UseSelectorFunctionKeys,
+  selector: SimpleSelector<any, T> | ArraySelector<T> | FunctionSelector<T> = identity,
+  areEqual: EqualityFn<T> = shallowEqual,
+): T {
+  const contextValue = React.useContext(AsyncStateContext);
+  const isInsideProvider = contextValue !== null;
+
+  ensureParamsAreOk(contextValue, keys, selector);
+
+  // on every render, recheck the keys, because they are most likely to be inlined
+  const [self, setSelf] = React.useState<SelectorSelf<T>>(computeSelf);
+
+  // when the content of the keys array change, recalculate
+  // const keysToWatch = readKeys(keys, contextValue);
+  // if (didKeysChange(self.currentKeys, keysToWatch)) {
+  //   setSelf(computeSelf());
+  // }
+
+  if (isInsideProvider) {
+    React.useLayoutEffect(() => {
+      function onChange(
+        value: ManagerWatchCallbackValue<T>,
+        notificationKey: AsyncStateKey
+      ) {
+
+        // if we are interested in what happened, recalculate and quit
+        if (
+          self.currentInstances.hasOwnProperty(notificationKey) &&
+          self.currentInstances[notificationKey] !== value
+        ) {
+          setSelf(computeSelf());
+          return;
+        }
+        // re-attempt calculating keys if the given keys is a function:
+        if (isFn(keys)) {
+          const newKeys = readKeys(keys, contextValue);
+          if (didKeysChange(self.currentKeys, newKeys)) {
+            setSelf(computeSelf());
+          }
+        }
+      }
+
+      return contextValue.watchAll(onChange);
+    });
+  }
+
+  // uses:
+  //    - self.currentInstances
+  //    - self.currentValue
+  //    - areEqual
+  //    - selector (readValue uses it)
+  React.useEffect(() => {
+    function onUpdate() {
+      const newValue = readValue(self.currentInstances);
+      if (!areEqual(self.currentValue, newValue)) {
+        setSelf(old => ({...old, currentValue: newValue}));
+      }
+    }
+
+    const unsubscribeFns = Object
+      .values(self.currentInstances)
+      .filter(Boolean)
+      .map(as => as?.subscribe(onUpdate));
+
+    return () => {
+      unsubscribeFns.forEach((cleanup => cleanup?.()));
+    }
+  });
+
+  function computeSelf() {
+    const currentKeys = readKeys(keys, contextValue);
+    const currentInstances = computeInstancesMap(contextValue, currentKeys);
+    const currentValue = readValue(currentInstances);
+    return {
+      currentKeys,
+      currentValue,
+      currentInstances,
+    };
+  }
+
+  // uses: selector
+  function readValue(instances: Record<AsyncStateKey, AsyncStateInterface<any> | undefined>) {
+    const selectorStates = Object.entries(instances)
+      .map(([key, as]) => ({
+        ...as?.currentState,
+        key,
+        cache: as?.cache,
+        lastSuccess: as?.lastSuccess
+      }));
+
+    if (isFn(keys)) {
+      const selectorParam: Record<AsyncStateKey, FunctionSelectorItem<any>> = selectorStates
+        .reduce((
+          result, current) => {
+          result[current.key] = current;
+          return result;
+        }, {});
+      return (selector as FunctionSelector<T>)(selectorParam);
+    }
+
+    if (Array.isArray(keys)) {
+      return (selector as ArraySelector<T>)(...selectorStates);
+    }
+
+    return (selector as SimpleSelector<any, T>)(selectorStates[0]);
+  }
+
+  return self.currentValue;
+}
+
+function didKeysChange(
+  oldKeys: (AsyncStateKey | AsyncStateSource<any>)[],
+  newKeys: (AsyncStateKey | AsyncStateSource<any>)[]
+): boolean {
+  if (oldKeys.length !== newKeys.length) {
+    return true;
+  }
+  for (let i = 0; i < oldKeys.length; i++) {
+    if (oldKeys[i] !== newKeys[i]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function readKeys(
+  keys: SelectorV2KeysArg,
+  ctx: AsyncStateContextValue | null
+): (AsyncStateKey | AsyncStateSource<any>)[] {
+  if (typeof keys === "function") {
+    const availableKeys = ctx !== null ? ctx.getAllKeys() : [];
+    return readKeys(keys(availableKeys), ctx);
   }
   if (Array.isArray(keys)) {
     return keys;
   }
-  if (typeof keys === "function") {
-    const availableKeys = availableKeysGetter();
-    return readSelectorKeys(keys(availableKeys), availableKeysGetter);
-  }
   return [keys];
 }
 
-function newSelectorManager() {
-  const output = Object.create(null);
-
-  output.didUnmount = false;
-  output.subscriptions = Object.create(null);
-
-  output.has = function has(key) {
-    return !!output.subscriptions[key];
+function ensureParamsAreOk<E>(
+  contextValue: AsyncStateContextValue | null,
+  keys: BaseSelectorKey | BaseSelectorKey[] | UseSelectorFunctionKeys,
+  selector: SimpleSelector<any, E> | ArraySelector<E> | FunctionSelector<E>
+) {
+  if (contextValue === null && isFn(keys)) {
+    throw new Error('useSelector keys is passed as a function which is not supported outside the provider.')
   }
-
-  return output;
+  if (!isFn(selector)) {
+    throw new Error(`useSelector's selector (second arg) is not a function: '${typeof selector}'`);
+  }
 }
 
-export function useAsyncStateSelector<T>(
-  keys: SelectorKeysArg,
-  selector: AsyncStateSelector<T> = identity,
-  areEqual: EqualityFn<T> = shallowEqual
-): T {
-  console.error('[Deprecation warning] : useAsyncStateSelector is deprecated and ' +
-    'will be removed before the v1. Please use useSelector instead.' +
-    'Like this: import { useSelector } from "react-async-states"');
-  return useSelector(keys, selector, areEqual);
+function computeInstancesMap(
+  contextValue: AsyncStateContextValue | null,
+  fromKeys: (string | AsyncStateSource<any>)[]
+): Record<AsyncStateKey, AsyncStateInterface<any> | undefined> {
+  return fromKeys
+    .reduce((result, current) => {
+      if (isAsyncStateSource(current)) {
+        const asyncState = readAsyncStateFromSource(current as AsyncStateSource<any>);
+        result[asyncState.key] = asyncState;
+      } else if (contextValue !== null) {
+        result[current as AsyncStateKey] = contextValue.get(current as AsyncStateKey);
+      } else {
+        result[current as AsyncStateKey] = undefined;
+      }
+      return result;
+    }, {});
 }

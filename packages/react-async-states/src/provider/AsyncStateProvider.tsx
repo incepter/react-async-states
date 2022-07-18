@@ -1,7 +1,7 @@
 import * as React from "react";
 import {AsyncStateContext} from "../context";
 import {shallowClone} from "shared";
-import {AsyncStateManager} from "./utils/AsyncStateManager";
+import {AsyncStateManager} from "./AsyncStateManager";
 import {
   AsyncStateContextValue,
   AsyncStateEntry,
@@ -97,7 +97,7 @@ export function AsyncStateProvider(
       getAllKeys: manager.getAllKeys,
       runAsyncState: manager.runAsyncState,
       notifyWatchers: manager.notifyWatchers,
-      runExtraPropsCreator: manager.runExtraPropsCreator,
+      producerEffectsCreator: manager.producerEffectsCreator,
     };
   }
 
