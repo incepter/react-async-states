@@ -14,18 +14,24 @@ export function runSource<T>(src: AsyncStateSource<T>, ...args): AbortFn {
 }
 
 export function runSourceLane<T>(
-  src: AsyncStateSource<T>, lane: string | undefined, ...args): AbortFn {
+  src: AsyncStateSource<T>,
+  lane: string | undefined,
+  ...args
+): AbortFn {
   let asyncState = readAsyncStateFromSource(src).getLane(lane);
   return asyncState.run.call(asyncState, standaloneProducerEffectsCreator, ...args);
 }
 
 export function runpSource<T>(
-  src: AsyncStateSource<T>, ...args): Promise<State<T>> {
+  src: AsyncStateSource<T>,
+  ...args
+): Promise<State<T>> {
   return runpSourceLane(src, undefined, ...args);
 }
 
 export function runpSourceLane<T>(
-  src: AsyncStateSource<T>, lane: string | undefined,
+  src: AsyncStateSource<T>,
+  lane: string | undefined,
   ...args
 ): Promise<State<T>> {
   let asyncState = readAsyncStateFromSource(src).getLane(lane);
@@ -45,7 +51,9 @@ export function runpSourceLane<T>(
 }
 
 export function invalidateCache<T>(
-  src: AsyncStateSource<T>, cacheKey?: string): void {
+  src: AsyncStateSource<T>,
+  cacheKey?: string
+): void {
   readAsyncStateFromSource(src).invalidateCache(cacheKey);
 }
 

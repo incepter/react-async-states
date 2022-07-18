@@ -21,7 +21,7 @@ import {isAsyncStateSource} from "../async-state/utils";
 
 function createRunFunction<T>(
   manager: AsyncStateManagerInterface | null,
-  props: ProducerProps<T>
+  _props: ProducerProps<T>
 ) {
   return function run<T>(
     input: ProducerPropsRunInput<T>,
