@@ -44,13 +44,13 @@ function createRunFunction<T>(
         asyncState.payload = shallowClone(Object.create(null), config.payload);
       }
     } else if (manager !== null) {
-      asyncState = manager?.get(input as AsyncStateKey);
+      asyncState = manager.get(input as AsyncStateKey);
 
-      if (config?.lane) {
+      if (asyncState && config?.lane) {
         asyncState = asyncState.getLane(config.lane);
       }
     } else {
-      asyncState = undefined;
+      return undefined;
     }
 
     if (!asyncState) {

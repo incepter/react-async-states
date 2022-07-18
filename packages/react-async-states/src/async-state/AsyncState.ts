@@ -420,6 +420,12 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
       if (!runIndicators.fulfilled) {
         runIndicators.aborted = true;
+        // todo: we should be able to skip this update:
+        // this abort function is passed as a part of the props to producer
+        // the producer may be able to decide to **not run**
+        // for example: trying to run when a condition such on a user input isn't met
+        // rather than throwing, you can just decide **not to run**.
+        // im not sure whether this function is the place to achieve this.
         that.setState(StateBuilder.aborted(reason, cloneProducerProps(props)));
       }
 

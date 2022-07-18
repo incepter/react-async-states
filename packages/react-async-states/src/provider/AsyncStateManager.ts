@@ -1,12 +1,8 @@
 import {
   asyncify,
-  EMPTY_OBJECT,
+  EMPTY_OBJECT, readProducerConfigFromProducerConfig,
   readProducerConfigFromSubscriptionConfig
 } from "shared";
-import {
-  createAsyncStateEntry,
-  createInitialAsyncStatesReducer,
-} from "./providerUtils";
 import {
   ArraySelector,
   AsyncStateEntries,
@@ -16,15 +12,15 @@ import {
   AsyncStateSelector,
   AsyncStateSelectorKeys,
   AsyncStateWatchKey, ExtendedInitialAsyncState,
-  FunctionSelector,
+  FunctionSelector, InitialAsyncState,
   InitialStates,
   ManagerHoistConfig,
   ManagerWatchCallback,
   ManagerWatchCallbackValue,
   ManagerWatchers,
   WatcherType
-} from "../../types.internal";
-import {createRunExtraPropsCreator} from "../../helpers/run-props-creator";
+} from "../types.internal";
+import {createRunExtraPropsCreator} from "../helpers/run-props-creator";
 import AsyncState, {
   AbortFn,
   AsyncStateInterface,
@@ -32,9 +28,9 @@ import AsyncState, {
   AsyncStateSource,
   ForkConfig,
   State
-} from "../../async-state";
-import {readAsyncStateFromSource} from "../../async-state/read-source";
-import {isAsyncStateSource} from "../../async-state/utils";
+} from "../async-state";
+import {readAsyncStateFromSource} from "../async-state/read-source";
+import {isAsyncStateSource} from "../async-state/utils";
 
 const listenersKey = Symbol();
 
@@ -355,5 +351,55 @@ export function AsyncStateManager(
   // used in function selector in useSelector
   function getAllKeys(): AsyncStateKey[] {
     return Object.keys(asyncStateEntries);
+  }
+}
+
+function createAsyncStateEntry<T>(
+  asyncState: AsyncStateInterface<T>,
+  initiallyHoisted: boolean,
+): AsyncStateEntry<T> {
+  return {value: asyncState, initiallyHoisted };
+}
+
+
+function createInitialAsyncStatesReducer(
+  result: AsyncStateEntries,
+  current: ExtendedInitialAsyncState<any>
+): AsyncStateEntries {
+  if (isAsyncStateSource(current)) {
+    const key = current.key;
+    const existingEntry = result[key];
+    const asyncState = readAsyncStateFromSource(
+      current as AsyncStateSource<any>);
+
+    if (!existingEntry || asyncState !== existingEntry.value) {
+      result[key] = createAsyncStateEntry(asyncState, true);
+      result[key].initiallyHoisted = true;
+    }
+
+    return result;
+  } else {
+    const {key, producer, config} = current as InitialAsyncState<any>;
+    const initialValue = config?.initialValue;
+    const existingEntry = result[key];
+    if (existingEntry) {
+      const asyncState = existingEntry.value;
+      if (
+        asyncState.originalProducer === producer &&
+        asyncState.config.initialValue === initialValue
+      ) {
+        return result;
+      }
+    }
+    result[key] = createAsyncStateEntry(
+      new AsyncState(
+        key,
+        producer,
+        readProducerConfigFromProducerConfig((current as InitialAsyncState<any>).config)
+      ),
+      true
+    );
+    result[key].initiallyHoisted = true;
+    return result;
   }
 }
