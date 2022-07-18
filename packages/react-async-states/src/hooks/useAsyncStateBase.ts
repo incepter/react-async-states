@@ -39,7 +39,7 @@ import {
   warnInDevAboutIrrelevantUseAsyncStateConfiguration
 } from "../helpers/configuration-warn";
 import {readAsyncStateFromSource} from "../async-state/read-source";
-import {standaloneProducerEffectsCreator} from "../helpers/run-props-creator";
+import {standaloneProducerEffectsCreator} from "../helpers/producer-effects";
 import {supportsConcurrentMode} from "../helpers/supports-concurrent-mode";
 import {isAsyncStateSource} from "../async-state/utils";
 

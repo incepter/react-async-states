@@ -20,7 +20,7 @@ import {
   ManagerWatchers,
   WatcherType
 } from "../types.internal";
-import {createProducerEffectsCreator} from "../helpers/run-props-creator";
+import {createProducerEffectsCreator} from "../helpers/producer-effects";
 import AsyncState, {
   AbortFn,
   AsyncStateInterface,
