@@ -165,7 +165,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   }
 
   function subscribeToAsyncState() {
-    return useAsyncStateSubscribeFn(
+    return universalAsyncStateSubscribeFn(
       asyncState,
       mode,
       configuration,
@@ -257,7 +257,7 @@ export function useSource<T>(
       contextValue
     );
     const configuration = constructUseSourceDefaultConfig(source);
-    return useAsyncStateSubscribeFn(
+    return universalAsyncStateSubscribeFn(
       asyncState,
       AsyncStateSubscriptionMode.SOURCE,
       configuration,
@@ -656,11 +656,17 @@ function shouldRecalculateInstance<T, E>(
 }
 
 function watchOverAsyncState<T, E = State<T>>(
+  // the instance
   asyncState: AsyncStateInterface<T>,
+  // this function only works inside provider, todo: remove the | null
   contextValue: AsyncStateContextValue | null,
+  // the watching mode (waiting, listen, hoist..)
   mode: AsyncStateSubscriptionMode,
+  // the configuration, will read key and hoistToProviderConfig in case of hoist
   configuration: UseAsyncStateConfiguration<T, E>,
+  // a callback that notifies when the watch decided that a recalculation is necessary
   setGuard: (value: React.SetStateAction<number>) => void,
+  // the dispose function that serves to destroy the old instance in case we need a new one for hoist mode
   dispose: (() => (boolean | undefined)),
 ) {
   if (contextValue === null) {
@@ -750,12 +756,19 @@ function watchOverAsyncState<T, E = State<T>>(
   return undefined;
 }
 
-function useAsyncStateSubscribeFn<T, E = State<T>>(
+// a universal subscription to an async state (an external mutable source)
+function universalAsyncStateSubscribeFn<T, E = State<T>>(
+  // the instance
   asyncState: AsyncStateInterface<T>,
+  // the desired subscription mode
   mode: AsyncStateSubscriptionMode,
+  // the given configuration, will use: selector, areEqual, events and few more
   configuration: UseAsyncStateConfiguration<T, E>,
+  // a callback that the subscriber uses to report his current version, used to check when an update arrives
   getCurrentValue: () => E,
+  // this subscription constructs a UseAsyncState, so it needs a state updater for it
   update: (value: React.SetStateAction<Readonly<UseAsyncState<T, E>>>) => void,
+  // the subscriber run fn that will be passed to subscribe events
   run: (...args: any[]) => AbortFn,
 ): CleanupFn {
   if (!asyncState) {
