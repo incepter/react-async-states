@@ -20,7 +20,7 @@ import {
   ManagerWatchers,
   WatcherType
 } from "../types.internal";
-import {createRunExtraPropsCreator} from "../helpers/run-props-creator";
+import {createProducerEffectsCreator} from "../helpers/run-props-creator";
 import AsyncState, {
   AbortFn,
   AsyncStateInterface,
@@ -52,7 +52,7 @@ export function AsyncStateManager(
   let watchers: ManagerWatchers = Object.create(null);
 
   // @ts-ignore
-  // ts is yelling at runExtraPropsCreator property which will be assigned
+  // ts is yelling at producerEffectsCreator property which will be assigned
   // in the next statement.
   const output: AsyncStateManagerInterface = {
     entries: asyncStateEntries,
@@ -70,7 +70,7 @@ export function AsyncStateManager(
     notifyWatchers,
     setInitialStates
   };
-  output.runExtraPropsCreator = createRunExtraPropsCreator(output);
+  output.producerEffectsCreator = createProducerEffectsCreator(output);
 
   return output;
 
@@ -121,7 +121,7 @@ export function AsyncStateManager(
     asyncState: AsyncStateInterface<T>,
     ...args: any[]
   ): AbortFn {
-    return asyncState.run(output.runExtraPropsCreator, ...args);
+    return asyncState.run(output.producerEffectsCreator, ...args);
   }
 
   function runAsyncState<T>(

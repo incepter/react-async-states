@@ -39,7 +39,7 @@ import {
   warnInDevAboutIrrelevantUseAsyncStateConfiguration
 } from "../helpers/configuration-warn";
 import {readAsyncStateFromSource} from "../async-state/read-source";
-import {standaloneRunExtraPropsCreator} from "../helpers/run-props-creator";
+import {standaloneProducerEffectsCreator} from "../helpers/run-props-creator";
 import {supportsConcurrentMode} from "../helpers/supports-concurrent-mode";
 import {isAsyncStateSource} from "../async-state/utils";
 
@@ -458,9 +458,9 @@ function runAsyncStateSubscriptionFn<T, E>(
             ...args
           )
           :
-          asyncState.run(standaloneRunExtraPropsCreator, ...args);
+          asyncState.run(standaloneProducerEffectsCreator, ...args);
       case AsyncStateSubscriptionMode.OUTSIDE_PROVIDER:
-        return asyncState.run(standaloneRunExtraPropsCreator, ...args);
+        return asyncState.run(standaloneProducerEffectsCreator, ...args);
       case AsyncStateSubscriptionMode.FORK:
       case AsyncStateSubscriptionMode.HOIST:
       case AsyncStateSubscriptionMode.LISTEN: {
@@ -956,7 +956,7 @@ function makeUseAsyncStateReturnValue<T, E>(
 
     abort: asyncState.abort.bind(asyncState),
     replaceState: asyncState.replaceState.bind(asyncState),
-    run: isFn(run) ? run : asyncState.run.bind(asyncState, standaloneRunExtraPropsCreator),
+    run: isFn(run) ? run : asyncState.run.bind(asyncState, standaloneProducerEffectsCreator),
     invalidateCache: asyncState.invalidateCache.bind(asyncState),
   });
 }

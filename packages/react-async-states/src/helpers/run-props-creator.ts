@@ -11,7 +11,7 @@ import AsyncState, {
   ProducerProps,
   ProducerPropsRunConfig,
   ProducerPropsRunInput,
-  RunExtraProps,
+  ProducerEffects,
   State
 } from "../async-state";
 import {invokeIfPresent, isFn, shallowClone} from "../../../shared";
@@ -29,8 +29,8 @@ function createRunFunction<T>(
     ...args: any[]
   ): AbortFn {
     let asyncState: AsyncStateInterface<T> | undefined;
-    const runExtraPropsCreator =
-      manager?.runExtraPropsCreator || standaloneRunExtraPropsCreator;
+    const producerEffectsCreator =
+      manager?.producerEffectsCreator || standaloneProducerEffectsCreator;
 
     if (isAsyncStateSource(input)) {
       asyncState = readAsyncStateFromSource(input as AsyncStateSource<T>);
@@ -57,7 +57,7 @@ function createRunFunction<T>(
       return undefined;
     }
 
-    return asyncState.run(runExtraPropsCreator, ...args);
+    return asyncState.run(producerEffectsCreator, ...args);
   }
 }
 
@@ -68,8 +68,8 @@ function createRunPFunction(manager, props) {
     ...args: any[]
   ): Promise<State<T>> | undefined {
     let asyncState: AsyncStateInterface<T>;
-    const runExtraPropsCreator =
-      manager?.runExtraPropsCreator || standaloneRunExtraPropsCreator;
+    const producerEffectsCreator =
+      manager?.producerEffectsCreator || standaloneProducerEffectsCreator;
 
     if (isAsyncStateSource(input)) {
       asyncState = readAsyncStateFromSource(input as AsyncStateSource<T>);
@@ -98,7 +98,7 @@ function createRunPFunction(manager, props) {
       let unsubscribe = asyncState.subscribe(subscription);
       props.onAbort(unsubscribe);
 
-      let abort = asyncState.run(runExtraPropsCreator, ...args);
+      let abort = asyncState.run(producerEffectsCreator, ...args);
       props.onAbort(abort);
 
       function subscription(newState: State<T>) {
@@ -141,8 +141,8 @@ function createSelectFunction<T>(manager: AsyncStateManagerInterface | null) {
   }
 }
 
-export function createRunExtraPropsCreator(manager: AsyncStateManagerInterface) {
-  return function closeOverProps<T>(props: ProducerProps<T>): RunExtraProps {
+export function createProducerEffectsCreator(manager: AsyncStateManagerInterface) {
+  return function closeOverProps<T>(props: ProducerProps<T>): ProducerEffects {
     return {
       run: createRunFunction(manager, props),
       runp: createRunPFunction(manager, props),
@@ -151,7 +151,7 @@ export function createRunExtraPropsCreator(manager: AsyncStateManagerInterface) 
   }
 }
 
-export function standaloneRunExtraPropsCreator<T>(props: ProducerProps<T>): RunExtraProps {
+export function standaloneProducerEffectsCreator<T>(props: ProducerProps<T>): ProducerEffects {
   return {
     run: createRunFunction(null, props),
     runp: createRunPFunction(null, props),

@@ -26,7 +26,7 @@ import {
   ProducerProps,
   ProducerRunEffects,
   ProducerType,
-  RunExtraPropsCreator,
+  ProducerEffectsCreator,
   State,
   StateFunctionUpdater,
   StateSubscription
@@ -253,18 +253,18 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     return true;
   }
 
-  run(extraPropsCreator: RunExtraPropsCreator<T>, ...args: any[]) {
+  run(createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]) {
     const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
 
     if (!areRunEffectsSupported() || !this.config.runEffect || effectDurationMs === 0) {
-      return this.runImmediately(extraPropsCreator, ...args);
+      return this.runImmediately(createProducerEffects, ...args);
     } else {
-      return this.runWithEffect(extraPropsCreator, ...args);
+      return this.runWithEffect(createProducerEffects, ...args);
     }
   }
 
   private runWithEffect(
-    extraPropsCreator: RunExtraPropsCreator<T>, ...args: any[]): AbortFn {
+    createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]): AbortFn {
 
     const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
 
@@ -277,7 +277,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
         const timeoutId = setTimeout(function realRun() {
           that.pendingTimeout = null;
-          runAbortCallback = that.runImmediately(extraPropsCreator, ...args);
+          runAbortCallback = that.runImmediately(createProducerEffects, ...args);
         }, effectDurationMs);
 
         that.pendingTimeout = {
@@ -323,11 +323,11 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
         }
       }
     }
-    return this.runImmediately(extraPropsCreator, ...args);
+    return this.runImmediately(createProducerEffects, ...args);
   }
 
   private runImmediately(
-    extraPropsCreator: RunExtraPropsCreator<T>,
+    createProducerEffects: ProducerEffectsCreator<T>,
     ...execArgs: any[]
   ): AbortFn {
     if (this.currentState.status === AsyncStateStatus.pending || this.pendingUpdate) {
@@ -393,7 +393,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
         return that.currentState;
       }
     };
-    Object.assign(props, extraPropsCreator(props));
+    Object.assign(props, createProducerEffects(props));
 
     function emit(
       updater: T | StateFunctionUpdater<T>,

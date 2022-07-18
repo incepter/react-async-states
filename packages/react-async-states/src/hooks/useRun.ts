@@ -9,7 +9,7 @@ import {invokeIfPresent} from "../../../shared";
 import {AsyncStateKeyOrSource} from "../types.internal";
 import {AsyncStateContext} from "../context";
 import {readAsyncStateFromSource} from "../async-state/read-source";
-import {standaloneRunExtraPropsCreator} from "../helpers/run-props-creator";
+import {standaloneProducerEffectsCreator} from "../helpers/run-props-creator";
 
 export function runSource<T>(src: AsyncStateSource<T>, ...args): AbortFn {
   return runSourceLane(src, undefined, ...args);
@@ -17,7 +17,7 @@ export function runSource<T>(src: AsyncStateSource<T>, ...args): AbortFn {
 
 export function runSourceLane<T>(src: AsyncStateSource<T>, lane: string | undefined, ...args): AbortFn {
   let asyncState = readAsyncStateFromSource(src).getLane(lane);
-  return asyncState.run.call(asyncState, standaloneRunExtraPropsCreator, ...args);
+  return asyncState.run.call(asyncState, standaloneProducerEffectsCreator, ...args);
 }
 
 export function useRun<T>():
@@ -57,7 +57,7 @@ export function runpSourceLane<T>(src: AsyncStateSource<T>, lane: string | undef
       }
     }
 
-    asyncState.run(standaloneRunExtraPropsCreator, ...args);
+    asyncState.run(standaloneProducerEffectsCreator, ...args);
   });
 }
 

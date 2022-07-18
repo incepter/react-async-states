@@ -97,7 +97,7 @@ export function AsyncStateProvider(
       getAllKeys: manager.getAllKeys,
       runAsyncState: manager.runAsyncState,
       notifyWatchers: manager.notifyWatchers,
-      runExtraPropsCreator: manager.runExtraPropsCreator,
+      producerEffectsCreator: manager.producerEffectsCreator,
     };
   }
 
