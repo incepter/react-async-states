@@ -817,11 +817,9 @@ function universalAsyncStateSubscribeFn<T, E = State<T>>(
       // when we get an update from this async state, we recalculate
       // the selected value.
       const newState = readStateFromAsyncState(asyncState, selector);
-
-      update(old => {
-        return areEqual(old.state, newState)
-          ? old
-          :
+      const latestState = getCurrentValue();
+      if (!areEqual(latestState, newState)) {
+        update(
           makeUseAsyncStateReturnValue(
             asyncState,
             newState,
@@ -829,7 +827,10 @@ function universalAsyncStateSubscribeFn<T, E = State<T>>(
             run,
             mode
           )
-      });
+        );
+      }
+
+
 
       // if there are any change listeners: invoke them
       invokeChangeEvents(nextState, events);

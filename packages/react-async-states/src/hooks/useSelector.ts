@@ -2,9 +2,16 @@ import * as React from "react";
 import {identity, isFn, shallowEqual} from "shared";
 import {AsyncStateContext} from "../context";
 import {
+  ArraySelector,
   AsyncStateContextValue,
+  BaseSelectorKey,
   EqualityFn,
+  FunctionSelector,
+  FunctionSelectorItem,
   ManagerWatchCallbackValue,
+  SelectorKeysArg,
+  SimpleSelector,
+  UseSelectorFunctionKeys,
 } from "../types.internal";
 import {isAsyncStateSource} from "../async-state/utils";
 import {readAsyncStateFromSource} from "../async-state/read-source";
@@ -15,28 +22,6 @@ import {
   CachedState,
   State
 } from "../async-state";
-
-type BaseSelectorKey = AsyncStateKey | AsyncStateSource<any>
-
-type UseSelectorFunctionKeys = ((allKeys: AsyncStateKey[]) => BaseSelectorKey[]);
-
-export type SelectorV2KeysArg =
-  BaseSelectorKey
-  | BaseSelectorKey[]
-  | UseSelectorFunctionKeys
-
-interface FunctionSelectorItem<T> extends Partial<State<T>> {
-  key: AsyncStateKey,
-  lastSuccess?: State<T>,
-  cache?: Record<string, CachedState<T>>,
-}
-
-export type FunctionSelectorArgument = Record<AsyncStateKey, FunctionSelectorItem<any> | undefined>;
-
-export type FunctionSelector<T> = (arg: FunctionSelectorArgument) => T;
-
-export type SimpleSelector<T, E> = (props: FunctionSelectorItem<T> | undefined) => E;
-export type ArraySelector<T> = (...states: (FunctionSelectorItem<any> | undefined)[]) => T;
 
 type SelectorSelf<T> = {
   currentValue: T,
@@ -186,7 +171,7 @@ function didKeysChange(
 }
 
 function readKeys(
-  keys: SelectorV2KeysArg,
+  keys: SelectorKeysArg,
   ctx: AsyncStateContextValue | null
 ): (AsyncStateKey | AsyncStateSource<any>)[] {
   if (typeof keys === "function") {

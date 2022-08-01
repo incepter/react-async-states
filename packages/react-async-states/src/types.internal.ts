@@ -67,16 +67,6 @@ export type AsyncStateKeyOrSource<T> = string | AsyncStateSource<T>;
 
 export type AsyncStateSelectorKeys = string[];
 
-export type SimpleSelector<T, E> = (state: State<T>) => E;
-export type ArraySelector<T> = (...states: (State<any> | undefined)[]) => T;
-
-export type FunctionSelectorArgument = ({ [id: AsyncStateKey]: State<any> | undefined });
-export type FunctionSelector<T> = (arg: FunctionSelectorArgument) => T;
-
-export type SelectorKeysArg = AsyncStateKey
-  | AsyncStateKey[]
-  | ((allKeys: AsyncStateKey[]) => (AsyncStateKey | AsyncStateKey[]))
-
 export type AsyncStateSelector<T> =
   SimpleSelector<any, T>
   | ArraySelector<T>
@@ -415,3 +405,25 @@ export interface UseAsyncStateType<T, E> {
     dependencies?: any[]
   ): UseAsyncState<T, E>,
 }
+
+export type BaseSelectorKey = AsyncStateKey | AsyncStateSource<any>
+
+export type UseSelectorFunctionKeys = ((allKeys: AsyncStateKey[]) => BaseSelectorKey[]);
+
+export type SelectorKeysArg =
+  BaseSelectorKey
+  | BaseSelectorKey[]
+  | UseSelectorFunctionKeys
+
+export interface FunctionSelectorItem<T> extends Partial<State<T>> {
+  key: AsyncStateKey,
+  lastSuccess?: State<T>,
+  cache?: Record<string, CachedState<T>>,
+}
+
+export type FunctionSelectorArgument = Record<AsyncStateKey, FunctionSelectorItem<any> | undefined>;
+
+export type FunctionSelector<T> = (arg: FunctionSelectorArgument) => T;
+
+export type SimpleSelector<T, E> = (props: FunctionSelectorItem<T> | undefined) => E;
+export type ArraySelector<T> = (...states: (FunctionSelectorItem<any> | undefined)[]) => T;
