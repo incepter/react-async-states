@@ -91,7 +91,6 @@ export function AsyncStateProvider(
       fork: manager.fork,
       hoist: manager.hoist,
       watch: manager.watch,
-      select: manager.select,
       dispose: manager.dispose,
       watchAll: manager.watchAll,
       getAllKeys: manager.getAllKeys,

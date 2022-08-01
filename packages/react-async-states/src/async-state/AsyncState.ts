@@ -455,6 +455,11 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     }
 
     this.currentAborter = abort;
+    this.latestRunTask = {
+      payload,
+      args: execArgs,
+      producerEffectsCreator: createProducerEffects,
+    };
     this.producer(props, runIndicators);
     return abort;
   }
@@ -611,15 +616,7 @@ function spreadCacheChangeOnLanes<T>(topLevelParent: AsyncStateInterface<T>) {
 }
 
 type RunTask<T> = {
-  timestamp: number,
-
   args: any[],
   payload: Record<string, any> | null,
-
-  producer: Producer<T>,
   producerEffectsCreator: ProducerEffectsCreator<T>,
-
-  hash?: string,
-
-  result: T,
 }

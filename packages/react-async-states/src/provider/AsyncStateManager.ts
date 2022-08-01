@@ -61,7 +61,6 @@ export function AsyncStateManager(
     fork,
     hoist,
     watch,
-    select,
     dispose,
     watchers,
     watchAll,
@@ -330,22 +329,6 @@ export function AsyncStateManager(
   ): { [id: AsyncStateKey]: State<any> | undefined } {
     result[key] = get(key)?.currentState;
     return result;
-  }
-
-  function select<T>(
-    keys: AsyncStateSelectorKeys,
-    selector: AsyncStateSelector<T>,
-    reduceToObject?: boolean
-  ): T {
-    if (reduceToObject) {
-      const statesMap = keys.reduce(
-        selectIncludeKeyReducer,
-        {}
-      );
-      return (selector as FunctionSelector<T>)(statesMap);
-    }
-    const statesArray = keys.map(key => get(key)?.currentState);
-    return (selector as ArraySelector<T>)(...statesArray);
   }
 
   // used in function selector in useSelector

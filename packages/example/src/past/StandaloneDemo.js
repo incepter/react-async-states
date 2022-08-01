@@ -1,6 +1,6 @@
 import React from "react";
-import { useAsyncState } from "react-async-states";
-import { demoAsyncStates } from "./Provider";
+import { useProducer, useAsyncState } from "react-async-states";
+import { usersProducer } from "./producers";
 
 export default function Demo() {
   return (
@@ -12,7 +12,7 @@ export default function Demo() {
 }
 
 function SourceExample() {
-  const {key, state: {status, data}, run, abort} = useAsyncState(demoAsyncStates.users);
+  const {key, state: {status, data}, run, abort} = useProducer(usersProducer);
 
   return (
     <div>
@@ -27,23 +27,23 @@ function SourceExample() {
   );
 }
 
+let producer = function(props) {
+  console.log('running', props.payload, ...props.args);
+  return props.args[0];
+};
+
 function NewDemo() {
-  const {state, run, abort} = useAsyncState(function(props) {
-    console.log('running', props.isAborted(), props.aborted);
-    return new Promise(resolve => {
-      const id = setTimeout(resolve, 3000);
-      props.onAbort(function() {
-        console.log('on abort callback', props.isAborted());
-        clearTimeout(id);
-      });
-    });
-  });
+  const [userId, setUserId] = React.useState("0");
+  const {state, run, abort, replay} = useAsyncState({producer, payload: {userId}}, [userId]);
 
 
   return (
     <div>
-      <button onClick={() => run()}>run</button>
-      <button onClick={() => abort()}>abort</button>
+      <input onChange={e => setUserId(e.target.value)} value={userId} />
+
+      <button onClick={() => run(userId)}>run</button>
+      <button onClick={() => replay()}>replay</button>
+      {state.status === "pending" && <button onClick={() => abort()}>abort</button>}
       <span>status is: {state.status}</span>
     </div>
   );

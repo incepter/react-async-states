@@ -470,6 +470,15 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
   // detect the new mode based on configuration
   const newMode = inferSubscriptionMode(contextValue, newConfig);
 
+  // in most of the cases, the AsyncStateInterface could be reused and a new one
+  // is not necessary.
+  const recalculateInstance = shouldRecalculateInstance(
+    newConfig,
+    newMode,
+    guard,
+    memoizedRef.subscriptionInfo
+  );
+
   // in case of an undefined key
   // we attempt to read it from the source if we are in source modes
   // or else create a default anonymous one
@@ -487,16 +496,6 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
   if (__DEV__) {
     warnInDevAboutIrrelevantUseAsyncStateConfiguration(newMode, newConfig);
   }
-
-
-  // in most of the cases, the AsyncStateInterface could be reused and a new one
-  // is not necessary.
-  const recalculateInstance = shouldRecalculateInstance(
-    newConfig,
-    newMode,
-    guard,
-    memoizedRef.subscriptionInfo
-  );
 
 
   let newAsyncState: AsyncStateInterface<T>;
@@ -767,7 +766,7 @@ function shouldRecalculateInstance<T, E>(
     newGuard !== oldSubscriptionInfo.guard ||
     newMode !== oldSubscriptionInfo.mode ||
     newConfig.producer !== oldSubscriptionInfo.configuration.producer ||
-    newConfig.key !== oldSubscriptionInfo.configuration.key ||
+    newConfig.key !== undefined && newConfig.key !== oldSubscriptionInfo.configuration.key ||
     newConfig.source !== oldSubscriptionInfo.configuration.source ||
     newConfig.lane !== oldSubscriptionInfo.configuration.lane ||
 

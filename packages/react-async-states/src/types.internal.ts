@@ -121,11 +121,6 @@ export type AsyncStateManagerInterface = {
     key: AsyncStateKey,
     config: ForkConfig
   ): AsyncStateInterface<T> | undefined,
-  select<T>(
-    keys: AsyncStateSelectorKeys,
-    selector: AsyncStateSelector<T>,
-    reduceToObject?: boolean
-  ): T,
   hoist<T>(config: ManagerHoistConfig<T>): AsyncStateInterface<T>,
   dispose<T>(asyncState: AsyncStateInterface<T>): boolean,
   watch<T>(
@@ -166,11 +161,6 @@ export type AsyncStateContextValue = {
     key: AsyncStateKey,
     config?: ForkConfig
   ): AsyncStateInterface<T> | undefined,
-  select<T>(
-    keys: AsyncStateSelectorKeys,
-    selector: AsyncStateSelector<T>,
-    reduceToObject?: boolean
-  ): T,
   hoist<T>(config: ManagerHoistConfig<T>): AsyncStateInterface<T>,
   dispose<T>(asyncState: AsyncStateInterface<T>): boolean,
   watch<T>(
