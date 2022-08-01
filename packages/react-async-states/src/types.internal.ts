@@ -205,6 +205,7 @@ export type UseAsyncState<T, E = State<T>> = {
 
   payload: { [id: string]: any } | null,
 
+  replay: () => AbortFn,
   abort: ((reason?: any) => void),
   run: (...args: any[]) => AbortFn,
   replaceState: StateUpdater<T>,

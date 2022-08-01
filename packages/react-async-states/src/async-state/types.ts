@@ -132,7 +132,7 @@ export interface AsyncStateInterface<T> {
   cache: {[id: AsyncStateKey]: CachedState<T>}
   invalidateCache: (cacheKey?: string) => void,
 
-  payload: { [id: string]: any } | null,
+  payload: Record<string, any> | null,
   config: ProducerConfig<T>,
 
   subscriptions: { [id: number]: StateSubscription<T> },
@@ -154,6 +154,9 @@ export interface AsyncStateInterface<T> {
   parent: AsyncStateInterface<T> | null,
   lanes: Record<string, AsyncStateInterface<T>>,
   getLane(laneKey?: string): AsyncStateInterface<T>,
+
+  replaceProducer(newProducer: Producer<any>),
+  replay(): AbortFn,
 }
 
 export interface StateBuilderInterface {

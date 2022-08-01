@@ -31,7 +31,7 @@ import AsyncState, {
   AsyncStateInterface,
   AsyncStateKey,
   AsyncStateSource,
-  AsyncStateStatus,
+  AsyncStateStatus, Producer,
   State
 } from "../async-state";
 import {nextKey} from "./key-gen";
@@ -280,6 +280,93 @@ export function useSource<T>(
   }
 }
 
+const emptyArray = [];
+// useContext
+// useRef
+// useState
+// useEffect
+// useLayoutEffect
+// this is a mini version of useAsyncState
+// this hook uses fewer hooks and has fewer capabilities that useAsyncState
+// its usage should be when you want to have control over a producer (may be inline)
+// and you do not intend to have it auto run, dependencies, manage payload
+// etc etc.
+// this is like useSyncExternalStore, but returns an object with several
+// functions that allows controlling the external source. So, may be better ?
+// this hook can use directly useSES on the asyncState instance
+// but this will require additional memoization to add the other properties
+// that UseAsyncState has (abort, mergePayload, invalidateCache, run, replaceState ...)
+export function useProducer<T>(
+  producer: Producer<T>,
+): UseAsyncState<T, State<T>> {
+  const contextValue = React.useContext(AsyncStateContext);
+  const asyncState = React.useMemo<AsyncStateInterface<T>>(createInstance, emptyArray);
+
+  const latestState = React.useRef<State<T>>()
+
+  // declare a state snapshot initialized by the initial selected value
+  // useState
+  const [selectedValue, setSelectedValue] = React
+    .useState<Readonly<UseAsyncState<T, State<T>>>>(initialize);
+
+  if (latestState.current !== selectedValue.state) {
+    latestState.current = selectedValue.state;
+  }
+
+  React.useLayoutEffect(onProducerChange, [producer]);
+  // subscribe to async state
+  React.useEffect(subscribeToAsyncState, []);
+
+  return selectedValue;
+
+  function createInstance() {
+    return new AsyncState(nextKey(), producer);
+  }
+
+  function onProducerChange() {
+    if (asyncState.originalProducer !== producer) {
+      asyncState.replaceProducer(producer);
+      if (asyncState.currentState.status === AsyncStateStatus.pending) {
+        // @ts-ignore
+        // ts says I should provide an argument to the abort fn (the reason)
+        asyncState.abort();
+      }
+    }
+  }
+
+  function initialize(): Readonly<UseAsyncState<T, State<T>>> {
+    return makeUseAsyncStateReturnValue(
+      asyncState,
+      readStateFromAsyncState(asyncState, oneObjectIdentity),
+      asyncState.key,
+      runAsyncStateSubscriptionFn(
+        AsyncStateSubscriptionMode.STANDALONE,
+        asyncState,
+        contextValue
+      ),
+      AsyncStateSubscriptionMode.STANDALONE
+    );
+
+  }
+
+  function subscribeToAsyncState() {
+    let runFn = runAsyncStateSubscriptionFn(
+      AsyncStateSubscriptionMode.STANDALONE,
+      asyncState,
+      contextValue
+    );
+    const configuration = constructUseProducerDefaultConfig(asyncState.key, producer);
+    return universalAsyncStateSubscribeFn(
+      asyncState,
+      AsyncStateSubscriptionMode.STANDALONE,
+      configuration,
+      () => latestState.current,
+      setSelectedValue,
+      runFn,
+    );
+  }
+}
+
 //region configuration parsing
 
 
@@ -353,7 +440,14 @@ function readUserConfiguration<T, E>(
 function constructUseSourceDefaultConfig<T>(
   source: AsyncStateSource<T>,
 ): UseAsyncStateConfiguration<T, State<T>> {
-  return Object.freeze(Object.assign({key: source.key,}, defaultUseASConfig));
+  return Object.freeze(Object.assign({key: source.key}, defaultUseASConfig));
+}
+
+function constructUseProducerDefaultConfig<T>(
+  key: AsyncStateKey,
+  producer: Producer<T>,
+): UseAsyncStateConfiguration<T, State<T>> {
+  return Object.freeze(Object.assign({key, producer}, defaultUseASConfig));
 }
 
 function parseUseAsyncStateConfiguration<T, E = State<T>>(
@@ -831,7 +925,6 @@ function universalAsyncStateSubscribeFn<T, E = State<T>>(
       }
 
 
-
       // if there are any change listeners: invoke them
       invokeChangeEvents(nextState, events);
 
@@ -955,6 +1048,9 @@ function readStateFromAsyncState<T, E = State<T>>(
 function noop() {
   // that's a noop fn
 }
+function returnsUndefined() {
+  return undefined;
+}
 
 function makeUseAsyncStateReturnValue<T, E>(
   asyncState: AsyncStateInterface<T>,
@@ -975,12 +1071,11 @@ function makeUseAsyncStateReturnValue<T, E>(
       uniqueId: undefined,
       key: configurationKey,
       invalidateCache: noop,
+      run: returnsUndefined,
+      replay: returnsUndefined,
 
       read() {
         return stateValue;
-      },
-      run(): AbortFn {
-        return undefined;
       },
     });
   }
@@ -1005,6 +1100,7 @@ function makeUseAsyncStateReturnValue<T, E>(
     },
 
     abort: asyncState.abort.bind(asyncState),
+    replay: asyncState.replay.bind(asyncState),
     replaceState: asyncState.replaceState.bind(asyncState),
     run: isFn(run) ? run : asyncState.run.bind(asyncState, standaloneProducerEffectsCreator),
     invalidateCache: asyncState.invalidateCache.bind(asyncState),

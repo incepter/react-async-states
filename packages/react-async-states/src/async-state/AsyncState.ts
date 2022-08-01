@@ -22,11 +22,11 @@ import {
   ForkConfig,
   Producer,
   ProducerConfig,
+  ProducerEffectsCreator,
   ProducerFunction,
   ProducerProps,
   ProducerRunEffects,
   ProducerType,
-  ProducerEffectsCreator,
   State,
   StateFunctionUpdater,
   StateSubscription
@@ -52,7 +52,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   private locks: number = 0;
   private forkCount: number = 0;
-  payload: { [id: string]: any } | null = null;
+  payload: Record<string, any> | null = null;
   private pendingTimeout: { id: ReturnType<typeof setTimeout>, startDate: number } | null = null;
 
   private subscriptionsMeter: number = 0;
@@ -60,8 +60,9 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   producer: ProducerFunction<T>;
   suspender: Promise<T> | undefined = undefined;
-  readonly originalProducer: Producer<T> | undefined;
+  originalProducer: Producer<T> | undefined;
   private currentAborter: AbortFn = undefined;
+  private latestRunTask: RunTask<T> | null = null;
 
   private pendingUpdate:
     { timeoutId: ReturnType<typeof setTimeout>, callback: () => void } | null = null;
@@ -117,6 +118,12 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     }
 
     if (__DEV__) devtools.emitCreation(this);
+  }
+
+  replaceProducer(newProducer: Producer<any>) {
+    this.originalProducer = newProducer ?? undefined;
+    this.producer = wrapProducerFunction(this);
+    this.producerType = ProducerType.indeterminate;
   }
 
   getLane(laneKey?: string): AsyncStateInterface<T> {
@@ -257,14 +264,20 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
 
     if (!areRunEffectsSupported() || !this.config.runEffect || effectDurationMs === 0) {
-      return this.runImmediately(createProducerEffects, ...args);
+      return this.runImmediately(
+        createProducerEffects,
+        shallowClone(this.payload),
+        ...args
+      );
     } else {
-      return this.runWithEffect(createProducerEffects, ...args);
+      return this.runWithEffect(createProducerEffects,...args);
     }
   }
 
   private runWithEffect(
-    createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]): AbortFn {
+    createProducerEffects: ProducerEffectsCreator<T>,
+    ...args: any[]
+  ): AbortFn {
 
     const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
 
@@ -277,7 +290,11 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
         const timeoutId = setTimeout(function realRun() {
           that.pendingTimeout = null;
-          runAbortCallback = that.runImmediately(createProducerEffects, ...args);
+          runAbortCallback = that.runImmediately(
+            createProducerEffects,
+            shallowClone(that.payload),
+            ...args
+          );
         }, effectDurationMs);
 
         that.pendingTimeout = {
@@ -323,11 +340,12 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
         }
       }
     }
-    return this.runImmediately(createProducerEffects, ...args);
+    return this.runImmediately(createProducerEffects, shallowClone(this.payload), ...args);
   }
 
   private runImmediately(
     createProducerEffects: ProducerEffectsCreator<T>,
+    payload: Record<string, any> | null,
     ...execArgs: any[]
   ): AbortFn {
     if (this.currentState.status === AsyncStateStatus.pending || this.pendingUpdate) {
@@ -378,9 +396,9 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     const props: ProducerProps<T> = {
       emit,
       abort,
+      payload,
       args: execArgs,
       lastSuccess: that.lastSuccess,
-      payload: shallowClone(that.payload),
       onAbort(cb: AbortFn) {
         if (isFn(cb)) {
           onAbortCallbacks.push(cb);
@@ -528,6 +546,20 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     });
     this.setState(StateBuilder[status](effectiveValue, savedProps));
   }
+
+  replay(): AbortFn {
+    if (this.currentState.status === AsyncStateStatus.pending) {
+      this.abort();
+    }
+    if (!this.latestRunTask) {
+      return undefined;
+    }
+    return this.runImmediately(
+      this.latestRunTask.producerEffectsCreator,
+      this.latestRunTask.payload,
+      ...this.latestRunTask.args
+    );
+  }
 }
 
 function nextUniqueId() {
@@ -576,4 +608,18 @@ function spreadCacheChangeOnLanes<T>(topLevelParent: AsyncStateInterface<T>) {
       lane.cache = topLevelParent.cache;
       spreadCacheChangeOnLanes(lane);
     });
+}
+
+type RunTask<T> = {
+  timestamp: number,
+
+  args: any[],
+  payload: Record<string, any> | null,
+
+  producer: Producer<T>,
+  producerEffectsCreator: ProducerEffectsCreator<T>,
+
+  hash?: string,
+
+  result: T,
 }
