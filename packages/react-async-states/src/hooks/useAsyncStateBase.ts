@@ -97,7 +97,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
     // if we already rendered, but this time, the async state instance changed
     // for some of many possible reasons.
     if (
-      !asyncState || // means we dont have yet the instance, mostly waiting for it
+      !asyncState || // means we don't have yet the instance, mostly waiting for it
       memoizedRef.subscriptionInfo && // means we already had something
       memoizedRef.subscriptionInfo.asyncState !== subscriptionInfo.asyncState // the subscribed instance changed
     ) {
@@ -216,9 +216,9 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
 // useState
 // useEffect
 // this is a mini version of useAsyncState
-// this hook uses less hooks and has fewer capabilities that useAsyncState
+// this hook uses fewer hooks and has fewer capabilities that useAsyncState
 // its usage should be when you want to have control over a source
-// and you do not entend to have it auto run, dependencies, manage payload
+// and you do not intend to have it auto run, dependencies, manage payload
 // etc etc.
 // this is like useSyncExternalStore, but returns an object with several
 // functions that allows controlling the external source. So, may be better ?
@@ -342,11 +342,6 @@ function readUserConfiguration<T, E>(
       }
     );
   }
-  // @ts-ignore
-  if (isFn(userConfig?.postSubscribe)) {
-    console.error("[Deprecation warning] - postSubscribe was removed from the library." +
-      " Please use events.subscribe instead.");
-  }
   return Object.assign(
     {},
     defaultUseASConfig,
@@ -400,7 +395,7 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
   }
 
 
-  // in most of cases, the AsyncStateInterface could be reused and a new one
+  // in most of the cases, the AsyncStateInterface could be reused and a new one
   // is not necessary.
   const recalculateInstance = shouldRecalculateInstance(
     newConfig,
@@ -730,7 +725,7 @@ function watchOverAsyncState<T, E = State<T>>(
   }
 
   // if this component is the one hoisting a state,
-  // re-notify watchers that may missed the notification for some reason
+  // re-notify watchers that may have missed the notification for some reason
   // this case is not likely to occur,
   // but this is like a safety check that notify the watchers
   // and quit because i don't think the hoister should watch over itself
@@ -983,7 +978,7 @@ function makeUseAsyncStateReturnValue<T, E>(
       read() {
         return stateValue;
       },
-      run(...args: any[]): AbortFn {
+      run(): AbortFn {
         return undefined;
       },
     });
