@@ -78,10 +78,6 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     this.config = shallowClone(config);
     this.originalProducer = producer ?? undefined;
 
-    const initialValue = typeof this.config.initialValue === "function" ? this.config.initialValue() : this.config.initialValue;
-    this.currentState = StateBuilder.initial(initialValue);
-    this.lastSuccess = this.currentState;
-
     this.producer = wrapProducerFunction(this);
     this.producerType = ProducerType.indeterminate;
 
@@ -93,8 +89,6 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     this.lanes = Object.create(null);
 
     this._source = makeSource(this);
-
-    Object.preventExtensions(this);
 
     if (
       this.isCacheEnabled() &&
@@ -116,6 +110,14 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
         }
       }
     }
+
+    let initialState = this.config.initialValue;
+    this.currentState = StateBuilder.initial(
+      typeof initialState === "function" ? initialState.call(null, this.cache) : initialState
+    );
+    this.lastSuccess = this.currentState;
+
+    Object.preventExtensions(this);
 
     if (__DEV__) devtools.emitCreation(this);
   }
@@ -253,8 +255,11 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     this.abort();
 
     this.locks = 0;
-    const initialValue = typeof this.config.initialValue === "function" ? this.config.initialValue() : this.config.initialValue;
-    this.setState(StateBuilder.initial(initialValue));
+    const initialState = this.config.initialValue;
+    const newState: State<T> = StateBuilder.initial(
+      typeof initialState === "function" ? initialState.call(null, this.cache) : initialState
+    );
+    this.setState(newState);
     if (__DEV__) devtools.emitDispose(this);
 
     return true;

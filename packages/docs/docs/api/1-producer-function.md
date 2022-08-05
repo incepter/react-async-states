@@ -154,12 +154,26 @@ The supported configuration is:
 
 | Property              | Type                                       | Description                                                                                                                                                                                           |
 |-----------------------|--------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `initialValue`        | `T`                                        | The initial value or the initializer of the state (status = `initial`)                                                                                                                                |
+| `initialValue`        | `T`                                        | The initial value or the initializer of the state (status = `initial`), the initializer receives the cache as unique parameter                                                                        |
 | `runEffect`           | `oneOf('debounce', 'throttle', undefined)` | An effect to apply when running the producer, can be used to debounce or throttle                                                                                                                     |
 | `runEffectDurationMs` | `number > 0`, `undefined`                  | The debounce/throttle duration                                                                                                                                                                        |
 | `resetStateOnDispose` | `boolean`                                  | Whether to reset the state to its initial state when all subscribers unsubscribe or to keep it. Default to `true`.                                                                                    |
 | `skipPendingDelayMs`  | `number > 0` or `undefined`                | The duration under which a state update with a pending status may be skipped. The component in this case won't render with a pending status if it gets updated to something else under that duration. |
 | `cacheConfig`         | `CacheConfig`                              | The cache config                                                                                                                                                                                      |
+
+
+```tsx
+
+export type ProducerConfig<T> = {
+  initialValue?: T | ((cache: Record<string, CachedState<T>>) => T),
+  cacheConfig?: CacheConfig<T>,
+  runEffectDurationMs?: number,
+  runEffect?: ProducerRunEffects,
+  skipPendingDelayMs?: number,
+  resetStateOnDispose?: boolean,
+}
+
+```
 
 Where the supported cache config is:
 

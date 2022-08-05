@@ -10,7 +10,7 @@ from multiple states at once, and derive its data. Let's get back to `useSelecto
 ```javascript
 // keys: string or array (or function: not yet)
 function useSelector(keys, selector = identity, areEqual = shallowEqual) {
-  // returns whathever the selector returns (or initialValue)
+  // returns whathever the selector returns
 }
 // where
 function shallowEqual(prev, next) {
@@ -30,7 +30,6 @@ Let's explore the arguments one by one and see what we can with them:
   or a function that will receive the keys being hoisted in the provider (should return a string or an array of strings).
 - `selector`: will receive as many parameters (the async state state value) as the count of resulting keys.
 - `areEqual`: This function receives the previous and current selected value, then re-renders only if the previous and current value are not equal.
-- `initialValue`: The desired initial value if the selected value is falsy.
 
 Notes:
 - The selector subscribes to all desired async states, and runs whenever they notify it by recalculating the selected value.

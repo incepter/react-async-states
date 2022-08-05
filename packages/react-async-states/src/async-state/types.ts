@@ -77,7 +77,7 @@ export enum RenderStrategy {
 }
 
 export type ProducerConfig<T> = {
-  initialValue?: T,
+  initialValue?: T | ((cache: Record<string, CachedState<T>>) => T),
   cacheConfig?: CacheConfig<T>,
   runEffectDurationMs?: number,
   runEffect?: ProducerRunEffects,
@@ -129,7 +129,7 @@ export interface AsyncStateInterface<T> {
   currentState: State<T>,
   lastSuccess: State<T>,
 
-  cache: {[id: AsyncStateKey]: CachedState<T>}
+  cache: Record<string, CachedState<T>>,
   invalidateCache: (cacheKey?: string) => void,
 
   payload: Record<string, any> | null,
