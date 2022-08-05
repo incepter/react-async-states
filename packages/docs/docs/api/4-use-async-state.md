@@ -83,7 +83,7 @@ Let's see in details the supported configuration:
 | `cacheConfig`           | `CacheConfig`         | `undefined`                            | Defines the cache config for the producer                                                                                                                                                          |
 | `runEffect`             | `RunEffect`           | `undefined`                            | Defines run effect to decorate the producer with: debounce, throttle, delay...                                                                                                                     |
 | `runEffectDurationMs`   | `number > 0`          | `undefined`                            | The duration of the effect in milliseconds                                                                                                                                                         |
-| `resetStateOnDispose`   | `boolean`             | `true`                                 | Whether to reset the state to its initial state when all subscribers unsubscribe or to keep it. Default to `true`.                                                                                 |
+| `resetStateOnDispose`   | `boolean`             | `true`                                 | Whether to reset the state to its initial state when all subscribers unsubscribe or to keep it. Default to `false`.                                                                                |
 | `skipPendingDelayMs`    | `number > 0`          | `undefined`                            | The duration under which a state update with a pending status may be skipped. The component in this case won't render with a pending status if it gets updated to something else under that delay. |
 | `initialValue`          | `any`                 | `null`                                 | The initial state value,  the initializer receives the cache as unique parameter                                                                                                                   |
 | `events`                | `UseAsyncStateEvents` | `undefined`                            | Defines events that will be invoked with this subscription.                                                                                                                                        |
@@ -652,20 +652,19 @@ const { run, state } = useAsyncState({
 `resetStateOnDispose` : Defines whether to reset the state to the initial value
 when all subscribers unsubcribe, or to keep the current value.
 
-The default value is `true` and the library will reset the state to its initial
-value by default.
+The default value is `false` and the library will not reset the state to its 
+initial value by default by convenience.
 
 ```typescript
-// the state won't go to pending if the fetch goes under 300ms!
 const { run, state } = useAsyncState({
-  resetStateOnDispose: false,
+  resetStateOnDispose: true,
   producer: getClientProducer,
 });
 
 
 // or
 
-createSource(key, producer, {resetStateOnDispose: false});
+createSource(key, producer, {resetStateOnDispose: true});
 ```
 
 ### `cacheConfig`

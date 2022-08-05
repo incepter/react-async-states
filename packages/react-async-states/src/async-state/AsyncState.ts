@@ -501,7 +501,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       that.locks -= 1;
       delete that.subscriptions[subscriptionKey];
       if (__DEV__) devtools.emitUnsubscription(that, subscriptionKey);
-      if (that.config.resetStateOnDispose !== false) {
+      if (that.config.resetStateOnDispose === true) {
         if (Object.values(that.subscriptions).filter(Boolean).length === 0) {
           that.dispose();
         }

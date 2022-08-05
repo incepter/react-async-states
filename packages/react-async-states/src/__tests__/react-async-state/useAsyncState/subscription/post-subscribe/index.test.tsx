@@ -20,7 +20,7 @@ describe('should post subscribe', () => {
         props.onAbort(() => clearTimeout(id));
       });
     });
-    const counterSource = createSource("counter", producer, {initialValue: 0});
+    const counterSource = createSource("counter", producer, {initialValue: 0, resetStateOnDispose: true});
     const onUnsubscribe = jest.fn();
 
     const mocked = jest.fn();
