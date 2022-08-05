@@ -74,7 +74,7 @@ It also does the following:
   - update `AsyncState.lastSuccess` property
   - if cache is enabled
     - calculate the hash from args and payload the props and save it
-    - if `persiste` is provided, it is called with the whole cache.
+    - if `persist` is provided, it is called with the whole cache.
   - if status isn't `pending`
     - empty the `suspender` property (the pending promise)
 

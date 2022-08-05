@@ -45,7 +45,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   config: ProducerConfig<T>;
 
-  cache: { [id: AsyncStateKey]: CachedState<T> } = Object.create(null);
+  cache: Record<string, CachedState<T>> = Object.create(null);
 
   parent: AsyncStateInterface<T> | null;
   lanes: Record<string, AsyncStateInterface<T>>;
@@ -102,10 +102,25 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
         const loadedCache = this.config.cacheConfig.load();
         if (loadedCache) {
           if (isPromise(loadedCache)) {
-            (loadedCache as Promise<{ [id: AsyncStateKey]: CachedState<T> }>)
-              .then(asyncCache => this.cache = asyncCache)
+            (loadedCache as Promise<Record<string, CachedState<T>>>)
+              .then(asyncCache => {
+                this.cache = asyncCache;
+                if (typeof this.config.cacheConfig?.onCacheLoad === "function") {
+                  this.config.cacheConfig.onCacheLoad({
+                    cache: this.cache,
+                    setState: this.replaceState.bind(this)
+                  });
+                }
+              })
           } else {
-            this.cache = loadedCache as { [id: AsyncStateKey]: CachedState<T> };
+            this.cache = loadedCache as Record<string, CachedState<T>>;
+
+            if (typeof this.config.cacheConfig?.onCacheLoad === "function") {
+              this.config.cacheConfig.onCacheLoad({
+                cache: this.cache,
+                setState: this.replaceState.bind(this)
+              });
+            }
           }
         }
       }
