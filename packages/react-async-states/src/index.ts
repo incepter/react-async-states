@@ -17,8 +17,14 @@ export {
 export {useSelector} from "./hooks/useSelector";
 
 export * from "./types";
-export {invalidateCache} from "./helpers/run-source";
-export {runpSource} from "./helpers/run-source";
-export {runpSourceLane} from "./helpers/run-source";
-export {runSourceLane} from "./helpers/run-source";
-export {runSource} from "./helpers/run-source";
+export {
+  runSourceLane,
+  runSource,
+  replaceLaneState,
+  getLaneSource,
+  getState,
+  replaceState,
+  runpSource,
+  runpSourceLane,
+  invalidateCache
+} from "./helpers/source-utils";

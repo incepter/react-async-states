@@ -553,9 +553,6 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
   }
 
   replay(): AbortFn {
-    if (this.currentState.status === AsyncStateStatus.pending) {
-      this.abort();
-    }
     if (!this.latestRunTask) {
       return undefined;
     }

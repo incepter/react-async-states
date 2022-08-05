@@ -2,7 +2,8 @@ import {
   AbortFn,
   AsyncStateSource,
   AsyncStateStatus,
-  State
+  State,
+  StateFunctionUpdater
 } from "../async-state";
 import {invokeIfPresent} from "../../../shared";
 import {readAsyncStateFromSource} from "../async-state/read-source";
@@ -64,7 +65,7 @@ export function outsideContextRunFn<T>(
   if (typeof keyOrSource === "string") {
     return undefined;
   } else {
-    return runSource(keyOrSource, undefined, ...args);
+    return runSourceLane(keyOrSource, undefined, ...args);
   }
 }
 
@@ -76,7 +77,7 @@ export function outsideContextRunLaneFn<T>(
   if (typeof keyOrSource === "string") {
     return undefined;
   } else {
-    return runSource(keyOrSource, lane, ...args);
+    return runSourceLane(keyOrSource, lane, ...args);
   }
 }
 
@@ -97,4 +98,30 @@ export function insideContextRunLaneFn<T>(context) {
   ): AbortFn {
     return context.runAsyncState(keyOrSource, lane, ...args);
   }
+}
+
+export function replaceLaneState<T>(
+  src: AsyncStateSource<T>,
+  lane: string | undefined,
+  updater: T | StateFunctionUpdater<T>,
+  status: AsyncStateStatus = AsyncStateStatus.success,
+): void {
+  const asyncState = readAsyncStateFromSource(src).getLane(lane);
+  asyncState.replaceState.call(asyncState, updater, status);
+}
+
+export function replaceState<T>(
+  src: AsyncStateSource<T>,
+  updater: T | StateFunctionUpdater<T>,
+  status: AsyncStateStatus = AsyncStateStatus.success,
+): void {
+  replaceLaneState(src, undefined, updater , status)
+}
+
+export function getState<T>(src: AsyncStateSource<T>, lane?: string) {
+  return readAsyncStateFromSource(src).getLane(lane).currentState;
+}
+
+export function getLaneSource<T>(src: AsyncStateSource<T>, lane?: string): AsyncStateSource<T> {
+  return readAsyncStateFromSource(src).getLane(lane)._source;
 }
