@@ -13,3 +13,5 @@ npm-debug.log
 package-lock.json
 
 __tests__/async-state
+
+.scannerwork

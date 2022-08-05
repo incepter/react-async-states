@@ -19,8 +19,6 @@ import {
   AsyncStateInterface,
   AsyncStateKey,
   AsyncStateSource,
-  CachedState,
-  State
 } from "../async-state";
 
 type SelectorSelf<T> = {

@@ -125,6 +125,8 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   // if inside provider: watch over the async state
   // useEffect: [mode, key]
   // check if the effect should do a no-op early
+  // this hook is safe to be inside this precise condition, which, if changed
+  // react during reconciliation would throw the old tree to GC.
   if (isInsideProvider) {
     React.useEffect(
       watchAsyncState,
