@@ -48,7 +48,7 @@ function inferBoundaryChildren<T, E = State<T>>(
 }
 
 export function RenderThenFetchBoundary<T, E>(props: StateBoundaryProps<T, E>) {
-  const result = useAsyncState(props.config, props.dependencies);
+  const result = useAsyncState.auto(props.config, props.dependencies);
 
   const children = inferBoundaryChildren(result, props);
   return (
