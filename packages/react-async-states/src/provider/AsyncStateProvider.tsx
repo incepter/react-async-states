@@ -133,7 +133,7 @@ export function AsyncStateManager(
   initializer?: InitialStates
 ): AsyncStateManagerInterface {
 
-  const asyncStateEntries: AsyncStateEntries = Object
+  let asyncStateEntries: AsyncStateEntries = Object
     .values(initializer ?? EMPTY_OBJECT)
     .reduce(
       createInitialAsyncStatesReducer,
@@ -176,7 +176,8 @@ export function AsyncStateManager(
         }, Object.create(null)) as { [id: AsyncStateKey]: ExtendedInitialAsyncState<any> };
 
     const previousStates = {...asyncStateEntries};
-    Object
+    // basically, this is the same object reference...
+    asyncStateEntries = Object
       .values(newStatesMap)
       .reduce(
         createInitialAsyncStatesReducer,

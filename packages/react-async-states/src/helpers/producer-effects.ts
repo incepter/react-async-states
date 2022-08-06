@@ -19,9 +19,9 @@ import {nextKey} from "./key-gen";
 import {readAsyncStateFromSource} from "../async-state/read-source";
 import {isAsyncStateSource} from "../async-state/utils";
 
-function createRunFunction<T>(
+function createRunFunction(
   manager: AsyncStateManagerInterface | null,
-  _props: ProducerProps<T>
+  _props: ProducerProps<any>
 ) {
   return function run<T>(
     input: ProducerPropsRunInput<T>,
