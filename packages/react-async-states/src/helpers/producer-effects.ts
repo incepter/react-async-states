@@ -15,7 +15,7 @@ import AsyncState, {
   State
 } from "../async-state";
 import {invokeIfPresent, isFn, shallowClone} from "../../../shared";
-import {nextKey} from "../hooks/key-gen";
+import {nextKey} from "./key-gen";
 import {readAsyncStateFromSource} from "../async-state/read-source";
 import {isAsyncStateSource} from "../async-state/utils";
 

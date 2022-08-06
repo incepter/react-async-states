@@ -34,7 +34,7 @@ import AsyncState, {
   AsyncStateStatus, Producer,
   State
 } from "../async-state";
-import {nextKey} from "./key-gen";
+import {nextKey} from "../helpers/key-gen";
 import {
   warnInDevAboutIrrelevantUseAsyncStateConfiguration
 } from "../helpers/configuration-warn";

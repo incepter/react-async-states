@@ -27,25 +27,27 @@ type SelectorSelf<T> = {
   currentInstances: Record<AsyncStateKey, AsyncStateInterface<any> | undefined>,
 }
 
+// todo: enhance the typing of useSelector
 export function useSelector<T>(
   keys: BaseSelectorKey,
-  selector: SimpleSelector<any, T>,
+  selector?: SimpleSelector<any, T>,
   areEqual?: EqualityFn<T>
 ): T
 export function useSelector<T>(
   keys: BaseSelectorKey[],
-  selector: ArraySelector<T>,
+  selector?: ArraySelector<T>,
   areEqual?: EqualityFn<T>,
 ): T
 export function useSelector<T>(
   keys: UseSelectorFunctionKeys,
-  selector: FunctionSelector<T>,
+  selector?: FunctionSelector<T>,
   areEqual?: EqualityFn<T>,
 ): T
 export function useSelector<T>(
   keys: BaseSelectorKey | BaseSelectorKey[] | UseSelectorFunctionKeys,
-  selector: SimpleSelector<any, T> | ArraySelector<T> | FunctionSelector<T> = identity,
-  areEqual: EqualityFn<T> = shallowEqual,
+// @ts-ignore
+  selector?: SimpleSelector<any, T> | ArraySelector<T> | FunctionSelector<T> = identity,
+  areEqual?: EqualityFn<T> = shallowEqual,
 ): T {
   const contextValue = React.useContext(AsyncStateContext);
   const isInsideProvider = contextValue !== null;
