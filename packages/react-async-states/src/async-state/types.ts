@@ -113,7 +113,10 @@ export type CacheConfig<T> = {
   load?(): {[id: AsyncStateKey]: CachedState<T>} | Promise<{[id: AsyncStateKey]: CachedState<T>}>,
   persist?(cache: {[id: AsyncStateKey]: CachedState<T>}): void,
 
-  onCacheLoad?({cache, setState}: {cache: Record<string, CachedState<T>>, setState: T | StateFunctionUpdater<T>}): void,
+  onCacheLoad?({cache, setState}: {cache: Record<string, CachedState<T>>, setState: (
+      newValue: T | StateFunctionUpdater<T>,
+      status?: AsyncStateStatus
+    ) => void}): void,
 }
 
 export type CachedState<T> = {

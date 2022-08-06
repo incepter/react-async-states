@@ -4,10 +4,11 @@ import {
   UseAsyncState,
 } from "../../../types.internal";
 import {useAsyncState} from "../../../hooks/useAsyncState";
+import {State} from "../../../async-state";
 
 const defaultDeps = [];
 
-export default function AsyncStateComponent<T, E>({
+export default function AsyncStateComponent<T, E = State<T>>({
   config,
   children,
   dependencies = defaultDeps

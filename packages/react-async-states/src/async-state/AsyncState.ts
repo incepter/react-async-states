@@ -551,7 +551,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     if (!StateBuilder[status]) {
       throw new Error(`Couldn't replace state to unknown status ${status}.`);
     }
-    if (this.currentState.status === AsyncStateStatus.pending) {
+    if (this.currentState?.status === AsyncStateStatus.pending) {
       this.abort();
       this.currentAborter = undefined;
     }

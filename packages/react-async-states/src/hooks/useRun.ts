@@ -22,7 +22,7 @@ export function useRun<T>():
 }
 
 export function useRunLane<T>():
-  ((keyOrSource: AsyncStateKeyOrSource<T>, lane: string, ...args: any[]) => AbortFn) {
+  ((keyOrSource: AsyncStateKeyOrSource<T>, lane: string | undefined, ...args: any[]) => AbortFn) {
   const contextValue = React.useContext(AsyncStateContext);
 
   return React.useMemo(() => {
