@@ -5,7 +5,6 @@ import { DevtoolsContextProvider, useDevtoolsContext } from "./context/DevtoolsC
 import "./index.v2.css";
 import DevtoolsViewTypes from "./domain/DevtoolsViewTypes";
 import { useAsyncState } from "react-async-states";
-import { EMPTY_ARRAY } from "shared";
 
 export default function App() {
   let port = useRef();

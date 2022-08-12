@@ -1,9 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import App from './App';
-import DevtoolsAsyncStatesProvider from "./core/DevtoolsAsyncStatesProvider";
 import { toDevtoolsEvents } from "devtools/eventTypes";
+import { DevtoolsV2 } from "./v2";
 
 
 const isDev = process.env.NODE_ENV !== "production";
@@ -31,7 +30,6 @@ if (isDev) {
   };
 }
 
-export let allMessages = [];
 const source = "async-states-agent";
 function Wrapper({children}) {
   const [visible, setVisible] = React.useState(true);
@@ -54,11 +52,9 @@ function Wrapper({children}) {
 
 ReactDOM.render(
   <React.StrictMode>
-    <DevtoolsAsyncStatesProvider>
       <Wrapper>
-        <App/>
+        <DevtoolsV2 />
       </Wrapper>
-    </DevtoolsAsyncStatesProvider>
   </React.StrictMode>,
   document.getElementById('root')
 );
