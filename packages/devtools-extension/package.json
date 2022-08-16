@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "antd": "^4.22.5",
     "cra-template": "1.1.2",
     "lodash": "^4.17.21",
     "react": "18.1.0",

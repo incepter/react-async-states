@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
+import "./index.v2.css";
 import { toDevtoolsEvents } from "devtools/eventTypes";
 import { DevtoolsV2 } from "./v2";
 

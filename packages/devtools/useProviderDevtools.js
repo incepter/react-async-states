@@ -13,7 +13,7 @@ export default function useProviderDevtools(entries) {
       if (!message.data || message.data.source !== "async-states-devtools-panel") {
         return;
       }
-      devtools.connect();
+      devtools.connect();// todo: to remove
       if (message.data && message.data.type === devtoolsRequests.provider) {
         devtools.emitProviderState(entries);
       }

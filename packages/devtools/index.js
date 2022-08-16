@@ -1,13 +1,19 @@
 import { devtoolsJournalEvents, toDevtoolsEvents } from "./eventTypes";
 import { __DEV__, shallowClone } from "shared";
 
+let journalEventsId = 0;
 const source = "async-states-agent";
 const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
   let queue = [];
   let connected = false;
   let currentUpdate = null;
 
+  function isConnected() {
+    return !!connected;
+  }
+
   return {
+    isConnected,
     connect,
     disconnect,
 
@@ -29,8 +35,12 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
   };
 
   function connect() {
+    if (connected) {
+      return;
+    }
     connected = true;
     emitFlush();
+    console.log('flushing queue of ', queue.length, queue)
     if (queue.length) {
       queue.forEach(e => emit(e, false));
     }
@@ -83,6 +93,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
       source,
       payload: {
         key: asyncState.key,
+        eventId: ++journalEventsId,
         uniqueId: asyncState.uniqueId,
 
         eventType: evt.type,
@@ -97,8 +108,8 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
     emitJournalEvent(asyncState, {
       type: devtoolsJournalEvents.creation,
       payload: {
-        config: asyncState.config,
-        state: asyncState.currentState
+        state: asyncState.currentState,
+        config: asyncState.config
       },
     });
   }

@@ -1,3 +1,5 @@
+@import '~antd/dist/antd.css';
+
 .main {
     display: flex;
     height: 100vh;
@@ -7,6 +9,7 @@
 .sidebar-el-active {
     background-color: antiquewhite;
 }
+
 .sidebar-container {
     width: 20%;
     border-right: 1px solid #7f7f7f;
@@ -49,24 +52,31 @@
 .flex {
     display: flex;
 }
+
 .items-center {
     align-items: center;
 }
+
 .justify-center {
     align-items: center;
 }
+
 .flex-row {
     flex-direction: row;
 }
+
 .flex-col {
     flex-direction: column;
 }
+
 .w-full {
     width: 100%;
 }
+
 .h-full {
     height: 100%;
 }
+
 .o-auto {
     overflow: auto;
 }
