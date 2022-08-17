@@ -15,24 +15,60 @@ import {
   replaceState,
 } from "react-async-states";
 import { devtoolsJournalEvents, toDevtoolsEvents } from "devtools/eventTypes";
+import { idsStateInitialValue, journalStateInitialValue } from "./dev-data";
 
+let isDev = process.env.NODE_ENV !== "production";
 let currentJson = createSource("json", undefined);
-let statesSource = createSource("states", statesProducer);
+let currentState = createSource("current-state", undefined);
 let gatewaySource = createSource("gateway", gatewayProducer);
-let logsSource = createSource("logs", logsProducer, {initialValue: {}});
-let journalSource = createSource("journal", journalProducer, {initialValue: []});
+let logsSource = createSource("logs", logsProducer, {initialValue: isDev ? idsStateInitialValue : {}});
+let journalSource = createSource("journal", journalProducer, {
+  initialValue: {
+    data: null,
+    messages: [],
+  }
+});
+
+if (isDev) {
+  console.log('populating!!')
+  Object
+    .keys(getState(logsSource).data ?? {})
+    .forEach(id => {
+      console.log('replacing', id, journalStateInitialValue[`${id}`]);
+      replaceLaneState(journalSource, `${id}`, journalStateInitialValue[`${id}`] ?? {
+        data: null,
+        messages: []
+      })
+    });
+}
+//
+// setTimeout(() => {
+//   let logsSourceState = getState(logsSource);
+//   console.log('logsSource - state', logsSourceState);
+//
+//   Object
+//     .keys(logsSourceState.data ?? {})
+//     .forEach(id =>
+//       console.log('journalSource - lane - state', id, getState(getLaneSource(journalSource, `${id}`)))
+//     );
+// }, 10000);
 
 function resetDevtools() {
-  const oldJournalUniqueIds = getState(logsSource);
-  const oldUniqueIds = Object.keys(oldJournalUniqueIds ?? {});
-  oldUniqueIds.forEach(id => replaceLaneState(journalSource, `${id}`, []));
+  Object
+    .keys(getState(logsSource).data ?? {})
+    .forEach(id => replaceLaneState(journalSource, `${id}`, {
+      data: null,
+      messages: []
+    }));
   replaceState(logsSource, {});
 }
 
 function gatewayProducer() {
   const port = window.chrome.runtime.connect({name: "panel"});
 
-  resetDevtools();
+  if (!isDev) {
+    resetDevtools();
+  }
 
   port.postMessage({
     type: "init",
@@ -45,14 +81,14 @@ function gatewayProducer() {
     }
     switch (message.type) {
       case toDevtoolsEvents.journal:
-        return runSource(logsSource, message);
+        return runSource(logsSource, "message", message);
       case toDevtoolsEvents.flush:
         resetDevtools();
         return;
       // case toDevtoolsEvents.provider:
       //   return syncProvider(message);
       case toDevtoolsEvents.asyncState:
-        return runSource(statesSource, message);
+        return runSource(logsSource, "async-state", message);
       default:
         return;
     }
@@ -62,43 +98,48 @@ function gatewayProducer() {
 
 function logsProducer(props) {
   const lastData = props.lastSuccess.data ?? {};
-  const message = props.args[0];
+  const [action, message] = props.args;
 
-  if (!message) {
+  if (!action || (action !== "message" && action !== "async-state") || !message) {
     return lastData;
   }
 
   const {key, uniqueId} = message.payload;
-  runSourceLane(journalSource, `${uniqueId}`, message);
+  runSourceLane(journalSource, `${uniqueId}`, action, message);
 
   if (lastData.hasOwnProperty(uniqueId)) {
     return lastData;
   }
   return {...lastData, [uniqueId]: key};
+
 }
 
 function journalProducer(props) {
   const lastData = props.lastSuccess.data ?? [];
-  const message = props.args[0];
+  const [action, message] = props.args;
 
-  if (!message) {
+  if (!action || (action !== "message" && action !== "async-state") || !message) {
     return lastData;
   }
 
-  return [...lastData, message];
+  let output = {...lastData};
+  if (action === "message") {
+    output.messages.push(message);
+  }
+  if (action === "async-state") {
+    output.data = message;
+  }
+
+  return output;
 }
-
-
-function statesProducer() {
-  return null;
-}
-
 
 export function DevtoolsV2() {
   useAsyncState.auto(gatewaySource);
   const {state: logsState} = useSource(logsSource);
 
   const keys = Object.keys(logsState.data);
+
+  console.log('==>', keys);
 
   return (<div>
     <button onClick={resetDevtools}>Reset</button>
@@ -113,6 +154,7 @@ export function DevtoolsV2() {
         </Col>
         <Col span={13}>
           <CurrentJson/>
+          <CurrentState/>
         </Col>
       </Row>
       <div>
@@ -126,13 +168,20 @@ const Journal = React.memo(function Journal({lane}) {
     lane, source: journalSource,
   });
 
-  const {data: allLogs} = state;
+  const {data} = state;
+  const {messages: allLogs} = data;
 
   return (
     <details>
       <summary>{lane} - {allLogs?.[0]?.payload?.key ?? ''} journal
         - {allLogs.length} size
       </summary>
+      <Button onClick={() => {
+        replaceState(currentJson, null);
+        replaceState(currentState, lane);
+      }}>
+        - current state
+      </Button>
       <JournalView data={allLogs}/>
     </details>
   );
@@ -155,6 +204,13 @@ function JournalView({data}) {
     <div>
       <span>Available: ({data.length}), shown: ({filteredData.length})</span>
       <br/>
+      <Button onClick={() => setSelectedTypes([])}>Clear all</Button>
+      <Button
+        onClick={() => setSelectedTypes(Object.values(initialSelectedEvents))}
+      >
+        Select all
+      </Button>
+      <br/>
       <Select
         mode="multiple"
         style={{width: '100%'}}
@@ -162,7 +218,7 @@ function JournalView({data}) {
         defaultValue={selectedTypes}
         options={JOURNAL_EVENT_TYPES_FILTER_OPTIONS}
       />
-      <ul style={{ maxHeight: 400, overflowY: 'auto'}}>
+      <ul style={{maxHeight: 400, overflowY: 'auto'}}>
         {filteredData.map((entry, id) => (
           <li
             style={{color: json.data?.eventId === entry.payload.eventId ? "red" : "black"}}
@@ -171,8 +227,10 @@ function JournalView({data}) {
               replaceState(currentJson, {
                 data: formJournalEventJson(entry),
                 eventId: entry.payload.eventId,
+                uniqueId: entry.payload.uniqueId,
                 name: `${entry.payload.key} - ${entry.payload.eventType}`,
-              })
+              });
+              replaceState(currentState, null);
             }}>
               {entry.payload.eventType}
             </Button>
@@ -235,4 +293,43 @@ function CurrentJson() {
                src={json.data?.data}
     />
   );
+}
+
+function StateView({uniqueId}) {
+
+
+  const {state} = useAsyncState({
+    lane: uniqueId, source: journalSource,
+  });
+
+  console.log('showing state view for unique id', uniqueId, state);
+
+  const {data} = state;
+  const {data: asyncStateInfo} = data;
+
+
+  if (!asyncStateInfo) {
+    return null;
+  }
+  return (
+    <ReactJson name={asyncStateInfo?.key}
+               style={{padding: "1rem", height: "100%", overflow: "auto"}}
+               theme="monokai"
+               collapsed={2}
+               displayArrayKey={false}
+               displayDataTypes={false}
+               displayObjectSize={false}
+               enableClipboard={false}
+               src={asyncStateInfo}
+    />
+  );
+}
+
+function CurrentState() {
+  const {state} = useSource(currentState);
+  const {data: lane} = state;
+  if (!lane) {
+    return null;
+  }
+  return <StateView uniqueId={lane}/>
 }

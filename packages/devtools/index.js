@@ -182,6 +182,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
       },
       type: devtoolsJournalEvents.update
     });
+    emitAsyncState(asyncState);
   }
 
   function startUpdate(asyncState) {
