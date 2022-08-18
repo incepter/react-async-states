@@ -38,10 +38,12 @@ import {nextKey} from "../helpers/key-gen";
 import {
   warnInDevAboutIrrelevantUseAsyncStateConfiguration
 } from "../helpers/configuration-warn";
-import {readAsyncStateFromSource} from "../async-state/read-source";
-import {standaloneProducerEffectsCreator} from "../helpers/producer-effects";
 import {supportsConcurrentMode} from "../helpers/supports-concurrent-mode";
 import {isAsyncStateSource} from "../async-state/utils";
+import {
+  readAsyncStateFromSource,
+  standaloneProducerEffectsCreator
+} from "../async-state/AsyncState";
 
 const defaultDependencies: any[] = [];
 

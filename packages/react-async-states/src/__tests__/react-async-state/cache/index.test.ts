@@ -1,8 +1,8 @@
 import AsyncState, {AsyncStateStatus, CachedState} from "../../../async-state";
+import {flushPromises} from "../utils/test-utils";
 import {
   standaloneProducerEffectsCreator
-} from "../../../helpers/producer-effects";
-import {flushPromises} from "../utils/test-utils";
+} from "../../../async-state/AsyncState";
 
 describe('async state cache', () => {
   it('should load cache and pass it to lanes', () => {

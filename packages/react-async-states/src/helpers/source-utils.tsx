@@ -6,9 +6,11 @@ import {
   StateFunctionUpdater
 } from "../async-state";
 import {invokeIfPresent} from "../../../shared";
-import {standaloneProducerEffectsCreator} from "./producer-effects";
 import {AsyncStateKeyOrSource} from "../types.internal";
-import {readAsyncStateFromSource} from "../async-state/read-source";
+import {
+  readAsyncStateFromSource,
+  standaloneProducerEffectsCreator
+} from "../async-state/AsyncState";
 
 export function runSource<T>(src: AsyncStateSource<T>, ...args): AbortFn {
   return runSourceLane(src, undefined, ...args);

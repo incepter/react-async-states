@@ -6,13 +6,8 @@ import Row from "antd/lib/row";
 import Col from "antd/lib/col";
 import {
   createSource,
-  runSource,
-  runSourceLane,
   useAsyncState,
   useSource,
-  getState,
-  replaceLaneState,
-  replaceState,
 } from "react-async-states";
 import { devtoolsJournalEvents, toDevtoolsEvents } from "devtools/eventTypes";
 import { idsStateInitialValue, journalStateInitialValue } from "./dev-data";
@@ -30,15 +25,16 @@ let journalSource = createSource("journal", journalProducer, {
 });
 
 if (isDev) {
-  console.log('populating!!')
   Object
-    .keys(getState(logsSource).data ?? {})
+    .keys(logsSource.getState().data ?? {})
     .forEach(id => {
       console.log('replacing', id, journalStateInitialValue[`${id}`]);
-      replaceLaneState(journalSource, `${id}`, journalStateInitialValue[`${id}`] ?? {
-        data: null,
-        messages: []
-      })
+      journalSource.getLaneSource(`${id}`).setState(
+        journalStateInitialValue[`${id}`] ?? {
+          data: null,
+          messages: []
+        }
+      );
     });
 }
 //
@@ -54,16 +50,18 @@ if (isDev) {
 // }, 10000);
 
 function resetDevtools() {
+  console.log('resetting devtools');
   Object
-    .keys(getState(logsSource).data ?? {})
-    .forEach(id => replaceLaneState(journalSource, `${id}`, {
+    .keys(logsSource.getState().data ?? {})
+    .forEach(id => journalSource.getLaneSource(`${id}`).setState({
       data: null,
       messages: []
     }));
-  replaceState(logsSource, {});
+  logsSource.setState({});
 }
 
 function gatewayProducer() {
+  console.log('running gateway producer');
   const port = window.chrome.runtime.connect({name: "panel"});
 
   if (!isDev) {
@@ -79,16 +77,17 @@ function gatewayProducer() {
     if (message.source !== "async-states-agent") {
       return;
     }
+    console.log('on message from agent listener!');
     switch (message.type) {
       case toDevtoolsEvents.journal:
-        return runSource(logsSource, "message", message);
+        return logsSource.run("message", message);
       case toDevtoolsEvents.flush:
         resetDevtools();
         return;
       // case toDevtoolsEvents.provider:
       //   return syncProvider(message);
       case toDevtoolsEvents.asyncState:
-        return runSource(logsSource, "async-state", message);
+        return logsSource.run("async-state", message);
       default:
         return;
     }
@@ -105,7 +104,7 @@ function logsProducer(props) {
   }
 
   const {key, uniqueId} = message.payload;
-  runSourceLane(journalSource, `${uniqueId}`, action, message);
+  journalSource.getLaneSource(`${uniqueId}`).run(action, message);
 
   if (lastData.hasOwnProperty(uniqueId)) {
     return lastData;
@@ -143,7 +142,7 @@ export function DevtoolsV2() {
 
   return (<div>
     <button onClick={resetDevtools}>Reset</button>
-    <button onClick={() => runSource(gatewaySource)}>Reconnect</button>
+    <button onClick={() => gatewaySource.run()}>Reconnect</button>
     <details open>
       <summary>here is the logs state</summary>
       <Row>
@@ -177,8 +176,8 @@ const Journal = React.memo(function Journal({lane}) {
         - {allLogs.length} size
       </summary>
       <Button onClick={() => {
-        replaceState(currentJson, null);
-        replaceState(currentState, lane);
+        currentJson.setState(null);
+        currentState.setState(lane);
       }}>
         - current state
       </Button>
@@ -224,13 +223,13 @@ function JournalView({data}) {
             style={{color: json.data?.eventId === entry.payload.eventId ? "red" : "black"}}
             key={id}>
             <Button onClick={() => {
-              replaceState(currentJson, {
+              currentJson.setState({
                 data: formJournalEventJson(entry),
                 eventId: entry.payload.eventId,
                 uniqueId: entry.payload.uniqueId,
                 name: `${entry.payload.key} - ${entry.payload.eventType}`,
               });
-              replaceState(currentState, null);
+              currentState.setState(null);
             }}>
               {entry.payload.eventType}
             </Button>

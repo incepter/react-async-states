@@ -1,4 +1,8 @@
-import { devtoolsJournalEvents, toDevtoolsEvents } from "./eventTypes";
+import {
+  devtoolsJournalEvents,
+  devtoolsRequests,
+  toDevtoolsEvents
+} from "./eventTypes";
 import { __DEV__, shallowClone } from "shared";
 
 let journalEventsId = 0;
@@ -35,9 +39,6 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
   };
 
   function connect() {
-    if (connected) {
-      return;
-    }
     connected = true;
     emitFlush();
     console.log('flushing queue of ', queue.length, queue)
@@ -206,6 +207,25 @@ function formatEntriesToDevtools(entries) {
     result[entry.value.uniqueId].subscriptions = Object.keys(entry.value.subscriptions);
     return result;
   }, {});
+}
+
+if (__DEV__) {
+  function listener(message) {
+    if (!message.data || message.data.source !== "async-states-devtools-panel") {
+      return;
+    }
+    console.log('message from devtools', message.data.type, message.data);
+    if (message.data) {
+      if (message.data.type === devtoolsRequests.init) {
+        devtools.connect();
+      }
+      if (message.data.type === devtoolsRequests.disconnect) {
+        devtools.disconnect();
+      }
+    }
+  }
+
+  window && window.addEventListener("message", listener);
 }
 
 export default devtools;

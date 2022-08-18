@@ -9,7 +9,14 @@ import {
   warning
 } from "shared";
 import {wrapProducerFunction} from "./wrap-producer-function";
-import {didNotExpire, hash, sourceIsSourceSymbol, StateBuilder} from "./utils";
+import {
+  asyncStatesKey,
+  didNotExpire,
+  hash,
+  isAsyncStateSource,
+  sourceIsSourceSymbol,
+  StateBuilder
+} from "./utils";
 import devtools from "devtools";
 import {areRunEffectsSupported} from "shared/features";
 import {
@@ -22,9 +29,12 @@ import {
   ForkConfig,
   Producer,
   ProducerConfig,
+  ProducerEffects,
   ProducerEffectsCreator,
   ProducerFunction,
   ProducerProps,
+  ProducerPropsRunConfig,
+  ProducerPropsRunInput,
   ProducerRunEffects,
   ProducerType,
   State,
@@ -32,7 +42,11 @@ import {
   StateSubscription
 } from "./types";
 import {constructAsyncStateSource} from "./construct-source";
-import {standaloneProducerEffectsCreator} from "../helpers/producer-effects";
+import {
+  AsyncStateKeyOrSource,
+  AsyncStateManagerInterface
+} from "../types.internal";
+import {nextKey} from "../helpers/key-gen";
 
 export default class AsyncState<T> implements AsyncStateInterface<T> {
   //region properties
@@ -597,32 +611,6 @@ let uniqueId: number = 0;
 
 const defaultForkConfig: ForkConfig = Object.freeze({keepState: false});
 
-function makeSource<T>(asyncState: AsyncStateInterface<T>): Readonly<AsyncStateSource<T>> {
-  const source: AsyncStateSource<T> = constructAsyncStateSource(asyncState);
-  source.key = asyncState.key;
-
-  Object.defineProperty(source, sourceIsSourceSymbol, {
-    value: true,
-    writable: false,
-    enumerable: false,
-    configurable: false,
-  });
-
-  if (__DEV__) {
-    source.uniqueId = asyncState.uniqueId;
-  }
-
-  source.getLaneSource = function getLaneSource(lane?: string) {
-    return asyncState.getLane(lane)._source;
-  };
-  source.getState = asyncState.getState.bind(asyncState);
-  source.setState = asyncState.replaceState.bind(asyncState);
-  source.invalidateCache = asyncState.invalidateCache.bind(asyncState);
-  source.run = asyncState.run.bind(asyncState, standaloneProducerEffectsCreator);
-
-  return Object.freeze(source);
-}
-
 function notifySubscribers(asyncState: AsyncStateInterface<any>) {
   Object.values(asyncState.subscriptions).forEach(subscription => {
     subscription.callback(asyncState.currentState);
@@ -649,4 +637,161 @@ type RunTask<T> = {
   args: any[],
   payload: Record<string, any> | null,
   producerEffectsCreator: ProducerEffectsCreator<T>,
+}
+function makeSource<T>(asyncState: AsyncStateInterface<T>): Readonly<AsyncStateSource<T>> {
+  const source: AsyncStateSource<T> = constructAsyncStateSource(asyncState);
+  source.key = asyncState.key;
+
+  Object.defineProperty(source, sourceIsSourceSymbol, {
+    value: true,
+    writable: false,
+    enumerable: false,
+    configurable: false,
+  });
+
+  if (__DEV__) {
+    source.uniqueId = asyncState.uniqueId;
+  }
+
+  source.getLaneSource = function getLaneSource(lane?: string) {
+    return asyncState.getLane(lane)._source;
+  };
+  source.getState = asyncState.getState.bind(asyncState);
+  source.setState = asyncState.replaceState.bind(asyncState);
+  source.invalidateCache = asyncState.invalidateCache.bind(asyncState);
+  source.run = asyncState.run.bind(asyncState, standaloneProducerEffectsCreator);
+
+  return Object.freeze(source);
+}
+
+export function readAsyncStateFromSource<T>(possiblySource: AsyncStateSource<T>): AsyncStateInterface<T> {
+  try {
+    const candidate = possiblySource.constructor(asyncStatesKey);
+    if (!(candidate instanceof AsyncState)) {
+      throw new Error("");// this error is thrown to trigger the catch block
+    }
+    return candidate; // async state instance
+  } catch (e) {
+    throw new Error("You ve passed an incompatible source object. Please make sure to pass the received source object.");
+  }
+}
+
+function createRunFunction(
+  manager: AsyncStateManagerInterface | null,
+  _props: ProducerProps<any>
+) {
+  return function run<T>(
+    input: ProducerPropsRunInput<T>,
+    config: ProducerPropsRunConfig | null,
+    ...args: any[]
+  ): AbortFn {
+    let asyncState: AsyncStateInterface<T> | undefined;
+    const producerEffectsCreator =
+      manager?.producerEffectsCreator || standaloneProducerEffectsCreator;
+
+    if (isAsyncStateSource(input)) {
+      asyncState = readAsyncStateFromSource(input as AsyncStateSource<T>).getLane(config?.lane);
+    } else if (isFn(input)) {
+      asyncState = new AsyncState(nextKey(), input as Producer<T>);
+      if (config?.payload) {
+        asyncState.payload = shallowClone(Object.create(null), config.payload);
+      }
+    } else if (manager !== null) {
+      asyncState = manager.get(input as AsyncStateKey);
+
+      if (asyncState && config?.lane) {
+        asyncState = asyncState.getLane(config.lane);
+      }
+    } else {
+      return undefined;
+    }
+
+    if (!asyncState) {
+      return undefined;
+    }
+
+    return asyncState.run(producerEffectsCreator, ...args);
+  }
+}
+
+function createRunPFunction(manager, props) {
+  return function runp<T>(
+    input: ProducerPropsRunInput<T>,
+    config: ProducerPropsRunConfig | null,
+    ...args: any[]
+  ): Promise<State<T>> | undefined {
+    let asyncState: AsyncStateInterface<T>;
+    const producerEffectsCreator =
+      manager?.producerEffectsCreator || standaloneProducerEffectsCreator;
+
+    if (isAsyncStateSource(input)) {
+      asyncState = readAsyncStateFromSource(input as AsyncStateSource<T>).getLane(config?.lane);
+    } else if (isFn(input)) {
+      asyncState = new AsyncState(nextKey(), input as Producer<T>);
+      if (config?.payload) {
+        asyncState.payload = shallowClone(Object.create(null), config.payload);
+      }
+    } else {
+      asyncState = manager?.get(input as AsyncStateKey);
+
+      if (config?.lane) {
+        asyncState = asyncState.getLane(config.lane);
+      }
+    }
+
+    if (!asyncState) {
+      return undefined;
+    }
+
+    return new Promise(resolve => {
+      let unsubscribe = asyncState.subscribe(subscription);
+      props.onAbort(unsubscribe);
+
+      let abort = asyncState.run(producerEffectsCreator, ...args);
+      props.onAbort(abort);
+
+      function subscription(newState: State<T>) {
+        if (newState.status === AsyncStateStatus.success
+          || newState.status === AsyncStateStatus.error) {
+          invokeIfPresent(unsubscribe);
+          resolve(newState);
+        }
+      }
+    });
+  }
+}
+
+function createSelectFunction<T>(manager: AsyncStateManagerInterface | null) {
+  return function select(
+    input: AsyncStateKeyOrSource<T>,
+    lane?: string,
+  ): State<T> | undefined {
+    if (isAsyncStateSource(input)) {
+      return readAsyncStateFromSource(input as AsyncStateSource<T>).getLane(lane).getState();
+    }
+
+    let managerAsyncState = manager?.get(input as AsyncStateKey);
+    if (!managerAsyncState) {
+      return undefined;
+    }
+    return (managerAsyncState as AsyncStateInterface<T>).getLane(lane).getState();
+  }
+}
+
+export function createProducerEffectsCreator(manager: AsyncStateManagerInterface) {
+  return function closeOverProps<T>(props: ProducerProps<T>): ProducerEffects {
+    return {
+      run: createRunFunction(manager, props),
+      runp: createRunPFunction(manager, props),
+      select: createSelectFunction(manager),
+    };
+  }
+}
+
+export function standaloneProducerEffectsCreator<T>(props: ProducerProps<T>): ProducerEffects {
+  return {
+    run: createRunFunction(null, props),
+    runp: createRunPFunction(null, props),
+    select: createSelectFunction(null),
+  };
 }

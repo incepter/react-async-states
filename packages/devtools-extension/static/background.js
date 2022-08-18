@@ -57,9 +57,11 @@ chrome.runtime.onInstalled.addListener(detail => {
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+
+  console.log('extension updated!', tabId, changeInfo, tab);
   if (changeInfo.status === "complete") {
     chrome.tabs.sendMessage(tabId, {
-      type: "get-provider-state",
+      type: "init",
       source: "async-states-devtools-panel"
     });
   }

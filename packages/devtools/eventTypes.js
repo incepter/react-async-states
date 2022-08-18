@@ -1,4 +1,7 @@
 export const devtoolsRequests = {
+  init: "init",
+  disconnect: "disconnect",
+
   provider: "get-provider-state", // Map<key, info>
 
   info: "get-async-state-info", // shape: {state, subscribers, lastSuccess}
