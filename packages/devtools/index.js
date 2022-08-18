@@ -113,6 +113,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
         config: asyncState.config
       },
     });
+    emitAsyncState(asyncState);
   }
 
   function emitInsideProvider(asyncState, insideProvider = true) {
@@ -165,6 +166,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
       payload: subKey,
       type: devtoolsJournalEvents.subscription
     });
+    emitAsyncState(asyncState);
   }
 
   function emitUnsubscription(asyncState, subKey) {
@@ -172,6 +174,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
       payload: subKey,
       type: devtoolsJournalEvents.unsubscription
     });
+    emitAsyncState(asyncState);
   }
 
   function emitUpdate(asyncState) {

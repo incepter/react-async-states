@@ -28,7 +28,6 @@ if (isDev) {
   Object
     .keys(logsSource.getState().data ?? {})
     .forEach(id => {
-      console.log('replacing', id, journalStateInitialValue[`${id}`]);
       journalSource.getLaneSource(`${id}`).setState(
         journalStateInitialValue[`${id}`] ?? {
           data: null,
@@ -50,7 +49,6 @@ if (isDev) {
 // }, 10000);
 
 function resetDevtools() {
-  console.log('resetting devtools');
   Object
     .keys(logsSource.getState().data ?? {})
     .forEach(id => journalSource.getLaneSource(`${id}`).setState({
@@ -104,6 +102,7 @@ function logsProducer(props) {
   }
 
   const {key, uniqueId} = message.payload;
+  console.log('processing message', uniqueId, action, message);
   journalSource.getLaneSource(`${uniqueId}`).run(action, message);
 
   if (lastData.hasOwnProperty(uniqueId)) {
@@ -138,7 +137,7 @@ export function DevtoolsV2() {
 
   const keys = Object.keys(logsState.data);
 
-  console.log('==>', keys);
+  console.log('==>', keys, logsState.data);
 
   return (<div>
     <button onClick={resetDevtools}>Reset</button>
@@ -167,12 +166,14 @@ const Journal = React.memo(function Journal({lane}) {
     lane, source: journalSource,
   });
 
+  console.log('journal of lane', lane, state);
+
   const {data} = state;
-  const {messages: allLogs} = data;
+  const {messages: allLogs, data: instanceInfo} = data;
 
   return (
     <details>
-      <summary>{lane} - {allLogs?.[0]?.payload?.key ?? ''} journal
+      <summary>{lane} - {instanceInfo?.payload.key ?? ''} journal
         - {allLogs.length} size
       </summary>
       <Button onClick={() => {
@@ -299,7 +300,7 @@ function StateView({uniqueId}) {
 
   const {state} = useAsyncState({
     lane: uniqueId, source: journalSource,
-  });
+  }, [uniqueId]);
 
   console.log('showing state view for unique id', uniqueId, state);
 
