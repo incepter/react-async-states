@@ -191,7 +191,8 @@ function CurrentTreeDisplay() {
 const SideKey = React.memo(function SiderKey({uniqueId, asyncStateKey, isCurrent}) {
   return (
     <Button
-      style={{width: '100%', color: isCurrent ? "red" : "unset"}}
+      style={{width: '100%'}}
+      type={isCurrent ? "primary" : "default"}
       onClick={() => {
         currentJournal.setState(null);
         currentState.setState(`${uniqueId}`);
@@ -204,22 +205,12 @@ const SideKey = React.memo(function SiderKey({uniqueId, asyncStateKey, isCurrent
 
 
 const Journal = React.memo(function Journal({lane}) {
-  const {state} = useSourceLane(journalSource, lane);
-
-  console.log('journal of lane', lane, state);
-
-  const {data} = state;
-  const {messages: allLogs, data: instanceInfo} = data;
 
   return (
     <Layout style={{height: '100vh'}}>
-      <Header style={{height: 32}} className="header">
-        {lane} - {instanceInfo?.payload.key ?? ''} journal
-        - {allLogs.length} size
-      </Header>
       <Layout>
         <Sider width={200} className="site-layout-background">
-          <JournalView data={allLogs}/>
+          <JournalView lane={lane}/>
         </Sider>
         <Layout>
           <Content
@@ -241,29 +232,43 @@ const initialSelectedEvents = [
   devtoolsJournalEvents.update,
 ];
 
-function JournalView({data}) {
-  const [selectedTypes, setSelectedTypes] = React.useState(initialSelectedEvents);
-  const filteredData = data.filter(t => selectedTypes.includes(t.payload.eventType));
+function sortByEventIdDesc(ev1, ev2) {
+  console.log('comparing', ev1)
+  return ev2.payload.eventId - ev1.payload.eventId;
+}
+
+function JournalView({lane}) {
   const {state: json} = useSource(currentJournal);
+  const {state: {data}} = useSourceLane(journalSource, lane);
+
+  const {messages: allLogs} = data;
+  const [selectedTypes, setSelectedTypes] = React.useState(initialSelectedEvents);
+  const filteredData = React.useMemo(() => {
+    return allLogs
+      .filter(t => selectedTypes.includes(t.payload.eventType))
+      .sort(sortByEventIdDesc)
+  }, [data, selectedTypes]);
+
   return (
     <div>
-      <span>Available: ({data.length}), shown: ({filteredData.length})</span>
+      <span>Available: ({allLogs.length}), shown: ({filteredData.length})</span>
       <br/>
       <Button onClick={() => setSelectedTypes([])}>Clear all</Button>
       <Button
-        onClick={() => setSelectedTypes(Object.values(initialSelectedEvents))}
+        onClick={() => setSelectedTypes(Object.values(devtoolsJournalEvents))}
       >
         Select all
       </Button>
       <br/>
       <Select
         mode="multiple"
+        value={selectedTypes}
         style={{width: '100%'}}
         onChange={setSelectedTypes}
         defaultValue={selectedTypes}
         options={JOURNAL_EVENT_TYPES_FILTER_OPTIONS}
       />
-      <ul style={{maxHeight: 400, overflowY: 'auto'}}>
+      <ul style={{maxHeight: 'calc(100vh - 300px)', overflowY: 'auto'}}>
         {filteredData.map((entry, id) => (
           <li
             style={{color: json.data?.eventId === entry.payload.eventId ? "red" : "black"}}
@@ -351,7 +356,7 @@ function StateView({lane}) {
 
 
   if (!asyncStateInfo) {
-    return null;
+    return <span>No state information</span>;
   }
   return (
     <ReactJson name={asyncStateInfo?.key}
