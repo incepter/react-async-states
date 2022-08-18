@@ -320,7 +320,7 @@ function StateView({uniqueId}) {
                displayDataTypes={false}
                displayObjectSize={false}
                enableClipboard={false}
-               src={asyncStateInfo}
+               src={asyncStateInfo?.payload}
     />
   );
 }
