@@ -130,9 +130,9 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
     });
   }
 
-  function emitReplaceState(asyncState) {
+  function emitReplaceState(asyncState, props) {
     emitJournalEvent(asyncState, {
-      payload: {type: "sync"},
+      payload: {replaceState: true, type: "sync", props},
       type: devtoolsJournalEvents.run
     });
   }

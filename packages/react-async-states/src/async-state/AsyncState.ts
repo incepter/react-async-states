@@ -581,13 +581,13 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     }
 
 
-    if (__DEV__) devtools.emitReplaceState(this);
     // @ts-ignore
     const savedProps = cloneProducerProps({
       args: [effectiveValue],
       lastSuccess: this.lastSuccess,
       payload: shallowClone(this.payload),
     });
+    if (__DEV__) devtools.emitReplaceState(this, savedProps);
     this.setState(StateBuilder[status](effectiveValue, savedProps));
   }
 
