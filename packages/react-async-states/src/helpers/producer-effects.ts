@@ -17,6 +17,7 @@ import AsyncState, {
 import {invokeIfPresent, isFn, shallowClone} from "../../../shared";
 import {nextKey} from "./key-gen";
 import {isAsyncStateSource} from "../async-state/utils";
+import {readAsyncStateFromSource} from "../async-state/read-source";
 
 function createRunFunction(
   manager: AsyncStateManagerInterface | null,
@@ -32,7 +33,7 @@ function createRunFunction(
       manager?.producerEffectsCreator || standaloneProducerEffectsCreator;
 
     if (isAsyncStateSource(input)) {
-      asyncState = (input as AsyncStateSource<T>).getLane(config?.lane);
+      asyncState = readAsyncStateFromSource(input as AsyncStateSource<T>).getLane(config?.lane);
     } else if (isFn(input)) {
       asyncState = new AsyncState(nextKey(), input as Producer<T>);
       if (config?.payload) {
@@ -67,7 +68,7 @@ function createRunPFunction(manager, props) {
       manager?.producerEffectsCreator || standaloneProducerEffectsCreator;
 
     if (isAsyncStateSource(input)) {
-      asyncState = (input as AsyncStateSource<T>).getLane(config?.lane);
+      asyncState = readAsyncStateFromSource(input as AsyncStateSource<T>).getLane(config?.lane);
     } else if (isFn(input)) {
       asyncState = new AsyncState(nextKey(), input as Producer<T>);
       if (config?.payload) {
@@ -109,7 +110,7 @@ function createSelectFunction<T>(manager: AsyncStateManagerInterface | null) {
     lane?: string,
   ): State<T> | undefined {
     if (isAsyncStateSource(input)) {
-      return (input as AsyncStateSource<T>).getLane(lane).getState();
+      return readAsyncStateFromSource(input as AsyncStateSource<T>).getLane(lane).getState();
     }
 
     let managerAsyncState = manager?.get(input as AsyncStateKey);

@@ -17,6 +17,7 @@ describe('readSource', () => {
     const source = {key: "test", uniqueId: 0};
 
     // then
+    // @ts-ignore
     expect(() => readAsyncStateFromSource(source))
       .toThrow("You ve passed an incompatible source object. Please make sure to pass the received source object.");
   });

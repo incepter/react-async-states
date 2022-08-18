@@ -612,7 +612,9 @@ function makeSource<T>(asyncState: AsyncStateInterface<T>): Readonly<AsyncStateS
     source.uniqueId = asyncState.uniqueId;
   }
 
-  source.getLane = asyncState.getLane.bind(asyncState);
+  source.getLaneSource = function getLaneSource(lane?: string) {
+    return asyncState.getLane(lane)._source;
+  };
   source.getState = asyncState.getState.bind(asyncState);
   source.setState = asyncState.replaceState.bind(asyncState);
   source.invalidateCache = asyncState.invalidateCache.bind(asyncState);
