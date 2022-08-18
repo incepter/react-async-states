@@ -31,22 +31,18 @@ function onDevtoolsConnect(port) {
     if (message.source !== "async-states-devtools-panel") {
       return;
     }
-    console.log('background script!', message, tabId, ports);
     if (message.type === "init") {
-      console.log('background received init message');
       if (tabId && ports[tabId]) {
         onDevtoolsDisconnect();
       }
       tabId = message.tabId;
       ports[tabId] = port;
-    }
-    if (!tabId) {
-      console.log('tabId return!!', tabId);
       return;
     }
-    console.log('bg', ports);
+    if (!tabId) {
+      return;
+    }
     if (ports[tabId]) {
-      console.log('sending message to tab', message);
       chrome.tabs.sendMessage(tabId, message);
     }
   }

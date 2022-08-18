@@ -10,27 +10,30 @@ import {
   useSource,
   useSourceLane,
 } from "react-async-states";
-import { devtoolsJournalEvents, toDevtoolsEvents } from "devtools/eventTypes";
-import { idsStateInitialValue, journalStateInitialValue } from "./dev-data";
+import {
+  devtoolsJournalEvents, newDevtoolsEvents,
+  newDevtoolsRequests,
+} from "devtools/eventTypes";
+import { journalStateInitialValue } from "./dev-data";
 
 const {Header, Content, Sider} = Layout;
 
-
 let isDev = process.env.NODE_ENV !== "production";
-let currentJournal = createSource("json", undefined);
-let currentState = createSource("current-state", undefined);
+
+// stores data related to any async state
+let journalSource = createSource("journal", undefined);
+// defines the gateway receiving messages from the app
 let gatewaySource = createSource("gateway", gatewayProducer);
-let logsSource = createSource("logs", logsProducer, {initialValue: isDev ? idsStateInitialValue : {}});
-let journalSource = createSource("journal", journalProducer, {
-  initialValue: {
-    data: null,
-    messages: [],
-  }
-});
+// stores the keys with unique ids of created states
+let keysSource = createSource("keys", undefined, {initialValue: {}});
+
+// contains the current state unique Id to display
+let currentState = createSource("current-state", undefined);
+let currentJournal = createSource("json", undefined);
 
 if (isDev) {
   Object
-    .keys(logsSource.getState().data ?? {})
+    .keys(keysSource.getState().data ?? {})
     .forEach(id => {
       journalSource.getLaneSource(`${id}`).setState(
         journalStateInitialValue[`${id}`] ?? {
@@ -43,42 +46,39 @@ if (isDev) {
 
 function resetDevtools() {
   Object
-    .keys(logsSource.getState().data ?? {})
+    .keys(keysSource.getState().data ?? {})
     .forEach(id => journalSource.getLaneSource(`${id}`).setState({
       data: null,
       messages: []
     }));
-  logsSource.setState({});
+  keysSource.setState({});
 }
 
 function gatewayProducer() {
   console.log('running gateway producer');
   const port = window.chrome.runtime.connect({name: "panel"});
 
-  if (!isDev) {
-    resetDevtools();
-  }
-
   port.postMessage({
     type: "init",
     source: "async-states-devtools-panel",
     tabId: window.chrome.devtools.inspectedWindow.tabId
   });
+  port.postMessage({
+    type: newDevtoolsRequests.getKeys,
+    source: "async-states-devtools-panel",
+    tabId: window.chrome.devtools.inspectedWindow.tabId
+  });
+
   port.onMessage.addListener(message => {
     if (message.source !== "async-states-agent") {
       return;
     }
-    console.log('on message from agent listener!');
+    console.log('received message', message)
     switch (message.type) {
-      case toDevtoolsEvents.journal:
-        return logsSource.run("message", message);
-      case toDevtoolsEvents.flush:
-        resetDevtools();
-        return;
-      // case toDevtoolsEvents.provider:
-      //   return syncProvider(message);
-      case toDevtoolsEvents.asyncState:
-        return logsSource.run("async-state", message);
+      case newDevtoolsEvents.setKeys:
+        return keysSource.setState(message.payload);
+      case newDevtoolsEvents.setAsyncState:
+        return journalSource.getLaneSource(`${message.payload.uniqueId}`).setState(message.payload);
       default:
         return;
     }
@@ -86,47 +86,9 @@ function gatewayProducer() {
   return port;
 }
 
-function logsProducer(props) {
-  const lastData = props.lastSuccess.data ?? {};
-  const [action, message] = props.args;
-
-  if (!action || (action !== "message" && action !== "async-state") || !message) {
-    return lastData;
-  }
-
-  const {key, uniqueId} = message.payload;
-  console.log('processing message', uniqueId, action, message);
-  journalSource.getLaneSource(`${uniqueId}`).run(action, message);
-
-  if (lastData.hasOwnProperty(uniqueId)) {
-    return lastData;
-  }
-  return {...lastData, [uniqueId]: key};
-
-}
-
-function journalProducer(props) {
-  const lastData = props.lastSuccess.data ?? [];
-  const [action, message] = props.args;
-
-  if (!action || (action !== "message" && action !== "async-state") || !message) {
-    return lastData;
-  }
-
-  let output = {...lastData};
-  if (action === "message") {
-    output.messages.push(message);
-  }
-  if (action === "async-state") {
-    output.data = message;
-  }
-
-  return output;
-}
-
 export function DevtoolsV2() {
   useAsyncState.auto(gatewaySource);
-  const {state: {data}} = useSource(logsSource);
+  const {state: {data}} = useSource(keysSource);
   const {state: {data: lane}} = useSource(currentState);
 
   const entries = Object.entries(data);
@@ -170,6 +132,7 @@ function CurrentJsonDisplay({lane, mode}) {
 function CurrentTreeDisplay() {
   const {state} = useSource(currentState);
   const {data: lane} = state;
+  console.log('current tree display', lane, state);
   if (!lane) {
     return null;
   }
@@ -189,6 +152,14 @@ function CurrentTreeDisplay() {
 }
 
 const SideKey = React.memo(function SiderKey({uniqueId, asyncStateKey, isCurrent}) {
+  React.useEffect(() => {
+    gatewaySource.getState().data.postMessage({
+      uniqueId,
+      source: "async-states-devtools-panel",
+      type: newDevtoolsRequests.getAsyncState,
+      tabId: window.chrome.devtools.inspectedWindow.tabId
+    });
+  }, [uniqueId]);
   return (
     <Button
       style={{width: '100%'}}
@@ -233,19 +204,18 @@ const initialSelectedEvents = [
 ];
 
 function sortByEventIdDesc(ev1, ev2) {
-  console.log('comparing', ev1)
-  return ev2.payload.eventId - ev1.payload.eventId;
+  return ev2.eventId - ev1.eventId;
 }
 
 function JournalView({lane}) {
   const {state: json} = useSource(currentJournal);
   const {state: {data}} = useSourceLane(journalSource, lane);
 
-  const {messages: allLogs} = data;
+  const {journal: allLogs} = data ?? {};
   const [selectedTypes, setSelectedTypes] = React.useState(initialSelectedEvents);
   const filteredData = React.useMemo(() => {
     return allLogs
-      .filter(t => selectedTypes.includes(t.payload.eventType))
+      .filter(t => selectedTypes.includes(t.eventType))
       .sort(sortByEventIdDesc)
   }, [data, selectedTypes]);
 
@@ -271,17 +241,17 @@ function JournalView({lane}) {
       <ul style={{maxHeight: 'calc(100vh - 300px)', overflowY: 'auto'}}>
         {filteredData.map((entry, id) => (
           <li
-            style={{color: json.data?.eventId === entry.payload.eventId ? "red" : "black"}}
+            style={{color: json.data?.eventId === entry.eventId ? "red" : "black"}}
             key={id}>
             <Button onClick={() => {
               currentJournal.setState({
                 data: formJournalEventJson(entry),
-                eventId: entry.payload.eventId,
-                uniqueId: entry.payload.uniqueId,
-                name: `${entry.payload.key} - ${entry.payload.eventType}`,
+                eventId: entry.eventId,
+                uniqueId: entry.uniqueId,
+                name: `${entry.key} - ${entry.eventType}`,
               });
             }}>
-              {entry.payload.eventType}
+              {entry.eventType}
             </Button>
           </li>
         ))}
@@ -291,11 +261,11 @@ function JournalView({lane}) {
 }
 
 function formJournalEventJson(entry) {
-  switch (entry.payload.eventType) {
+  switch (entry.eventType) {
     case devtoolsJournalEvents.update: {
-      const {oldState, newState, lastSuccess} = entry.payload.eventPayload;
+      const {oldState, newState, lastSuccess} = entry;
       return {
-        eventDate: new Date(entry.payload.eventDate),
+        eventDate: new Date(entry.eventDate),
         from: oldState.data,
         to: newState.data,
         oldState: oldState,
@@ -308,15 +278,15 @@ function formJournalEventJson(entry) {
     case devtoolsJournalEvents.creation:
     case devtoolsJournalEvents.insideProvider: {
       return {
-        ...entry.payload.eventPayload,
-        eventDate: new Date(entry.payload.eventDate),
+        ...entry,
+        eventDate: new Date(entry.eventDate),
       };
     }
     case devtoolsJournalEvents.subscription:
     case devtoolsJournalEvents.unsubscription: {
       return {
-        eventDate: new Date(entry.payload.eventDate),
-        subscriptionKey: entry.payload.eventPayload,
+        eventDate: new Date(entry.eventDate),
+        subscriptionKey: entry,
       };
     }
     default:
@@ -345,21 +315,33 @@ function CurrentJson() {
 }
 
 function StateView({lane}) {
-
-
   const {state} = useSourceLane(journalSource, lane);
-
   console.log('showing state view for unique id', lane, state);
+  if (!state.data) {
+    return (
+      <div>
+        <span>No state information</span>
+        <Button onClick={() => {
+          gatewaySource.getState().data.postMessage({
+            uniqueId: lane,
+            source: "async-states-devtools-panel",
+            type: newDevtoolsRequests.getAsyncState,
+            tabId: window.chrome.devtools.inspectedWindow.tabId
+          });
+        }}>Click to refresh</Button>
+      </div>
+    );
+  }
 
   const {data} = state;
-  const {data: asyncStateInfo} = data;
+  const {key, lastSuccess, state: asyncStateState, subscriptions} = data;
 
 
-  if (!asyncStateInfo) {
+  if (!key) {
     return <span>No state information</span>;
   }
   return (
-    <ReactJson name={asyncStateInfo?.key}
+    <ReactJson name={key}
                style={{padding: "1rem", height: "100%", overflow: "auto"}}
                theme="monokai"
                collapsed={2}
@@ -367,7 +349,12 @@ function StateView({lane}) {
                displayDataTypes={false}
                displayObjectSize={false}
                enableClipboard={false}
-               src={asyncStateInfo?.payload}
+               src={{
+                 key,
+                 state: asyncStateState,
+                 subscriptions,
+                 lastSuccess,
+               }}
     />
   );
 }

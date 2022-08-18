@@ -1,6 +1,7 @@
 import {
   devtoolsJournalEvents,
-  devtoolsRequests,
+  newDevtoolsEvents,
+  newDevtoolsRequests,
   toDevtoolsEvents
 } from "./eventTypes";
 import { __DEV__, shallowClone } from "shared";
@@ -8,19 +9,11 @@ import { __DEV__, shallowClone } from "shared";
 let journalEventsId = 0;
 const source = "async-states-agent";
 const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
-  let queue = [];
-  let connected = false;
+
+  let keys = {};
   let currentUpdate = null;
-
-  function isConnected() {
-    return !!connected;
-  }
-
   return {
-    isConnected,
-    connect,
-    disconnect,
-
+    emitKeys,
     emitCreation,
     emitRunSync,
     emitReplaceState,
@@ -38,31 +31,18 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
     emitInsideProvider,
   };
 
-  function connect() {
-    connected = true;
-    emitFlush();
-    console.log('flushing queue of ', queue.length, queue)
-    if (queue.length) {
-      queue.forEach(e => emit(e, false));
-    }
+  function emitKeys() {
+    emit({
+      source,
+      payload: keys,
+      type: newDevtoolsEvents.setKeys,
+    });
   }
 
-  function disconnect() {
-    connected = false;
+  function emit(message) {
+    window && window.postMessage(JSON.parse(JSON.stringify(message)), "*");
   }
 
-  function emit(message, saveToQueue = true) {
-    if (connected) {
-      window && window.postMessage(JSON.parse(JSON.stringify(message)), "*");
-    }
-    if (saveToQueue && message.type !== toDevtoolsEvents.provider) {
-      queue.push(message);
-    }
-  }
-
-  function emitFlush() {
-    emit({ source, type: toDevtoolsEvents.flush }, false);
-  }
   function emitProviderState(entries) {
     emit({
       source,
@@ -79,33 +59,31 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
       source,
       payload: {
         key: asyncState.key,
+        journal: asyncState.journal,
         uniqueId: asyncState.uniqueId,
         state: asyncState.currentState,
         lastSuccess: asyncState.lastSuccess,
         subscriptions: Object.keys(asyncState.subscriptions)
       },
-      type: toDevtoolsEvents.asyncState
+      type: newDevtoolsEvents.setAsyncState
     });
   }
 
   function emitJournalEvent(asyncState, evt) {
 
-    emit({
-      source,
-      payload: {
-        key: asyncState.key,
-        eventId: ++journalEventsId,
-        uniqueId: asyncState.uniqueId,
+    asyncState.journal.push({
+      key: asyncState.key,
+      eventId: ++journalEventsId,
+      uniqueId: asyncState.uniqueId,
 
-        eventType: evt.type,
-        eventDate: Date.now(),
-        eventPayload: evt.payload,
-      },
-      type: toDevtoolsEvents.journal
+      eventType: evt.type,
+      eventDate: Date.now(),
+      eventPayload: evt.payload,
     });
   }
 
   function emitCreation(asyncState) {
+    keys[`${asyncState.uniqueId}`] = asyncState.key;
     emitJournalEvent(asyncState, {
       type: devtoolsJournalEvents.creation,
       payload: {
@@ -219,11 +197,8 @@ if (__DEV__) {
     }
     console.log('message from devtools', message.data.type, message.data);
     if (message.data) {
-      if (message.data.type === devtoolsRequests.init) {
-        devtools.connect();
-      }
-      if (message.data.type === devtoolsRequests.disconnect) {
-        devtools.disconnect();
+      if (message.data.type === newDevtoolsRequests.getKeys) {
+        devtools.emitKeys();
       }
     }
   }

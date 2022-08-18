@@ -1,11 +1,12 @@
-export const devtoolsRequests = {
-  init: "init",
-  disconnect: "disconnect",
+export const newDevtoolsRequests = {
+  getKeys: "get-keys",
+  getAsyncState: "get-async-state",
+}
 
-  provider: "get-provider-state", // Map<key, info>
-
-  info: "get-async-state-info", // shape: {state, subscribers, lastSuccess}
-};
+export const newDevtoolsEvents = {
+  setKeys: "set-keys",
+  setAsyncState: "set-async-state",
+}
 
 export const toDevtoolsEvents = {
   provider: "sync-provider", // provider state sent to devtools_old; should be fired once a hoist/fork/entries_change

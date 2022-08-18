@@ -170,6 +170,8 @@ export interface AsyncStateInterface<T> {
   replay(): AbortFn,
 
   getState(): State<T>,
+
+  journal: any[], // for devtools, dev only
 }
 
 export interface StateBuilderInterface {

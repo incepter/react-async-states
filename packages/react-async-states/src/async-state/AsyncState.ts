@@ -53,6 +53,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
   key: AsyncStateKey;
   _source: AsyncStateSource<T>;
   uniqueId: number | undefined;
+  journal: any[];
 
   currentState: State<T>;
   lastSuccess: State<T>;
@@ -98,6 +99,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
     if (__DEV__) {
       this.uniqueId = nextUniqueId();
+      this.journal = [];
     }
 
     this.parent = null;
@@ -149,7 +151,23 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
     Object.preventExtensions(this);
 
-    if (__DEV__) devtools.emitCreation(this);
+    if (__DEV__) {
+      const that = this;
+      devtools.emitCreation(this);
+
+      function listener(message) {
+        if (
+          !message.data ||
+          message.data.uniqueId !== `${that.uniqueId}` ||
+          message.data.source !== "async-states-devtools-panel" ||
+          message.data.type !== "get-async-state"
+        ) {
+          return;
+        }
+        devtools.emitAsyncState(that);
+      }
+      window && window.addEventListener("message", listener);
+    }
   }
 
   getState(): State<T> {
@@ -265,7 +283,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   invalidateCache(cacheKey?: string) {
     if (this.isCacheEnabled()) {
-      const topLevelParent:AsyncStateInterface<T> = getTopLevelParent(this);
+      const topLevelParent: AsyncStateInterface<T> = getTopLevelParent(this);
 
       if (!cacheKey) {
         topLevelParent.cache = Object.create(null);
@@ -309,7 +327,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
         ...args
       );
     } else {
-      return this.runWithEffect(createProducerEffects,...args);
+      return this.runWithEffect(createProducerEffects, ...args);
     }
   }
 
@@ -638,6 +656,7 @@ type RunTask<T> = {
   payload: Record<string, any> | null,
   producerEffectsCreator: ProducerEffectsCreator<T>,
 }
+
 function makeSource<T>(asyncState: AsyncStateInterface<T>): Readonly<AsyncStateSource<T>> {
   const source: AsyncStateSource<T> = constructAsyncStateSource(asyncState);
   source.key = asyncState.key;
