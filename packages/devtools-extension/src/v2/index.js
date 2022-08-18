@@ -55,7 +55,6 @@ function resetDevtools() {
 }
 
 function gatewayProducer() {
-  console.log('running gateway producer');
   const port = window.chrome.runtime.connect({name: "panel"});
 
   port.postMessage({
@@ -75,10 +74,60 @@ function gatewayProducer() {
     }
     console.log('received message', message)
     switch (message.type) {
-      case newDevtoolsEvents.setKeys:
+      case newDevtoolsEvents.setKeys: {
         return keysSource.setState(message.payload);
-      case newDevtoolsEvents.setAsyncState:
-        return journalSource.getLaneSource(`${message.payload.uniqueId}`).setState(message.payload);
+      }
+      case newDevtoolsEvents.setAsyncState: {
+        return journalSource.getLaneSource(`${message.uniqueId}`).setState(message.payload);
+      }
+      case newDevtoolsEvents.partialSync: {
+        if (message.payload.eventType === devtoolsJournalEvents.run) {
+          journalSource
+            .getLaneSource(`${message.uniqueId}`)
+            .setState(old => {
+              return {
+                ...old.data,
+                journal: [...old.data.journal, message.payload],
+              }
+            })
+        }
+        if (message.payload.eventType === devtoolsJournalEvents.update) {
+          journalSource
+            .getLaneSource(`${message.uniqueId}`)
+            .setState(old => {
+              return {
+                ...old.data,
+                state: message.payload.eventPayload.newState,
+                oldState: message.payload.eventPayload.oldState,
+                lastSuccess: message.payload.eventPayload.lastSuccess,
+                journal: [...old.data.journal, message.payload],
+              }
+            })
+        }
+        if (message.payload.eventType === devtoolsJournalEvents.subscription) {
+          journalSource
+            .getLaneSource(`${message.uniqueId}`)
+            .setState(old => {
+              return {
+                ...old.data,
+                subscriptions: [...old.data.subscriptions, message.payload.eventPayload],
+                journal: [...old.data.journal, message.payload],
+              }
+            })
+        }
+        if (message.payload.eventType === devtoolsJournalEvents.unsubscription) {
+          journalSource
+            .getLaneSource(`${message.uniqueId}`)
+            .setState(old => {
+              return {
+                ...old.data,
+                subscriptions: old.data.subscriptions?.filter(t => t !== message.payload.eventPayload),
+                journal: [...old.data.journal, message.payload],
+              }
+            })
+        }
+        return;
+      }
       default:
         return;
     }
@@ -137,21 +186,28 @@ function CurrentTreeDisplay() {
     return null;
   }
   return (
-    <Tabs defaultActiveKey="1">
-      <Tabs.TabPane
-        tab={<span style={{paddingLeft: 24, paddingRight: 24}}>State</span>}
-        key="1">
-        <CurrentJsonDisplay lane={lane} mode="state"/>
-      </Tabs.TabPane>
-      <Tabs.TabPane tab={<span style={{paddingLeft: 24, paddingRight: 24}}>Journal events</span>}
-                    key="2">
-        <CurrentJsonDisplay lane={lane} mode="journal"/>
-      </Tabs.TabPane>
-    </Tabs>
+    <div>
+      <RefreshButton lane={lane} />
+      <Tabs defaultActiveKey="1">
+        <Tabs.TabPane
+          tab={<span style={{paddingLeft: 24, paddingRight: 24}}>State</span>}
+          key="1">
+          <CurrentJsonDisplay lane={lane} mode="state"/>
+        </Tabs.TabPane>
+        <Tabs.TabPane tab={<span style={{paddingLeft: 24, paddingRight: 24}}>Journal events</span>}
+                      key="2">
+          <CurrentJsonDisplay lane={lane} mode="journal"/>
+        </Tabs.TabPane>
+      </Tabs>
+    </div>
   );
 }
 
-const SideKey = React.memo(function SiderKey({uniqueId, asyncStateKey, isCurrent}) {
+const SideKey = React.memo(function SiderKey({
+                                               uniqueId,
+                                               asyncStateKey,
+                                               isCurrent
+                                             }) {
   React.useEffect(() => {
     gatewaySource.getState().data.postMessage({
       uniqueId,
@@ -261,9 +317,10 @@ function JournalView({lane}) {
 }
 
 function formJournalEventJson(entry) {
+  console.log('forming entry', entry);
   switch (entry.eventType) {
     case devtoolsJournalEvents.update: {
-      const {oldState, newState, lastSuccess} = entry;
+      const {oldState, newState, lastSuccess} = entry.eventPayload;
       return {
         eventDate: new Date(entry.eventDate),
         from: oldState.data,
@@ -275,7 +332,6 @@ function formJournalEventJson(entry) {
     }
     case devtoolsJournalEvents.run:
     case devtoolsJournalEvents.dispose:
-    case devtoolsJournalEvents.creation:
     case devtoolsJournalEvents.insideProvider: {
       return {
         ...entry,
@@ -314,6 +370,19 @@ function CurrentJson() {
   );
 }
 
+function RefreshButton({lane}) {
+  return (
+    <Button onClick={() => {
+      gatewaySource.getState().data.postMessage({
+        uniqueId: lane,
+        source: "async-states-devtools-panel",
+        type: newDevtoolsRequests.getAsyncState,
+        tabId: window.chrome.devtools.inspectedWindow.tabId
+      });
+    }}>Click to refresh</Button>
+  );
+}
+
 function StateView({lane}) {
   const {state} = useSourceLane(journalSource, lane);
   console.log('showing state view for unique id', lane, state);
@@ -321,14 +390,7 @@ function StateView({lane}) {
     return (
       <div>
         <span>No state information</span>
-        <Button onClick={() => {
-          gatewaySource.getState().data.postMessage({
-            uniqueId: lane,
-            source: "async-states-devtools-panel",
-            type: newDevtoolsRequests.getAsyncState,
-            tabId: window.chrome.devtools.inspectedWindow.tabId
-          });
-        }}>Click to refresh</Button>
+        <RefreshButton lane={lane}/>
       </div>
     );
   }

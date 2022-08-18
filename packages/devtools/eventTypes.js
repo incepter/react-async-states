@@ -6,6 +6,8 @@ export const newDevtoolsRequests = {
 export const newDevtoolsEvents = {
   setKeys: "set-keys",
   setAsyncState: "set-async-state",
+
+  partialSync: "async-state-partial-sync",
 }
 
 export const toDevtoolsEvents = {
