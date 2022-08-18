@@ -16,7 +16,6 @@ import AsyncState, {
 } from "../async-state";
 import {invokeIfPresent, isFn, shallowClone} from "../../../shared";
 import {nextKey} from "./key-gen";
-import {readAsyncStateFromSource} from "../async-state/read-source";
 import {isAsyncStateSource} from "../async-state/utils";
 
 function createRunFunction(
@@ -33,11 +32,7 @@ function createRunFunction(
       manager?.producerEffectsCreator || standaloneProducerEffectsCreator;
 
     if (isAsyncStateSource(input)) {
-      asyncState = readAsyncStateFromSource(input as AsyncStateSource<T>);
-
-      if (config?.lane) {
-        asyncState = asyncState.getLane(config.lane);
-      }
+      asyncState = (input as AsyncStateSource<T>).getLane(config?.lane);
     } else if (isFn(input)) {
       asyncState = new AsyncState(nextKey(), input as Producer<T>);
       if (config?.payload) {
@@ -72,13 +67,9 @@ function createRunPFunction(manager, props) {
       manager?.producerEffectsCreator || standaloneProducerEffectsCreator;
 
     if (isAsyncStateSource(input)) {
-      asyncState = readAsyncStateFromSource(input as AsyncStateSource<T>);
-
-      if (config?.lane) {
-        asyncState = asyncState.getLane(config.lane);
-      }
+      asyncState = (input as AsyncStateSource<T>).getLane(config?.lane);
     } else if (isFn(input)) {
-      asyncState = new AsyncState(nextKey(), input as Producer<T>, {});
+      asyncState = new AsyncState(nextKey(), input as Producer<T>);
       if (config?.payload) {
         asyncState.payload = shallowClone(Object.create(null), config.payload);
       }
@@ -117,27 +108,15 @@ function createSelectFunction<T>(manager: AsyncStateManagerInterface | null) {
     input: AsyncStateKeyOrSource<T>,
     lane?: string,
   ): State<T> | undefined {
-    let asyncState: AsyncStateInterface<T>;
-
     if (isAsyncStateSource(input)) {
-      asyncState = readAsyncStateFromSource(input as AsyncStateSource<T>);
-      if (lane) {
-        asyncState = asyncState.getLane(lane);
-      }
-      return asyncState.currentState;
+      return (input as AsyncStateSource<T>).getLane(lane).getState();
     }
 
     let managerAsyncState = manager?.get(input as AsyncStateKey);
     if (!managerAsyncState) {
       return undefined;
     }
-    if (lane) {
-      asyncState = (managerAsyncState as AsyncStateInterface<T>).getLane(lane);
-    } else {
-      asyncState = managerAsyncState  as AsyncStateInterface<T>;
-    }
-
-    return asyncState.currentState;
+    return (managerAsyncState as AsyncStateInterface<T>).getLane(lane).getState();
   }
 }
 

@@ -32,6 +32,7 @@ import {
   StateSubscription
 } from "./types";
 import {constructAsyncStateSource} from "./construct-source";
+import {standaloneProducerEffectsCreator} from "../helpers/producer-effects";
 
 export default class AsyncState<T> implements AsyncStateInterface<T> {
   //region properties
@@ -135,6 +136,10 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     Object.preventExtensions(this);
 
     if (__DEV__) devtools.emitCreation(this);
+  }
+
+  getState(): State<T> {
+    return this.currentState;
   }
 
   replaceProducer(newProducer: Producer<any>) {
@@ -592,7 +597,7 @@ let uniqueId: number = 0;
 
 const defaultForkConfig: ForkConfig = Object.freeze({keepState: false});
 
-function makeSource<T>(asyncState: AsyncStateInterface<T>) {
+function makeSource<T>(asyncState: AsyncStateInterface<T>): Readonly<AsyncStateSource<T>> {
   const source: AsyncStateSource<T> = constructAsyncStateSource(asyncState);
   source.key = asyncState.key;
 
@@ -606,6 +611,12 @@ function makeSource<T>(asyncState: AsyncStateInterface<T>) {
   if (__DEV__) {
     source.uniqueId = asyncState.uniqueId;
   }
+
+  source.getLane = asyncState.getLane.bind(asyncState);
+  source.getState = asyncState.getState.bind(asyncState);
+  source.setState = asyncState.replaceState.bind(asyncState);
+  source.invalidateCache = asyncState.invalidateCache.bind(asyncState);
+  source.run = asyncState.run.bind(asyncState, standaloneProducerEffectsCreator);
 
   return Object.freeze(source);
 }

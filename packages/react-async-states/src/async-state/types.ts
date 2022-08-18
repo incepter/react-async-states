@@ -97,6 +97,12 @@ export type StateUpdater<T> = (
 export type AsyncStateSource<T> = {
   key: AsyncStateKey,
   uniqueId: number | undefined,
+
+  getState(): State<T>,
+  setState: StateUpdater<T>,
+  run: (...args: any[]) => AbortFn,
+  invalidateCache: (cacheKey?: string) => void,
+  getLane(laneKey?: string): AsyncStateInterface<T>,
 }
 
 export type StateSubscription<T> = {
@@ -162,6 +168,8 @@ export interface AsyncStateInterface<T> {
 
   replaceProducer(newProducer: Producer<any>),
   replay(): AbortFn,
+
+  getState(): State<T>,
 }
 
 export interface StateBuilderInterface {
