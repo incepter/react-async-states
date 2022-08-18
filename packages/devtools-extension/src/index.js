@@ -31,6 +31,7 @@ if (isDev) {
 }
 
 const source = "async-states-agent";
+
 function Wrapper({children}) {
   const [visible, setVisible] = React.useState(true);
 
@@ -52,9 +53,7 @@ function Wrapper({children}) {
 
 ReactDOM.render(
   <React.StrictMode>
-      <Wrapper>
-        <DevtoolsV2 />
-      </Wrapper>
+    <DevtoolsV2/>
   </React.StrictMode>,
   document.getElementById('root')
 );

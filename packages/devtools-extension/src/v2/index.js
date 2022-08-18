@@ -2,18 +2,22 @@ import React from "react";
 import Select from "antd/lib/select";
 import ReactJson from "react-json-view";
 import Button from "antd/lib/button";
-import Row from "antd/lib/row";
-import Col from "antd/lib/col";
+import Tabs from "antd/lib/tabs";
+import Layout from "antd/lib/layout";
 import {
   createSource,
   useAsyncState,
   useSource,
+  useSourceLane,
 } from "react-async-states";
 import { devtoolsJournalEvents, toDevtoolsEvents } from "devtools/eventTypes";
 import { idsStateInitialValue, journalStateInitialValue } from "./dev-data";
 
+const {Header, Content, Sider} = Layout;
+
+
 let isDev = process.env.NODE_ENV !== "production";
-let currentJson = createSource("json", undefined);
+let currentJournal = createSource("json", undefined);
 let currentState = createSource("current-state", undefined);
 let gatewaySource = createSource("gateway", gatewayProducer);
 let logsSource = createSource("logs", logsProducer, {initialValue: isDev ? idsStateInitialValue : {}});
@@ -36,17 +40,6 @@ if (isDev) {
       );
     });
 }
-//
-// setTimeout(() => {
-//   let logsSourceState = getState(logsSource);
-//   console.log('logsSource - state', logsSourceState);
-//
-//   Object
-//     .keys(logsSourceState.data ?? {})
-//     .forEach(id =>
-//       console.log('journalSource - lane - state', id, getState(getLaneSource(journalSource, `${id}`)))
-//     );
-// }, 10000);
 
 function resetDevtools() {
   Object
@@ -133,38 +126,85 @@ function journalProducer(props) {
 
 export function DevtoolsV2() {
   useAsyncState.auto(gatewaySource);
-  const {state: logsState} = useSource(logsSource);
+  const {state: {data}} = useSource(logsSource);
+  const {state: {data: lane}} = useSource(currentState);
 
-  const keys = Object.keys(logsState.data);
+  const entries = Object.entries(data);
 
-  console.log('==>', keys, logsState.data);
-
-  return (<div>
-    <button onClick={resetDevtools}>Reset</button>
-    <button onClick={() => gatewaySource.run()}>Reconnect</button>
-    <details open>
-      <summary>here is the logs state</summary>
-      <Row>
-        <Col span={10}>
-          <ul>
-            {keys.map((key) => (<Journal key={key} lane={key}/>))}
-          </ul>
-        </Col>
-        <Col span={13}>
-          <CurrentJson/>
-          <CurrentState/>
-        </Col>
-      </Row>
-      <div>
-      </div>
-    </details>
-  </div>);
+  return (
+    <Layout style={{height: '100vh'}}>
+      <Header style={{height: 32}} className="header">
+        <div className="logo"/>
+      </Header>
+      <Layout>
+        <Sider width={200} className="site-layout-background">
+          <div style={{display: "flex", flexDirection: "column"}}>
+            {entries.map(([uniqueId, key]) => <SideKey key={uniqueId}
+                                                       uniqueId={uniqueId}
+                                                       asyncStateKey={key}
+                                                       isCurrent={uniqueId === lane}
+            />)}
+          </div>
+        </Sider>
+        <Layout>
+          <Content
+            className="site-layout-background"
+          >
+            <CurrentTreeDisplay/>
+          </Content>
+        </Layout>
+      </Layout>
+    </Layout>
+  );
 }
 
+function CurrentJsonDisplay({lane, mode}) {
+  if (mode === "state") {
+    return <StateView lane={lane}/>;
+  }
+  if (mode === "journal") {
+    return <Journal lane={lane}/>;
+  }
+}
+
+function CurrentTreeDisplay() {
+  const {state} = useSource(currentState);
+  const {data: lane} = state;
+  if (!lane) {
+    return null;
+  }
+  return (
+    <Tabs defaultActiveKey="1">
+      <Tabs.TabPane
+        tab={<span style={{paddingLeft: 24, paddingRight: 24}}>State</span>}
+        key="1">
+        <CurrentJsonDisplay lane={lane} mode="state"/>
+      </Tabs.TabPane>
+      <Tabs.TabPane tab={<span style={{paddingLeft: 24, paddingRight: 24}}>Journal events</span>}
+                    key="2">
+        <CurrentJsonDisplay lane={lane} mode="journal"/>
+      </Tabs.TabPane>
+    </Tabs>
+  );
+}
+
+const SideKey = React.memo(function SiderKey({uniqueId, asyncStateKey, isCurrent}) {
+  return (
+    <Button
+      style={{width: '100%', color: isCurrent ? "red" : "unset"}}
+      onClick={() => {
+        currentJournal.setState(null);
+        currentState.setState(`${uniqueId}`);
+      }}
+    >
+      {asyncStateKey}
+    </Button>
+  );
+});
+
+
 const Journal = React.memo(function Journal({lane}) {
-  const {state} = useAsyncState({
-    lane, source: journalSource,
-  });
+  const {state} = useSourceLane(journalSource, lane);
 
   console.log('journal of lane', lane, state);
 
@@ -172,19 +212,24 @@ const Journal = React.memo(function Journal({lane}) {
   const {messages: allLogs, data: instanceInfo} = data;
 
   return (
-    <details>
-      <summary>{lane} - {instanceInfo?.payload.key ?? ''} journal
+    <Layout style={{height: '100vh'}}>
+      <Header style={{height: 32}} className="header">
+        {lane} - {instanceInfo?.payload.key ?? ''} journal
         - {allLogs.length} size
-      </summary>
-      <Button onClick={() => {
-        currentJson.setState(null);
-        currentState.setState(lane);
-      }}>
-        - current state
-      </Button>
-      <JournalView data={allLogs}/>
-    </details>
-  );
+      </Header>
+      <Layout>
+        <Sider width={200} className="site-layout-background">
+          <JournalView data={allLogs}/>
+        </Sider>
+        <Layout>
+          <Content
+            className="site-layout-background"
+          >
+            <CurrentJson/>
+          </Content>
+        </Layout>
+      </Layout>
+    </Layout>);
 });
 
 const JOURNAL_EVENT_TYPES_FILTER_OPTIONS = Object.values(devtoolsJournalEvents).map(t => ({
@@ -199,7 +244,7 @@ const initialSelectedEvents = [
 function JournalView({data}) {
   const [selectedTypes, setSelectedTypes] = React.useState(initialSelectedEvents);
   const filteredData = data.filter(t => selectedTypes.includes(t.payload.eventType));
-  const {state: json} = useSource(currentJson);
+  const {state: json} = useSource(currentJournal);
   return (
     <div>
       <span>Available: ({data.length}), shown: ({filteredData.length})</span>
@@ -224,13 +269,12 @@ function JournalView({data}) {
             style={{color: json.data?.eventId === entry.payload.eventId ? "red" : "black"}}
             key={id}>
             <Button onClick={() => {
-              currentJson.setState({
+              currentJournal.setState({
                 data: formJournalEventJson(entry),
                 eventId: entry.payload.eventId,
                 uniqueId: entry.payload.uniqueId,
                 name: `${entry.payload.key} - ${entry.payload.eventType}`,
               });
-              currentState.setState(null);
             }}>
               {entry.payload.eventType}
             </Button>
@@ -276,7 +320,7 @@ function formJournalEventJson(entry) {
 }
 
 function CurrentJson() {
-  const {state: json} = useSource(currentJson);
+  const {state: json} = useSource(currentJournal);
 
   if (!json.data) {
     return null;
@@ -295,14 +339,12 @@ function CurrentJson() {
   );
 }
 
-function StateView({uniqueId}) {
+function StateView({lane}) {
 
 
-  const {state} = useAsyncState({
-    lane: uniqueId, source: journalSource,
-  }, [uniqueId]);
+  const {state} = useSourceLane(journalSource, lane);
 
-  console.log('showing state view for unique id', uniqueId, state);
+  console.log('showing state view for unique id', lane, state);
 
   const {data} = state;
   const {data: asyncStateInfo} = data;
@@ -323,13 +365,4 @@ function StateView({uniqueId}) {
                src={asyncStateInfo?.payload}
     />
   );
-}
-
-function CurrentState() {
-  const {state} = useSource(currentState);
-  const {data: lane} = state;
-  if (!lane) {
-    return null;
-  }
-  return <StateView uniqueId={lane}/>
 }
