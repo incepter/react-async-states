@@ -14,7 +14,7 @@ import {
   devtoolsJournalEvents, newDevtoolsEvents,
   newDevtoolsRequests,
 } from "devtools/eventTypes";
-import { journalStateInitialValue } from "./dev-data";
+import { idsStateInitialValue, journalStateInitialValue } from "./dev-data";
 
 const {Header, Content, Sider} = Layout;
 
@@ -25,7 +25,7 @@ let journalSource = createSource("journal", undefined);
 // defines the gateway receiving messages from the app
 let gatewaySource = createSource("gateway", gatewayProducer);
 // stores the keys with unique ids of created states
-let keysSource = createSource("keys", undefined, {initialValue: {}});
+let keysSource = createSource("keys", undefined, {initialValue: isDev ? idsStateInitialValue : {}});
 
 // contains the current state unique Id to display
 let currentState = createSource("current-state", undefined);
@@ -54,21 +54,38 @@ function resetDevtools() {
   keysSource.setState({});
 }
 
+if (isDev) {
+  setTimeout(() => {
+    let shape = {};
+    Object
+      .keys(keysSource.getState().data ?? {})
+      .forEach(id => {
+        shape[id] = journalSource.getLaneSource(`${id}`).getState().data
+      });
+    console.log('_______ state of all ________________');
+
+    console.log(shape);
+
+    console.log('______________________ keys ___________________');
+    console.log(keysSource.getState());
+  }, 10000);
+}
+
 function gatewayProducer() {
   const port = window.chrome.runtime.connect({name: "panel"});
 
-  port.postMessage({
+  port?.postMessage({
     type: "init",
     source: "async-states-devtools-panel",
     tabId: window.chrome.devtools.inspectedWindow.tabId
   });
-  port.postMessage({
+  port?.postMessage({
     type: newDevtoolsRequests.getKeys,
     source: "async-states-devtools-panel",
     tabId: window.chrome.devtools.inspectedWindow.tabId
   });
 
-  port.onMessage.addListener(message => {
+  port?.onMessage.addListener(message => {
     if (message.source !== "async-states-agent") {
       return;
     }
@@ -187,7 +204,7 @@ function CurrentTreeDisplay() {
   }
   return (
     <div>
-      <RefreshButton lane={lane} />
+      <RefreshButton lane={lane}/>
       <Tabs defaultActiveKey="1">
         <Tabs.TabPane
           tab={<span style={{paddingLeft: 24, paddingRight: 24}}>State</span>}
@@ -209,7 +226,7 @@ const SideKey = React.memo(function SiderKey({
                                                isCurrent
                                              }) {
   React.useEffect(() => {
-    gatewaySource.getState().data.postMessage({
+    gatewaySource.getState().data?.postMessage({
       uniqueId,
       source: "async-states-devtools-panel",
       type: newDevtoolsRequests.getAsyncState,
@@ -396,7 +413,13 @@ function StateView({lane}) {
   }
 
   const {data} = state;
-  const {key, lastSuccess, state: asyncStateState, subscriptions} = data;
+  const {
+    key,
+    lastSuccess,
+    state: asyncStateState,
+    subscriptions,
+    producerType
+  } = data;
 
 
   if (!key) {
@@ -413,6 +436,7 @@ function StateView({lane}) {
                enableClipboard={false}
                src={{
                  key,
+                 producerType,
                  state: asyncStateState,
                  subscriptions,
                  lastSuccess,

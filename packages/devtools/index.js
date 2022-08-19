@@ -64,6 +64,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
         uniqueId: asyncState.uniqueId,
         state: asyncState.currentState,
         lastSuccess: asyncState.lastSuccess,
+        producerType: asyncState.producerType,
         subscriptions: Object.keys(asyncState.subscriptions)
       },
       type: newDevtoolsEvents.setAsyncState
