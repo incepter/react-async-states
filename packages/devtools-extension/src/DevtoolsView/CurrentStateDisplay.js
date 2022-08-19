@@ -30,6 +30,10 @@ function CurrentTreeDisplay() {
   return (
     <div>
       <RefreshButton lane={lane}/>
+      <Button onClick={() => {
+        currentJournal.setState(null);
+        currentState.setState(null);
+      }}> Close </Button>
       <Tabs defaultActiveKey="1">
         <Tabs.TabPane
           tab={
@@ -86,7 +90,6 @@ export const SideKey = React.memo(function SiderKey({
 
 function StateView({lane}) {
   const {state} = useSourceLane(journalSource, lane);
-  console.log('showing state view for unique id', lane, state);
   if (!state.data) {
     return (
       <div>

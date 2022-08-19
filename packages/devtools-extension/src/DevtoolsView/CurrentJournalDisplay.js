@@ -94,33 +94,42 @@ function JournalView({lane}) {
   );
 }
 
+function addFormattedDate(obj, prop = "timestamp", newProp = "formattedTimestamp") {
+  return {...obj, [newProp]: new Date(obj[prop]).toISOString()};
+}
+
 function formJournalEventJson(entry) {
-  console.log('forming entry', entry);
   switch (entry.eventType) {
     case devtoolsJournalEvents.update: {
       const {oldState, newState, lastSuccess} = entry.eventPayload;
       return {
-        eventDate: new Date(entry.eventDate),
+        eventDate: entry.eventDate,
+        formattedEventDate: new Date(entry.eventDate).toISOString(),
         from: oldState.data,
         to: newState.data,
-        oldState: oldState,
-        newState: newState,
+        oldState: addFormattedDate(oldState),
+        newState: addFormattedDate(newState),
         lastSuccess: lastSuccess,
       };
     }
     case devtoolsJournalEvents.run:
     case devtoolsJournalEvents.dispose:
+    case devtoolsJournalEvents.creation:
     case devtoolsJournalEvents.insideProvider: {
       return {
-        ...entry,
-        eventDate: new Date(entry.eventDate),
+        eventId: entry.eventId,
+        eventType: entry.eventType,
+        eventDate: entry.eventDate,
+        formattedEventDate: new Date(entry.eventDate).toISOString(),
+        payload: entry.eventPayload,
       };
     }
     case devtoolsJournalEvents.subscription:
     case devtoolsJournalEvents.unsubscription: {
       return {
-        eventDate: new Date(entry.eventDate),
         subscriptionKey: entry,
+        eventDate: entry.eventDate,
+        formattedEventDate: new Date(entry.eventDate).toISOString(),
       };
     }
     default:
