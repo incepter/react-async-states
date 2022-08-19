@@ -6,7 +6,7 @@ import {
   currentState,
   gatewaySource,
   journalSource,
-  keysSource
+  keysSource, updatesMeter
 } from "./sources";
 import CurrentStateDisplay, { SideKey } from "./CurrentStateDisplay";
 
@@ -26,7 +26,7 @@ export function DevtoolsView() {
         </Sider>
         <Layout>
           <Content
-            style={{padding: 32}}
+            style={{padding: 8}}
             className="site-layout-background"
           >
             <CurrentStateDisplay/>
@@ -114,6 +114,7 @@ const SiderDisplay = React.memo(function () {
   const [sort, setSort] = React.useState(initialSort);
   const {state: {data}} = useSource(keysSource);
   const {state: {data: lane}} = useSource(currentState);
+  const {state: {data: meter}} = useSource(updatesMeter);
 
   const currentSort = `${sort.by}|${sort.direction}`;
 
@@ -125,7 +126,7 @@ const SiderDisplay = React.memo(function () {
         return [uniqueId, key, journalSource.getLaneSource(uniqueId).getState().timestamp];
       })
       .sort(sortFn)
-  }, [data, sort]);
+  }, [data, sort, meter]);
 
   return (
     <div style={{display: "flex", flexDirection: "column"}}>

@@ -3,9 +3,12 @@ import {
 } from "react-async-states";
 import { idsStateInitialValue, journalStateInitialValue } from "./dev-data";
 import { devtoolsJournalEvents, newDevtoolsEvents } from "devtools/eventTypes";
+import { DevtoolsMessagesBuilder } from "./utils";
 
 const isDev = process.env.NODE_ENV !== "production";
 
+// an update meter to trigger recalculation of the sort
+export const updatesMeter = createSource("update-meter", undefined, {initialValue: 0});
 // stores data related to any async state
 export const journalSource = createSource("journal", undefined);
 // defines the gateway receiving messages from the app
@@ -61,6 +64,7 @@ function gatewayProducer() {
         return keysSource.setState(message.payload);
       }
       case newDevtoolsEvents.setAsyncState: {
+        updatesMeter.setState(old => old.data + 1);
         return journalSource.getLaneSource(`${message.uniqueId}`).setState(message.payload);
       }
       case newDevtoolsEvents.partialSync: {
@@ -75,6 +79,7 @@ function gatewayProducer() {
             })
         }
         if (message.payload.eventType === devtoolsJournalEvents.update) {
+          updatesMeter.setState(old => old.data + 1);
           journalSource
             .getLaneSource(`${message.uniqueId}`)
             .setState(old => {

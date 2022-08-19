@@ -29,12 +29,18 @@ function CurrentTreeDisplay() {
   }
   return (
     <div>
-      <RefreshButton lane={lane}/>
-      <Button onClick={() => {
-        currentJournal.setState(null);
-        currentState.setState(null);
-      }}> Close </Button>
-      <Tabs defaultActiveKey="1">
+      <Tabs type="card" defaultActiveKey="1">
+        <Tabs.TabPane
+          tab="Actions"
+          key="3">
+          <div>
+            <RefreshButton lane={lane}/>
+            <Button onClick={() => {
+              currentJournal.setState(null);
+              currentState.setState(null);
+            }}> Close </Button>
+          </div>
+        </Tabs.TabPane>
         <Tabs.TabPane
           tab={
             <span
@@ -139,7 +145,7 @@ function RefreshButton({lane}) {
         .getState()
         .data
         ?.postMessage?.(DevtoolsMessagesBuilder.getAsyncState(lane));
-    }}>Click to refresh</Button>
+    }}>Refresh</Button>
   );
 }
 
