@@ -13,6 +13,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
   let keys = {};
   let currentUpdate = null;
   return {
+    formatData,
     emitKeys,
     emitCreation,
     emitRunSync,
@@ -29,7 +30,19 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
     emitProviderState,
 
     emitInsideProvider,
+    emitRunConsumedFromCache,
   };
+
+  function formatData(data, isJson) {
+    if (!isJson) {
+      return data;
+    }
+    try {
+      return JSON.parse(data);
+    } catch (e) {
+      return data;
+    }
+  }
 
   function emitKeys() {
     emit({
@@ -128,6 +141,27 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
       eventPayload: evt.payload,
     });
   }
+
+    function emitRunConsumedFromCache(asyncState, payload, execArgs) {
+      let evt = {
+        payload: {
+          consumedFromCache: true,
+          type: "sync",
+          props: {payload, args: execArgs}
+        },
+        type: devtoolsJournalEvents.run
+      };
+      emitJournalEvent(asyncState, evt);
+      emitPartialSync(asyncState.uniqueId, {
+        key: asyncState.key,
+        eventId: journalEventsId,
+        uniqueId: asyncState.uniqueId,
+
+        eventType: evt.type,
+        eventDate: Date.now(),
+        eventPayload: evt.payload,
+      });
+    }
 
   function emitReplaceState(asyncState, props) {
     let evt = {

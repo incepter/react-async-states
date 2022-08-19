@@ -1,6 +1,7 @@
 export const newDevtoolsRequests = {
   getKeys: "get-keys",
   getAsyncState: "get-async-state",
+  changeAsyncState: "change-async-state",
 }
 
 export const newDevtoolsEvents = {

@@ -22,5 +22,16 @@ export const DevtoolsMessagesBuilder = {
       type: newDevtoolsRequests.getAsyncState,
       tabId: window.chrome.devtools.inspectedWindow.tabId
     };
-  }
+  },
+  changeAsyncState(uniqueId, status, data, isJson) {
+    return {
+      data,
+      status,
+      isJson,
+      uniqueId,
+      source: "async-states-devtools-panel",
+      type: newDevtoolsRequests.changeAsyncState,
+      tabId: window.chrome.devtools.inspectedWindow.tabId
+    };
+  },
 }

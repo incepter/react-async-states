@@ -159,12 +159,18 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
         if (
           !message.data ||
           message.data.uniqueId !== `${that.uniqueId}` ||
-          message.data.source !== "async-states-devtools-panel" ||
-          message.data.type !== "get-async-state"
+          message.data.source !== "async-states-devtools-panel"
         ) {
           return;
         }
-        devtools.emitAsyncState(that);
+        if (message.data.type === "get-async-state") {
+          devtools.emitAsyncState(that);
+        }
+        if (message.data.type === "change-async-state") {
+          const {data, status, isJson} = message.data;
+          const newData = devtools.formatData(data, isJson);
+          that.replaceState(newData, status);
+        }
       }
       window && window.addEventListener("message", listener);
     }
@@ -429,6 +435,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
           if (cachedState.state !== this.currentState) {
             this.setState(cachedState.state);
           }
+          if (__DEV__) devtools.emitRunConsumedFromCache(this, payload, execArgs);
           return;
         } else {
           const topLevelParent: AsyncStateInterface<T> = getTopLevelParent(this);
