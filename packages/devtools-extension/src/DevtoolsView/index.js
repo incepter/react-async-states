@@ -119,12 +119,16 @@ const SiderDisplay = React.memo(function () {
   }, [data, sort, meter]);
 
   return (
-    <Sider className='main-bg' style={{
-      height: '100vh',
-      overflow: 'auto',
-      padding: '0px 4px',
-      borderRight: '1px dashed #C3C3C3',
-    }} width={300}>
+    <Sider
+      className='main-bg'
+      style={{
+        height: '100vh',
+        overflow: 'auto',
+        padding: '0px 8px',
+        borderRight: '1px dashed #C3C3C3',
+      }}
+      width={250}
+    >
       <Header className='main-bg' style={{
         height: 40,
         display: "flex",
@@ -133,7 +137,7 @@ const SiderDisplay = React.memo(function () {
         alignItems: "center",
       }}>
         <label className="main-color" htmlFor="sort">Sort by: </label>
-        <Select style={{height: 32, marginLeft: 8}} id="sort"
+        <Select className="sorter" style={{height: 32, marginLeft: 8, borderRadius: 20}} id="sort"
                 value={currentSort}
                 options={sortOptions}
                 onChange={(_, option) => setSort(option.sort)}/>

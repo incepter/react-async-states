@@ -76,24 +76,22 @@ export const SideKey = React.memo(function SiderKey({
   }, [uniqueId]);
   return (
     <Button
+      size="small"
       style={{
-        height: 24,
         marginTop: 2,
         width: '100%',
-        display: "flex",
-        boarderRadius: 0,
         cursor: 'pointer',
         textAlign: 'start',
-        alignItems: "center",
         borderBottom: 'none',
       }}
+      shape="round"
       type={isCurrent ? "primary" : "default"}
       onClick={() => {
         currentJournal.setState(null);
         currentState.setState(`${uniqueId}`);
       }}
     >
-      {`› ${asyncStateKey}`}
+      <span style={{marginLeft: 8}}>{`› ${asyncStateKey}`}</span>
     </Button>
   );
 });

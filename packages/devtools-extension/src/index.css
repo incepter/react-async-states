@@ -1,7 +1,7 @@
 @import '~antd/dist/antd.css';
 
 :root {
-    --bg-color: #2D2740;
+    --bg-color: #1D2129;
     --text-color: white;
 }
 
@@ -11,6 +11,10 @@
 
 .main-color {
     color: var(--text-color);
+}
+
+.sorter > .ant-select-selector {
+    border-radius: 24px !important;
 }
 
 .sidebar-el-active {
