@@ -18,6 +18,8 @@ const CurrentJournalDisplay = React.memo(function Journal({lane}) {
     }}>
       <Sider style={{
         padding: 8,
+        overflow: 'auto',
+        height: 'calc(100vh - 40px)',
         borderRight: '1px dashed #C3C3C3',
       }} className='main-bg main-color' width={250}>
         <JournalView lane={lane}/>
@@ -34,7 +36,6 @@ const JOURNAL_EVENT_TYPES_FILTER_OPTIONS = Object.values(devtoolsJournalEvents).
 }));
 const initialSelectedEvents = [
   devtoolsJournalEvents.creation,
-  devtoolsJournalEvents.run,
   devtoolsJournalEvents.update,
 ];
 
