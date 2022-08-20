@@ -16,7 +16,7 @@ export function DevtoolsView() {
   useAsyncState.auto(gatewaySource);
 
   return (
-    <Layout style={{height: '100vh', overflow: "auto"}}>
+    <Layout className='main-bg' style={{height: '100vh', overflow: "auto"}}>
       <SiderDisplay/>
       <Content
         style={{padding: 8}}
@@ -119,23 +119,22 @@ const SiderDisplay = React.memo(function () {
   }, [data, sort, meter]);
 
   return (
-    <Sider style={{
+    <Sider className='main-bg' style={{
       height: '100vh',
       overflow: 'auto',
       padding: '0px 4px',
       borderRight: '1px dashed #C3C3C3',
-      backgroundColor: 'rgb(240, 242, 245)',
     }} width={300}>
-      <Header style={{
+      <Header className='main-bg' style={{
         height: 40,
         display: "flex",
         position: "fixed",
         padding: "0px 8px",
         alignItems: "center",
-        backgroundColor: 'rgb(240, 242, 245)'
       }}>
-        <label htmlFor="sort">Sort by: </label>
-        <Select style={{height: 32}} id="sort" value={currentSort}
+        <label className="main-color" htmlFor="sort">Sort by: </label>
+        <Select style={{height: 32, marginLeft: 8}} id="sort"
+                value={currentSort}
                 options={sortOptions}
                 onChange={(_, option) => setSort(option.sort)}/>
       </Header>

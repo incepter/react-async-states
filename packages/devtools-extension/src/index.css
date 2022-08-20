@@ -1,7 +1,16 @@
 @import '~antd/dist/antd.css';
 
+:root {
+    --bg-color: #2D2740;
+    --text-color: white;
+}
+
 .main-bg {
-    background-color: aliceblue;
+    background-color: var(--bg-color);
+}
+
+.main-color {
+    color: var(--text-color);
 }
 
 .sidebar-el-active {

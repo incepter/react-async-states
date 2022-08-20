@@ -12,15 +12,13 @@ const {Content, Sider} = Layout;
 const CurrentJournalDisplay = React.memo(function Journal({lane}) {
 
   return (
-    <Layout style={{height: 'calc(100vh - 200px)'}}>
+    <Layout className='main-bg' style={{height: 'calc(100vh - 200px)'}}>
       <Layout>
         <Sider width={400}>
           <JournalView lane={lane}/>
         </Sider>
         <Layout>
-          <Content
-            className="site-layout-background"
-          >
+          <Content>
             <CurrentJson/>
           </Content>
         </Layout>
