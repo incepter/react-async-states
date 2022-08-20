@@ -3,7 +3,6 @@ import Layout from "antd/lib/layout";
 import ReactJson from "react-json-view";
 import Button from "antd/lib/button";
 import Modal from "antd/lib/modal";
-import Tabs from "antd/lib/tabs";
 import Select from "antd/lib/select";
 import { useSource, useSourceLane, AsyncStateStatus } from "react-async-states";
 import {
@@ -23,7 +22,7 @@ function CurrentJsonDisplay({lane, mode}) {
     return <StateView lane={lane}/>;
   }
   if (mode === "journal") {
-    return <CurrentJournalDisplay lane={lane}/>;
+    return <CurrentJournalDisplay key={lane} lane={lane}/>;
   }
 }
 
@@ -36,18 +35,24 @@ function CurrentTreeDisplay() {
   return (
     <Layout>
       <Header style={{
-        padding: 0,
+        padding: 8,
         height: 40,
         display: "flex",
         alignItems: "center",
+        borderBottom: '1px dashed #C3C3C3',
       }} className="main-bg">
         <Actions lane={lane}/>
       </Header>
-      <Layout style={{height: "calc(100vh - 56px)"}}>
-        <Sider className="main-bg" width='30%'>
+      <Layout style={{height: "calc(100vh - 40px)"}}>
+        <Sider style={{
+          borderRight: '1px dashed #C3C3C3',
+        }} className="main-bg" width='30%'>
           <CurrentJsonDisplay lane={lane} mode="state"/>
         </Sider>
-        <Content className="main-bg">
+        <Content style={{
+          maxHeight: 'calc(100vh - 40px)',
+          overflow: 'auto'
+        }} className="main-bg">
           <CurrentJsonDisplay lane={lane} mode="journal"/>
         </Content>
       </Layout>
@@ -111,10 +116,10 @@ function StateView({lane}) {
     <ReactJson name={key}
                style={{
                  padding: "1rem",
-                 height: "calc(100vh - 56px)",
+                 maxHeight: "calc(100vh - 40px)",
                  overflow: "auto"
                }}
-               theme="monokai"
+               theme="solarized"
                collapsed={2}
                displayArrayKey={false}
                displayDataTypes={false}
@@ -251,10 +256,8 @@ function EditState({lane}) {
                 <ReactJson name="New state"
                            style={{
                              padding: "1rem",
-                             height: "100%",
-                             overflow: "auto"
                            }}
-                           theme="monokai"
+                           theme="solarized"
                            collapsed={2}
                            displayArrayKey={false}
                            displayDataTypes={false}

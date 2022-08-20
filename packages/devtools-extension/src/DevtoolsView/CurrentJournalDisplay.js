@@ -13,15 +13,17 @@ const CurrentJournalDisplay = React.memo(function Journal({lane}) {
 
   return (
     <Layout className='main-bg' style={{
-      height: 'calc(100vh - 48px)',
-      overflowY: 'auto',
+      height: '100%',
       padding: 0
     }}>
-      <Sider style={{padding: 8}} className='main-bg main-color' width={250}>
+      <Sider style={{
+        padding: 8,
+        borderRight: '1px dashed #C3C3C3',
+      }} className='main-bg main-color' width={250}>
         <JournalView lane={lane}/>
       </Sider>
       <Content className='main-bg main-color'
-               style={{height: 'calc(100vh - 56px)', overflowY: 'auto'}}>
+               style={{height: '100%', overflowY: 'auto'}}>
         <CurrentJson/>
       </Content>
     </Layout>);
@@ -52,19 +54,33 @@ function JournalView({lane}) {
       .sort(sortByEventIdDesc)
   }, [data, selectedTypes]);
 
+  React.useEffect(() => {
+    if (!currentJournal.getState().data && filteredData[0]) {
+      const entry = filteredData[0];
+      currentJournal.setState({
+        data: formJournalEventJson(entry),
+        eventId: entry.eventId,
+        uniqueId: entry.uniqueId,
+        name: `${entry.key} - ${entry.eventType}`,
+      });
+    }
+  }, [lane]);
+
   return (
-    <div style={{height: 'calc(100vh - 56px)', overflowY: 'auto'}}>
+    <div>
       <span>Available: ({allLogs.length}), shown: ({filteredData.length})</span>
-      <br/>
-      <Button size="small" shape="round" className="default-button"
-              onClick={() => setSelectedTypes([])}>Clear all</Button>
-      <Button size="small" shape="round" className="default-button"
-              style={{marginLeft: 8}}
-              onClick={() => setSelectedTypes(Object.values(devtoolsJournalEvents))}
-      >
-        Select all
-      </Button>
-      <br/>
+      <div style={{display: "flex"}}>
+        <Button type="link" size="small" shape="round"
+                className="default-button"
+                onClick={() => setSelectedTypes([])}>Clear all</Button>
+        <Button type="link" size="small" shape="round"
+                className="default-button"
+                style={{marginLeft: 8}}
+                onClick={() => setSelectedTypes(Object.values(devtoolsJournalEvents))}
+        >
+          Select all
+        </Button>
+      </div>
       <Select
         mode="multiple"
         value={selectedTypes}
@@ -81,14 +97,14 @@ function JournalView({lane}) {
             <Button
               type={json.data?.eventId === entry.eventId ? "primary" : "link"}
               size="small" shape="round" className="default-button"
-                    onClick={() => {
-                      currentJournal.setState({
-                        data: formJournalEventJson(entry),
-                        eventId: entry.eventId,
-                        uniqueId: entry.uniqueId,
-                        name: `${entry.key} - ${entry.eventType}`,
-                      });
-                    }}>
+              onClick={() => {
+                currentJournal.setState({
+                  data: formJournalEventJson(entry),
+                  eventId: entry.eventId,
+                  uniqueId: entry.uniqueId,
+                  name: `${entry.key} - ${entry.eventType}`,
+                });
+              }}>
               {`› ${entry.eventType}`}
             </Button>
           </li>
@@ -148,22 +164,19 @@ function CurrentJson() {
     return null;
   }
   return (
-    <div style={{
-      height: "calc(100vh - 56px)",
-      overflow: "auto"
-    }}><ReactJson name={json.data?.name}
-                  theme="monokai"
-                  style={{
-                    height: "100%",
-                    overflow: "auto"
-                  }}
-                  collapsed={2}
-                  displayArrayKey={false}
-                  displayDataTypes={false}
-                  displayObjectSize={false}
-                  enableClipboard={false}
-                  src={json.data?.data}
-    />
+    <div>
+      <ReactJson name={json.data?.name}
+                 theme="solarized"
+                 style={{
+                   padding: '1rem'
+                 }}
+                 collapsed={2}
+                 displayArrayKey={false}
+                 displayDataTypes={false}
+                 displayObjectSize={false}
+                 enableClipboard={false}
+                 src={json.data?.data}
+      />
 
     </div>
 

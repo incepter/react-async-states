@@ -20,7 +20,6 @@ export function DevtoolsView() {
       <SiderDisplay/>
       <Content
         style={{
-          padding: 8,
           height: '100vh',
           overflow: 'auto',
         }}
