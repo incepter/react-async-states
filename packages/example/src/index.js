@@ -2,9 +2,9 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 
 import './index.css'
-import App from "./App2";
+import App from "./past/App";
 
-// import App2 from './past/App2';
+import App2 from './past/v2/Bug2';
 
 ReactDOM.createRoot(document.getElementById('root'))
   .render(

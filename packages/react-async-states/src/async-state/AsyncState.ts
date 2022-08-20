@@ -9,7 +9,14 @@ import {
   warning
 } from "shared";
 import {wrapProducerFunction} from "./wrap-producer-function";
-import {didNotExpire, hash, sourceIsSourceSymbol, StateBuilder} from "./utils";
+import {
+  asyncStatesKey,
+  didNotExpire,
+  hash,
+  isAsyncStateSource,
+  sourceIsSourceSymbol,
+  StateBuilder
+} from "./utils";
 import devtools from "devtools";
 import {areRunEffectsSupported} from "shared/features";
 import {
@@ -22,22 +29,31 @@ import {
   ForkConfig,
   Producer,
   ProducerConfig,
+  ProducerEffects,
+  ProducerEffectsCreator,
   ProducerFunction,
   ProducerProps,
+  ProducerPropsRunConfig,
+  ProducerPropsRunInput,
   ProducerRunEffects,
   ProducerType,
-  RunExtraPropsCreator,
   State,
   StateFunctionUpdater,
   StateSubscription
 } from "./types";
 import {constructAsyncStateSource} from "./construct-source";
+import {
+  AsyncStateKeyOrSource,
+  AsyncStateManagerInterface
+} from "../types.internal";
+import {nextKey} from "../helpers/key-gen";
 
 export default class AsyncState<T> implements AsyncStateInterface<T> {
   //region properties
   key: AsyncStateKey;
   _source: AsyncStateSource<T>;
   uniqueId: number | undefined;
+  journal: any[];
 
   currentState: State<T>;
   lastSuccess: State<T>;
@@ -45,14 +61,14 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   config: ProducerConfig<T>;
 
-  cache: { [id: AsyncStateKey]: CachedState<T> } = Object.create(null);
+  cache: Record<string, CachedState<T>> = Object.create(null);
 
   parent: AsyncStateInterface<T> | null;
   lanes: Record<string, AsyncStateInterface<T>>;
 
   private locks: number = 0;
   private forkCount: number = 0;
-  payload: { [id: string]: any } | null = null;
+  payload: Record<string, any> | null = null;
   private pendingTimeout: { id: ReturnType<typeof setTimeout>, startDate: number } | null = null;
 
   private subscriptionsMeter: number = 0;
@@ -60,8 +76,9 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   producer: ProducerFunction<T>;
   suspender: Promise<T> | undefined = undefined;
-  readonly originalProducer: Producer<T> | undefined;
+  originalProducer: Producer<T> | undefined;
   private currentAborter: AbortFn = undefined;
+  private latestRunTask: RunTask<T> | null = null;
 
   private pendingUpdate:
     { timeoutId: ReturnType<typeof setTimeout>, callback: () => void } | null = null;
@@ -77,23 +94,18 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     this.config = shallowClone(config);
     this.originalProducer = producer ?? undefined;
 
-    const initialValue = typeof this.config.initialValue === "function" ? this.config.initialValue() : this.config.initialValue;
-    this.currentState = StateBuilder.initial(initialValue);
-    this.lastSuccess = this.currentState;
-
     this.producer = wrapProducerFunction(this);
     this.producerType = ProducerType.indeterminate;
 
     if (__DEV__) {
       this.uniqueId = nextUniqueId();
+      this.journal = [];
     }
 
     this.parent = null;
     this.lanes = Object.create(null);
 
     this._source = makeSource(this);
-
-    Object.preventExtensions(this);
 
     if (
       this.isCacheEnabled() &&
@@ -107,16 +119,71 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
         const loadedCache = this.config.cacheConfig.load();
         if (loadedCache) {
           if (isPromise(loadedCache)) {
-            (loadedCache as Promise<{ [id: AsyncStateKey]: CachedState<T> }>)
-              .then(asyncCache => this.cache = asyncCache)
+            (loadedCache as Promise<Record<string, CachedState<T>>>)
+              .then(asyncCache => {
+                this.cache = asyncCache;
+                if (typeof this.config.cacheConfig?.onCacheLoad === "function") {
+                  this.config.cacheConfig.onCacheLoad({
+                    cache: this.cache,
+                    setState: this.replaceState.bind(this)
+                  });
+                }
+              })
           } else {
-            this.cache = loadedCache as { [id: AsyncStateKey]: CachedState<T> };
+            this.cache = loadedCache as Record<string, CachedState<T>>;
+
+            if (typeof this.config.cacheConfig?.onCacheLoad === "function") {
+              this.config.cacheConfig.onCacheLoad({
+                cache: this.cache,
+                setState: this.replaceState.bind(this)
+              });
+            }
           }
         }
       }
     }
 
-    if (__DEV__) devtools.emitCreation(this);
+    let initialState = this.config.initialValue;
+    this.currentState = StateBuilder.initial(
+      typeof initialState === "function" ? initialState.call(null, this.cache) : initialState
+    );
+    this.lastSuccess = this.currentState;
+
+    Object.preventExtensions(this);
+
+    if (__DEV__) {
+      const that = this;
+      devtools.emitCreation(this);
+
+      function listener(message) {
+        if (
+          !message.data ||
+          message.data.uniqueId !== `${that.uniqueId}` ||
+          message.data.source !== "async-states-devtools-panel"
+        ) {
+          return;
+        }
+        if (message.data.type === "get-async-state") {
+          devtools.emitAsyncState(that);
+        }
+        if (message.data.type === "change-async-state") {
+          const {data, status, isJson} = message.data;
+          const newData = devtools.formatData(data, isJson);
+          that.replaceState(newData, status);
+        }
+      }
+      window && window.addEventListener("message", listener);
+    }
+  }
+
+  getState(): State<T> {
+    return this.currentState;
+  }
+
+  replaceProducer(newProducer: Producer<any>) {
+    this.originalProducer = newProducer ?? undefined;
+    this.producer = wrapProducerFunction(this);
+    this.producerType = ProducerType.indeterminate;
   }
 
   getLane(laneKey?: string): AsyncStateInterface<T> {
@@ -222,7 +289,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
   invalidateCache(cacheKey?: string) {
     if (this.isCacheEnabled()) {
-      const topLevelParent:AsyncStateInterface<T> = getTopLevelParent(this);
+      const topLevelParent: AsyncStateInterface<T> = getTopLevelParent(this);
 
       if (!cacheKey) {
         topLevelParent.cache = Object.create(null);
@@ -246,25 +313,34 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     this.abort();
 
     this.locks = 0;
-    const initialValue = typeof this.config.initialValue === "function" ? this.config.initialValue() : this.config.initialValue;
-    this.setState(StateBuilder.initial(initialValue));
+    const initialState = this.config.initialValue;
+    const newState: State<T> = StateBuilder.initial(
+      typeof initialState === "function" ? initialState.call(null, this.cache) : initialState
+    );
+    this.setState(newState);
     if (__DEV__) devtools.emitDispose(this);
 
     return true;
   }
 
-  run(extraPropsCreator: RunExtraPropsCreator<T>, ...args: any[]) {
+  run(createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]) {
     const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
 
     if (!areRunEffectsSupported() || !this.config.runEffect || effectDurationMs === 0) {
-      return this.runImmediately(extraPropsCreator, ...args);
+      return this.runImmediately(
+        createProducerEffects,
+        shallowClone(this.payload),
+        ...args
+      );
     } else {
-      return this.runWithEffect(extraPropsCreator, ...args);
+      return this.runWithEffect(createProducerEffects, ...args);
     }
   }
 
   private runWithEffect(
-    extraPropsCreator: RunExtraPropsCreator<T>, ...args: any[]): AbortFn {
+    createProducerEffects: ProducerEffectsCreator<T>,
+    ...args: any[]
+  ): AbortFn {
 
     const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
 
@@ -277,7 +353,11 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
         const timeoutId = setTimeout(function realRun() {
           that.pendingTimeout = null;
-          runAbortCallback = that.runImmediately(extraPropsCreator, ...args);
+          runAbortCallback = that.runImmediately(
+            createProducerEffects,
+            shallowClone(that.payload),
+            ...args
+          );
         }, effectDurationMs);
 
         that.pendingTimeout = {
@@ -323,11 +403,12 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
         }
       }
     }
-    return this.runImmediately(extraPropsCreator, ...args);
+    return this.runImmediately(createProducerEffects, shallowClone(this.payload), ...args);
   }
 
   private runImmediately(
-    extraPropsCreator: RunExtraPropsCreator<T>,
+    createProducerEffects: ProducerEffectsCreator<T>,
+    payload: Record<string, any> | null,
     ...execArgs: any[]
   ): AbortFn {
     if (this.currentState.status === AsyncStateStatus.pending || this.pendingUpdate) {
@@ -354,6 +435,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
           if (cachedState.state !== this.currentState) {
             this.setState(cachedState.state);
           }
+          if (__DEV__) devtools.emitRunConsumedFromCache(this, payload, execArgs);
           return;
         } else {
           const topLevelParent: AsyncStateInterface<T> = getTopLevelParent(this);
@@ -378,9 +460,9 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     const props: ProducerProps<T> = {
       emit,
       abort,
+      payload,
       args: execArgs,
       lastSuccess: that.lastSuccess,
-      payload: shallowClone(that.payload),
       onAbort(cb: AbortFn) {
         if (isFn(cb)) {
           onAbortCallbacks.push(cb);
@@ -393,7 +475,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
         return that.currentState;
       }
     };
-    Object.assign(props, extraPropsCreator(props));
+    Object.assign(props, createProducerEffects(props));
 
     function emit(
       updater: T | StateFunctionUpdater<T>,
@@ -420,6 +502,12 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
 
       if (!runIndicators.fulfilled) {
         runIndicators.aborted = true;
+        // todo: we should be able to skip this update:
+        // this abort function is passed as a part of the props to producer
+        // the producer may be able to decide to **not run**
+        // for example: trying to run when a condition such on a user input isn't met
+        // rather than throwing, you can just decide **not to run**.
+        // im not sure whether this function is the place to achieve this.
         that.setState(StateBuilder.aborted(reason, cloneProducerProps(props)));
       }
 
@@ -431,6 +519,11 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     }
 
     this.currentAborter = abort;
+    this.latestRunTask = {
+      payload,
+      args: execArgs,
+      producerEffectsCreator: createProducerEffects,
+    };
     this.producer(props, runIndicators);
     return abort;
   }
@@ -452,7 +545,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
       that.locks -= 1;
       delete that.subscriptions[subscriptionKey];
       if (__DEV__) devtools.emitUnsubscription(that, subscriptionKey);
-      if (that.config.resetStateOnDispose !== false) {
+      if (that.config.resetStateOnDispose === true) {
         if (Object.values(that.subscriptions).filter(Boolean).length === 0) {
           that.dispose();
         }
@@ -502,7 +595,7 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     if (!StateBuilder[status]) {
       throw new Error(`Couldn't replace state to unknown status ${status}.`);
     }
-    if (this.currentState.status === AsyncStateStatus.pending) {
+    if (this.currentState?.status === AsyncStateStatus.pending) {
       this.abort();
       this.currentAborter = undefined;
     }
@@ -513,14 +606,25 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     }
 
 
-    if (__DEV__) devtools.emitReplaceState(this);
     // @ts-ignore
     const savedProps = cloneProducerProps({
       args: [effectiveValue],
       lastSuccess: this.lastSuccess,
       payload: shallowClone(this.payload),
     });
+    if (__DEV__) devtools.emitReplaceState(this, savedProps);
     this.setState(StateBuilder[status](effectiveValue, savedProps));
+  }
+
+  replay(): AbortFn {
+    if (!this.latestRunTask) {
+      return undefined;
+    }
+    return this.runImmediately(
+      this.latestRunTask.producerEffectsCreator,
+      this.latestRunTask.payload,
+      ...this.latestRunTask.args
+    );
   }
 }
 
@@ -531,24 +635,6 @@ function nextUniqueId() {
 let uniqueId: number = 0;
 
 const defaultForkConfig: ForkConfig = Object.freeze({keepState: false});
-
-function makeSource<T>(asyncState: AsyncStateInterface<T>) {
-  const source: AsyncStateSource<T> = constructAsyncStateSource(asyncState);
-  source.key = asyncState.key;
-
-  Object.defineProperty(source, sourceIsSourceSymbol, {
-    value: true,
-    writable: false,
-    enumerable: false,
-    configurable: false,
-  });
-
-  if (__DEV__) {
-    source.uniqueId = asyncState.uniqueId;
-  }
-
-  return Object.freeze(source);
-}
 
 function notifySubscribers(asyncState: AsyncStateInterface<any>) {
   Object.values(asyncState.subscriptions).forEach(subscription => {
@@ -570,4 +656,168 @@ function spreadCacheChangeOnLanes<T>(topLevelParent: AsyncStateInterface<T>) {
       lane.cache = topLevelParent.cache;
       spreadCacheChangeOnLanes(lane);
     });
+}
+
+type RunTask<T> = {
+  args: any[],
+  payload: Record<string, any> | null,
+  producerEffectsCreator: ProducerEffectsCreator<T>,
+}
+
+function makeSource<T>(asyncState: AsyncStateInterface<T>): Readonly<AsyncStateSource<T>> {
+  const source: AsyncStateSource<T> = constructAsyncStateSource(asyncState);
+  source.key = asyncState.key;
+
+  Object.defineProperty(source, sourceIsSourceSymbol, {
+    value: true,
+    writable: false,
+    enumerable: false,
+    configurable: false,
+  });
+
+  if (__DEV__) {
+    source.uniqueId = asyncState.uniqueId;
+  }
+
+  source.getLaneSource = function getLaneSource(lane?: string) {
+    return asyncState.getLane(lane)._source;
+  };
+  source.getState = asyncState.getState.bind(asyncState);
+  source.setState = asyncState.replaceState.bind(asyncState);
+  source.invalidateCache = asyncState.invalidateCache.bind(asyncState);
+  source.run = asyncState.run.bind(asyncState, standaloneProducerEffectsCreator);
+
+  return Object.freeze(source);
+}
+
+export function readAsyncStateFromSource<T>(possiblySource: AsyncStateSource<T>): AsyncStateInterface<T> {
+  try {
+    const candidate = possiblySource.constructor(asyncStatesKey);
+    if (!(candidate instanceof AsyncState)) {
+      throw new Error("");// this error is thrown to trigger the catch block
+    }
+    return candidate; // async state instance
+  } catch (e) {
+    throw new Error("You ve passed an incompatible source object. Please make sure to pass the received source object.");
+  }
+}
+
+function createRunFunction(
+  manager: AsyncStateManagerInterface | null,
+  _props: ProducerProps<any>
+) {
+  return function run<T>(
+    input: ProducerPropsRunInput<T>,
+    config: ProducerPropsRunConfig | null,
+    ...args: any[]
+  ): AbortFn {
+    let asyncState: AsyncStateInterface<T> | undefined;
+    const producerEffectsCreator =
+      manager?.producerEffectsCreator || standaloneProducerEffectsCreator;
+
+    if (isAsyncStateSource(input)) {
+      asyncState = readAsyncStateFromSource(input as AsyncStateSource<T>).getLane(config?.lane);
+    } else if (isFn(input)) {
+      asyncState = new AsyncState(nextKey(), input as Producer<T>);
+      if (config?.payload) {
+        asyncState.payload = shallowClone(Object.create(null), config.payload);
+      }
+    } else if (manager !== null) {
+      asyncState = manager.get(input as AsyncStateKey);
+
+      if (asyncState && config?.lane) {
+        asyncState = asyncState.getLane(config.lane);
+      }
+    } else {
+      return undefined;
+    }
+
+    if (!asyncState) {
+      return undefined;
+    }
+
+    return asyncState.run(producerEffectsCreator, ...args);
+  }
+}
+
+function createRunPFunction(manager, props) {
+  return function runp<T>(
+    input: ProducerPropsRunInput<T>,
+    config: ProducerPropsRunConfig | null,
+    ...args: any[]
+  ): Promise<State<T>> | undefined {
+    let asyncState: AsyncStateInterface<T>;
+    const producerEffectsCreator =
+      manager?.producerEffectsCreator || standaloneProducerEffectsCreator;
+
+    if (isAsyncStateSource(input)) {
+      asyncState = readAsyncStateFromSource(input as AsyncStateSource<T>).getLane(config?.lane);
+    } else if (isFn(input)) {
+      asyncState = new AsyncState(nextKey(), input as Producer<T>);
+      if (config?.payload) {
+        asyncState.payload = shallowClone(Object.create(null), config.payload);
+      }
+    } else {
+      asyncState = manager?.get(input as AsyncStateKey);
+
+      if (config?.lane) {
+        asyncState = asyncState.getLane(config.lane);
+      }
+    }
+
+    if (!asyncState) {
+      return undefined;
+    }
+
+    return new Promise(resolve => {
+      let unsubscribe = asyncState.subscribe(subscription);
+      props.onAbort(unsubscribe);
+
+      let abort = asyncState.run(producerEffectsCreator, ...args);
+      props.onAbort(abort);
+
+      function subscription(newState: State<T>) {
+        if (newState.status === AsyncStateStatus.success
+          || newState.status === AsyncStateStatus.error) {
+          invokeIfPresent(unsubscribe);
+          resolve(newState);
+        }
+      }
+    });
+  }
+}
+
+function createSelectFunction<T>(manager: AsyncStateManagerInterface | null) {
+  return function select(
+    input: AsyncStateKeyOrSource<T>,
+    lane?: string,
+  ): State<T> | undefined {
+    if (isAsyncStateSource(input)) {
+      return readAsyncStateFromSource(input as AsyncStateSource<T>).getLane(lane).getState();
+    }
+
+    let managerAsyncState = manager?.get(input as AsyncStateKey);
+    if (!managerAsyncState) {
+      return undefined;
+    }
+    return (managerAsyncState as AsyncStateInterface<T>).getLane(lane).getState();
+  }
+}
+
+export function createProducerEffectsCreator(manager: AsyncStateManagerInterface) {
+  return function closeOverProps<T>(props: ProducerProps<T>): ProducerEffects {
+    return {
+      run: createRunFunction(manager, props),
+      runp: createRunPFunction(manager, props),
+      select: createSelectFunction(manager),
+    };
+  }
+}
+
+export function standaloneProducerEffectsCreator<T>(props: ProducerProps<T>): ProducerEffects {
+  return {
+    run: createRunFunction(null, props),
+    runp: createRunPFunction(null, props),
+    select: createSelectFunction(null),
+  };
 }

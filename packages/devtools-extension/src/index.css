@@ -1,83 +1,117 @@
-body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+@import '~antd/dist/antd.css';
+
+:root {
+    --bg-color: #1D2129;
+    --text-color: white;
 }
 
-code {
-    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+.main-bg {
+    background-color: var(--bg-color);
 }
 
-.main-container {
-    width: 100%;
-    height: 100vh;
+.main-color {
+    color: var(--text-color);
+}
+
+.sorter > .ant-select-selector {
+    border-radius: 24px !important;
+}
+
+.default-button {
+    margin-top: 2px;
+    text-align: start;
+    border-bottom: none;
     display: flex;
+    align-items: center;
 }
 
-.sidebar-wrapper {
-    width: 150px;
-    border-right: 1px solid #004444;
+.sidebar-el-active {
+    background-color: antiquewhite;
 }
 
-.sidebar-element {
-    cursor: pointer;
+.sidebar-container {
+    width: 20%;
+    border-right: 1px solid #7f7f7f;
 }
 
-.view-wrapper {
-    width: calc(100% - 150px);
+.content-container {
+    width: 80%;
+    overflow: auto;
 }
 
-
-.overview-container {
-    width: 100%;
+.sidebar {
     height: 100%;
     display: flex;
-}
-
-.overview-list-container {
-    width: 250px;
-    display: flex;
+    overflow: auto;
+    max-height: 100vh;
+    align-items: center;
+    align-content: center;
     flex-direction: column;
-    overflow: auto;
 }
 
-.overview-journal-list-container {
-    width: 250px;
-    display: flex;
-    flex-direction: column;
-    border-left: 1px solid #004444;
-    border-right: 1px solid #004444;
-    overflow: auto;
-}
-
-.overview-json-container {
+.sidebar-button {
     width: 100%;
-    height: 100%;
-    overflow: auto;
-    border-left: 1px solid #004444;
-}
-
-.overview-journal-json-container {
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    border-left: 1px solid #004444;
-}
-.overview-key {
+    min-height: 1rem;
+    height: 2rem;
+    max-height: 1rem;
     border: none;
-    border-bottom: 1px solid #7f7f7f;
-    background-color: transparent;
-    padding: 8px;
     cursor: pointer;
-    transition: all 300ms ease-out;
+    font-size: 1rem;
+    /*background-color: lightgray;*/
 }
-.overview-key .active {
-    background-color: #999999;
+
+.sidebar-button:hover {
+    background-color: darkgrey;
 }
-.overview-key:hover {
-    background-color: #999999;
+
+.devtools-view-container {
+    overflow: auto;
+}
+
+.flex {
+    display: flex;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-center {
+    align-items: center;
+}
+
+.flex-row {
+    flex-direction: row;
+}
+
+.flex-col {
+    flex-direction: column;
+}
+
+.w-full {
+    width: 100%;
+}
+
+.h-full {
+    height: 100%;
+}
+
+.o-auto {
+    overflow: auto;
+}
+#components-layout-demo-top-side-2 .logo {
+    float: left;
+    width: 120px;
+    height: 31px;
+    margin: 16px 24px 16px 0;
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.ant-row-rtl #components-layout-demo-top-side-2 .logo {
+    float: right;
+    margin: 16px 0 16px 24px;
+}
+
+.site-layout-background {
+    background: #fff;
 }

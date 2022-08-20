@@ -1,16 +1,11 @@
 export {useAsyncState} from "./hooks/useAsyncState";
+export {useSource, useSourceLane, useProducer} from "./hooks/useAsyncStateBase";
 export {createSource} from "./helpers/create-async-state";
 export {createReducerProducer} from "./helpers/create-producer";
 export {AsyncStateProvider} from "./provider/AsyncStateProvider";
 export {
   useRun,
-  runSource,
   useRunLane,
-  runpSource,
-  runSourceLane,
-  runpSourceLane,
-  invalidateCache,
-  useRunAsyncState,
 } from "./hooks/useRun";
 export {
   StateBoundary,
@@ -19,6 +14,17 @@ export {
   RenderThenFetchBoundary,
   FetchAsYouRenderBoundary,
 } from "./components/StateBoundary";
-export {useSelector, useAsyncStateSelector} from "./hooks/useSelector";
+export {useSelector} from "./hooks/useSelector";
 
 export * from "./types";
+export {
+  runSourceLane,
+  runSource,
+  replaceLaneState,
+  getLaneSource,
+  getState,
+  replaceState,
+  runpSource,
+  runpSourceLane,
+  invalidateCache
+} from "./helpers/source-utils";

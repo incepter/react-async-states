@@ -30,7 +30,7 @@ export type AbortFn = ((reason?: any) => void) | undefined;
 
 export type OnAbortFn = (cb: ((reason?: any) => void)) => void;
 
-export interface ProducerProps<T> extends RunExtraProps {
+export interface ProducerProps<T> extends ProducerEffects {
   abort: AbortFn,
   onAbort: OnAbortFn,
   emit: StateUpdater<T>,
@@ -77,7 +77,7 @@ export enum RenderStrategy {
 }
 
 export type ProducerConfig<T> = {
-  initialValue?: T,
+  initialValue?: T | ((cache: Record<string, CachedState<T>>) => T),
   cacheConfig?: CacheConfig<T>,
   runEffectDurationMs?: number,
   runEffect?: ProducerRunEffects,
@@ -97,6 +97,12 @@ export type StateUpdater<T> = (
 export type AsyncStateSource<T> = {
   key: AsyncStateKey,
   uniqueId: number | undefined,
+
+  getState(): State<T>,
+  setState: StateUpdater<T>,
+  run: (...args: any[]) => AbortFn,
+  invalidateCache: (cacheKey?: string) => void,
+  getLaneSource(laneKey?: string): AsyncStateSource<T>,
 }
 
 export type StateSubscription<T> = {
@@ -112,6 +118,11 @@ export type CacheConfig<T> = {
 
   load?(): {[id: AsyncStateKey]: CachedState<T>} | Promise<{[id: AsyncStateKey]: CachedState<T>}>,
   persist?(cache: {[id: AsyncStateKey]: CachedState<T>}): void,
+
+  onCacheLoad?({cache, setState}: {cache: Record<string, CachedState<T>>, setState: (
+      newValue: T | StateFunctionUpdater<T>,
+      status?: AsyncStateStatus
+    ) => void}): void,
 }
 
 export type CachedState<T> = {
@@ -129,10 +140,10 @@ export interface AsyncStateInterface<T> {
   currentState: State<T>,
   lastSuccess: State<T>,
 
-  cache: {[id: AsyncStateKey]: CachedState<T>}
+  cache: Record<string, CachedState<T>>,
   invalidateCache: (cacheKey?: string) => void,
 
-  payload: { [id: string]: any } | null,
+  payload: Record<string, any> | null,
   config: ProducerConfig<T>,
 
   subscriptions: { [id: number]: StateSubscription<T> },
@@ -147,13 +158,20 @@ export interface AsyncStateInterface<T> {
   abort: (reason: any) => void,
   replaceState: StateUpdater<T>,
   setState: (newState: State<T>, notify?: boolean) => void,
-  run: (extraPropsCreator: RunExtraPropsCreator<T>, ...args: any[]) => AbortFn,
+  run: (createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]) => AbortFn,
   fork: (forkConfig?: ForkConfig) => AsyncStateInterface<T>,
   subscribe: (cb: Function, subscriptionKey?: AsyncStateKey) => AbortFn,
 
   parent: AsyncStateInterface<T> | null,
   lanes: Record<string, AsyncStateInterface<T>>,
   getLane(laneKey?: string): AsyncStateInterface<T>,
+
+  replaceProducer(newProducer: Producer<any>),
+  replay(): AbortFn,
+
+  getState(): State<T>,
+
+  journal: any[], // for devtools, dev only
 }
 
 export interface StateBuilderInterface {
@@ -170,14 +188,14 @@ export type ForkConfig = {
   keepCache?: boolean,
 }
 
-export interface RunExtraProps {
+export interface ProducerEffects {
   run: <T>(input: ProducerPropsRunInput<T>, config: ProducerPropsRunConfig | null, ...args: any[] ) => AbortFn,
   runp: <T>(input: ProducerPropsRunInput<T>, config: ProducerPropsRunConfig | null, ...args: any[] ) => Promise<State<T>> | undefined,
 
   select: <T>(input: AsyncStateKeyOrSource<T>) => State<T> | undefined,
 }
 
-export type RunExtraPropsCreator<T> = (props: ProducerProps<T>) => RunExtraProps;
+export type ProducerEffectsCreator<T> = (props: ProducerProps<T>) => ProducerEffects;
 
 export type ProducerPropsRunInput<T> = AsyncStateKeyOrSource<T> | Producer<T>;
 

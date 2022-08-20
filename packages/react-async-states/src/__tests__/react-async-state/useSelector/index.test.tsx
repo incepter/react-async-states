@@ -12,7 +12,7 @@ describe('useSelector', () => {
     const dataSource = createSource("data", null, {initialValue: "hello!"});
 
     function Component() {
-      const data = useSelector("data", d => d.data);
+      const data = useSelector("data", d => d!.data);
       return <span data-testid="result">{data}</span>
     }
 
@@ -34,11 +34,11 @@ describe('useSelector', () => {
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("hello!");
   });
-  it('should throw when not in provider', () => {
+  it('should not throw when not in provider', () => {
     // given
 
     function Component() {
-      const data = useSelector("data", d => d.data);
+      const data = useSelector("data", d => d!.data);
       return <span data-testid="result">{data}</span>
     }
 
@@ -50,6 +50,7 @@ describe('useSelector', () => {
         <Component />
       </React.StrictMode>
     ))
+      .not
       .toThrow("to use useSelector you must be inside a <AsyncStateProvider/>");
     console.error = oldError;
   });
@@ -64,7 +65,7 @@ describe('useSelector', () => {
     }
 
     function Component() {
-      const data = useSelector([], d => d.data);
+      const data = useSelector([], d => d?.data);
       return <span data-testid="result">{data}</span>;
     }
 
@@ -76,6 +77,7 @@ describe('useSelector', () => {
         <Test />
       </React.StrictMode>
     ))
+      .not
       .toThrow("A selector cannot have 0 watched keys.");
     console.error = oldError;
   });
@@ -136,7 +138,7 @@ describe('useSelector', () => {
     function Component() {
       const data = useSelector(
         allKeys => allKeys.filter(t => t === "data"),
-        ({data: state}) => state.data,
+        ({data: state}) => state!.data,
         (prev, next) => prev === next
       );
       return <span data-testid="result">{data}</span>

@@ -72,7 +72,7 @@ export default function Demo() {
                 lazy
                 suspend
                 source={demoAsyncStates.users}
-                displayValue={data => data.map(user => <li
+                displayValue={data => data?.map(user => <li
                   key={user.id}>{user.id} - {user.username} - {user.name} - {user.email}</li>)}
               />
             </React.Suspense>
@@ -81,7 +81,7 @@ export default function Demo() {
               <SimpleSub
                 lazy
                 asyncStateKey={demoAsyncStates.posts.key}
-                displayValue={data => data.map(post => <li
+                displayValue={data => data?.map(post => <li
                   key={post.id}>{post.id} -
                   userId: {post.userId} - {post.title}</li>)}
               />

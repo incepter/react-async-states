@@ -79,7 +79,7 @@ describe('AsyncState - subscriptions', () => {
     // given
     let key = "simulated";
     let subscriptionFn = jest.fn();
-    let myConfig = {initialValue: null};
+    let myConfig = {initialValue: null, resetStateOnDispose: true};
     let producer = timeout(50, "Some Value");
 
     // when

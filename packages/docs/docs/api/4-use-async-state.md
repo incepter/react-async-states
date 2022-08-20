@@ -83,9 +83,9 @@ Let's see in details the supported configuration:
 | `cacheConfig`           | `CacheConfig`         | `undefined`                            | Defines the cache config for the producer                                                                                                                                                          |
 | `runEffect`             | `RunEffect`           | `undefined`                            | Defines run effect to decorate the producer with: debounce, throttle, delay...                                                                                                                     |
 | `runEffectDurationMs`   | `number > 0`          | `undefined`                            | The duration of the effect in milliseconds                                                                                                                                                         |
-| `resetStateOnDispose`   | `boolean`             | `true`                                 | Whether to reset the state to its initial state when all subscribers unsubscribe or to keep it. Default to `true`.                                                                                 |
+| `resetStateOnDispose`   | `boolean`             | `true`                                 | Whether to reset the state to its initial state when all subscribers unsubscribe or to keep it. Default to `false`.                                                                                |
 | `skipPendingDelayMs`    | `number > 0`          | `undefined`                            | The duration under which a state update with a pending status may be skipped. The component in this case won't render with a pending status if it gets updated to something else under that delay. |
-| `initialValue`          | `any`                 | `null`                                 | The initial producer value, useful only if working as standalone(ie defining own producer)                                                                                                         |
+| `initialValue`          | `any`                 | `null`                                 | The initial state value,  the initializer receives the cache as unique parameter                                                                                                                   |
 | `events`                | `UseAsyncStateEvents` | `undefined`                            | Defines events that will be invoked with this subscription.                                                                                                                                        |
 | `hoistToProvider`       | `boolean`             | `false`                                | Defines whether to hoist this state to the provider or not                                                                                                                                         |
 | `hoistToProviderConfig` | `HoistConfig`         | `{override: false}`                    | Defines the configuration associated with `hoistToProvider = true`                                                                                                                                 |
@@ -652,20 +652,19 @@ const { run, state } = useAsyncState({
 `resetStateOnDispose` : Defines whether to reset the state to the initial value
 when all subscribers unsubcribe, or to keep the current value.
 
-The default value is `true` and the library will reset the state to its initial
-value by default.
+The default value is `false` and the library will not reset the state to its 
+initial value by default by convenience.
 
 ```typescript
-// the state won't go to pending if the fetch goes under 300ms!
 const { run, state } = useAsyncState({
-  resetStateOnDispose: false,
+  resetStateOnDispose: true,
   producer: getClientProducer,
 });
 
 
 // or
 
-createSource(key, producer, {resetStateOnDispose: false});
+createSource(key, producer, {resetStateOnDispose: true});
 ```
 
 ### `cacheConfig`
@@ -673,13 +672,14 @@ This property is only relevant when `creating` a new state (along with hoist...)
 
 It determines the cache configurations:
 
-| Property      | Type                                                              | Description                                                                    |
-|---------------|-------------------------------------------------------------------|--------------------------------------------------------------------------------|
-| `enabled`     | `boolean`                                                         | Whether to enable cache or not                                                 |
-| `hash`        | `(args?: any[], payload?: {[id: string]: any} or null) => string` | a function to calculate a hash for a producer run (from args and payload)      |
-| `getDeadline` | `(currentState: State<T>) => number`                              | returns the deadline after which the cache is invalid                          |
-| `load`        | `() => {[id: AsyncStateKey]: CachedState<T>}`                     | loads the cached data when the async state instance is created                 |
-| `persist`     | `(cache: {[id: AsyncStateKey]: CachedState<T>}) => void`          | a function to persist the whole cache, called when state is updated to success |
+| Property      | Type                                                              | Description                                                                      |
+|---------------|-------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| `enabled`     | `boolean`                                                         | Whether to enable cache or not                                                   |
+| `hash`        | `(args?: any[], payload?: {[id: string]: any} or null) => string` | a function to calculate a hash for a producer run (from args and payload)        |
+| `getDeadline` | `(currentState: State<T>) => number`                              | returns the deadline after which the cache is invalid                            |
+| `load`        | `() => {[id: AsyncStateKey]: CachedState<T>}`                     | loads the cached data when the async state instance is created                   |
+| `persist`     | `(cache: {[id: AsyncStateKey]: CachedState<T>}) => void`          | a function to persist the whole cache, called when state is updated to success   |
+| `onCacheLoad` | `onCacheLoad?({cache, setState}): void`                           | a callback called when the cache loads, useful when asynchronously loading cache |
 
 ### `events`
 The `events` property defines handlers that will be invoked.

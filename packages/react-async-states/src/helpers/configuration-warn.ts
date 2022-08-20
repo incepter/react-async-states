@@ -20,18 +20,6 @@ const hoistProperties = [
   "hoistToProviderConfig",
 ];
 
-// const subscriptionProperties = [
-//   "key",
-//   "lazy",
-//   "source",
-//   "events",
-//   "payload",
-//   "selector",
-//   "areEqual",
-//   "condition",
-//   "subscriptionKey",
-// ];
-
 const forkProperties = [
   "fork",
   "forkConfig",

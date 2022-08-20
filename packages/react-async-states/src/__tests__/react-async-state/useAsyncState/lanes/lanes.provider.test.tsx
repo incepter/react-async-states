@@ -3,12 +3,12 @@ import {act, fireEvent, render, screen} from "@testing-library/react";
 import {mockDateNow} from "../../utils/setup";
 import {createSource} from "../../../../helpers/create-async-state";
 import {useAsyncState} from "../../../../hooks/useAsyncState";
+import {AsyncStateProvider} from "../../../../provider/AsyncStateProvider";
 import {
   runpSourceLane,
   runSource,
   runSourceLane
-} from "../../../../hooks/useRun";
-import {AsyncStateProvider} from "../../../../provider/AsyncStateProvider";
+} from "../../../../helpers/source-utils";
 
 mockDateNow();
 

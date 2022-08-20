@@ -2,11 +2,11 @@ import React from "react";
 import {
   AsyncStateProvider,
   useAsyncState,
-  useSelector
+  useSelector,
 } from "react-async-states";
 
-function Wrapper({children}) {
-  const [mounted, setMounted] = React.useState(false);
+function Wrapper({children, initialValue = false}) {
+  const [mounted, setMounted] = React.useState(initialValue);
 
 
   return (
@@ -51,19 +51,25 @@ export default function App() {
         </button>
       </section>
       <AsyncStateProvider initialStates={asyncStates}>
-        <Wrapper>
+        <Wrapper initialValue>
+          <Wrapper initialValue>
+            <SelectorV2Example/>
+          </Wrapper>
           {Object.keys(asyncStates).map((t, i) => <SimpleSub key={`${t}-${i}`}
-                                                              subKey={t}/>)}
+                                                             subKey={t}/>)}
           <br/>
-          <Father/>
-          <Sibling/>
-          <br/>
-          <br/>
-          <DynamicSubscribe/>
+          {/*<Father/>*/}
+          {/*<Sibling/>*/}
           <br/>
           <br/>
-          <EveryThingInsideProvider/>
-          <SubscribeToWithInput />
+          {/*<DynamicSubscribe/>*/}
+          <br/>
+          <br/>
+          <Wrapper initialValue={false}>
+            <HoistSomething/>
+          </Wrapper>
+          {/*<EveryThingInsideProvider/>*/}
+          <SubscribeToWithInput/>
         </Wrapper>
       </AsyncStateProvider>
     </>
@@ -88,6 +94,14 @@ function Sibling() {
       Run - {state.data} - {uniqueId} - {mode}
     </button>
   );
+}
+
+function HoistSomething() {
+  useAsyncState.hoist({
+    key: "atyuu",
+    initialValue: 15,
+  })
+  return "I did hoist something";
 }
 
 function DynamicSubscribe() {
@@ -116,7 +130,10 @@ function DynamicSubscribe() {
 }
 
 function SimpleSub({subKey}) {
-  const {mode, state, run} = useAsyncState({key: subKey, selector: t => ({...t})}, [subKey]);
+  const {mode, state, run} = useAsyncState({
+    key: subKey,
+    selector: t => ({...t})
+  }, [subKey]);
 
   function onClick() {
     run(old => old.data + 1)
@@ -124,7 +141,8 @@ function SimpleSub({subKey}) {
 
   return (
     <p>
-      <button onClick={onClick}> {subKey} - {mode} - {state?.data} - ok!</button>
+      <button onClick={onClick}> {subKey} - {mode} - {state?.data} - ok!
+      </button>
     </p>
   )
 }
@@ -155,14 +173,30 @@ function SubscribeToWithInput() {
 
   return (
     <div>
-      <br />
-      <br />
-      <input value={key} onChange={e => setKey(e.target.value)} />
+      <br/>
+      <br/>
+      <input value={key} onChange={e => setKey(e.target.value)}/>
       <details open>
         <pre>{JSON.stringify(result, null, 4)}</pre>
       </details>
-      <br />
-      <SimpleSub subKey={key} />
+      <br/>
+      <SimpleSub subKey={key}/>
     </div>
+  );
+}
+
+function id(allIds) {
+  return allIds.filter(t => t.startsWith("a"));
+}
+
+
+function SelectorV2Example() {
+
+  return (
+    <details open>
+      <pre>
+        {JSON.stringify(useSelector(id), null, 4)}
+      </pre>
+    </details>
   );
 }

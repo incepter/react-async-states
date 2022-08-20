@@ -1,6 +1,5 @@
 import * as React from "react";
 import {
-  AsyncStateSource,
   AsyncStateStatus,
   RenderStrategy,
   State
@@ -11,7 +10,6 @@ import {
   UseAsyncState,
 } from "../types.internal";
 import {useAsyncState} from "../hooks/useAsyncState";
-import {readAsyncStateFromSource} from "../async-state/read-source";
 
 const StateBoundaryContext = React.createContext<any>(null);
 
@@ -41,14 +39,13 @@ function inferBoundaryChildren<T, E = State<T>>(
     return props.children;
   }
 
-  const asyncState = readAsyncStateFromSource(result.source);
-  const {status} = asyncState.currentState;
+  const {status} = result.source.getState();
 
   return props.render[status] ? props.render[status] : props.children;
 }
 
 export function RenderThenFetchBoundary<T, E>(props: StateBoundaryProps<T, E>) {
-  const result = useAsyncState(props.config, props.dependencies);
+  const result = useAsyncState.auto(props.config, props.dependencies);
 
   const children = inferBoundaryChildren(result, props);
   return (
@@ -84,9 +81,7 @@ export function FetchThenRenderBoundary<T, E>(props: StateBoundaryProps<T, E>) {
 
   if (!self.didLoad) {
     const {source} = result;
-    const asyncState = readAsyncStateFromSource(source as AsyncStateSource<T>);
-
-    const {status} = asyncState.currentState;
+    const {status} = source!.getState(); // would throw before if undefined!
 
     if (status === AsyncStateStatus.error || status === AsyncStateStatus.success) {
       self.didLoad = true;

@@ -11,7 +11,7 @@ import {
   ProducerConfig,
   ProducerProps,
   ProducerRunEffects, RenderStrategy,
-  RunExtraProps,
+  ProducerEffects,
   State,
   StateUpdater
 } from "./async-state";
@@ -67,16 +67,6 @@ export type AsyncStateKeyOrSource<T> = string | AsyncStateSource<T>;
 
 export type AsyncStateSelectorKeys = string[];
 
-export type SimpleSelector<T, E> = (state: State<T>) => E;
-export type ArraySelector<T> = (...states: (State<any> | undefined)[]) => T;
-
-export type FunctionSelectorArgument = ({ [id: AsyncStateKey]: State<any> | undefined });
-export type FunctionSelector<T> = (arg: FunctionSelectorArgument) => T;
-
-export type SelectorKeysArg = AsyncStateKey
-  | AsyncStateKey[]
-  | ((allKeys: AsyncStateKey[]) => (AsyncStateKey | AsyncStateKey[]))
-
 export type AsyncStateSelector<T> =
   SimpleSelector<any, T>
   | ArraySelector<T>
@@ -131,11 +121,6 @@ export type AsyncStateManagerInterface = {
     key: AsyncStateKey,
     config: ForkConfig
   ): AsyncStateInterface<T> | undefined,
-  select<T>(
-    keys: AsyncStateSelectorKeys,
-    selector: AsyncStateSelector<T>,
-    reduceToObject?: boolean
-  ): T,
   hoist<T>(config: ManagerHoistConfig<T>): AsyncStateInterface<T>,
   dispose<T>(asyncState: AsyncStateInterface<T>): boolean,
   watch<T>(
@@ -159,7 +144,7 @@ export type AsyncStateManagerInterface = {
   watchAll(cb: ManagerWatchCallback<any>),
   setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[],
 
-  runExtraPropsCreator<T>(props: ProducerProps<T>): RunExtraProps,
+  producerEffectsCreator<T>(props: ProducerProps<T>): ProducerEffects,
 }
 
 // end manager types
@@ -176,11 +161,6 @@ export type AsyncStateContextValue = {
     key: AsyncStateKey,
     config?: ForkConfig
   ): AsyncStateInterface<T> | undefined,
-  select<T>(
-    keys: AsyncStateSelectorKeys,
-    selector: AsyncStateSelector<T>,
-    reduceToObject?: boolean
-  ): T,
   hoist<T>(config: ManagerHoistConfig<T>): AsyncStateInterface<T>,
   dispose<T>(asyncState: AsyncStateInterface<T>): boolean,
   watch<T>(
@@ -199,7 +179,7 @@ export type AsyncStateContextValue = {
   getAllKeys(): AsyncStateKey[],
   watchAll(cb: ManagerWatchCallback<any>),
 
-  runExtraPropsCreator<T>(props: ProducerProps<T>): RunExtraProps,
+  producerEffectsCreator<T>(props: ProducerProps<T>): ProducerEffects,
 }
 
 
@@ -215,6 +195,7 @@ export type UseAsyncState<T, E = State<T>> = {
 
   payload: { [id: string]: any } | null,
 
+  replay: () => AbortFn,
   abort: ((reason?: any) => void),
   run: (...args: any[]) => AbortFn,
   replaceState: StateUpdater<T>,
@@ -359,8 +340,9 @@ export type CleanupFn = AbortFn
   | (() => void)
   | undefined;
 
-export type MemoizedUseAsyncStateRef<T, E> = {
-  subscriptionInfo: UseAsyncStateSubscriptionInfo<T, E>
+export type MemoizedUseAsyncStateRef<T, E = State<T>> = {
+  latestData: E,
+  subscriptionInfo: UseAsyncStateSubscriptionInfo<T, E>,
 }
 
 export type SelectorManager = {
@@ -414,3 +396,25 @@ export interface UseAsyncStateType<T, E> {
     dependencies?: any[]
   ): UseAsyncState<T, E>,
 }
+
+export type BaseSelectorKey = AsyncStateKey | AsyncStateSource<any>
+
+export type UseSelectorFunctionKeys = ((allKeys: AsyncStateKey[]) => BaseSelectorKey[]);
+
+export type SelectorKeysArg =
+  BaseSelectorKey
+  | BaseSelectorKey[]
+  | UseSelectorFunctionKeys
+
+export interface FunctionSelectorItem<T> extends Partial<State<T>> {
+  key: AsyncStateKey,
+  lastSuccess?: State<T>,
+  cache?: Record<string, CachedState<T>>,
+}
+
+export type FunctionSelectorArgument = Record<AsyncStateKey, FunctionSelectorItem<any> | undefined>;
+
+export type FunctionSelector<T> = (arg: FunctionSelectorArgument) => T;
+
+export type SimpleSelector<T, E> = (props: FunctionSelectorItem<T> | undefined) => E;
+export type ArraySelector<T> = (...states: (FunctionSelectorItem<any> | undefined)[]) => T;

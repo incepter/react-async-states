@@ -5,6 +5,7 @@ import {AsyncStateProvider} from "../../../provider/AsyncStateProvider";
 import {useAsyncState} from "../../../hooks/useAsyncState";
 import {UseAsyncState} from "../../../types.internal";
 import {flushPromises} from "../utils/test-utils";
+import {useRun, useRunLane} from "../../../hooks/useRun";
 
 mockDateNow();
 
@@ -21,12 +22,13 @@ describe('dynamic provider states hoisting', () => {
   }
 
   function Father() {
-    const {mode, state, uniqueId, run} = useAsyncState({
+    const run = useRunLane();
+    const {key, mode, state, uniqueId} = useAsyncState({
       key: "counter",
       initialValue: 0,
       hoistToProvider: true
     });
-    return <button data-testid={`father`} onClick={() => run((old) => old.data + 1)}>
+    return <button data-testid={`father`} onClick={() => run(key, undefined, (old) => old.data + 1)}>
       FATHER - {state.data} - {mode}
     </button>;
   }

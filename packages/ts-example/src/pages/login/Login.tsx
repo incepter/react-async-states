@@ -1,17 +1,15 @@
 import * as React from "react";
 import {FormEvent} from "react";
-import {useRun} from "react-async-states";
+import {runSource} from "react-async-states";
 import {currentUserConfig, principalSource} from "./producers";
 
 export default function LoginPage() {
-  const run = useRun();
-
   function submit(e: FormEvent) {
     e.preventDefault();
     // @ts-ignore
     const userId = document.forms["login"].elements.userId.value;
-    run(currentUserConfig, {id: userId});
-    run(principalSource);
+    runSource(currentUserConfig, {id: userId});
+    runSource(principalSource);
   }
 
   return (
@@ -21,8 +19,8 @@ export default function LoginPage() {
         <option value="1">1</option>
         <option value="2">2</option>
         <option value="3">3</option>
-        <option value="3">4</option>
-        <option value="3">5</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
       </select>
       <button type="submit">Go!</button>
     </form>

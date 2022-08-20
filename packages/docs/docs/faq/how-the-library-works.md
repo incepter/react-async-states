@@ -52,7 +52,7 @@ interface AsyncStateInterface<T> {
   dispose: () => boolean, abort: (reason: any) => void,
   replaceState: StateUpdater<T>,
   setState: (newState: State<T>, notify?: boolean) => void,
-  run: (extraPropsCreator: RunExtraPropsCreator<T>, ...args: any[]) => AbortFn,
+  run: (createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]) => AbortFn,
   fork: (forkConfig?: ForkConfig) => AsyncStateInterface<T>,
   subscribe: (cb: Function, subscriptionKey?: AsyncStateKey) => AbortFn,
 }
@@ -74,7 +74,7 @@ It also does the following:
   - update `AsyncState.lastSuccess` property
   - if cache is enabled
     - calculate the hash from args and payload the props and save it
-    - if `persiste` is provided, it is called with the whole cache.
+    - if `persist` is provided, it is called with the whole cache.
   - if status isn't `pending`
     - empty the `suspender` property (the pending promise)
 
@@ -94,7 +94,7 @@ gets invalidated once the producer resolves.
 
 ```typescript
 function runImmediately(
-  extraPropsCreator: RunExtraPropsCreator<T>,
+  createProducerEffects: ProducerEffectsCreator<T>,
 ...execArgs: any[]
 ): AbortFn
 {
@@ -126,7 +126,7 @@ function runImmediately(
       return indicators.aborted;
     }
   };
-  Object.assign(props, extraPropsCreator(props));
+  Object.assign(props, createProducerEffects(props));
 
   function emit(
     updater: T | StateFunctionUpdater<T>,
@@ -157,9 +157,9 @@ some effects, like `debounce` and `throttle`.
 const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
 
 if (!areRunEffectsSupported() || !this.config.runEffect || effectDurationMs === 0) {
-  return this.runImmediately(extraPropsCreator, ...args);
+  return this.runImmediately(createProducerEffects, ...args);
 } else {
-  return this.runWithEffect(extraPropsCreator, ...args);
+  return this.runWithEffect(createProducerEffects, ...args);
 }
 ```
 
@@ -234,7 +234,7 @@ This allows the library's `props.run` to inherit the context behavior:
 When doing `props.run`, it needs to run a producer, and provide a `props` object
 which may `select` from a provider, this power should be cascaded on runs.
 
-That's why `RunExtraProps` exists:
+That's why `ProducerEffects` exists:
 It allows the library to cascade the props:
 - If you run a producer from provider, all cascading calls via `props.run`
   and `props.runp` and `props.select` are context aware and may support
@@ -245,8 +245,8 @@ It allows the library to cascade the props:
 
 ```typescript
 
-export function createRunExtraPropsCreator(manager: AsyncStateManagerInterface) {
-  return function closeOverProps<T>(props: ProducerProps<T>): RunExtraProps {
+export function createProducerEffectsCreator(manager: AsyncStateManagerInterface) {
+  return function closeOverProps<T>(props: ProducerProps<T>): ProducerEffects {
     return {
       run: createRunFunction(manager, props),
       runp: createRunPFunction(manager, props),
@@ -255,7 +255,7 @@ export function createRunExtraPropsCreator(manager: AsyncStateManagerInterface) 
   }
 }
 
-export function standaloneRunExtraPropsCreator<T>(props: ProducerProps<T>): RunExtraProps {
+export function standaloneProducerEffectsCreator<T>(props: ProducerProps<T>): ProducerEffects {
   return {
     run: createRunFunction(null, props),
     runp: createRunPFunction(null, props),
@@ -382,7 +382,7 @@ function makeContextValue(): AsyncStateContextValue {
       getAllKeys: manager.getAllKeys,
       runAsyncState: manager.runAsyncState,
       notifyWatchers: manager.notifyWatchers,
-      runExtraPropsCreator: manager.runExtraPropsCreator,
+      producerEffectsCreator: manager.producerEffectsCreator,
     };
   }
 ```
@@ -432,7 +432,7 @@ const asyncStateEntries: AsyncStateEntries = Object
     notifyWatchers,
     setInitialStates
   };
-  output.runExtraPropsCreator = createRunExtraPropsCreator(output);
+  output.producerEffectsCreator = createProducerEffectsCreator(output);
 
   return output;
 ```
