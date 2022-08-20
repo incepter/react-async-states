@@ -19,7 +19,11 @@ export function DevtoolsView() {
     <Layout className='main-bg' style={{height: '100vh', overflow: "auto"}}>
       <SiderDisplay/>
       <Content
-        style={{padding: 8}}
+        style={{
+          padding: 8,
+          height: '100vh',
+          overflow: 'auto',
+        }}
       >
         <CurrentStateDisplay/>
       </Content>
@@ -130,6 +134,7 @@ const SiderDisplay = React.memo(function () {
       width={250}
     >
       <Header className='main-bg' style={{
+        zIndex: 1,
         height: 40,
         display: "flex",
         position: "fixed",

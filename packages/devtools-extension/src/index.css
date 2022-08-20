@@ -17,6 +17,12 @@
     border-radius: 24px !important;
 }
 
+.default-button {
+    margin-top: 2px;
+    text-align: start;
+    border-bottom: none;
+}
+
 .sidebar-el-active {
     background-color: antiquewhite;
 }

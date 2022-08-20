@@ -1,6 +1,8 @@
 import React from "react";
+import Layout from "antd/lib/layout";
 import ReactJson from "react-json-view";
 import Button from "antd/lib/button";
+import Modal from "antd/lib/modal";
 import Tabs from "antd/lib/tabs";
 import Select from "antd/lib/select";
 import { useSource, useSourceLane, AsyncStateStatus } from "react-async-states";
@@ -12,6 +14,9 @@ import {
 } from "./sources";
 import { DevtoolsMessagesBuilder } from "./utils";
 import CurrentJournalDisplay from "./CurrentJournalDisplay";
+import { devtoolsJournalEvents } from "devtools/eventTypes";
+
+const {Header, Content, Sider} = Layout;
 
 function CurrentJsonDisplay({lane, mode}) {
   if (mode === "state") {
@@ -29,37 +34,24 @@ function CurrentTreeDisplay() {
     return null;
   }
   return (
-    <div key={lane}>
-      <Tabs type="card" defaultActiveKey="1">
-        <Tabs.TabPane
-          tab="Actions"
-          key="3">
-          <Actions lane={lane}/>
-        </Tabs.TabPane>
-        <Tabs.TabPane
-          tab={
-            <span
-              style={{paddingLeft: 24, paddingRight: 24}}
-            >
-            State
-          </span>
-          }
-          key="1">
+    <Layout>
+      <Header style={{
+        padding: 0,
+        height: 40,
+        display: "flex",
+        alignItems: "center",
+      }} className="main-bg">
+        <Actions lane={lane}/>
+      </Header>
+      <Layout>
+        <Sider className="main-bg" width='30%'>
           <CurrentJsonDisplay lane={lane} mode="state"/>
-        </Tabs.TabPane>
-        <Tabs.TabPane
-          tab={
-            <span
-              style={{paddingLeft: 24, paddingRight: 24}}
-            >
-            Journal events
-          </span>
-          }
-          key="2">
+        </Sider>
+        <Content className="main-bg">
           <CurrentJsonDisplay lane={lane} mode="journal"/>
-        </Tabs.TabPane>
-      </Tabs>
-    </div>
+        </Content>
+      </Layout>
+    </Layout>
   );
 }
 
@@ -77,14 +69,8 @@ export const SideKey = React.memo(function SiderKey({
   return (
     <Button
       size="small"
-      style={{
-        marginTop: 2,
-        width: '100%',
-        cursor: 'pointer',
-        textAlign: 'start',
-        borderBottom: 'none',
-      }}
       shape="round"
+      className="default-button w-full"
       type={isCurrent ? "primary" : "default"}
       onClick={() => {
         currentJournal.setState(null);
@@ -143,62 +129,55 @@ function StateView({lane}) {
 
 function RefreshButton({lane}) {
   return (
-    <Button onClick={() => {
-      gatewaySource
-        .getState()
-        .data
-        ?.postMessage?.(DevtoolsMessagesBuilder.getAsyncState(lane));
-    }}>Refresh</Button>
+    <Button
+      size="small"
+      shape="round"
+      className="default-button"
+      onClick={() => {
+        gatewaySource
+          .getState()
+          .data
+          ?.postMessage?.(DevtoolsMessagesBuilder.getAsyncState(lane));
+      }}>Refresh</Button>
   );
 }
 
 const Actions = React.memo(function Actions({lane}) {
 
   return (
-    <div>
+    <>
       <RefreshButton lane={lane}/>
-      <Button onClick={() => {
-        currentJournal.setState(null);
-        currentState.setState(null);
-      }}> Close </Button>
-      <br/>
-      <EditState lane={lane}/>
-    </div>
+
+      <EditState key={lane} lane={lane}/>
+
+      <Button
+        size="small"
+        shape="round"
+        style={{marginLeft: 8}}
+        className="default-button"
+        onClick={() => {
+          currentJournal.setState(null);
+          currentState.setState(null);
+        }}> Close </Button>
+    </>
   );
 });
 
 function EditState({lane}) {
-  const [status, setStatus] = React.useState(AsyncStateStatus.success);
+  const [open, setOpen] = React.useState(false);
   const [data, setData] = React.useState("");
   const [isJson, setIsJson] = React.useState(true);
+  const [status, setStatus] = React.useState(AsyncStateStatus.success);
   return (
-    <section>
-      <summary>Change state</summary>
-      <Select
-        value={status}
-        options={Object.values(AsyncStateStatus).map(t => ({
-          label: t,
-          value: t
-        }))}
-        onChange={v => {
-          setStatus(v);
-          if (v === AsyncStateStatus.pending) {
-            setData(null);
-          }
-        }}
-      />
-      {status !== AsyncStateStatus.pending && (
-        <section>
-          <summary>Data</summary>
-          <label htmlFor="is-json">JSON data</label>
-          <input id="is-json" type="checkbox" checked={isJson}
-                 onChange={e => setIsJson(e.target.checked)}/>
-          <br/>
-          <textarea value={data}
-                    onChange={e => setData(e.target.value)}></textarea>
-        </section>
-      )}
-      <Button onClick={() => {
+    <>
+      <Button
+        style={{marginLeft: 8}}
+        onClick={() => setOpen(true)} size="small" shape="round"
+        className="default-button">Change state</Button>
+      <Modal
+        centered
+        title="Change state"
+        onCancel={() => setOpen(false)} onOk={() => {
         gatewaySource
           .getState()
           .data
@@ -211,12 +190,128 @@ function EditState({lane}) {
               isJson
             )
         );
-      }}>Change</Button>
-    </section>
+        setOpen(false);
+      }} visible={open}>
+        {
+          open && (
+            <section className="w-full" style={{padding: '0px 8px'}}>
+              <label style={{fontWeight: 600}}>Status:</label>
+              <Select
+                id="next-status"
+                value={status}
+                options={Object.values(AsyncStateStatus).map(t => ({
+                  label: t,
+                  value: t
+                }))}
+                onChange={v => {
+                  setStatus(v);
+                  if (v === AsyncStateStatus.pending) {
+                    setData(null);
+                  }
+                }}
+              />
+              {status !== AsyncStateStatus.pending && (
+                <section style={{
+                  padding: '4px 0px',
+                }}>
+                  <h4>Data:</h4>
+                  <span>
+                    Type data and choose if it should be parsed as json.
+                    <br/>
+                  </span>
+                  <textarea style={{width: '100%'}} rows={2} value={data}
+                            onChange={e => setData(e.target.value)}></textarea>
+                  <br />
+                  <input id="is-json" type="checkbox"
+                         checked={isJson}
+                         onChange={e => setIsJson(e.target.checked)}/>
+                  <label style={{marginLeft: 16}} htmlFor="is-json">is JSON
+                    data</label>
+                  <br/>
+                  <span>
+                    You can choose preview states from here:
+                    <br/>
+                    <PreviewsStateChoice status={status} onChange={setData} lane={lane}/>
+                  </span>
+                </section>
+              )}
+              <details>
+                <summary>
+                  Preview:
+                </summary>
+
+                <ReactJson name="New state"
+                           style={{
+                             padding: "1rem",
+                             height: "100%",
+                             overflow: "auto"
+                           }}
+                           theme="monokai"
+                           collapsed={2}
+                           displayArrayKey={false}
+                           displayDataTypes={false}
+                           displayObjectSize={false}
+                           enableClipboard={false}
+                           src={{
+                             status,
+                             data: isJson ? formatData(data) : data,
+                           }}
+                />
+              </details>
+            </section>
+          )
+        }
+      </Modal>
+
+    </>
   );
+}
+
+function PreviewsStateChoiceDefault({lane, onChange}) {
+  const {state} = useSourceLane(journalSource, lane);
+  const updateEvents = (state.data?.journal ?? [])
+    .filter(t => t.eventType === devtoolsJournalEvents.update)
+    .reverse();
+  return (
+    <details>
+      <summary>Choose from previous states</summary>
+
+      <Select
+        style={{width: '100%'}}
+        options={updateEvents.map(t => ({
+          label: `${t.eventPayload.newState.status} - ${stringifyForSelect(t.eventPayload.newState.data)}`,
+          value: `${t.eventId}`,
+          data: t,
+        }))}
+        onChange={(_v, option) => {
+          console.log('changing by', option);
+          onChange(stringifyForSelect(option.data.eventPayload.newState.data))
+        }}
+      />
+    </details>
+  );
+}
+
+function formatData(data) {
+  try {
+    return JSON.parse(data)
+  } catch (e) {
+    return data;
+  }
 }
 
 
 const CurrentStateDisplay = React.memo(CurrentTreeDisplay);
+const PreviewsStateChoice = React.memo(PreviewsStateChoiceDefault);
 
 export default CurrentStateDisplay;
+
+function stringifyForSelect(data) {
+  if (typeof data === "string") {
+    return data;
+  }
+  if (typeof data === "object" && data !== null) {
+    return JSON.stringify(data);
+  }
+  return data;
+}
