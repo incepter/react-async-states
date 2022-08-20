@@ -21,6 +21,8 @@
     margin-top: 2px;
     text-align: start;
     border-bottom: none;
+    display: flex;
+    align-items: center;
 }
 
 .sidebar-el-active {

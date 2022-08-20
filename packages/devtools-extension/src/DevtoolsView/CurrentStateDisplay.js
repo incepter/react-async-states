@@ -43,7 +43,7 @@ function CurrentTreeDisplay() {
       }} className="main-bg">
         <Actions lane={lane}/>
       </Header>
-      <Layout>
+      <Layout style={{height: "calc(100vh - 56px)"}}>
         <Sider className="main-bg" width='30%'>
           <CurrentJsonDisplay lane={lane} mode="state"/>
         </Sider>
@@ -71,7 +71,7 @@ export const SideKey = React.memo(function SiderKey({
       size="small"
       shape="round"
       className="default-button w-full"
-      type={isCurrent ? "primary" : "default"}
+      type={isCurrent ? "primary" : "link"}
       onClick={() => {
         currentJournal.setState(null);
         currentState.setState(`${uniqueId}`);
@@ -109,7 +109,11 @@ function StateView({lane}) {
   }
   return (
     <ReactJson name={key}
-               style={{padding: "1rem", height: "100%", overflow: "auto"}}
+               style={{
+                 padding: "1rem",
+                 height: "calc(100vh - 56px)",
+                 overflow: "auto"
+               }}
                theme="monokai"
                collapsed={2}
                displayArrayKey={false}
@@ -130,6 +134,7 @@ function StateView({lane}) {
 function RefreshButton({lane}) {
   return (
     <Button
+      type="link"
       size="small"
       shape="round"
       className="default-button"
@@ -151,6 +156,7 @@ const Actions = React.memo(function Actions({lane}) {
       <EditState key={lane} lane={lane}/>
 
       <Button
+        type="link"
         size="small"
         shape="round"
         style={{marginLeft: 8}}
@@ -171,6 +177,7 @@ function EditState({lane}) {
   return (
     <>
       <Button
+        type="link"
         style={{marginLeft: 8}}
         onClick={() => setOpen(true)} size="small" shape="round"
         className="default-button">Change state</Button>
@@ -221,7 +228,7 @@ function EditState({lane}) {
                   </span>
                   <textarea style={{width: '100%'}} rows={2} value={data}
                             onChange={e => setData(e.target.value)}></textarea>
-                  <br />
+                  <br/>
                   <input id="is-json" type="checkbox"
                          checked={isJson}
                          onChange={e => setIsJson(e.target.checked)}/>
@@ -231,7 +238,8 @@ function EditState({lane}) {
                   <span>
                     You can choose preview states from here:
                     <br/>
-                    <PreviewsStateChoice status={status} onChange={setData} lane={lane}/>
+                    <PreviewsStateChoice status={status} onChange={setData}
+                                         lane={lane}/>
                   </span>
                 </section>
               )}
@@ -284,7 +292,6 @@ function PreviewsStateChoiceDefault({lane, onChange}) {
           data: t,
         }))}
         onChange={(_v, option) => {
-          console.log('changing by', option);
           onChange(stringifyForSelect(option.data.eventPayload.newState.data))
         }}
       />

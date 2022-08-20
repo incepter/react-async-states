@@ -12,17 +12,18 @@ const {Content, Sider} = Layout;
 const CurrentJournalDisplay = React.memo(function Journal({lane}) {
 
   return (
-    <Layout className='main-bg' style={{}}>
-      <Layout>
-        <Sider width={400}>
-          <JournalView lane={lane}/>
-        </Sider>
-        <Layout>
-          <Content>
-            <CurrentJson/>
-          </Content>
-        </Layout>
-      </Layout>
+    <Layout className='main-bg' style={{
+      height: 'calc(100vh - 48px)',
+      overflowY: 'auto',
+      padding: 0
+    }}>
+      <Sider style={{padding: 8}} className='main-bg main-color' width={250}>
+        <JournalView lane={lane}/>
+      </Sider>
+      <Content className='main-bg main-color'
+               style={{height: 'calc(100vh - 56px)', overflowY: 'auto'}}>
+        <CurrentJson/>
+      </Content>
     </Layout>);
 });
 
@@ -52,12 +53,14 @@ function JournalView({lane}) {
   }, [data, selectedTypes]);
 
   return (
-    <div>
+    <div style={{height: 'calc(100vh - 56px)', overflowY: 'auto'}}>
       <span>Available: ({allLogs.length}), shown: ({filteredData.length})</span>
       <br/>
-      <Button onClick={() => setSelectedTypes([])}>Clear all</Button>
-      <Button
-        onClick={() => setSelectedTypes(Object.values(devtoolsJournalEvents))}
+      <Button size="small" shape="round" className="default-button"
+              onClick={() => setSelectedTypes([])}>Clear all</Button>
+      <Button size="small" shape="round" className="default-button"
+              style={{marginLeft: 8}}
+              onClick={() => setSelectedTypes(Object.values(devtoolsJournalEvents))}
       >
         Select all
       </Button>
@@ -65,25 +68,28 @@ function JournalView({lane}) {
       <Select
         mode="multiple"
         value={selectedTypes}
-        style={{width: '100%'}}
+        style={{width: '100%', marginTop: 8}}
         onChange={setSelectedTypes}
         defaultValue={selectedTypes}
         options={JOURNAL_EVENT_TYPES_FILTER_OPTIONS}
       />
-      <ul style={{maxHeight: 'calc(100vh - 300px)', overflowY: 'auto'}}>
+      <ul style={{marginTop: 8}}>
         {filteredData.map((entry, id) => (
           <li
-            style={{color: json.data?.eventId === entry.eventId ? "red" : "black"}}
+            className="w-full"
             key={id}>
-            <Button onClick={() => {
-              currentJournal.setState({
-                data: formJournalEventJson(entry),
-                eventId: entry.eventId,
-                uniqueId: entry.uniqueId,
-                name: `${entry.key} - ${entry.eventType}`,
-              });
-            }}>
-              {entry.eventType}
+            <Button
+              type={json.data?.eventId === entry.eventId ? "primary" : "link"}
+              size="small" shape="round" className="default-button"
+                    onClick={() => {
+                      currentJournal.setState({
+                        data: formJournalEventJson(entry),
+                        eventId: entry.eventId,
+                        uniqueId: entry.uniqueId,
+                        name: `${entry.key} - ${entry.eventType}`,
+                      });
+                    }}>
+              {`› ${entry.eventType}`}
             </Button>
           </li>
         ))}
@@ -142,16 +148,25 @@ function CurrentJson() {
     return null;
   }
   return (
-    <ReactJson name={json.data?.name}
-               style={{padding: "1rem", height: "100%", overflow: "auto"}}
-               theme="monokai"
-               collapsed={2}
-               displayArrayKey={false}
-               displayDataTypes={false}
-               displayObjectSize={false}
-               enableClipboard={false}
-               src={json.data?.data}
+    <div style={{
+      height: "calc(100vh - 56px)",
+      overflow: "auto"
+    }}><ReactJson name={json.data?.name}
+                  theme="monokai"
+                  style={{
+                    height: "100%",
+                    overflow: "auto"
+                  }}
+                  collapsed={2}
+                  displayArrayKey={false}
+                  displayDataTypes={false}
+                  displayObjectSize={false}
+                  enableClipboard={false}
+                  src={json.data?.data}
     />
+
+    </div>
+
   );
 }
 
