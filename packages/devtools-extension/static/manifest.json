@@ -1,5 +1,5 @@
 {
-  "manifest_version" : 2,
+  "manifest_version" : 3,
   "name" : "React Async States Dev Tools",
   "version" : "0.1",
   "description" : "Developer tools for react-async-states",
@@ -8,12 +8,11 @@
   "devtools_page" : "index.html",
 
   "background": {
-    "scripts": [
-      "background.js"
-    ],
-    "persistent": false
+    "service_worker": "background.js"
   },
-  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
   "content_scripts": [
     {
       "matches": [
@@ -24,11 +23,5 @@
       ],
       "run_at": "document_start"
     }
-  ],
-  "web_accessible_resources": [
-    "index.html",
-    "contentScript.js",
-    "background.js",
-    "main.js"
   ]
 }

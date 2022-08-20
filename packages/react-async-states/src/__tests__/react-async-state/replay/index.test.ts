@@ -1,7 +1,7 @@
 import AsyncState from "../../../async-state";
 import {
   standaloneProducerEffectsCreator
-} from "../../../helpers/producer-effects";
+} from "../../../async-state/AsyncState";
 
 describe('AsyncState.reply', () => {
   it('should reply async state latest run', () => {

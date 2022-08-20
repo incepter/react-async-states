@@ -38,10 +38,12 @@ import {nextKey} from "../helpers/key-gen";
 import {
   warnInDevAboutIrrelevantUseAsyncStateConfiguration
 } from "../helpers/configuration-warn";
-import {readAsyncStateFromSource} from "../async-state/read-source";
-import {standaloneProducerEffectsCreator} from "../helpers/producer-effects";
 import {supportsConcurrentMode} from "../helpers/supports-concurrent-mode";
 import {isAsyncStateSource} from "../async-state/utils";
+import {
+  readAsyncStateFromSource,
+  standaloneProducerEffectsCreator
+} from "../async-state/AsyncState";
 
 const defaultDependencies: any[] = [];
 
@@ -230,8 +232,14 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
 export function useSource<T>(
   source: AsyncStateSource<T>
 ): UseAsyncState<T, State<T>> {
+  return useSourceLane(source);
+}
+export function useSourceLane<T>(
+  source: AsyncStateSource<T>,
+  lane?: string,
+): UseAsyncState<T, State<T>> {
   const contextValue = React.useContext(AsyncStateContext);
-  const asyncState = readAsyncStateFromSource(source);
+  const asyncState = readAsyncStateFromSource(source).getLane(lane);
   const latestState = React.useRef<State<T>>()
 
 

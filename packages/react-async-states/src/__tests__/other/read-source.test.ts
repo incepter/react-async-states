@@ -1,5 +1,5 @@
 import {createSource} from "../../helpers/create-async-state";
-import {readAsyncStateFromSource} from "../../async-state/read-source";
+import {readAsyncStateFromSource} from "../../async-state/AsyncState";
 
 describe('readSource', () => {
   it('should correctly read the source', () => {
@@ -17,6 +17,7 @@ describe('readSource', () => {
     const source = {key: "test", uniqueId: 0};
 
     // then
+    // @ts-ignore
     expect(() => readAsyncStateFromSource(source))
       .toThrow("You ve passed an incompatible source object. Please make sure to pass the received source object.");
   });

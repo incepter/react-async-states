@@ -31,7 +31,7 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
       executionValue = asyncState.originalProducer(props);
 
     } catch (e) {
-      if (__DEV__) devtools.emitRunSync(asyncState, props);
+      if (__DEV__) devtools.emitRunSync(asyncState, savedProps);
       indicators.fulfilled = true;
       asyncState.setState(StateBuilder.error(e, savedProps));
       return;
@@ -39,7 +39,7 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
 
     if (isGenerator(executionValue)) {
       asyncState.producerType = ProducerType.generator;
-      if (__DEV__) devtools.emitRunGenerator(asyncState, props);
+      if (__DEV__) devtools.emitRunGenerator(asyncState, savedProps);
       // generatorResult is either {done, value} or a promise
       let generatorResult;
       try {
@@ -60,12 +60,12 @@ export function wrapProducerFunction<T>(asyncState: AsyncState<T>): ProducerFunc
       }
     } else if (isPromise(executionValue)) {
       asyncState.producerType = ProducerType.promise;
-      if (__DEV__) devtools.emitRunPromise(asyncState, props);
+      if (__DEV__) devtools.emitRunPromise(asyncState, savedProps);
       runningPromise = executionValue;
       asyncState.suspender = runningPromise;
       asyncState.setState(StateBuilder.pending(savedProps) as State<any>);
     } else { // final value
-      if (__DEV__) devtools.emitRunSync(asyncState, props);
+      if (__DEV__) devtools.emitRunSync(asyncState, savedProps);
       indicators.fulfilled = true;
       asyncState.producerType = ProducerType.sync;
       asyncState.setState(StateBuilder.success(executionValue, savedProps));

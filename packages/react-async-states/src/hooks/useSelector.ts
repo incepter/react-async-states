@@ -14,12 +14,12 @@ import {
   UseSelectorFunctionKeys,
 } from "../types.internal";
 import {isAsyncStateSource} from "../async-state/utils";
-import {readAsyncStateFromSource} from "../async-state/read-source";
 import {
   AsyncStateInterface,
   AsyncStateKey,
   AsyncStateSource,
 } from "../async-state";
+import {readAsyncStateFromSource} from "../async-state/AsyncState";
 
 type SelectorSelf<T> = {
   currentValue: T,
@@ -88,7 +88,7 @@ export function useSelector<T>(
       }
 
       return contextValue.watchAll(onChange);
-    });
+    }, [contextValue, self.currentInstances, self.currentKeys, keys]);
   }
 
   // uses:
@@ -112,7 +112,7 @@ export function useSelector<T>(
     return () => {
       unsubscribeFns.forEach((cleanup => cleanup?.()));
     }
-  });
+  }, [self.currentInstances, self.currentValue, areEqual]);
 
   function computeSelf() {
     const currentKeys = readKeys(keys, contextValue);

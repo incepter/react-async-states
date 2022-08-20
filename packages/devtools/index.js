@@ -1,16 +1,22 @@
-import { devtoolsJournalEvents, toDevtoolsEvents } from "./eventTypes";
+import {
+  devtoolsJournalEvents,
+  newDevtoolsEvents,
+  newDevtoolsRequests,
+  toDevtoolsEvents
+} from "./eventTypes";
 import { __DEV__, shallowClone } from "shared";
 
+let journalEventsId = 0;
 const source = "async-states-agent";
 const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
-  let queue = [];
+
+  let keys = {};
   let connected = false;
   let currentUpdate = null;
-
   return {
-    connect,
-    disconnect,
-
+    markAsConnected,
+    formatData,
+    emitKeys,
     emitCreation,
     emitRunSync,
     emitReplaceState,
@@ -26,32 +32,85 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
     emitProviderState,
 
     emitInsideProvider,
+    emitRunConsumedFromCache,
   };
 
-  function connect() {
+  function markAsConnected() {
     connected = true;
-    emitFlush();
-    if (queue.length) {
-      queue.forEach(e => emit(e, false));
+  }
+
+  function formatData(data, isJson) {
+    if (!isJson) {
+      return data;
+    }
+    try {
+      return JSON.parse(data);
+    } catch (e) {
+      return data;
     }
   }
 
-  function disconnect() {
-    connected = false;
+  function emitKeys() {
+    emit({
+      source,
+      payload: keys,
+      type: newDevtoolsEvents.setKeys,
+    });
+}
+
+  function stringify(val, depth) {
+    depth = isNaN(+depth) ? 1 : depth;
+
+    function _build(key, val, depth, o, a) { // (JSON.stringify() has it's own rules, which we respect here by using it for property iteration)
+      return !val || typeof val !== 'object' ? val : (a = Array.isArray(val), JSON.stringify(val, function (k, v) {
+        if (a || depth > 0) {
+          if (!k) return (a = Array.isArray(v), val = v);
+          !o && (o = a ? [] : {});
+          o[k] = _build(k, v, a ? depth : depth - 1);
+        }
+      }), o || (a ? [] : {}));
+    }
+
+    return JSON.stringify(_build('', val, depth));
   }
 
-  function emit(message, saveToQueue = true) {
-    if (connected) {
-      window && window.postMessage(JSON.parse(JSON.stringify(message)), "*");
+
+  function serializePayload(payload) {
+    return stringify(payload, 10);
+  }
+
+  function emit(message) {
+    if (!connected || !message || !window) {
+      return;
     }
-    if (saveToQueue && message.type !== toDevtoolsEvents.provider) {
-      queue.push(message);
+    // only payload may cause issue
+    try {
+      window.postMessage(JSON.parse(JSON.stringify(message)), "*");
+    } catch (e) {
+      try {
+        window.postMessage({
+          ...message,
+          payload: JSON.parse(serializePayload(message.payload))
+        }, "*");
+      } catch (g) {
+        window.postMessage({
+          source,
+          payload: {
+            description: "An error occurred while transmitting message to the devtools",
+            error: g,
+            isError: true,
+            eventDate: Date.now(),
+            errorString: g.toString?.(),
+            eventType: message.payload.type,
+            eventId: message.payload.eventId,
+          },
+          type: message.type,
+          uniqueId: message.uniqueId || message.payload.uniqueId,
+        }, "*");
+      }
     }
   }
 
-  function emitFlush() {
-    emit({ source, type: toDevtoolsEvents.flush }, false);
-  }
   function emitProviderState(entries) {
     emit({
       source,
@@ -66,41 +125,52 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
     }
     emit({
       source,
+      uniqueId: asyncState.uniqueId,
       payload: {
         key: asyncState.key,
+        journal: asyncState.journal,
         uniqueId: asyncState.uniqueId,
         state: asyncState.currentState,
         lastSuccess: asyncState.lastSuccess,
+        producerType: asyncState.producerType,
         subscriptions: Object.keys(asyncState.subscriptions)
       },
-      type: toDevtoolsEvents.asyncState
+      type: newDevtoolsEvents.setAsyncState
     });
   }
 
   function emitJournalEvent(asyncState, evt) {
+    asyncState.journal.push({
+      key: asyncState.key,
+      eventId: ++journalEventsId,
+      uniqueId: asyncState.uniqueId,
 
+      eventType: evt.type,
+      eventDate: Date.now(),
+      eventPayload: evt.payload,
+    });
+  }
+
+  function emitPartialSync(uniqueId, evt) {
     emit({
       source,
-      payload: {
-        key: asyncState.key,
-        uniqueId: asyncState.uniqueId,
-
-        eventType: evt.type,
-        eventDate: Date.now(),
-        eventPayload: evt.payload,
-      },
-      type: toDevtoolsEvents.journal
+      payload: evt,
+      uniqueId: uniqueId,
+      type: newDevtoolsEvents.partialSync,
     });
   }
 
   function emitCreation(asyncState) {
+    keys[`${asyncState.uniqueId}`] = asyncState.key;
+    emitKeys();
     emitJournalEvent(asyncState, {
       type: devtoolsJournalEvents.creation,
       payload: {
-        config: asyncState.config,
-        state: asyncState.currentState
+        state: asyncState.currentState,
+        config: asyncState.config
       },
     });
+    emitAsyncState(asyncState);
   }
 
   function emitInsideProvider(asyncState, insideProvider = true) {
@@ -111,30 +181,91 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
   }
 
   function emitRunSync(asyncState, props) {
-    emitJournalEvent(asyncState, {
+    let evt = {
       payload: {props, type: "sync"},
       type: devtoolsJournalEvents.run
+    };
+    emitJournalEvent(asyncState, evt);
+    emitPartialSync(asyncState.uniqueId, {
+      key: asyncState.key,
+      eventId: journalEventsId,
+      uniqueId: asyncState.uniqueId,
+
+      eventType: evt.type,
+      eventDate: Date.now(),
+      eventPayload: evt.payload,
     });
   }
 
-  function emitReplaceState(asyncState) {
-    emitJournalEvent(asyncState, {
-      payload: {type: "sync"},
+    function emitRunConsumedFromCache(asyncState, payload, execArgs) {
+      let evt = {
+        payload: {
+          consumedFromCache: true,
+          type: "sync",
+          props: {payload, args: execArgs}
+        },
+        type: devtoolsJournalEvents.run
+      };
+      emitJournalEvent(asyncState, evt);
+      emitPartialSync(asyncState.uniqueId, {
+        key: asyncState.key,
+        eventId: journalEventsId,
+        uniqueId: asyncState.uniqueId,
+
+        eventType: evt.type,
+        eventDate: Date.now(),
+        eventPayload: evt.payload,
+      });
+    }
+
+  function emitReplaceState(asyncState, props) {
+    let evt = {
+      payload: {replaceState: true, type: "sync", props},
       type: devtoolsJournalEvents.run
+    };
+    emitJournalEvent(asyncState, evt);
+    emitPartialSync(asyncState.uniqueId, {
+      key: asyncState.key,
+      eventId: journalEventsId,
+      uniqueId: asyncState.uniqueId,
+
+      eventType: evt.type,
+      eventDate: Date.now(),
+      eventPayload: evt.payload,
     });
   }
 
   function emitRunGenerator(asyncState, props) {
-    emitJournalEvent(asyncState, {
+    let evt = {
       payload: {props, type: "generator"},
       type: devtoolsJournalEvents.run
+    };
+    emitJournalEvent(asyncState, evt);
+    emitPartialSync(asyncState.uniqueId, {
+      key: asyncState.key,
+      eventId: journalEventsId,
+      uniqueId: asyncState.uniqueId,
+
+      eventType: evt.type,
+      eventDate: Date.now(),
+      eventPayload: evt.payload,
     });
   }
 
   function emitRunPromise(asyncState, props) {
-    emitJournalEvent(asyncState, {
+    let evt = {
       payload: {props, type: "promise"},
       type: devtoolsJournalEvents.run
+    };
+    emitJournalEvent(asyncState, evt);
+    emitPartialSync(asyncState.uniqueId, {
+      key: asyncState.key,
+      eventId: journalEventsId,
+      uniqueId: asyncState.uniqueId,
+
+      eventType: evt.type,
+      eventDate: Date.now(),
+      eventPayload: evt.payload,
     });
   }
 
@@ -149,27 +280,57 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
   }
 
   function emitSubscription(asyncState, subKey) {
-    emitJournalEvent(asyncState, {
+    let evt = {
       payload: subKey,
       type: devtoolsJournalEvents.subscription
+    };
+    emitJournalEvent(asyncState, evt);
+    emitPartialSync(asyncState.uniqueId, {
+      key: asyncState.key,
+      eventId: journalEventsId,
+      uniqueId: asyncState.uniqueId,
+
+      eventType: evt.type,
+      eventDate: Date.now(),
+      eventPayload: evt.payload,
     });
   }
 
   function emitUnsubscription(asyncState, subKey) {
-    emitJournalEvent(asyncState, {
+    let evt = {
       payload: subKey,
       type: devtoolsJournalEvents.unsubscription
+    };
+    emitJournalEvent(asyncState, evt);
+    emitPartialSync(asyncState.uniqueId, {
+      key: asyncState.key,
+      eventId: journalEventsId,
+      uniqueId: asyncState.uniqueId,
+
+      eventType: evt.type,
+      eventDate: Date.now(),
+      eventPayload: evt.payload,
     });
   }
 
   function emitUpdate(asyncState) {
-    emitJournalEvent(asyncState, {
+    let evt = {
       payload: {
         oldState: currentUpdate.oldState,
         newState: asyncState.currentState,
         lastSuccess: asyncState.lastSuccess,
       },
       type: devtoolsJournalEvents.update
+    };
+    emitJournalEvent(asyncState, evt);
+    emitPartialSync(asyncState.uniqueId, {
+      key: asyncState.key,
+      eventId: journalEventsId,
+      uniqueId: asyncState.uniqueId,
+
+      eventType: evt.type,
+      eventDate: Date.now(),
+      eventPayload: evt.payload,
     });
   }
 
@@ -194,6 +355,25 @@ function formatEntriesToDevtools(entries) {
     result[entry.value.uniqueId].subscriptions = Object.keys(entry.value.subscriptions);
     return result;
   }, {});
+}
+
+if (__DEV__) {
+  function listener(message) {
+    if (!message.data || message.data.source !== "async-states-devtools-panel") {
+      return;
+    }
+    console.log('message from devtools', message.data.type, message.data);
+    if (message.data) {
+      if (message.data.type === newDevtoolsRequests.init) {
+        devtools.markAsConnected();
+      }
+      if (message.data.type === newDevtoolsRequests.getKeys) {
+        devtools.emitKeys();
+      }
+    }
+  }
+
+  window && window.addEventListener("message", listener);
 }
 
 export default devtools;

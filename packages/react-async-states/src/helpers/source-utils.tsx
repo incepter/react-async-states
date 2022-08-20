@@ -6,9 +6,11 @@ import {
   StateFunctionUpdater
 } from "../async-state";
 import {invokeIfPresent} from "../../../shared";
-import {readAsyncStateFromSource} from "../async-state/read-source";
-import {standaloneProducerEffectsCreator} from "./producer-effects";
 import {AsyncStateKeyOrSource} from "../types.internal";
+import {
+  readAsyncStateFromSource,
+  standaloneProducerEffectsCreator
+} from "../async-state/AsyncState";
 
 export function runSource<T>(src: AsyncStateSource<T>, ...args): AbortFn {
   return runSourceLane(src, undefined, ...args);
@@ -19,8 +21,7 @@ export function runSourceLane<T>(
   lane: string | undefined,
   ...args
 ): AbortFn {
-  let asyncState = readAsyncStateFromSource(src).getLane(lane);
-  return asyncState.run.call(asyncState, standaloneProducerEffectsCreator, ...args);
+  return src.getLaneSource(lane).run.apply(null, args);
 }
 
 export function runpSource<T>(
@@ -55,7 +56,7 @@ export function invalidateCache<T>(
   src: AsyncStateSource<T>,
   cacheKey?: string
 ): void {
-  readAsyncStateFromSource(src).invalidateCache(cacheKey);
+  src.invalidateCache(cacheKey);
 }
 
 export function outsideContextRunFn<T>(
@@ -106,8 +107,7 @@ export function replaceLaneState<T>(
   updater: T | StateFunctionUpdater<T>,
   status: AsyncStateStatus = AsyncStateStatus.success,
 ): void {
-  const asyncState = readAsyncStateFromSource(src).getLane(lane);
-  asyncState.replaceState.call(asyncState, updater, status);
+  src.getLaneSource(lane).setState.call(null, updater, status);
 }
 
 export function replaceState<T>(
@@ -119,9 +119,9 @@ export function replaceState<T>(
 }
 
 export function getState<T>(src: AsyncStateSource<T>, lane?: string) {
-  return readAsyncStateFromSource(src).getLane(lane).currentState;
+  return src.getLaneSource(lane).getState();
 }
 
 export function getLaneSource<T>(src: AsyncStateSource<T>, lane?: string): AsyncStateSource<T> {
-  return readAsyncStateFromSource(src).getLane(lane)._source;
+  return src.getLaneSource(lane);
 }

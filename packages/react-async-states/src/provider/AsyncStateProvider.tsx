@@ -25,8 +25,6 @@ import {
   UseAsyncStateContextType,
   WatcherType
 } from "../types.internal";
-import useProviderDevtools from "devtools/useProviderDevtools";
-import {createProducerEffectsCreator} from "../helpers/producer-effects";
 import AsyncState, {
   AbortFn,
   AsyncStateInterface,
@@ -35,7 +33,10 @@ import AsyncState, {
   ForkConfig
 } from "../async-state";
 import {isAsyncStateSource} from "../async-state/utils";
-import {readAsyncStateFromSource} from "../async-state/read-source";
+import {
+  createProducerEffectsCreator,
+  readAsyncStateFromSource
+} from "../async-state/AsyncState";
 
 export function AsyncStateProvider(
   {
@@ -48,8 +49,6 @@ export function AsyncStateProvider(
   // this manager lives with the provider and will never change
   // the initialize function creates a mutable manager instance
   const manager = React.useMemo<AsyncStateManagerInterface>(initialize, []);
-
-  useProviderDevtools(manager.entries);
 
   // this function should only tell the manager to execute a diffing
   // of items he has and the new ones
