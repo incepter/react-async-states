@@ -14,7 +14,7 @@ const CurrentJournalDisplay = React.memo(function Journal({lane}) {
   return (
     <Layout style={{height: 'calc(100vh - 200px)'}}>
       <Layout>
-        <Sider width={400} className="site-layout-background">
+        <Sider width={400}>
           <JournalView lane={lane}/>
         </Sider>
         <Layout>

@@ -1,8 +1,6 @@
 @import '~antd/dist/antd.css';
 
-.main {
-    display: flex;
-    height: 100vh;
+.main-bg {
     background-color: aliceblue;
 }
 

@@ -16,23 +16,13 @@ export function DevtoolsView() {
   useAsyncState.auto(gatewaySource);
 
   return (
-    <Layout style={{height: '100vh'}}>
-      <Header style={{height: 32}} className="header">
-        <div className="logo"/>
-      </Header>
-      <Layout>
-        <Sider width={300} className="site-layout-background">
-          <SiderDisplay/>
-        </Sider>
-        <Layout>
-          <Content
-            style={{padding: 8}}
-            className="site-layout-background"
-          >
-            <CurrentStateDisplay/>
-          </Content>
-        </Layout>
-      </Layout>
+    <Layout style={{height: '100vh', overflow: "auto"}}>
+      <SiderDisplay/>
+      <Content
+        style={{padding: 8}}
+      >
+        <CurrentStateDisplay/>
+      </Content>
     </Layout>
   );
 }
@@ -129,19 +119,43 @@ const SiderDisplay = React.memo(function () {
   }, [data, sort, meter]);
 
   return (
-    <div style={{display: "flex", flexDirection: "column"}}>
-      <div>
+    <Sider style={{
+      height: '100vh',
+      overflow: 'auto',
+      padding: '0px 4px',
+      borderRight: '1px dashed #C3C3C3',
+      backgroundColor: 'rgb(240, 242, 245)',
+    }} width={300}>
+      <Header style={{
+        height: 40,
+        display: "flex",
+        position: "fixed",
+        padding: "0px 8px",
+        alignItems: "center",
+        backgroundColor: 'rgb(240, 242, 245)'
+      }}>
         <label htmlFor="sort">Sort by: </label>
-        <Select id="sort" value={currentSort} options={sortOptions}
+        <Select style={{height: 32}} id="sort" value={currentSort}
+                options={sortOptions}
                 onChange={(_, option) => setSort(option.sort)}/>
-      </div>
-      <div style={{display: "flex", flexDirection: "column"}}>
-        {entries.map(([uniqueId, key]) => <SideKey key={uniqueId}
-                                                   uniqueId={uniqueId}
-                                                   asyncStateKey={key}
-                                                   isCurrent={uniqueId === lane}
-        />)}
-      </div>
-    </div>
+      </Header>
+      <Content
+        style={{
+          top: 40,
+          height: 'calc(100vh - 45px)',
+          overflow: 'auto',
+          marginTop: 40
+        }}>
+        <div style={{display: "flex", flexDirection: "column"}}>
+          <div style={{display: "flex", flexDirection: "column"}}>
+            {entries.map(([uniqueId, key]) => <SideKey key={uniqueId}
+                                                       uniqueId={uniqueId}
+                                                       asyncStateKey={key}
+                                                       isCurrent={uniqueId === lane}
+            />)}
+          </div>
+        </div>
+      </Content>
+    </Sider>
   );
 });

@@ -11,8 +11,10 @@ const source = "async-states-agent";
 const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
 
   let keys = {};
+  let connected = false;
   let currentUpdate = null;
   return {
+    markAsConnected,
     formatData,
     emitKeys,
     emitCreation,
@@ -33,6 +35,10 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
     emitRunConsumedFromCache,
   };
 
+  function markAsConnected() {
+    connected = true;
+  }
+
   function formatData(data, isJson) {
     if (!isJson) {
       return data;
@@ -50,56 +56,58 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
       payload: keys,
       type: newDevtoolsEvents.setKeys,
     });
-  }
+}
 
-  function stringify(val, depth, replacer, space, onGetObjID) {
+  function stringify(val, depth) {
     depth = isNaN(+depth) ? 1 : depth;
-    const recursMap = new WeakMap();
 
-    function _build(val, depth, o, a, r) { // (JSON.stringify() has it's own rules, which we respect here by using it for property iteration)
-      return !val || typeof val != 'object' ? val
-        : (r = recursMap.has(val), recursMap.set(val, true), a = Array.isArray(val),
-          r ? (o = onGetObjID && onGetObjID(val) || null) : JSON.stringify(val, function (k, v) {
-            if (a || depth > 0) {
-              if (replacer) v = replacer(k, v);
-              if (!k) return (a = Array.isArray(v), val = v);
-              !o && (o = a ? [] : {});
-              o[k] = _build(v, a ? depth : depth - 1);
-            }
-          }),
-          o === void 0 ? (a ? [] : {}) : o);
+    function _build(key, val, depth, o, a) { // (JSON.stringify() has it's own rules, which we respect here by using it for property iteration)
+      return !val || typeof val !== 'object' ? val : (a = Array.isArray(val), JSON.stringify(val, function (k, v) {
+        if (a || depth > 0) {
+          if (!k) return (a = Array.isArray(v), val = v);
+          !o && (o = a ? [] : {});
+          o[k] = _build(k, v, a ? depth : depth - 1);
+        }
+      }), o || (a ? [] : {}));
     }
 
-    return JSON.stringify(_build(val, depth), null, space);
+    return JSON.stringify(_build('', val, depth));
   }
+
 
   function serializePayload(payload) {
-    try {
-      return stringify(payload, 20);
-    } catch (e) {
-      return payload?.toString?.();
-    }
+    return stringify(payload, 10);
   }
 
   function emit(message) {
+    if (!connected || !message || !window) {
+      return;
+    }
+    // only payload may cause issue
     try {
-      const serializedPayload = JSON.parse(serializePayload(message.payload));
-      window && window.postMessage({...message, payload: serializedPayload}, "*");
+      window.postMessage(JSON.parse(JSON.stringify(message)), "*");
     } catch (e) {
-      emit({
-        source,
-        payload: {
-          description: "An error occurred while transmitting message to the devtools",
-          error: e,
-          isError: true,
-          eventDate: Date.now(),
-          type: message.payload.type,
-          errorString: e.toString?.(),
-          eventId: message.payload.eventId,
-        },
-        uniqueId: uniqueId,
-        type: newDevtoolsEvents.partialSync,
-      });
+      try {
+        window.postMessage({
+          ...message,
+          payload: JSON.parse(serializePayload(message.payload))
+        }, "*");
+      } catch (g) {
+        window.postMessage({
+          source,
+          payload: {
+            description: "An error occurred while transmitting message to the devtools",
+            error: g,
+            isError: true,
+            eventDate: Date.now(),
+            errorString: g.toString?.(),
+            eventType: message.payload.type,
+            eventId: message.payload.eventId,
+          },
+          type: message.type,
+          uniqueId: message.uniqueId || message.payload.uniqueId,
+        }, "*");
+      }
     }
   }
 
@@ -356,6 +364,9 @@ if (__DEV__) {
     }
     console.log('message from devtools', message.data.type, message.data);
     if (message.data) {
+      if (message.data.type === newDevtoolsRequests.init) {
+        devtools.markAsConnected();
+      }
       if (message.data.type === newDevtoolsRequests.getKeys) {
         devtools.emitKeys();
       }

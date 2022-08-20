@@ -1,4 +1,5 @@
 export const newDevtoolsRequests = {
+  init: "init",
   getKeys: "get-keys",
   getAsyncState: "get-async-state",
   changeAsyncState: "change-async-state",
