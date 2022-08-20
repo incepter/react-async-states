@@ -11,7 +11,7 @@ import {
   gatewaySource,
   journalSource
 } from "./sources";
-import { DevtoolsMessagesBuilder } from "./utils";
+import { addFormattedDate, DevtoolsMessagesBuilder } from "./utils";
 import CurrentJournalDisplay from "./CurrentJournalDisplay";
 import { devtoolsJournalEvents } from "devtools/eventTypes";
 
@@ -46,13 +46,13 @@ function CurrentTreeDisplay() {
       <Layout style={{height: "calc(100vh - 40px)"}}>
         <Sider style={{
           borderRight: '1px dashed #C3C3C3',
-        }} className="main-bg" width='30%'>
+        }} className="main-bg" width={400}>
           <CurrentJsonDisplay lane={lane} mode="state"/>
         </Sider>
         <Content style={{
           maxHeight: 'calc(100vh - 40px)',
           overflow: 'auto'
-        }} className="main-bg">
+        }} className="main-bg scroll-y-auto">
           <CurrentJsonDisplay lane={lane} mode="journal"/>
         </Content>
       </Layout>
@@ -100,40 +100,57 @@ function StateView({lane}) {
   }
 
   const {data} = state;
-  const {
-    key,
-    lastSuccess,
-    state: asyncStateState,
-    subscriptions,
-    producerType
-  } = data;
 
-
-  if (!key) {
+  if (!data.key) {
     return <span>No state information</span>;
   }
   return (
-    <ReactJson name={key}
-               style={{
-                 padding: "1rem",
-                 maxHeight: "calc(100vh - 40px)",
-                 overflow: "auto"
-               }}
-               theme="solarized"
-               collapsed={2}
-               displayArrayKey={false}
-               displayDataTypes={false}
-               displayObjectSize={false}
-               enableClipboard={false}
-               src={{
-                 key,
-                 producerType,
-                 state: asyncStateState,
-                 subscriptions,
-                 lastSuccess,
-               }}
-    />
+    <div style={{height: 'calc(100vh - 40px)'}} className="scroll-y-auto">
+      <ReactJson name={data.key}
+                 style={{
+                   padding: "1rem",
+                   overflow: "auto"
+                 }}
+                 className="scroll-y-auto"
+                 theme="solarized"
+                 collapsed={2}
+                 displayArrayKey={false}
+                 displayDataTypes={false}
+                 displayObjectSize={false}
+                 enableClipboard={false}
+                 src={displayAsyncState(data)}
+      />
+    </div>
   );
+}
+
+function displayAsyncState(data) {
+  const output = {
+    key: data.key,
+    uniqueId: data.uniqueId,
+    producerType: displayProducerType(data.producerType),
+    state: addFormattedDate(data.state),
+    subscriptions: data.subscriptions,
+    lastSuccess: data.lastSuccess,
+
+    lanes : data.lanes,
+    cache : data.cache,
+    parent : data.parent,
+    config : data.config,
+  };
+  const {oldState} = data;
+  if (oldState) output.oldState = addFormattedDate(oldState);
+  return output;
+}
+
+function displayProducerType(value) {
+  switch (value) {
+    case 0: return 'indeterminate';
+    case 1: return 'sync';
+    case 2: return 'promise';
+    case 3: return 'generator';
+  }
+  return null;
 }
 
 function RefreshButton({lane}) {

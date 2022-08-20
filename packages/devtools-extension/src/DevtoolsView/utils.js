@@ -35,3 +35,7 @@ export const DevtoolsMessagesBuilder = {
     };
   },
 }
+
+export function addFormattedDate(obj, prop = "timestamp", newProp = "formattedTimestamp") {
+  return {...obj, [newProp]: new Date(obj[prop]).toISOString()};
+}

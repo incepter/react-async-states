@@ -115,3 +115,38 @@
 .site-layout-background {
     background: #fff;
 }
+
+.scroll-y-auto {
+    overflow-y: auto;
+    text-shadow: 0 0 black;
+    transition: color 0.3s ease;
+    color: rgba(255, 255, 255, 0);
+    /*box-shadow: 0 1px 6px rgba(255, 255, 255, 0.2);*/
+}
+
+.scroll-y-auto::-webkit-scrollbar {
+     height: 16px;
+     width: 18px;
+     border-radius: 13px;
+     background-clip: padding-box;
+     border: 5px solid transparent;
+ }
+
+.scroll-y-auto::-webkit-scrollbar-track {
+     background-color: transparent;
+     border-radius: 6px;
+ }
+
+.scroll-y-auto::-webkit-scrollbar-thumb {
+     box-shadow: inset 0 0 0 10px;
+     height: 16px;
+     width: 16px;
+     border-radius: 13px;
+     background-clip: padding-box;
+     border: 5px solid transparent;
+ }
+
+.scroll-y-auto:hover {
+     color: #8c8c8c;
+ }
+
