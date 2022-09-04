@@ -71,7 +71,7 @@ function ShowCounter() {
 }
 
 export default function App() {
-
+  React.useEffect(() => console.log('app mounted'), []);
   return (
     <Router>
       {/*<GeneratorsTests/>*/}

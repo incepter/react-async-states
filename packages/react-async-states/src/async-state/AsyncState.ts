@@ -686,6 +686,7 @@ function makeSource<T>(asyncState: AsyncStateInterface<T>): Readonly<AsyncStateS
   source.setState = asyncState.replaceState.bind(asyncState);
   source.invalidateCache = asyncState.invalidateCache.bind(asyncState);
   source.run = asyncState.run.bind(asyncState, standaloneProducerEffectsCreator);
+  source.subscribe = asyncState.subscribe.bind(asyncState);
 
   return Object.freeze(source);
 }

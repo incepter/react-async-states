@@ -63,29 +63,65 @@ function CurrentTreeDisplay() {
 export const SideKey = React.memo(function SiderKey({
                                                       uniqueId,
                                                       asyncStateKey,
-                                                      isCurrent
+                                                      isCurrent,
+                                                      level = 0,
+                                                      lanes
                                                     }) {
+
+
   React.useEffect(() => {
     gatewaySource
       .getState()
       .data
       ?.postMessage?.(DevtoolsMessagesBuilder.getAsyncState(uniqueId));
   }, [uniqueId]);
+
+  if (!lanes?.length) {
+    return (
+      <Button
+        size="small"
+        shape="round"
+        style={{marginLeft: level * 30, width: level === 0 ? '100%' : `calc(100% - ${level * 30}px)`}}
+        className={`default-button`}
+        type={isCurrent ? "primary" : "link"}
+        onClick={() => {
+          currentJournal.setState(null);
+          currentState.setState(`${uniqueId}`);
+        }}
+      >
+        <span style={{marginLeft: 8}}>{`› ${asyncStateKey}`}</span>
+      </Button>
+    );
+  }
+
+
   return (
-    <Button
-      size="small"
-      shape="round"
-      className="default-button w-full"
-      type={isCurrent ? "primary" : "link"}
-      onClick={() => {
-        currentJournal.setState(null);
-        currentState.setState(`${uniqueId}`);
-      }}
-    >
-      <span style={{marginLeft: 8}}>{`› ${asyncStateKey}`}</span>
-    </Button>
+    <>
+      <Button
+        size="small"
+        shape="round"
+        className="default-button w-full"
+        type={isCurrent ? "primary" : "link"}
+        onClick={() => {
+          currentJournal.setState(null);
+          currentState.setState(`${uniqueId}`);
+        }}
+      >
+        <span style={{marginLeft: 8}}>{`› ${asyncStateKey}`}</span>
+      </Button>
+      <SiderLanes lanes={lanes} level={level+1} />
+    </>
   );
 });
+
+function SiderLanes({lanes, level}) {
+  const {state: {data: lane}} = useSource(currentState);
+  return lanes.map(([id, key]) => <SideKey key={key} uniqueId={id}
+                                            asyncStateKey={key}
+                                            isCurrent={lane === id}
+                                            level={level}
+    />);
+}
 
 
 function StateView({lane}) {
@@ -133,10 +169,10 @@ function displayAsyncState(data) {
     subscriptions: data.subscriptions,
     lastSuccess: data.lastSuccess,
 
-    lanes : data.lanes,
-    cache : data.cache,
-    parent : data.parent,
-    config : data.config,
+    lanes: data.lanes,
+    cache: data.cache,
+    parent: data.parent,
+    config: data.config,
   };
   const {oldState} = data;
   if (oldState) output.oldState = addFormattedDate(oldState);
@@ -145,10 +181,14 @@ function displayAsyncState(data) {
 
 function displayProducerType(value) {
   switch (value) {
-    case 0: return 'indeterminate';
-    case 1: return 'sync';
-    case 2: return 'promise';
-    case 3: return 'generator';
+    case 0:
+      return 'indeterminate';
+    case 1:
+      return 'sync';
+    case 2:
+      return 'promise';
+    case 3:
+      return 'generator';
   }
   return null;
 }
@@ -341,4 +381,34 @@ function stringifyForSelect(data) {
     return JSON.stringify(data);
   }
   return data;
+}
+function useWhyDidYouUpdate(name, props) {
+  // Get a mutable ref object where we can store props ...
+  // ... for comparison next time this hook runs.
+  const previousProps = React.useRef();
+  React.useEffect(() => {
+    if (previousProps.current) {
+      // Get all keys from previous and current props
+      const allKeys = Object.keys({ ...previousProps.current, ...props });
+      // Use this object to keep track of changed props
+      const changesObj = {};
+      // Iterate through keys
+      allKeys.forEach((key) => {
+        // If previous is different from current
+        if (previousProps.current[key] !== props[key]) {
+          // Add to changesObj
+          changesObj[key] = {
+            from: previousProps.current[key],
+            to: props[key],
+          };
+        }
+      });
+      // If changesObj not empty then output to console
+      if (Object.keys(changesObj).length) {
+        console.log("[why-did-you-update]", name, changesObj);
+      }
+    }
+    // Finally update previousProps with current props for next hook call
+    previousProps.current = props;
+  });
 }

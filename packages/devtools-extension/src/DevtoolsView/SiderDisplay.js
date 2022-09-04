@@ -69,8 +69,8 @@ const sortOptions = [
 
 function getSortFunction(sort) {
   return function sortFn(a, b) {
-    const [uniqueId1, key1, timestamp1] = a;
-    const [uniqueId2, key2, timestamp2] = b;
+    const {data: [uniqueId1, key1, timestamp1]} = a;
+    const {data: [uniqueId2, key2, timestamp2]} = b;
     if (sort.by === "uniqueId") {
       return sort.direction === "asc" ? uniqueId1 - uniqueId2 : uniqueId2 - uniqueId1;
     }
@@ -97,17 +97,37 @@ const SiderDisplay = React.memo(function () {
 
   const entries = React.useMemo(() => {
     const sortFn = getSortFunction(sort);
-    let stateEntries = Object
-      .entries(data);
+    let keysAndUniqueIds = Object.entries(data);
     if (search) {
-      stateEntries = stateEntries.filter(([, key]) => key?.includes(search));
+      keysAndUniqueIds = keysAndUniqueIds.filter(([, key]) => key?.includes(search));
     }
 
-    return stateEntries
-      .map(([uniqueId, key]) => {
-        return [uniqueId, key, journalSource.getLaneSource(uniqueId).getState().timestamp];
+    let instancesGroupingMap = {};
+    keysAndUniqueIds
+      .forEach(([id, key]) => {
+        let laneState = journalSource.getLaneSource(id).getState();
+        let {parent} = laneState.data;
+
+        if (parent.uniqueId) {
+          if (!instancesGroupingMap[parent.uniqueId]) {
+            instancesGroupingMap[parent.uniqueId] = {
+              data: [parent.uniqueId, parent.key],
+              children: [[id, key, laneState.timestamp]]
+            };
+          } else {
+            instancesGroupingMap[parent.uniqueId].children.push([id, key, laneState.timestamp]);
+          }
+        } else {
+          if (!instancesGroupingMap[id]) {
+            instancesGroupingMap[id] = {
+              data: [id, key, laneState.timestamp],
+              children: []
+            }
+          }
+        }
       })
-      .sort(sortFn)
+
+    return Object.values(instancesGroupingMap).sort(sortFn);
   }, [data, sort, meter, search]);
 
   return (
@@ -134,7 +154,7 @@ const SiderDisplay = React.memo(function () {
           alignItems: "center",
           justifyContent: "space-between",
         }}>
-          <div className="main-color">Sort by: </div>
+          <div className="main-color">Sort by:</div>
           <Select size="small" className="sorter"
                   style={{marginLeft: 8, borderRadius: 20}}
                   value={currentSort}
@@ -143,22 +163,24 @@ const SiderDisplay = React.memo(function () {
         </div>
       </Header>
       <Content className="scroll-y-auto"
-        style={{
-          top: 40,
-          height: 'calc(100vh - 45px)',
-          overflow: 'auto',
-          marginTop: 40
-        }}>
+               style={{
+                 top: 40,
+                 height: 'calc(100vh - 45px)',
+                 overflow: 'auto',
+                 marginTop: 40
+               }}>
         <div style={{display: "flex", flexDirection: "column"}}>
           <Input allowClear placeholder="search by key"
                  style={{borderRadius: 24}}
                  size="small" value={search}
                  onChange={e => setSearch(e.target.value)}/>
           <div style={{display: "flex", marginTop: 8, flexDirection: "column"}}>
-            {entries.map(([uniqueId, key]) => <SideKey key={uniqueId}
-                                                       uniqueId={uniqueId}
-                                                       asyncStateKey={key}
-                                                       isCurrent={uniqueId === lane}
+            {entries.map(({data: [uniqueId, key], children}) => <SideKey
+              key={uniqueId}
+              uniqueId={uniqueId}
+              asyncStateKey={key}
+              isCurrent={lane === uniqueId}
+              lanes={children}
             />)}
           </div>
         </div>

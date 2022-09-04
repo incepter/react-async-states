@@ -5761,7 +5761,10 @@ export const journalStateInitialValue = {
     "producerType": 2,
     "subscriptions": [],
     "lanes": [],
-    "parent": {},
+    "parent": {
+      "uniqueId": "17",
+      "key": "get-user-fork-1"
+    },
     "oldState": {
       "status": "pending",
       "data": null,
@@ -5832,7 +5835,10 @@ export const journalStateInitialValue = {
     "producerType": 0,
     "subscriptions": [],
     "lanes": [],
-    "parent": {}
+    "parent": {
+      "uniqueId": "17",
+      "key": "get-user-fork-1"
+    },
   },
   "20": {
     "key": "get-user-fork-4",
@@ -6131,7 +6137,10 @@ export const journalStateInitialValue = {
     "producerType": 2,
     "subscriptions": [],
     "lanes": [],
-    "parent": {},
+    "parent": {
+      "uniqueId": "19",
+      "key": "get-user-fork-3"
+    },
     "oldState": {
       "status": "pending",
       "data": null,

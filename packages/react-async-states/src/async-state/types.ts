@@ -103,6 +103,7 @@ export type AsyncStateSource<T> = {
   run: (...args: any[]) => AbortFn,
   invalidateCache: (cacheKey?: string) => void,
   getLaneSource(laneKey?: string): AsyncStateSource<T>,
+  subscribe: (cb: Function, subscriptionKey?: AsyncStateKey) => AbortFn,
 }
 
 export type StateSubscription<T> = {
