@@ -4,7 +4,7 @@ import {
   AsyncStateSubscriptionMode,
   UseAsyncState
 } from "../../../../types.internal";
-import {useAsyncState} from "../../../../hooks/useAsyncState";
+import {useAsyncState} from "../../../../react/useAsyncState";
 
 describe('should add static payload to async state', () => {
   it('should add payload to standalone subscription ', async () => {

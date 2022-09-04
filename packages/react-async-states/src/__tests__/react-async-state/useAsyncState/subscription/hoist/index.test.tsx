@@ -4,8 +4,8 @@ import {
   AsyncStateSubscriptionMode,
   UseAsyncState
 } from "../../../../../types.internal";
-import {useAsyncState} from "../../../../../hooks/useAsyncState";
-import {AsyncStateProvider} from "../../../../../provider/AsyncStateProvider";
+import {useAsyncState} from "../../../../../react/useAsyncState";
+import {AsyncStateProvider} from "../../../../../react/AsyncStateProvider";
 import {flushPromises} from "../../../utils/test-utils";
 import {mockDateNow, TESTS_TS} from "../../../utils/setup";
 

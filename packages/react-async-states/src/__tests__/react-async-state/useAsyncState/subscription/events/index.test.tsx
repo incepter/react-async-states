@@ -4,8 +4,8 @@ import {
   AsyncStateSubscriptionMode,
   UseAsyncState
 } from "../../../../../types.internal";
-import {useAsyncState} from "../../../../../hooks/useAsyncState";
-import {createSource} from "../../../../../helpers/create-async-state";
+import {useAsyncState} from "../../../../../react/useAsyncState";
+import {createSource} from "../../../../../async-state/create-async-state";
 import {AsyncStateStatus} from "../../../../../async-state";
 
 describe('useAsyncState - events', () => {

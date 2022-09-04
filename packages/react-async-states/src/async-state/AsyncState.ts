@@ -36,7 +36,7 @@ import {
   ProducerPropsRunConfig,
   ProducerPropsRunInput,
   ProducerRunEffects,
-  ProducerType,
+  ProducerType, RunTask,
   State,
   StateFunctionUpdater,
   StateSubscription
@@ -46,9 +46,9 @@ import {
   AsyncStateKeyOrSource,
   AsyncStateManagerInterface
 } from "../types.internal";
-import {nextKey} from "../helpers/key-gen";
+import {nextKey} from "./key-gen";
 
-export default class AsyncState<T> implements AsyncStateInterface<T> {
+class AsyncState<T> implements AsyncStateInterface<T> {
   //region properties
   key: AsyncStateKey;
   _source: AsyncStateSource<T>;
@@ -204,7 +204,6 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
     this.lanes[laneKey] = newLane;
     return newLane;
   }
-
 
   isCacheEnabled(): boolean {
     return !!this.config.cacheConfig?.enabled;
@@ -628,13 +627,24 @@ export default class AsyncState<T> implements AsyncStateInterface<T> {
   }
 }
 
+//region AsyncState methods helpers
+const defaultForkConfig: ForkConfig = Object.freeze({keepState: false});
+let uniqueId: number = 0;
 function nextUniqueId() {
   return ++uniqueId;
 }
 
-let uniqueId: number = 0;
-
-const defaultForkConfig: ForkConfig = Object.freeze({keepState: false});
+function readAsyncStateFromSource<T>(possiblySource: AsyncStateSource<T>): AsyncStateInterface<T> {
+  try {
+    const candidate = possiblySource.constructor(asyncStatesKey);
+    if (!(candidate instanceof AsyncState)) {
+      throw new Error("");// this error is thrown to trigger the catch block
+    }
+    return candidate; // async state instance
+  } catch (e) {
+    throw new Error("You ve passed an incompatible source object. Please make sure to pass the received source object.");
+  }
+}
 
 function notifySubscribers(asyncState: AsyncStateInterface<any>) {
   Object.values(asyncState.subscriptions).forEach(subscription => {
@@ -656,12 +666,6 @@ function spreadCacheChangeOnLanes<T>(topLevelParent: AsyncStateInterface<T>) {
       lane.cache = topLevelParent.cache;
       spreadCacheChangeOnLanes(lane);
     });
-}
-
-type RunTask<T> = {
-  args: any[],
-  payload: Record<string, any> | null,
-  producerEffectsCreator: ProducerEffectsCreator<T>,
 }
 
 function makeSource<T>(asyncState: AsyncStateInterface<T>): Readonly<AsyncStateSource<T>> {
@@ -690,19 +694,9 @@ function makeSource<T>(asyncState: AsyncStateInterface<T>): Readonly<AsyncStateS
 
   return Object.freeze(source);
 }
+//endregion
 
-export function readAsyncStateFromSource<T>(possiblySource: AsyncStateSource<T>): AsyncStateInterface<T> {
-  try {
-    const candidate = possiblySource.constructor(asyncStatesKey);
-    if (!(candidate instanceof AsyncState)) {
-      throw new Error("");// this error is thrown to trigger the catch block
-    }
-    return candidate; // async state instance
-  } catch (e) {
-    throw new Error("You ve passed an incompatible source object. Please make sure to pass the received source object.");
-  }
-}
-
+//region producerEffects creators helpers
 function createRunFunction(
   manager: AsyncStateManagerInterface | null,
   _props: ProducerProps<any>
@@ -805,7 +799,7 @@ function createSelectFunction<T>(manager: AsyncStateManagerInterface | null) {
   }
 }
 
-export function createProducerEffectsCreator(manager: AsyncStateManagerInterface) {
+function createProducerEffectsCreator(manager: AsyncStateManagerInterface) {
   return function closeOverProps<T>(props: ProducerProps<T>): ProducerEffects {
     return {
       run: createRunFunction(manager, props),
@@ -815,10 +809,20 @@ export function createProducerEffectsCreator(manager: AsyncStateManagerInterface
   }
 }
 
-export function standaloneProducerEffectsCreator<T>(props: ProducerProps<T>): ProducerEffects {
+function standaloneProducerEffectsCreator<T>(props: ProducerProps<T>): ProducerEffects {
   return {
     run: createRunFunction(null, props),
     runp: createRunPFunction(null, props),
     select: createSelectFunction(null),
   };
 }
+//endregion
+
+//region Exports
+export default AsyncState;
+export {
+  createProducerEffectsCreator,
+  readAsyncStateFromSource,
+  standaloneProducerEffectsCreator,
+};
+//endregion

@@ -8,7 +8,7 @@ import {
   shallowClone,
   shallowEqual
 } from "shared";
-import {AsyncStateContext} from "../context";
+import {AsyncStateContext} from "./context";
 import {
   AsyncStateContextValue,
   AsyncStateSubscriptionMode,
@@ -34,11 +34,11 @@ import AsyncState, {
   AsyncStateStatus, Producer,
   State
 } from "../async-state";
-import {nextKey} from "../helpers/key-gen";
+import {nextKey} from "../async-state/key-gen";
 import {
   warnInDevAboutIrrelevantUseAsyncStateConfiguration
-} from "../helpers/configuration-warn";
-import {supportsConcurrentMode} from "../helpers/supports-concurrent-mode";
+} from "./helpers/configuration-warn";
+import {supportsConcurrentMode} from "./helpers/supports-concurrent-mode";
 import {isAsyncStateSource} from "../async-state/utils";
 import {
   readAsyncStateFromSource,
@@ -213,7 +213,6 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
     );
   }
 }
-
 
 // useContext
 // useRef

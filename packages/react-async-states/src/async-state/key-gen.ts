@@ -1,4 +1,4 @@
-const defaultAnonymousPrefix = "anonymous-async-state-";
+const defaultAnonymousPrefix = "async-state-";
 export const nextKey: () => string = (function autoKey() {
   let key = 0;
   return function incrementAndGet() {

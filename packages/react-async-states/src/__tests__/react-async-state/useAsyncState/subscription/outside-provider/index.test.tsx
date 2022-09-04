@@ -3,7 +3,7 @@ import {act, fireEvent, render, screen} from "@testing-library/react";
 import {
   UseAsyncState,
 } from "../../../../../types.internal";
-import {useAsyncState} from "../../../../../hooks/useAsyncState";
+import {useAsyncState} from "../../../../../react/useAsyncState";
 import {AsyncStateStatus} from "../../../../../async-state";
 
 describe('should do basic subscription to an async state', () => {

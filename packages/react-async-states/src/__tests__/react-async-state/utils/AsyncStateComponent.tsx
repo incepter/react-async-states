@@ -3,7 +3,7 @@ import {
   UseAsyncStateConfig,
   UseAsyncState,
 } from "../../../types.internal";
-import {useAsyncState} from "../../../hooks/useAsyncState";
+import {useAsyncState} from "../../../react/useAsyncState";
 import {State} from "../../../async-state";
 
 const defaultDeps = [];

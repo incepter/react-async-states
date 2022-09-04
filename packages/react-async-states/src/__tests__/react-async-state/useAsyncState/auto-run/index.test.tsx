@@ -1,7 +1,7 @@
 import * as React from "react";
 import {act, render, screen} from "@testing-library/react";
 import {UseAsyncState} from "../../../../types.internal";
-import {useAsyncState} from "../../../../hooks/useAsyncState";
+import {useAsyncState} from "../../../../react/useAsyncState";
 import {AsyncStateStatus} from "../../../../async-state";
 
 describe('should auto run async state', () => {

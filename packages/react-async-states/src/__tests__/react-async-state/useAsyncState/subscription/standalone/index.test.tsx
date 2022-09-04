@@ -4,8 +4,8 @@ import {
   AsyncStateSubscriptionMode,
   UseAsyncState
 } from "../../../../../types.internal";
-import {useAsyncState} from "../../../../../hooks/useAsyncState";
-import {AsyncStateProvider} from "../../../../../provider/AsyncStateProvider";
+import {useAsyncState} from "../../../../../react/useAsyncState";
+import {AsyncStateProvider} from "../../../../../react/AsyncStateProvider";
 
 describe('should declare a standalone producer inside a provider', () => {
   it('should declare a standalone producer inside a provider ', async () => {

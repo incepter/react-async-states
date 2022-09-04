@@ -2,7 +2,7 @@ import {warning} from "shared";
 import {
   AsyncStateSubscriptionMode,
   UseAsyncStateConfiguration
-} from "../types.internal";
+} from "../../types.internal";
 
 
 const creationProperties = [

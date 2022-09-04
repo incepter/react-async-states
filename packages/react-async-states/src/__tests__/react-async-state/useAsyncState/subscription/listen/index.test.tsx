@@ -4,9 +4,9 @@ import {
   AsyncStateSubscriptionMode,
   UseAsyncState
 } from "../../../../../types.internal";
-import {useAsyncState} from "../../../../../hooks/useAsyncState";
-import {AsyncStateProvider} from "../../../../../provider/AsyncStateProvider";
-import {createSource} from "../../../../../helpers/create-async-state";
+import {useAsyncState} from "../../../../../react/useAsyncState";
+import {AsyncStateProvider} from "../../../../../react/AsyncStateProvider";
+import {createSource} from "../../../../../async-state/create-async-state";
 import {mockDateNow, TESTS_TS} from "../../../utils/setup";
 
 mockDateNow();

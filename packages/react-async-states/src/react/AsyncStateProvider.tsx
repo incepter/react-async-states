@@ -1,5 +1,5 @@
 import * as React from "react";
-import {AsyncStateContext} from "../context";
+import {AsyncStateContext} from "./context";
 import {
   asyncify,
   EMPTY_OBJECT,

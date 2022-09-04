@@ -1,9 +1,9 @@
 import * as React from "react";
 import {render} from "@testing-library/react";
 import AsyncStateComponent from "../../utils/AsyncStateComponent";
-import {createSource} from "../../../../helpers/create-async-state";
+import {createSource} from "../../../../async-state/create-async-state";
 import {Producer, ProducerProps} from "../../../../async-state";
-import {AsyncStateProvider} from "../../../../provider/AsyncStateProvider";
+import {AsyncStateProvider} from "../../../../react/AsyncStateProvider";
 
 describe('should run another producer from producer', () => {
   it('should run producer by source', () => {

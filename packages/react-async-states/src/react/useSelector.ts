@@ -1,6 +1,6 @@
 import * as React from "react";
 import {identity, isFn, shallowEqual} from "shared";
-import {AsyncStateContext} from "../context";
+import {AsyncStateContext} from "./context";
 import {
   ArraySelector,
   AsyncStateContextValue,

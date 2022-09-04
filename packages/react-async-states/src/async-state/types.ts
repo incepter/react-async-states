@@ -105,6 +105,11 @@ export type AsyncStateSource<T> = {
   getLaneSource(laneKey?: string): AsyncStateSource<T>,
   subscribe: (cb: Function, subscriptionKey?: AsyncStateKey) => AbortFn,
 }
+export type RunTask<T> = {
+  args: any[],
+  payload: Record<string, any> | null,
+  producerEffectsCreator: ProducerEffectsCreator<T>,
+}
 
 export type StateSubscription<T> = {
   key: AsyncStateKey, // subscription key

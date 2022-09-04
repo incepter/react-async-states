@@ -1,4 +1,4 @@
-import {createReducerProducer} from "../../helpers/create-producer";
+import {createReducerProducer} from "../../async-state/create-producer";
 import {AsyncStateStatus} from "../../async-state";
 
 describe('createReducerProducer', () => {

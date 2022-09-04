@@ -1,8 +1,8 @@
 import * as React from "react";
 import {fireEvent, render, screen} from "@testing-library/react";
-import {AsyncStateProvider} from "../../../provider/AsyncStateProvider";
+import {AsyncStateProvider} from "../../../react/AsyncStateProvider";
 import {AsyncStateSubscriptionMode} from "../../../types.internal";
-import {useProducer} from "../../../hooks/useAsyncStateBase";
+import {useProducer} from "../../../react/useAsyncStateBase";
 
 describe('should useProducer', () => {
   it('should use a global producer ', async () => {

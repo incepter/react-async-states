@@ -1,4 +1,4 @@
-import {supportsConcurrentMode} from "../../helpers/supports-concurrent-mode";
+import {supportsConcurrentMode} from "../../react/helpers/supports-concurrent-mode";
 
 jest.mock("react", () => ({
   ...jest.requireActual("react"),

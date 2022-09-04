@@ -4,13 +4,13 @@ import {
   AsyncStateStatus,
   State,
   StateFunctionUpdater
-} from "../async-state";
+} from "./index";
 import {invokeIfPresent} from "../../../shared";
 import {AsyncStateKeyOrSource} from "../types.internal";
 import {
   readAsyncStateFromSource,
   standaloneProducerEffectsCreator
-} from "../async-state/AsyncState";
+} from "./AsyncState";
 
 export function runSource<T>(src: AsyncStateSource<T>, ...args): AbortFn {
   return runSourceLane(src, undefined, ...args);
