@@ -22,6 +22,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
         emitRunPromise,
         emitRunGenerator,
         startUpdate,
+        listenToDevtoolsMessages,
         emitUpdate,
         emitDispose,
         emitSubscription,
@@ -171,6 +172,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
           },
         });
         emitAsyncState(asyncState);
+        listenToDevtoolsMessages(asyncState);
       }
 
       function emitInsideProvider(asyncState, insideProvider = true) {
@@ -339,6 +341,27 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
           uniqueId: asyncState.uniqueId,
           oldState: shallowClone(asyncState.currentState),
         };
+      }
+      function listenToDevtoolsMessages(asyncState) {
+        function listener(message) {
+          if (
+            !message.data ||
+            message.data.uniqueId !== `${asyncState.uniqueId}` ||
+            message.data.source !== "async-states-devtools-panel"
+          ) {
+            return;
+          }
+          if (message.data.type === "get-async-state") {
+            emitAsyncState(asyncState);
+          }
+          if (message.data.type === "change-async-state") {
+            const {data, status, isJson} = message.data;
+            const newData = devtools.formatData(data, isJson);
+            asyncState.replaceState(newData, status);
+          }
+        }
+
+        window && window.addEventListener("message", listener);
       }
     })()
   )
