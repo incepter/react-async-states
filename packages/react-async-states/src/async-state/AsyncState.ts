@@ -90,6 +90,8 @@ class AsyncState<T> implements AsyncStateInterface<T> {
     producer: Producer<T> | undefined | null,
     config?: ProducerConfig<T>
   ) {
+    this.uniqueId = nextUniqueId();
+
     this.key = key;
     this.config = shallowClone(config);
     this.originalProducer = producer ?? undefined;
@@ -97,51 +99,16 @@ class AsyncState<T> implements AsyncStateInterface<T> {
     this.producer = wrapProducerFunction(this);
     this.producerType = ProducerType.indeterminate;
 
-    if (__DEV__) {
-      this.uniqueId = nextUniqueId();
-      this.journal = [];
-    }
-
     this.parent = null;
     this.lanes = Object.create(null);
 
     this._source = makeSource(this);
 
-    if (
-      this.isCacheEnabled() &&
-      typeof this.config.cacheConfig?.load === "function"
-    ) {
-      // if there is a parent (set with lane), take its cache
-      if (this.parent !== null) {
-        const topLevelParent: AsyncStateInterface<T> = getTopLevelParent(this);
-        this.cache = topLevelParent.cache;
-      } else {
-        const loadedCache = this.config.cacheConfig.load();
-        if (loadedCache) {
-          if (isPromise(loadedCache)) {
-            (loadedCache as Promise<Record<string, CachedState<T>>>)
-              .then(asyncCache => {
-                this.cache = asyncCache;
-                if (typeof this.config.cacheConfig?.onCacheLoad === "function") {
-                  this.config.cacheConfig.onCacheLoad({
-                    cache: this.cache,
-                    setState: this.replaceState.bind(this)
-                  });
-                }
-              })
-          } else {
-            this.cache = loadedCache as Record<string, CachedState<T>>;
-
-            if (typeof this.config.cacheConfig?.onCacheLoad === "function") {
-              this.config.cacheConfig.onCacheLoad({
-                cache: this.cache,
-                setState: this.replaceState.bind(this)
-              });
-            }
-          }
-        }
-      }
+    if (__DEV__) {
+      this.journal = [];
     }
+
+    loadCache(this);
 
     let initialState = this.config.initialValue;
     this.currentState = StateBuilder.initial(
@@ -172,6 +139,7 @@ class AsyncState<T> implements AsyncStateInterface<T> {
           that.replaceState(newData, status);
         }
       }
+
       window && window.addEventListener("message", listener);
     }
   }
@@ -217,7 +185,6 @@ class AsyncState<T> implements AsyncStateInterface<T> {
 
     if (this.pendingUpdate) {
       clearTimeout(this.pendingUpdate.timeoutId);
-      // this.pendingUpdate.callback(); skip the callback!
       this.pendingUpdate = null;
     }
 
@@ -630,6 +597,7 @@ class AsyncState<T> implements AsyncStateInterface<T> {
 //region AsyncState methods helpers
 const defaultForkConfig: ForkConfig = Object.freeze({keepState: false});
 let uniqueId: number = 0;
+
 function nextUniqueId() {
   return ++uniqueId;
 }
@@ -643,6 +611,59 @@ function readAsyncStateFromSource<T>(possiblySource: AsyncStateSource<T>): Async
     return candidate; // async state instance
   } catch (e) {
     throw new Error("You ve passed an incompatible source object. Please make sure to pass the received source object.");
+  }
+}
+
+function waitForAsyncCache<T>(
+  asyncState: AsyncStateInterface<T>,
+  promise: Promise<Record<string, CachedState<T>>>
+) {
+  promise.then(asyncCache => {
+    resolveCache(asyncState, asyncCache);
+  })
+}
+
+function resolveCache<T>(
+  asyncState: AsyncStateInterface<T>,
+  resolvedCache: Record<string, CachedState<T>>
+) {
+  asyncState.cache = resolvedCache;
+  const cacheConfig = asyncState.config.cacheConfig;
+
+  if (typeof cacheConfig!.onCacheLoad === "function") {
+    cacheConfig!.onCacheLoad({
+      cache: asyncState.cache,
+      setState: asyncState.replaceState.bind(asyncState)
+    });
+  }
+}
+
+function loadCache<T>(asyncState: AsyncState<T>) {
+  if (
+    !asyncState.isCacheEnabled() ||
+    typeof asyncState.config.cacheConfig?.load !== "function"
+  ) {
+    return;
+  }
+
+  // inherit cache from the parent if exists!
+  if (asyncState.parent !== null) {
+    const topLevelParent: AsyncStateInterface<T> = getTopLevelParent(asyncState);
+    asyncState.cache = topLevelParent.cache;
+    return;
+  }
+
+  const cacheConfig = asyncState.config.cacheConfig;
+  const loadedCache = cacheConfig.load!();
+
+  if (!loadedCache) {
+    return;
+  }
+
+  if (isPromise(loadedCache)) {
+    waitForAsyncCache(asyncState, loadedCache as Promise<Record<string, CachedState<T>>>);
+  } else {
+    resolveCache(asyncState, loadedCache as Record<string, CachedState<T>>);
   }
 }
 
@@ -679,9 +700,7 @@ function makeSource<T>(asyncState: AsyncStateInterface<T>): Readonly<AsyncStateS
     configurable: false,
   });
 
-  if (__DEV__) {
-    source.uniqueId = asyncState.uniqueId;
-  }
+  source.uniqueId = asyncState.uniqueId;
 
   source.getLaneSource = function getLaneSource(lane?: string) {
     return asyncState.getLane(lane)._source;
@@ -694,6 +713,7 @@ function makeSource<T>(asyncState: AsyncStateInterface<T>): Readonly<AsyncStateS
 
   return Object.freeze(source);
 }
+
 //endregion
 
 //region producerEffects creators helpers
@@ -816,6 +836,7 @@ function standaloneProducerEffectsCreator<T>(props: ProducerProps<T>): ProducerE
     select: createSelectFunction(null),
   };
 }
+
 //endregion
 
 //region Exports
