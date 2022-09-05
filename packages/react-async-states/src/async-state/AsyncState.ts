@@ -83,6 +83,8 @@ class AsyncState<T> implements AsyncStateInterface<T> {
   pendingUpdate:
     { timeoutId: ReturnType<typeof setTimeout>, callback: () => void } | null = null;
 
+  private willPerformStateUpdate: boolean = false;
+
   //endregion
 
   constructor(
@@ -151,6 +153,9 @@ class AsyncState<T> implements AsyncStateInterface<T> {
     notify: boolean = true
   ): void {
 
+    // pending update has always a pending status
+    // setting the state should always clear this pending update
+    // because it is stale, and we could safely skip it
     if (this.pendingUpdate) {
       clearTimeout(this.pendingUpdate.timeoutId);
       this.pendingUpdate = null;
@@ -229,6 +234,7 @@ class AsyncState<T> implements AsyncStateInterface<T> {
     if (!StateBuilder[status]) {
       throw new Error(`Couldn't replace state to unknown status ${status}.`);
     }
+    this.willPerformStateUpdate = true;
     if (this.currentState?.status === AsyncStateStatus.pending) {
       this.abort();
       this.currentAborter = undefined;
@@ -246,16 +252,18 @@ class AsyncState<T> implements AsyncStateInterface<T> {
     });
     if (__DEV__) devtools.emitReplaceState(this, savedProps);
     this.setState(StateBuilder[status](effectiveValue, savedProps));
+    this.willPerformStateUpdate = false;
   }
 
   replay(): AbortFn {
-    if (!this.latestRunTask) {
+    let latestRunTask = this.latestRunTask;
+    if (!latestRunTask) {
       return undefined;
     }
     return this.runImmediately(
-      this.latestRunTask.producerEffectsCreator,
-      this.latestRunTask.payload,
-      ...this.latestRunTask.args
+      latestRunTask.producerEffectsCreator,
+      latestRunTask.payload,
+      ...latestRunTask.args
     );
   }
 
@@ -290,15 +298,18 @@ class AsyncState<T> implements AsyncStateInterface<T> {
   run(createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]) {
     const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
 
-    if (!areRunEffectsSupported() || !this.config.runEffect || effectDurationMs === 0) {
+    if (
+      !areRunEffectsSupported() ||
+      !this.config.runEffect ||
+      effectDurationMs === 0
+    ) {
       return this.runImmediately(
         createProducerEffects,
         shallowClone(this.payload),
         ...args
       );
-    } else {
-      return this.runWithEffect(createProducerEffects, ...args);
     }
+    return this.runWithEffect(createProducerEffects, ...args);
   }
 
   private runWithEffect(
@@ -312,7 +323,7 @@ class AsyncState<T> implements AsyncStateInterface<T> {
     if (areRunEffectsSupported() && this.config.runEffect) {
       const now = Date.now();
 
-      function registerTimeout() {
+      function scheduleDelayedRun() {
         let runAbortCallback: AbortFn | null = null;
 
         const timeoutId = setTimeout(function realRun() {
@@ -348,7 +359,7 @@ class AsyncState<T> implements AsyncStateInterface<T> {
               clearTimeout(this.pendingTimeout.id);
             }
           }
-          return registerTimeout();
+          return scheduleDelayedRun();
         }
         case ProducerRunEffects.throttle:
         case ProducerRunEffects.takeFirst:
@@ -362,7 +373,7 @@ class AsyncState<T> implements AsyncStateInterface<T> {
             }
             break;
           } else {
-            return registerTimeout();
+            return scheduleDelayedRun();
           }
         }
       }
@@ -375,6 +386,7 @@ class AsyncState<T> implements AsyncStateInterface<T> {
     payload: Record<string, any> | null,
     ...execArgs: any[]
   ): AbortFn {
+    this.willPerformStateUpdate = true;
     if (this.currentState.status === AsyncStateStatus.pending || this.pendingUpdate) {
       if (this.pendingUpdate) {
         clearTimeout(this.pendingUpdate.timeoutId);
@@ -412,9 +424,9 @@ class AsyncState<T> implements AsyncStateInterface<T> {
     const that = this;
 
     const runIndicators = {
-      cleared: false,
-      aborted: false,
-      fulfilled: false,
+      cleared: false, // abort was called and abort callbacks were removed
+      aborted: false, // aborted before fulfillment
+      fulfilled: false, // resolved to something, either success or error
     };
 
     // @ts-ignore
@@ -426,6 +438,8 @@ class AsyncState<T> implements AsyncStateInterface<T> {
       abort,
       payload,
       args: execArgs,
+      // todo: lastSuccess is error prone, since emit stays alive and may read a wrong result from here
+      // but has low priority since getState returns the very current state
       lastSuccess: that.lastSuccess,
       onAbort(cb: AbortFn) {
         if (isFn(cb)) {
@@ -466,13 +480,16 @@ class AsyncState<T> implements AsyncStateInterface<T> {
 
       if (!runIndicators.fulfilled) {
         runIndicators.aborted = true;
-        // todo: we should be able to skip this update:
-        // this abort function is passed as a part of the props to producer
-        // the producer may be able to decide to **not run**
-        // for example: trying to run when a condition such on a user input isn't met
-        // rather than throwing, you can just decide **not to run**.
-        // im not sure whether this function is the place to achieve this.
-        that.setState(StateBuilder.aborted(reason, cloneProducerProps(props)));
+        // in case we will be running right next, there is no need to step in the
+        // aborted state since we'll be immediately (sync) later in pending again, so
+        // we bail out this aborted state update.
+        // this is to distinguish between aborts that are called from the wild
+        // from aborts that will be called synchronously
+        // by the library replace the state again
+        // these state updates are only with aborted status
+        if (!that.willPerformStateUpdate) {
+          that.setState(StateBuilder.aborted(reason, cloneProducerProps(props)));
+        }
       }
 
       runIndicators.cleared = true;
@@ -489,6 +506,7 @@ class AsyncState<T> implements AsyncStateInterface<T> {
       producerEffectsCreator: createProducerEffects,
     };
     this.producer(props, runIndicators);
+    this.willPerformStateUpdate = false;
     return abort;
   }
 
@@ -501,6 +519,7 @@ class AsyncState<T> implements AsyncStateInterface<T> {
       return false;
     }
 
+    this.willPerformStateUpdate = true;
     this.abort();
 
     this.locks = 0;
@@ -511,6 +530,7 @@ class AsyncState<T> implements AsyncStateInterface<T> {
     this.setState(newState);
     if (__DEV__) devtools.emitDispose(this);
 
+    this.willPerformStateUpdate = false;
     return true;
   }
 
@@ -588,7 +608,7 @@ function scheduleDelayedPendingUpdate<T>(
   asyncState: AsyncState<T>,
   newState: State<T>,
   notify: boolean
-  ) {
+) {
   function callback() {
     // callback always sets the state with a pending status
     if (__DEV__) devtools.startUpdate(asyncState);

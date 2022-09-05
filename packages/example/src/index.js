@@ -7,7 +7,7 @@ import App from "./past/App";
 import App2 from './past/v2/Bug2';
 
 
-import { createSource, useSource } from "react-async-states";
+import { createSource, useSource, useAsyncState } from "react-async-states";
 
 function getOrCreateHost(id) {
   const maybeElement = document.getElementById(id);
@@ -19,6 +19,7 @@ function getOrCreateHost(id) {
   }
   return maybeElement;
 }
+
 function initVanillaHost(host) {
   const incrButton = document.createElement("button");
   incrButton.innerHTML = "+";
@@ -49,7 +50,33 @@ const counterSource = createSource("counter", null, {initialValue: 0});
 const decrement = () => counterSource.setState(p => p.data - 1);
 const increment = () => counterSource.setState(p => p.data + 1);
 
-root.render(<MeTesting />);
+function userProducer() {
+  return fetch(`https://jsonplaceholder.typicode.com/users/1`).then((res) =>
+    res.json()
+  );
+}
+
+const source = createSource("user-1", userProducer, {skipPendingDelayMs: 400});
+
+function Toto() {
+  const {state, abort} = useAsyncState({
+    source,
+    events: {change: (e) => console.log("CHANGE EVENT", e.state)}
+  });
+
+  return (
+    <div>
+      <button onClick={() => source.run()}>run</button>
+      <button onClick={() => abort()}>abort</button>
+      <span>{state.timestamp}</span>
+      <details open>
+        <pre>{JSON.stringify(state, null, 4)}</pre>
+      </details>
+    </div>
+  );
+}
+
+root.render(<React.StrictMode><Toto/></React.StrictMode>);
 // root2.render(<Counter from="root2"/>);
 initVanillaHost(vanillaHost);
 
