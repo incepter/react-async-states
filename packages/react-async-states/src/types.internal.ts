@@ -219,7 +219,7 @@ export type UseAsyncStateConfiguration<T, E = State<T>> = {
   source?: AsyncStateSource<T>,
 
   producer?: Producer<T>,
-  initialValue?: T,
+  initialValue?: T | ((cache: Record<string, CachedState<T>>) => T),
 
   lazy?: boolean,
   condition?: boolean,
@@ -297,7 +297,7 @@ export type useSelector<T, E> =
 
 export type PartialUseAsyncStateConfiguration<T, E> = Partial<UseAsyncStateConfiguration<T, E>>
 
-export type UseAsyncStateSubscriptionInfo<T, E> = {
+export type SubscriptionInfo<T, E> = {
   mode: AsyncStateSubscriptionMode,
   asyncState: AsyncStateInterface<T>,
   configuration: UseAsyncStateConfiguration<T, E>,
@@ -311,7 +311,7 @@ export type UseAsyncStateSubscriptionInfo<T, E> = {
 
 export type UseAsyncStateRefsFactory<T, E> = {
   returnValue?: UseAsyncState<T, E>,
-  subscriptionInfo?: UseAsyncStateSubscriptionInfo<T, E>
+  subscriptionInfo?: SubscriptionInfo<T, E>
 };
 
 export type UseAsyncStateContextType = AsyncStateContextValue | null;
@@ -340,9 +340,10 @@ export type CleanupFn = AbortFn
   | (() => void)
   | undefined;
 
-export type MemoizedUseAsyncStateRef<T, E = State<T>> = {
+export type UseAsyncStateRef<T, E = State<T>> = {
   latestData: E,
-  subscriptionInfo: UseAsyncStateSubscriptionInfo<T, E>,
+  latestVersion: number | null,
+  subscriptionInfo: SubscriptionInfo<T, E>,
 }
 
 export type SelectorManager = {

@@ -13,7 +13,7 @@ import {
   AsyncStateContextValue,
   AsyncStateSubscriptionMode,
   CleanupFn,
-  MemoizedUseAsyncStateRef,
+  UseAsyncStateRef,
   PartialUseAsyncStateConfiguration,
   SubscribeEventProps,
   UseAsyncState,
@@ -23,7 +23,7 @@ import {
   UseAsyncStateEventFn,
   UseAsyncStateEvents,
   UseAsyncStateEventSubscribe,
-  UseAsyncStateSubscriptionInfo,
+  SubscriptionInfo,
   useSelector
 } from "../types.internal";
 import AsyncState, {
@@ -47,114 +47,70 @@ import {
 
 const defaultDependencies: any[] = [];
 
+
 export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
-  dependencies: any[] = defaultDependencies,
+  deps: any[] = defaultDependencies,
   configOverrides?: PartialUseAsyncStateConfiguration<T, E>,
 ): UseAsyncState<T, E> {
 
-  // need a guard to trigger re-renders
+  // When inside provider, the subscribed instance might change
+  // this gard serves to trigger the memo recalculation
   const [guard, setGuard] = React.useState<number>(0);
-
-  // subscribe to context
   const contextValue = React.useContext(AsyncStateContext);
-  const isInsideProvider = contextValue !== null;
+  // this is similar to a ref, it is used a mutable object between renders
+  // Besides a ref (that may get reset according to the rumors), this won't
+  // get reset . And can keep track of the old configuration
+  // and pass it to the parseConfiguration function.
+  // We only mutate this during render, and we only assign a value to it if different
+  const ownRef = React
+    .useMemo<UseAsyncStateRef<T, E>>(createMemoizedRef, []);
 
-  // this is similar to a ref, but will never get reset
-  // it is used a mutable object between renders
-  // and we only read/mutate it during render
-  // this to grant old configuration to the parseConfiguration
-  // because of hoisting, you can know the previous value of a memo
-  // when recalculating it, you should either use a ref or a mutable memo for that
-  // or even state. I prefer using useMemo because it s the most lightweight and sure
-  // this ref contains two things: the previous configuration (references
-  // the current asyncState instance and its config) + the latest state
-  // we only mutate this during render, and we only assign a value to it if different
-  const memoizedRef = React.useMemo<MemoizedUseAsyncStateRef<T, E>>(
-    createMemoizedRef,
-    []
-  );
-  // read configuration
-  // useMemo: [...dependencies]
-  // infer async state instance, the subscription mode and other things
-  const subscriptionInfo = React.useMemo<UseAsyncStateSubscriptionInfo<T, E>>(
-    parseConfiguration,
-    [guard, ...dependencies]
-  );
+  const subscriptionInfo = React
+    .useMemo<SubscriptionInfo<T, E>>(parseConfiguration, [guard, ...deps]);
 
-  const {run, mode, asyncState, configuration, dispose} = subscriptionInfo;
-  const {selector, areEqual, events} = configuration;
-
-
-  // declare a state snapshot initialized by the initial selected value
-  // useState
   const [selectedValue, setSelectedValue] = React
     .useState<Readonly<UseAsyncState<T, E>>>(initialize);
 
-  // this memo reference inequality means that
-  // the memo has a new configuration, because either
-  // dependencies changed, or guard changed.
-  if (memoizedRef.subscriptionInfo !== subscriptionInfo) {
-    // this means:
-    // if we already rendered, but this time, the async state instance changed
-    // for some of many possible reasons.
-    if (
-      !asyncState || // means we don't have yet the instance, mostly waiting for it
-      memoizedRef.subscriptionInfo && // means we already had something
-      memoizedRef.subscriptionInfo.asyncState !== subscriptionInfo.asyncState // the subscribed instance changed
-    ) {
 
-      // whenever we have an async state instance,
-      // we will check if the calculated state from the new one
-      // is in conflict with the last updated value. if yes set it
-      ensureSubscriptionStateIsLatest(
-        asyncState,
-        mode,
-        configuration,
-        run,
-        selectedValue.state,
-        setSelectedValue,
-      );
-    }
-
-    memoizedRef.subscriptionInfo = subscriptionInfo;
-  }
-
-  if (memoizedRef.latestData !== selectedValue.state) {
-    memoizedRef.latestData = selectedValue.state;
-  }
+  const {run, mode, asyncState, configuration} = subscriptionInfo;
+  const {selector, areEqual, events} = configuration;
 
   // if inside provider: watch over the async state
-  // useEffect: [mode, key]
   // check if the effect should do a no-op early
   // this hook is safe to be inside this precise condition, which, if changed
   // react during reconciliation would throw the old tree to GC.
-  if (isInsideProvider) {
-    React.useEffect(
-      watchAsyncState,
-      // omitting context because we only manipulate get, dispose and some other
-      // functions which are safe to be excluded from dependencies and never change
-      // omitting dispose fn because it depends on from the mode and whether inside provider
-      [
-        mode,
-        asyncState,
-        configuration
-      ]
-    )
+  // omitting context because we only manipulate get, dispose and some other
+  // functions which are safe to be excluded from dependencies and never change
+  // omitting dispose fn because it depends on from the mode and whether inside provider
+  if (contextValue !== null) {
+    React.useEffect(watchAsyncState, [mode, asyncState, configuration]);
   }
 
-  // subscribe to async state
-  React.useEffect(subscribeToAsyncState, [
-    areEqual,
-    selector,
-    asyncState,
-    events?.change,
-    events?.subscribe,
-    configuration.subscriptionKey
-  ]);
+  React.useEffect(subscribeToAsyncState,
+    [configuration.subscriptionKey, areEqual, selector, asyncState, events]);
 
-  // run automatically, if necessary
-  React.useEffect(autoRunAsyncState, dependencies);
+  React.useEffect(autoRunAsyncState, deps);
+
+  // this memo reference inequality means that memo has been recalculated
+  if (ownRef.subscriptionInfo !== subscriptionInfo) {
+    if (
+      !asyncState ||
+      ownRef.subscriptionInfo && // means we already calculated and
+      ownRef.subscriptionInfo.asyncState !== subscriptionInfo.asyncState // the subscribed instance changed
+    ) {
+      updateSelectedValue();
+    }
+    ownRef.subscriptionInfo = subscriptionInfo;
+  }
+
+  if (ownRef.latestData !== selectedValue.state) {
+    ownRef.latestData = selectedValue.state;
+  }
+
+  if (ownRef.latestVersion !== asyncState?.version) {
+    updateSelectedValue();
+  }
 
   return selectedValue;
 
@@ -166,28 +122,49 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
       run,
       mode
     );
-
   }
 
-  function createMemoizedRef(): MemoizedUseAsyncStateRef<T, E> {
-    return Object.create(null);
+  function updateSelectedValue() {
+    setSelectedValue(initialize());
+    ownRef.latestVersion = asyncState?.version;
+  }
+
+  function parseConfiguration() {
+    return parseUseAsyncStateConfiguration(
+      subscriptionConfig,
+      contextValue,
+      guard,
+      ownRef,
+      deps,
+      configOverrides
+    );
   }
 
   function autoRunAsyncState(): CleanupFn {
-    // auto run only if condition is met and it is not lazy
+    // auto run only if condition is met, and it is not lazy
     const shouldAutoRun = configuration.condition && !configuration.lazy;
     // if dependencies change, if we run, the cleanup shall abort
     return shouldAutoRun ? run() : undefined;
   }
 
   function subscribeToAsyncState() {
-    return universalAsyncStateSubscribeFn(
-      asyncState,
+    function onStateChange() {
+      const newState = asyncState.currentState;
+      const newSelectedState = readStateFromAsyncState(asyncState, selector);
+
+      if (!areEqual(newSelectedState, ownRef.latestData)) {
+        updateSelectedValue();
+      }
+      invokeChangeEvents(newState, events);
+    }
+    return newSubscribeToAsyncState(
       mode,
-      configuration,
-      () => memoizedRef.latestData,
-      setSelectedValue,
       run,
+      () => ownRef.latestVersion,
+      asyncState,
+      configuration.subscriptionKey,
+      events,
+      onStateChange,
     );
   }
 
@@ -198,18 +175,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
       mode,
       configuration,
       setGuard,
-      dispose
-    );
-  }
-
-  function parseConfiguration() {
-    return parseUseAsyncStateConfiguration(
-      subscriptionConfig,
-      contextValue,
-      guard,
-      memoizedRef,
-      dependencies,
-      configOverrides
+      subscriptionInfo.dispose
     );
   }
 }
@@ -467,12 +433,12 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
   // the current version of the external calculation
   guard: number,
   // the ref holding previous configuration
-  memoizedRef: MemoizedUseAsyncStateRef<T, E>,
+  memoizedRef: UseAsyncStateRef<T, E>,
   // the hook dependencies
   dependencies: any[],
   // overrides that the library may use to control something
   configOverrides?: PartialUseAsyncStateConfiguration<T, E>,
-): UseAsyncStateSubscriptionInfo<T, E> {
+): SubscriptionInfo<T, E> {
 
   // read the new used configuration
   const newConfig = readUserConfiguration(subscriptionConfig, configOverrides);
@@ -525,7 +491,7 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
     newAsyncState = newAsyncState.getLane(newConfig.lane);
   }
 
-  let output: UseAsyncStateSubscriptionInfo<T, E> = {
+  let output: SubscriptionInfo<T, E> = {
     guard,
     mode: newMode,
     deps: dependencies,
@@ -707,6 +673,10 @@ function inferAsyncStateInstance<T, E>(
 
 //region subscription functions
 
+function createMemoizedRef<T, E>(): UseAsyncStateRef<T, E> {
+  return Object.create(null);
+}
+
 function inferSubscriptionMode<T, E>(
   contextValue: UseAsyncStateContextType,
   configuration: UseAsyncStateConfiguration<T, E>
@@ -768,7 +738,7 @@ function shouldRecalculateInstance<T, E>(
   newConfig: UseAsyncStateConfiguration<T, E>,
   newMode: AsyncStateSubscriptionMode,
   newGuard: Object,
-  oldSubscriptionInfo: UseAsyncStateSubscriptionInfo<T, E> | undefined
+  oldSubscriptionInfo: SubscriptionInfo<T, E> | undefined
 ): boolean {
   // here we check on relevant information to decide on the asyncState instance
   return !oldSubscriptionInfo ||
@@ -811,7 +781,6 @@ function watchOverAsyncState<T, E = State<T>>(
   // this case is when this renders before the component hoisting the state
   // the notifyWatchers is scheduled via microTaskQueue,
   // that occurs after the layoutEffect and before is effect
-  // that should watch over a state.
   // This means that we will miss the notification about the awaited state
   // so, if we are waiting without an asyncState, recalculate the memo
   if (mode === AsyncStateSubscriptionMode.WAITING) {
@@ -823,17 +792,15 @@ function watchOverAsyncState<T, E = State<T>>(
         return;
       }
     }
-
   }
 
   // if this component is the one hoisting a state,
   // re-notify watchers that may have missed the notification for some reason
   // this case is not likely to occur,
   // but this is like a safety check that notify the watchers
-  // and quit because i don't think the hoister should watch over itself
   if (mode === AsyncStateSubscriptionMode.HOIST) {
     // when we are hoisting, since we notify again, better execute
-    // the whole hoist again without overriding it
+    // the whole hoist again _without_ overriding it
     // and make sure the returned one is the subscribed
     const newHoist = inferAsyncStateInstance(
       mode,
@@ -862,9 +829,7 @@ function watchOverAsyncState<T, E = State<T>>(
     mode === AsyncStateSubscriptionMode.LISTEN
   ) {
     let watchedKey = AsyncStateSubscriptionMode.WAITING === mode
-      ? configuration.key
-      :
-      asyncState?.key;
+      ? configuration.key : asyncState?.key;
 
     const unwatch = contextValue.watch(
       watchedKey as AsyncStateKey,
@@ -873,7 +838,6 @@ function watchOverAsyncState<T, E = State<T>>(
           return;
         }
         // only trigger a rerender if the newAsyncState is different
-        // this re-render schedules a memo recalculation
         if (mayBeNewAsyncState !== asyncState) {
           setGuard(old => old + 1);
         }
@@ -886,6 +850,36 @@ function watchOverAsyncState<T, E = State<T>>(
   }
 
   return undefined;
+}
+
+function subscribeToAsync(asyncState, listener, events) {}
+
+function newSubscribeToAsyncState<T>(
+  mode: AsyncStateSubscriptionMode,
+  run: (...args: any[]) => AbortFn,
+  getLatestRenderedVersion: () => number | null,
+  asyncState?: AsyncStateInterface<T>,
+  subscriptionKey?: string,
+  events?: UseAsyncStateEvents<T>,
+  onUpdate?: (newState: State<T>) => void,
+): CleanupFn {
+  if (!asyncState || !onUpdate) {
+    return;
+  }
+  let unsubscribe = asyncState.subscribe(onUpdate, subscriptionKey);
+  let unsubscribeFromEvents = invokeSubscribeEvents(
+    events?.subscribe, run, mode, asyncState);
+
+  if (asyncState.version !== getLatestRenderedVersion()) {
+    onUpdate(asyncState.currentState);
+  }
+
+  return function cleanup() {
+    if (unsubscribeFromEvents) {
+      unsubscribeFromEvents.forEach(cb => invokeIfPresent(cb));
+    }
+    unsubscribe!();
+  }
 }
 
 // a universal subscription to an async state (an external mutable source)
@@ -932,7 +926,6 @@ function universalAsyncStateSubscribeFn<T, E = State<T>>(
         );
       }
 
-
       // if there are any change listeners: invoke them
       invokeChangeEvents(nextState, events);
 
@@ -940,18 +933,8 @@ function universalAsyncStateSubscribeFn<T, E = State<T>>(
     configuration.subscriptionKey
   );
 
-  let postUnsubscribe: CleanupFn[] | null = null;
-  if (events?.subscribe) {
-    postUnsubscribe = invokeSubscribeEvents(
-      events.subscribe,
-      {
-        run,
-        mode,
-        getState: () => asyncState.currentState,
-        invalidateCache: asyncState.invalidateCache.bind(asyncState),
-      }
-    );
-  }
+  let postUnsubscribe: CleanupFn[] | null = invokeSubscribeEvents(
+    events?.subscribe, run, mode, asyncState);
 
   ensureSubscriptionStateIsLatest(
     asyncState,
@@ -998,11 +981,30 @@ function invokeChangeEvents<T>(
   });
 }
 
+function constructSubscribeEventProps<T>(
+  asyncState: AsyncStateInterface<T>,
+  run: (...args: any[]) => AbortFn,
+  mode: AsyncStateSubscriptionMode,
+) {
+  return
+}
 
 function invokeSubscribeEvents<T>(
-  events: UseAsyncStateEventSubscribe<T>,
-  eventProps: SubscribeEventProps<T>
-): CleanupFn[] {
+  events: UseAsyncStateEventSubscribe<T> | undefined,
+  run: (...args: any[]) => AbortFn,
+  mode: AsyncStateSubscriptionMode,
+  asyncState?: AsyncStateInterface<T>,
+): CleanupFn[] | null {
+  if (!events || !asyncState) {
+    return null;
+  }
+
+  let eventProps: SubscribeEventProps<T> = {
+    run,
+    mode,
+    getState: () => asyncState.currentState,
+    invalidateCache: asyncState.invalidateCache.bind(asyncState),
+  };
 
   let handlers: ((props: SubscribeEventProps<T>) => CleanupFn)[]
     = Array.isArray(events) ? events : [events];

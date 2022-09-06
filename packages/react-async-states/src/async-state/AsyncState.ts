@@ -52,6 +52,7 @@ class AsyncState<T> implements AsyncStateInterface<T> {
   //region properties
   key: AsyncStateKey;
   _source: AsyncStateSource<T>;
+  version: number = 0;
   uniqueId: number | undefined;
   journal: any[];
 
@@ -174,6 +175,7 @@ class AsyncState<T> implements AsyncStateInterface<T> {
 
     if (__DEV__) devtools.startUpdate(this);
     this.currentState = newState;
+    this.version += 1;
     if (__DEV__) devtools.emitUpdate(this);
 
     if (this.currentState.status === AsyncStateStatus.success) {

@@ -140,6 +140,7 @@ export type CachedState<T> = {
 export interface AsyncStateInterface<T> {
   // properties
   key: AsyncStateKey,
+  version: number,
   uniqueId: number | undefined,
   _source: AsyncStateSource<T>,
 
