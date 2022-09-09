@@ -17,14 +17,13 @@ import {
   PartialUseAsyncStateConfiguration,
   SubscribeEventProps,
   UseAsyncState,
-  UseAsyncStateConfig,
   UseAsyncStateConfiguration,
   UseAsyncStateContextType,
   UseAsyncStateEventFn,
   UseAsyncStateEvents,
   UseAsyncStateEventSubscribe,
   SubscriptionInfo,
-  useSelector
+  useSelector, MixedConfig
 } from "../types.internal";
 import AsyncState, {
   AbortFn,
@@ -47,7 +46,7 @@ import {
 
 const defaultDependencies: any[] = [];
 export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
-  subscriptionConfig: UseAsyncStateConfig<T, E>,
+  subscriptionConfig: MixedConfig<T, E>,
   deps: any[] = defaultDependencies,
   configOverrides?: PartialUseAsyncStateConfiguration<T, E>,
 ): UseAsyncState<T, E> {
@@ -353,7 +352,7 @@ const defaultUseASConfig = Object.freeze({
 // userConfig is the config the developer wrote
 function readUserConfiguration<T, E>(
   // the configuration that the developer emitted, can be of many forms
-  userConfig: UseAsyncStateConfig<T, E>,
+  userConfig: MixedConfig<T, E>,
   // overrides that the library may use to control something
   overrides?: PartialUseAsyncStateConfiguration<T, E>
 ): UseAsyncStateConfiguration<T, E> {
@@ -423,7 +422,7 @@ function assignAutomaticKeyIfNotExists(newConfig, newMode) {
 
 function parseUseAsyncStateConfiguration<T, E = State<T>>(
   // the configuration that the developer emitted, can be of many forms
-  mixedConfig: UseAsyncStateConfig<T, E>,
+  mixedConfig: MixedConfig<T, E>,
   // the context value, nullable
   contextValue: AsyncStateContextValue | null,
   // the current version of the external calculation

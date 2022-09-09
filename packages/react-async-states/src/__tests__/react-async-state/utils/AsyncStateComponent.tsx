@@ -1,8 +1,5 @@
 import * as React from "react";
-import {
-  UseAsyncStateConfig,
-  UseAsyncState,
-} from "../../../types.internal";
+import {MixedConfig, UseAsyncState,} from "../../../types.internal";
 import {useAsyncState} from "../../../react/useAsyncState";
 import {State} from "../../../async-state";
 
@@ -13,7 +10,7 @@ export default function AsyncStateComponent<T, E = State<T>>({
   children,
   dependencies = defaultDeps
 }: {
-  config: UseAsyncStateConfig<T, E>,
+  config: MixedConfig<T, E>,
   children: (props: UseAsyncState<T, E>) => React.ReactNode,
   dependencies?: any[],
 }): any {
