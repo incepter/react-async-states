@@ -280,7 +280,7 @@ export function useProducer<T>(
   // declare a state snapshot initialized by the initial selected value
   // useState
   const [selectedValue, setSelectedValue] = React
-    .useState<Readonly<UseAsyncState<T, State<T>>>>(initialize);
+    .useState<Readonly<UseAsyncState<T, State<T>>>>(calculateSelectedValue);
 
   if (latestVersion.current !== selectedValue.version) {
     latestVersion.current = selectedValue.version;
@@ -306,7 +306,6 @@ export function useProducer<T>(
       asyncState.replaceProducer(producer);
     }
   }
-
 
   function calculateSelectedValue(): Readonly<UseAsyncState<T, State<T>>> {
     let mode = AsyncStateSubscriptionMode.STANDALONE;
@@ -337,18 +336,6 @@ export function useProducer<T>(
       updateSelectedValue,
       updateSelectedValue,
     );
-  }
-
-  function initialize(): Readonly<UseAsyncState<T, State<T>>> {
-    let mode = AsyncStateSubscriptionMode.STANDALONE;
-    return makeUseAsyncStateReturnValue(
-      asyncState,
-      readStateFromAsyncState(asyncState, oneObjectIdentity),
-      asyncState.key,
-      runAsyncStateSubscriptionFn(mode, asyncState, contextValue),
-      mode
-    );
-
   }
 }
 
