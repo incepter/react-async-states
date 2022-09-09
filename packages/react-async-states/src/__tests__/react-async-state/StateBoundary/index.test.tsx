@@ -3,9 +3,9 @@ import {act, render, screen} from "@testing-library/react";
 import {
   StateBoundary,
   useCurrentState
-} from "../../../components/StateBoundary";
+} from "../../../react/StateBoundary";
 import {AsyncStateStatus, RenderStrategy} from "../../../async-state";
-import {createSource} from "../../../helpers/create-async-state";
+import {createSource} from "../../../async-state/create-async-state";
 import {AsyncStateSubscriptionMode} from "../../../types.internal";
 import {flushPromises} from "../utils/test-utils";
 

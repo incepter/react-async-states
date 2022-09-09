@@ -58,7 +58,7 @@ export const demoAsyncStates = {
     key: "get-user",
     producer: getUserProducer,
     config: {
-      skipPendingDelayMs: 200,
+      skipPendingDelayMs: 400,
       cacheConfig: {
         enabled: false,
         hash(args, payload) {

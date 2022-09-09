@@ -1,21 +1,23 @@
 import * as React from "react";
+import {ReactNode} from "react";
 import {
   AbortFn,
   AsyncStateInterface,
   AsyncStateKey,
-  AsyncStateSource, AsyncStateStatus,
+  AsyncStateSource,
+  AsyncStateStatus,
   CacheConfig,
   CachedState,
   ForkConfig,
   Producer,
   ProducerConfig,
-  ProducerProps,
-  ProducerRunEffects, RenderStrategy,
   ProducerEffects,
+  ProducerProps,
+  ProducerRunEffects,
+  RenderStrategy,
   State,
   StateUpdater
 } from "./async-state";
-import {ReactNode} from "react";
 
 export type Reducer<T> = (
   T,
@@ -64,8 +66,6 @@ export type AsyncStateEntries = {
 }
 
 export type AsyncStateKeyOrSource<T> = string | AsyncStateSource<T>;
-
-export type AsyncStateSelectorKeys = string[];
 
 export type AsyncStateSelector<T> =
   SimpleSelector<any, T>
@@ -185,13 +185,11 @@ export type AsyncStateContextValue = {
 
 // use async state
 
-export type UseAsyncState<T, E = State<T>> = {
-  state: E,
+interface BaseUseAsyncState<T, E = State<T>> {
   key: AsyncStateKey,
 
   source?: AsyncStateSource<T>,
   mode: AsyncStateSubscriptionMode,
-  lastSuccess?: State<T>,
 
   payload: { [id: string]: any } | null,
 
@@ -204,13 +202,75 @@ export type UseAsyncState<T, E = State<T>> = {
   uniqueId: number | undefined,
   invalidateCache: (cacheKey?: string) => void,
 
+}
+
+export interface UseAsyncState<T, E = State<T>> extends BaseUseAsyncState<T, E> {
+  state: E,
   read: () => E,
+  version?: number,
+  lastSuccess?: State<T>,
 }
 
 export type EqualityFn<T> = (
   prev: T,
   next: T
 ) => boolean;
+
+
+export interface BaseConfig<T> extends ProducerConfig<T>{
+  key?: AsyncStateKey,
+  subscriptionKey?: AsyncStateKey,
+
+  lazy?: boolean,
+  condition?: boolean,
+  payload?: { [id: string]: any },
+
+  fork?: boolean,
+  forkConfig?: ForkConfig,
+
+  hoistToProvider?: boolean,
+  hoistToProviderConfig?: HoistToProviderConfig,
+
+  events?: UseAsyncStateEvents<T>,
+  lane?: string,
+}
+
+export interface ConfigWithKeyWithSelector<T, E> extends ConfigWithKeyWithoutSelector<T> {
+  selector: useSelector<T, E>,
+  areEqual?: EqualityFn<E>,
+}
+export interface ConfigWithKeyWithoutSelector<T> extends BaseConfig<T> {
+  key: AsyncStateKey,
+}
+
+export interface ConfigWithSourceWithSelector<T, E> extends ConfigWithSourceWithoutSelector<T> {
+  selector: useSelector<T, E>,
+  areEqual?: EqualityFn<E>,
+}
+
+export interface ConfigWithSourceWithoutSelector<T> extends BaseConfig<T> {
+  source: AsyncStateSource<T>,
+}
+
+export interface ConfigWithProducerWithSelector<T, E> extends ConfigWithProducerWithoutSelector<T> {
+  selector: useSelector<T, E>,
+  areEqual?: EqualityFn<E>,
+}
+
+export interface ConfigWithProducerWithoutSelector<T> extends BaseConfig<T> {
+  producer?: Producer<T>,
+}
+
+export type MixedConfig<T, E> = AsyncStateKey | AsyncStateSource<T> | Producer<T> |
+  ConfigWithKeyWithSelector<T, E> |
+  ConfigWithKeyWithoutSelector<T> |
+  ConfigWithSourceWithSelector<T, E> |
+  ConfigWithSourceWithoutSelector<T> |
+  ConfigWithProducerWithSelector<T, E> |
+  ConfigWithProducerWithoutSelector<T>;
+
+
+
 
 export type UseAsyncStateConfiguration<T, E = State<T>> = {
   subscriptionKey?: AsyncStateKey,
@@ -219,7 +279,7 @@ export type UseAsyncStateConfiguration<T, E = State<T>> = {
   source?: AsyncStateSource<T>,
 
   producer?: Producer<T>,
-  initialValue?: T,
+  initialValue?: T | ((cache: Record<string, CachedState<T>>) => T),
 
   lazy?: boolean,
   condition?: boolean,
@@ -246,7 +306,7 @@ export type UseAsyncStateConfiguration<T, E = State<T>> = {
 
 export type StateBoundaryProps<T, E> = {
   children: React.ReactNode,
-  config: UseAsyncStateConfig<T, E>,
+  config: MixedConfig<T, E>,
 
   dependencies?: any[],
   strategy?: RenderStrategy,
@@ -297,7 +357,7 @@ export type useSelector<T, E> =
 
 export type PartialUseAsyncStateConfiguration<T, E> = Partial<UseAsyncStateConfiguration<T, E>>
 
-export type UseAsyncStateSubscriptionInfo<T, E> = {
+export type SubscriptionInfo<T, E> = {
   mode: AsyncStateSubscriptionMode,
   asyncState: AsyncStateInterface<T>,
   configuration: UseAsyncStateConfiguration<T, E>,
@@ -307,23 +367,11 @@ export type UseAsyncStateSubscriptionInfo<T, E> = {
 
   dispose: () => boolean | undefined,
   run: (...args: any[]) => AbortFn,
+
+  baseReturn: BaseUseAsyncState<T, E>,
 }
 
-export type UseAsyncStateRefsFactory<T, E> = {
-  returnValue?: UseAsyncState<T, E>,
-  subscriptionInfo?: UseAsyncStateSubscriptionInfo<T, E>
-};
-
 export type UseAsyncStateContextType = AsyncStateContextValue | null;
-
-export type UseAsyncStateConfig<T, E = State<T>> =
-  string
-  | Producer<T>
-  | AsyncStateSource<T>
-  | UseAsyncStateConfiguration<T, E>
-  | Partial<UseAsyncStateConfiguration<T, E>>;
-
-export type UseSimpleAsyncStateConfig<T> = UseAsyncStateConfig<T, State<T>>;
 
 export type InitialStatesObject = { [id: string]: ExtendedInitialAsyncState<any> };
 
@@ -340,59 +388,45 @@ export type CleanupFn = AbortFn
   | (() => void)
   | undefined;
 
-export type MemoizedUseAsyncStateRef<T, E = State<T>> = {
+export type UseAsyncStateRef<T, E = State<T>> = {
   latestData: E,
-  subscriptionInfo: UseAsyncStateSubscriptionInfo<T, E>,
-}
-
-export type SelectorManager = {
-  didUnmount: boolean,
-  has: (key: string) => boolean,
-  subscriptions: SelectorSubscriptionsMap,
-}
-
-export type SelectorSubscriptionsMap = {
-  [id: string]: SelectorSubscription<any>,
-}
-
-export type SelectorSubscription<T> = {
-  cleanup: CleanupFn,
-  asyncState: AsyncStateInterface<T>,
+  latestVersion?: number,
+  subscriptionInfo: SubscriptionInfo<T, E>,
 }
 
 export interface UseAsyncStateType<T, E> {
   (
-    subscriptionConfig: UseAsyncStateConfig<T, E>,
+    subscriptionConfig: MixedConfig<T, E>,
     dependencies?: any[]
   ): UseAsyncState<T, E>,
 
   auto(
-    subscriptionConfig: UseAsyncStateConfig<T, E>,
+    subscriptionConfig: MixedConfig<T, E>,
     dependencies?: any[]
   ): UseAsyncState<T, E>,
 
   lazy(
-    subscriptionConfig: UseAsyncStateConfig<T, E>,
+    subscriptionConfig: MixedConfig<T, E>,
     dependencies?: any[]
   ): UseAsyncState<T, E>,
 
   fork(
-    subscriptionConfig: UseAsyncStateConfig<T, E>,
+    subscriptionConfig: MixedConfig<T, E>,
     dependencies?: any[]
   ): UseAsyncState<T, E>,
 
   hoist(
-    subscriptionConfig: UseAsyncStateConfig<T, E>,
+    subscriptionConfig: MixedConfig<T, E>,
     dependencies?: any[]
   ): UseAsyncState<T, E>,
 
   forkAuto(
-    subscriptionConfig: UseAsyncStateConfig<T, E>,
+    subscriptionConfig: MixedConfig<T, E>,
     dependencies?: any[]
   ): UseAsyncState<T, E>,
 
   hoistAuto(
-    subscriptionConfig: UseAsyncStateConfig<T, E>,
+    subscriptionConfig: MixedConfig<T, E>,
     dependencies?: any[]
   ): UseAsyncState<T, E>,
 }

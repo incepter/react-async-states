@@ -4,9 +4,9 @@ import {
   AsyncStateSubscriptionMode,
   UseAsyncState
 } from "../../../../../types.internal";
-import {useAsyncState} from "../../../../../hooks/useAsyncState";
-import {AsyncStateProvider} from "../../../../../provider/AsyncStateProvider";
-import {createSource} from "../../../../../helpers/create-async-state";
+import {useAsyncState} from "../../../../../react/useAsyncState";
+import {AsyncStateProvider} from "../../../../../react/AsyncStateProvider";
+import {createSource} from "../../../../../async-state/create-async-state";
 import {ForkConfig} from "../../../../../async-state";
 
 describe('should fork an initially hoisted async state', () => {

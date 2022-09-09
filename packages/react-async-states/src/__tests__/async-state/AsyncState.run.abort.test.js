@@ -153,7 +153,7 @@ describe('AsyncState - run - abort', () => {
       data: "reason",
     });
   });
-  it('should automatically abort previous producer and start new one', async () => {
+  it('should bailout aborted state when it will be running again', async () => {
     // given
     let key = "simulated";
     let producer = timeout(100, "value");
@@ -180,10 +180,9 @@ describe('AsyncState - run - abort', () => {
     myAsyncState.run(() => {
     });
 
-    expect(subscription.mock.calls[0][0].status).toBe(AsyncStateStatus.aborted);
-    expect(subscription.mock.calls[1][0].status).toBe(AsyncStateStatus.pending);
+    expect(subscription.mock.calls[0][0].status).toBe(AsyncStateStatus.pending);
 
-    expect(subscription).toHaveBeenCalledTimes(2);
+    expect(subscription).toHaveBeenCalledTimes(1);
 
 
     await act(async () => {

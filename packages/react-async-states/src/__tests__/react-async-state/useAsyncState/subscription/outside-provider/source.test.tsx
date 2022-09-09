@@ -1,8 +1,8 @@
 import * as React from "react";
 import {fireEvent, render, screen} from "@testing-library/react";
-import {createSource} from "../../../../../helpers/create-async-state";
+import {createSource} from "../../../../../async-state/create-async-state";
 import {UseAsyncState} from "../../../../../types.internal";
-import {useAsyncState} from "../../../../../hooks/useAsyncState";
+import {useAsyncState} from "../../../../../react/useAsyncState";
 import AsyncStateComponent from "../../../utils/AsyncStateComponent";
 
 describe('should subscribe to a module level source object', () => {

@@ -68,3 +68,15 @@ Where the supported cache config is:
 | `load`        | `() => {[id: AsyncStateKey]: CachedState<T>}`                     | loads the cached data when the async state instance is created                   |
 | `persist`     | `(cache: {[id: AsyncStateKey]: CachedState<T>}) => void`          | a function to persist the whole cache, called when state is updated to success   |
 | `onCacheLoad` | `onCacheLoad?({cache, setState}): void`                           | a callback called when the cache loads, useful when asynchronously loading cache |
+
+The source object has the following properties:
+
+
+| Property          | Type                                                | Description                                                                |
+|-------------------|-----------------------------------------------------|----------------------------------------------------------------------------|
+| `key`             | `string`                                            | the provided key of the state instance                                     |
+| `run`             | `function(...args[])`                               | A function that runs the producer attached to the source                   |
+| `getState`        | `() => State<T>`                                    | returns the current state of the source object                             |
+| `getLaneSource`   | `(lane?: string) => Source<T>`                      | returns a `source` object for the given lane                               |
+| `setState`        | `((t: T) => void) or (prev: State<T>, status) => T` | replaces the current state with the value or the provided updater function |
+| `invalidateCache` | `(cacheKey?: string) => void`                       | invalidates the given cache by key or the whole cache                      |

@@ -1,9 +1,9 @@
 import * as React from "react";
 import {render, screen} from "@testing-library/react";
-import {createSource} from "../../../../helpers/create-async-state";
-import {useAsyncState} from "../../../../hooks/useAsyncState";
+import {createSource} from "../../../../async-state/create-async-state";
+import {useAsyncState} from "../../../../react/useAsyncState";
 import {UseAsyncState} from "../../../../types.internal";
-import {AsyncStateProvider} from "../../../../provider/AsyncStateProvider";
+import {AsyncStateProvider} from "../../../../react/AsyncStateProvider";
 import {AsyncStateSource} from "../../../../async-state";
 import {State} from "../../../../types";
 

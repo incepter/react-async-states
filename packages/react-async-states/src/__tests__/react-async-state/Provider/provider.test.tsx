@@ -1,11 +1,11 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {mockDateNow} from "../utils/setup";
-import {AsyncStateProvider} from "../../../provider/AsyncStateProvider";
-import {useAsyncState} from "../../../hooks/useAsyncState";
+import {AsyncStateProvider} from "../../../react/AsyncStateProvider";
+import {useAsyncState} from "../../../react/useAsyncState";
 import {UseAsyncState} from "../../../types.internal";
 import {flushPromises} from "../utils/test-utils";
-import {useRun, useRunLane} from "../../../hooks/useRun";
+import {useRun, useRunLane} from "../../../react/useRun";
 
 mockDateNow();
 

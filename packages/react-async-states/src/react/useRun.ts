@@ -1,13 +1,13 @@
 import * as React from "react";
 import {AbortFn} from "../async-state";
 import {AsyncStateKeyOrSource} from "../types.internal";
-import {AsyncStateContext} from "../context";
+import {AsyncStateContext} from "./context";
 import {
   insideContextRunFn,
   insideContextRunLaneFn,
   outsideContextRunFn,
   outsideContextRunLaneFn
-} from "../helpers/source-utils";
+} from "../async-state/source-utils";
 
 export function useRun<T>():
   ((keyOrSource: AsyncStateKeyOrSource<T>, ...args: any[]) => AbortFn) {

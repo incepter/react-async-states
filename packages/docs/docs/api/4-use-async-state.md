@@ -834,6 +834,18 @@ module level states. Also, the library support running producers and states
 from almost everywhere in your code base, and it would just work if you provid
 a `Source` object.
 
+The source object has the following properties:
+
+| Property          | Type                                                | Description                                                                |
+|-------------------|-----------------------------------------------------|----------------------------------------------------------------------------|
+| `key`             | `string`                                            | the provided key of the state instance                                     |
+| `run`             | `function(...args[])`                               | A function that runs the producer attached to the source                   |
+| `getState`        | `() => State<T>`                                    | returns the current state of the source object                             |
+| `getLaneSource`   | `(lane?: string) => Source<T>`                      | returns a `source` object for the given lane                               |
+| `setState`        | `((t: T) => void) or (prev: State<T>, status) => T` | replaces the current state with the value or the provided updater function |
+| `invalidateCache` | `(cacheKey?: string) => void`                       | invalidates the given cache by key or the whole cache                      |
+
+
 ```typescript
 import {useAsyncState} from "react-async-states";
 

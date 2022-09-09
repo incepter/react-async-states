@@ -6,6 +6,7 @@ import Button from "antd/lib/button";
 import Layout from "antd/lib/layout";
 import { useSource, useSourceLane, } from "react-async-states";
 import { currentJournal, journalSource } from "./sources";
+import { addFormattedDate } from "./utils";
 
 const {Content, Sider} = Layout;
 
@@ -21,10 +22,12 @@ const CurrentJournalDisplay = React.memo(function Journal({lane}) {
         overflow: 'auto',
         height: 'calc(100vh - 40px)',
         borderRight: '1px dashed #C3C3C3',
-      }} className='main-bg main-color' width={250}>
-        <JournalView lane={lane}/>
+      }} className='main-bg scroll-y-auto' width={250}>
+        <div className='main-color' style={{height: '100%'}}>
+          <JournalView lane={lane}/>
+        </div>
       </Sider>
-      <Content className='main-bg main-color'
+      <Content className='main-bg main-color scroll-y-auto'
                style={{height: '100%', overflowY: 'auto'}}>
         <CurrentJson/>
       </Content>
@@ -113,10 +116,6 @@ function JournalView({lane}) {
       </ul>
     </div>
   );
-}
-
-function addFormattedDate(obj, prop = "timestamp", newProp = "formattedTimestamp") {
-  return {...obj, [newProp]: new Date(obj[prop]).toISOString()};
 }
 
 function formJournalEventJson(entry) {

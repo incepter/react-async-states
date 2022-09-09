@@ -32,21 +32,22 @@ if (isDev) {
         }
       );
     });
-  setTimeout(() => {
-    let shape = {};
-    Object
-      .keys(keysSource.getState().data ?? {})
-      .forEach(id => {
-        shape[id] = journalSource.getLaneSource(`${id}`).getState().data
-      });
-    console.log('_______ state of all ________________');
-
-    console.log(shape);
-
-    console.log('______________________ keys ___________________');
-    console.log(keysSource.getState());
-  }, 10000);
 }
+
+setTimeout(() => {
+  let shape = {};
+  Object
+    .keys(keysSource.getState().data ?? {})
+    .forEach(id => {
+      shape[id] = journalSource.getLaneSource(`${id}`).getState().data
+    });
+  console.log('_______ state of all ________________');
+
+  console.log(shape);
+
+  console.log('______________________ keys ___________________');
+  console.log(keysSource.getState());
+}, 20000);
 
 function gatewayProducer() {
   const port = window.chrome.runtime.connect({name: "panel"});
@@ -58,62 +59,17 @@ function gatewayProducer() {
     if (message.source !== "async-states-agent") {
       return;
     }
-    console.log('received message', message)
     switch (message.type) {
       case newDevtoolsEvents.setKeys: {
         return keysSource.setState(message.payload);
       }
       case newDevtoolsEvents.setAsyncState: {
+        console.log('received an async state', message);
         updatesMeter.setState(old => old.data + 1);
         return journalSource.getLaneSource(`${message.uniqueId}`).setState(message.payload);
       }
       case newDevtoolsEvents.partialSync: {
-        if (message.payload.eventType === devtoolsJournalEvents.run) {
-          journalSource
-            .getLaneSource(`${message.uniqueId}`)
-            .setState(old => {
-              return {
-                ...old.data,
-                journal: [...old.data.journal, message.payload],
-              }
-            })
-        }
-        if (message.payload.eventType === devtoolsJournalEvents.update) {
-          updatesMeter.setState(old => old.data + 1);
-          journalSource
-            .getLaneSource(`${message.uniqueId}`)
-            .setState(old => {
-              return {
-                ...old.data,
-                state: message.payload.eventPayload.newState,
-                oldState: message.payload.eventPayload.oldState,
-                lastSuccess: message.payload.eventPayload.lastSuccess,
-                journal: [...old.data.journal, message.payload],
-              }
-            })
-        }
-        if (message.payload.eventType === devtoolsJournalEvents.subscription) {
-          journalSource
-            .getLaneSource(`${message.uniqueId}`)
-            .setState(old => {
-              return {
-                ...old.data,
-                subscriptions: [...old.data.subscriptions, message.payload.eventPayload],
-                journal: [...old.data.journal, message.payload],
-              }
-            })
-        }
-        if (message.payload.eventType === devtoolsJournalEvents.unsubscription) {
-          journalSource
-            .getLaneSource(`${message.uniqueId}`)
-            .setState(old => {
-              return {
-                ...old.data,
-                subscriptions: old.data.subscriptions?.filter(t => t !== message.payload.eventPayload),
-                journal: [...old.data.journal, message.payload],
-              }
-            })
-        }
+        applyPartialUpdate(message);
         return;
       }
       default:
@@ -121,4 +77,54 @@ function gatewayProducer() {
     }
   });
   return port;
+}
+
+function applyPartialUpdate(message) {
+  const {eventType} = message.payload;
+  switch (eventType) {
+    case devtoolsJournalEvents.run: {
+      journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
+        return {
+          ...old.data,
+          journal: [...old.data.journal, message.payload],
+        }
+      });
+      return;
+    }
+    case devtoolsJournalEvents.update: {
+      updatesMeter.setState(old => old.data + 1);
+      journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
+        return {
+          ...old.data,
+          state: message.payload.eventPayload.newState,
+          oldState: message.payload.eventPayload.oldState,
+          lastSuccess: message.payload.eventPayload.lastSuccess,
+          journal: [...old.data.journal, message.payload],
+        }
+      });
+      return;
+    }
+    case devtoolsJournalEvents.subscription: {
+      journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
+        return {
+          ...old.data,
+          subscriptions: [...old.data.subscriptions, message.payload.eventPayload],
+          journal: [...old.data.journal, message.payload],
+        }
+      });
+      return;
+    }
+    case devtoolsJournalEvents.unsubscription: {
+      journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
+        return {
+          ...old.data,
+          subscriptions: old.data.subscriptions?.filter(t => t !== message.payload.eventPayload),
+          journal: [...old.data.journal, message.payload],
+        }
+      });
+      return;
+    }
+    default:
+      console.warn('received unsupported message', message);
+  }
 }

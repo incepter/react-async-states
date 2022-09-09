@@ -9,7 +9,7 @@ import {
   StateBoundaryProps,
   UseAsyncState,
 } from "../types.internal";
-import {useAsyncState} from "../hooks/useAsyncState";
+import {useAsyncState} from "./useAsyncState";
 
 const StateBoundaryContext = React.createContext<any>(null);
 

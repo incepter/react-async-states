@@ -103,6 +103,12 @@ export type AsyncStateSource<T> = {
   run: (...args: any[]) => AbortFn,
   invalidateCache: (cacheKey?: string) => void,
   getLaneSource(laneKey?: string): AsyncStateSource<T>,
+  subscribe: (cb: Function, subscriptionKey?: AsyncStateKey) => AbortFn,
+}
+export type RunTask<T> = {
+  args: any[],
+  payload: Record<string, any> | null,
+  producerEffectsCreator: ProducerEffectsCreator<T>,
 }
 
 export type StateSubscription<T> = {
@@ -134,6 +140,7 @@ export type CachedState<T> = {
 export interface AsyncStateInterface<T> {
   // properties
   key: AsyncStateKey,
+  version: number,
   uniqueId: number | undefined,
   _source: AsyncStateSource<T>,
 

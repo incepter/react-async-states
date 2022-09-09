@@ -1,4 +1,4 @@
-import {Producer} from "../async-state";
+import {Producer} from "./index";
 import {Reducer} from "../types.internal";
 
 export function createReducerProducer<T>(reducerFn: Reducer<T>): Producer<T> {

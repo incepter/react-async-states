@@ -1,9 +1,9 @@
 import * as React from "react";
 import {act, render, screen} from "@testing-library/react";
-import {useSource} from "../../../hooks/useAsyncStateBase";
+import {useSource} from "../../../react/useAsyncStateBase";
 import {AsyncStateSubscriptionMode} from "../../../types.internal";
-import {createSource} from "../../../helpers/create-async-state";
-import {replaceState} from "../../../helpers/source-utils";
+import {createSource} from "../../../async-state/create-async-state";
+import {replaceState} from "../../../async-state/source-utils";
 
 describe('should useSource', () => {
   it('should use a source and subscribe to it ', async () => {

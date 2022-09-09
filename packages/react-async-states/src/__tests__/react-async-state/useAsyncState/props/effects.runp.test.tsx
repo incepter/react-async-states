@@ -1,13 +1,13 @@
 import * as React from "react";
 import {act, render, screen} from "@testing-library/react";
-import {createSource} from "../../../../helpers/create-async-state";
+import {createSource} from "../../../../async-state/create-async-state";
 import {
   AsyncStateStatus,
   Producer,
   ProducerProps
 } from "../../../../async-state";
 import AsyncStateComponent from "../../utils/AsyncStateComponent";
-import {AsyncStateProvider} from "../../../../provider/AsyncStateProvider";
+import {AsyncStateProvider} from "../../../../react/AsyncStateProvider";
 import {UseAsyncState} from "../../../../types.internal";
 import {flushPromises} from "../../utils/test-utils";
 import {mockDateNow, TESTS_TS} from "../../utils/setup";

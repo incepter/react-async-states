@@ -16,7 +16,6 @@ export default function Demo() {
   } = useAsyncState({
     fork: true,
     subscriptionKey: "hahaha",
-    producer: () => 5,
     lazy: false,
     payload: {matchParams: params},
     key: demoAsyncStates.getUser.key,
