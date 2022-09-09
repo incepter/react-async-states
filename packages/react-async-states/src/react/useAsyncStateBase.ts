@@ -46,8 +46,6 @@ import {
 } from "../async-state/AsyncState";
 
 const defaultDependencies: any[] = [];
-
-
 export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   subscriptionConfig: UseAsyncStateConfig<T, E>,
   deps: any[] = defaultDependencies,
@@ -63,19 +61,36 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   // get reset . And can keep track of the old configuration
   // and pass it to the parseConfiguration function.
   // We only mutate this during render, and we only assign a value to it if different
-  const ownRef = React
-    .useMemo<UseAsyncStateRef<T, E>>(createMemoizedRef, []);
+  const selfMemo = React
+    .useMemo<UseAsyncStateRef<T, E>>(createEmptyObject, []);
 
   const subscriptionInfo = React
     .useMemo<SubscriptionInfo<T, E>>(parseConfiguration, [guard, ...deps]);
 
-  const [selectedValue, setSelectedValue] = React
-    .useState<Readonly<UseAsyncState<T, E>>>(initialize);
-
-
   const {run, mode, asyncState, configuration} = subscriptionInfo;
   const {selector, areEqual, events} = configuration;
 
+  const [selectedValue, setSelectedValue] = React
+    .useState<Readonly<UseAsyncState<T, E>>>(calculateStateValue);
+
+  // this reference inequality means that memo has been recalculated
+  if (selfMemo.subscriptionInfo !== subscriptionInfo) {
+    selfMemo.subscriptionInfo = subscriptionInfo;
+  }
+
+  if (
+    selectedValue.version !== asyncState?.version ||
+    selectedValue.source !== subscriptionInfo.asyncState?._source
+  ) {
+    updateSelectedValue();
+  }
+
+  if (selfMemo.latestData !== selectedValue.state) {
+    selfMemo.latestData = selectedValue.state;
+  }
+  if (selfMemo.latestVersion !== selectedValue.version) {
+    selfMemo.latestVersion = selectedValue.version;
+  }
   // if inside provider: watch over the async state
   // check if the effect should do a no-op early
   // this hook is safe to be inside this precise condition, which, if changed
@@ -92,41 +107,22 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
 
   React.useEffect(autoRunAsyncState, deps);
 
-  // this memo reference inequality means that memo has been recalculated
-  if (ownRef.subscriptionInfo !== subscriptionInfo) {
-    if (
-      !asyncState ||
-      ownRef.subscriptionInfo && // means we already calculated and
-      ownRef.subscriptionInfo.asyncState !== subscriptionInfo.asyncState // the subscribed instance changed
-    ) {
-      updateSelectedValue();
-    }
-    ownRef.subscriptionInfo = subscriptionInfo;
-  }
-
-  if (ownRef.latestData !== selectedValue.state) {
-    ownRef.latestData = selectedValue.state;
-  }
-
-  if (ownRef.latestVersion !== asyncState?.version) {
-    updateSelectedValue();
-  }
-
   return selectedValue;
 
-  function initialize(): Readonly<UseAsyncState<T, E>> {
-    return makeUseAsyncStateReturnValue(
-      asyncState,
-      (asyncState ? readStateFromAsyncState(asyncState, selector) : undefined) as E,
-      configuration.key as AsyncStateKey,
-      run,
-      mode
-    );
+  function calculateStateValue(): Readonly<UseAsyncState<T, E>> {
+    const newValue = (asyncState ? readStateFromAsyncState(asyncState, selector) : undefined) as E;
+
+    const newState = shallowClone(subscriptionInfo.baseReturn);
+    newState.read = createReadInConcurrentMode(asyncState, newValue);
+    newState.state = newValue;
+    newState.version = asyncState?.version;
+    newState.lastSuccess = asyncState?.lastSuccess;
+    return newState;
   }
 
   function updateSelectedValue() {
-    setSelectedValue(initialize());
-    ownRef.latestVersion = asyncState?.version;
+    setSelectedValue(calculateStateValue());
+    selfMemo.latestVersion = asyncState?.version;
   }
 
   function parseConfiguration() {
@@ -134,7 +130,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
       subscriptionConfig,
       contextValue,
       guard,
-      ownRef,
+      selfMemo,
       deps,
       configOverrides
     );
@@ -152,7 +148,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
       const newState = asyncState.currentState;
       const newSelectedState = readStateFromAsyncState(asyncState, selector);
 
-      if (!areEqual(newSelectedState, ownRef.latestData)) {
+      if (!areEqual(newSelectedState, selfMemo.latestData)) {
         updateSelectedValue();
       }
       invokeChangeEvents(newState, events);
@@ -160,11 +156,12 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
     return newSubscribeToAsyncState(
       mode,
       run,
-      () => ownRef.latestVersion,
+      () => selfMemo.latestVersion,
       asyncState,
       configuration.subscriptionKey,
       events,
       onStateChange,
+      updateSelectedValue,
     );
   }
 
@@ -205,16 +202,19 @@ export function useSourceLane<T>(
 ): UseAsyncState<T, State<T>> {
   const contextValue = React.useContext(AsyncStateContext);
   const asyncState = readAsyncStateFromSource(source).getLane(lane);
-  const latestState = React.useRef<State<T>>()
-
+  const latestVersion = React.useRef<number | undefined>(asyncState.version);
 
   // declare a state snapshot initialized by the initial selected value
   // useState
   const [selectedValue, setSelectedValue] = React
-    .useState<Readonly<UseAsyncState<T, State<T>>>>(initialize);
+    .useState<Readonly<UseAsyncState<T, State<T>>>>(calculateSelectedValue);
 
-  if (latestState.current !== selectedValue.state) {
-    latestState.current = selectedValue.state;
+  if (selectedValue.version !== asyncState.version) {
+    updateSelectedValue();
+  }
+
+  if (latestVersion.current !== selectedValue.version) {
+    latestVersion.current = selectedValue.version;
   }
 
   // subscribe to async state
@@ -222,35 +222,34 @@ export function useSourceLane<T>(
 
   return selectedValue;
 
-  function initialize(): Readonly<UseAsyncState<T, State<T>>> {
+  function calculateSelectedValue(): Readonly<UseAsyncState<T, State<T>>> {
+    let mode = AsyncStateSubscriptionMode.SOURCE;
     return makeUseAsyncStateReturnValue(
       asyncState,
-      readStateFromAsyncState(asyncState, oneObjectIdentity),
+      asyncState.currentState,
       source.key,
-      runAsyncStateSubscriptionFn(
-        AsyncStateSubscriptionMode.SOURCE,
-        asyncState,
-        contextValue
-      ),
-      AsyncStateSubscriptionMode.SOURCE
+      runAsyncStateSubscriptionFn(mode, asyncState, contextValue),
+      mode
     );
+  }
 
+  function updateSelectedValue() {
+    setSelectedValue(calculateSelectedValue());
   }
 
   function subscribeToAsyncState() {
-    let runFn = runAsyncStateSubscriptionFn(
-      AsyncStateSubscriptionMode.SOURCE,
-      asyncState,
-      contextValue
-    );
-    const configuration = constructUseSourceDefaultConfig(source);
-    return universalAsyncStateSubscribeFn(
-      asyncState,
-      AsyncStateSubscriptionMode.SOURCE,
-      configuration,
-      () => latestState.current,
-      setSelectedValue,
+    let mode = AsyncStateSubscriptionMode.SOURCE;
+    let runFn = runAsyncStateSubscriptionFn(mode, asyncState, contextValue);
+
+    return newSubscribeToAsyncState(
+      mode,
       runFn,
+      () => latestVersion.current,
+      asyncState,
+      undefined,
+      undefined,
+      updateSelectedValue,
+      updateSelectedValue,
     );
   }
 }
@@ -276,18 +275,22 @@ export function useProducer<T>(
 ): UseAsyncState<T, State<T>> {
   const contextValue = React.useContext(AsyncStateContext);
   const asyncState = React.useMemo<AsyncStateInterface<T>>(createInstance, emptyArray);
-
-  const latestState = React.useRef<State<T>>()
+  const latestVersion = React.useRef<number | undefined>(asyncState.version);
 
   // declare a state snapshot initialized by the initial selected value
   // useState
   const [selectedValue, setSelectedValue] = React
     .useState<Readonly<UseAsyncState<T, State<T>>>>(initialize);
 
-  if (latestState.current !== selectedValue.state) {
-    latestState.current = selectedValue.state;
+  if (latestVersion.current !== selectedValue.version) {
+    latestVersion.current = selectedValue.version;
   }
 
+  if (selectedValue.version !== asyncState.version) {
+    updateSelectedValue();
+  }
+
+  // todo: change to insertEffect with a fallback to layout
   React.useLayoutEffect(onProducerChange, [producer]);
   // subscribe to async state
   React.useEffect(subscribeToAsyncState, []);
@@ -301,50 +304,55 @@ export function useProducer<T>(
   function onProducerChange() {
     if (asyncState.originalProducer !== producer) {
       asyncState.replaceProducer(producer);
-      if (asyncState.currentState.status === AsyncStateStatus.pending) {
-        // @ts-ignore
-        // ts says I should provide an argument to the abort fn (the reason)
-        asyncState.abort();
-      }
     }
   }
 
+
+  function calculateSelectedValue(): Readonly<UseAsyncState<T, State<T>>> {
+    let mode = AsyncStateSubscriptionMode.STANDALONE;
+    return makeUseAsyncStateReturnValue(
+      asyncState,
+      asyncState.currentState,
+      asyncState.key,
+      runAsyncStateSubscriptionFn(mode, asyncState, contextValue),
+      mode
+    );
+  }
+
+  function updateSelectedValue() {
+    setSelectedValue(calculateSelectedValue());
+  }
+
+  function subscribeToAsyncState() {
+    let mode = AsyncStateSubscriptionMode.STANDALONE;
+    let runFn = runAsyncStateSubscriptionFn(mode, asyncState, contextValue);
+
+    return newSubscribeToAsyncState(
+      mode,
+      runFn,
+      () => latestVersion.current,
+      asyncState,
+      undefined,
+      undefined,
+      updateSelectedValue,
+      updateSelectedValue,
+    );
+  }
+
   function initialize(): Readonly<UseAsyncState<T, State<T>>> {
+    let mode = AsyncStateSubscriptionMode.STANDALONE;
     return makeUseAsyncStateReturnValue(
       asyncState,
       readStateFromAsyncState(asyncState, oneObjectIdentity),
       asyncState.key,
-      runAsyncStateSubscriptionFn(
-        AsyncStateSubscriptionMode.STANDALONE,
-        asyncState,
-        contextValue
-      ),
-      AsyncStateSubscriptionMode.STANDALONE
+      runAsyncStateSubscriptionFn(mode, asyncState, contextValue),
+      mode
     );
 
-  }
-
-  function subscribeToAsyncState() {
-    let runFn = runAsyncStateSubscriptionFn(
-      AsyncStateSubscriptionMode.STANDALONE,
-      asyncState,
-      contextValue
-    );
-    const configuration = constructUseProducerDefaultConfig(asyncState.key, producer);
-    return universalAsyncStateSubscribeFn(
-      asyncState,
-      AsyncStateSubscriptionMode.STANDALONE,
-      configuration,
-      () => latestState.current,
-      setSelectedValue,
-      runFn,
-    );
   }
 }
 
 //region configuration parsing
-
-
 const sourceConfigurationSecretSymbol = Symbol();
 
 const defaultUseASConfig = Object.freeze({
@@ -412,102 +420,95 @@ function readUserConfiguration<T, E>(
   );
 }
 
-function constructUseSourceDefaultConfig<T>(
-  source: AsyncStateSource<T>,
-): UseAsyncStateConfiguration<T, State<T>> {
-  return Object.freeze(Object.assign({key: source.key}, defaultUseASConfig));
-}
-
-function constructUseProducerDefaultConfig<T>(
-  key: AsyncStateKey,
-  producer: Producer<T>,
-): UseAsyncStateConfiguration<T, State<T>> {
-  return Object.freeze(Object.assign({key, producer}, defaultUseASConfig));
+function assignAutomaticKeyIfNotExists(newConfig, newMode) {
+  if (newConfig.key !== undefined) {
+    return;
+  }
+  if (
+    newMode === AsyncStateSubscriptionMode.SOURCE ||
+    newMode === AsyncStateSubscriptionMode.SOURCE_FORK
+  ) {
+    newConfig.key = newConfig.source!.key;
+  } else {
+    newConfig.key = nextKey();
+  }
 }
 
 function parseUseAsyncStateConfiguration<T, E = State<T>>(
   // the configuration that the developer emitted, can be of many forms
-  subscriptionConfig: UseAsyncStateConfig<T, E>,
+  mixedConfig: UseAsyncStateConfig<T, E>,
   // the context value, nullable
   contextValue: AsyncStateContextValue | null,
   // the current version of the external calculation
   guard: number,
   // the ref holding previous configuration
-  memoizedRef: UseAsyncStateRef<T, E>,
+  ownRef: UseAsyncStateRef<T, E>,
   // the hook dependencies
   dependencies: any[],
   // overrides that the library may use to control something
-  configOverrides?: PartialUseAsyncStateConfiguration<T, E>,
+  overrides?: PartialUseAsyncStateConfiguration<T, E>,
 ): SubscriptionInfo<T, E> {
 
-  // read the new used configuration
-  const newConfig = readUserConfiguration(subscriptionConfig, configOverrides);
-  // detect the new mode based on configuration
+  const newConfig = readUserConfiguration(mixedConfig, overrides);
   const newMode = inferSubscriptionMode(contextValue, newConfig);
 
-  // in most of the cases, the AsyncStateInterface could be reused and a new one
-  // is not necessary.
   const recalculateInstance = shouldRecalculateInstance(
-    newConfig,
-    newMode,
-    guard,
-    memoizedRef.subscriptionInfo
-  );
+    newConfig, newMode, guard, ownRef.subscriptionInfo);
 
-  // in case of an undefined key
-  // we attempt to read it from the source if we are in source modes
-  // or else create a default anonymous one
-  if (newConfig.key === undefined) {
-    if (
-      newMode === AsyncStateSubscriptionMode.SOURCE ||
-      newMode === AsyncStateSubscriptionMode.SOURCE_FORK
-    ) {
-      newConfig.key = (newConfig.source as AsyncStateSource<T>).key;
-    } else {
-      newConfig.key = nextKey();
-    }
-  }
+  assignAutomaticKeyIfNotExists(newConfig, newMode);
 
   if (__DEV__) {
     warnInDevAboutIrrelevantUseAsyncStateConfiguration(newMode, newConfig);
   }
 
-
   let newAsyncState: AsyncStateInterface<T>;
+  let previousInstance = ownRef.subscriptionInfo?.asyncState;
 
-  // if we should recalculate the instance, we infer it
-  // or else we reuse the last used one
   if (recalculateInstance) {
-    newAsyncState = inferAsyncStateInstance(
-      newMode,
-      newConfig,
-      contextValue
-    );
+    newAsyncState = inferAsyncStateInstance(newMode, newConfig, contextValue);
   } else {
-    newAsyncState = memoizedRef.subscriptionInfo.asyncState;
+    newAsyncState = previousInstance;
   }
 
   if (newConfig.lane) {
     newAsyncState = newAsyncState.getLane(newConfig.lane);
   }
 
-  let output: SubscriptionInfo<T, E> = {
-    guard,
-    mode: newMode,
-    deps: dependencies,
-    configuration: newConfig,
-    asyncState: newAsyncState,
-    run: runAsyncStateSubscriptionFn(
-      newMode,
-      newAsyncState,
-      contextValue
-    ),
-    dispose: disposeAsyncStateSubscriptionFn(
-      newMode,
-      newAsyncState,
-      contextValue
-    )
-  };
+  let didInstanceChange = previousInstance !== newAsyncState;
+  let didModeChange = newMode !== ownRef.subscriptionInfo?.mode;
+
+  let shouldCalculateNewOutput = didInstanceChange || didModeChange;
+
+  let output: SubscriptionInfo<T, E>;
+
+  if (shouldCalculateNewOutput) {
+    let configKey: AsyncStateKey = newConfig.key as AsyncStateKey; // not falsy
+    let runFn = runAsyncStateSubscriptionFn(newMode, newAsyncState, contextValue);
+    let disposeFn = disposeAsyncStateSubscriptionFn(newMode, newAsyncState, contextValue);
+
+    output = {
+      run: runFn,
+      mode: newMode,
+      dispose: disposeFn,
+      asyncState: newAsyncState,
+      baseReturn: Object.freeze(makeUseAsyncStateBaseReturnValue(
+        newAsyncState, configKey, runFn, newMode)),
+
+      guard,
+      deps: dependencies,
+      configuration: newConfig,
+    };
+  } else {
+    if (!ownRef.subscriptionInfo) {
+      throw new Error("Cannot reuse ownRef.subscriptionInfo while it is not " +
+        "defined. This is a bug, please fill an issue.");
+    }
+    output = shallowClone(ownRef.subscriptionInfo);
+
+    output.guard = guard;
+    output.deps = dependencies;
+    output.configuration = newConfig;
+  }
 
   // assign payload
   if (output.asyncState) {
@@ -673,7 +674,7 @@ function inferAsyncStateInstance<T, E>(
 
 //region subscription functions
 
-function createMemoizedRef<T, E>(): UseAsyncStateRef<T, E> {
+function createEmptyObject<T, E>(): UseAsyncStateRef<T, E> {
   return Object.create(null);
 }
 
@@ -852,16 +853,15 @@ function watchOverAsyncState<T, E = State<T>>(
   return undefined;
 }
 
-function subscribeToAsync(asyncState, listener, events) {}
-
 function newSubscribeToAsyncState<T>(
   mode: AsyncStateSubscriptionMode,
   run: (...args: any[]) => AbortFn,
-  getLatestRenderedVersion: () => number | null,
+  getLatestRenderedVersion: () => number | undefined,
   asyncState?: AsyncStateInterface<T>,
   subscriptionKey?: string,
   events?: UseAsyncStateEvents<T>,
   onUpdate?: (newState: State<T>) => void,
+  onVersionMismatch?: () => void,
 ): CleanupFn {
   if (!asyncState || !onUpdate) {
     return;
@@ -870,8 +870,8 @@ function newSubscribeToAsyncState<T>(
   let unsubscribeFromEvents = invokeSubscribeEvents(
     events?.subscribe, run, mode, asyncState);
 
-  if (asyncState.version !== getLatestRenderedVersion()) {
-    onUpdate(asyncState.currentState);
+  if (asyncState.version !== getLatestRenderedVersion() && isFn(onVersionMismatch)) {
+    onVersionMismatch!();
   }
 
   return function cleanup() {
@@ -881,80 +881,6 @@ function newSubscribeToAsyncState<T>(
     unsubscribe!();
   }
 }
-
-// a universal subscription to an async state (an external mutable source)
-function universalAsyncStateSubscribeFn<T, E = State<T>>(
-  // the instance
-  asyncState: AsyncStateInterface<T>,
-  // the desired subscription mode
-  mode: AsyncStateSubscriptionMode,
-  // the given configuration, will use: selector, areEqual, events and few more
-  configuration: UseAsyncStateConfiguration<T, E>,
-  // a callback that the subscriber uses to report his current version, used to check when an update arrives
-  getCurrentValue: () => E,
-  // this subscription constructs a UseAsyncState, so it needs a state updater for it
-  update: (value: React.SetStateAction<Readonly<UseAsyncState<T, E>>>) => void,
-  // the subscriber run fn that will be passed to subscribe events
-  run: (...args: any[]) => AbortFn,
-): CleanupFn {
-  if (!asyncState) {
-    return undefined;
-  }
-
-  const {selector, areEqual, events} = configuration;
-
-  let didClean = false;
-  // the subscribe function returns the unsubscribe function
-  const unsubscribe = asyncState.subscribe(
-    function onUpdate(nextState: State<T>) {
-      if (didClean) {
-        return;
-      }
-      // when we get an update from this async state, we recalculate
-      // the selected value.
-      const newState = readStateFromAsyncState(asyncState, selector);
-      const latestState = getCurrentValue();
-      if (!areEqual(latestState, newState)) {
-        update(
-          makeUseAsyncStateReturnValue(
-            asyncState,
-            newState,
-            configuration.key as AsyncStateKey,
-            run,
-            mode
-          )
-        );
-      }
-
-      // if there are any change listeners: invoke them
-      invokeChangeEvents(nextState, events);
-
-    },
-    configuration.subscriptionKey
-  );
-
-  let postUnsubscribe: CleanupFn[] | null = invokeSubscribeEvents(
-    events?.subscribe, run, mode, asyncState);
-
-  ensureSubscriptionStateIsLatest(
-    asyncState,
-    mode,
-    configuration,
-    run,
-    getCurrentValue(),
-    update,
-  );
-
-  return function cleanup() {
-    didClean = true;
-
-    if (postUnsubscribe) {
-      postUnsubscribe.forEach(fn => invokeIfPresent(fn))
-    }
-    (unsubscribe as () => void)();
-  }
-}
-
 
 function invokeChangeEvents<T>(
   nextState: State<T>,
@@ -981,14 +907,6 @@ function invokeChangeEvents<T>(
   });
 }
 
-function constructSubscribeEventProps<T>(
-  asyncState: AsyncStateInterface<T>,
-  run: (...args: any[]) => AbortFn,
-  mode: AsyncStateSubscriptionMode,
-) {
-  return
-}
-
 function invokeSubscribeEvents<T>(
   events: UseAsyncStateEventSubscribe<T> | undefined,
   run: (...args: any[]) => AbortFn,
@@ -1012,38 +930,6 @@ function invokeSubscribeEvents<T>(
   return handlers.map(handler => handler(eventProps));
 }
 
-function ensureSubscriptionStateIsLatest<T, E = State<T>>(
-  // the subscribed async state
-  asyncState: AsyncStateInterface<T>,
-  // the subscription mode, passed because its part of the return value
-  mode: AsyncStateSubscriptionMode,
-  // reading key, selector and areEqual
-  configuration: UseAsyncStateConfiguration<T, E>,
-  // run is returned as part of the return object
-  run: (...args: any[]) => AbortFn,
-  // the latest value that the subscriber has
-  oldValue: E,
-  // trigger a state update for the subscriber
-  update: (value: React.SetStateAction<Readonly<UseAsyncState<T, E>>>) => void,
-) {
-  const {key, selector, areEqual} = configuration;
-
-  const renderValue = oldValue;
-  const newState = (asyncState ? readStateFromAsyncState(asyncState, selector) : undefined) as E;
-
-  const actualValue = makeUseAsyncStateReturnValue(
-    asyncState,
-    newState,
-    key as AsyncStateKey,
-    run,
-    mode
-  );
-
-  if (!areEqual(renderValue, actualValue.state)) {
-    update(actualValue);
-  }
-}
-
 function readStateFromAsyncState<T, E = State<T>>(
   asyncState: AsyncStateInterface<T>,
   selector: useSelector<T, E>
@@ -1062,20 +948,17 @@ function returnsUndefined() {
   return undefined;
 }
 
-function makeUseAsyncStateReturnValue<T, E>(
+function makeUseAsyncStateBaseReturnValue<T, E>(
   asyncState: AsyncStateInterface<T>,
-  stateValue: E,
   configurationKey: AsyncStateKey,
   run: (...args: any[]) => AbortFn,
   mode: AsyncStateSubscriptionMode
-): Readonly<UseAsyncState<T, E>> {
-
+) {
   if (!asyncState) {
-    return Object.freeze({
+    return {
       mode,
       abort: noop,
       payload: null,
-      state: stateValue,
       replaceState: noop,
       mergePayload: noop,
       uniqueId: undefined,
@@ -1083,24 +966,16 @@ function makeUseAsyncStateReturnValue<T, E>(
       invalidateCache: noop,
       run: returnsUndefined,
       replay: returnsUndefined,
-
-      read() {
-        return stateValue;
-      },
-    });
+    };
   }
 
-  return Object.freeze({
+  return {
     mode,
     key: asyncState.key,
+    version: asyncState.version,
     source: asyncState._source,
     payload: asyncState.payload,
-
     uniqueId: asyncState.uniqueId,
-
-    state: stateValue,
-    lastSuccess: asyncState.lastSuccess,
-    read: createReadInConcurrentMode(asyncState, stateValue),
 
     mergePayload(newPayload) {
       asyncState.payload = shallowClone(
@@ -1114,7 +989,33 @@ function makeUseAsyncStateReturnValue<T, E>(
     replaceState: asyncState.replaceState.bind(asyncState),
     run: isFn(run) ? run : asyncState.run.bind(asyncState, standaloneProducerEffectsCreator),
     invalidateCache: asyncState.invalidateCache.bind(asyncState),
-  });
+  };
+}
+
+function makeUseAsyncStateReturnValue<T, E>(
+  asyncState: AsyncStateInterface<T>,
+  stateValue: E,
+  configurationKey: AsyncStateKey,
+  run: (...args: any[]) => AbortFn,
+  mode: AsyncStateSubscriptionMode
+): Readonly<UseAsyncState<T, E>> {
+
+  // @ts-ignore
+  // ok ts! I will append missing properties right now!
+  const base: UseAsyncState<T, E> = makeUseAsyncStateBaseReturnValue(
+    asyncState, configurationKey, run, mode);
+
+  base.state = stateValue;
+  if (!asyncState) {
+    base.read = function() {
+      return stateValue;
+    };
+    return Object.freeze(base);
+  }
+  base.payload = asyncState.payload;
+  base.lastSuccess = asyncState.lastSuccess;
+  base.read = createReadInConcurrentMode(asyncState, stateValue);
+  return Object.freeze(base);
 }
 
 

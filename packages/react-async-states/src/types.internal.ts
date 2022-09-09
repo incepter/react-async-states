@@ -185,13 +185,11 @@ export type AsyncStateContextValue = {
 
 // use async state
 
-export type UseAsyncState<T, E = State<T>> = {
-  state: E,
+interface BaseUseAsyncState<T, E = State<T>> {
   key: AsyncStateKey,
 
   source?: AsyncStateSource<T>,
   mode: AsyncStateSubscriptionMode,
-  lastSuccess?: State<T>,
 
   payload: { [id: string]: any } | null,
 
@@ -204,7 +202,13 @@ export type UseAsyncState<T, E = State<T>> = {
   uniqueId: number | undefined,
   invalidateCache: (cacheKey?: string) => void,
 
+}
+
+export interface UseAsyncState<T, E = State<T>> extends BaseUseAsyncState<T, E> {
+  state: E,
   read: () => E,
+  version?: number,
+  lastSuccess?: State<T>,
 }
 
 export type EqualityFn<T> = (
@@ -307,6 +311,8 @@ export type SubscriptionInfo<T, E> = {
 
   dispose: () => boolean | undefined,
   run: (...args: any[]) => AbortFn,
+
+  baseReturn: BaseUseAsyncState<T, E>,
 }
 
 export type UseAsyncStateRefsFactory<T, E> = {
@@ -342,7 +348,7 @@ export type CleanupFn = AbortFn
 
 export type UseAsyncStateRef<T, E = State<T>> = {
   latestData: E,
-  latestVersion: number | null,
+  latestVersion?: number,
   subscriptionInfo: SubscriptionInfo<T, E>,
 }
 
