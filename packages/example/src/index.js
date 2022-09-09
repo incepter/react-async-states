@@ -76,7 +76,7 @@ function Toto() {
   );
 }
 
-root.render(<React.StrictMode><App2/></React.StrictMode>);
+root.render(<React.StrictMode><App/></React.StrictMode>);
 // root2.render(<Counter from="root2"/>);
 initVanillaHost(vanillaHost);
 
