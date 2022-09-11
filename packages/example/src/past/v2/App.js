@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Link, Route, Switch } from "react-router-dom";
+import { BrowserRouter as Router, Link, Route, Routes } from "react-router-dom";
 import DemoProvider from "./core/AsyncStateProvider";
 import UsersPage, { UserDetailsPage } from "./domain/users";
 
@@ -17,14 +17,10 @@ export default function App() {
             </li>
           </ul>
           <hr/>
-          <Switch>
-            <Route exact path="/users">
-              <UsersPage/>
-            </Route>
-            <Route path="/users/:userId">
-              <UserDetailsPage/>
-            </Route>
-          </Switch>
+          <Routes>
+            <Route path="/users" element={<UsersPage/>} />
+            <Route path="/users/:userId" element={<UserDetailsPage/>} />
+          </Routes>
         </div>
       </DemoProvider>
     </Router>

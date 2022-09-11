@@ -1,11 +1,11 @@
 import React from "react";
-import { useHistory, useLocation, useParams } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useAsyncState } from "react-async-states";
 import { DOMAIN_USER_PRODUCERS } from "./producers";
 import { parseSearch, readFormValues } from "../../shared/utils";
 
 export default function UsersPage() {
-  const history = useHistory();
+  const navigate = useNavigate();
   const search = useLocation().search;
   const queryString = parseSearch(search);
   const {state: {status, data}, run, abort} = useAsyncState.auto(DOMAIN_USER_PRODUCERS.list.key, [search]);
@@ -14,7 +14,7 @@ export default function UsersPage() {
     e.preventDefault();
 
     const values = readFormValues(e.target);
-    history.push("?" + Object.entries(values)
+    navigate("?" + Object.entries(values)
       .map(([key, value]) => `${key}=${value}`)
       .join("&")
     );
@@ -51,14 +51,13 @@ export function UserDetailsPage() {
   return (
     <div style={{display: "flex"}}>
       <UserDetailsPageImpl/>
-      <UserDetailsPageImpl2/>
     </div>
   );
 }
 
-function UserDetailsPageImpl({fork = false}) {
+function UserDetailsPageImpl() {
 
-  const history = useHistory();
+  const navigate = useNavigate();
   const matchParams = useParams();
 
   const {state, abort, run} = useAsyncState.auto({
@@ -72,7 +71,7 @@ function UserDetailsPageImpl({fork = false}) {
     e.preventDefault();
 
     const values = readFormValues(e.target);
-    history.push(`/users/${values.id}`);
+    navigate(`/users/${values.id}`);
   }
 
   return (

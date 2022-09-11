@@ -72,7 +72,7 @@ class AsyncState<T> implements AsyncStateInterface<T> {
   payload: Record<string, any> | null = null;
   private pendingTimeout: { id: ReturnType<typeof setTimeout>, startDate: number } | null = null;
 
-  private subscriptionsMeter: number = 0;
+  subscriptionsMeter: number = 0;
   subscriptions: { [id: number]: StateSubscription<T> } = {};
 
   producer: ProducerFunction<T>;
@@ -204,7 +204,7 @@ class AsyncState<T> implements AsyncStateInterface<T> {
     let subscriptionKey: string = subKey;
 
     if (subKey === undefined) {
-      subscriptionKey = `${this.key}-sub-${this.subscriptionsMeter}`;
+      subscriptionKey = `subscription-$${this.subscriptionsMeter}`;
     }
 
     function cleanup() {
@@ -619,13 +619,12 @@ function scheduleDelayedPendingUpdate<T>(
     if (__DEV__) devtools.emitUpdate(asyncState);
 
     if (notify) {
-      notifySubscribers(asyncState as AsyncStateInterface<any>);
+      notifySubscribers(asyncState as AsyncStateInterface<T>);
     }
   }
 
   const timeoutId = setTimeout(callback, asyncState.config.skipPendingDelayMs);
   asyncState.pendingUpdate = {callback, timeoutId};
-  return;
 }
 
 function saveCacheAfterSuccessfulUpdate<T>(asyncState: AsyncStateInterface<T>) {

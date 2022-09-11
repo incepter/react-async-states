@@ -43,6 +43,7 @@ import {
   readAsyncStateFromSource,
   standaloneProducerEffectsCreator
 } from "../async-state/AsyncState";
+import useInDevSubscriptionKey from "./helpers/useCallerName";
 
 const defaultDependencies: any[] = [];
 export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
@@ -68,6 +69,12 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
 
   const {run, mode, asyncState, configuration} = subscriptionInfo;
   const {selector, areEqual, events} = configuration;
+
+  let {subscriptionKey} = configuration;
+  if (__DEV__) {
+    subscriptionKey = useInDevSubscriptionKey(subscriptionKey, asyncState);
+  }
+
 
   const [selectedValue, setSelectedValue] = React
     .useState<Readonly<UseAsyncState<T, E>>>(calculateStateValue);
@@ -102,7 +109,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   }
 
   React.useEffect(subscribeToAsyncState,
-    [configuration.subscriptionKey, areEqual, selector, asyncState, events]);
+    [subscriptionKey, areEqual, selector, asyncState, events]);
 
   React.useEffect(autoRunAsyncState, deps);
 
@@ -152,12 +159,13 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
       }
       invokeChangeEvents(newState, events);
     }
+
     return newSubscribeToAsyncState(
       mode,
       run,
       () => selfMemo.latestVersion,
       asyncState,
-      configuration.subscriptionKey,
+      subscriptionKey,
       events,
       onStateChange,
       updateSelectedValue,
@@ -195,10 +203,12 @@ export function useSource<T>(
 ): UseAsyncState<T, State<T>> {
   return useSourceLane(source);
 }
+
 export function useSourceLane<T>(
   source: AsyncStateSource<T>,
   lane?: string,
 ): UseAsyncState<T, State<T>> {
+  let subscriptionKey;
   const contextValue = React.useContext(AsyncStateContext);
   const asyncState = readAsyncStateFromSource(source).getLane(lane);
   const latestVersion = React.useRef<number | undefined>(asyncState.version);
@@ -208,12 +218,19 @@ export function useSourceLane<T>(
   const [selectedValue, setSelectedValue] = React
     .useState<Readonly<UseAsyncState<T, State<T>>>>(calculateSelectedValue);
 
-  if (selectedValue.version !== asyncState.version) {
+  if (
+    selectedValue.version !== asyncState.version ||
+    selectedValue.source !== asyncState._source
+  ) {
     updateSelectedValue();
   }
 
   if (latestVersion.current !== selectedValue.version) {
     latestVersion.current = selectedValue.version;
+  }
+
+  if (__DEV__) {
+    subscriptionKey = useInDevSubscriptionKey(subscriptionKey, asyncState);
   }
 
   // subscribe to async state
@@ -245,7 +262,7 @@ export function useSourceLane<T>(
       runFn,
       () => latestVersion.current,
       asyncState,
-      undefined,
+      subscriptionKey,
       undefined,
       updateSelectedValue,
       updateSelectedValue,
@@ -272,6 +289,7 @@ const emptyArray = [];
 export function useProducer<T>(
   producer: Producer<T>,
 ): UseAsyncState<T, State<T>> {
+  let subscriptionKey;
   const contextValue = React.useContext(AsyncStateContext);
   const asyncState = React.useMemo<AsyncStateInterface<T>>(createInstance, emptyArray);
   const latestVersion = React.useRef<number | undefined>(asyncState.version);
@@ -287,6 +305,10 @@ export function useProducer<T>(
 
   if (selectedValue.version !== asyncState.version) {
     updateSelectedValue();
+  }
+
+  if (__DEV__) {
+    subscriptionKey = useInDevSubscriptionKey(subscriptionKey, asyncState);
   }
 
   // todo: change to insertEffect with a fallback to layout
@@ -330,7 +352,7 @@ export function useProducer<T>(
       runFn,
       () => latestVersion.current,
       asyncState,
-      undefined,
+      subscriptionKey,
       undefined,
       updateSelectedValue,
       updateSelectedValue,
@@ -930,6 +952,7 @@ function readStateFromAsyncState<T, E = State<T>>(
 function noop() {
   // that's a noop fn
 }
+
 function returnsUndefined() {
   return undefined;
 }
@@ -993,7 +1016,7 @@ function makeUseAsyncStateReturnValue<T, E>(
 
   base.state = stateValue;
   if (!asyncState) {
-    base.read = function() {
+    base.read = function () {
       return stateValue;
     };
     return Object.freeze(base);
