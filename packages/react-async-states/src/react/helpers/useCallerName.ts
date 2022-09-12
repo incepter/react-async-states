@@ -44,7 +44,9 @@ export default function useInDevSubscriptionKey<T>(
           result: `${callerName}-$${from}-$${nextId}`,
         };
       } else {
-        self.current.result = undefined;
+        self.current = {
+          result: subKey,
+        };
       }
     }
 
