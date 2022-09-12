@@ -1,5 +1,5 @@
 import * as React from "react";
-import {identity, isFn, shallowEqual} from "shared";
+import {__DEV__, identity, isFn, shallowEqual} from "shared";
 import {AsyncStateContext} from "./context";
 import {
   ArraySelector,
@@ -14,12 +14,13 @@ import {
   UseSelectorFunctionKeys,
 } from "../types.internal";
 import {isAsyncStateSource} from "../async-state/utils";
-import {
+import AsyncState, {
   AsyncStateInterface,
   AsyncStateKey,
   AsyncStateSource,
 } from "../async-state";
 import {readAsyncStateFromSource} from "../async-state/AsyncState";
+import {useCallerName} from "./helpers/useCallerName";
 
 type SelectorSelf<T> = {
   currentValue: T,
@@ -49,8 +50,13 @@ export function useSelector<T>(
   selector?: SimpleSelector<any, T> | ArraySelector<T> | FunctionSelector<T> = identity,
   areEqual?: EqualityFn<T> = shallowEqual,
 ): T {
+  let caller;
   const contextValue = React.useContext(AsyncStateContext);
   const isInsideProvider = contextValue !== null;
+
+  if (__DEV__) {
+    caller = useCallerName(3);
+  }
 
   ensureParamsAreOk(contextValue, keys, selector);
 
@@ -107,7 +113,14 @@ export function useSelector<T>(
     const unsubscribeFns = Object
       .values(self.currentInstances)
       .filter(Boolean)
-      .map(as => as?.subscribe(onUpdate));
+      .map(as => {
+        let subscriptionKey: string | undefined = undefined;
+        if (__DEV__) {
+          let nextMeter = (as as AsyncState<any>).subscriptionsMeter;
+          subscriptionKey = `${caller}-$4-$${nextMeter}`;// 4: useSelector
+        }
+        return as!.subscribe(onUpdate, subscriptionKey);
+      });
 
     return () => {
       unsubscribeFns.forEach((cleanup => cleanup?.()));

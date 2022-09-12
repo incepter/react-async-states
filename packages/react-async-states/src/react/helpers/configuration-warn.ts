@@ -3,6 +3,7 @@ import {
   AsyncStateSubscriptionMode,
   UseAsyncStateConfiguration
 } from "../../types.internal";
+import {computeCallerName} from "./useCallerName";
 
 
 const creationProperties = [
@@ -52,9 +53,10 @@ export function warnInDevAboutIrrelevantUseAsyncStateConfiguration(
   )
 
   if (usedIrrelevantProperties.length) {
-    warning(`[Irrelevant configuration] - A subscription to '${userConfig.key}' ` +
+    const caller = computeCallerName(9);
+    warning(`[Incompatible configuration] - Subscription to '${userConfig.key}' ` +
       `${userConfig.subscriptionKey ? '(with subscriptionKey=' +
-        userConfig.subscriptionKey + ') ' : ''}is using some ` +
-      `properties that have no effect with its ${mode} mode: '${usedIrrelevantProperties.join(", ")}'`);
+        userConfig.subscriptionKey + ') ' : ''}from '${caller}' is using incompatible ` +
+      `['${usedIrrelevantProperties.join(", ")}'] properties with its mode '${mode}'`);
   }
 }

@@ -72,7 +72,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
 
   let {subscriptionKey} = configuration;
   if (__DEV__) {
-    subscriptionKey = useInDevSubscriptionKey(subscriptionKey, asyncState);
+    subscriptionKey = useInDevSubscriptionKey(subscriptionKey, asyncState, "1");
   }
 
 
@@ -230,7 +230,7 @@ export function useSourceLane<T>(
   }
 
   if (__DEV__) {
-    subscriptionKey = useInDevSubscriptionKey(subscriptionKey, asyncState);
+    subscriptionKey = useInDevSubscriptionKey(subscriptionKey, asyncState, "2");
   }
 
   // subscribe to async state
@@ -308,7 +308,7 @@ export function useProducer<T>(
   }
 
   if (__DEV__) {
-    subscriptionKey = useInDevSubscriptionKey(subscriptionKey, asyncState);
+    subscriptionKey = useInDevSubscriptionKey(subscriptionKey, asyncState, "3");
   }
 
   // todo: change to insertEffect with a fallback to layout
