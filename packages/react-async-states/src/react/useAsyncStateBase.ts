@@ -589,13 +589,13 @@ function disposeAsyncStateSubscriptionFn<T, E>(
 ): () => (boolean | undefined) {
   return function dispose() {
     switch (mode) {
+      case AsyncStateSubscriptionMode.FORK:
       case AsyncStateSubscriptionMode.HOIST:
         return (contextValue as AsyncStateContextValue).dispose(asyncState);
       // NoOp - should not happen
       case AsyncStateSubscriptionMode.SOURCE:
       case AsyncStateSubscriptionMode.SOURCE_FORK:
       case AsyncStateSubscriptionMode.LISTEN:
-      case AsyncStateSubscriptionMode.FORK:
       case AsyncStateSubscriptionMode.STANDALONE:
       case AsyncStateSubscriptionMode.OUTSIDE_PROVIDER:
       case AsyncStateSubscriptionMode.NOOP:
@@ -825,12 +825,16 @@ function watchOverAsyncState<T, E = State<T>>(
     );
     if (newHoist !== asyncState) {
       setGuard(old => old + 1);
-    } else {
-      return function disposeOld() {
-        dispose();
-      }
+      return;
     }
-    return;
+  }
+
+  // these modes create an entry in the provider that should be disposed!
+  if (
+    mode === AsyncStateSubscriptionMode.HOIST ||
+    mode === AsyncStateSubscriptionMode.FORK
+  ) {
+    return dispose;
   }
 
   if (

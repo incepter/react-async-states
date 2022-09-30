@@ -1,11 +1,12 @@
 import * as React from "react";
 import {AsyncStateContext} from "./context";
 import {
+  __DEV__,
   asyncify,
   EMPTY_OBJECT,
   readProducerConfigFromProducerConfig,
   readProducerConfigFromSubscriptionConfig,
-  shallowClone
+  shallowClone, warning
 } from "shared";
 import {
   AsyncStateContextValue,
@@ -38,12 +39,31 @@ import {
   readAsyncStateFromSource
 } from "../async-state/AsyncState";
 
+let didWarnAboutProviderDeprecated = false;
+/**
+ * @deprecated
+ * The provider will be removed in the next stable release
+ * don't rely on it as it only causes errors and this part will
+ * be delegated completely outside React
+ */
 export function AsyncStateProvider(
   {
     children,
     payload,
     initialStates
   }: StateProviderProps) {
+  if (__DEV__) {
+    if (!didWarnAboutProviderDeprecated) {
+      warning(`[Deprecation Warning] The provider will be deprecated in v2.
+      Please limit your usage with the provider.\n
+      There will be no provider and useAsyncState({key: "some-key"}) will just work.
+      \nThe recommendation for now is to keep the keys unique and don't make
+      any abstraction assuming there are multiple providers and keys are unique
+      per provider. For the payload, there will be a global way to set it and it
+      so all features would remain working.`);
+      didWarnAboutProviderDeprecated = true;
+    }
+  }
 
   // manager per provider
   // this manager lives with the provider and will never change

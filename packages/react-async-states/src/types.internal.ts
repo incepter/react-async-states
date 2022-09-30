@@ -379,6 +379,7 @@ export type InitialStates = ExtendedInitialAsyncState<any>[]
   | InitialStatesObject;
 
 export type StateProviderProps = {
+  manager?: AsyncStateManagerInterface,
   children: any,
   initialStates?: InitialStates,
   payload?: { [id: string]: any },
