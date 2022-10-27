@@ -126,7 +126,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
             state: asyncState.currentState,
             lastSuccess: asyncState.lastSuccess,
             producerType: asyncState.producerType,
-            subscriptions: Object.keys(asyncState.subscriptions),
+            subscriptions: asyncState.subscriptions ? Object.keys(asyncState.subscriptions) : [],
             lanes: Object.keys(asyncState.lanes).map(key => ({
               uniqueId: asyncState.lanes[key].uniqueId,
               key

@@ -18,16 +18,16 @@ describe('AsyncState - fork', () => {
 
     // then
     expect(myAsyncState.key).toBe(key);
-    expect(myAsyncState.forkCount).toBe(0);
-    expect(myAsyncState.subscriptions).toEqual({});
+    expect(myAsyncState.forksIndex).toBe(0);
+    expect(myAsyncState.subscriptions).toBe(null);
     expect(typeof myAsyncState.run).toBe("function");
     expect(myAsyncState.config).toEqual(shallowClone(myConfig));
     expect(myAsyncState.lastSuccess).toEqual({props: null, data: null, status: AsyncStateStatus.initial, timestamp: TESTS_TS});
     expect(myAsyncState.state).toEqual({data: null, status: AsyncStateStatus.initial, props: null, timestamp: TESTS_TS});
 
     let forkedAsyncState = myAsyncState.fork();
-    expect(myAsyncState.forkCount).toBe(1);
-    expect(forkedAsyncState.forkCount).toBe(0);
+    expect(myAsyncState.forksIndex).toBe(1);
+    expect(forkedAsyncState.forksIndex).toBe(0);
     expect(forkedAsyncState.config).toEqual(myAsyncState.config);
     expect(forkedAsyncState.lastSuccess).toEqual(myAsyncState.lastSuccess);
     expect(forkedAsyncState.originalProducer).toBe(myAsyncState.originalProducer);
@@ -36,7 +36,6 @@ describe('AsyncState - fork', () => {
     expect(forkedAsyncState.key).not.toBe(myAsyncState.key);
     expect(forkedAsyncState.producer).not.toBe(myAsyncState.producer);
     expect(forkedAsyncState.state).not.toBe(myAsyncState.state);// not same reference even if retrieved
-    expect(forkedAsyncState.subscriptions).not.toBe(myAsyncState.subscriptions);// not same reference even if retrieved
   });
   it('should fork and keep state and subscriptions after run', async () => {
     // given
