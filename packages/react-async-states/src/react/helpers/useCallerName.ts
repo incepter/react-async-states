@@ -1,6 +1,6 @@
 import * as React from "react";
 import {__DEV__} from "shared";
-import AsyncState, {AsyncStateInterface} from "../../async-state";
+import AsyncState, {StateInterface} from "../../async-state";
 
 const emptyArray = [];
 
@@ -12,12 +12,12 @@ type WarnInDevSelf<T> = {
   subId?: number,
   result?: string,
   subKey?: string,
-  instance?: AsyncStateInterface<T>,
+  instance?: StateInterface<T>,
 }
 
 export default function useInDevSubscriptionKey<T>(
   subKey: string | undefined,
-  asyncState: AsyncStateInterface<T>,
+  asyncState: StateInterface<T>,
   from: string, // 1: useAsyncState, 2: useSourceLane, 3: useProducer, 4: useSelector
 ): string | undefined {
   if (__DEV__) {
@@ -35,7 +35,7 @@ export default function useInDevSubscriptionKey<T>(
         let nextId = self.current.subId;
 
         if (didInstanceChange) {
-          nextId = ++((asyncState as AsyncState<T>).subscriptionsMeter);
+          nextId = ++((asyncState as AsyncState<T>).subscriptionsIndex);
         }
 
         self.current = {

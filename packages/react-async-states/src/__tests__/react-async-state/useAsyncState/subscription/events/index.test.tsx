@@ -1,7 +1,7 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {
-  AsyncStateSubscriptionMode,
+  SubscriptionMode,
   UseAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../react/useAsyncState";

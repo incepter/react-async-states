@@ -677,8 +677,8 @@ It determines the cache configurations:
 | `enabled`     | `boolean`                                                         | Whether to enable cache or not                                                   |
 | `hash`        | `(args?: any[], payload?: {[id: string]: any} or null) => string` | a function to calculate a hash for a producer run (from args and payload)        |
 | `getDeadline` | `(currentState: State<T>) => number`                              | returns the deadline after which the cache is invalid                            |
-| `load`        | `() => {[id: AsyncStateKey]: CachedState<T>}`                     | loads the cached data when the async state instance is created                   |
-| `persist`     | `(cache: {[id: AsyncStateKey]: CachedState<T>}) => void`          | a function to persist the whole cache, called when state is updated to success   |
+| `load`        | `() => {[id: string]: CachedState<T>}`                     | loads the cached data when the async state instance is created                   |
+| `persist`     | `(cache: {[id: string]: CachedState<T>}) => void`          | a function to persist the whole cache, called when state is updated to success   |
 | `onCacheLoad` | `onCacheLoad?({cache, setState}): void`                           | a callback called when the cache loads, useful when asynchronously loading cache |
 
 ### `events`
@@ -705,10 +705,10 @@ or do another side effect.
 ```javascript
 // this is how the library invokes the subscribe events.
 unsubscribe = subscribe({
-    run,
-    mode,
-    invalidateCache,
-    getState: () => asyncState.currentState,
+  run,
+  mode,
+  invalidateCache,
+  getState: () => asyncState.state,
 })
 ```
 

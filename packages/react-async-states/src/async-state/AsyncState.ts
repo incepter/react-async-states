@@ -21,9 +21,8 @@ import devtools from "devtools";
 import {areRunEffectsSupported} from "shared/features";
 import {
   AbortFn,
-  AsyncStateInterface,
-  AsyncStateKey,
-  AsyncStateSource,
+  StateInterface,
+  Source,
   AsyncStateStatus,
   CachedState,
   ForkConfig,
@@ -39,7 +38,7 @@ import {
   ProducerType, RunTask,
   State,
   StateFunctionUpdater,
-  StateSubscription
+  StateSubscription, PendingUpdate, PendingTimeout
 } from "./types";
 import {constructAsyncStateSource} from "./construct-source";
 import {
@@ -48,48 +47,46 @@ import {
 } from "../types.internal";
 import {nextKey} from "./key-gen";
 
-class AsyncState<T> implements AsyncStateInterface<T> {
+class AsyncState<T> implements StateInterface<T> {
   //region properties
-  key: AsyncStateKey;
-  _source: AsyncStateSource<T>;
-  version: number = 0;
-  uniqueId: number | undefined;
+  key: string;
   journal: any[];
+  uniqueId: number;
+  _source: Source<T>;
+  version: number = 0;
+  config: ProducerConfig<T>;
+  payload: Record<string, any> | null = null;
 
-  currentState: State<T>;
+  state: State<T>;
   lastSuccess: State<T>;
   producerType: ProducerType;
 
-  config: ProducerConfig<T>;
+  cache: Record<string, CachedState<T>> | null = null;
 
-  cache: Record<string, CachedState<T>> = Object.create(null);
+  parent: StateInterface<T> | null;
+  lanes: Record<string, StateInterface<T>>;
 
-  parent: AsyncStateInterface<T> | null;
-  lanes: Record<string, AsyncStateInterface<T>>;
-
-  private locks: number = 0;
-  private forkCount: number = 0;
-  payload: Record<string, any> | null = null;
-  private pendingTimeout: { id: ReturnType<typeof setTimeout>, startDate: number } | null = null;
-
-  subscriptionsMeter: number = 0;
-  subscriptions: { [id: number]: StateSubscription<T> } = {};
+  subscriptionsIndex: number = 0;
+  subscriptions: Record<number, StateSubscription<T>> | null = null;
 
   producer: ProducerFunction<T>;
   suspender: Promise<T> | undefined = undefined;
   originalProducer: Producer<T> | undefined;
+
+  pendingUpdate: PendingUpdate | null = null;
+
+  private locks: number = 0;
+  private forksIndex: number = 0;
+  private pendingTimeout: PendingTimeout | null = null;
+
   private currentAborter: AbortFn = undefined;
   private latestRunTask: RunTask<T> | null = null;
-
-  pendingUpdate:
-    { timeoutId: ReturnType<typeof setTimeout>, callback: () => void } | null = null;
-
   private willPerformStateUpdate: boolean = false;
 
   //endregion
 
   constructor(
-    key: AsyncStateKey,
+    key: string,
     producer: Producer<T> | undefined | null,
     config?: ProducerConfig<T>
   ) {
@@ -114,10 +111,10 @@ class AsyncState<T> implements AsyncStateInterface<T> {
     loadCache(this);
 
     let initialState = this.config.initialValue;
-    this.currentState = StateBuilder.initial(
+    this.state = StateBuilder.initial(
       typeof initialState === "function" ? initialState.call(null, this.cache) : initialState
     );
-    this.lastSuccess = this.currentState;
+    this.lastSuccess = this.state;
 
     Object.preventExtensions(this);
 
@@ -127,10 +124,10 @@ class AsyncState<T> implements AsyncStateInterface<T> {
   }
 
   getState(): State<T> {
-    return this.currentState;
+    return this.state;
   }
 
-  getLane(laneKey?: string): AsyncStateInterface<T> {
+  getLane(laneKey?: string): StateInterface<T> {
     if (!laneKey) {
       return this;
     }
@@ -174,23 +171,23 @@ class AsyncState<T> implements AsyncStateInterface<T> {
     }
 
     if (__DEV__) devtools.startUpdate(this);
-    this.currentState = newState;
+    this.state = newState;
     this.version += 1;
     if (__DEV__) devtools.emitUpdate(this);
 
-    if (this.currentState.status === AsyncStateStatus.success) {
-      this.lastSuccess = this.currentState;
+    if (this.state.status === AsyncStateStatus.success) {
+      this.lastSuccess = this.state;
       if (this.isCacheEnabled()) {
         saveCacheAfterSuccessfulUpdate(this);
       }
     }
 
-    if (this.currentState.status !== AsyncStateStatus.pending) {
+    if (this.state.status !== AsyncStateStatus.pending) {
       this.suspender = undefined;
     }
 
     if (notify) {
-      notifySubscribers(this as AsyncStateInterface<any>);
+      notifySubscribers(this as StateInterface<any>);
     }
   }
 
@@ -198,27 +195,30 @@ class AsyncState<T> implements AsyncStateInterface<T> {
     cb,
     subKey?: string | undefined
   ): AbortFn {
+    if (!this.subscriptions) {
+      this.subscriptions = {};
+    }
+
     let that = this;
-    this.subscriptionsMeter += 1;
-    // @ts-ignore
-    let subscriptionKey: string = subKey;
+    this.subscriptionsIndex += 1;
+    let subscriptionKey: string | undefined = subKey;
 
     if (subKey === undefined) {
-      subscriptionKey = `subscription-$${this.subscriptionsMeter}`;
+      subscriptionKey = `subscription-$${this.subscriptionsIndex}`;
     }
 
     function cleanup() {
       that.locks -= 1;
-      delete that.subscriptions[subscriptionKey];
+      delete that.subscriptions![subscriptionKey!];
       if (__DEV__) devtools.emitUnsubscription(that, subscriptionKey);
       if (that.config.resetStateOnDispose === true) {
-        if (Object.values(that.subscriptions).filter(Boolean).length === 0) {
+        if (Object.values(that.subscriptions!).filter(Boolean).length === 0) {
           that.dispose();
         }
       }
     }
 
-    this.subscriptions[subscriptionKey] = {
+    this.subscriptions[subscriptionKey!] = {
       cleanup,
       callback: cb,
       key: subscriptionKey,
@@ -237,14 +237,14 @@ class AsyncState<T> implements AsyncStateInterface<T> {
       throw new Error(`Couldn't replace state to unknown status ${status}.`);
     }
     this.willPerformStateUpdate = true;
-    if (this.currentState?.status === AsyncStateStatus.pending) {
+    if (this.state?.status === AsyncStateStatus.pending) {
       this.abort();
       this.currentAborter = undefined;
     }
 
     let effectiveValue = newValue;
     if (isFn(newValue)) {
-      effectiveValue = (newValue as StateFunctionUpdater<T>)(this.currentState);
+      effectiveValue = (newValue as StateFunctionUpdater<T>)(this.state);
     }
     // @ts-ignore
     const savedProps = cloneProducerProps({
@@ -281,15 +281,18 @@ class AsyncState<T> implements AsyncStateInterface<T> {
 
   invalidateCache(cacheKey?: string) {
     if (this.isCacheEnabled()) {
-      const topLevelParent: AsyncStateInterface<T> = getTopLevelParent(this);
+      const topLevelParent: StateInterface<T> = getTopLevelParent(this);
 
       if (!cacheKey) {
-        topLevelParent.cache = Object.create(null);
-      } else {
+        topLevelParent.cache = {};
+      } else if (topLevelParent.cache) {
         delete topLevelParent.cache[cacheKey];
       }
 
-      if (typeof topLevelParent.config.cacheConfig?.persist === "function") {
+      if (
+        topLevelParent.cache &&
+        typeof topLevelParent.config.cacheConfig?.persist === "function"
+      ) {
         topLevelParent.config.cacheConfig.persist(topLevelParent.cache);
       }
 
@@ -389,7 +392,7 @@ class AsyncState<T> implements AsyncStateInterface<T> {
     ...execArgs: any[]
   ): AbortFn {
     this.willPerformStateUpdate = true;
-    if (this.currentState.status === AsyncStateStatus.pending || this.pendingUpdate) {
+    if (this.state.status === AsyncStateStatus.pending || this.pendingUpdate) {
       if (this.pendingUpdate) {
         clearTimeout(this.pendingUpdate.timeoutId);
         // this.pendingUpdate.callback(); skip the callback!
@@ -405,19 +408,28 @@ class AsyncState<T> implements AsyncStateInterface<T> {
     let onAbortCallbacks: AbortFn[] = [];
 
     if (this.isCacheEnabled()) {
+      const topLevelParent: StateInterface<T> = getTopLevelParent(this);
       const runHash = hash(execArgs, this.payload, this.config.cacheConfig);
-      const cachedState = this.cache[runHash];
+
+      const cachedState = topLevelParent.cache?.[runHash];
 
       if (cachedState) {
         if (didNotExpire(cachedState)) {
-          if (cachedState.state !== this.currentState) {
+          if (cachedState.state !== this.state) {
             this.setState(cachedState.state);
           }
           if (__DEV__) devtools.emitRunConsumedFromCache(this, payload, execArgs);
           return;
         } else {
-          const topLevelParent: AsyncStateInterface<T> = getTopLevelParent(this);
-          delete topLevelParent.cache[runHash];
+          delete topLevelParent.cache![runHash];
+
+          if (
+            topLevelParent.cache &&
+            typeof topLevelParent.config.cacheConfig?.persist === "function"
+          ) {
+            topLevelParent.config.cacheConfig.persist(topLevelParent.cache);
+          }
+
           spreadCacheChangeOnLanes(topLevelParent);
         }
       }
@@ -452,7 +464,7 @@ class AsyncState<T> implements AsyncStateInterface<T> {
         return runIndicators.aborted;
       },
       getState() {
-        return that.currentState;
+        return that.state;
       }
     };
     Object.assign(props, createProducerEffects(props));
@@ -461,7 +473,7 @@ class AsyncState<T> implements AsyncStateInterface<T> {
       updater: T | StateFunctionUpdater<T>,
       status?: AsyncStateStatus
     ): void {
-      if (runIndicators.cleared && that.currentState.status === AsyncStateStatus.aborted) {
+      if (runIndicators.cleared && that.state.status === AsyncStateStatus.aborted) {
         warning("You are emitting while your producer is passing to aborted state." +
           "This has no effect and not supported by the library. The next " +
           "state value on aborted state is the reason of the abort.");
@@ -542,23 +554,39 @@ class AsyncState<T> implements AsyncStateInterface<T> {
     let {key} = mergedConfig;
 
     if (key === undefined) {
-      key = `${this.key}-fork-${this.forkCount + 1}`;
+      key = `${this.key}-fork-${this.forksIndex + 1}`;
     }
 
     const clone = new AsyncState(key, this.originalProducer, this.config);
 
     // if something fail, no need to increment
-    this.forkCount += 1;
+    this.forksIndex += 1;
 
     if (mergedConfig.keepState) {
-      clone.currentState = shallowClone(this.currentState);
+      clone.state = shallowClone(this.state);
       clone.lastSuccess = shallowClone(this.lastSuccess);
     }
     if (mergedConfig.keepCache) {
       clone.cache = this.cache;
     }
 
-    return clone as AsyncStateInterface<T>;
+    return clone as StateInterface<T>;
+  }
+
+  mergePayload(partialPayload: Record<string, any>): void {
+    this.payload = Object.assign(this.payload, partialPayload);
+  }
+
+  replaceCache(cacheKey: string, cache: CachedState<T>): void {
+    if (!this.isCacheEnabled()) {
+      return;
+    }
+    const topLevelParent = getTopLevelParent(this);
+    if (!topLevelParent.cache) {
+      topLevelParent.cache = {};
+    }
+    topLevelParent.cache[cacheKey] = cache;
+    spreadCacheChangeOnLanes(topLevelParent);
   }
 }
 
@@ -570,7 +598,7 @@ function nextUniqueId() {
   return ++uniqueId;
 }
 
-function readAsyncStateFromSource<T>(possiblySource: AsyncStateSource<T>): AsyncStateInterface<T> {
+function readAsyncStateFromSource<T>(possiblySource: Source<T>): StateInterface<T> {
   try {
     const candidate = possiblySource.constructor(asyncStatesKey);
     if (!(candidate instanceof AsyncState)) {
@@ -583,7 +611,7 @@ function readAsyncStateFromSource<T>(possiblySource: AsyncStateSource<T>): Async
 }
 
 function waitForAsyncCache<T>(
-  asyncState: AsyncStateInterface<T>,
+  asyncState: StateInterface<T>,
   promise: Promise<Record<string, CachedState<T>>>
 ) {
   promise.then(asyncCache => {
@@ -592,7 +620,7 @@ function waitForAsyncCache<T>(
 }
 
 function resolveCache<T>(
-  asyncState: AsyncStateInterface<T>,
+  asyncState: StateInterface<T>,
   resolvedCache: Record<string, CachedState<T>>
 ) {
   asyncState.cache = resolvedCache;
@@ -614,12 +642,12 @@ function scheduleDelayedPendingUpdate<T>(
   function callback() {
     // callback always sets the state with a pending status
     if (__DEV__) devtools.startUpdate(asyncState);
-    asyncState.currentState = newState; // <-- status is pending!
+    asyncState.state = newState; // <-- status is pending!
     asyncState.pendingUpdate = null;
     if (__DEV__) devtools.emitUpdate(asyncState);
 
     if (notify) {
-      notifySubscribers(asyncState as AsyncStateInterface<T>);
+      notifySubscribers(asyncState as StateInterface<T>);
     }
   }
 
@@ -627,19 +655,22 @@ function scheduleDelayedPendingUpdate<T>(
   asyncState.pendingUpdate = {callback, timeoutId};
 }
 
-function saveCacheAfterSuccessfulUpdate<T>(asyncState: AsyncStateInterface<T>) {
-  const {cache, config, currentState} = asyncState;
-  const runHash = hash(
-    currentState.props?.args,
-    currentState.props?.payload,
-    config.cacheConfig
-  );
-  if (cache[runHash]?.state !== currentState) {
-    const topLevelParent: AsyncStateInterface<T> = getTopLevelParent(asyncState);
+function saveCacheAfterSuccessfulUpdate<T>(instance: StateInterface<T>) {
+  const topLevelParent: StateInterface<T> = getTopLevelParent(instance);
+  const {config: {cacheConfig}} = topLevelParent;
+  const {state} = instance;
+  const {props} = state;
+
+  if (!topLevelParent.cache) {
+    topLevelParent.cache = {};
+  }
+
+  const runHash = hash(props?.args, props?.payload, cacheConfig);
+  if (topLevelParent.cache[runHash]?.state !== state) {
 
     topLevelParent.cache[runHash] = {
-      state: currentState,
-      deadline: config.cacheConfig?.getDeadline?.(currentState) || Infinity,
+      state: state,
+      deadline: cacheConfig?.getDeadline?.(state) || Infinity,
       addedAt: Date.now(),
     };
 
@@ -661,7 +692,7 @@ function loadCache<T>(asyncState: AsyncState<T>) {
 
   // inherit cache from the parent if exists!
   if (asyncState.parent !== null) {
-    const topLevelParent: AsyncStateInterface<T> = getTopLevelParent(asyncState);
+    const topLevelParent: StateInterface<T> = getTopLevelParent(asyncState);
     asyncState.cache = topLevelParent.cache;
     return;
   }
@@ -679,13 +710,16 @@ function loadCache<T>(asyncState: AsyncState<T>) {
   }
 }
 
-function notifySubscribers(asyncState: AsyncStateInterface<any>) {
+function notifySubscribers(asyncState: StateInterface<any>) {
+  if (!asyncState.subscriptions) {
+    return;
+  }
   Object.values(asyncState.subscriptions).forEach(subscription => {
-    subscription.callback(asyncState.currentState);
+    subscription.callback(asyncState.state);
   });
 }
 
-function getTopLevelParent<T>(base: AsyncStateInterface<T>): AsyncStateInterface<T> {
+function getTopLevelParent<T>(base: StateInterface<T>): StateInterface<T> {
   let current = base;
   while (current.parent !== null) {
     current = current.parent;
@@ -693,7 +727,10 @@ function getTopLevelParent<T>(base: AsyncStateInterface<T>): AsyncStateInterface
   return current;
 }
 
-function spreadCacheChangeOnLanes<T>(topLevelParent: AsyncStateInterface<T>) {
+function spreadCacheChangeOnLanes<T>(topLevelParent: StateInterface<T>) {
+  if (!topLevelParent.lanes) {
+    return;
+  }
   Object.values(topLevelParent.lanes)
     .forEach(lane => {
       lane.cache = topLevelParent.cache;
@@ -701,8 +738,8 @@ function spreadCacheChangeOnLanes<T>(topLevelParent: AsyncStateInterface<T>) {
     });
 }
 
-function makeSource<T>(asyncState: AsyncStateInterface<T>): Readonly<AsyncStateSource<T>> {
-  const source: AsyncStateSource<T> = constructAsyncStateSource(asyncState);
+function makeSource<T>(asyncState: StateInterface<T>): Readonly<Source<T>> {
+  const source: Source<T> = constructAsyncStateSource(asyncState);
   source.key = asyncState.key;
 
   Object.defineProperty(source, sourceIsSourceSymbol, {
@@ -738,19 +775,19 @@ function createRunFunction(
     config: ProducerPropsRunConfig | null,
     ...args: any[]
   ): AbortFn {
-    let asyncState: AsyncStateInterface<T> | undefined;
+    let asyncState: StateInterface<T> | undefined;
     const producerEffectsCreator =
       manager?.producerEffectsCreator || standaloneProducerEffectsCreator;
 
     if (isAsyncStateSource(input)) {
-      asyncState = readAsyncStateFromSource(input as AsyncStateSource<T>).getLane(config?.lane);
+      asyncState = readAsyncStateFromSource(input as Source<T>).getLane(config?.lane);
     } else if (isFn(input)) {
       asyncState = new AsyncState(nextKey(), input as Producer<T>);
       if (config?.payload) {
         asyncState.payload = shallowClone(Object.create(null), config.payload);
       }
     } else if (manager !== null) {
-      asyncState = manager.get(input as AsyncStateKey);
+      asyncState = manager.get(input as string);
 
       if (asyncState && config?.lane) {
         asyncState = asyncState.getLane(config.lane);
@@ -773,19 +810,19 @@ function createRunPFunction(manager, props) {
     config: ProducerPropsRunConfig | null,
     ...args: any[]
   ): Promise<State<T>> | undefined {
-    let asyncState: AsyncStateInterface<T>;
+    let asyncState: StateInterface<T>;
     const producerEffectsCreator =
       manager?.producerEffectsCreator || standaloneProducerEffectsCreator;
 
     if (isAsyncStateSource(input)) {
-      asyncState = readAsyncStateFromSource(input as AsyncStateSource<T>).getLane(config?.lane);
+      asyncState = readAsyncStateFromSource(input as Source<T>).getLane(config?.lane);
     } else if (isFn(input)) {
       asyncState = new AsyncState(nextKey(), input as Producer<T>);
       if (config?.payload) {
         asyncState.payload = shallowClone(Object.create(null), config.payload);
       }
     } else {
-      asyncState = manager?.get(input as AsyncStateKey);
+      asyncState = manager?.get(input as string);
 
       if (config?.lane) {
         asyncState = asyncState.getLane(config.lane);
@@ -820,14 +857,14 @@ function createSelectFunction<T>(manager: AsyncStateManagerInterface | null) {
     lane?: string,
   ): State<T> | undefined {
     if (isAsyncStateSource(input)) {
-      return readAsyncStateFromSource(input as AsyncStateSource<T>).getLane(lane).getState();
+      return readAsyncStateFromSource(input as Source<T>).getLane(lane).getState();
     }
 
-    let managerAsyncState = manager?.get(input as AsyncStateKey);
+    let managerAsyncState = manager?.get(input as string);
     if (!managerAsyncState) {
       return undefined;
     }
-    return (managerAsyncState as AsyncStateInterface<T>).getLane(lane).getState();
+    return (managerAsyncState as StateInterface<T>).getLane(lane).getState();
   }
 }
 

@@ -1,6 +1,6 @@
 import {warning} from "shared";
 import {
-  AsyncStateSubscriptionMode,
+  SubscriptionMode,
   UseAsyncStateConfiguration
 } from "../../types.internal";
 import {computeCallerName} from "./useCallerName";
@@ -27,7 +27,7 @@ const forkProperties = [
 ];
 
 
-const irrelevantPropertiesByMode: Record<AsyncStateSubscriptionMode, string[]> = {
+const irrelevantPropertiesByMode: Record<SubscriptionMode, string[]> = {
   LISTEN: [...creationProperties, ...hoistProperties, ...forkProperties],
   HOIST: [...forkProperties],
   STANDALONE: [...hoistProperties, ...forkProperties],
@@ -40,7 +40,7 @@ const irrelevantPropertiesByMode: Record<AsyncStateSubscriptionMode, string[]> =
 };
 
 export function warnInDevAboutIrrelevantUseAsyncStateConfiguration(
-  mode: AsyncStateSubscriptionMode,
+  mode: SubscriptionMode,
   userConfig: UseAsyncStateConfiguration<any, any>
 ) {
   const irrelevantProperties = irrelevantPropertiesByMode[mode];

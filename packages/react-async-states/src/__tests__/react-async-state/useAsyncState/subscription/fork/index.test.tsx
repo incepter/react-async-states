@@ -1,7 +1,7 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {
-  AsyncStateSubscriptionMode,
+  SubscriptionMode,
   UseAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../react/useAsyncState";
@@ -59,9 +59,9 @@ describe('should fork an initially hoisted async state', () => {
 
     // then
     expect(screen.getByTestId("mode-counter").innerHTML)
-      .toEqual(AsyncStateSubscriptionMode.LISTEN);
+      .toEqual(SubscriptionMode.LISTEN);
     expect(screen.getByTestId("mode-counter-fork").innerHTML)
-      .toEqual(AsyncStateSubscriptionMode.FORK);
+      .toEqual(SubscriptionMode.FORK);
 
     expect(screen.getByTestId("result-counter").innerHTML).toEqual("0");
     expect(screen.getByTestId("result-counter-fork").innerHTML).toEqual("0");

@@ -19,7 +19,7 @@ describe('AsyncState - subscriptions', () => {
     let myAsyncState = new AsyncState(key, producer, myConfig);
 
     // then
-    expect(myAsyncState.subscriptionsMeter).toBe(0);
+    expect(myAsyncState.subscriptionsIndex).toBe(0);
 
     let unsubscribe = myAsyncState.subscribe(subscriptionFn);
     expect(typeof unsubscribe).toBe("function");
@@ -61,7 +61,7 @@ describe('AsyncState - subscriptions', () => {
       ]
     );
     expect(subscriptionFn).toHaveBeenCalledTimes(2);
-    expect(myAsyncState.currentState).toEqual({
+    expect(myAsyncState.state).toEqual({
       props: {
         args: [],
         payload: {},
@@ -113,7 +113,7 @@ describe('AsyncState - subscriptions', () => {
       ]
     );
     expect(subscriptionFn).toHaveBeenCalledTimes(1);
-    expect(myAsyncState.currentState).toEqual({
+    expect(myAsyncState.state).toEqual({
       props: null,
       status: AsyncStateStatus.initial,
       data: null,
@@ -142,7 +142,7 @@ describe('AsyncState - subscriptions', () => {
 
     expect(subscriptionFn.mock.calls).toEqual([]);
     expect(subscriptionFn).toHaveBeenCalledTimes(0);
-    expect(myAsyncState.currentState).toEqual({ // original async state resolved, but we got notified neither by pending nor success
+    expect(myAsyncState.state).toEqual({ // original async state resolved, but we got notified neither by pending nor success
       props: {
         args: [],
         payload: {},

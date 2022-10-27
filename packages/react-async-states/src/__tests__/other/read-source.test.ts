@@ -10,7 +10,7 @@ describe('readSource', () => {
     const asyncState = readAsyncStateFromSource(source);
 
     // then
-    expect(asyncState.currentState.data).toEqual(0);
+    expect(asyncState.state.data).toEqual(0);
   });
   it('should throw on invalid source', () => {
     // given

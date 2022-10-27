@@ -1,7 +1,7 @@
 import * as React from "react";
 import {fireEvent, render, screen} from "@testing-library/react";
 import {
-  AsyncStateSubscriptionMode,
+  SubscriptionMode,
   UseAsyncState
 } from "../../../../types.internal";
 import {useAsyncState} from "../../../../react/useAsyncState";
@@ -52,7 +52,7 @@ describe('should add static payload to async state', () => {
     const incrementBtn = screen.getByTestId("increment");
     // then
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual(AsyncStateSubscriptionMode.OUTSIDE_PROVIDER);
+      .toEqual(SubscriptionMode.OUTSIDE_PROVIDER);
 
     // +1
     fireEvent.click(incrementBtn);

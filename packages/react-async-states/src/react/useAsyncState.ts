@@ -9,14 +9,14 @@ import {
   UseAsyncState,
   MixedConfig
 } from "../types.internal";
-import {AsyncStateKey, AsyncStateSource, Producer, State} from "../async-state";
+import {Source, Producer, State} from "../async-state";
 
 // the real implementation is in useAsyncStateBase.tsx
 
 // default
 
-function useAsyncStateExport<T>(key: AsyncStateKey, deps?: any[]): UseAsyncState<T>
-function useAsyncStateExport<T>(source: AsyncStateSource<T>, deps?: any[])
+function useAsyncStateExport<T>(key: string, deps?: any[]): UseAsyncState<T>
+function useAsyncStateExport<T>(source: Source<T>, deps?: any[])
 function useAsyncStateExport<T>(producer: Producer<T>, deps?: any[])
 function useAsyncStateExport<T, E>(configWithKeyWithSelector: ConfigWithKeyWithSelector<T, E>, deps?: any[])
 function useAsyncStateExport<T>(configWithKeyWithoutSelector: ConfigWithKeyWithoutSelector<T>, deps?: any[])

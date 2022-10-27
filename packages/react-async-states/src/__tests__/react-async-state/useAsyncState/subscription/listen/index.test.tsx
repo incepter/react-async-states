@@ -1,7 +1,7 @@
 import * as React from "react";
 import {render, screen} from "@testing-library/react";
 import {
-  AsyncStateSubscriptionMode,
+  SubscriptionMode,
   UseAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../react/useAsyncState";
@@ -57,13 +57,13 @@ describe('should subscribe to an async state in provider', () => {
 
     // then
     expect(screen.getByTestId("mode-counter").innerHTML)
-      .toEqual(AsyncStateSubscriptionMode.LISTEN);
+      .toEqual(SubscriptionMode.LISTEN);
 
     expect(screen.getByTestId("mode-todos").innerHTML)
-      .toEqual(AsyncStateSubscriptionMode.LISTEN);
+      .toEqual(SubscriptionMode.LISTEN);
 
     expect(screen.getByTestId("mode-doesntExist").innerHTML)
-      .toEqual(AsyncStateSubscriptionMode.WAITING);
+      .toEqual(SubscriptionMode.WAITING);
 
     expect(screen.getByTestId("result-todos").innerHTML)
       .toEqual(JSON.stringify({

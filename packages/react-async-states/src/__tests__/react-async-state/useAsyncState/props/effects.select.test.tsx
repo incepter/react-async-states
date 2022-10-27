@@ -4,14 +4,14 @@ import {createSource} from "../../../../async-state/create-async-state";
 import {useAsyncState} from "../../../../react/useAsyncState";
 import {UseAsyncState} from "../../../../types.internal";
 import {AsyncStateProvider} from "../../../../react/AsyncStateProvider";
-import {AsyncStateSource} from "../../../../async-state";
+import {Source} from "../../../../async-state";
 import {State} from "../../../../types";
 
 describe('should select from another async state', () => {
   it('should select by source', () => {
     // given
     const counterSource = createSource("counter", null, {initialValue: 30});
-    const loggerSource: AsyncStateSource<string> = createSource("logger", props => {
+    const loggerSource: Source<string> = createSource("logger", props => {
       const state = props.select(counterSource);
       if (!state?.data) {
         return "does not exist.";
@@ -47,7 +47,7 @@ describe('should select from another async state', () => {
   it('should select by key', () => {
     // given
     const counterSource = createSource("counter", null, {initialValue: 15});
-    const loggerSource: AsyncStateSource<string> = createSource("logger", props => {
+    const loggerSource: Source<string> = createSource("logger", props => {
       const state = props.select("counter") as State<number>;
       if (!state?.data) {
         return "does not exist.";

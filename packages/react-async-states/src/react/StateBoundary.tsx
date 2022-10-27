@@ -5,7 +5,7 @@ import {
   State
 } from "../async-state";
 import {
-  AsyncStateSubscriptionMode,
+  SubscriptionMode,
   StateBoundaryProps,
   UseAsyncState,
 } from "../types.internal";
@@ -74,8 +74,8 @@ export function FetchThenRenderBoundary<T, E>(props: StateBoundaryProps<T, E>) {
   const result = useAsyncState.auto(props.config, props.dependencies);
   const self = React.useMemo<FetchThenRenderSelf>(constructSelf, []);
 
-  if (result.mode === AsyncStateSubscriptionMode.NOOP ||
-    result.mode === AsyncStateSubscriptionMode.WAITING) {
+  if (result.mode === SubscriptionMode.NOOP ||
+    result.mode === SubscriptionMode.WAITING) {
     throw new Error("FetchThenRenderBoundary is not supported with NOOP and WAITING modes");
   }
 

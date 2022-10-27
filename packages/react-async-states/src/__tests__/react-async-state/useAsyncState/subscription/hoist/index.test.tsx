@@ -1,7 +1,7 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {
-  AsyncStateSubscriptionMode,
+  SubscriptionMode,
   UseAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../react/useAsyncState";
@@ -72,7 +72,7 @@ describe('should hoist an async state to provider', () => {
 
     // then
     expect(screen.getByTestId("mode-counter").innerHTML)
-      .toEqual(AsyncStateSubscriptionMode.WAITING);
+      .toEqual(SubscriptionMode.WAITING);
 
 
     act(() => {
@@ -80,13 +80,13 @@ describe('should hoist an async state to provider', () => {
     });
 
     expect(screen.getByTestId("hoister-mode").innerHTML)
-      .toEqual(AsyncStateSubscriptionMode.HOIST);
+      .toEqual(SubscriptionMode.HOIST);
     await act(async () => {
       await flushPromises();
     });
 
     expect(screen.getByTestId("mode-counter").innerHTML)
-      .toEqual(AsyncStateSubscriptionMode.LISTEN);
+      .toEqual(SubscriptionMode.LISTEN);
 
     expect(screen.getByTestId("result-counter").innerHTML)
       .toEqual(JSON.stringify({

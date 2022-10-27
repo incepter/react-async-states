@@ -21,7 +21,7 @@ describe('AsyncState - run - abort', () => {
     myAsyncState.subscribe(subscription);
     // then
     // should have initial status
-    expect(myAsyncState.currentState).toEqual({
+    expect(myAsyncState.state).toEqual({
       props: null,
       data: null,
       timestamp: TESTS_TS,
@@ -68,7 +68,7 @@ describe('AsyncState - run - abort', () => {
       status: AsyncStateStatus.aborted,
     });
 
-    expect(myAsyncState.currentState).toEqual({
+    expect(myAsyncState.state).toEqual({
       props: {
         args: [],
         lastSuccess: {
@@ -87,7 +87,7 @@ describe('AsyncState - run - abort', () => {
     });
 
     // async state should be in success state with data
-    expect(myAsyncState.currentState).toEqual({
+    expect(myAsyncState.state).toEqual({
       props: {
         args: [],
         lastSuccess: {
@@ -127,9 +127,9 @@ describe('AsyncState - run - abort', () => {
 
     // now, let's check that a second call to the abort function does not update state or subscribers
     subscription.mockClear();
-    let currentStateReference = myAsyncState.currentState;
+    let currentStateReference = myAsyncState.state;
     abort("whatever is ignored");
-    expect(myAsyncState.currentState).toBe(currentStateReference);
+    expect(myAsyncState.state).toBe(currentStateReference);
 
     expect(subscription).not.toHaveBeenCalled();
 
@@ -138,7 +138,7 @@ describe('AsyncState - run - abort', () => {
     });
 
     // async state should be in success state with data
-    expect(myAsyncState.currentState).toEqual({
+    expect(myAsyncState.state).toEqual({
       props: {
         args: [],
         payload: {},
@@ -173,7 +173,7 @@ describe('AsyncState - run - abort', () => {
       await jest.advanceTimersByTime(50);
     });
 
-    expect(myAsyncState.currentState.status).toBe(AsyncStateStatus.pending);
+    expect(myAsyncState.state.status).toBe(AsyncStateStatus.pending);
 
     // rerun while pending should interrupt previous
     subscription.mockClear();
@@ -190,7 +190,7 @@ describe('AsyncState - run - abort', () => {
     });
 
     // async state should be in success state with data
-    expect(myAsyncState.currentState).toEqual({
+    expect(myAsyncState.state).toEqual({
       props: {
         args: [],
         lastSuccess: {

@@ -1,4 +1,4 @@
-import {AsyncStateInterface, AsyncStateSource} from "./types";
+import {StateInterface, Source} from "./types";
 import {asyncStatesKey} from "./utils";
 
 function Secret() {
@@ -17,7 +17,7 @@ function Secret() {
 
 function objectWithHiddenProperty(
   key: Object,
-  value: AsyncStateInterface<any>
+  value: StateInterface<any>
 ) {
   // @ts-ignore
   let output = new (Secret())();
@@ -26,6 +26,6 @@ function objectWithHiddenProperty(
   return output;
 }
 
-export function constructAsyncStateSource<T>(asyncState: AsyncStateInterface<T>): AsyncStateSource<T> {
+export function constructAsyncStateSource<T>(asyncState: StateInterface<T>): Source<T> {
   return objectWithHiddenProperty(asyncStatesKey, asyncState);
 }

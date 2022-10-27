@@ -10,8 +10,8 @@ import {
 } from "shared";
 import {AsyncStateContext} from "./context";
 import {
-  AsyncStateContextValue,
-  AsyncStateSubscriptionMode,
+  StateContextValue,
+  SubscriptionMode,
   CleanupFn,
   UseAsyncStateRef,
   PartialUseAsyncStateConfiguration,
@@ -27,9 +27,8 @@ import {
 } from "../types.internal";
 import AsyncState, {
   AbortFn,
-  AsyncStateInterface,
-  AsyncStateKey,
-  AsyncStateSource,
+  StateInterface,
+  Source,
   AsyncStateStatus, Producer,
   State
 } from "../async-state";
@@ -151,7 +150,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
 
   function subscribeToAsyncState() {
     function onStateChange() {
-      const newState = asyncState.currentState;
+      const newState = asyncState.state;
       const newSelectedState = readStateFromAsyncState(asyncState, selector);
 
       if (!areEqual(newSelectedState, selfMemo.latestData)) {
@@ -199,13 +198,13 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
 // but this will require additional memoization to add the other properties
 // that UseAsyncState has (abort, mergePayload, invalidateCache, run, replaceState ...)
 export function useSource<T>(
-  source: AsyncStateSource<T>
+  source: Source<T>
 ): UseAsyncState<T, State<T>> {
   return useSourceLane(source);
 }
 
 export function useSourceLane<T>(
-  source: AsyncStateSource<T>,
+  source: Source<T>,
   lane?: string,
 ): UseAsyncState<T, State<T>> {
   let subscriptionKey;
@@ -239,10 +238,10 @@ export function useSourceLane<T>(
   return selectedValue;
 
   function calculateSelectedValue(): Readonly<UseAsyncState<T, State<T>>> {
-    let mode = AsyncStateSubscriptionMode.SOURCE;
+    let mode = SubscriptionMode.SOURCE;
     return makeUseAsyncStateReturnValue(
       asyncState,
-      asyncState.currentState,
+      asyncState.state,
       source.key,
       runAsyncStateSubscriptionFn(mode, asyncState, contextValue),
       mode
@@ -254,7 +253,7 @@ export function useSourceLane<T>(
   }
 
   function subscribeToAsyncState() {
-    let mode = AsyncStateSubscriptionMode.SOURCE;
+    let mode = SubscriptionMode.SOURCE;
     let runFn = runAsyncStateSubscriptionFn(mode, asyncState, contextValue);
 
     return newSubscribeToAsyncState(
@@ -291,7 +290,7 @@ export function useProducer<T>(
 ): UseAsyncState<T, State<T>> {
   let subscriptionKey;
   const contextValue = React.useContext(AsyncStateContext);
-  const asyncState = React.useMemo<AsyncStateInterface<T>>(createInstance, emptyArray);
+  const asyncState = React.useMemo<StateInterface<T>>(createInstance, emptyArray);
   const latestVersion = React.useRef<number | undefined>(asyncState.version);
 
   // declare a state snapshot initialized by the initial selected value
@@ -329,10 +328,10 @@ export function useProducer<T>(
   }
 
   function calculateSelectedValue(): Readonly<UseAsyncState<T, State<T>>> {
-    let mode = AsyncStateSubscriptionMode.STANDALONE;
+    let mode = SubscriptionMode.STANDALONE;
     return makeUseAsyncStateReturnValue(
       asyncState,
-      asyncState.currentState,
+      asyncState.state,
       asyncState.key,
       runAsyncStateSubscriptionFn(mode, asyncState, contextValue),
       mode
@@ -344,7 +343,7 @@ export function useProducer<T>(
   }
 
   function subscribeToAsyncState() {
-    let mode = AsyncStateSubscriptionMode.STANDALONE;
+    let mode = SubscriptionMode.STANDALONE;
     let runFn = runAsyncStateSubscriptionFn(mode, asyncState, contextValue);
 
     return newSubscribeToAsyncState(
@@ -433,8 +432,8 @@ function assignAutomaticKeyIfNotExists(newConfig, newMode) {
     return;
   }
   if (
-    newMode === AsyncStateSubscriptionMode.SOURCE ||
-    newMode === AsyncStateSubscriptionMode.SOURCE_FORK
+    newMode === SubscriptionMode.SOURCE ||
+    newMode === SubscriptionMode.SOURCE_FORK
   ) {
     newConfig.key = newConfig.source!.key;
   } else {
@@ -446,7 +445,7 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
   // the configuration that the developer emitted, can be of many forms
   mixedConfig: MixedConfig<T, E>,
   // the context value, nullable
-  contextValue: AsyncStateContextValue | null,
+  contextValue: StateContextValue | null,
   // the current version of the external calculation
   guard: number,
   // the ref holding previous configuration
@@ -469,7 +468,7 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
     warnInDevAboutIrrelevantUseAsyncStateConfiguration(newMode, newConfig);
   }
 
-  let newAsyncState: AsyncStateInterface<T>;
+  let newAsyncState: StateInterface<T>;
   let previousInstance = ownRef.subscriptionInfo?.asyncState;
 
   if (recalculateInstance) {
@@ -490,7 +489,7 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
   let output: SubscriptionInfo<T, E>;
 
   if (shouldCalculateNewOutput) {
-    let configKey: AsyncStateKey = newConfig.key as AsyncStateKey; // not falsy
+    let configKey: string = newConfig.key as string; // not falsy
     let runFn = runAsyncStateSubscriptionFn(newMode, newAsyncState, contextValue);
     let disposeFn = disposeAsyncStateSubscriptionFn(newMode, newAsyncState, contextValue);
 
@@ -543,17 +542,17 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
 // and cascade down this power
 function runAsyncStateSubscriptionFn<T, E>(
   // the subscription mode
-  mode: AsyncStateSubscriptionMode,
+  mode: SubscriptionMode,
   // the instance
-  asyncState: AsyncStateInterface<T>,
+  asyncState: StateInterface<T>,
   // the context value, if applicable
   contextValue: UseAsyncStateContextType
 ): (...args: any[]) => AbortFn {
   return function run(...args) {
     switch (mode) {
-      case AsyncStateSubscriptionMode.SOURCE:
-      case AsyncStateSubscriptionMode.STANDALONE:
-      case AsyncStateSubscriptionMode.SOURCE_FORK:
+      case SubscriptionMode.SOURCE:
+      case SubscriptionMode.STANDALONE:
+      case SubscriptionMode.SOURCE_FORK:
         return contextValue !== null ?
           contextValue.run(
             asyncState,
@@ -561,19 +560,19 @@ function runAsyncStateSubscriptionFn<T, E>(
           )
           :
           asyncState.run(standaloneProducerEffectsCreator, ...args);
-      case AsyncStateSubscriptionMode.OUTSIDE_PROVIDER:
+      case SubscriptionMode.OUTSIDE_PROVIDER:
         return asyncState.run(standaloneProducerEffectsCreator, ...args);
-      case AsyncStateSubscriptionMode.FORK:
-      case AsyncStateSubscriptionMode.HOIST:
-      case AsyncStateSubscriptionMode.LISTEN: {
-        return (contextValue as AsyncStateContextValue).run(
+      case SubscriptionMode.FORK:
+      case SubscriptionMode.HOIST:
+      case SubscriptionMode.LISTEN: {
+        return (contextValue as StateContextValue).run(
           asyncState,
           ...args
         );
       }
       // NoOp - should not happen
-      case AsyncStateSubscriptionMode.NOOP:
-      case AsyncStateSubscriptionMode.WAITING:
+      case SubscriptionMode.NOOP:
+      case SubscriptionMode.WAITING:
       default:
         return undefined;
     }
@@ -583,23 +582,23 @@ function runAsyncStateSubscriptionFn<T, E>(
 // we only dispose what we hoist, other states are disposed
 // automatically when their subscribers go to 0
 function disposeAsyncStateSubscriptionFn<T, E>(
-  mode: AsyncStateSubscriptionMode,
-  asyncState: AsyncStateInterface<T>,
+  mode: SubscriptionMode,
+  asyncState: StateInterface<T>,
   contextValue: UseAsyncStateContextType
 ): () => (boolean | undefined) {
   return function dispose() {
     switch (mode) {
-      case AsyncStateSubscriptionMode.FORK:
-      case AsyncStateSubscriptionMode.HOIST:
-        return (contextValue as AsyncStateContextValue).dispose(asyncState);
+      case SubscriptionMode.FORK:
+      case SubscriptionMode.HOIST:
+        return (contextValue as StateContextValue).dispose(asyncState);
       // NoOp - should not happen
-      case AsyncStateSubscriptionMode.SOURCE:
-      case AsyncStateSubscriptionMode.SOURCE_FORK:
-      case AsyncStateSubscriptionMode.LISTEN:
-      case AsyncStateSubscriptionMode.STANDALONE:
-      case AsyncStateSubscriptionMode.OUTSIDE_PROVIDER:
-      case AsyncStateSubscriptionMode.NOOP:
-      case AsyncStateSubscriptionMode.WAITING:
+      case SubscriptionMode.SOURCE:
+      case SubscriptionMode.SOURCE_FORK:
+      case SubscriptionMode.LISTEN:
+      case SubscriptionMode.STANDALONE:
+      case SubscriptionMode.OUTSIDE_PROVIDER:
+      case SubscriptionMode.NOOP:
+      case SubscriptionMode.WAITING:
       default:
         return undefined;
     }
@@ -609,24 +608,24 @@ function disposeAsyncStateSubscriptionFn<T, E>(
 // this functions search for the instance that you desire to subscribe to
 function inferAsyncStateInstance<T, E>(
   // the subscription mode
-  mode: AsyncStateSubscriptionMode,
+  mode: SubscriptionMode,
   // the configuration
   configuration: UseAsyncStateConfiguration<T, E>,
   // the context, if applicable
   contextValue: UseAsyncStateContextType
-): AsyncStateInterface<T> {
+): StateInterface<T> {
   const candidate = contextValue
-    ?.get(configuration.key as string) as AsyncStateInterface<T>;
+    ?.get(configuration.key as string) as StateInterface<T>;
 
   switch (mode) {
-    case AsyncStateSubscriptionMode.FORK:
+    case SubscriptionMode.FORK:
       // @ts-ignore
       // contextValue is not null here, because we decide the mode based on it!
       return contextValue.fork(
         configuration.key as string,
         configuration.forkConfig
-      ) as AsyncStateInterface<T>;
-    case AsyncStateSubscriptionMode.HOIST:
+      ) as StateInterface<T>;
+    case SubscriptionMode.HOIST:
       const {
         key,
         producer,
@@ -642,7 +641,7 @@ function inferAsyncStateInstance<T, E>(
       // @ts-ignore
       // contextValue is not null here, because we decide the mode based on it!
       return contextValue.hoist({
-        key: key as AsyncStateKey,
+        key: key as string,
         producer,
         runEffect,
         cacheConfig,
@@ -652,25 +651,25 @@ function inferAsyncStateInstance<T, E>(
         runEffectDurationMs,
         hoistToProviderConfig,
       });
-    case AsyncStateSubscriptionMode.LISTEN:
+    case SubscriptionMode.LISTEN:
       return candidate;
-    case AsyncStateSubscriptionMode.STANDALONE:
-    case AsyncStateSubscriptionMode.OUTSIDE_PROVIDER:
+    case SubscriptionMode.STANDALONE:
+    case SubscriptionMode.OUTSIDE_PROVIDER:
       return new AsyncState(
-        configuration.key as AsyncStateKey,
+        configuration.key as string,
         configuration.producer,
         readProducerConfigFromSubscriptionConfig(configuration)
       );
-    case AsyncStateSubscriptionMode.SOURCE:
+    case SubscriptionMode.SOURCE:
       return readAsyncStateFromSource(
-        configuration.source as AsyncStateSource<T>);
-    case AsyncStateSubscriptionMode.SOURCE_FORK: {
+        configuration.source as Source<T>);
+    case SubscriptionMode.SOURCE_FORK: {
       const sourceAsyncState = readAsyncStateFromSource(
-        configuration.source as AsyncStateSource<T>);
+        configuration.source as Source<T>);
       return sourceAsyncState.fork(configuration.forkConfig);
     }
-    case AsyncStateSubscriptionMode.NOOP:
-    case AsyncStateSubscriptionMode.WAITING:
+    case SubscriptionMode.NOOP:
+    case SubscriptionMode.WAITING:
       // @ts-ignore
       return null;
     default:
@@ -689,63 +688,63 @@ function createEmptyObject<T, E>(): UseAsyncStateRef<T, E> {
 function inferSubscriptionMode<T, E>(
   contextValue: UseAsyncStateContextType,
   configuration: UseAsyncStateConfiguration<T, E>
-): AsyncStateSubscriptionMode {
+): SubscriptionMode {
   // the subscription via source passes directly
   if (configuration[sourceConfigurationSecretSymbol] === true) {
     return configuration.fork
       ?
-      AsyncStateSubscriptionMode.SOURCE_FORK
+      SubscriptionMode.SOURCE_FORK
       :
-      AsyncStateSubscriptionMode.SOURCE;
+      SubscriptionMode.SOURCE;
   }
 
   if (contextValue === null) {
-    return AsyncStateSubscriptionMode.OUTSIDE_PROVIDER;
+    return SubscriptionMode.OUTSIDE_PROVIDER;
   }
 
   const {key, fork, hoistToProvider, producer} = configuration;
   if (key === undefined && configuration.source?.key === undefined) {
-    return AsyncStateSubscriptionMode.STANDALONE;
+    return SubscriptionMode.STANDALONE;
   }
 
-  const existsInProvider = !!contextValue.get(key as AsyncStateKey);
+  const existsInProvider = !!contextValue.get(key as string);
 
   // early decide that this is a listener and return it immediately
   // because this is the most common use case that it will be
   // we'll be optimizing this path first
   if (existsInProvider && !hoistToProvider && !fork) {
-    return AsyncStateSubscriptionMode.LISTEN;
+    return SubscriptionMode.LISTEN;
   }
 
   // we dont want to hoist or fork
   if (!hoistToProvider && !fork && producer) {
-    return AsyncStateSubscriptionMode.STANDALONE;
+    return SubscriptionMode.STANDALONE;
   }
 
   // we want to hoist while (not in provider or we dont want to fork)
   if (hoistToProvider && (!existsInProvider || !fork)) {
-    return AsyncStateSubscriptionMode.HOIST;
+    return SubscriptionMode.HOIST;
   }
 
   // fork a hoisted
   // the provider will hoist it again
   if (fork && existsInProvider) {
-    return AsyncStateSubscriptionMode.FORK;
+    return SubscriptionMode.FORK;
   }
 
   // not found in provider; so either a mistake, or still not hoisted from
   if (!existsInProvider) {
     // waiting, or may be we should throw ?
-    return AsyncStateSubscriptionMode.WAITING;
+    return SubscriptionMode.WAITING;
   }
 
-  return AsyncStateSubscriptionMode.NOOP; // we should not be here
+  return SubscriptionMode.NOOP; // we should not be here
 }
 
 
 function shouldRecalculateInstance<T, E>(
   newConfig: UseAsyncStateConfiguration<T, E>,
-  newMode: AsyncStateSubscriptionMode,
+  newMode: SubscriptionMode,
   newGuard: Object,
   oldSubscriptionInfo: SubscriptionInfo<T, E> | undefined
 ): boolean {
@@ -768,11 +767,11 @@ function shouldRecalculateInstance<T, E>(
 
 function watchOverAsyncState<T, E = State<T>>(
   // the instance
-  asyncState: AsyncStateInterface<T>,
+  asyncState: StateInterface<T>,
   // this function only works inside provider, todo: remove the | null
-  contextValue: AsyncStateContextValue | null,
+  contextValue: StateContextValue | null,
   // the watching mode (waiting, listen, hoist..)
-  mode: AsyncStateSubscriptionMode,
+  mode: SubscriptionMode,
   // the configuration, will read key and hoistToProviderConfig in case of hoist
   configuration: UseAsyncStateConfiguration<T, E>,
   // a callback that notifies when the watch decided that a recalculation is necessary
@@ -792,8 +791,8 @@ function watchOverAsyncState<T, E = State<T>>(
   // that occurs after the layoutEffect and before is effect
   // This means that we will miss the notification about the awaited state
   // so, if we are waiting without an asyncState, recalculate the memo
-  if (mode === AsyncStateSubscriptionMode.WAITING) {
-    let candidate = contextValue.get(configuration.key as AsyncStateKey);
+  if (mode === SubscriptionMode.WAITING) {
+    let candidate = contextValue.get(configuration.key as string);
     if (candidate) {
       if (!asyncState || candidate !== asyncState) {
         // schedule the recalculation of the memo
@@ -807,7 +806,7 @@ function watchOverAsyncState<T, E = State<T>>(
   // re-notify watchers that may have missed the notification for some reason
   // this case is not likely to occur,
   // but this is like a safety check that notify the watchers
-  if (mode === AsyncStateSubscriptionMode.HOIST) {
+  if (mode === SubscriptionMode.HOIST) {
     // when we are hoisting, since we notify again, better execute
     // the whole hoist again _without_ overriding it
     // and make sure the returned one is the subscribed
@@ -831,21 +830,21 @@ function watchOverAsyncState<T, E = State<T>>(
 
   // these modes create an entry in the provider that should be disposed!
   if (
-    mode === AsyncStateSubscriptionMode.HOIST ||
-    mode === AsyncStateSubscriptionMode.FORK
+    mode === SubscriptionMode.HOIST ||
+    mode === SubscriptionMode.FORK
   ) {
     return dispose;
   }
 
   if (
-    mode === AsyncStateSubscriptionMode.WAITING ||
-    mode === AsyncStateSubscriptionMode.LISTEN
+    mode === SubscriptionMode.WAITING ||
+    mode === SubscriptionMode.LISTEN
   ) {
-    let watchedKey = AsyncStateSubscriptionMode.WAITING === mode
+    let watchedKey = SubscriptionMode.WAITING === mode
       ? configuration.key : asyncState?.key;
 
     const unwatch = contextValue.watch(
-      watchedKey as AsyncStateKey,
+      watchedKey as string,
       function notify(mayBeNewAsyncState) {
         if (didClean) {
           return;
@@ -866,10 +865,10 @@ function watchOverAsyncState<T, E = State<T>>(
 }
 
 function newSubscribeToAsyncState<T>(
-  mode: AsyncStateSubscriptionMode,
+  mode: SubscriptionMode,
   run: (...args: any[]) => AbortFn,
   getLatestRenderedVersion: () => number | undefined,
-  asyncState?: AsyncStateInterface<T>,
+  asyncState?: StateInterface<T>,
   subscriptionKey?: string,
   events?: UseAsyncStateEvents<T>,
   onUpdate?: (newState: State<T>) => void,
@@ -922,8 +921,8 @@ function invokeChangeEvents<T>(
 function invokeSubscribeEvents<T>(
   events: UseAsyncStateEventSubscribe<T> | undefined,
   run: (...args: any[]) => AbortFn,
-  mode: AsyncStateSubscriptionMode,
-  asyncState?: AsyncStateInterface<T>,
+  mode: SubscriptionMode,
+  asyncState?: StateInterface<T>,
 ): CleanupFn[] | null {
   if (!events || !asyncState) {
     return null;
@@ -932,7 +931,7 @@ function invokeSubscribeEvents<T>(
   let eventProps: SubscribeEventProps<T> = {
     run,
     mode,
-    getState: () => asyncState.currentState,
+    getState: () => asyncState.state,
     invalidateCache: asyncState.invalidateCache.bind(asyncState),
   };
 
@@ -943,10 +942,10 @@ function invokeSubscribeEvents<T>(
 }
 
 function readStateFromAsyncState<T, E = State<T>>(
-  asyncState: AsyncStateInterface<T>,
+  asyncState: StateInterface<T>,
   selector: useSelector<T, E>
 ): E {
-  return selector(asyncState.currentState, asyncState.lastSuccess, asyncState.cache);
+  return selector(asyncState.state, asyncState.lastSuccess, asyncState.cache);
 }
 
 //endregion
@@ -962,10 +961,10 @@ function returnsUndefined() {
 }
 
 function makeUseAsyncStateBaseReturnValue<T, E>(
-  asyncState: AsyncStateInterface<T>,
-  configurationKey: AsyncStateKey,
+  asyncState: StateInterface<T>,
+  configurationKey: string,
   run: (...args: any[]) => AbortFn,
-  mode: AsyncStateSubscriptionMode
+  mode: SubscriptionMode
 ) {
   if (!asyncState) {
     return {
@@ -1006,11 +1005,11 @@ function makeUseAsyncStateBaseReturnValue<T, E>(
 }
 
 function makeUseAsyncStateReturnValue<T, E>(
-  asyncState: AsyncStateInterface<T>,
+  asyncState: StateInterface<T>,
   stateValue: E,
-  configurationKey: AsyncStateKey,
+  configurationKey: string,
   run: (...args: any[]) => AbortFn,
-  mode: AsyncStateSubscriptionMode
+  mode: SubscriptionMode
 ): Readonly<UseAsyncState<T, E>> {
 
   // @ts-ignore
@@ -1035,13 +1034,13 @@ function makeUseAsyncStateReturnValue<T, E>(
 let didWarnAboutUnsupportedConcurrentFeatures = false;
 
 function createReadInConcurrentMode<T, E>(
-  asyncState: AsyncStateInterface<T>,
+  asyncState: StateInterface<T>,
   stateValue: E
 ) {
   return function readInConcurrentMode() {
     if (supportsConcurrentMode()) {
       if (
-        AsyncStateStatus.pending === asyncState.currentState?.status &&
+        AsyncStateStatus.pending === asyncState.state?.status &&
         asyncState.suspender
       ) {
         throw asyncState.suspender;

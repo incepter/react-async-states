@@ -1,6 +1,6 @@
 import {
   AbortFn,
-  AsyncStateSource,
+  Source,
   AsyncStateStatus,
   State,
   StateFunctionUpdater
@@ -12,12 +12,12 @@ import {
   standaloneProducerEffectsCreator
 } from "./AsyncState";
 
-export function runSource<T>(src: AsyncStateSource<T>, ...args): AbortFn {
+export function runSource<T>(src: Source<T>, ...args): AbortFn {
   return runSourceLane(src, undefined, ...args);
 }
 
 export function runSourceLane<T>(
-  src: AsyncStateSource<T>,
+  src: Source<T>,
   lane: string | undefined,
   ...args
 ): AbortFn {
@@ -25,14 +25,14 @@ export function runSourceLane<T>(
 }
 
 export function runpSource<T>(
-  src: AsyncStateSource<T>,
+  src: Source<T>,
   ...args
 ): Promise<State<T>> {
   return runpSourceLane(src, undefined, ...args);
 }
 
 export function runpSourceLane<T>(
-  src: AsyncStateSource<T>,
+  src: Source<T>,
   lane: string | undefined,
   ...args
 ): Promise<State<T>> {
@@ -53,7 +53,7 @@ export function runpSourceLane<T>(
 }
 
 export function invalidateCache<T>(
-  src: AsyncStateSource<T>,
+  src: Source<T>,
   cacheKey?: string
 ): void {
   src.invalidateCache(cacheKey);
@@ -102,7 +102,7 @@ export function insideContextRunLaneFn<T>(context) {
 }
 
 export function replaceLaneState<T>(
-  src: AsyncStateSource<T>,
+  src: Source<T>,
   lane: string | undefined,
   updater: T | StateFunctionUpdater<T>,
   status: AsyncStateStatus = AsyncStateStatus.success,
@@ -111,17 +111,17 @@ export function replaceLaneState<T>(
 }
 
 export function replaceState<T>(
-  src: AsyncStateSource<T>,
+  src: Source<T>,
   updater: T | StateFunctionUpdater<T>,
   status: AsyncStateStatus = AsyncStateStatus.success,
 ): void {
   replaceLaneState(src, undefined, updater , status)
 }
 
-export function getState<T>(src: AsyncStateSource<T>, lane?: string) {
+export function getState<T>(src: Source<T>, lane?: string) {
   return src.getLaneSource(lane).getState();
 }
 
-export function getLaneSource<T>(src: AsyncStateSource<T>, lane?: string): AsyncStateSource<T> {
+export function getLaneSource<T>(src: Source<T>, lane?: string): Source<T> {
   return src.getLaneSource(lane);
 }

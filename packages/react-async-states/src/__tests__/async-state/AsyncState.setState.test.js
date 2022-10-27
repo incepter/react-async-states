@@ -29,7 +29,7 @@ describe('AsyncState - setState', () => {
       timestamp: TESTS_TS,
       status: AsyncStateStatus.pending,
     };
-    expect(myAsyncState.currentState).toEqual(expectedState);
+    expect(myAsyncState.state).toEqual(expectedState);
 
     expect(subscription).toHaveBeenCalledTimes(1);
     expect(subscription).toHaveBeenCalledWith(expectedState);

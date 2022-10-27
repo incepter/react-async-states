@@ -9,7 +9,7 @@ import {
   shallowClone, warning
 } from "shared";
 import {
-  AsyncStateContextValue,
+  StateContextValue,
   AsyncStateEntries,
   AsyncStateEntry,
   AsyncStateKeyOrSource,
@@ -28,9 +28,8 @@ import {
 } from "../types.internal";
 import AsyncState, {
   AbortFn,
-  AsyncStateInterface,
-  AsyncStateKey,
-  AsyncStateSource,
+  StateInterface,
+  Source,
   ForkConfig
 } from "../async-state";
 import {isAsyncStateSource} from "../async-state/utils";
@@ -122,7 +121,7 @@ export function AsyncStateProvider(
     }
   }
 
-  function makeContextValue(): AsyncStateContextValue {
+  function makeContextValue(): StateContextValue {
     return {
       manager,
       payload: shallowClone(payload),
@@ -185,14 +184,14 @@ export function AsyncStateManager(
   return output;
 
   function setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[] {
-    const newStatesMap: { [id: AsyncStateKey]: ExtendedInitialAsyncState<any> } =
+    const newStatesMap: Record<string, ExtendedInitialAsyncState<any>> =
       Object
         .values(initialStates ?? EMPTY_OBJECT)
         .reduce((result, current) => {
           // @ts-ignore
           result[current.key] = current;
           return result;
-        }, Object.create(null)) as { [id: AsyncStateKey]: ExtendedInitialAsyncState<any> };
+        }, Object.create(null)) as Record<string, ExtendedInitialAsyncState<any>>;
 
     const previousStates = {...asyncStateEntries};
     // basically, this is the same object reference...
@@ -223,13 +222,13 @@ export function AsyncStateManager(
   }
 
   function get<T>(
-    key: AsyncStateKey
-  ): AsyncStateInterface<T> {
+    key: string
+  ): StateInterface<T> {
     return asyncStateEntries[key]?.value;
   }
 
   function run<T>(
-    asyncState: AsyncStateInterface<T>,
+    asyncState: StateInterface<T>,
     ...args: any[]
   ): AbortFn {
     return asyncState.run(output.producerEffectsCreator, ...args);
@@ -240,12 +239,12 @@ export function AsyncStateManager(
     lane: string | undefined,
     ...args: any[]
   ): AbortFn {
-    let asyncState: AsyncStateInterface<T>;
+    let asyncState: StateInterface<T>;
     // always attempt a source object
     if (isAsyncStateSource(key)) {
-      asyncState = readAsyncStateFromSource(key as AsyncStateSource<T>);
+      asyncState = readAsyncStateFromSource(key as Source<T>);
     } else {
-      asyncState = get(key as AsyncStateKey);
+      asyncState = get(key as string);
     }
 
     if (!asyncState) {
@@ -260,15 +259,17 @@ export function AsyncStateManager(
   }
 
   function dispose<T>(
-    asyncState: AsyncStateInterface<T>
+    asyncState: StateInterface<T>
   ): boolean {
     const {key} = asyncState;
 
     // delete only if it was not initially hoisted
+    const entry = asyncStateEntries[key]
     if (
-      asyncStateEntries[key] &&
-      !asyncStateEntries[key].initiallyHoisted &&
-      Object.values(asyncStateEntries[key].value.subscriptions).length === 0
+       entry &&
+      !entry.initiallyHoisted &&
+      entry.value.subscriptions &&
+      Object.values(entry.value.subscriptions).length === 0
     ) {
       delete asyncStateEntries[key];
       // notify watchers about disappearance
@@ -282,10 +283,10 @@ export function AsyncStateManager(
 
   // the fork registers in the provider automatically
   function fork<T>(
-    key: AsyncStateKey,
+    key: string,
     forkConfig: ForkConfig
-  ): AsyncStateInterface<T> | undefined {
-    const asyncState: AsyncStateInterface<T> = get(key);
+  ): StateInterface<T> | undefined {
+    const asyncState: StateInterface<T> = get(key);
     if (!asyncState) {
       return undefined;
     }
@@ -340,7 +341,7 @@ export function AsyncStateManager(
 
     function notification(
       argv: ManagerWatchCallbackValue<T>,
-      notificationKey: AsyncStateKey
+      notificationKey: string
     ) {
       if (!didUnwatch) {
         notify(
@@ -365,7 +366,7 @@ export function AsyncStateManager(
   }
 
   function notifyWatchers<T>(
-    key: AsyncStateKey,
+    key: string,
     value: ManagerWatchCallbackValue<T>
   ): void {
     function cb() {
@@ -396,7 +397,7 @@ export function AsyncStateManager(
     asyncify(cb)();
   }
 
-  function hoist<T>(config: ManagerHoistConfig<T>): AsyncStateInterface<T> {
+  function hoist<T>(config: ManagerHoistConfig<T>): StateInterface<T> {
     const {
       key,
       hoistToProviderConfig = {override: false},
@@ -405,14 +406,14 @@ export function AsyncStateManager(
 
     const existing = get(key);
     if (existing && !hoistToProviderConfig.override) {
-      return existing as AsyncStateInterface<T>;
+      return existing as StateInterface<T>;
 
     }
     if (existing) {
       let didDispose = dispose(existing);
 
       if (!didDispose) {
-        return existing as AsyncStateInterface<T>;
+        return existing as StateInterface<T>;
       }
     }
 
@@ -425,7 +426,7 @@ export function AsyncStateManager(
       false
     );
 
-    const returnValue: AsyncStateInterface<T> = get(key);
+    const returnValue: StateInterface<T> = get(key);
     notifyWatchers(
       key,
       returnValue
@@ -435,13 +436,13 @@ export function AsyncStateManager(
   }
 
   // used in function selector in useSelector
-  function getAllKeys(): AsyncStateKey[] {
+  function getAllKeys(): string[] {
     return Object.keys(asyncStateEntries);
   }
 }
 
 function createAsyncStateEntry<T>(
-  asyncState: AsyncStateInterface<T>,
+  asyncState: StateInterface<T>,
   initiallyHoisted: boolean,
 ): AsyncStateEntry<T> {
   return {value: asyncState, initiallyHoisted};
@@ -456,7 +457,7 @@ function createInitialAsyncStatesReducer(
     const key = current.key;
     const existingEntry = result[key];
     const asyncState = readAsyncStateFromSource(
-      current as AsyncStateSource<any>);
+      current as Source<any>);
 
     if (!existingEntry || asyncState !== existingEntry.value) {
       result[key] = createAsyncStateEntry(asyncState, true);

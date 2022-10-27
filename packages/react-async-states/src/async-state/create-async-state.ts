@@ -1,15 +1,14 @@
 import AsyncState, {
-  AsyncStateKey,
-  AsyncStateSource,
+  Source,
   Producer,
   ProducerConfig
 } from "./index";
 
 export const createSource = function createSource<T>(
-  key: AsyncStateKey,
+  key: string,
   producer?: Producer<T> | undefined | null,
   config?: ProducerConfig<T>
-): AsyncStateSource<T> {
+): Source<T> {
   return new AsyncState(
     key,
     producer,

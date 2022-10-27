@@ -3,7 +3,7 @@ import {__DEV__, identity, isFn, shallowEqual} from "shared";
 import {AsyncStateContext} from "./context";
 import {
   ArraySelector,
-  AsyncStateContextValue,
+  StateContextValue,
   BaseSelectorKey,
   EqualityFn,
   FunctionSelector,
@@ -15,17 +15,16 @@ import {
 } from "../types.internal";
 import {isAsyncStateSource} from "../async-state/utils";
 import AsyncState, {
-  AsyncStateInterface,
-  AsyncStateKey,
-  AsyncStateSource,
+  StateInterface,
+  Source,
 } from "../async-state";
 import {readAsyncStateFromSource} from "../async-state/AsyncState";
 import {useCallerName} from "./helpers/useCallerName";
 
 type SelectorSelf<T> = {
   currentValue: T,
-  currentKeys: (string | AsyncStateSource<any>)[],
-  currentInstances: Record<AsyncStateKey, AsyncStateInterface<any> | undefined>,
+  currentKeys: (string | Source<any>)[],
+  currentInstances: Record<string, StateInterface<any> | undefined>,
 }
 
 // todo: enhance the typing of useSelector
@@ -73,7 +72,7 @@ export function useSelector<T>(
     React.useLayoutEffect(() => {
       function onChange(
         value: ManagerWatchCallbackValue<T>,
-        notificationKey: AsyncStateKey
+        notificationKey: string
       ) {
 
         // if we are interested in what happened, recalculate and quit
@@ -116,7 +115,7 @@ export function useSelector<T>(
       .map(as => {
         let subscriptionKey: string | undefined = undefined;
         if (__DEV__) {
-          let nextMeter = (as as AsyncState<any>).subscriptionsMeter;
+          let nextMeter = (as as AsyncState<any>).subscriptionsIndex;
           subscriptionKey = `${caller}-$4-$${nextMeter}`;// 4: useSelector
         }
         return as!.subscribe(onUpdate, subscriptionKey);
@@ -139,17 +138,17 @@ export function useSelector<T>(
   }
 
   // uses: selector
-  function readValue(instances: Record<AsyncStateKey, AsyncStateInterface<any> | undefined>) {
+  function readValue(instances: Record<string, StateInterface<any> | undefined>) {
     const selectorStates = Object.entries(instances)
       .map(([key, as]) => ({
-        ...as?.currentState,
+        ...as?.state,
         key,
         cache: as?.cache,
         lastSuccess: as?.lastSuccess
       }));
 
     if (isFn(keys)) {
-      const selectorParam: Record<AsyncStateKey, FunctionSelectorItem<any>> = selectorStates
+      const selectorParam: Record<string, FunctionSelectorItem<any>> = selectorStates
         .reduce((
           result, current) => {
           result[current.key] = current;
@@ -169,8 +168,8 @@ export function useSelector<T>(
 }
 
 function didKeysChange(
-  oldKeys: (AsyncStateKey | AsyncStateSource<any>)[],
-  newKeys: (AsyncStateKey | AsyncStateSource<any>)[]
+  oldKeys: (string | Source<any>)[],
+  newKeys: (string | Source<any>)[]
 ): boolean {
   if (oldKeys.length !== newKeys.length) {
     return true;
@@ -185,8 +184,8 @@ function didKeysChange(
 
 function readKeys(
   keys: SelectorKeysArg,
-  ctx: AsyncStateContextValue | null
-): (AsyncStateKey | AsyncStateSource<any>)[] {
+  ctx: StateContextValue | null
+): (string | Source<any>)[] {
   if (typeof keys === "function") {
     const availableKeys = ctx !== null ? ctx.getAllKeys() : [];
     return readKeys(keys(availableKeys), ctx);
@@ -198,7 +197,7 @@ function readKeys(
 }
 
 function ensureParamsAreOk<E>(
-  contextValue: AsyncStateContextValue | null,
+  contextValue: StateContextValue | null,
   keys: BaseSelectorKey | BaseSelectorKey[] | UseSelectorFunctionKeys,
   selector: SimpleSelector<any, E> | ArraySelector<E> | FunctionSelector<E>
 ) {
@@ -211,18 +210,18 @@ function ensureParamsAreOk<E>(
 }
 
 function computeInstancesMap(
-  contextValue: AsyncStateContextValue | null,
-  fromKeys: (string | AsyncStateSource<any>)[]
-): Record<AsyncStateKey, AsyncStateInterface<any> | undefined> {
+  contextValue: StateContextValue | null,
+  fromKeys: (string | Source<any>)[]
+): Record<string, StateInterface<any> | undefined> {
   return fromKeys
     .reduce((result, current) => {
       if (isAsyncStateSource(current)) {
-        const asyncState = readAsyncStateFromSource(current as AsyncStateSource<any>);
+        const asyncState = readAsyncStateFromSource(current as Source<any>);
         result[asyncState.key] = asyncState;
       } else if (contextValue !== null) {
-        result[current as AsyncStateKey] = contextValue.get(current as AsyncStateKey);
+        result[current as string] = contextValue.get(current as string);
       } else {
-        result[current as AsyncStateKey] = undefined;
+        result[current as string] = undefined;
       }
       return result;
     }, {});

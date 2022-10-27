@@ -23,7 +23,7 @@ describe('AsyncState - fork', () => {
     expect(typeof myAsyncState.run).toBe("function");
     expect(myAsyncState.config).toEqual(shallowClone(myConfig));
     expect(myAsyncState.lastSuccess).toEqual({props: null, data: null, status: AsyncStateStatus.initial, timestamp: TESTS_TS});
-    expect(myAsyncState.currentState).toEqual({data: null, status: AsyncStateStatus.initial, props: null, timestamp: TESTS_TS});
+    expect(myAsyncState.state).toEqual({data: null, status: AsyncStateStatus.initial, props: null, timestamp: TESTS_TS});
 
     let forkedAsyncState = myAsyncState.fork();
     expect(myAsyncState.forkCount).toBe(1);
@@ -35,7 +35,7 @@ describe('AsyncState - fork', () => {
 
     expect(forkedAsyncState.key).not.toBe(myAsyncState.key);
     expect(forkedAsyncState.producer).not.toBe(myAsyncState.producer);
-    expect(forkedAsyncState.currentState).not.toBe(myAsyncState.currentState);// not same reference even if retrieved
+    expect(forkedAsyncState.state).not.toBe(myAsyncState.state);// not same reference even if retrieved
     expect(forkedAsyncState.subscriptions).not.toBe(myAsyncState.subscriptions);// not same reference even if retrieved
   });
   it('should fork and keep state and subscriptions after run', async () => {
@@ -52,15 +52,15 @@ describe('AsyncState - fork', () => {
       await jest.advanceTimersByTime(100);
     });
 
-    expect(myAsyncState.currentState.status).toBe(AsyncStateStatus.success); // make sure it resolved
+    expect(myAsyncState.state.status).toBe(AsyncStateStatus.success); // make sure it resolved
 
     let forkedAsyncState = myAsyncState.fork({keepSubscriptions: true, keepState: true});
     // then
     // make sure they are deeply equal, but not with same reference ;)
     expect(myAsyncState.lastSuccess).toEqual(forkedAsyncState.lastSuccess);
     expect(myAsyncState.lastSuccess).not.toBe(forkedAsyncState.lastSuccess);
-    expect(myAsyncState.currentState).toEqual(forkedAsyncState.currentState);
-    expect(myAsyncState.currentState).not.toBe(forkedAsyncState.currentState);
+    expect(myAsyncState.state).toEqual(forkedAsyncState.state);
+    expect(myAsyncState.state).not.toBe(forkedAsyncState.state);
   });
   it('should fork and keep state and subscriptions before run', async () => {
     // given
@@ -79,10 +79,10 @@ describe('AsyncState - fork', () => {
       await jest.advanceTimersByTime(100);
     });
 
-    expect(forkedAsyncState.currentState.status).toBe(AsyncStateStatus.success); // make sure it resolved
+    expect(forkedAsyncState.state.status).toBe(AsyncStateStatus.success); // make sure it resolved
 
     // then
     expect(myAsyncState.lastSuccess).not.toEqual(forkedAsyncState.lastSuccess);// forked async state moved independently
-    expect(myAsyncState.currentState).not.toBe(forkedAsyncState.currentState);
+    expect(myAsyncState.state).not.toBe(forkedAsyncState.state);
   });
 });

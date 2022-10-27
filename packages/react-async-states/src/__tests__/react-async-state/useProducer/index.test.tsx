@@ -1,7 +1,7 @@
 import * as React from "react";
 import {fireEvent, render, screen} from "@testing-library/react";
 import {AsyncStateProvider} from "../../../react/AsyncStateProvider";
-import {AsyncStateSubscriptionMode} from "../../../types.internal";
+import {SubscriptionMode} from "../../../types.internal";
 import {useProducer} from "../../../react/useAsyncStateBase";
 
 describe('should useProducer', () => {
@@ -48,7 +48,7 @@ describe('should useProducer', () => {
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("");
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual(AsyncStateSubscriptionMode.STANDALONE);
+      .toEqual(SubscriptionMode.STANDALONE);
 
     // +1
     fireEvent.click(incrementBtn);
@@ -101,7 +101,7 @@ describe('should useProducer', () => {
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("");
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual(AsyncStateSubscriptionMode.STANDALONE);
+      .toEqual(SubscriptionMode.STANDALONE);
 
     // +1
     fireEvent.click(incrementBtn);

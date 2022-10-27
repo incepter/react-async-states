@@ -21,20 +21,20 @@ created by a constructor called `AsyncState`, when the state updates,
 the subscribed components schedule a rerender (if it is not a component, the
 subscriber gets notified).
 
-Here is the whole `AsyncStateInterface` definition:
+Here is the whole `StateInterface` definition:
 
 ```typescript
-interface AsyncStateInterface<T> {
-  // new (key: AsyncStateKey, producer: Producer<T>, config: ProducerConfig<T>) : {},
+interface StateInterface<T> {
+  // new (key: string, producer: Producer<T>, config: ProducerConfig<T>) : {},
   // properties
-  key: AsyncStateKey,
+  key: string,
   uniqueId: number | undefined,
   _source: AsyncStateSource<T>,
 
   currentState: State<T>,
   lastSuccess: State<T>,
 
-  cache: { [id: AsyncStateKey]: CachedState<T> }
+  cache: { [id: string]: CachedState<T> }
   invalidateCache: (cacheKey?:
     string) => void,
 
@@ -53,8 +53,8 @@ interface AsyncStateInterface<T> {
   replaceState: StateUpdater<T>,
   setState: (newState: State<T>, notify?: boolean) => void,
   run: (createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]) => AbortFn,
-  fork: (forkConfig?: ForkConfig) => AsyncStateInterface<T>,
-  subscribe: (cb: Function, subscriptionKey?: AsyncStateKey) => AbortFn,
+  fork: (forkConfig?: ForkConfig) => StateInterface<T>,
+  subscribe: (cb: Function, subscriptionKey?: string) => AbortFn,
 }
 
 ```
@@ -309,7 +309,7 @@ function dispose() {
   }
 
   this.abort();
-  clearSubscribers(this as AsyncStateInterface<T>);
+  clearSubscribers(this as StateInterface<T>);
 
   this.locks = 0;
   this.setState(StateBuilder.initial(
@@ -334,7 +334,7 @@ holds a reference to the async state instance itself.
 ```typescript
 
 function constructAsyncStateSource<T>(
-  asyncState: AsyncStateInterface<T>
+  asyncState: StateInterface<T>
 ): AsyncStateSource<T> {
   return objectWithHiddenProperty(asyncStatesKey, asyncState);
 }
@@ -576,7 +576,7 @@ function subscribeToAsyncState(): CleanupFn {
           makeUseAsyncStateReturnValue(
             asyncState,
             newState,
-            configuration.key as AsyncStateKey,
+            configuration.key as string,
             run,
             mode
           )

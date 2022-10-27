@@ -9,7 +9,7 @@ export type {
   ProducerProps,
   ProducerConfig,
   ProducerEffects,
-  AsyncStateSource,
+  Source,
   ProducerSavedProps,
 } from "./async-state/types";
 
@@ -30,7 +30,7 @@ export type {
   SelectorKeysArg,
   AsyncStateSelector,
   AsyncStateKeyOrSource,
-  AsyncStateSubscriptionMode,
+  SubscriptionMode,
 
 
   InitialAsyncState,

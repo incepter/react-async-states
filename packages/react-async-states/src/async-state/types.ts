@@ -68,6 +68,7 @@ export enum ProducerType {
   sync = 1,
   promise = 2,
   generator = 3,
+  notProvided = 4,
 }
 
 export enum RenderStrategy {
@@ -85,8 +86,6 @@ export type ProducerConfig<T> = {
   resetStateOnDispose?: boolean,
 }
 
-export type AsyncStateKey = string;
-
 export type StateFunctionUpdater<T> = (updater: State<T>) => T;
 
 export type StateUpdater<T> = (
@@ -94,16 +93,16 @@ export type StateUpdater<T> = (
   status?: AsyncStateStatus
 ) => void;
 
-export type AsyncStateSource<T> = {
-  key: AsyncStateKey,
+export type Source<T> = {
+  key: string,
   uniqueId: number | undefined,
 
   getState(): State<T>,
   setState: StateUpdater<T>,
   run: (...args: any[]) => AbortFn,
+  getLaneSource(laneKey?: string): Source<T>,
   invalidateCache: (cacheKey?: string) => void,
-  getLaneSource(laneKey?: string): AsyncStateSource<T>,
-  subscribe: (cb: Function, subscriptionKey?: AsyncStateKey) => AbortFn,
+  subscribe: (cb: Function, subscriptionKey?: string) => AbortFn,
 }
 export type RunTask<T> = {
   args: any[],
@@ -112,23 +111,25 @@ export type RunTask<T> = {
 }
 
 export type StateSubscription<T> = {
-  key: AsyncStateKey, // subscription key
+  key: string, // subscription key
   cleanup: () => void,
   callback: (newState: State<T>) => void,
 };
 
+export type OnCacheLoadProps<T> = {
+  cache: Record<string, CachedState<T>>,
+  setState(newValue: T | StateFunctionUpdater<T>, status?: AsyncStateStatus): void
+}
+
 export type CacheConfig<T> = {
   enabled: boolean,
   getDeadline?(currentState: State<T>): number,
-  hash?(args?: any[], payload?: {[id: string]: any} | null): string,
+  hash?(args: any[] | undefined, payload: Record<string, any> | null): string,
 
-  load?(): {[id: AsyncStateKey]: CachedState<T>} | Promise<{[id: AsyncStateKey]: CachedState<T>}>,
-  persist?(cache: {[id: AsyncStateKey]: CachedState<T>}): void,
+  persist?(cache: Record<string, CachedState<T>>): void,
+  load?(): Record<string, CachedState<T>> | Promise<Record<string, CachedState<T>>>,
 
-  onCacheLoad?({cache, setState}: {cache: Record<string, CachedState<T>>, setState: (
-      newValue: T | StateFunctionUpdater<T>,
-      status?: AsyncStateStatus
-    ) => void}): void,
+  onCacheLoad?({cache, setState}: OnCacheLoadProps<T>): void,
 }
 
 export type CachedState<T> = {
@@ -137,47 +138,53 @@ export type CachedState<T> = {
   deadline: number,
 }
 
-export interface AsyncStateInterface<T> {
-  // properties
-  key: AsyncStateKey,
+export interface StateInterface<T> {
+  // identity
+  key: string,
   version: number,
-  uniqueId: number | undefined,
-  _source: AsyncStateSource<T>,
-
-  currentState: State<T>,
-  lastSuccess: State<T>,
-
-  cache: Record<string, CachedState<T>>,
-  invalidateCache: (cacheKey?: string) => void,
-
-  payload: Record<string, any> | null,
+  uniqueId: number,
+  _source: Source<T>,
   config: ProducerConfig<T>,
+  payload: Record<string, any> | null,
+  mergePayload(partialPayload: Record<string, any>),
 
-  subscriptions: { [id: number]: StateSubscription<T> },
-
-  suspender: Promise<T> | undefined,
-  producer: ProducerFunction<T>,
-  producerType: ProducerType,
-  readonly originalProducer: Producer<T> | undefined,
-
-  // prototype functions
-  dispose: () => boolean,
-  abort: (reason: any) => void,
-  replaceState: StateUpdater<T>,
-  setState: (newState: State<T>, notify?: boolean) => void,
-  run: (createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]) => AbortFn,
-  fork: (forkConfig?: ForkConfig) => AsyncStateInterface<T>,
-  subscribe: (cb: Function, subscriptionKey?: AsyncStateKey) => AbortFn,
-
-  parent: AsyncStateInterface<T> | null,
-  lanes: Record<string, AsyncStateInterface<T>>,
-  getLane(laneKey?: string): AsyncStateInterface<T>,
-
-  replaceProducer(newProducer: Producer<any>),
-  replay(): AbortFn,
-
+  // state
+  state: State<T>,
   getState(): State<T>,
+  lastSuccess: State<T>,
+  replaceState: StateUpdater<T>,
+  setState(newState: State<T>, notify?: boolean): void,
 
+  // subscriptions
+  dispose(): boolean,
+  subscriptions: Record<number, StateSubscription<T>> | null,
+  subscribe(cb: Function, subscriptionKey?: string): AbortFn,
+
+  // producer
+  producerType: ProducerType,
+  producer: ProducerFunction<T>,
+  suspender: Promise<T> | undefined,
+  originalProducer: Producer<T> | undefined,
+
+  replay(): AbortFn,
+  abort(reason: any): void,
+  replaceProducer(newProducer: Producer<any>),
+  run(createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]): AbortFn,
+
+
+  // lanes and forks
+  parent: StateInterface<T> | null,
+  getLane(laneKey?: string): StateInterface<T>,
+  lanes: Record<string, StateInterface<T>> | null,
+  fork(forkConfig?: ForkConfig): StateInterface<T>,
+
+  // cache
+  invalidateCache(cacheKey?: string): void,
+  cache: Record<string, CachedState<T>> | null,
+  replaceCache(cacheKey: string, cache: CachedState<T>): void,
+
+
+  // dev properties
   journal: any[], // for devtools, dev only
 }
 
@@ -190,7 +197,7 @@ export interface StateBuilderInterface {
 }
 
 export type ForkConfig = {
-  key?: AsyncStateKey,
+  key?: string,
   keepState?: boolean,
   keepCache?: boolean,
 }
@@ -209,5 +216,8 @@ export type ProducerPropsRunInput<T> = AsyncStateKeyOrSource<T> | Producer<T>;
 export type ProducerPropsRunConfig = {
   lane?: string,
   fork?: boolean,
-  payload?: { [id: string]: any } | null,
+  payload?: Record<string, any> | null,
 };
+
+export type PendingTimeout = { id: ReturnType<typeof setTimeout>, startDate: number };
+export type PendingUpdate = { timeoutId: ReturnType<typeof setTimeout>, callback(): void };
