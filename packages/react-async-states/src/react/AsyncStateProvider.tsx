@@ -1,12 +1,11 @@
 import * as React from "react";
 import {AsyncStateContext} from "./context";
 import {
-  __DEV__,
   asyncify,
   EMPTY_OBJECT,
   readProducerConfigFromProducerConfig,
   readProducerConfigFromSubscriptionConfig,
-  shallowClone, warning
+  shallowClone,
 } from "shared";
 import {
   StateContextValue,

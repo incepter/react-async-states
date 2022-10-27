@@ -21,19 +21,19 @@ export default function Demo() {
     key: demoAsyncStates.getUser.key,
     // this function does not depend on render and may be static
     selector(current, lastSuccess, cache) {
-      if (cache[`user-${params.userId}`]) {
+      if (cache?.[`user-${params.userId}`]) {
         return cache[`user-${params.userId}`].state;
       }
       return current;
     },
     // this object does not depend on render and may be static
-    cacheConfig: {
-      enabled: false,
-      getDeadline: state => state.data?.maxAge || 5000,
-      load: () => JSON.parse(localStorage.getItem("users-cache-demo")),
-      hash: (args, payload) => `user-${payload?.matchParams?.userId}`,
-      persist: cache => localStorage.setItem("users-cache-demo", JSON.stringify(cache))
-    },
+    // cacheConfig: {
+    //   enabled: false,
+    //   getDeadline: state => state.data?.maxAge || 5000,
+    //   load: () => JSON.parse(localStorage.getItem("users-cache-demo")),
+    //   hash: (args, payload) => `user-${payload?.matchParams?.userId}`,
+    //   persist: cache => localStorage.setItem("users-cache-demo", JSON.stringify(cache))
+    // },
     // this function does not depend on render and may be static
     events: {
       // subscribe({getState, run}) {
