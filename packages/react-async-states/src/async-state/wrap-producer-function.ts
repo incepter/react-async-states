@@ -6,7 +6,8 @@ import {
   ProducerProps,
   ProducerType,
   RunIndicators,
-  State, StateInterface
+  State,
+  StateInterface
 } from "./types";
 
 export function wrapProducerFunction<T>(instance: StateInterface<T>): ProducerFunction<T> {
@@ -14,8 +15,10 @@ export function wrapProducerFunction<T>(instance: StateInterface<T>): ProducerFu
   return function producerFuncImpl(props: ProducerProps<T>, indicators: RunIndicators): undefined {
     // this allows the developer to omit the producer attribute.
     // and replaces state when there is no producer
-    if (typeof instance.originalProducer !== "function") {
+    const currentProducer = instance.originalProducer;
+    if (typeof currentProducer !== "function") {
       indicators.fulfilled = true;
+      instance.producerType = ProducerType.notProvided;
       instance.replaceState(props.args[0], props.args[1]);
       return;
     }
@@ -27,8 +30,7 @@ export function wrapProducerFunction<T>(instance: StateInterface<T>): ProducerFu
     const savedProps = cloneProducerProps(props);
 
     try {
-      executionValue = instance.originalProducer(props);
-
+      executionValue = currentProducer(props);
     } catch (e) {
       if (__DEV__) devtools.emitRunSync(instance, savedProps);
       indicators.fulfilled = true;

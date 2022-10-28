@@ -157,8 +157,9 @@ export interface StateInterface<T> {
 
   // subscriptions
   dispose(): boolean,
-  subscriptions: Record<number, StateSubscription<T>> | null,
+  subscriptionsIndex: number;
   subscribe(cb: Function, subscriptionKey?: string): AbortFn,
+  subscriptions: Record<number, StateSubscription<T>> | null,
 
   // producer
   producerType: ProducerType,
@@ -168,11 +169,12 @@ export interface StateInterface<T> {
 
   replay(): AbortFn,
   abort(reason: any): void,
-  replaceProducer(newProducer: Producer<any>),
+  replaceProducer(newProducer: Producer<any> | undefined),
   run(createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]): AbortFn,
 
 
   // lanes and forks
+  forksIndex: number,
   parent: StateInterface<T> | null,
   getLane(laneKey?: string): StateInterface<T>,
   lanes: Record<string, StateInterface<T>> | null,
@@ -203,17 +205,17 @@ export type ForkConfig = {
 }
 
 export interface ProducerEffects {
-  run: <T>(input: ProducerPropsRunInput<T>, config: ProducerPropsRunConfig | null, ...args: any[] ) => AbortFn,
-  runp: <T>(input: ProducerPropsRunInput<T>, config: ProducerPropsRunConfig | null, ...args: any[] ) => Promise<State<T>> | undefined,
+  run: <T>(input: ProducerRunInput<T>, config: ProducerRunConfig | null, ...args: any[] ) => AbortFn,
+  runp: <T>(input: ProducerRunInput<T>, config: ProducerRunConfig | null, ...args: any[] ) => Promise<State<T>> | undefined,
 
   select: <T>(input: AsyncStateKeyOrSource<T>) => State<T> | undefined,
 }
 
 export type ProducerEffectsCreator<T> = (props: ProducerProps<T>) => ProducerEffects;
 
-export type ProducerPropsRunInput<T> = AsyncStateKeyOrSource<T> | Producer<T>;
+export type ProducerRunInput<T> = AsyncStateKeyOrSource<T> | Producer<T>;
 
-export type ProducerPropsRunConfig = {
+export type ProducerRunConfig = {
   lane?: string,
   fork?: boolean,
   payload?: Record<string, any> | null,
