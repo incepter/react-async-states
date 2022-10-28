@@ -66,7 +66,7 @@ When constructed, the async state performs the following actions:
 - Loads cache (is asynchronous, `.then`)
 
 ### How `setState` works ?
-`setState` is the only part where we `change` the `AsyncState.currentState`
+`setState` is the only part where we `change` the `AsyncState.state`
 property and notify subscribers.
 
 It also does the following:

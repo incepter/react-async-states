@@ -120,17 +120,17 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
           payload: {
             key: asyncState.key,
             cache: asyncState.cache,
+            state: asyncState.state,
             config: asyncState.config,
             journal: asyncState.journal,
             uniqueId: asyncState.uniqueId,
-            state: asyncState.currentState,
             lastSuccess: asyncState.lastSuccess,
             producerType: asyncState.producerType,
             subscriptions: asyncState.subscriptions ? Object.keys(asyncState.subscriptions) : [],
-            lanes: Object.keys(asyncState.lanes).map(key => ({
+            lanes: asyncState.lanes ? Object.keys(asyncState.lanes).map(key => ({
               uniqueId: asyncState.lanes[key].uniqueId,
               key
-            })),
+            })) : [],
             parent: {
               key: asyncState.parent?.key,
               uniqueId: asyncState.parent?.uniqueId
@@ -167,7 +167,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
         emitJournalEvent(asyncState, {
           type: devtoolsJournalEvents.creation,
           payload: {
-            state: asyncState.currentState,
+            state: asyncState.state,
             config: asyncState.config
           },
         });
@@ -274,7 +274,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
       function emitDispose(asyncState) {
         emitJournalEvent(asyncState, {
           payload: {
-            state: asyncState.currentState,
+            state: asyncState.state,
             lastSuccess: asyncState.lastSuccess
           },
           type: devtoolsJournalEvents.dispose
@@ -318,8 +318,8 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
       function emitUpdate(asyncState) {
         let evt = {
           payload: {
+            newState: asyncState.state,
             oldState: currentUpdate.oldState,
-            newState: asyncState.currentState,
             lastSuccess: asyncState.lastSuccess,
           },
           type: devtoolsJournalEvents.update
@@ -339,7 +339,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
       function startUpdate(asyncState) {
         currentUpdate = {
           uniqueId: asyncState.uniqueId,
-          oldState: shallowClone(asyncState.currentState),
+          oldState: shallowClone(asyncState.state),
         };
       }
       function listenToDevtoolsMessages(asyncState) {
@@ -372,8 +372,8 @@ function formatEntriesToDevtools(entries) {
   return Object.entries(entries).reduce((result, [key, entry]) => {
     result[entry.value.uniqueId] = {};
     result[entry.value.uniqueId].key = entry.value.key;
+    result[entry.value.uniqueId].state = entry.value.state;
     result[entry.value.uniqueId].uniqueId = entry.value.uniqueId;
-    result[entry.value.uniqueId].state = entry.value.currentState;
     result[entry.value.uniqueId].lastSuccess = entry.value.lastSuccess;
     result[entry.value.uniqueId].subscriptions = Object.keys(entry.value.subscriptions);
     return result;
