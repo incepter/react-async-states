@@ -37,7 +37,7 @@ import {
   readAsyncStateFromSource
 } from "../async-state/AsyncState";
 
-let didWarnAboutProviderDeprecated = false;
+// let didWarnAboutProviderDeprecated = false;
 /**
  * @deprecated
  * The provider will be removed in the next stable release
