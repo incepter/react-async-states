@@ -2,13 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 
 import './index.css'
-import {
-  runpSource,
-  createSource,
-  RenderStrategy,
-  StateBoundary,
-  useSource
-} from "react-async-states";
+import { createSource, runpSource, useSelector } from "react-async-states";
 
 
 function fetchProfiles(props) {
@@ -21,24 +15,24 @@ function fetchProfiles(props) {
 
 }
 
-const profilesList = createSource("profiles", fetchProfiles, {runEffect: "delay", runEffectDurationMs: 800});
+const profilesList = createSource("profiles", fetchProfiles, {
+  runEffect: "delay",
+  runEffectDurationMs: 800
+});
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 runpSource(profilesList)
-  .then(state =>  {
+  .then(() => {
     root.render(
       <React.StrictMode>
-        <StateBoundary strategy={RenderStrategy.FetchThenRender} config={profilesList}>
-          <ProfilesView />
-        </StateBoundary>
+        <ProfilesView/>
       </React.StrictMode>
     )
   });
 
 
 function ProfilesView() {
-  const {state} = useSource(profilesList);
-  console.log('rendeerrrrr', state)
+  const state = useSelector(profilesList);
   return <details open>
     <summary>App boot with state of status {state.status}</summary>
     <pre>{JSON.stringify(state.data, null, 4)}</pre>
