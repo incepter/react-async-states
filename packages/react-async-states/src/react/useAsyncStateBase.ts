@@ -43,6 +43,7 @@ import {
   standaloneProducerEffectsCreator
 } from "../async-state/AsyncState";
 import useInDevSubscriptionKey from "./helpers/useCallerName";
+import {getState} from "../async-state/source-utils";
 
 const defaultDependencies: any[] = [];
 export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
@@ -104,11 +105,15 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   // functions which are safe to be excluded from dependencies and never change
   // omitting dispose fn because it depends on from the mode and whether inside provider
   if (contextValue !== null) {
-    React.useEffect(watchAsyncState, [mode, asyncState, configuration]);
-  }
+    React.useEffect(subscribeToAsyncState,
+      [subscriptionKey, areEqual, selector, asyncState, events]);
 
-  React.useEffect(subscribeToAsyncState,
-    [subscriptionKey, areEqual, selector, asyncState, events]);
+    React.useEffect(watchAsyncState, [mode, asyncState, configuration]);
+  } else {
+
+    React.useEffect(subscribeToAsyncState,
+      [subscriptionKey, areEqual, selector, asyncState, events]);
+  }
 
   React.useEffect(autoRunAsyncState, deps);
 
@@ -427,7 +432,7 @@ function readUserConfiguration<T, E>(
   );
 }
 
-function assignAutomaticKeyIfNotExists(newConfig, newMode) {
+function assignAutomaticKeyIfNotProvided(newConfig, newMode) {
   if (newConfig.key !== undefined) {
     return;
   }
@@ -462,7 +467,7 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
   const recalculateInstance = shouldRecalculateInstance(
     newConfig, newMode, guard, ownRef.subscriptionInfo);
 
-  assignAutomaticKeyIfNotExists(newConfig, newMode);
+  assignAutomaticKeyIfNotProvided(newConfig, newMode);
 
   if (__DEV__) {
     warnInDevAboutIrrelevantUseAsyncStateConfiguration(newMode, newConfig);
@@ -472,7 +477,7 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
   let previousInstance = ownRef.subscriptionInfo?.asyncState;
 
   if (recalculateInstance) {
-    newAsyncState = inferAsyncStateInstance(newMode, newConfig, contextValue);
+    newAsyncState = inferStateInstance(newMode, newConfig, contextValue);
   } else {
     newAsyncState = previousInstance;
   }
@@ -554,10 +559,7 @@ function runAsyncStateSubscriptionFn<T, E>(
       case SubscriptionMode.STANDALONE:
       case SubscriptionMode.SOURCE_FORK:
         return contextValue !== null ?
-          contextValue.run(
-            asyncState,
-            ...args
-          )
+          contextValue.run(asyncState, ...args)
           :
           asyncState.run(standaloneProducerEffectsCreator, ...args);
       case SubscriptionMode.OUTSIDE_PROVIDER:
@@ -565,10 +567,7 @@ function runAsyncStateSubscriptionFn<T, E>(
       case SubscriptionMode.FORK:
       case SubscriptionMode.HOIST:
       case SubscriptionMode.LISTEN: {
-        return (contextValue as StateContextValue).run(
-          asyncState,
-          ...args
-        );
+        return contextValue!.run(asyncState, ...args);
       }
       // NoOp - should not happen
       case SubscriptionMode.NOOP:
@@ -590,7 +589,7 @@ function disposeAsyncStateSubscriptionFn<T, E>(
     switch (mode) {
       case SubscriptionMode.FORK:
       case SubscriptionMode.HOIST:
-        return (contextValue as StateContextValue).dispose(asyncState);
+        return contextValue!.dispose(asyncState);
       // NoOp - should not happen
       case SubscriptionMode.SOURCE:
       case SubscriptionMode.SOURCE_FORK:
@@ -606,7 +605,7 @@ function disposeAsyncStateSubscriptionFn<T, E>(
 }
 
 // this functions search for the instance that you desire to subscribe to
-function inferAsyncStateInstance<T, E>(
+function inferStateInstance<T, E>(
   // the subscription mode
   mode: SubscriptionMode,
   // the configuration
@@ -619,38 +618,19 @@ function inferAsyncStateInstance<T, E>(
 
   switch (mode) {
     case SubscriptionMode.FORK:
-      // @ts-ignore
-      // contextValue is not null here, because we decide the mode based on it!
-      return contextValue.fork(
-        configuration.key as string,
-        configuration.forkConfig
-      ) as StateInterface<T>;
+      const parentInstance = contextValue!.get<T>(configuration.key!);
+      if (!parentInstance) {
+        throw new Error("Fork mode with no existing parent instance. This is a bug please fill an issue.")
+      }
+      return parentInstance.fork(configuration.forkConfig);
     case SubscriptionMode.HOIST:
-      const {
-        key,
-        producer,
-        runEffect,
-        cacheConfig,
-        initialValue,
+      const {key, producer} = configuration;
 
-        skipPendingDelayMs,
-        runEffectDurationMs,
-        resetStateOnDispose,
-        hoistToProviderConfig
-      } = configuration;
-      // @ts-ignore
-      // contextValue is not null here, because we decide the mode based on it!
-      return contextValue.hoist({
-        key: key as string,
+      return new AsyncState(
+        key!,
         producer,
-        runEffect,
-        cacheConfig,
-        initialValue,
-        skipPendingDelayMs,
-        resetStateOnDispose,
-        runEffectDurationMs,
-        hoistToProviderConfig,
-      });
+        readProducerConfigFromSubscriptionConfig(configuration)
+      );
     case SubscriptionMode.LISTEN:
       return candidate;
     case SubscriptionMode.STANDALONE:
@@ -802,37 +782,32 @@ function watchOverAsyncState<T, E = State<T>>(
     }
   }
 
-  // if this component is the one hoisting a state,
-  // re-notify watchers that may have missed the notification for some reason
-  // this case is not likely to occur,
-  // but this is like a safety check that notify the watchers
   if (mode === SubscriptionMode.HOIST) {
-    // when we are hoisting, since we notify again, better execute
-    // the whole hoist again _without_ overriding it
-    // and make sure the returned one is the subscribed
-    const newHoist = inferAsyncStateInstance(
-      mode,
-      shallowClone(
-        configuration,
-        {
-          hoistToProviderConfig:
-            shallowClone(
-              configuration.hoistToProviderConfig, {override: false}
-            )
-        }),
-      contextValue
+    const hoistedInstance = contextValue.hoist(
+      configuration.key!,
+      asyncState,
+      configuration.hoistToProviderConfig
     );
-    if (newHoist !== asyncState) {
+    if (hoistedInstance !== asyncState) {
       setGuard(old => old + 1);
       return;
     }
+
+    return dispose;
   }
 
-  // these modes create an entry in the provider that should be disposed!
-  if (
-    mode === SubscriptionMode.HOIST ||
-    mode === SubscriptionMode.FORK
-  ) {
+  if (mode === SubscriptionMode.FORK) {
+    const hoistedInstance = contextValue.hoist(
+      asyncState.key,
+      asyncState,
+      configuration.hoistToProviderConfig
+    );
+    if (hoistedInstance !== asyncState) {
+      console.log('Shouldnt be here!!!', hoistedInstance.uniqueId, asyncState.uniqueId)
+      setGuard(old => old + 1);
+      return;
+    }
+
     return dispose;
   }
 
@@ -844,7 +819,7 @@ function watchOverAsyncState<T, E = State<T>>(
       ? configuration.key : asyncState?.key;
 
     const unwatch = contextValue.watch(
-      watchedKey as string,
+      watchedKey!,
       function notify(mayBeNewAsyncState) {
         if (didClean) {
           return;
@@ -868,11 +843,11 @@ function newSubscribeToAsyncState<T>(
   mode: SubscriptionMode,
   run: (...args: any[]) => AbortFn,
   getLatestRenderedVersion: () => number | undefined,
-  asyncState?: StateInterface<T>,
-  subscriptionKey?: string,
-  events?: UseAsyncStateEvents<T>,
-  onUpdate?: (newState: State<T>) => void,
-  onVersionMismatch?: () => void,
+  asyncState: StateInterface<T>,
+  subscriptionKey: string | undefined,
+  events: UseAsyncStateEvents<T> | undefined,
+  onUpdate: (newState: State<T>) => void,
+  onVersionMismatch: () => void,
 ): CleanupFn {
   if (!asyncState || !onUpdate) {
     return;
@@ -1064,3 +1039,11 @@ function createReadInConcurrentMode<T, E>(
 }
 
 //endregion
+
+function subscribeAndWatch<T, E>(
+  instance: StateInterface<T>,
+  contextValue: StateContextValue | null,
+  configuration: UseAsyncStateConfiguration<T, E>
+) {
+
+}

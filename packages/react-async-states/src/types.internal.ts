@@ -75,6 +75,7 @@ export type HoistToProviderConfig = {
 }
 
 export type ManagerHoistConfig<T> = {
+  instance: StateInterface<T>,
   initialValue?: T,
   runEffect?: ProducerRunEffects,
   runEffectDurationMs?: number,
@@ -114,11 +115,7 @@ export type AsyncStateManagerInterface = {
     ...args: any[]
   ): AbortFn,
   get<T>(key: string): StateInterface<T>,
-  fork<T>(
-    key: string,
-    config: ForkConfig
-  ): StateInterface<T> | undefined,
-  hoist<T>(config: ManagerHoistConfig<T>): StateInterface<T>,
+  hoist<T>(key: string, instance: StateInterface<T>, hoistConfig?: HoistToProviderConfig): StateInterface<T>,
   dispose<T>(asyncState: StateInterface<T>): boolean,
   watch<T>(
     key: AsyncStateWatchKey,
@@ -153,8 +150,7 @@ export type StateContextValue = {
   getAllKeys(): string[],
   get<T>(key: string): StateInterface<T>,
   dispose<T>(asyncState: StateInterface<T>): boolean,
-  hoist<T>(config: ManagerHoistConfig<T>): StateInterface<T>,
-  fork<T>(key: string, config?: ForkConfig): StateInterface<T> | undefined,
+  hoist<T>(key: string, instance: StateInterface<T>, hoistConfig?: HoistToProviderConfig): StateInterface<T>,
 
   watchAll(cb: ManagerWatchCallback<any>),
   notifyWatchers<T>(key: string, value: ManagerWatchCallbackValue<T>): void,

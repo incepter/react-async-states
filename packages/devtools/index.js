@@ -114,6 +114,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
         if (!asyncState) {
           return;
         }
+        listenToDevtoolsMessages(asyncState);
         emit({
           source,
           uniqueId: asyncState.uniqueId,
@@ -176,6 +177,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
       }
 
       function emitInsideProvider(asyncState, insideProvider = true) {
+        listenToDevtoolsMessages(asyncState);
         emitJournalEvent(asyncState, {
           payload: insideProvider,
           type: devtoolsJournalEvents.insideProvider,
@@ -183,6 +185,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
       }
 
       function emitRunSync(asyncState, props) {
+        listenToDevtoolsMessages(asyncState);
         let evt = {
           payload: {props, type: "sync"},
           type: devtoolsJournalEvents.run
@@ -200,6 +203,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
       }
 
       function emitRunConsumedFromCache(asyncState, payload, execArgs) {
+        listenToDevtoolsMessages(asyncState);
         let evt = {
           payload: {
             consumedFromCache: true,
@@ -221,6 +225,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
       }
 
       function emitReplaceState(asyncState, props) {
+        listenToDevtoolsMessages(asyncState);
         let evt = {
           payload: {replaceState: true, type: "sync", props},
           type: devtoolsJournalEvents.run
@@ -238,6 +243,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
       }
 
       function emitRunGenerator(asyncState, props) {
+        listenToDevtoolsMessages(asyncState);
         let evt = {
           payload: {props, type: "generator"},
           type: devtoolsJournalEvents.run
@@ -255,6 +261,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
       }
 
       function emitRunPromise(asyncState, props) {
+        listenToDevtoolsMessages(asyncState);
         let evt = {
           payload: {props, type: "promise"},
           type: devtoolsJournalEvents.run
@@ -279,9 +286,12 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
           },
           type: devtoolsJournalEvents.dispose
         });
+        delete retainedInstances[asyncState.uniqueId];
+        window && window.removeEventListener("message", retainedInstances[asyncState.uniqueId]?.listener);
       }
 
       function emitSubscription(asyncState, subKey) {
+        listenToDevtoolsMessages(asyncState);
         let evt = {
           payload: subKey,
           type: devtoolsJournalEvents.subscription
@@ -299,6 +309,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
       }
 
       function emitUnsubscription(asyncState, subKey) {
+        listenToDevtoolsMessages(asyncState);
         let evt = {
           payload: subKey,
           type: devtoolsJournalEvents.unsubscription
@@ -316,6 +327,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
       }
 
       function emitUpdate(asyncState) {
+        listenToDevtoolsMessages(asyncState);
         let evt = {
           payload: {
             newState: asyncState.state,
@@ -337,35 +349,55 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
       }
 
       function startUpdate(asyncState) {
+        listenToDevtoolsMessages(asyncState);
         currentUpdate = {
           uniqueId: asyncState.uniqueId,
           oldState: shallowClone(asyncState.state),
         };
       }
-      function listenToDevtoolsMessages(asyncState) {
-        function listener(message) {
-          if (
-            !message.data ||
-            message.data.uniqueId !== `${asyncState.uniqueId}` ||
-            message.data.source !== "async-states-devtools-panel"
-          ) {
-            return;
-          }
-          if (message.data.type === "get-async-state") {
-            emitAsyncState(asyncState);
-          }
-          if (message.data.type === "change-async-state") {
-            const {data, status, isJson} = message.data;
-            const newData = devtools.formatData(data, isJson);
-            asyncState.replaceState(newData, status);
-          }
-        }
 
-        window && window.addEventListener("message", listener);
-      }
     })()
   )
 ;
+
+
+let retainedInstances = {}
+function listenToDevtoolsMessages(asyncState) {
+
+  if (retainedInstances.hasOwnProperty(asyncState.uniqueId)) {
+    return;
+  }
+
+  const {uniqueId} = asyncState;
+  const instanceListener = devtoolsListener.bind(null, uniqueId);
+
+  retainedInstances[uniqueId] = {
+    instance: asyncState,
+    listener: instanceListener
+  };
+
+
+  window && window.addEventListener("message", instanceListener);
+}
+
+function devtoolsListener(instanceUniqueId, message) {
+  if (
+    !message.data ||
+    message.data.uniqueId !== `${instanceUniqueId}` ||
+    message.data.source !== "async-states-devtools-panel"
+  ) {
+    return;
+  }
+  if (message.data.type === "get-async-state") {
+    devtools.emitAsyncState(retainedInstances[instanceUniqueId].instance);
+  }
+  if (message.data.type === "change-async-state") {
+    const {data, status, isJson} = message.data;
+    const newData = devtools.formatData(data, isJson);
+    retainedInstances[instanceUniqueId].instance.replaceState(newData, status);
+  }
+}
+
 
 
 function formatEntriesToDevtools(entries) {

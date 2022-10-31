@@ -4,33 +4,27 @@ import {
   asyncify,
   EMPTY_OBJECT,
   readProducerConfigFromProducerConfig,
-  readProducerConfigFromSubscriptionConfig,
   shallowClone,
 } from "shared";
 import {
-  StateContextValue,
   AsyncStateEntries,
   AsyncStateEntry,
   AsyncStateKeyOrSource,
   AsyncStateManagerInterface,
   AsyncStateWatchKey,
   ExtendedInitialAsyncState,
+  HoistToProviderConfig,
   InitialAsyncState,
   InitialStates,
-  ManagerHoistConfig,
   ManagerWatchCallback,
   ManagerWatchCallbackValue,
   ManagerWatchers,
+  StateContextValue,
   StateProviderProps,
   UseAsyncStateContextType,
   WatcherType
 } from "../types.internal";
-import AsyncState, {
-  AbortFn,
-  StateInterface,
-  Source,
-  ForkConfig
-} from "../async-state";
+import AsyncState, {AbortFn, Source, StateInterface} from "../async-state";
 import {isAsyncStateSource} from "../async-state/utils";
 import {
   createProducerEffectsCreator,
@@ -39,7 +33,6 @@ import {
 
 // let didWarnAboutProviderDeprecated = false;
 /**
- * @deprecated
  * The provider will be removed in the next stable release
  * don't rely on it as it only causes errors and this part will
  * be delegated completely outside React
@@ -127,7 +120,6 @@ export function AsyncStateProvider(
 
       get: manager.get,
       run: manager.run,
-      fork: manager.fork,
       hoist: manager.hoist,
       watch: manager.watch,
       dispose: manager.dispose,
@@ -167,7 +159,6 @@ export function AsyncStateManager(
     entries: asyncStateEntries,
     run,
     get,
-    fork,
     hoist,
     watch,
     dispose,
@@ -280,28 +271,6 @@ export function AsyncStateManager(
     return false;
   }
 
-  // the fork registers in the provider automatically
-  function fork<T>(
-    key: string,
-    forkConfig: ForkConfig
-  ): StateInterface<T> | undefined {
-    const asyncState: StateInterface<T> = get(key);
-    if (!asyncState) {
-      return undefined;
-    }
-
-    const forkedAsyncState = asyncState.fork(forkConfig);
-    asyncStateEntries[forkedAsyncState.key] = createAsyncStateEntry(
-      forkedAsyncState, false);
-
-    notifyWatchers(
-      forkedAsyncState.key,
-      asyncStateEntries[forkedAsyncState.key].value
-    );
-
-    return forkedAsyncState;
-  }
-
   // there is two types of watchers: per key, and watching everything
   // the everything watcher is the useSelector with a function selecting keys
   // (cannot statically predict them, so it needs to be notified about everything happening)
@@ -396,18 +365,18 @@ export function AsyncStateManager(
     asyncify(cb)();
   }
 
-  function hoist<T>(config: ManagerHoistConfig<T>): StateInterface<T> {
-    const {
-      key,
-      hoistToProviderConfig = {override: false},
-      producer
-    } = config;
+  function hoist<T>(
+    key: string,
+    instance: StateInterface<T>,
+    hoistConfig?: HoistToProviderConfig
+  ): StateInterface<T> {
 
     const existing = get(key);
-    if (existing && !hoistToProviderConfig.override) {
-      return existing as StateInterface<T>;
 
+    if (existing && !hoistConfig?.override) {
+      return existing as StateInterface<T>;
     }
+
     if (existing) {
       let didDispose = dispose(existing);
 
@@ -416,22 +385,11 @@ export function AsyncStateManager(
       }
     }
 
-    asyncStateEntries[key] = createAsyncStateEntry(
-      new AsyncState(
-        key,
-        producer,
-        readProducerConfigFromSubscriptionConfig(config)
-      ),
-      false
-    );
+    asyncStateEntries[key] = createAsyncStateEntry(instance, false);
 
-    const returnValue: StateInterface<T> = get(key);
-    notifyWatchers(
-      key,
-      returnValue
-    ); // this is async
+    notifyWatchers(key, instance); // this is async
 
-    return returnValue;
+    return instance;
   }
 
   // used in function selector in useSelector
