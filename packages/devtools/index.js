@@ -173,7 +173,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
           },
         });
         emitAsyncState(asyncState);
-        listenToDevtoolsMessages(asyncState);
+        // listenToDevtoolsMessages(asyncState);
       }
 
       function emitInsideProvider(asyncState, insideProvider = true) {

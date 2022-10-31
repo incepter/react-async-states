@@ -146,7 +146,7 @@ export interface StateInterface<T> {
   _source: Source<T>,
   config: ProducerConfig<T>,
   payload: Record<string, any> | null,
-  mergePayload(partialPayload: Record<string, any>),
+  mergePayload(partialPayload?: Record<string, any>),
 
   // state
   state: State<T>,

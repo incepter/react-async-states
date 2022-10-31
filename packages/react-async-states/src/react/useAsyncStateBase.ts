@@ -963,19 +963,12 @@ function makeUseAsyncStateBaseReturnValue<T, E>(
     source: asyncState._source,
     payload: asyncState.payload,
     uniqueId: asyncState.uniqueId,
-
-    mergePayload(newPayload) {
-      asyncState.payload = shallowClone(
-        asyncState.payload,
-        newPayload
-      );
-    },
-
     abort: asyncState.abort.bind(asyncState),
     replay: asyncState.replay.bind(asyncState),
+    mergePayload: asyncState.mergePayload.bind(asyncState),
     replaceState: asyncState.replaceState.bind(asyncState),
-    run: isFn(run) ? run : asyncState.run.bind(asyncState, standaloneProducerEffectsCreator),
     invalidateCache: asyncState.invalidateCache.bind(asyncState),
+    run: isFn(run) ? run : asyncState.run.bind(asyncState, standaloneProducerEffectsCreator),
   };
 }
 

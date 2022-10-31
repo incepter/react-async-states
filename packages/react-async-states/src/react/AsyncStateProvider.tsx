@@ -81,6 +81,8 @@ export function AsyncStateProvider(
     [manager, payload]
   );
 
+  React.useEffect(disposeManager, [manager]);
+
   return (
     <AsyncStateContext.Provider value={contextValue}>
       {children}
@@ -89,6 +91,15 @@ export function AsyncStateProvider(
 
   function initialize() {
     return AsyncStateManager(initialStates);
+  }
+
+  function disposeManager() {
+    return function cleanup() {
+      Promise.resolve().then(() => {
+        Object.values(manager.entries)
+          .forEach(entry => entry.value.dispose())
+      });
+    }
   }
 
   function onInitialStatesChange(): { data: AsyncStateEntry<any>[] } {
@@ -109,7 +120,7 @@ export function AsyncStateProvider(
   function onPayloadChange() {
     // propagate the new payload
     for (const entry of Object.values(manager.entries)) {
-      entry.value.payload = shallowClone(entry.value.payload, payload);
+      entry.value.mergePayload(payload);
     }
   }
 

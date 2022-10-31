@@ -9,6 +9,7 @@ import {
   AsyncStateStatus,
   AsyncStateProvider, useAsyncState
 } from "react-async-states";
+import App from "./past/App"
 
 //
 // function fetchProfiles(props) {
@@ -42,7 +43,9 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
     <AsyncStateProvider>
-      <ProviderTest/>
+      <Wrapper>
+        <App/>
+      </Wrapper>
     </AsyncStateProvider>
   </React.StrictMode>
 )
@@ -87,6 +90,14 @@ root.render(
 // }
 
 function ProviderTest() {
+  return (
+    <Wrapper>
+      <Hoister/>
+    </Wrapper>
+  );
+}
+
+function Wrapper({children}) {
   const [mounted, setMounted] = React.useState(false);
 
   return (
@@ -95,7 +106,7 @@ function ProviderTest() {
         onClick={() => setMounted(old => !old)}>
         {mounted ? "unmount" : "mount"}
       </button>
-      {mounted && <Hoister/>}
+      {mounted && children}
     </>
   );
 }

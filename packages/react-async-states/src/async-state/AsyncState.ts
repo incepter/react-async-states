@@ -212,8 +212,8 @@ class AsyncState<T> implements StateInterface<T> {
       that.locks -= 1;
       delete that.subscriptions![subscriptionKey!];
       if (__DEV__) devtools.emitUnsubscription(that, subscriptionKey);
-      if (that.config.resetStateOnDispose === true) {
-        if (Object.values(that.subscriptions!).filter(Boolean).length === 0) {
+      if (that.config.resetStateOnDispose) {
+        if (Object.values(that.subscriptions!).length === 0) {
           that.dispose();
         }
       }
@@ -569,7 +569,10 @@ class AsyncState<T> implements StateInterface<T> {
     return clone as StateInterface<T>;
   }
 
-  mergePayload(partialPayload: Record<string, any>): void {
+  mergePayload(partialPayload?: Record<string, any>): void {
+    if (!this.payload) {
+      this.payload = {}
+    }
     this.payload = Object.assign(this.payload, partialPayload);
   }
 
@@ -784,7 +787,7 @@ function createRunFunction(
     } else if (isFn(input)) {
       instance = new AsyncState(nextKey(), input as Producer<T>);
       if (config?.payload) {
-        instance.payload = shallowClone(Object.create(null), config.payload);
+        instance?.mergePayload(config.payload)
       }
     } else if (manager !== null) {
       instance = manager.get(input as string);
@@ -819,7 +822,7 @@ function createRunPFunction(manager, props) {
     } else if (isFn(input)) {
       instance = new AsyncState(nextKey(), input as Producer<T>);
       if (config?.payload) {
-        instance.payload = shallowClone(Object.create(null), config.payload);
+        instance.mergePayload(config.payload);
       }
     } else {
       instance = manager?.get(input as string);
