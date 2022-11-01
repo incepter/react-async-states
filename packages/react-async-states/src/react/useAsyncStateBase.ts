@@ -529,15 +529,12 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
 
   // assign payload
   if (output.asyncState) {
-    if (!output.asyncState.payload) {
-      output.asyncState.payload = Object.create(null);
+    if (contextValue?.payload) {
+      output.asyncState.mergePayload(contextValue?.payload);
     }
-    // merge the payload in the async state immediately to benefit from its power
-    output.asyncState.payload = Object.assign(
-      output.asyncState.payload,
-      contextValue?.payload,
-      newConfig.payload
-    );
+    if (newConfig.payload) {
+      output.asyncState.mergePayload(newConfig.payload);
+    }
   }
 
   return output;
