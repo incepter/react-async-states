@@ -756,6 +756,7 @@ function makeSource<T>(instance: StateInterface<T>): Readonly<Source<T>> {
   source.getState = instance.getState.bind(instance);
   source.subscribe = instance.subscribe.bind(instance);
   source.setState = instance.replaceState.bind(instance);
+  source.mergePayload = instance.mergePayload.bind(instance);
   source.invalidateCache = instance.invalidateCache.bind(instance);
   source.run = instance.run.bind(instance, standaloneProducerEffectsCreator);
 

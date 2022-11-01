@@ -102,6 +102,7 @@ export type Source<T> = {
   run: (...args: any[]) => AbortFn,
   getLaneSource(laneKey?: string): Source<T>,
   invalidateCache: (cacheKey?: string) => void,
+  mergePayload(partialPayload?: Record<string, any>),
   subscribe: (cb: Function, subscriptionKey?: string) => AbortFn,
 }
 export type RunTask<T> = {
