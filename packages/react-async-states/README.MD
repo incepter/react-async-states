@@ -3,8 +3,8 @@
 ## What is this ?
 This is a multi-paradigm library for decentralized state management in React.
 It aims to facilitate and automate working with [a]synchronous states while
-sharing them. It was designed to the needed boilerplate to achieve great and
-effective results.
+sharing them. It was designed to reduce the needed boilerplate to
+achieve great and effective results.
 
 ## Main features
 The features that make this library special are:

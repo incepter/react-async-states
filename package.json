@@ -14,6 +14,7 @@
     "publish:lib": "copyfiles -f README.MD packages/react-async-states && cd packages/react-async-states &&  npm publish && rimraf README.MD"
   },
   "devDependencies": {
+    "@svgr/webpack": "6.5.1",
     "typescript": "^4.8.4"
   }
 }
