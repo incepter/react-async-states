@@ -12,20 +12,25 @@ import {
 import App from "./past/App"
 
 //
-// function fetchProfiles(props) {
+function fetchProfiles(props) {
+
+  const controller = new AbortController();
+
+  props.onAbort(() => {
+    controller.abort()
+  });
+
+  return fetch(
+    `https://jsonplaceholder.typicode.com/users/${props.args[0] ?? ''}`,
+    {signal: controller.signal}
+  ).then(r => r.json());
+
+}
 //
-//   const controller = new AbortController();
-//   props.onAbort(() => {
-//     controller.abort()
-//   });
-//   return fetch(`https://jsonplaceholder.typicode.com/users`, {signal: controller.signal}).then(r => r.json());
-//
-// }
-//
-// const profilesList = createSource("profiles", fetchProfiles, {
-//   // runEffect: "delay",
-//   // runEffectDurationMs: 800
-// });
+const profilesList = createSource("profiles", fetchProfiles, {
+  // runEffect: "delay",
+  // runEffectDurationMs: 800
+});
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 // runpSource(profilesList)
@@ -43,62 +48,64 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
     <AsyncStateProvider>
-      <Wrapper>
-        <App/>
+      <Wrapper initialValue={true}>
+        <ProfilesView/>
       </Wrapper>
     </AsyncStateProvider>
   </React.StrictMode>
 )
 
 //
-// function ProfilesView() {
-//   const state = useSelector(profilesList);
-//   if (state.status !== AsyncStateStatus.error && state.status !== AsyncStateStatus.success) {
-//     return "state is still not resolved!"
-//   }
-//
-//   if (state.status === AsyncStateStatus.error) {
-//     return <span>Error occurred!!! {state.data?.toString?.()}</span>
-//   }
-//   return (
-//     <div className="splash" style={{
-//       display: "flex",
-//       paddingBottom: 20,
-//     }}>
-//       {state.data.map((profile, index) => <ProfileView key={profile.username}
-//                                                        profile={profile}
-//                                                        index={index}/>)}
-//     </div>
-//   );
-// }
+function ProfilesView() {
+  const {state} = useAsyncState.auto({source: profilesList, autoRunArgs: [2]});
 
-// function ProfileView({profile, index}) {
-//   return (<div className="card" title={profile.username} style={{
-//     opacity: 0,
-//     width: 100,
-//     height: 100,
-//     marginTop: 20,
-//     marginLeft: 20,
-//     display: "flex",
-//     textAlign: "center",
-//     alignItems: "center",
-//     justifyContent: "center",
-//     animation: "fadeIn 800ms 1",
-//     animationFillMode: 'forwards',
-//     animationDelay: `${index * 50}ms`,
-//   }}>{profile.name}</div>)
-// }
+  if (state.status !== AsyncStateStatus.error && state.status !== AsyncStateStatus.success) {
+    return "Pending..."
+  }
 
-function ProviderTest() {
+  if (state.status === AsyncStateStatus.error) {
+    return <span>Error occurred!!! {state.data?.toString?.()}</span>
+  }
+  const data = Array.isArray(state.data) ? state.data : [state.data]
   return (
-    <Wrapper>
-      <Hoister/>
-    </Wrapper>
+    <div className="splash" style={{
+      display: "flex",
+      paddingBottom: 20,
+    }}>
+      {data.map((profile, index) => <ProfileView key={profile.username}
+                                                       profile={profile}
+                                                       index={index}/>)}
+    </div>
   );
 }
 
-function Wrapper({children}) {
-  const [mounted, setMounted] = React.useState(false);
+function ProfileView({profile, index}) {
+  return (<div className="card" title={profile.username} style={{
+    opacity: 0,
+    width: 100,
+    height: 100,
+    marginTop: 20,
+    marginLeft: 20,
+    display: "flex",
+    textAlign: "center",
+    alignItems: "center",
+    justifyContent: "center",
+    animation: "fadeIn 800ms 1",
+    animationFillMode: 'forwards',
+    animationDelay: `${index * 50}ms`,
+  }}>{profile.name}</div>)
+}
+
+// function ProviderTest() {
+//   return (
+//     <Wrapper>
+//       <Hoister/>
+//     </Wrapper>
+//   );
+// }
+
+function Wrapper({children, initialValue = false}) {
+  const [mounted, setMounted] = React.useState(initialValue);
 
   return (
     <>
@@ -110,14 +117,14 @@ function Wrapper({children}) {
     </>
   );
 }
-
-function Hoister() {
-  const {state} = useAsyncState.hoist({
-    key: "haha",
-    initialValue: 5,
-    producer: () => 3,
-    resetStateOnDispose: true,
-  });
-
-  return state.data;
-}
+//
+// function Hoister() {
+//   const {state} = useAsyncState.hoist({
+//     key: "haha",
+//     initialValue: 5,
+//     producer: () => 3,
+//     resetStateOnDispose: true,
+//   });
+//
+//   return state.data;
+// }

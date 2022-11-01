@@ -202,20 +202,19 @@ export type EqualityFn<T> = (
 
 export interface BaseConfig<T> extends ProducerConfig<T>{
   key?: string,
+  lane?: string,
+  autoRunArgs?: any[],
   subscriptionKey?: string,
+  payload?: Record<string, any>,
+  events?: UseAsyncStateEvents<T>,
 
   lazy?: boolean,
   condition?: boolean,
-  payload?: { [id: string]: any },
 
   fork?: boolean,
   forkConfig?: ForkConfig,
-
   hoistToProvider?: boolean,
   hoistToProviderConfig?: HoistToProviderConfig,
-
-  events?: UseAsyncStateEvents<T>,
-  lane?: string,
 }
 
 export interface ConfigWithKeyWithSelector<T, E> extends ConfigWithKeyWithoutSelector<T> {
@@ -256,35 +255,30 @@ export type MixedConfig<T, E> = string | Source<T> | Producer<T> |
 
 
 export type UseAsyncStateConfiguration<T, E = State<T>> = {
-  subscriptionKey?: string,
-
   key?: string,
+  lane?: string,
   source?: Source<T>,
-
   producer?: Producer<T>,
-  initialValue?: T | ((cache: Record<string, CachedState<T>>) => T),
-
-  lazy?: boolean,
-  condition?: boolean,
-  payload?: { [id: string]: any },
-
-  runEffect?: ProducerRunEffects,
   skipPendingDelayMs?: number,
+  cacheConfig?: CacheConfig<T>,
   runEffectDurationMs?: number,
   resetStateOnDispose?: boolean,
-  cacheConfig?: CacheConfig<T>,
+  payload?: Record<string, any>,
+  runEffect?: ProducerRunEffects,
+  initialValue?: T | ((cache: Record<string, CachedState<T>>) => T),
 
   fork?: boolean,
   forkConfig?: ForkConfig,
-
   hoistToProvider?: boolean,
   hoistToProviderConfig?: HoistToProviderConfig,
 
-  selector: useSelector<T, E>,
+  lazy?: boolean,
+  autoRunArgs?: any[],
+  condition?: boolean,
   areEqual: EqualityFn<E>,
-
+  subscriptionKey?: string,
+  selector: useSelector<T, E>,
   events?: UseAsyncStateEvents<T>,
-  lane?: string,
 }
 
 export type StateBoundaryProps<T, E> = {

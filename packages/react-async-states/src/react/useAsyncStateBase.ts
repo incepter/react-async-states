@@ -149,8 +149,14 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   function autoRunAsyncState(): CleanupFn {
     // auto run only if condition is met, and it is not lazy
     const shouldAutoRun = configuration.condition && !configuration.lazy;
+    if (!shouldAutoRun) {
+      return;
+    }
     // if dependencies change, if we run, the cleanup shall abort
-    return shouldAutoRun ? run() : undefined;
+    if (configuration.autoRunArgs && Array.isArray(configuration.autoRunArgs)) {
+      return run(...configuration.autoRunArgs);
+    }
+    return run();
   }
 
   function subscribeToAsyncState() {
