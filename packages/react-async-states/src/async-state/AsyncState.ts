@@ -41,7 +41,7 @@ import {
   State,
   StateFunctionUpdater,
   StateInterface,
-  StateSubscription
+  StateSubscription, DevModeConfiguration
 } from "./types";
 import {constructAsyncStateSource} from "./construct-source";
 import {
@@ -58,6 +58,7 @@ class AsyncState<T> implements StateInterface<T> {
   _source: Source<T>;
   version: number = 0;
   config: ProducerConfig<T>;
+  devModeConfiguration?: DevModeConfiguration;
   payload: Record<string, any> | null = null;
 
   state: State<T>;
@@ -91,7 +92,8 @@ class AsyncState<T> implements StateInterface<T> {
   constructor(
     key: string,
     producer: Producer<T> | undefined | null,
-    config?: ProducerConfig<T>
+    config?: ProducerConfig<T>,
+    devModeConfiguration?: DevModeConfiguration,
   ) {
     this.key = key;
     this.uniqueId = nextUniqueId();
@@ -103,6 +105,7 @@ class AsyncState<T> implements StateInterface<T> {
 
     if (__DEV__) {
       this.journal = [];
+      this.devModeConfiguration = devModeConfiguration;
     }
 
     loadCache(this);

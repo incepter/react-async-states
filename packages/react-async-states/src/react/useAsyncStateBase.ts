@@ -43,7 +43,6 @@ import {
   standaloneProducerEffectsCreator
 } from "../async-state/AsyncState";
 import useInDevSubscriptionKey from "./helpers/useCallerName";
-import {getState} from "../async-state/source-utils";
 
 const defaultDependencies: any[] = [];
 export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(

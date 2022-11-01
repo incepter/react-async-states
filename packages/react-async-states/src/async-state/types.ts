@@ -139,6 +139,18 @@ export type CachedState<T> = {
   deadline: number,
 }
 
+export type DevModeConfiguration = {
+  creationPath: CreationPath,
+}
+
+export enum CreationPath {
+  CREATE_SOURCE                           = 0b00001,
+  USE_ASYNC_STATE                         = 0b00010,
+  PROPS_RUN_FUNCTION                      = 0b00100,
+  PROPS_RUNP_FUNCTION                     = 0b01000,
+  PROVIDER_INITIALIZATION                 = 0b10000,
+}
+
 export interface StateInterface<T> {
   // identity
   key: string,
@@ -189,6 +201,7 @@ export interface StateInterface<T> {
 
   // dev properties
   journal: any[], // for devtools, dev only
+  devModeConfiguration?: DevModeConfiguration,
 }
 
 export interface StateBuilderInterface {
