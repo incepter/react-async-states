@@ -1,11 +1,9 @@
 import * as React from "react";
 import {render, screen} from "@testing-library/react";
-import {createSource} from "../../../../async-state/create-async-state";
 import {useAsyncState} from "../../../../react/useAsyncState";
 import {UseAsyncState} from "../../../../types.internal";
 import {AsyncStateProvider} from "../../../../react/AsyncStateProvider";
-import {Source} from "../../../../async-state";
-import {State} from "../../../../types";
+import {createSource, Source, State} from "../../../../async-state";
 
 describe('should select from another async state', () => {
   it('should select by source', () => {

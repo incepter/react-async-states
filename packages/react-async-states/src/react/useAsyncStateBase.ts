@@ -1,36 +1,30 @@
 import * as React from "react";
-import {
-  __DEV__,
-  invokeIfPresent,
-  isFn,
-  oneObjectIdentity,
-  readProducerConfigFromSubscriptionConfig,
-  shallowClone,
-  shallowEqual
-} from "shared";
+import {__DEV__, shallowClone, shallowEqual} from "shared";
 import {AsyncStateContext} from "./context";
 import {
-  StateContextValue,
-  SubscriptionMode,
   CleanupFn,
-  UseAsyncStateRef,
+  MixedConfig,
   PartialUseAsyncStateConfiguration,
+  StateContextValue,
   SubscribeEventProps,
+  SubscriptionInfo,
+  SubscriptionMode,
   UseAsyncState,
   UseAsyncStateConfiguration,
   UseAsyncStateContextType,
   UseAsyncStateEventFn,
   UseAsyncStateEvents,
   UseAsyncStateEventSubscribe,
-  SubscriptionInfo,
-  useSelector, MixedConfig
+  UseAsyncStateRef,
+  useSelector
 } from "../types.internal";
 import AsyncState, {
   AbortFn,
-  StateInterface,
+  AsyncStateStatus,
+  Producer,
   Source,
-  AsyncStateStatus, Producer,
-  State
+  State,
+  StateInterface
 } from "../async-state";
 import {nextKey} from "../async-state/key-gen";
 import {
@@ -376,6 +370,11 @@ const defaultUseASConfig = Object.freeze({
   selector: oneObjectIdentity,
 });
 
+function oneObjectIdentity<T>(obj: T): T {
+  return obj;
+}
+
+
 // userConfig is the config the developer wrote
 function readUserConfiguration<T, E>(
   // the configuration that the developer emitted, can be of many forms
@@ -384,7 +383,7 @@ function readUserConfiguration<T, E>(
   overrides?: PartialUseAsyncStateConfiguration<T, E>
 ): UseAsyncStateConfiguration<T, E> {
   // this is direct anonymous producer configuration
-  if (isFn(userConfig)) {
+  if (typeof userConfig === "function") {
     return Object.assign(
       {},
       defaultUseASConfig,
@@ -627,7 +626,7 @@ function inferStateInstance<T, E>(
       return new AsyncState(
         key!,
         producer,
-        readProducerConfigFromSubscriptionConfig(configuration)
+        configuration,
       );
     case SubscriptionMode.LISTEN:
       return candidate;
@@ -636,7 +635,7 @@ function inferStateInstance<T, E>(
       return new AsyncState(
         configuration.key as string,
         configuration.producer,
-        readProducerConfigFromSubscriptionConfig(configuration)
+        configuration,
       );
     case SubscriptionMode.SOURCE:
       return readAsyncStateFromSource(
@@ -830,7 +829,10 @@ function watchOverAsyncState<T, E = State<T>>(
     );
     return function cleanup() {
       didClean = true;
-      invokeIfPresent(unwatch);
+
+      if (typeof unwatch === "function") {
+        unwatch();
+      }
     };
   }
 
@@ -854,13 +856,17 @@ function newSubscribeToAsyncState<T>(
   let unsubscribeFromEvents = invokeSubscribeEvents(
     events?.subscribe, run, mode, asyncState);
 
-  if (asyncState.version !== getLatestRenderedVersion() && isFn(onVersionMismatch)) {
+  if (asyncState.version !== getLatestRenderedVersion() && typeof onVersionMismatch === "function") {
     onVersionMismatch!();
   }
 
   return function cleanup() {
     if (unsubscribeFromEvents) {
-      unsubscribeFromEvents.forEach(cb => invokeIfPresent(cb));
+      unsubscribeFromEvents.forEach(cb => {
+        if (typeof cb === "function") {
+          cb();
+        }
+      });
     }
     unsubscribe!();
   }
@@ -966,7 +972,11 @@ function makeUseAsyncStateBaseReturnValue<T, E>(
     mergePayload: asyncState.mergePayload,
     replaceState: asyncState.setState,
     invalidateCache: asyncState.invalidateCache,
-    run: isFn(run) ? run : asyncState.run.bind(asyncState, standaloneProducerEffectsCreator),
+
+    run: typeof run === "function" ?
+      run
+      :
+      asyncState.run.bind(asyncState, standaloneProducerEffectsCreator),
   };
 }
 
@@ -1030,11 +1040,3 @@ function createReadInConcurrentMode<T, E>(
 }
 
 //endregion
-
-function subscribeAndWatch<T, E>(
-  instance: StateInterface<T>,
-  contextValue: StateContextValue | null,
-  configuration: UseAsyncStateConfiguration<T, E>
-) {
-
-}

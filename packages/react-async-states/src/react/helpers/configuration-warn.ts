@@ -1,4 +1,3 @@
-import {warning} from "shared";
 import {
   SubscriptionMode,
   UseAsyncStateConfiguration
@@ -54,7 +53,7 @@ export function warnInDevAboutIrrelevantUseAsyncStateConfiguration(
 
   if (usedIrrelevantProperties.length) {
     const caller = computeCallerName(9);
-    warning(`[Incompatible configuration] - Subscription to '${userConfig.key}' ` +
+    console.error(`[Incompatible configuration] - Subscription to '${userConfig.key}' ` +
       `${userConfig.subscriptionKey ? '(with subscriptionKey=' +
         userConfig.subscriptionKey + ') ' : ''}from '${caller}' is using incompatible ` +
       `['${usedIrrelevantProperties.join(", ")}'] properties with its mode '${mode}'`);

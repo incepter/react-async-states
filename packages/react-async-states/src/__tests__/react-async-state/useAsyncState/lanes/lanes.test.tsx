@@ -1,13 +1,13 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {mockDateNow} from "../../utils/setup";
-import {createSource} from "../../../../async-state/create-async-state";
 import {useAsyncState} from "../../../../react/useAsyncState";
 import {
   runpSourceLane,
   runSource,
   runSourceLane
 } from "../../../../async-state/source-utils";
+import {createSource} from "../../../../async-state";
 
 mockDateNow();
 

@@ -1,5 +1,5 @@
-import {StateInterface, Source} from "./types";
 import {asyncStatesKey} from "./utils";
+import {StateInterface} from "./index";
 
 function Secret() {
   let key = null;
@@ -15,7 +15,7 @@ function Secret() {
   };
 }
 
-export function constructAsyncStateSource<T>(asyncState: StateInterface<T>): {} {
+export function hideStateInstanceInNewObject<T>(asyncState: StateInterface<T>): {} {
   // @ts-ignore
   let output = new (Secret())();
   output.constructor(asyncStatesKey, asyncState);

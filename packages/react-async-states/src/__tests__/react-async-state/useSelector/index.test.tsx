@@ -1,9 +1,9 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {AsyncStateProvider} from "../../../react/AsyncStateProvider";
-import {createSource} from "../../../async-state/create-async-state";
 import {useSelector} from "../../../react/useSelector";
 import {useRun} from "../../../react/useRun";
+import {createSource} from "../../../async-state";
 
 describe('useSelector', () => {
   it('should do basic selection', () => {

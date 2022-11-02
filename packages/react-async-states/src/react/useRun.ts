@@ -1,6 +1,5 @@
 import * as React from "react";
-import {AbortFn} from "../async-state";
-import {AsyncStateKeyOrSource} from "../types.internal";
+import {AbortFn, AsyncStateKeyOrSource} from "../async-state";
 import {AsyncStateContext} from "./context";
 import {
   insideContextRunFn,

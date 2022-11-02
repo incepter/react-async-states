@@ -1,6 +1,5 @@
 import { act } from "@testing-library/react-hooks";
-import AsyncState from "../../async-state";
-import { AsyncStateStatus } from "shared";
+import AsyncState, { AsyncStateStatus } from "../../async-state";
 import { rejectionTimeout, timeout } from "./test-utils";
 import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
 

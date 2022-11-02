@@ -1,53 +1,21 @@
 import {
   __DEV__,
   cloneProducerProps,
-  invokeIfPresent,
-  isFn,
+  isGenerator,
   isPromise,
-  numberOrZero,
   shallowClone,
-  warning
 } from "shared";
-import {wrapProducerFunction} from "./wrap-producer-function";
 import {
   asyncStatesKey,
   didNotExpire,
   hash,
   isAsyncStateSource,
   sourceIsSourceSymbol,
-  StateBuilder
 } from "./utils";
 import devtools from "devtools";
 import {areRunEffectsSupported} from "shared/features";
-import {
-  AbortFn,
-  AsyncStateStatus,
-  CachedState,
-  ForkConfig,
-  PendingTimeout,
-  PendingUpdate,
-  Producer,
-  ProducerConfig,
-  ProducerEffects,
-  ProducerEffectsCreator,
-  ProducerFunction,
-  ProducerProps,
-  ProducerRunConfig,
-  ProducerRunInput,
-  ProducerRunEffects,
-  ProducerType,
-  RunTask,
-  Source,
-  State,
-  StateFunctionUpdater,
-  StateInterface,
-  StateSubscription, DevModeConfiguration, BaseSource
-} from "./types";
-import {constructAsyncStateSource} from "./construct-source";
-import {
-  AsyncStateKeyOrSource,
-  AsyncStateManagerInterface
-} from "../types.internal";
+import {hideStateInstanceInNewObject} from "./hide-object";
+import {AsyncStateManagerInterface} from "../types.internal";
 import {nextKey} from "./key-gen";
 
 class AsyncState<T> implements StateInterface<T> {
@@ -58,7 +26,6 @@ class AsyncState<T> implements StateInterface<T> {
   _source: Source<T>;
   version: number = 0;
   config: ProducerConfig<T>;
-  devModeConfiguration?: DevModeConfiguration;
   payload: Record<string, any> | null = null;
 
   state: State<T>;
@@ -71,7 +38,7 @@ class AsyncState<T> implements StateInterface<T> {
   parent: StateInterface<T> | null = null;
   lanes: Record<string, StateInterface<T>> | null = null;
 
-  subscriptionsIndex: number = 0;
+  subsIndex: number = 0;
   subscriptions: Record<number, StateSubscription<T>> | null = null;
 
   producer: ProducerFunction<T>;
@@ -83,9 +50,9 @@ class AsyncState<T> implements StateInterface<T> {
   private locks: number = 0;
   private pendingTimeout: PendingTimeout | null = null;
 
-  private currentAborter: AbortFn = undefined;
-  private latestRunTask: RunTask<T> | null = null;
-  private willPerformStateUpdate: boolean = false;
+  private willUpdate: boolean = false;
+  private currentAbort: AbortFn = undefined;
+  private latestRun: RunTask<T> | null = null;
 
   //endregion
 
@@ -93,7 +60,6 @@ class AsyncState<T> implements StateInterface<T> {
     key: string,
     producer: Producer<T> | undefined | null,
     config?: ProducerConfig<T>,
-    devModeConfiguration?: DevModeConfiguration,
   ) {
     this.key = key;
     this.uniqueId = nextUniqueId();
@@ -104,7 +70,6 @@ class AsyncState<T> implements StateInterface<T> {
 
     if (__DEV__) {
       this.journal = [];
-      this.devModeConfiguration = devModeConfiguration;
     }
 
     loadCache(this);
@@ -235,11 +200,11 @@ class AsyncState<T> implements StateInterface<T> {
     }
 
     let that = this;
-    this.subscriptionsIndex += 1;
+    this.subsIndex += 1;
     let subscriptionKey: string | undefined = subKey;
 
     if (subKey === undefined) {
-      subscriptionKey = `subscription-$${this.subscriptionsIndex}`;
+      subscriptionKey = `subscription-$${this.subsIndex}`;
     }
 
     function cleanup() {
@@ -271,14 +236,14 @@ class AsyncState<T> implements StateInterface<T> {
     if (!StateBuilder[status]) {
       throw new Error(`Couldn't replace state to unknown status ${status}.`);
     }
-    this.willPerformStateUpdate = true;
+    this.willUpdate = true;
     if (this.state?.status === AsyncStateStatus.pending) {
       this.abort();
-      this.currentAborter = undefined;
+      this.currentAbort = undefined;
     }
 
     let effectiveValue = newValue;
-    if (isFn(newValue)) {
+    if (typeof newValue === "function") {
       effectiveValue = (newValue as StateFunctionUpdater<T>)(this.state);
     }
     // @ts-ignore
@@ -289,11 +254,11 @@ class AsyncState<T> implements StateInterface<T> {
     });
     if (__DEV__) devtools.emitReplaceState(this, savedProps);
     this.replaceState(StateBuilder[status](effectiveValue, savedProps));
-    this.willPerformStateUpdate = false;
+    this.willUpdate = false;
   }
 
   replay(): AbortFn {
-    let latestRunTask = this.latestRunTask;
+    let latestRunTask = this.latestRun;
     if (!latestRunTask) {
       return undefined;
     }
@@ -331,7 +296,7 @@ class AsyncState<T> implements StateInterface<T> {
   }
 
   run(createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]) {
-    const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
+    const effectDurationMs = Number(this.config.runEffectDurationMs) || 0;
 
     if (
       !areRunEffectsSupported() ||
@@ -352,7 +317,7 @@ class AsyncState<T> implements StateInterface<T> {
     ...args: any[]
   ): AbortFn {
 
-    const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
+    const effectDurationMs = Number(this.config.runEffectDurationMs) || 0;
 
     const that = this;
     function scheduleDelayedRun() {
@@ -375,7 +340,9 @@ class AsyncState<T> implements StateInterface<T> {
       return function abortCleanup(reason) {
         clearTimeout(timeoutId);
         that.pendingTimeout = null;
-        invokeIfPresent(runAbortCallback, reason);
+        if (typeof runAbortCallback === "function") {
+          runAbortCallback(reason);
+        }
       }
     }
     if (areRunEffectsSupported() && this.config.runEffect) {
@@ -419,7 +386,7 @@ class AsyncState<T> implements StateInterface<T> {
     payload: Record<string, any> | null,
     ...execArgs: any[]
   ): AbortFn {
-    this.willPerformStateUpdate = true;
+    this.willUpdate = true;
     if (this.state.status === AsyncStateStatus.pending || this.pendingUpdate) {
       if (this.pendingUpdate) {
         clearTimeout(this.pendingUpdate.timeoutId);
@@ -427,8 +394,8 @@ class AsyncState<T> implements StateInterface<T> {
         this.pendingUpdate = null;
       }
       this.abort();
-      this.currentAborter = undefined;
-    } else if (isFn(this.currentAborter)) {
+      this.currentAbort = undefined;
+    } else if (typeof this.currentAbort === "function") {
       this.abort();
     }
 
@@ -484,7 +451,7 @@ class AsyncState<T> implements StateInterface<T> {
       // but has low priority since getState returns the very current state
       lastSuccess: that.lastSuccess,
       onAbort(cb: AbortFn) {
-        if (isFn(cb)) {
+        if (typeof cb === "function") {
           onAbortCallbacks.push(cb);
         }
       },
@@ -502,13 +469,13 @@ class AsyncState<T> implements StateInterface<T> {
       status?: AsyncStateStatus
     ): void {
       if (runIndicators.cleared && that.state.status === AsyncStateStatus.aborted) {
-        warning("You are emitting while your producer is passing to aborted state." +
+        console.error("You are emitting while your producer is passing to aborted state." +
           "This has no effect and not supported by the library. The next " +
           "state value on aborted state is the reason of the abort.");
         return;
       }
       if (!runIndicators.fulfilled) {
-        warning("Called props.emit before the producer resolves. This is" +
+        console.error("Called props.emit before the producer resolves. This is" +
           " not supported in the library and will have no effect");
         return;
       }
@@ -529,31 +496,36 @@ class AsyncState<T> implements StateInterface<T> {
         // from aborts that will be called synchronously
         // by the library replace the state again
         // these state updates are only with aborted status
-        if (!that.willPerformStateUpdate) {
+        if (!that.willUpdate) {
           that.replaceState(StateBuilder.aborted(reason, cloneProducerProps(props)));
         }
       }
 
       runIndicators.cleared = true;
       onAbortCallbacks.forEach(function clean(func) {
-        invokeIfPresent(func, reason);
+
+        if (typeof func === "function") {
+          func(reason);
+        }
       });
-      that.currentAborter = undefined;
+      that.currentAbort = undefined;
     }
 
-    this.currentAborter = abort;
-    this.latestRunTask = {
+    this.currentAbort = abort;
+    this.latestRun = {
       payload,
       args: execArgs,
       producerEffectsCreator: createProducerEffects,
     };
     this.producer(props, runIndicators);
-    this.willPerformStateUpdate = false;
+    this.willUpdate = false;
     return abort;
   }
 
   abort(reason: any = undefined) {
-    invokeIfPresent(this.currentAborter, reason);
+    if (typeof this.currentAbort === "function") {
+      this.currentAbort(reason);
+    }
   }
 
   dispose() {
@@ -561,7 +533,7 @@ class AsyncState<T> implements StateInterface<T> {
       return false;
     }
 
-    this.willPerformStateUpdate = true;
+    this.willUpdate = true;
     this.abort();
 
     this.locks = 0;
@@ -572,7 +544,7 @@ class AsyncState<T> implements StateInterface<T> {
     this.replaceState(newState);
     if (__DEV__) devtools.emitDispose(this);
 
-    this.willPerformStateUpdate = false;
+    this.willUpdate = false;
     return true;
   }
 
@@ -622,6 +594,19 @@ class AsyncState<T> implements StateInterface<T> {
 }
 
 //region AsyncState methods helpers
+
+export function createSource<T>(
+  key: string,
+  producer?: Producer<T> | undefined | null,
+  config?: ProducerConfig<T>
+): Source<T> {
+  return new AsyncState(
+    key,
+    producer,
+    config
+  )._source;
+}
+
 const defaultForkConfig: ForkConfig = Object.freeze({keepState: false});
 let uniqueId: number = 0;
 
@@ -770,7 +755,7 @@ function spreadCacheChangeOnLanes<T>(topLevelParent: StateInterface<T>) {
 }
 
 function makeSource<T>(instance: StateInterface<T>): Readonly<Source<T>> {
-  const hiddenInstance = constructAsyncStateSource(instance);
+  const hiddenInstance = hideStateInstanceInNewObject(instance);
 
   const source: Source<T> = Object.assign(hiddenInstance, {
     key: instance.key,
@@ -808,6 +793,32 @@ function makeSource<T>(instance: StateInterface<T>): Readonly<Source<T>> {
 function isCacheEnabled(instance: StateInterface<any>): boolean {
   return !!instance.config.cacheConfig?.enabled;
 }
+
+
+function state<T>(
+  status: AsyncStateStatus,
+  data: T | any,
+  props: ProducerSavedProps<T> | null
+): State<T> {
+  return Object.freeze({status, data, props, timestamp: Date.now()});
+}
+
+export const StateBuilder = Object.freeze({
+  initial: (initialValue) => state(AsyncStateStatus.initial, initialValue, null),
+  error: (
+    data,
+    props
+  ) => state(AsyncStateStatus.error, data, props),
+  success: (
+    data,
+    props
+  ) => state(AsyncStateStatus.success, data, props),
+  pending: props => state(AsyncStateStatus.pending, null, props),
+  aborted: (
+    reason,
+    props
+  ) => state(AsyncStateStatus.aborted, reason, props),
+}) as StateBuilderInterface;
 //endregion
 
 //region producerEffects creators helpers
@@ -828,7 +839,7 @@ function createRunFunction(
       instance = readAsyncStateFromSource(input as Source<T>).getLane(config?.lane);
 
       return instance.run(producerEffectsCreator, ...args);
-    } else if (isFn(input)) {
+    } else if (typeof input === "function") {
 
       instance = new AsyncState(nextKey(), input as Producer<T>);
       if (config?.payload) {
@@ -841,6 +852,10 @@ function createRunFunction(
 
       if (instance && config?.lane) {
         instance = instance.getLane(config.lane);
+      }
+
+      if (!instance) {
+        return undefined;
       }
 
       return instance.run(producerEffectsCreator, ...args);
@@ -862,7 +877,7 @@ function createRunPFunction(manager, props) {
 
     if (isAsyncStateSource(input)) {
       instance = readAsyncStateFromSource(input as Source<T>).getLane(config?.lane);
-    } else if (isFn(input)) {
+    } else if (typeof input === "function") {
       instance = new AsyncState(nextKey(), input as Producer<T>);
       if (config?.payload) {
         instance.mergePayload(config.payload);
@@ -889,7 +904,9 @@ function createRunPFunction(manager, props) {
       function subscription(newState: State<T>) {
         if (newState.status === AsyncStateStatus.success
           || newState.status === AsyncStateStatus.error) {
-          invokeIfPresent(unsubscribe);
+          if (typeof unsubscribe === "function") {
+            unsubscribe();
+          }
           resolve(newState);
         }
       }
@@ -932,6 +949,191 @@ function standaloneProducerEffectsCreator<T>(props: ProducerProps<T>): ProducerE
   };
 }
 
+
+//endregion
+
+
+//region WRAP PRODUCER FUNCTION
+
+export function wrapProducerFunction<T>(instance: StateInterface<T>): ProducerFunction<T> {
+  // this is the real deal
+  return function producerFuncImpl(props: ProducerProps<T>, indicators: RunIndicators): undefined {
+    // this allows the developer to omit the producer attribute.
+    // and replaces state when there is no producer
+    const currentProducer = instance.originalProducer;
+    if (typeof currentProducer !== "function") {
+      indicators.fulfilled = true;
+      instance.producerType = ProducerType.notProvided;
+      instance.setState(props.args[0], props.args[1]);
+      return;
+    }
+    // the running promise is used to pass the status to pending and as suspender in react18+
+    let runningPromise;
+    // the execution value is the return of the initial producer function
+    let executionValue;
+    // it is important to clone to capture properties and save only serializable stuff
+    const savedProps = cloneProducerProps(props);
+
+    try {
+      executionValue = currentProducer(props);
+    } catch (e) {
+      if (__DEV__) devtools.emitRunSync(instance, savedProps);
+      indicators.fulfilled = true;
+      instance.replaceState(StateBuilder.error(e, savedProps));
+      return;
+    }
+
+    if (isGenerator(executionValue)) {
+      instance.producerType = ProducerType.generator;
+      if (__DEV__) devtools.emitRunGenerator(instance, savedProps);
+      // generatorResult is either {done, value} or a promise
+      let generatorResult;
+      try {
+        generatorResult = wrapStartedGenerator(executionValue, props, indicators);
+      } catch (e) {
+        indicators.fulfilled = true;
+        instance.replaceState(StateBuilder.error(e, savedProps));
+        return;
+      }
+      if (generatorResult.done) {
+        indicators.fulfilled = true;
+        instance.replaceState(StateBuilder.success(generatorResult.value, savedProps));
+        return;
+      } else {
+        runningPromise = generatorResult;
+        instance.suspender = runningPromise;
+        instance.replaceState(StateBuilder.pending(savedProps) as State<any>);
+      }
+    } else if (isPromise(executionValue)) {
+      instance.producerType = ProducerType.promise;
+      if (__DEV__) devtools.emitRunPromise(instance, savedProps);
+      runningPromise = executionValue;
+      instance.suspender = runningPromise;
+      instance.replaceState(StateBuilder.pending(savedProps) as State<any>);
+    } else { // final value
+      if (__DEV__) devtools.emitRunSync(instance, savedProps);
+      indicators.fulfilled = true;
+      instance.producerType = ProducerType.sync;
+      instance.replaceState(StateBuilder.success(executionValue, savedProps));
+      return;
+    }
+
+    runningPromise
+      .then(stateData => {
+        let aborted = indicators.aborted;
+        if (!aborted) {
+          indicators.fulfilled = true;
+          instance.replaceState(StateBuilder.success(stateData, savedProps));
+        }
+      })
+      .catch(stateError => {
+        let aborted = indicators.aborted;
+        if (!aborted) {
+          indicators.fulfilled = true;
+          instance.replaceState(StateBuilder.error(stateError, savedProps));
+        }
+      });
+  };
+}
+
+function wrapStartedGenerator(
+  generatorInstance,
+  props,
+  indicators
+) {
+  let lastGeneratorValue = generatorInstance.next();
+
+  while (!lastGeneratorValue.done && !isPromise(lastGeneratorValue.value)) {
+    lastGeneratorValue = generatorInstance.next(lastGeneratorValue.value);
+  }
+
+  if (lastGeneratorValue.done) {
+    return {done: true, value: lastGeneratorValue.value};
+  } else {
+    // encountered a promise
+    return new Promise((
+      resolve,
+      reject
+    ) => {
+      const abortGenerator = stepAsyncAndContinueStartedGenerator(
+        generatorInstance,
+        lastGeneratorValue,
+        resolve,
+        reject
+      );
+
+      function abortFn() {
+        if (!indicators.fulfilled && !indicators.aborted) {
+          abortGenerator();
+        }
+      }
+
+      props.onAbort(abortFn);
+    });
+  }
+}
+
+function stepAsyncAndContinueStartedGenerator(
+  generatorInstance,
+  lastGeneratorValue,
+  onDone,
+  onReject
+) {
+  let aborted = false;
+
+  // we enter here only if startupValue is pending promise of the generator instance!
+  lastGeneratorValue.value.then(step, onGeneratorCatch);
+
+  function onGeneratorResolve(resolveValue) {
+    if (aborted) {
+      return;
+    }
+    if (!lastGeneratorValue.done) {
+      step();
+    } else {
+      onDone(resolveValue);
+    }
+  }
+
+  function onGeneratorCatch(e) {
+    if (aborted) {
+      return;
+    }
+    if (lastGeneratorValue.done) {
+      onDone(e);
+    } else {
+      try {
+        lastGeneratorValue = generatorInstance.throw(e);
+      } catch (newException) {
+        onReject(newException);
+      }
+      if (lastGeneratorValue.done) {
+        onDone(lastGeneratorValue.value);
+      } else {
+        step();
+      }
+    }
+  }
+
+  function step() {
+    if (aborted) {
+      return;
+    }
+    try {
+      lastGeneratorValue = generatorInstance.next(lastGeneratorValue.value);
+    } catch (e) {
+      onGeneratorCatch(e);
+    }
+    Promise
+      .resolve(lastGeneratorValue.value)
+      .then(onGeneratorResolve, onGeneratorCatch)
+  }
+
+  return function abort() {
+    aborted = true;
+  }
+}
+
 //endregion
 
 //region Exports
@@ -941,4 +1143,248 @@ export {
   readAsyncStateFromSource,
   standaloneProducerEffectsCreator,
 };
+//endregion
+
+//region TYPES
+
+export interface BaseSource<T> {
+  // identity
+  key: string,
+  uniqueId: number,
+  getPayload(): Record<string, any>,
+  mergePayload(partialPayload?: Record<string, any>),
+
+  // state
+  getState(): State<T>,
+  setState(
+    updater: StateFunctionUpdater<T> | T, status?: AsyncStateStatus): void;
+
+  // subscriptions
+  subscribe(cb: Function, subscriptionKey?: string): AbortFn,
+
+  // producer
+  replay(): AbortFn,
+  abort(reason: any): void,
+  replaceProducer(newProducer: Producer<any> | undefined),
+  run(createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]): AbortFn,
+
+  // cache
+  invalidateCache(cacheKey?: string): void,
+  replaceCache(cacheKey: string, cache: CachedState<T>): void,
+}
+
+export interface StateInterface<T> extends BaseSource<T>{
+  // identity
+  version: number,
+  _source: Source<T>,
+  config: ProducerConfig<T>,
+  payload: Record<string, any> | null,
+
+  // state
+  state: State<T>,
+  lastSuccess: State<T>,
+  replaceState(newState: State<T>, notify?: boolean): void,
+
+  // subscriptions
+  subsIndex: number;
+  subscriptions: Record<number, StateSubscription<T>> | null,
+
+  // producer
+  producerType: ProducerType,
+  producer: ProducerFunction<T>,
+  suspender: Promise<T> | undefined,
+  originalProducer: Producer<T> | undefined,
+
+  // lanes and forks
+  forksIndex: number,
+  parent: StateInterface<T> | null,
+  lanes: Record<string, StateInterface<T>> | null,
+
+  // cache
+  cache: Record<string, CachedState<T>> | null,
+
+  // dev properties
+  journal: any[], // for devtools, dev only
+
+  // methods & overrides
+  dispose(): boolean,
+  getLane(laneKey?: string): StateInterface<T>,
+  fork(forkConfig?: ForkConfig): StateInterface<T>,
+
+  // lanes and forks
+  removeLane(laneKey?: string): boolean,
+  getLane(laneKey?: string): BaseSource<T>,
+  fork(forkConfig?: ForkConfig): BaseSource<T>,
+}
+
+export enum AsyncStateStatus {
+  error = "error",
+  pending = "pending",
+  success = "success",
+  aborted = "aborted",
+  initial = "initial",
+}
+
+export enum ProducerRunEffects {
+  delay = "delay",
+  debounce = "debounce",
+  takeLast = "takeLast",
+  takeLatest = "takeLatest",
+
+  throttle = "throttle",
+  takeFirst = "takeFirst",
+  takeLeading = "takeLeading",
+}
+
+export type State<T> = {
+  data: T,
+  timestamp: number,
+  status: AsyncStateStatus,
+  props?: ProducerSavedProps<T> | null,
+};
+
+export type AbortFn = ((reason?: any) => void) | undefined;
+
+export type OnAbortFn = (cb: ((reason?: any) => void)) => void;
+
+export interface ProducerProps<T> extends ProducerEffects {
+  abort: AbortFn,
+  onAbort: OnAbortFn,
+  emit: StateUpdater<T>,
+
+  args: any[],
+  payload: any,
+  lastSuccess: State<T>,
+  isAborted: () => boolean,
+
+  getState: () => State<T>,
+}
+
+export type RunIndicators = {
+  cleared: boolean,
+  aborted: boolean,
+  fulfilled: boolean,
+}
+
+export type ProducerSavedProps<T> = {
+  payload?: any,
+  args?: any[],
+  lastSuccess?: State<T>
+}
+
+export type Producer<T> =
+  ((props: ProducerProps<T>) => (T | Promise<T> | Generator<any, T, any>));
+
+export type ProducerFunction<T> = (
+  props: ProducerProps<T>,
+  runIndicators: RunIndicators
+) => AbortFn;
+
+export enum ProducerType {
+  indeterminate = 0,
+  sync = 1,
+  promise = 2,
+  generator = 3,
+  notProvided = 4,
+}
+
+export enum RenderStrategy {
+  FetchAsYouRender = 0,
+  FetchThenRender = 1,
+  RenderThenFetch = 2,
+}
+
+export type ProducerConfig<T> = {
+  initialValue?: T | ((cache: Record<string, CachedState<T>>) => T),
+  cacheConfig?: CacheConfig<T>,
+  runEffectDurationMs?: number,
+  runEffect?: ProducerRunEffects,
+  skipPendingDelayMs?: number,
+  resetStateOnDispose?: boolean,
+}
+
+export type StateFunctionUpdater<T> = (updater: State<T>) => T;
+
+export type StateUpdater<T> = (
+  updater: T | StateFunctionUpdater<T>,
+  status?: AsyncStateStatus
+) => void;
+
+export interface Source<T> extends BaseSource<T>{
+  run: (...args: any[]) => AbortFn,
+
+  removeLane(laneKey?: string): boolean,
+  getLaneSource(laneKey?: string): Source<T>,
+}
+
+export type RunTask<T> = {
+  args: any[],
+  payload: Record<string, any> | null,
+  producerEffectsCreator: ProducerEffectsCreator<T>,
+}
+
+export type StateSubscription<T> = {
+  key: string, // subscription key
+  cleanup: () => void,
+  callback: (newState: State<T>) => void,
+};
+
+export type OnCacheLoadProps<T> = {
+  cache: Record<string, CachedState<T>>,
+  setState(newValue: T | StateFunctionUpdater<T>, status?: AsyncStateStatus): void
+}
+
+export type CacheConfig<T> = {
+  enabled: boolean,
+  getDeadline?(currentState: State<T>): number,
+  hash?(args: any[] | undefined, payload: Record<string, any> | null): string,
+
+  persist?(cache: Record<string, CachedState<T>>): void,
+  load?(): Record<string, CachedState<T>> | Promise<Record<string, CachedState<T>>>,
+
+  onCacheLoad?({cache, setState}: OnCacheLoadProps<T>): void,
+}
+
+export type CachedState<T> = {
+  state: State<T>,
+  addedAt: number,
+  deadline: number,
+}
+
+export interface StateBuilderInterface {
+  initial: <T> (initialValue: T) => State<T>,
+  pending: <T>(props: ProducerSavedProps<T>) => State<T>,
+  success: <T>(data: T, props: ProducerSavedProps<T>) => State<T>,
+  error: <T>(data: any, props: ProducerSavedProps<T>) => State<any>,
+  aborted: <T>(reason: any, props: ProducerSavedProps<T>) => State<any>,
+}
+
+export type ForkConfig = {
+  key?: string,
+  keepState?: boolean,
+  keepCache?: boolean,
+}
+
+export type AsyncStateKeyOrSource<T> = string | Source<T>;
+
+export interface ProducerEffects {
+  run: <T>(input: ProducerRunInput<T>, config: ProducerRunConfig | null, ...args: any[] ) => AbortFn,
+  runp: <T>(input: ProducerRunInput<T>, config: ProducerRunConfig | null, ...args: any[] ) => Promise<State<T>> | undefined,
+
+  select: <T>(input: AsyncStateKeyOrSource<T>) => State<T> | undefined,
+}
+
+export type ProducerEffectsCreator<T> = (props: ProducerProps<T>) => ProducerEffects;
+
+export type ProducerRunInput<T> = AsyncStateKeyOrSource<T> | Producer<T>;
+
+export type ProducerRunConfig = {
+  lane?: string,
+  fork?: boolean,
+  payload?: Record<string, any> | null,
+};
+
+export type PendingTimeout = { id: ReturnType<typeof setTimeout>, startDate: number };
+export type PendingUpdate = { timeoutId: ReturnType<typeof setTimeout>, callback(): void };
+
 //endregion

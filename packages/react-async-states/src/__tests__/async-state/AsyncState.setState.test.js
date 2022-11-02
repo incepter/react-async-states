@@ -1,5 +1,4 @@
-import { AsyncStateStatus } from "shared";
-import AsyncState, { StateBuilder } from "../../async-state";
+import AsyncState, { AsyncStateStatus, StateBuilder } from "../../async-state";
 import { timeout } from "./test-utils";
 import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
 

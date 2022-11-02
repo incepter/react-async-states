@@ -2,8 +2,7 @@ import * as React from "react";
 import {ReactNode} from "react";
 import {
   AbortFn,
-  StateInterface,
-  Source,
+  AsyncStateKeyOrSource,
   AsyncStateStatus,
   CacheConfig,
   CachedState,
@@ -14,14 +13,11 @@ import {
   ProducerProps,
   ProducerRunEffects,
   RenderStrategy,
+  Source,
   State,
+  StateInterface,
   StateUpdater
 } from "./async-state";
-
-export type Reducer<T> = (
-  T,
-  ...args: any[]
-) => T;
 
 export type ExtendedInitialAsyncState<T> =
   InitialAsyncState<T>
@@ -61,8 +57,6 @@ export type AsyncStateEntry<T> = {
 }
 
 export type AsyncStateEntries = Record<string, AsyncStateEntry<any>>
-
-export type AsyncStateKeyOrSource<T> = string | Source<T>;
 
 export type AsyncStateSelector<T> =
   SimpleSelector<any, T>
@@ -283,7 +277,7 @@ export type UseAsyncStateEventProps<T> = {
   state: State<T>,
 };
 
-type UseAsyncStateChangeEventHandler<T> =
+export type UseAsyncStateChangeEventHandler<T> =
   ((props: UseAsyncStateEventProps<T>) => void)
 
 export type UseAsyncStateEventFn<T> =

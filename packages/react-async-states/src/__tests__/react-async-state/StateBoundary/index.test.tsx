@@ -4,8 +4,11 @@ import {
   StateBoundary,
   useCurrentState
 } from "../../../react/StateBoundary";
-import {AsyncStateStatus, RenderStrategy} from "../../../async-state";
-import {createSource} from "../../../async-state/create-async-state";
+import {
+  AsyncStateStatus,
+  createSource,
+  RenderStrategy
+} from "../../../async-state";
 import {SubscriptionMode} from "../../../types.internal";
 import {flushPromises} from "../utils/test-utils";
 

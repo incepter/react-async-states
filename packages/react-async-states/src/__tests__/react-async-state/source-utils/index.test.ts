@@ -1,4 +1,3 @@
-import {createSource} from "../../../async-state/create-async-state";
 import {
   getLaneSource,
   getState,
@@ -8,6 +7,7 @@ import {
   runSource,
   runSourceLane
 } from "../../../async-state/source-utils";
+import {createSource} from "../../../async-state";
 
 describe('source utils', () => {
 

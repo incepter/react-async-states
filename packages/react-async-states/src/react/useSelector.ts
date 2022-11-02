@@ -1,5 +1,5 @@
 import * as React from "react";
-import {__DEV__, identity, isFn, shallowEqual} from "shared";
+import {__DEV__, shallowEqual} from "shared";
 import {AsyncStateContext} from "./context";
 import {
   ArraySelector,
@@ -84,7 +84,7 @@ export function useSelector<T>(
           return;
         }
         // re-attempt calculating keys if the given keys is a function:
-        if (isFn(keys)) {
+        if (typeof keys === "function") {
           const newKeys = readKeys(keys, contextValue);
           if (didKeysChange(self.currentKeys, newKeys)) {
             setSelf(computeSelf());
@@ -115,7 +115,7 @@ export function useSelector<T>(
       .map(as => {
         let subscriptionKey: string | undefined = undefined;
         if (__DEV__) {
-          let nextMeter = (as as AsyncState<any>).subscriptionsIndex;
+          let nextMeter = (as as AsyncState<any>).subsIndex;
           subscriptionKey = `${caller}-$4-$${nextMeter}`;// 4: useSelector
         }
         return as!.subscribe(onUpdate, subscriptionKey);
@@ -147,7 +147,7 @@ export function useSelector<T>(
         lastSuccess: as?.lastSuccess
       }));
 
-    if (isFn(keys)) {
+    if (typeof keys === "function") {
       const selectorParam: Record<string, FunctionSelectorItem<any>> = selectorStates
         .reduce((
           result, current) => {
@@ -201,10 +201,10 @@ function ensureParamsAreOk<E>(
   keys: BaseSelectorKey | BaseSelectorKey[] | UseSelectorFunctionKeys,
   selector: SimpleSelector<any, E> | ArraySelector<E> | FunctionSelector<E>
 ) {
-  if (contextValue === null && isFn(keys)) {
+  if (contextValue === null && typeof keys === "function") {
     throw new Error('useSelector keys is passed as a function which is not supported outside the provider.')
   }
-  if (!isFn(selector)) {
+  if (typeof selector !== "function") {
     throw new Error(`useSelector's selector (second arg) is not a function: '${typeof selector}'`);
   }
 }
@@ -225,4 +225,11 @@ function computeInstancesMap(
       }
       return result;
     }, {});
+}
+
+function identity(...args: any[]): any {
+  if (!args || !args.length) {
+    return undefined;
+  }
+  return args.length === 1 ? args[0] : args;
 }

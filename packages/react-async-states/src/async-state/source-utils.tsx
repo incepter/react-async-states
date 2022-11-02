@@ -1,12 +1,11 @@
 import {
   AbortFn,
-  Source,
+  AsyncStateKeyOrSource,
   AsyncStateStatus,
+  Source,
   State,
   StateFunctionUpdater
 } from "./index";
-import {invokeIfPresent} from "../../../shared";
-import {AsyncStateKeyOrSource} from "../types.internal";
 import {
   readAsyncStateFromSource,
   standaloneProducerEffectsCreator
@@ -43,7 +42,11 @@ export function runpSourceLane<T>(
     function subscription(newState: State<T>) {
       if (newState.status === AsyncStateStatus.success
         || newState.status === AsyncStateStatus.error) {
-        invokeIfPresent(unsubscribe);
+
+        if (typeof unsubscribe === "function") {
+          unsubscribe();
+        }
+
         resolve(newState);
       }
     }

@@ -1,15 +1,9 @@
 import * as React from "react";
 import {AsyncStateContext} from "./context";
-import {
-  asyncify,
-  EMPTY_OBJECT,
-  readProducerConfigFromProducerConfig,
-  shallowClone,
-} from "shared";
+import {EMPTY_OBJECT, shallowClone,} from "shared";
 import {
   AsyncStateEntries,
   AsyncStateEntry,
-  AsyncStateKeyOrSource,
   AsyncStateManagerInterface,
   AsyncStateWatchKey,
   ExtendedInitialAsyncState,
@@ -24,7 +18,12 @@ import {
   UseAsyncStateContextType,
   WatcherType
 } from "../types.internal";
-import AsyncState, {AbortFn, Source, StateInterface} from "../async-state";
+import AsyncState, {
+  AbortFn,
+  AsyncStateKeyOrSource,
+  Source,
+  StateInterface
+} from "../async-state";
 import {isAsyncStateSource} from "../async-state/utils";
 import {
   createProducerEffectsCreator,
@@ -348,7 +347,7 @@ export function AsyncStateManager(
     key: string,
     value: ManagerWatchCallbackValue<T>
   ): void {
-    function cb() {
+    function notify() {
       // it is important to close over the notifications to be sent
       // to avoid sending notifications to old closures that aren't relevant anymore
       // if this occurs, the component will receive a false notification
@@ -373,7 +372,7 @@ export function AsyncStateManager(
     // if we notify a component B that schedules a render
     // react would throw a warning in the console about scheduling
     // an update in a component in the render phase from another one
-    asyncify(cb)();
+    Promise.resolve().then(notify);
   }
 
   function hoist<T>(
@@ -437,6 +436,7 @@ function createInitialAsyncStatesReducer(
     const {key, producer, config} = current as InitialAsyncState<any>;
     const initialValue = config?.initialValue;
     const existingEntry = result[key];
+
     if (existingEntry) {
       const asyncState = existingEntry.value;
       if (
@@ -447,14 +447,11 @@ function createInitialAsyncStatesReducer(
       }
     }
     result[key] = createAsyncStateEntry(
-      new AsyncState(
-        key,
-        producer,
-        readProducerConfigFromProducerConfig((current as InitialAsyncState<any>).config)
-      ),
-      true
+      new AsyncState(key, producer, config),
+      true // initially hoisted
     );
     result[key].initiallyHoisted = true;
+
     return result;
   }
 }

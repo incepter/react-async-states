@@ -35,7 +35,7 @@ export default function useInDevSubscriptionKey<T>(
         let nextId = self.current.subId;
 
         if (didInstanceChange) {
-          nextId = ++((asyncState as AsyncState<T>).subscriptionsIndex);
+          nextId = ++((asyncState as AsyncState<T>).subsIndex);
         }
 
         self.current = {
