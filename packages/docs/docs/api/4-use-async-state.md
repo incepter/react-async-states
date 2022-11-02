@@ -424,6 +424,22 @@ This property is used only when `lazy` is `falsy`.
 If the `condition` is truthy, the `producer` 
 associated with the subscription will run.
 
+### `lazy`
+If this property is set to `true`, when the dependencies change,
+the `producer` will run if condition is `truthy`.
+
+:::caution
+If several subscriptions are made to the same state and all of them set `lazy`
+to false, then they may `abort` each other if they have the same dependencies.
+
+Pay close attention to this exact use case.
+:::
+
+### `autoRunArgs`
+In case you are opting for a producer that works with `args` and at the same time
+using `useAsyncState` with `lazy=false` and wish to pass arguments to your producer,
+`autoRunArgs` allows this and takes the array of args to the automatic run's producer.
+
 ### `lane`
 Lanes are a concept in the library that let's you group states with same producer:
 
@@ -470,17 +486,6 @@ useAsyncState({
 });
 
 ```
-
-### `lazy`
-If this property is set to `true`, when the dependencies change,
-the `producer` will run if condition is `truthy`.
-
-:::caution
-If several subscriptions are made to the same state and all of them set `lazy`
-to false, then they may `abort` each other if they have the same dependencies.
-
-Pay close attention to this exact use case.
-:::
 
 ### `fork`
 If this property is true, it will fork the subscribed state with the given `forkConfig`.
