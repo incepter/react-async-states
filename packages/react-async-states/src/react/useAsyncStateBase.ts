@@ -298,7 +298,7 @@ const emptyArray = [];
 export function useProducer<T>(
   producer: Producer<T>,
 ): UseAsyncState<T, State<T>> {
-  let subscriptionKey;
+  let subscriptionKey: string | undefined = undefined;
   const contextValue = React.useContext(AsyncStateContext);
   const asyncState = React.useMemo<StateInterface<T>>(createInstance, emptyArray);
   const latestVersion = React.useRef<number | undefined>(asyncState.version);
@@ -316,12 +316,14 @@ export function useProducer<T>(
     updateSelectedValue();
   }
 
+  if (asyncState.originalProducer !== producer) {
+    asyncState.replaceProducer(producer);
+  }
+
   if (__DEV__) {
     subscriptionKey = useInDevSubscriptionKey(subscriptionKey, asyncState, "3");
   }
 
-  // todo: change to insertEffect with a fallback to layout
-  React.useLayoutEffect(onProducerChange, [producer]);
   // subscribe to async state
   React.useEffect(subscribeToAsyncState, []);
 
@@ -329,12 +331,6 @@ export function useProducer<T>(
 
   function createInstance() {
     return new AsyncState(nextKey(), producer);
-  }
-
-  function onProducerChange() {
-    if (asyncState.originalProducer !== producer) {
-      asyncState.replaceProducer(producer);
-    }
   }
 
   function calculateSelectedValue(): Readonly<UseAsyncState<T, State<T>>> {

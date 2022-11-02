@@ -4,6 +4,9 @@ sidebar_label: TL;DR
 ---
 # TL;DR
 
+
+## `useAsyncState`
+
 ```typescript
 const {
   key, // The key of the state
@@ -66,4 +69,61 @@ const {
     subscribe, // may be a function or an array of them
   },
 });
+```
+
+## `producer`
+
+```typescript
+function myProducer<T>({
+  payload, // the payload held by the state instance
+  args, // the array of args given to the run function
+  onAbort, // registers abort/cleanup callbacks
+  isAborted, // returns whether this run was aborted
+  getState, // gives the current state at any point of time (may be used before emit)
+  emit, // replaces state, works after resolve to support streaming/incremental resolve
+  abort, // will abort its own run, if resolved
+  lastSuccess, // the last success that was registered before this call, useful for reducers & infinite data
+  
+  run, // runs a source or an instance or a producer and returns the abort function
+  runp, // runs a source or an instance or a producer and returns a promise to resolve
+  select, // selects from source or provider the current state of any state instance
+}) {
+  return T | Promise<T>;
+}
+```
+
+## `createSource`
+
+```typescript
+const source = createSource(
+  "my key",
+  myProducer,
+  {
+    initialValue, // the initial value, may be a function receiving cache a state setter
+    runEffect, // the effect to apply on runs (debounce, delay, throttle..)
+    runEffectDurationMs, // the duration of the run effect in Ms
+    resetStateOnDispose, // whether to reset state to initial status when no subscribers are left
+    skipPendingDelayMs, // skips the pending status under that delay in Ms
+    cacheConfig: {
+      enabled, // whether to enable cache or not
+      getDeadline, // get the cache deadline for a succeeded state
+      hash, // hashes the run task to add a cache entry
+      persist, // persists the whole cache
+      load, // loads the cache
+      onCacheLoad, // callback called when cache loads
+    },
+  }
+);
+
+const {
+  key, // the key of the related state instance
+  uniqueId, // the uniqueId of the state instance
+  getState, // gets the current state
+  setState, // sets state and notifies all subscribers
+  run, // runs the producer and returns the abort function
+  getLaneSource, // gets the source of a child
+  invalidateCache, // invalidates a cache entry or the whole cache
+  mergePayload, // merges a partial payload inside the state instance's payload
+  subscribe, // subscribes with a callback to state changes
+} = source;
 ```
