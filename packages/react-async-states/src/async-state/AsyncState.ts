@@ -355,33 +355,31 @@ class AsyncState<T> implements StateInterface<T> {
     const effectDurationMs = numberOrZero(this.config.runEffectDurationMs);
 
     const that = this;
+    function scheduleDelayedRun() {
+      let runAbortCallback: AbortFn | null = null;
+
+      const timeoutId = setTimeout(function realRun() {
+        that.pendingTimeout = null;
+        runAbortCallback = that.runImmediately(
+          createProducerEffects,
+          shallowClone(that.payload),
+          ...args
+        );
+      }, effectDurationMs);
+
+      that.pendingTimeout = {
+        id: timeoutId,
+        startDate: Date.now(),
+      };
+
+      return function abortCleanup(reason) {
+        clearTimeout(timeoutId);
+        that.pendingTimeout = null;
+        invokeIfPresent(runAbortCallback, reason);
+      }
+    }
     if (areRunEffectsSupported() && this.config.runEffect) {
       const now = Date.now();
-
-      function scheduleDelayedRun() {
-        let runAbortCallback: AbortFn | null = null;
-
-        const timeoutId = setTimeout(function realRun() {
-          that.pendingTimeout = null;
-          runAbortCallback = that.runImmediately(
-            createProducerEffects,
-            shallowClone(that.payload),
-            ...args
-          );
-        }, effectDurationMs);
-
-        that.pendingTimeout = {
-          id: timeoutId,
-          startDate: now,
-        };
-
-        return function abortCleanup(reason) {
-          clearTimeout(timeoutId);
-          that.pendingTimeout = null;
-          invokeIfPresent(runAbortCallback, reason);
-        }
-      }
-
 
       switch (this.config.runEffect) {
         case ProducerRunEffects.delay:

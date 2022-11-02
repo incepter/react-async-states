@@ -4,11 +4,30 @@ const CopyPlugin = require("copy-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const CompressionPlugin = require("compression-webpack-plugin");
 
-function buildFor(entry, output, mode) {
+let currentDir = process.cwd();
+
+function build({
+                 mode,
+                 entry,
+                 target,
+                 outputDir,
+                 externals,
+                 libraryName,
+                 globalObject,
+                 outputFilename,
+               }) {
   return {
     mode,
     entry,
-    output,
+    externals,
+
+    output: {
+      globalObject,
+      path: outputDir,
+      library: libraryName,
+      libraryTarget: target,
+      filename: `${outputFilename}.${mode}.js`,
+    },
 
     module: {
       rules: [
@@ -21,6 +40,26 @@ function buildFor(entry, output, mode) {
         },
       ],
     },
+
+    plugins: [
+      new webpack.EnvironmentPlugin({NODE_ENV: mode}),
+
+      new CompressionPlugin({
+        test: /\.js$/,
+        minRatio: 0.8,
+        threshold: 10240,
+        algorithm: "gzip",
+      }),
+
+      new CopyPlugin({
+        patterns: [
+          {
+            to: path.join(currentDir, "dist/index.js"),
+            from: path.join(currentDir, "src/index-prod.js")
+          }
+        ]
+      }),
+    ],
 
     optimization: {
       minimize: true,
@@ -46,66 +85,27 @@ function buildFor(entry, output, mode) {
       concatenateModules: true
     },
 
-    plugins: [
-
-      new CompressionPlugin({
-        algorithm: "gzip",
-        test: /\.js$/,
-        threshold: 10240,
-        minRatio: 0.8,
-      }),
-      new webpack.EnvironmentPlugin({
-        NODE_ENV: mode,
-      }),
-      new CopyPlugin({
-        patterns: [
-          {
-            from: path.join(process.cwd(), "src/index-prod.js"),
-            to: path.join(process.cwd(), "dist/index.js")
-          }
-        ]
-      }),
-    ],
     resolve: {
       modules: ["node_modules", "src"],
       extensions: [".js", ".ts", ".tsx"]
     },
-    externals: {
-      react: "react"
-    }
-  };
+  }
 }
 
-function umdBuild() {
-  return buildFor(
-    path.join(process.cwd(), "src/index.ts"),
-    {
-      globalObject: 'this',
-      libraryTarget: "umd",
-      library: "ReactAsyncState",
-      path: path.resolve(process.cwd(), `dist`),
-      filename: "react-async-states.production.js",
-    },
-    "production"
-  );
-}
-
-function devBuild() {
-
-  return buildFor(
-    path.join(process.cwd(), "src/index.ts"),
-    {
-      globalObject: 'this',
-      libraryTarget: "umd",
-      library: "ReactAsyncState",
-      path: path.resolve(process.cwd(), `dist`),
-      filename: "react-async-states.development.js",
-    },
-    "development"
-  );
+function defaultUmdBuild(mode) {
+  return build({
+    mode,
+    target: "umd",
+    globalObject: "this",
+    externals: {react: "React"},
+    libraryName: "ReactAsyncStates",
+    outputFilename: "react-async-states",
+    outputDir: path.resolve(currentDir, "dist"),
+    entry: path.resolve(currentDir, "src/index.ts"),
+  });
 }
 
 module.exports = [
-  devBuild(),
-  umdBuild(),
+  defaultUmdBuild("production"),
+  defaultUmdBuild("development"),
 ];

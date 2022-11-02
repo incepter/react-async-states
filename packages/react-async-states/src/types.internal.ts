@@ -74,20 +74,6 @@ export type HoistToProviderConfig = {
   override: boolean,
 }
 
-export type ManagerHoistConfig<T> = {
-  instance: StateInterface<T>,
-  initialValue?: T,
-  runEffect?: ProducerRunEffects,
-  runEffectDurationMs?: number,
-  resetStateOnDispose?: boolean,
-  skipPendingDelayMs?: number,
-  producer?: Producer<T>,
-
-  key: string,
-  hoistToProviderConfig?: HoistToProviderConfig,
-  cacheConfig?: CacheConfig<T>,
-}
-
 export type ManagerWatchCallbackValue<T> = StateInterface<T> | null;
 export type ManagerWatchCallback<T> = (
   value: ManagerWatchCallbackValue<T>,
