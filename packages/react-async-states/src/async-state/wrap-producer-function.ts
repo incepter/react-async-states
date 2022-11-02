@@ -19,7 +19,7 @@ export function wrapProducerFunction<T>(instance: StateInterface<T>): ProducerFu
     if (typeof currentProducer !== "function") {
       indicators.fulfilled = true;
       instance.producerType = ProducerType.notProvided;
-      instance.replaceState(props.args[0], props.args[1]);
+      instance.setState(props.args[0], props.args[1]);
       return;
     }
     // the running promise is used to pass the status to pending and as suspender in react18+
@@ -34,7 +34,7 @@ export function wrapProducerFunction<T>(instance: StateInterface<T>): ProducerFu
     } catch (e) {
       if (__DEV__) devtools.emitRunSync(instance, savedProps);
       indicators.fulfilled = true;
-      instance.setState(StateBuilder.error(e, savedProps));
+      instance.replaceState(StateBuilder.error(e, savedProps));
       return;
     }
 
@@ -47,29 +47,29 @@ export function wrapProducerFunction<T>(instance: StateInterface<T>): ProducerFu
         generatorResult = wrapStartedGenerator(executionValue, props, indicators);
       } catch (e) {
         indicators.fulfilled = true;
-        instance.setState(StateBuilder.error(e, savedProps));
+        instance.replaceState(StateBuilder.error(e, savedProps));
         return;
       }
       if (generatorResult.done) {
         indicators.fulfilled = true;
-        instance.setState(StateBuilder.success(generatorResult.value, savedProps));
+        instance.replaceState(StateBuilder.success(generatorResult.value, savedProps));
         return;
       } else {
         runningPromise = generatorResult;
         instance.suspender = runningPromise;
-        instance.setState(StateBuilder.pending(savedProps) as State<any>);
+        instance.replaceState(StateBuilder.pending(savedProps) as State<any>);
       }
     } else if (isPromise(executionValue)) {
       instance.producerType = ProducerType.promise;
       if (__DEV__) devtools.emitRunPromise(instance, savedProps);
       runningPromise = executionValue;
       instance.suspender = runningPromise;
-      instance.setState(StateBuilder.pending(savedProps) as State<any>);
+      instance.replaceState(StateBuilder.pending(savedProps) as State<any>);
     } else { // final value
       if (__DEV__) devtools.emitRunSync(instance, savedProps);
       indicators.fulfilled = true;
       instance.producerType = ProducerType.sync;
-      instance.setState(StateBuilder.success(executionValue, savedProps));
+      instance.replaceState(StateBuilder.success(executionValue, savedProps));
       return;
     }
 
@@ -78,14 +78,14 @@ export function wrapProducerFunction<T>(instance: StateInterface<T>): ProducerFu
         let aborted = indicators.aborted;
         if (!aborted) {
           indicators.fulfilled = true;
-          instance.setState(StateBuilder.success(stateData, savedProps));
+          instance.replaceState(StateBuilder.success(stateData, savedProps));
         }
       })
       .catch(stateError => {
         let aborted = indicators.aborted;
         if (!aborted) {
           indicators.fulfilled = true;
-          instance.setState(StateBuilder.error(stateError, savedProps));
+          instance.replaceState(StateBuilder.error(stateError, savedProps));
         }
       });
   };

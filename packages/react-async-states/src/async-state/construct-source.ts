@@ -5,7 +5,7 @@ function Secret() {
   let key = null;
   let value = null;
   return function Source(...args) {
-    if (args.length === 1 && args[0] && args[0] === key) {
+    if (args.length === 1 && args[0] === key) {
       return value;
     }
     if (args.length === 2 && !key && !value) {
@@ -15,17 +15,10 @@ function Secret() {
   };
 }
 
-function objectWithHiddenProperty(
-  key: Object,
-  value: StateInterface<any>
-) {
+export function constructAsyncStateSource<T>(asyncState: StateInterface<T>): {} {
   // @ts-ignore
   let output = new (Secret())();
-  output.constructor(key, value);
+  output.constructor(asyncStatesKey, asyncState);
 
   return output;
-}
-
-export function constructAsyncStateSource<T>(asyncState: StateInterface<T>): Source<T> {
-  return objectWithHiddenProperty(asyncStatesKey, asyncState);
 }

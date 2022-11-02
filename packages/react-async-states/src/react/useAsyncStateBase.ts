@@ -905,7 +905,7 @@ function invokeSubscribeEvents<T>(
     run,
     mode,
     getState: () => asyncState.state,
-    invalidateCache: asyncState.invalidateCache.bind(asyncState),
+    invalidateCache: asyncState.invalidateCache,
   };
 
   let handlers: ((props: SubscribeEventProps<T>) => CleanupFn)[]
@@ -961,11 +961,11 @@ function makeUseAsyncStateBaseReturnValue<T, E>(
     source: asyncState._source,
     payload: asyncState.payload,
     uniqueId: asyncState.uniqueId,
-    abort: asyncState.abort.bind(asyncState),
-    replay: asyncState.replay.bind(asyncState),
-    mergePayload: asyncState.mergePayload.bind(asyncState),
-    replaceState: asyncState.replaceState.bind(asyncState),
-    invalidateCache: asyncState.invalidateCache.bind(asyncState),
+    abort: asyncState.abort,
+    replay: asyncState.replay,
+    mergePayload: asyncState.mergePayload,
+    replaceState: asyncState.setState,
+    invalidateCache: asyncState.invalidateCache,
     run: isFn(run) ? run : asyncState.run.bind(asyncState, standaloneProducerEffectsCreator),
   };
 }

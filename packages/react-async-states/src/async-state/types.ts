@@ -93,18 +93,13 @@ export type StateUpdater<T> = (
   status?: AsyncStateStatus
 ) => void;
 
-export type Source<T> = {
-  key: string,
-  uniqueId: number | undefined,
-
-  getState(): State<T>,
-  setState: StateUpdater<T>,
+export interface Source<T> extends BaseSource<T>{
   run: (...args: any[]) => AbortFn,
+
+  removeLane(laneKey?: string): boolean,
   getLaneSource(laneKey?: string): Source<T>,
-  invalidateCache: (cacheKey?: string) => void,
-  mergePayload(partialPayload?: Record<string, any>),
-  subscribe: (cb: Function, subscriptionKey?: string) => AbortFn,
 }
+
 export type RunTask<T> = {
   args: any[],
   payload: Record<string, any> | null,
@@ -152,49 +147,77 @@ export enum CreationPath {
 }
 
 /**
- * getPayload
- * mergePayload
- *
  * getState
  * setState
+ * replaceProducer
+ * getConfig
+ * setConfig
  *
  * invalidateCache
  * replaceCache
  *
- * replaceProducer
- * run
- * getConfig
- * setConfig
+ * getPayload
+ * mergePayload
+ *
  * getLane
  * removeLane
  *
  * subscribe
  *
  * run
+ * replay
+ * abort
+ * runp
+ *
+ *
+ * constructor(key, producer, config) {
+ *   super();
+ *   this.boot(key, producer, config);
+ * }
  *
  */
 
-export interface StateInterface<T> {
+export interface BaseSource<T> {
   // identity
   key: string,
-  version: number,
   uniqueId: number,
-  _source: Source<T>,
-  config: ProducerConfig<T>,
-  payload: Record<string, any> | null,
+  getPayload(): Record<string, any>,
   mergePayload(partialPayload?: Record<string, any>),
 
   // state
-  state: State<T>,
   getState(): State<T>,
-  lastSuccess: State<T>,
-  replaceState: StateUpdater<T>,
-  setState(newState: State<T>, notify?: boolean): void,
+  setState(
+    updater: StateFunctionUpdater<T> | T, status?: AsyncStateStatus): void;
+
 
   // subscriptions
-  dispose(): boolean,
-  subscriptionsIndex: number;
   subscribe(cb: Function, subscriptionKey?: string): AbortFn,
+
+  // producer
+  replay(): AbortFn,
+  abort(reason: any): void,
+  replaceProducer(newProducer: Producer<any> | undefined),
+  run(createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]): AbortFn,
+
+  // cache
+  invalidateCache(cacheKey?: string): void,
+  replaceCache(cacheKey: string, cache: CachedState<T>): void,
+}
+
+export interface StateInterface<T> extends BaseSource<T>{
+  // identity
+  version: number,
+  _source: Source<T>,
+  config: ProducerConfig<T>,
+  payload: Record<string, any> | null,
+
+  // state
+  state: State<T>,
+  lastSuccess: State<T>,
+  replaceState(newState: State<T>, notify?: boolean): void,
+
+  // subscriptions
+  subscriptionsIndex: number;
   subscriptions: Record<number, StateSubscription<T>> | null,
 
   // producer
@@ -203,28 +226,27 @@ export interface StateInterface<T> {
   suspender: Promise<T> | undefined,
   originalProducer: Producer<T> | undefined,
 
-  replay(): AbortFn,
-  abort(reason: any): void,
-  replaceProducer(newProducer: Producer<any> | undefined),
-  run(createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]): AbortFn,
-
-
   // lanes and forks
   forksIndex: number,
   parent: StateInterface<T> | null,
-  getLane(laneKey?: string): StateInterface<T>,
   lanes: Record<string, StateInterface<T>> | null,
-  fork(forkConfig?: ForkConfig): StateInterface<T>,
 
   // cache
-  invalidateCache(cacheKey?: string): void,
   cache: Record<string, CachedState<T>> | null,
-  replaceCache(cacheKey: string, cache: CachedState<T>): void,
-
 
   // dev properties
   journal: any[], // for devtools, dev only
   devModeConfiguration?: DevModeConfiguration,
+
+  // methods & overrides
+  dispose(): boolean,
+  getLane(laneKey?: string): StateInterface<T>,
+  fork(forkConfig?: ForkConfig): StateInterface<T>,
+
+  // lanes and forks
+  removeLane(laneKey?: string): boolean,
+  getLane(laneKey?: string): BaseSource<T>,
+  fork(forkConfig?: ForkConfig): BaseSource<T>,
 }
 
 export interface StateBuilderInterface {

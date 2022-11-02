@@ -41,7 +41,7 @@ import {
   State,
   StateFunctionUpdater,
   StateInterface,
-  StateSubscription, DevModeConfiguration
+  StateSubscription, DevModeConfiguration, BaseSource
 } from "./types";
 import {constructAsyncStateSource} from "./construct-source";
 import {
@@ -97,7 +97,6 @@ class AsyncState<T> implements StateInterface<T> {
   ) {
     this.key = key;
     this.uniqueId = nextUniqueId();
-    this._source = makeSource(this);
     this.config = shallowClone(config);
     this.producer = wrapProducerFunction(this);
     this.originalProducer = producer ?? undefined;
@@ -118,7 +117,25 @@ class AsyncState<T> implements StateInterface<T> {
     this.state = StateBuilder.initial(initialStateValue);
     this.lastSuccess = this.state;
 
+
+
+    this.abort = this.abort.bind(this);
+    this.getState = this.getState.bind(this);
+    this.setState = this.setState.bind(this);
+    this.subscribe = this.subscribe.bind(this);
+    this.getPayload = this.getPayload.bind(this);
+    this.mergePayload = this.mergePayload.bind(this);
+
+    this.replay = this.replay.bind(this);
+    this.removeLane = this.removeLane.bind(this);
+    this.replaceCache = this.replaceCache.bind(this);
+    this.invalidateCache = this.invalidateCache.bind(this);
+    this.replaceProducer = this.replaceProducer.bind(this);
+
+    this._source = makeSource(this);
+
     Object.preventExtensions(this);
+
     if (__DEV__) {
       devtools.emitCreation(this);
     }
@@ -126,6 +143,20 @@ class AsyncState<T> implements StateInterface<T> {
 
   getState(): State<T> {
     return this.state;
+  }
+
+  getPayload(): Record<string, any> {
+    if (!this.payload) {
+      this.payload = {};
+    }
+    return this.payload;
+  }
+
+  removeLane(laneKey?: string): boolean {
+    if (!this.lanes || !laneKey) {
+      return false;
+    }
+    return delete this.lanes[laneKey];
   }
 
   getLane(laneKey?: string): StateInterface<T> {
@@ -150,7 +181,7 @@ class AsyncState<T> implements StateInterface<T> {
     return newLane;
   }
 
-  setState(
+  replaceState(
     newState: State<T>,
     notify: boolean = true
   ): void {
@@ -233,7 +264,7 @@ class AsyncState<T> implements StateInterface<T> {
     return cleanup;
   }
 
-  replaceState(
+  setState(
     newValue: T | StateFunctionUpdater<T>,
     status = AsyncStateStatus.success
   ): void {
@@ -257,7 +288,7 @@ class AsyncState<T> implements StateInterface<T> {
       payload: shallowClone(this.payload),
     });
     if (__DEV__) devtools.emitReplaceState(this, savedProps);
-    this.setState(StateBuilder[status](effectiveValue, savedProps));
+    this.replaceState(StateBuilder[status](effectiveValue, savedProps));
     this.willPerformStateUpdate = false;
   }
 
@@ -415,7 +446,7 @@ class AsyncState<T> implements StateInterface<T> {
       if (cachedState) {
         if (didNotExpire(cachedState)) {
           if (cachedState.state !== this.state) {
-            this.setState(cachedState.state);
+            this.replaceState(cachedState.state);
           }
           if (__DEV__) devtools.emitRunConsumedFromCache(this, payload, execArgs);
           return;
@@ -483,7 +514,7 @@ class AsyncState<T> implements StateInterface<T> {
           " not supported in the library and will have no effect");
         return;
       }
-      that.replaceState(updater, status);
+      that.setState(updater, status);
     }
 
     function abort(reason: any): AbortFn | undefined {
@@ -501,7 +532,7 @@ class AsyncState<T> implements StateInterface<T> {
         // by the library replace the state again
         // these state updates are only with aborted status
         if (!that.willPerformStateUpdate) {
-          that.setState(StateBuilder.aborted(reason, cloneProducerProps(props)));
+          that.replaceState(StateBuilder.aborted(reason, cloneProducerProps(props)));
         }
       }
 
@@ -540,7 +571,7 @@ class AsyncState<T> implements StateInterface<T> {
     const newState: State<T> = StateBuilder.initial(
       typeof initialState === "function" ? initialState.call(null, this.cache) : initialState
     );
-    this.setState(newState);
+    this.replaceState(newState);
     if (__DEV__) devtools.emitDispose(this);
 
     this.willPerformStateUpdate = false;
@@ -631,7 +662,7 @@ function resolveCache<T>(
   if (typeof cacheConfig!.onCacheLoad === "function") {
     cacheConfig!.onCacheLoad({
       cache: instance.cache,
-      setState: instance.replaceState.bind(instance)
+      setState: instance.setState
     });
   }
 }
@@ -741,8 +772,29 @@ function spreadCacheChangeOnLanes<T>(topLevelParent: StateInterface<T>) {
 }
 
 function makeSource<T>(instance: StateInterface<T>): Readonly<Source<T>> {
-  const source: Source<T> = constructAsyncStateSource(instance);
-  source.key = instance.key;
+  const hiddenInstance = constructAsyncStateSource(instance);
+
+  const source: Source<T> = Object.assign(hiddenInstance, {
+    key: instance.key,
+    uniqueId: instance.uniqueId,
+
+    abort: instance.abort,
+    getState: instance.getState,
+    setState: instance.setState,
+    subscribe: instance.subscribe,
+    getPayload: instance.getPayload,
+    mergePayload: instance.mergePayload,
+    replay: instance.replay,
+    removeLane: instance.removeLane,
+    replaceCache: instance.replaceCache,
+    invalidateCache: instance.invalidateCache,
+    replaceProducer: instance.replaceProducer,
+    run: instance.run.bind(instance, standaloneProducerEffectsCreator),
+
+    getLaneSource(lane?: string) {
+      return instance.getLane(lane)._source;
+    },
+  });
 
   Object.defineProperty(source, sourceIsSourceSymbol, {
     value: true,
@@ -750,18 +802,6 @@ function makeSource<T>(instance: StateInterface<T>): Readonly<Source<T>> {
     enumerable: false,
     configurable: false,
   });
-
-  source.uniqueId = instance.uniqueId;
-
-  source.getLaneSource = function getLaneSource(lane?: string) {
-    return instance.getLane(lane)._source;
-  };
-  source.getState = instance.getState.bind(instance);
-  source.subscribe = instance.subscribe.bind(instance);
-  source.setState = instance.replaceState.bind(instance);
-  source.mergePayload = instance.mergePayload.bind(instance);
-  source.invalidateCache = instance.invalidateCache.bind(instance);
-  source.run = instance.run.bind(instance, standaloneProducerEffectsCreator);
 
   return Object.freeze(source);
 }

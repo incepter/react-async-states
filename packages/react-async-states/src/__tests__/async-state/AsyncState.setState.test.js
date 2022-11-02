@@ -21,7 +21,7 @@ describe('AsyncState - setState', () => {
 
   it('should synchronously mutate the state after setState call and notify subscribers', () => {
     // when
-    myAsyncState.setState(StateBuilder.pending({}));
+    myAsyncState.replaceState(StateBuilder.pending({}));
     // then
     let expectedState = {
       props: {},
@@ -37,7 +37,7 @@ describe('AsyncState - setState', () => {
   it('should update state and do not notify subscribers', async () => {
     let lastSuccess = myAsyncState.lastSuccess;
 
-    myAsyncState.setState(StateBuilder.success({}), false);
+    myAsyncState.replaceState(StateBuilder.success({}), false);
     // then
     expect(subscription).not.toHaveBeenCalled();
   });
