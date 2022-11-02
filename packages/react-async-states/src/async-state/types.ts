@@ -151,6 +151,29 @@ export enum CreationPath {
   PROVIDER_INITIALIZATION                 = 0b10000,
 }
 
+/**
+ * getPayload
+ * mergePayload
+ *
+ * getState
+ * setState
+ *
+ * invalidateCache
+ * replaceCache
+ *
+ * replaceProducer
+ * run
+ * getConfig
+ * setConfig
+ * getLane
+ * removeLane
+ *
+ * subscribe
+ *
+ * run
+ *
+ */
+
 export interface StateInterface<T> {
   // identity
   key: string,

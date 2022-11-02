@@ -788,26 +788,27 @@ function createRunFunction(
 
     if (isAsyncStateSource(input)) {
       instance = readAsyncStateFromSource(input as Source<T>).getLane(config?.lane);
+
+      return instance.run(producerEffectsCreator, ...args);
     } else if (isFn(input)) {
+
       instance = new AsyncState(nextKey(), input as Producer<T>);
       if (config?.payload) {
         instance?.mergePayload(config.payload)
       }
+      return instance.run(producerEffectsCreator, ...args);
+
     } else if (manager !== null) {
       instance = manager.get(input as string);
 
       if (instance && config?.lane) {
         instance = instance.getLane(config.lane);
       }
+
+      return instance.run(producerEffectsCreator, ...args);
     } else {
       return undefined;
     }
-
-    if (!instance) {
-      return undefined;
-    }
-
-    return instance.run(producerEffectsCreator, ...args);
   }
 }
 
@@ -864,7 +865,7 @@ function createSelectFunction<T>(manager: AsyncStateManagerInterface | null) {
     lane?: string,
   ): State<T> | undefined {
     if (isAsyncStateSource(input)) {
-      return readAsyncStateFromSource(input as Source<T>).getLane(lane).getState();
+      return (input as Source<T>).getLaneSource(lane).getState();
     }
 
     let instanceFromManager = manager?.get(input as string);
