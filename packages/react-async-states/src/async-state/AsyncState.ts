@@ -16,6 +16,7 @@ import devtools from "devtools";
 import {areRunEffectsSupported} from "shared/features";
 import {hideStateInstanceInNewObject} from "./hide-object";
 import {nextKey} from "./key-gen";
+import {runpSourceLane} from "./source-utils";
 
 class AsyncState<T> implements StateInterface<T> {
   //region properties
@@ -49,8 +50,8 @@ class AsyncState<T> implements StateInterface<T> {
   private locks: number = 0;
   private pendingTimeout: PendingTimeout | null = null;
 
-  private willUpdate: boolean = false;
-  private currentAbort: AbortFn = undefined;
+  willUpdate: boolean = false;
+  currentAbort: AbortFn = undefined;
   private latestRun: RunTask<T> | null = null;
 
   //endregion
@@ -393,11 +394,12 @@ class AsyncState<T> implements StateInterface<T> {
   }
 
   private runImmediately(
-    createProducerEffects: ProducerEffectsCreator<T>,
+    producerEffectsCreator: ProducerEffectsCreator<T>,
     payload: Record<string, any> | null,
     ...execArgs: any[]
   ): AbortFn {
     this.willUpdate = true;
+
     if (this.state.status === AsyncStateStatus.pending || this.pendingUpdate) {
       if (this.pendingUpdate) {
         clearTimeout(this.pendingUpdate.timeoutId);
@@ -409,9 +411,6 @@ class AsyncState<T> implements StateInterface<T> {
     } else if (typeof this.currentAbort === "function") {
       this.abort();
     }
-
-
-    let onAbortCallbacks: AbortFn[] = [];
 
     if (isCacheEnabled(this)) {
       const topLevelParent: StateInterface<T> = getTopLevelParent(this);
@@ -441,7 +440,6 @@ class AsyncState<T> implements StateInterface<T> {
       }
     }
 
-    const that = this;
 
     const runIndicators = {
       cleared: false, // abort was called and abort callbacks were removed
@@ -449,87 +447,18 @@ class AsyncState<T> implements StateInterface<T> {
       fulfilled: false, // resolved to something, either success or error
     };
 
-    // @ts-ignore
-    // ts yelling to add a run, runp and select functions
-    // but run and runp will require access to this props object,
-    // so they are constructed later, and appended to the same object.
-    const props: ProducerProps<T> = {
-      emit,
-      abort,
-      payload,
-      args: execArgs,
-      // todo: lastSuccess is error prone, since emit stays alive and may read a wrong result from here
-      // but has low priority since getState returns the very current state
-      lastSuccess: that.lastSuccess,
-      onAbort(cb: AbortFn) {
-        if (typeof cb === "function") {
-          onAbortCallbacks.push(cb);
-        }
-      },
-      isAborted() {
-        return runIndicators.aborted;
-      },
-      getState() {
-        return that.state;
-      }
-    };
-    Object.assign(props, createProducerEffects(props));
 
-    function emit(
-      updater: T | StateFunctionUpdater<T>,
-      status?: AsyncStateStatus
-    ): void {
-      if (runIndicators.cleared && that.state.status === AsyncStateStatus.aborted) {
-        console.error("You are emitting while your producer is passing to aborted state." +
-          "This has no effect and not supported by the library. The next " +
-          "state value on aborted state is the reason of the abort.");
-        return;
-      }
-      if (!runIndicators.fulfilled) {
-        console.error("Called props.emit before the producer resolves. This is" +
-          " not supported in the library and will have no effect");
-        return;
-      }
-      that.setState(updater, status);
-    }
+    this.latestRun = {payload, args: execArgs, producerEffectsCreator};
 
-    function abort(reason: any): AbortFn | undefined {
-      if (runIndicators.aborted || runIndicators.cleared) {
-        return;
-      }
+    const props = constructPropsObject(
+      this, producerEffectsCreator, runIndicators, payload, execArgs);
 
-      if (!runIndicators.fulfilled) {
-        runIndicators.aborted = true;
-        // in case we will be running right next, there is no need to step in the
-        // aborted state since we'll be immediately (sync) later in pending again, so
-        // we bail out this aborted state update.
-        // this is to distinguish between aborts that are called from the wild
-        // from aborts that will be called synchronously
-        // by the library replace the state again
-        // these state updates are only with aborted status
-        if (!that.willUpdate) {
-          that.replaceState(StateBuilder.aborted(reason, cloneProducerProps(props)));
-        }
-      }
-
-      runIndicators.cleared = true;
-      onAbortCallbacks.forEach(function clean(func) {
-
-        if (typeof func === "function") {
-          func(reason);
-        }
-      });
-      that.currentAbort = undefined;
-    }
+    const abort = props.abort;
 
     this.currentAbort = abort;
-    this.latestRun = {
-      payload,
-      args: execArgs,
-      producerEffectsCreator: createProducerEffects,
-    };
     this.producer(props, runIndicators);
     this.willUpdate = false;
+
     return abort;
   }
 
@@ -605,6 +534,91 @@ class AsyncState<T> implements StateInterface<T> {
 }
 
 //region AsyncState methods helpers
+
+function constructPropsObject<T>(
+  instance: StateInterface<T>,
+  producerEffectsCreator: ProducerEffectsCreator<T>,
+  runIndicators: RunIndicators,
+  payload: Record<string, any> | null,
+  args: any[]
+): ProducerProps<T> {
+
+
+  let onAbortCallbacks: AbortFn[] = [];
+  // @ts-ignore
+  let props: ProducerProps<T> = {
+    emit,
+    args,
+    abort,
+    payload,
+    // todo: lastSuccess is error prone, since emit stays alive and may read a wrong result from here
+    // but has low priority since getState returns the very current state
+    lastSuccess: instance.lastSuccess,
+    onAbort(cb: AbortFn) {
+      if (typeof cb === "function") {
+        onAbortCallbacks.push(cb);
+      }
+    },
+    isAborted() {
+      return runIndicators.aborted;
+    },
+    getState() {
+      return instance.state;
+    }
+  };
+  Object.assign(props, producerEffectsCreator(props));
+
+  return props;
+
+
+  function emit(
+    updater: T | StateFunctionUpdater<T>,
+    status?: AsyncStateStatus
+  ): void {
+    if (runIndicators.cleared && instance.state.status === AsyncStateStatus.aborted) {
+      console.error("You are emitting while your producer is passing to aborted state." +
+        "This has no effect and not supported by the library. The next " +
+        "state value on aborted state is the reason of the abort.");
+      return;
+    }
+    if (!runIndicators.fulfilled) {
+      console.error("Called props.emit before the producer resolves. This is" +
+        " not supported in the library and will have no effect");
+      return;
+    }
+    instance.setState(updater, status);
+  }
+
+  function abort(reason: any): AbortFn | undefined {
+    if (runIndicators.aborted || runIndicators.cleared) {
+      return;
+    }
+
+    if (!runIndicators.fulfilled) {
+      runIndicators.aborted = true;
+      // in case we will be running right next, there is no need to step in the
+      // aborted state since we'll be immediately (sync) later in pending again, so
+      // we bail out this aborted state update.
+      // this is to distinguish between aborts that are called from the wild
+      // from aborts that will be called synchronously
+      // by the library replace the state again
+      // these state updates are only with aborted status
+      if (!instance.willUpdate) {
+        instance.replaceState(StateBuilder.aborted(reason, cloneProducerProps(props)));
+      }
+    }
+
+    runIndicators.cleared = true;
+    onAbortCallbacks.forEach(function clean(func) {
+
+      if (typeof func === "function") {
+        func(reason);
+      }
+    });
+    instance.currentAbort = undefined;
+  }
+
+}
 
 export function createSource<T>(
   key: string,
@@ -789,6 +803,9 @@ function makeSource<T>(instance: StateInterface<T>): Readonly<Source<T>> {
 
     getLaneSource(lane?: string) {
       return instance.getLane(lane)._source;
+    },
+    runp(...args: any[]): Promise<State<T>> {
+      return runpSourceLane(instance._source, undefined, ...args);
     },
   });
 
@@ -1179,6 +1196,9 @@ export interface StateInterface<T> extends BaseSource<T> {
   suspender: Promise<T> | undefined,
   originalProducer: Producer<T> | undefined,
 
+  willUpdate: boolean;
+  currentAbort: AbortFn;
+
   // lanes and forks
   forksIndex: number,
   parent: StateInterface<T> | null,
@@ -1300,6 +1320,7 @@ export type StateUpdater<T> = (
 
 export interface Source<T> extends BaseSource<T> {
   run: (...args: any[]) => AbortFn,
+  runp: (...args: any[]) => Promise<State<T>>,
 
   removeLane(laneKey?: string): boolean,
 

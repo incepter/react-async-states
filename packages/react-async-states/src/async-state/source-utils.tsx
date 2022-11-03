@@ -82,9 +82,6 @@ export function runpSourceLane<T>(
   lane: string | undefined,
   ...args
 ): Promise<State<T>> {
-  if (__DEV__) {
-    warnAboutSourceUtilsDeprecation();
-  }
   let asyncState = readAsyncStateFromSource(src).getLane(lane);
   return new Promise(resolve => {
     let unsubscribe = asyncState.subscribe(subscription);
