@@ -123,7 +123,7 @@ export function useSelector<T>(
     return () => {
       unsubscribeFns.forEach((cleanup => cleanup?.()));
     }
-  }, [self.currentInstances, self.currentValue, areEqual]);
+  }, [contextValue, self.currentInstances, self.currentValue, areEqual]);
 
   function computeSelf() {
     const currentKeys = readKeys(keys, contextValue);

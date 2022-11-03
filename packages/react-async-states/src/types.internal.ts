@@ -46,7 +46,6 @@ export enum SubscriptionMode {
 
 export type StateContextValue = {
   manager: AsyncStateManagerInterface,
-  payload: Record<string, any> | null,
 
   getAllKeys(): string[],
   get<T>(key: string): StateInterface<T>,
@@ -65,6 +64,9 @@ export type StateContextValue = {
   ): AbortFn,
 
   producerEffectsCreator<T>(props: ProducerProps<T>): ProducerEffects,
+
+  getPayload(): Record<string, any>,
+  mergePayload(partialPayload: Record<string, any>): void,
 }
 
 

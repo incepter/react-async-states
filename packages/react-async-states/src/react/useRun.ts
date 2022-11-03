@@ -17,7 +17,7 @@ export function useRun<T>():
       return outsideContextRunFn;
     }
     return insideContextRunFn(contextValue);
-  }, []);
+  }, [contextValue]);
 }
 
 export function useRunLane<T>():
@@ -29,5 +29,5 @@ export function useRunLane<T>():
       return outsideContextRunLaneFn;
     }
     return insideContextRunLaneFn(contextValue);
-  }, []);
+  }, [contextValue]);
 }

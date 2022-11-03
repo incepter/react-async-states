@@ -58,7 +58,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
     .useMemo<UseAsyncStateRef<T, E>>(createEmptyObject, []);
 
   const subscriptionInfo = React
-    .useMemo<SubscriptionInfo<T, E>>(parseConfiguration, [guard, ...deps]);
+    .useMemo<SubscriptionInfo<T, E>>(parseConfiguration, [contextValue, guard, ...deps]);
 
   const {run, mode, asyncState, configuration} = subscriptionInfo;
   const {selector, areEqual, events} = configuration;
@@ -99,13 +99,13 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   // omitting dispose fn because it depends on from the mode and whether inside provider
   if (contextValue !== null) {
     React.useEffect(subscribeToAsyncState,
-      [subscriptionKey, areEqual, selector, asyncState, events]);
+      [contextValue, subscriptionKey, areEqual, selector, asyncState, events]);
 
-    React.useEffect(watchAsyncState, [mode, asyncState, configuration]);
+    React.useEffect(watchAsyncState, [contextValue, mode, asyncState, configuration]);
   } else {
 
     React.useEffect(subscribeToAsyncState,
-      [subscriptionKey, areEqual, selector, asyncState, events]);
+      [contextValue, subscriptionKey, areEqual, selector, asyncState, events]);
   }
 
   React.useEffect(autoRunAsyncState, deps);
@@ -237,7 +237,7 @@ export function useSourceLane<T>(
   }
 
   // subscribe to async state
-  React.useEffect(subscribeToAsyncState, [asyncState]);
+  React.useEffect(subscribeToAsyncState, [contextValue, asyncState]);
 
   return selectedValue;
 
@@ -319,7 +319,7 @@ export function useProducer<T>(
   }
 
   // subscribe to async state
-  React.useEffect(subscribeToAsyncState, []);
+  React.useEffect(subscribeToAsyncState, [contextValue, asyncState]);
 
   return selectedValue;
 
@@ -524,8 +524,12 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
 
   // assign payload
   if (output.asyncState) {
-    if (contextValue?.payload) {
-      output.asyncState.mergePayload(contextValue?.payload);
+    if (contextValue) {
+      const contextPayload = contextValue.getPayload();
+      if (contextPayload) {
+        output.asyncState.mergePayload(contextPayload);
+
+      }
     }
     if (newConfig.payload) {
       output.asyncState.mergePayload(newConfig.payload);

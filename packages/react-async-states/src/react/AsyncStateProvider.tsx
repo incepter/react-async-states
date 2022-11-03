@@ -1,6 +1,5 @@
 import * as React from "react";
 import {AsyncStateContext} from "./context";
-import {shallowClone,} from "shared";
 import {
   AsyncStateEntry,
   AsyncStateManager,
@@ -17,9 +16,10 @@ import {StateContextValue, UseAsyncStateContextType} from "../types.internal";
  */
 export function AsyncStateProvider(
   {
-    children,
     payload,
-    initialStates
+    children,
+    initialStates,
+    manager: providedManager,
   }: StateProviderProps) {
   // if (__DEV__) {
   //   if (!didWarnAboutProviderDeprecated) {
@@ -34,16 +34,15 @@ export function AsyncStateProvider(
   //   }
   // }
 
-  // manager per provider
-  // this manager lives with the provider and will never change
-  // the initialize function creates a mutable manager instance
-  const manager = React.useMemo<AsyncStateManagerInterface>(initialize, []);
+  const manager = React
+    .useMemo<AsyncStateManagerInterface>(initialize, [providedManager]);
 
   // this function should only tell the manager to execute a diffing
   // of items he has and the new ones
   // we need to figure out a way to un-reference these dirty states
   const dirtyStates = React
-    .useMemo<{ data: AsyncStateEntry<any>[] }>(onInitialStatesChange, [initialStates]);
+    .useMemo<{ data: AsyncStateEntry<any>[] }>
+    (onInitialStatesChange, [manager, initialStates]);
 
   // this will serve to dispose old async states that were hoisted
   // since initialStates changed
@@ -52,11 +51,11 @@ export function AsyncStateProvider(
   // this should synchronously change the payload held by hoisted items
   // why not until effect? because all children may benefit from this in their
   // effects
-  React.useMemo<void>(onPayloadChange, [payload]);
+  React.useMemo<void>(onPayloadChange, [manager, payload]);
 
   const contextValue = React.useMemo<UseAsyncStateContextType>(
     makeContextValue,
-    [manager, payload]
+    [manager]
   );
 
   React.useEffect(disposeManager, [manager]);
@@ -68,6 +67,9 @@ export function AsyncStateProvider(
   );
 
   function initialize() {
+    if (providedManager) {
+      return providedManager;
+    }
     return AsyncStateManager(initialStates);
   }
 
@@ -97,6 +99,7 @@ export function AsyncStateProvider(
 
   function onPayloadChange() {
     // propagate the new payload
+    manager.mergePayload(payload);
     for (const entry of Object.values(manager.entries)) {
       entry.value.mergePayload(payload);
     }
@@ -105,7 +108,6 @@ export function AsyncStateProvider(
   function makeContextValue(): StateContextValue {
     return {
       manager,
-      payload: shallowClone(payload),
 
       get: manager.get,
       run: manager.run,
@@ -114,6 +116,8 @@ export function AsyncStateProvider(
       dispose: manager.dispose,
       watchAll: manager.watchAll,
       getAllKeys: manager.getAllKeys,
+      getPayload: manager.getPayload,
+      mergePayload: manager.mergePayload,
       runAsyncState: manager.runAsyncState,
       notifyWatchers: manager.notifyWatchers,
       producerEffectsCreator: manager.producerEffectsCreator,

@@ -41,6 +41,7 @@ export function AsyncStateManager(
       Object.create(null)
     ) as AsyncStateEntries;
 
+  let payload : Record<string, any> = {};
   // stores all listeners/watchers about an async state
   let watchers: ManagerWatchers = Object.create(null);
 
@@ -59,7 +60,13 @@ export function AsyncStateManager(
     getAllKeys,
     runAsyncState,
     notifyWatchers,
-    setInitialStates
+    setInitialStates,
+    getPayload(): Record<string, any> {
+      return payload;
+    },
+    mergePayload(partialPayload: Record<string, any>): void {
+      Object.assign(payload, partialPayload);
+    }
   };
   output.producerEffectsCreator = createProducerEffectsCreator(output);
 
@@ -455,14 +462,12 @@ export type AsyncStateManagerInterface = {
     keyOrSource: AsyncStateKeyOrSource<T>,
     ...args: any[]
   ): AbortFn,
-  runAsyncStateLane<T>(
-    keyOrSource: AsyncStateKeyOrSource<T>,
-    lane: string | undefined,
-    ...args: any[]
-  ): AbortFn,
   getAllKeys(): string[],
   watchAll(cb: ManagerWatchCallback<any>),
   setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[],
+
+  getPayload(): Record<string, any>,
+  mergePayload(partialPayload?: Record<string, any>): void,
 
   producerEffectsCreator<T>(props: ProducerProps<T>): ProducerEffects,
 }
