@@ -1,17 +1,18 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 
-import './index.css'
-import {
-  createSource,
-  runpSource,
-  useSelector,
-  AsyncStateStatus,
-  AsyncStateProvider, useAsyncState
-} from "react-async-states";
-import App from "./past/App"
+import * as TT from "react-async-states";
 
-//
+import './index.css'
+
+const {
+  AsyncStateProvider,
+    AsyncStateStatus,
+    createSource,
+    runpSource,
+    useAsyncState
+} = TT;
+
 function fetchProfiles(props) {
 
   const controller = new AbortController();
@@ -26,34 +27,35 @@ function fetchProfiles(props) {
   ).then(r => r.json());
 
 }
-//
+
 const profilesList = createSource("profiles", fetchProfiles, {
   // runEffect: "delay",
   // runEffectDurationMs: 800
 });
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
-// runpSource(profilesList)
-//   .then(() => {
-//     root.render(
-//       <React.StrictMode>
-//         <AsyncStateProvider>
-//           <ProviderTest/>
-//           <ProfilesView/>
-//         </AsyncStateProvider>
-//       </React.StrictMode>
-//     )
-//   });
+runpSource(profilesList)
+  .then(() => {
+    root.render(
+      <React.StrictMode>
+        <AsyncStateProvider>
+          <Wrapper initialValue={true}>
+            <ProfilesView/>
+          </Wrapper>
+        </AsyncStateProvider>
+      </React.StrictMode>
+    )
+  });
 
-root.render(
-  <React.StrictMode>
-    <AsyncStateProvider>
-      <Wrapper initialValue={true}>
-        <ProfilesView/>
-      </Wrapper>
-    </AsyncStateProvider>
-  </React.StrictMode>
-)
+// root.render(
+//   <React.StrictMode>
+//     <AsyncStateProvider>
+//       <Wrapper initialValue={true}>
+//         <ProfilesView/>
+//       </Wrapper>
+//     </AsyncStateProvider>
+//   </React.StrictMode>
+// )
 
 //
 function ProfilesView() {

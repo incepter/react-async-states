@@ -30,7 +30,7 @@ function build({
       path: outputDir,
       library: libraryName,
       libraryTarget: target,
-      filename: `${outputFilename}.${mode}.js`,
+      filename: outputFilename,
     },
 
     module: {
@@ -58,22 +58,6 @@ function build({
         failOnError: false,
         exclude: /a\.js|node_modules/,
       }),
-
-      new CompressionPlugin({
-        test: /\.js$/,
-        minRatio: 0.8,
-        threshold: 10240,
-        algorithm: "gzip",
-      }),
-
-      new CopyPlugin({
-        patterns: [
-          {
-            to: path.join(currentDir, "dist/index.js"),
-            from: path.join(currentDir, "src/index-prod.js")
-          }
-        ]
-      }),
     ],
 
     optimization: {
@@ -96,7 +80,7 @@ function build({
       ],
       nodeEnv: mode,
       usedExports: true,
-      sideEffects: false,
+      sideEffects: true,
       concatenateModules: true
     },
 
@@ -114,8 +98,9 @@ module.exports = [
     globalObject: "this",
     devtool: "source-map",
     outputFilename: "index.js",
-    externals: {react: "React"},
+    externals: {react: "react"},
     libraryName: "ReactAsyncStates",
+    outputDir: path.join(currentDir, "dist"),
     entry: [
       "webpack-hot-middleware/client?reload=true",
       path.join(currentDir, "src/index.ts"),

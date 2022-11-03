@@ -2,11 +2,6 @@ import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {mockDateNow} from "../../utils/setup";
 import {useAsyncState} from "../../../../react/useAsyncState";
-import {
-  runpSourceLane,
-  runSource,
-  runSourceLane
-} from "../../../../async-state/source-utils";
 import {createSource} from "../../../../async-state";
 
 mockDateNow();
@@ -143,7 +138,7 @@ describe('subscribe to lane and operate on it', () => {
     // now, let's run counter-3
 
     act(() => {
-      runSourceLane(countersSource, "counter-3");
+      countersSource.getLaneSource("counter-3").run();
     });
 
     await act(async () => {
@@ -157,7 +152,7 @@ describe('subscribe to lane and operate on it', () => {
       .toEqual("counter-counter-4-default-0");
 
     act(() => {
-      runpSourceLane(countersSource, "counter-4");
+      countersSource.getLaneSource("counter-4").run();
     });
 
     await act(async () => {
@@ -179,15 +174,13 @@ describe('subscribe to lane and operate on it', () => {
     expect(screen.getByTestId("counter-sub-counter-2-extra-default-data").innerHTML)
       .toEqual("counter-counter-2-extra-default-0");
     act(() => {
-      runSource(
         createSource(
           "temporary-will-run-counter-2",
           async function (props) {
             props.run(countersSource, {lane: "counter-2-extra"})
             props.runp(countersSource, {lane: "counter-2"})
           }
-        )
-      )
+        ).run();
     });
 
     await act(async () => {

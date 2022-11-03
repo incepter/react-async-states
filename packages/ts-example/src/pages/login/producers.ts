@@ -1,4 +1,4 @@
-import {createSource, ProducerProps, AsyncStateSource, State} from "react-async-states";
+import {createSource, ProducerProps, Source, State} from "react-async-states";
 import {UserType} from "../../domains/users/User";
 import {bindAbortController} from "../../utils/producer-props";
 
@@ -21,4 +21,4 @@ export const currentUserConfig = createSource(
   "current-user-config",
   null,
   {initialValue: {id: 1}}
-) as AsyncStateSource<CurrentUserConfig>;
+) as Source<CurrentUserConfig>;

@@ -4,8 +4,6 @@ const CopyPlugin = require("copy-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const CompressionPlugin = require("compression-webpack-plugin");
 
-let currentDir = process.cwd();
-
 function build({
                  mode,
                  entry,
@@ -26,7 +24,7 @@ function build({
       path: outputDir,
       library: libraryName,
       libraryTarget: target,
-      filename: `${outputFilename}.${mode}.js`,
+      filename: outputFilename,
     },
 
     module: {
@@ -34,15 +32,12 @@ function build({
         {
           test: /\.(t|j)sx?$/,
           exclude: /node_modules/,
-          use: {
-            loader: "ts-loader",
-          },
+          loader: "ts-loader",
         },
       ],
     },
 
     plugins: [
-      new webpack.EnvironmentPlugin({NODE_ENV: mode}),
 
       new CompressionPlugin({
         test: /\.js$/,
@@ -51,11 +46,13 @@ function build({
         algorithm: "gzip",
       }),
 
+      new webpack.EnvironmentPlugin({NODE_ENV: mode}),
+
       new CopyPlugin({
         patterns: [
           {
-            to: path.join(currentDir, "dist/index.js"),
-            from: path.join(currentDir, "src/index-prod.js")
+            to: path.join(process.cwd(), "dist/index.js"),
+            from: path.join(process.cwd(), "src/index-prod.js")
           }
         ]
       }),
@@ -81,7 +78,7 @@ function build({
       ],
       nodeEnv: mode,
       usedExports: true,
-      sideEffects: false,
+      sideEffects: true,
       concatenateModules: true
     },
 
@@ -97,11 +94,11 @@ function defaultUmdBuild(mode) {
     mode,
     target: "umd",
     globalObject: "this",
-    externals: {react: "React"},
+    externals: {react: "react"},
     libraryName: "ReactAsyncStates",
-    outputFilename: "react-async-states",
-    outputDir: path.resolve(currentDir, "dist"),
-    entry: path.resolve(currentDir, "src/index.ts"),
+    outputDir: path.resolve(process.cwd(), "dist"),
+    outputFilename: `react-async-states.${mode}.js`,
+    entry: path.resolve(process.cwd(), "src/index.ts"),
   });
 }
 

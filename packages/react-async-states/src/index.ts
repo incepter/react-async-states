@@ -23,10 +23,14 @@ export {
 } from "./async-state/source-utils";
 
 export {
+  createSource,
+
   ProducerType,
   RenderStrategy,
   AsyncStateStatus,
   ProducerRunEffects,
+
+  AsyncStateManager,
 } from "./async-state";
 
 export {
@@ -48,6 +52,27 @@ export type {
   ProducerRunConfig,
   ProducerSavedProps,
   AsyncStateKeyOrSource,
+
+
+  InitialStates,
+  InitialAsyncState,
+  AsyncStateSelector,
+  InitialStatesObject,
+  HoistToProviderConfig,
+  ExtendedInitialAsyncState,
+
+  AsyncStateManagerInterface,
+  AsyncStateWatchKey,
+  ManagerWatchCallback,
+  ManagerWatchCallbackValue,
+
+  AsyncStateEntry,
+  StateProviderProps,
+
+  ArraySelector,
+  FunctionSelector,
+  FunctionSelectorItem,
+  SimpleSelector
 } from "./async-state";
 
 export type {
@@ -70,4 +95,3 @@ export type {
   StateBoundaryProps,
   StateBoundaryRenderProp,
 } from "./types.internal";
-export {createSource} from "./async-state";
