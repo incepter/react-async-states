@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  createReducerProducer,
   useAsyncState,
   useSelector
 } from "react-async-states";
@@ -9,7 +8,20 @@ function reducer(old, name, value) {
   // console.log('running', name, value);
   return {...old, [name]: value};
 }
-
+function createReducerProducer(reducerFn) {
+  if (typeof reducerFn !== "function") {
+    throw new Error(
+      `Reducer producer creator expects reducerFn to be a function.` +
+      ` received ${typeof reducerFn}`
+    );
+  }
+  return function reducer(props) {
+    return reducerFn(
+      props.lastSuccess.data,
+      ...props.args
+    );
+  }
+}
 const size = 5;
 export default function Demo() {
   // console.log('___________APP_____________')

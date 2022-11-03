@@ -1,17 +1,17 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 
-import * as TT from "react-async-states";
+import {
+  AsyncStateProvider,
+  AsyncStateStatus,
+  createSource,
+  runpSource,
+  useAsyncState
+}  from "react-async-states";
+
+import App from "./past/App"
 
 import './index.css'
-
-const {
-  AsyncStateProvider,
-    AsyncStateStatus,
-    createSource,
-    runpSource,
-    useAsyncState
-} = TT;
 
 function fetchProfiles(props) {
 
@@ -34,28 +34,24 @@ const profilesList = createSource("profiles", fetchProfiles, {
 });
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
-runpSource(profilesList)
-  .then(() => {
-    root.render(
-      <React.StrictMode>
-        <AsyncStateProvider>
-          <Wrapper initialValue={true}>
-            <ProfilesView/>
-          </Wrapper>
-        </AsyncStateProvider>
-      </React.StrictMode>
-    )
-  });
+// runpSource(profilesList)
+//   .then(() => {
+//     root.render(
+//       <React.StrictMode>
+//         <AsyncStateProvider>
+//           <Wrapper initialValue={true}>
+//             <ProfilesView/>
+//           </Wrapper>
+//         </AsyncStateProvider>
+//       </React.StrictMode>
+//     )
+//   });
 
-// root.render(
-//   <React.StrictMode>
-//     <AsyncStateProvider>
-//       <Wrapper initialValue={true}>
-//         <ProfilesView/>
-//       </Wrapper>
-//     </AsyncStateProvider>
-//   </React.StrictMode>
-// )
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+)
 
 //
 function ProfilesView() {
