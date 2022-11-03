@@ -6,8 +6,9 @@ import {
   AsyncStateStatus,
   createSource,
   runpSource,
-  useAsyncState
-}  from "react-async-states";
+  useAsyncState,
+  AsyncStateManager
+} from "react-async-states";
 
 import App from "./past/App"
 
@@ -47,11 +48,62 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 //     )
 //   });
 
+const myManager = AsyncStateManager();
+
 root.render(
   <React.StrictMode>
-    <App />
+    <AsyncStateProvider manager={myManager}>
+      <Wrapper initialValue={true}>
+        <CounterDetails/>
+      </Wrapper>
+    </AsyncStateProvider>
+    <hr />
+    <AsyncStateProvider manager={myManager}>
+      <Wrapper initialValue={false}>
+        <CounterHoister/>
+      </Wrapper>
+    </AsyncStateProvider>
   </React.StrictMode>
 )
+
+function CounterDetails() {
+  const result = useAsyncState("counter")
+  return (
+    <main>
+      <h1>Details</h1>
+      <button onClick={()=>{result.run(old => old.data + 1)}}>increment</button>
+      <details>
+        <summary>
+          {result.mode}
+        </summary>
+        <pre>
+          {JSON.stringify(result.state, null, 4)}
+        </pre>
+      </details>
+    </main>
+  );
+}
+
+function CounterHoister() {
+  const result = useAsyncState.hoist({
+    key: "counter",
+    initialValue: 0,
+  })
+  return (
+    <main>
+      <h1>Hoister</h1>
+      <button onClick={()=>{result.run(old => old.data + 1)}}>increment</button>
+      <details>
+        <summary>
+          {result.mode}
+        </summary>
+        <pre>
+          {JSON.stringify(result.state, null, 4)}
+        </pre>
+      </details>
+    </main>
+  );
+}
 
 //
 function ProfilesView() {
@@ -71,8 +123,8 @@ function ProfilesView() {
       paddingBottom: 20,
     }}>
       {data.map((profile, index) => <ProfileView key={profile.username}
-                                                       profile={profile}
-                                                       index={index}/>)}
+                                                 profile={profile}
+                                                 index={index}/>)}
     </div>
   );
 }
@@ -115,6 +167,7 @@ function Wrapper({children, initialValue = false}) {
     </>
   );
 }
+
 //
 // function Hoister() {
 //   const {state} = useAsyncState.hoist({
