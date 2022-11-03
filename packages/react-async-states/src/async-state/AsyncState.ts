@@ -16,7 +16,6 @@ import devtools from "devtools";
 import {areRunEffectsSupported} from "shared/features";
 import {hideStateInstanceInNewObject} from "./hide-object";
 import {nextKey} from "./key-gen";
-import {runpSourceLane} from "./source-utils";
 
 class AsyncState<T> implements StateInterface<T> {
   //region properties
@@ -241,7 +240,7 @@ class AsyncState<T> implements StateInterface<T> {
 
   setState(
     newValue: T | StateFunctionUpdater<T>,
-    status = AsyncStateStatus.success
+    status = AsyncStateStatus.success,
   ): void {
     if (!StateBuilder[status]) {
       throw new Error(`Couldn't replace state to unknown status ${status}.`);
@@ -275,7 +274,8 @@ class AsyncState<T> implements StateInterface<T> {
     return this.runImmediately(
       latestRunTask.producerEffectsCreator,
       latestRunTask.payload,
-      ...latestRunTask.args
+      undefined,
+      latestRunTask.args
     );
   }
 
@@ -306,6 +306,14 @@ class AsyncState<T> implements StateInterface<T> {
   }
 
   run(createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]) {
+    return this.runWithCallbacks(createProducerEffects, undefined, args);
+  }
+
+  runWithCallbacks(
+    createProducerEffects: ProducerEffectsCreator<T>,
+    callbacks: ProducerCallbacks<T> | undefined,
+    args: any[]
+  ) {
     const effectDurationMs = Number(this.config.runEffectDurationMs) || 0;
 
     if (
@@ -316,15 +324,29 @@ class AsyncState<T> implements StateInterface<T> {
       return this.runImmediately(
         createProducerEffects,
         shallowClone(this.payload),
-        ...args
+        callbacks,
+        args
       );
     }
-    return this.runWithEffect(createProducerEffects, ...args);
+    return this.runWithEffect(createProducerEffects, callbacks, args);
+  }
+
+  runp(createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]) {
+    const that = this;
+    return new Promise<State<T>>(function runpPromise(resolve) {
+      const callbacks: ProducerCallbacks<T> = {
+        onError: resolve,
+        onSuccess: resolve,
+        onAborted: resolve,
+      };
+      that.runWithCallbacks(createProducerEffects, callbacks, args);
+    });
   }
 
   private runWithEffect(
     createProducerEffects: ProducerEffectsCreator<T>,
-    ...args: any[]
+    internalCallbacks: ProducerCallbacks<T> | undefined,
+    args: any[]
   ): AbortFn {
 
     const effectDurationMs = Number(this.config.runEffectDurationMs) || 0;
@@ -339,7 +361,8 @@ class AsyncState<T> implements StateInterface<T> {
         runAbortCallback = that.runImmediately(
           createProducerEffects,
           shallowClone(that.payload),
-          ...args
+          internalCallbacks,
+          args
         );
       }, effectDurationMs);
 
@@ -390,13 +413,19 @@ class AsyncState<T> implements StateInterface<T> {
         }
       }
     }
-    return this.runImmediately(createProducerEffects, shallowClone(this.payload), ...args);
+    return this.runImmediately(
+      createProducerEffects,
+      shallowClone(this.payload),
+      internalCallbacks,
+      args
+    );
   }
 
   private runImmediately(
     producerEffectsCreator: ProducerEffectsCreator<T>,
     payload: Record<string, any> | null,
-    ...execArgs: any[]
+    internalCallbacks: ProducerCallbacks<T> | undefined,
+    execArgs: any[]
   ): AbortFn {
     this.willUpdate = true;
 
@@ -451,12 +480,14 @@ class AsyncState<T> implements StateInterface<T> {
     this.latestRun = {payload, args: execArgs, producerEffectsCreator};
 
     const props = constructPropsObject(
-      this, producerEffectsCreator, runIndicators, payload, execArgs);
+      this, producerEffectsCreator, internalCallbacks, runIndicators, payload, execArgs);
 
     const abort = props.abort;
 
     this.currentAbort = abort;
-    this.producer(props, runIndicators);
+
+    this.producer(props, runIndicators, internalCallbacks);
+
     this.willUpdate = false;
 
     return abort;
@@ -538,6 +569,7 @@ class AsyncState<T> implements StateInterface<T> {
 function constructPropsObject<T>(
   instance: StateInterface<T>,
   producerEffectsCreator: ProducerEffectsCreator<T>,
+  internalCallbacks: ProducerCallbacks<T> | undefined,
   runIndicators: RunIndicators,
   payload: Record<string, any> | null,
   args: any[]
@@ -604,7 +636,9 @@ function constructPropsObject<T>(
       // by the library replace the state again
       // these state updates are only with aborted status
       if (!instance.willUpdate) {
-        instance.replaceState(StateBuilder.aborted(reason, cloneProducerProps(props)));
+        let abortedState = StateBuilder.aborted(reason, cloneProducerProps(props));
+        instance.replaceState(abortedState);
+        internalCallbacks?.onAborted?.(abortedState);
       }
     }
 
@@ -800,12 +834,10 @@ function makeSource<T>(instance: StateInterface<T>): Readonly<Source<T>> {
     invalidateCache: instance.invalidateCache,
     replaceProducer: instance.replaceProducer,
     run: instance.run.bind(instance, standaloneProducerEffectsCreator),
+    runp: instance.runp.bind(instance, standaloneProducerEffectsCreator),
 
     getLaneSource(lane?: string) {
       return instance.getLane(lane)._source;
-    },
-    runp(...args: any[]): Promise<State<T>> {
-      return runpSourceLane(instance._source, undefined, ...args);
     },
   });
 
@@ -946,7 +978,11 @@ function standaloneProducerEffectsCreator<T>(props: ProducerProps<T>): ProducerE
 export function wrapProducerFunction<T>(instance: StateInterface<T>): ProducerFunction<T> {
   // this is the real deal
   return function producerFuncImpl(
-    props: ProducerProps<T>, indicators: RunIndicators): undefined {
+    props: ProducerProps<T>,
+    indicators: RunIndicators,
+    callbacks?: ProducerCallbacks<T>,
+  ): undefined {
+
     // this allows the developer to omit the producer attribute.
     // and replaces state when there is no producer
     const currentProducer = instance.originalProducer;
@@ -954,6 +990,22 @@ export function wrapProducerFunction<T>(instance: StateInterface<T>): ProducerFu
       indicators.fulfilled = true;
       instance.producerType = ProducerType.notProvided;
       instance.setState(props.args[0], props.args[1]);
+      if (callbacks) {
+        switch (instance.state.status) {
+          case AsyncStateStatus.success: {
+            callbacks.onSuccess?.(instance.state);
+            break;
+          }
+          case AsyncStateStatus.aborted: {
+            callbacks.onAborted?.(instance.state);
+            break;
+          }
+          case AsyncStateStatus.error: {
+            callbacks.onError?.(instance.state);
+            break;
+          }
+        }
+      }
       return;
     }
     // the running promise is used to pass the status to pending and as suspender in react18+
@@ -968,7 +1020,9 @@ export function wrapProducerFunction<T>(instance: StateInterface<T>): ProducerFu
     } catch (e) {
       if (__DEV__) devtools.emitRunSync(instance, savedProps);
       indicators.fulfilled = true;
-      instance.replaceState(StateBuilder.error(e, savedProps));
+      let errorState = StateBuilder.error(e, savedProps);
+      instance.replaceState(errorState);
+      callbacks?.onError?.(errorState);
       return;
     }
 
@@ -981,12 +1035,16 @@ export function wrapProducerFunction<T>(instance: StateInterface<T>): ProducerFu
         generatorResult = wrapStartedGenerator(executionValue, props, indicators);
       } catch (e) {
         indicators.fulfilled = true;
-        instance.replaceState(StateBuilder.error(e, savedProps));
+        let errorState = StateBuilder.error(e, savedProps);
+        instance.replaceState(errorState);
+        callbacks?.onError?.(errorState);
         return;
       }
       if (generatorResult.done) {
         indicators.fulfilled = true;
-        instance.replaceState(StateBuilder.success(generatorResult.value, savedProps));
+        let successState = StateBuilder.success(generatorResult.value, savedProps);
+        instance.replaceState(successState);
+        callbacks?.onSuccess?.(successState);
         return;
       } else {
         runningPromise = generatorResult;
@@ -1003,7 +1061,9 @@ export function wrapProducerFunction<T>(instance: StateInterface<T>): ProducerFu
       if (__DEV__) devtools.emitRunSync(instance, savedProps);
       indicators.fulfilled = true;
       instance.producerType = ProducerType.sync;
-      instance.replaceState(StateBuilder.success(executionValue, savedProps));
+      let successState = StateBuilder.success(executionValue, savedProps);
+      instance.replaceState(successState);
+      callbacks?.onSuccess?.(successState);
       return;
     }
 
@@ -1012,14 +1072,18 @@ export function wrapProducerFunction<T>(instance: StateInterface<T>): ProducerFu
         let aborted = indicators.aborted;
         if (!aborted) {
           indicators.fulfilled = true;
-          instance.replaceState(StateBuilder.success(stateData, savedProps));
+          let successState = StateBuilder.success(stateData, savedProps);
+          instance.replaceState(successState);
+          callbacks?.onSuccess?.(successState);
         }
       })
       .catch(stateError => {
         let aborted = indicators.aborted;
         if (!aborted) {
           indicators.fulfilled = true;
-          instance.replaceState(StateBuilder.error(stateError, savedProps));
+          let errorState = StateBuilder.error(stateError, savedProps);
+          instance.replaceState(errorState);
+          callbacks?.onError?.(errorState);
         }
       });
   };
@@ -1148,7 +1212,9 @@ export interface BaseSource<T> {
   getState(): State<T>,
 
   setState(
-    updater: StateFunctionUpdater<T> | T, status?: AsyncStateStatus): void;
+    updater: StateFunctionUpdater<T> | T,
+    status?: AsyncStateStatus,
+  ): void;
 
   // subscriptions
   subscribe(cb: Function, subscriptionKey?: string): AbortFn,
@@ -1162,6 +1228,9 @@ export interface BaseSource<T> {
 
   run(
     createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]): AbortFn,
+
+  runp(
+    createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]): Promise<State<T>>,
 
   // cache
   invalidateCache(cacheKey?: string): void,
@@ -1223,6 +1292,12 @@ export interface StateInterface<T> extends BaseSource<T> {
   getLane(laneKey?: string): BaseSource<T>,
 
   fork(forkConfig?: ForkConfig): BaseSource<T>,
+
+  runWithCallbacks(
+    createProducerEffects: ProducerEffectsCreator<T>,
+    callbacks: ProducerCallbacks<T> | undefined,
+    args: any[]
+  ),
 }
 
 export enum AsyncStateStatus {
@@ -1274,6 +1349,12 @@ export type RunIndicators = {
   fulfilled: boolean,
 }
 
+export type ProducerCallbacks<T> = {
+  onAborted(aborted: State<T>),
+  onError(errorState: State<T>),
+  onSuccess(successState: State<T>),
+}
+
 export type ProducerSavedProps<T> = {
   payload?: any,
   args?: any[],
@@ -1285,7 +1366,8 @@ export type Producer<T> =
 
 export type ProducerFunction<T> = (
   props: ProducerProps<T>,
-  runIndicators: RunIndicators
+  runIndicators: RunIndicators,
+  internalCallbacks?: ProducerCallbacks<T>,
 ) => AbortFn;
 
 export enum ProducerType {
