@@ -51,17 +51,11 @@ export type {
 } from "./async-state";
 
 export type {
-  InitialStates,
-  InitialAsyncState,
-  InitialStatesObject,
-  ExtendedInitialAsyncState,
-
   EqualityFn,
   MixedConfig,
   UseAsyncState,
   UseAsyncStateType,
   AsyncStateInitializer,
-  HoistToProviderConfig,
   UseAsyncStateConfiguration,
 
   SubscribeEventProps,
@@ -72,7 +66,6 @@ export type {
   UseAsyncStateChangeEventHandler,
 
   SelectorKeysArg,
-  AsyncStateSelector,
 
   StateBoundaryProps,
   StateBoundaryRenderProp,

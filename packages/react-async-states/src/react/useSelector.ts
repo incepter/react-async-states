@@ -2,21 +2,21 @@ import * as React from "react";
 import {__DEV__, shallowEqual} from "shared";
 import {AsyncStateContext} from "./context";
 import {
-  ArraySelector,
-  StateContextValue,
   BaseSelectorKey,
   EqualityFn,
-  FunctionSelector,
-  FunctionSelectorItem,
-  ManagerWatchCallbackValue,
   SelectorKeysArg,
-  SimpleSelector,
+  StateContextValue,
   UseSelectorFunctionKeys,
 } from "../types.internal";
 import {isAsyncStateSource} from "../async-state/utils";
 import AsyncState, {
-  StateInterface,
+  ManagerWatchCallbackValue,
   Source,
+  StateInterface,
+  ArraySelector,
+  FunctionSelector,
+  FunctionSelectorItem,
+  SimpleSelector
 } from "../async-state";
 import {readAsyncStateFromSource} from "../async-state/AsyncState";
 import {useCallerName} from "./helpers/useCallerName";
@@ -51,7 +51,6 @@ export function useSelector<T>(
 ): T {
   let caller;
   const contextValue = React.useContext(AsyncStateContext);
-  const isInsideProvider = contextValue !== null;
 
   if (__DEV__) {
     caller = useCallerName(3);
@@ -68,7 +67,7 @@ export function useSelector<T>(
   //   setSelf(computeSelf());
   // }
 
-  if (isInsideProvider) {
+  if (contextValue !== null) {
     React.useLayoutEffect(() => {
       function onChange(
         value: ManagerWatchCallbackValue<T>,

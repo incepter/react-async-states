@@ -15,8 +15,8 @@ import {
 import devtools from "devtools";
 import {areRunEffectsSupported} from "shared/features";
 import {hideStateInstanceInNewObject} from "./hide-object";
-import {AsyncStateManagerInterface} from "../types.internal";
 import {nextKey} from "./key-gen";
+import {AsyncStateManagerInterface} from "./AsyncStateManager";
 
 class AsyncState<T> implements StateInterface<T> {
   //region properties

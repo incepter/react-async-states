@@ -1,4 +1,4 @@
-import AsyncState, {Producer, ProducerConfig, Source} from "./AsyncState";
+import AsyncState from "./AsyncState";
 
 export default AsyncState;
 
@@ -35,3 +35,29 @@ export type {
   AsyncStateKeyOrSource,
   StateBuilderInterface,
 } from "./AsyncState";
+
+export {
+  AsyncStateManager
+} from "./AsyncStateManager";
+
+export type {
+  InitialStates,
+  InitialAsyncState,
+  AsyncStateSelector,
+  InitialStatesObject,
+  HoistToProviderConfig,
+  ExtendedInitialAsyncState,
+
+  AsyncStateManagerInterface,
+  AsyncStateWatchKey,
+  ManagerWatchCallback,
+  ManagerWatchCallbackValue,
+
+  AsyncStateEntry,
+  StateProviderProps,
+
+  ArraySelector,
+  FunctionSelector,
+  FunctionSelectorItem,
+  SimpleSelector
+} from "./AsyncStateManager";
