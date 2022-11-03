@@ -3,7 +3,7 @@ import {ReactNode} from "react";
 import {
   AbortFn,
   AsyncStateKeyOrSource,
-  AsyncStateStatus,
+  AsyncStateStatus, BaseSource,
   CacheConfig,
   CachedState,
   ForkConfig,
@@ -94,6 +94,20 @@ export interface UseAsyncState<T, E = State<T>> extends BaseUseAsyncState<T, E> 
   version?: number,
   lastSuccess?: State<T>,
 }
+
+// interface NewUseAsyncState<T, E = State<T>> extends Source<T> {
+//
+//   key: string,
+//   version?: number,
+//   mode: SubscriptionMode,
+//   uniqueId: number | undefined,
+//   source?: Source<T> | undefined,
+//
+//   state: E | undefined,
+//   read(): E | undefined,
+//   lastSuccess?: State<T>,
+//
+// }
 
 export type EqualityFn<T> = (
   prev: T,
