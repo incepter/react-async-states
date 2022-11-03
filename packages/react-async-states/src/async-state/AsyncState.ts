@@ -90,7 +90,9 @@ class AsyncState<T> implements StateInterface<T> {
     this.mergePayload = this.mergePayload.bind(this);
 
     this.replay = this.replay.bind(this);
+    this.getConfig = this.getConfig.bind(this);
     this.removeLane = this.removeLane.bind(this);
+    this.patchConfig = this.patchConfig.bind(this);
     this.replaceCache = this.replaceCache.bind(this);
     this.invalidateCache = this.invalidateCache.bind(this);
     this.replaceProducer = this.replaceProducer.bind(this);
@@ -106,6 +108,15 @@ class AsyncState<T> implements StateInterface<T> {
 
   getState(): State<T> {
     return this.state;
+  }
+
+
+  getConfig(): ProducerConfig<T> {
+    return this.config;
+  }
+
+  patchConfig(partialConfig: Partial<ProducerConfig<T>>) {
+    Object.assign(this.config, partialConfig);
   }
 
   getPayload(): Record<string, any> {
@@ -762,13 +773,15 @@ function makeSource<T>(instance: StateInterface<T>): Readonly<Source<T>> {
     uniqueId: instance.uniqueId,
 
     abort: instance.abort,
+    replay: instance.replay,
     getState: instance.getState,
     setState: instance.setState,
+    getConfig: instance.getConfig,
     subscribe: instance.subscribe,
     getPayload: instance.getPayload,
-    mergePayload: instance.mergePayload,
-    replay: instance.replay,
     removeLane: instance.removeLane,
+    patchConfig: instance.patchConfig,
+    mergePayload: instance.mergePayload,
     replaceCache: instance.replaceCache,
     invalidateCache: instance.invalidateCache,
     replaceProducer: instance.replaceProducer,
@@ -1137,6 +1150,10 @@ export interface BaseSource<T> {
   invalidateCache(cacheKey?: string): void,
 
   replaceCache(cacheKey: string, cache: CachedState<T>): void,
+
+  patchConfig(partialConfig: Partial<ProducerConfig<T>>),
+
+  getConfig(): ProducerConfig<T>,
 }
 
 export interface StateInterface<T> extends BaseSource<T> {
