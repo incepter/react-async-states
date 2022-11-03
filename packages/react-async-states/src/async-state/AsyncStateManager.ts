@@ -6,16 +6,21 @@ import AsyncState, {
   ProducerConfig,
   ProducerEffects,
   ProducerProps,
+  ProducerRunConfig,
+  ProducerRunInput,
   Source,
   State,
   StateInterface
-} from "./index";
+} from "./AsyncState";
 
 import {isAsyncStateSource,} from "./utils";
 
 import {
-  createProducerEffectsCreator,
-  readAsyncStateFromSource
+  readAsyncStateFromSource,
+  runWhileSubscribingToNextResolve,
+  standaloneProducerRunEffectFunction,
+  standaloneProducerRunpEffectFunction,
+  standaloneProducerSelectEffectFunction
 } from "./AsyncState";
 
 import {EMPTY_OBJECT} from "shared";
@@ -333,8 +338,78 @@ function createInitialAsyncStatesReducer(
   }
 }
 
+//region Producer effects creator
 
+export function createProducerEffectsCreator(manager: AsyncStateManagerInterface) {
+  return function closeOverProps<T>(props: ProducerProps<T>): ProducerEffects {
+    return {
+      run: managerProducerRunFunction.bind(null, manager),
+      select: managerProducerSelectFunction.bind(null, manager),
+      runp: managerProducerRunpFunction.bind(null, manager, props),
+    };
+  }
+}
 
+function managerProducerRunFunction<T>(
+  manager: AsyncStateManagerInterface,
+  input: ProducerRunInput<T>,
+  config: ProducerRunConfig | null,
+  ...args: any[]
+): AbortFn {
+  if (typeof input === "string") {
+    let instance = manager.get(input);
+    if (!instance) {
+      return;
+    }
+    if (config?.lane) {
+      instance = instance.getLane(config.lane);
+    }
+    return instance.run(manager.producerEffectsCreator, ...args);
+  }
+  return standaloneProducerRunEffectFunction(input, config, ...args);
+}
+
+function managerProducerRunpFunction<T>(
+  manager: AsyncStateManagerInterface,
+  props: ProducerProps<T>,
+  input: ProducerRunInput<T>,
+  config: ProducerRunConfig | null,
+  ...args: any[]
+): Promise<State<T>> | undefined {
+  if (typeof input === "string") {
+    let instance = manager.get<T>(input);
+    if (!instance) {
+      return;
+    }
+    if (config?.lane) {
+      instance = instance.getLane(config.lane);
+    }
+    return runWhileSubscribingToNextResolve(instance, props, args);
+  }
+  return standaloneProducerRunpEffectFunction(props,input, config, ...args);
+}
+
+function managerProducerSelectFunction<T>(
+  manager: AsyncStateManagerInterface,
+  input: AsyncStateKeyOrSource<T>,
+  lane?: string,
+): State<T> | undefined {
+  if (typeof input === "string") {
+    let instance = manager.get<T>(input);
+    if (!instance) {
+      return;
+    }
+    if (lane) {
+      instance = instance.getLane(lane);
+    }
+    return instance.getState();
+  }
+  return standaloneProducerSelectEffectFunction(input, lane);
+}
+
+//endregion
+
+//region TYPES
 export type HoistToProviderConfig = {
   override: boolean,
 }
@@ -439,3 +514,4 @@ export interface FunctionSelectorItem<T> extends Partial<State<T>> {
   lastSuccess?: State<T>,
   cache?: Record<string, CachedState<T>> | null,
 }
+//endregion

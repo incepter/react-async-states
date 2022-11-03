@@ -16,7 +16,6 @@ import devtools from "devtools";
 import {areRunEffectsSupported} from "shared/features";
 import {hideStateInstanceInNewObject} from "./hide-object";
 import {nextKey} from "./key-gen";
-import {AsyncStateManagerInterface} from "./AsyncStateManager";
 
 class AsyncState<T> implements StateInterface<T> {
   //region properties
@@ -81,7 +80,6 @@ class AsyncState<T> implements StateInterface<T> {
       initializer;
     this.state = StateBuilder.initial(initialStateValue);
     this.lastSuccess = this.state;
-
 
 
     this.abort = this.abort.bind(this);
@@ -320,7 +318,8 @@ class AsyncState<T> implements StateInterface<T> {
     const effectDurationMs = Number(this.config.runEffectDurationMs) || 0;
 
     const that = this;
-    function scheduleDelayedRun() {
+
+    function scheduleDelayedRun(startDate) {
       let runAbortCallback: AbortFn | null = null;
 
       const timeoutId = setTimeout(function realRun() {
@@ -333,8 +332,8 @@ class AsyncState<T> implements StateInterface<T> {
       }, effectDurationMs);
 
       that.pendingTimeout = {
+        startDate,
         id: timeoutId,
-        startDate: Date.now(),
       };
 
       return function abortCleanup(reason) {
@@ -345,6 +344,7 @@ class AsyncState<T> implements StateInterface<T> {
         }
       }
     }
+
     if (areRunEffectsSupported() && this.config.runEffect) {
       const now = Date.now();
 
@@ -359,7 +359,7 @@ class AsyncState<T> implements StateInterface<T> {
               clearTimeout(this.pendingTimeout.id);
             }
           }
-          return scheduleDelayedRun();
+          return scheduleDelayedRun(now);
         }
         case ProducerRunEffects.throttle:
         case ProducerRunEffects.takeFirst:
@@ -373,7 +373,7 @@ class AsyncState<T> implements StateInterface<T> {
             }
             break;
           } else {
-            return scheduleDelayedRun();
+            return scheduleDelayedRun(now);
           }
         }
       }
@@ -822,142 +822,101 @@ export const StateBuilder = Object.freeze({
 //endregion
 
 //region producerEffects creators helpers
-function createRunFunction(
-  manager: AsyncStateManagerInterface | null,
-  _props: ProducerProps<any>
+
+export function standaloneProducerRunEffectFunction<T>(
+  input: ProducerRunInput<T>,
+  config: ProducerRunConfig | null,
+  ...args: any[]
 ) {
-  return function run<T>(
-    input: ProducerRunInput<T>,
-    config: ProducerRunConfig | null,
-    ...args: any[]
-  ): AbortFn {
-    let instance: StateInterface<T> | undefined;
-    const producerEffectsCreator =
-      manager?.producerEffectsCreator || standaloneProducerEffectsCreator;
+  if (isAsyncStateSource(input)) {
+    let instance = readAsyncStateFromSource(input as Source<T>)
+      .getLane(config?.lane);
 
-    if (isAsyncStateSource(input)) {
-      instance = readAsyncStateFromSource(input as Source<T>).getLane(config?.lane);
+    return instance.run(standaloneProducerEffectsCreator, ...args);
 
-      return instance.run(producerEffectsCreator, ...args);
-    } else if (typeof input === "function") {
-
-      instance = new AsyncState(nextKey(), input as Producer<T>);
-      if (config?.payload) {
-        instance?.mergePayload(config.payload)
-      }
-      return instance.run(producerEffectsCreator, ...args);
-
-    } else if (manager !== null) {
-      instance = manager.get(input as string);
-
-      if (instance && config?.lane) {
-        instance = instance.getLane(config.lane);
-      }
-
-      if (!instance) {
-        return undefined;
-      }
-
-      return instance.run(producerEffectsCreator, ...args);
-    } else {
-      return undefined;
+  } else if (typeof input === "function") {
+    let instance = new AsyncState(nextKey(), input);
+    if (config?.payload) {
+      instance.mergePayload(config.payload)
     }
+    return instance.run(standaloneProducerEffectsCreator, ...args);
+  }
+  return undefined;
+}
+
+export function standaloneProducerRunpEffectFunction<T>(
+  props: ProducerProps<T>,
+  input: ProducerRunInput<T>,
+  config: ProducerRunConfig | null,
+  ...args: any[]
+) {
+
+  if (isAsyncStateSource(input)) {
+    let instance = readAsyncStateFromSource(input as Source<T>).getLane(config?.lane);
+    return runWhileSubscribingToNextResolve(instance, props, args);
+  } else if (typeof input === "function") {
+
+    let instance = new AsyncState(nextKey(), input);
+    if (config?.payload) {
+      instance.mergePayload(config.payload);
+    }
+    return runWhileSubscribingToNextResolve(instance, props, args);
+
+  } else {
+    return undefined;
   }
 }
 
-function createRunPFunction(manager, props) {
-  return function runp<T>(
-    input: ProducerRunInput<T>,
-    config: ProducerRunConfig | null,
-    ...args: any[]
-  ): Promise<State<T>> | undefined {
-    let instance: StateInterface<T>;
-    const producerEffectsCreator =
-      manager?.producerEffectsCreator || standaloneProducerEffectsCreator;
+export function runWhileSubscribingToNextResolve<T>(
+  instance: StateInterface<T>,
+  props: ProducerProps<T>,
+  args
+): Promise<State<T>> {
+  return new Promise(resolve => {
+    let unsubscribe = instance.subscribe(subscription);
+    props.onAbort(unsubscribe);
 
-    if (isAsyncStateSource(input)) {
-      instance = readAsyncStateFromSource(input as Source<T>).getLane(config?.lane);
-    } else if (typeof input === "function") {
-      instance = new AsyncState(nextKey(), input as Producer<T>);
-      if (config?.payload) {
-        instance.mergePayload(config.payload);
-      }
-    } else {
-      instance = manager?.get(input as string);
+    let abort = instance.run(standaloneProducerEffectsCreator, ...args);
+    props.onAbort(abort);
 
-      if (config?.lane) {
-        instance = instance.getLane(config.lane);
-      }
-    }
-
-    if (!instance) {
-      return undefined;
-    }
-
-    return new Promise(resolve => {
-      let unsubscribe = instance.subscribe(subscription);
-      props.onAbort(unsubscribe);
-
-      let abort = instance.run(producerEffectsCreator, ...args);
-      props.onAbort(abort);
-
-      function subscription(newState: State<T>) {
-        if (newState.status === AsyncStateStatus.success
-          || newState.status === AsyncStateStatus.error) {
-          if (typeof unsubscribe === "function") {
-            unsubscribe();
-          }
-          resolve(newState);
+    function subscription(newState: State<T>) {
+      if (newState.status === AsyncStateStatus.success
+        || newState.status === AsyncStateStatus.error) {
+        if (typeof unsubscribe === "function") {
+          unsubscribe();
         }
+        resolve(newState);
       }
-    });
-  }
+    }
+  });
 }
 
-function createSelectFunction<T>(manager: AsyncStateManagerInterface | null) {
-  return function select(
-    input: AsyncStateKeyOrSource<T>,
-    lane?: string,
-  ): State<T> | undefined {
-    if (isAsyncStateSource(input)) {
-      return (input as Source<T>).getLaneSource(lane).getState();
-    }
-
-    let instanceFromManager = manager?.get(input as string);
-    if (!instanceFromManager) {
-      return undefined;
-    }
-    return (instanceFromManager as StateInterface<T>).getLane(lane).getState();
-  }
-}
-
-function createProducerEffectsCreator(manager: AsyncStateManagerInterface) {
-  return function closeOverProps<T>(props: ProducerProps<T>): ProducerEffects {
-    return {
-      run: createRunFunction(manager, props),
-      runp: createRunPFunction(manager, props),
-      select: createSelectFunction(manager),
-    };
+export function standaloneProducerSelectEffectFunction<T>(
+  input: ProducerRunInput<T>,
+  lane?: string,
+) {
+  if (isAsyncStateSource(input)) {
+    return (input as Source<T>).getLaneSource(lane).getState()
   }
 }
 
 function standaloneProducerEffectsCreator<T>(props: ProducerProps<T>): ProducerEffects {
   return {
-    run: createRunFunction(null, props),
-    runp: createRunPFunction(null, props),
-    select: createSelectFunction(null),
+    run: standaloneProducerRunEffectFunction,
+    select: standaloneProducerSelectEffectFunction,
+    runp: standaloneProducerRunpEffectFunction.bind(null, props),
   };
 }
 
 
 //endregion
 
-
 //region WRAP PRODUCER FUNCTION
 
 export function wrapProducerFunction<T>(instance: StateInterface<T>): ProducerFunction<T> {
   // this is the real deal
-  return function producerFuncImpl(props: ProducerProps<T>, indicators: RunIndicators): undefined {
+  return function producerFuncImpl(
+    props: ProducerProps<T>, indicators: RunIndicators): undefined {
     // this allows the developer to omit the producer attribute.
     // and replaces state when there is no producer
     const currentProducer = instance.originalProducer;
@@ -1139,7 +1098,6 @@ function stepAsyncAndContinueStartedGenerator(
 //region Exports
 export default AsyncState;
 export {
-  createProducerEffectsCreator,
   readAsyncStateFromSource,
   standaloneProducerEffectsCreator,
 };
@@ -1151,11 +1109,14 @@ export interface BaseSource<T> {
   // identity
   key: string,
   uniqueId: number,
+
   getPayload(): Record<string, any>,
+
   mergePayload(partialPayload?: Record<string, any>),
 
   // state
   getState(): State<T>,
+
   setState(
     updater: StateFunctionUpdater<T> | T, status?: AsyncStateStatus): void;
 
@@ -1164,16 +1125,21 @@ export interface BaseSource<T> {
 
   // producer
   replay(): AbortFn,
+
   abort(reason: any): void,
+
   replaceProducer(newProducer: Producer<any> | undefined),
-  run(createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]): AbortFn,
+
+  run(
+    createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]): AbortFn,
 
   // cache
   invalidateCache(cacheKey?: string): void,
+
   replaceCache(cacheKey: string, cache: CachedState<T>): void,
 }
 
-export interface StateInterface<T> extends BaseSource<T>{
+export interface StateInterface<T> extends BaseSource<T> {
   // identity
   version: number,
   _source: Source<T>,
@@ -1183,6 +1149,7 @@ export interface StateInterface<T> extends BaseSource<T>{
   // state
   state: State<T>,
   lastSuccess: State<T>,
+
   replaceState(newState: State<T>, notify?: boolean): void,
 
   // subscriptions
@@ -1208,12 +1175,16 @@ export interface StateInterface<T> extends BaseSource<T>{
 
   // methods & overrides
   dispose(): boolean,
+
   getLane(laneKey?: string): StateInterface<T>,
+
   fork(forkConfig?: ForkConfig): StateInterface<T>,
 
   // lanes and forks
   removeLane(laneKey?: string): boolean,
+
   getLane(laneKey?: string): BaseSource<T>,
+
   fork(forkConfig?: ForkConfig): BaseSource<T>,
 }
 
@@ -1245,7 +1216,7 @@ export type State<T> = {
 
 export type AbortFn = ((reason?: any) => void) | undefined;
 
-export type OnAbortFn = (cb: ((reason?: any) => void)) => void;
+export type OnAbortFn = (cb?: ((reason?: any) => void)) => void;
 
 export interface ProducerProps<T> extends ProducerEffects {
   abort: AbortFn,
@@ -1310,10 +1281,11 @@ export type StateUpdater<T> = (
   status?: AsyncStateStatus
 ) => void;
 
-export interface Source<T> extends BaseSource<T>{
+export interface Source<T> extends BaseSource<T> {
   run: (...args: any[]) => AbortFn,
 
   removeLane(laneKey?: string): boolean,
+
   getLaneSource(laneKey?: string): Source<T>,
 }
 
@@ -1331,7 +1303,8 @@ export type StateSubscription<T> = {
 
 export type OnCacheLoadProps<T> = {
   cache: Record<string, CachedState<T>>,
-  setState(newValue: T | StateFunctionUpdater<T>, status?: AsyncStateStatus): void
+  setState(
+    newValue: T | StateFunctionUpdater<T>, status?: AsyncStateStatus): void
 }
 
 export type CacheConfig<T> = {
@@ -1368,10 +1341,17 @@ export type ForkConfig = {
 export type AsyncStateKeyOrSource<T> = string | Source<T>;
 
 export interface ProducerEffects {
-  run: <T>(input: ProducerRunInput<T>, config: ProducerRunConfig | null, ...args: any[] ) => AbortFn,
-  runp: <T>(input: ProducerRunInput<T>, config: ProducerRunConfig | null, ...args: any[] ) => Promise<State<T>> | undefined,
+  run: <T>(
+    input: ProducerRunInput<T>, config: ProducerRunConfig | null,
+    ...args: any[]
+  ) => AbortFn,
 
-  select: <T>(input: AsyncStateKeyOrSource<T>) => State<T> | undefined,
+  runp: <T>(
+    input: ProducerRunInput<T>, config: ProducerRunConfig | null,
+    ...args: any[]
+  ) => Promise<State<T>> | undefined,
+
+  select: <T>(input: AsyncStateKeyOrSource<T>, lane?: string) => State<T> | undefined,
 }
 
 export type ProducerEffectsCreator<T> = (props: ProducerProps<T>) => ProducerEffects;
