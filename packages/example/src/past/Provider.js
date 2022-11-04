@@ -77,7 +77,7 @@ export const demoAsyncStates = {
     }
   },
 }
-const asyncStatesDemo = Object.values(demoAsyncStates);
+export const asyncStatesDemo = Object.values(demoAsyncStates);
 
 export default function DemoProvider({children}) {
   const location = useLocation();

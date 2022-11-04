@@ -1,12 +1,11 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {
-  AsyncStateSubscriptionMode,
+  SubscriptionMode,
   UseAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../react/useAsyncState";
-import {createSource} from "../../../../../async-state/create-async-state";
-import {AsyncStateStatus} from "../../../../../async-state";
+import {AsyncStateStatus, createSource} from "../../../../../async-state";
 
 describe('useAsyncState - events', () => {
   it('add several change events with different forms', async () => {

@@ -1,5 +1,7 @@
-import {createSource} from "../../async-state/create-async-state";
-import {readAsyncStateFromSource} from "../../async-state/AsyncState";
+import {
+  readAsyncStateFromSource
+} from "../../async-state/AsyncState";
+import {createSource} from "../../async-state";
 
 describe('readSource', () => {
   it('should correctly read the source', () => {
@@ -10,7 +12,7 @@ describe('readSource', () => {
     const asyncState = readAsyncStateFromSource(source);
 
     // then
-    expect(asyncState.currentState.data).toEqual(0);
+    expect(asyncState.state.data).toEqual(0);
   });
   it('should throw on invalid source', () => {
     // given

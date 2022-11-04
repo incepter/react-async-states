@@ -1,16 +1,16 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
-import {createSource} from "../../../../../async-state/create-async-state";
 import AsyncStateComponent from "../../../utils/AsyncStateComponent";
 import {UseAsyncState} from "../../../../../types.internal";
-import {AsyncStateStatus} from "../../../../../async-state";
+import {AsyncStateStatus, createSource} from "../../../../../async-state";
 import {mockDateNow, TESTS_TS} from "../../../utils/setup";
 
+// @ts-ignore
+jest.useFakeTimers("modern");
 mockDateNow();
 describe('should post subscribe', () => {
   it('should invoke post subscribe when present and run producer' +
     ' and run post unsubscribe', async () => {
-    jest.useFakeTimers();
     // given
     const onAbort = jest.fn();
     const producer = jest.fn().mockImplementation(props => {

@@ -1,13 +1,9 @@
 import * as React from "react";
+import {AsyncStateStatus, RenderStrategy, State} from "../async-state";
 import {
-  AsyncStateStatus,
-  RenderStrategy,
-  State
-} from "../async-state";
-import {
-  AsyncStateSubscriptionMode,
+  MixedConfig,
   StateBoundaryProps,
-  UseAsyncState,
+  UseAsyncState, UseAsyncStateConfiguration,
 } from "../types.internal";
 import {useAsyncState} from "./useAsyncState";
 
@@ -44,13 +40,18 @@ function inferBoundaryChildren<T, E = State<T>>(
   return props.render[status] ? props.render[status] : props.children;
 }
 
+function renderChildren(children) {
+  return typeof children === "function" ? React.createElement(children) : children;
+}
+
 export function RenderThenFetchBoundary<T, E>(props: StateBoundaryProps<T, E>) {
   const result = useAsyncState.auto(props.config, props.dependencies);
 
   const children = inferBoundaryChildren(result, props);
+
   return (
     <StateBoundaryContext.Provider value={result}>
-      {children}
+      {renderChildren(children)}
     </StateBoundaryContext.Provider>
   );
 }
@@ -61,53 +62,59 @@ export function FetchAsYouRenderBoundary<T, E>(props: StateBoundaryProps<T, E>) 
   const children = inferBoundaryChildren(result, props);
   return (
     <StateBoundaryContext.Provider value={result}>
-      {children}
+      {renderChildren(children)}
     </StateBoundaryContext.Provider>
   );
 }
 
-type FetchThenRenderSelf = {
-  didLoad: boolean,
+const emptyArray = [];
+function FetchThenRenderInitialBoundary<T, E>({
+  dependencies = emptyArray, result, config
+}: {dependencies?: any[], result: UseAsyncState<T, E>, config: MixedConfig<T, E>}) {
+
+  result.source?.patchConfig({
+    skipPendingStatus: true,
+  });
+
+  React.useEffect(() => {
+    if ((config as UseAsyncStateConfiguration<T, E>).condition !== false) {
+      const autoRunArgs = (config as UseAsyncStateConfiguration<T, E>).autoRunArgs;
+
+      if (Array.isArray(autoRunArgs)) {
+        return result.run(...autoRunArgs);
+      }
+
+      return result.run();
+    }
+  }, dependencies);
+
+  return null;
 }
 
 export function FetchThenRenderBoundary<T, E>(props: StateBoundaryProps<T, E>) {
-  const result = useAsyncState.auto(props.config, props.dependencies);
-  const self = React.useMemo<FetchThenRenderSelf>(constructSelf, []);
+  const result = useAsyncState(props.config, props.dependencies);
 
-  if (result.mode === AsyncStateSubscriptionMode.NOOP ||
-    result.mode === AsyncStateSubscriptionMode.WAITING) {
-    throw new Error("FetchThenRenderBoundary is not supported with NOOP and WAITING modes");
-  }
-
-  if (!self.didLoad) {
-    const {source} = result;
-    const {status} = source!.getState(); // would throw before if undefined!
-
-    if (status === AsyncStateStatus.error || status === AsyncStateStatus.success) {
-      self.didLoad = true;
+  switch (result.source?.getState().status) {
+    case AsyncStateStatus.pending:
+    case AsyncStateStatus.aborted:
+    case AsyncStateStatus.initial: {
+      return <FetchThenRenderInitialBoundary
+        result={result}
+        config={props.config}
+        dependencies={props.dependencies}
+      />;
+    }
+    case AsyncStateStatus.error:
+    case AsyncStateStatus.success: {
       const children = inferBoundaryChildren(result, props);
       return (
         <StateBoundaryContext.Provider value={result}>
-          {children}
+          {renderChildren(children)}
         </StateBoundaryContext.Provider>
       );
     }
-
-    return null;
-  } else {
-    const children = inferBoundaryChildren(result, props);
-    return (
-      <StateBoundaryContext.Provider value={result}>
-        {children}
-      </StateBoundaryContext.Provider>
-    );
   }
-
-  function constructSelf() {
-    return {
-      didLoad: false,
-    };
-  }
+  return null;
 }
 
 export function useCurrentState<T, E = State<T>>(): UseAsyncState<T, E> {

@@ -106,9 +106,9 @@ const SiderDisplay = React.memo(function () {
     keysAndUniqueIds
       .forEach(([id, key]) => {
         let laneState = journalSource.getLaneSource(id).getState();
-        let {parent} = laneState.data;
+        let {parent} = laneState.data ?? {};
 
-        if (parent.uniqueId) {
+        if (parent?.uniqueId) {
           if (!instancesGroupingMap[parent.uniqueId]) {
             instancesGroupingMap[parent.uniqueId] = {
               data: [parent.uniqueId, parent.key],

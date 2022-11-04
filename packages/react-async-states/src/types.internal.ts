@@ -2,45 +2,37 @@ import * as React from "react";
 import {ReactNode} from "react";
 import {
   AbortFn,
-  AsyncStateInterface,
-  AsyncStateKey,
-  AsyncStateSource,
-  AsyncStateStatus,
+  AsyncStateKeyOrSource,
+  AsyncStateStatus, BaseSource,
   CacheConfig,
   CachedState,
   ForkConfig,
+  HoistToProviderConfig,
   Producer,
   ProducerConfig,
   ProducerEffects,
   ProducerProps,
   ProducerRunEffects,
   RenderStrategy,
+  Source,
   State,
+  StateInterface,
   StateUpdater
 } from "./async-state";
-
-export type Reducer<T> = (
-  T,
-  ...args: any[]
-) => T;
-
-export type ExtendedInitialAsyncState<T> =
-  InitialAsyncState<T>
-  | AsyncStateSource<T>;
-
-export type InitialAsyncState<T> = {
-  key: AsyncStateKey,
-  producer?: Producer<T>,
-  config?: ProducerConfig<T>
-}
+import {
+  AsyncStateManagerInterface,
+  AsyncStateWatchKey,
+  ManagerWatchCallback,
+  ManagerWatchCallbackValue
+} from "./async-state";
 
 export interface AsyncStateInitializer<T> {
+  key?: string,
   producer?: Producer<T>,
-  key?: AsyncStateKey,
   config?: ProducerConfig<T>
 }
 
-export enum AsyncStateSubscriptionMode {
+export enum SubscriptionMode {
   LISTEN = "LISTEN", // simple listener
   HOIST = "HOIST", // hoisting a producer, for first time and intended to be shared, more like of an injection
   STANDALONE = "STANDALONE", // working standalone even if inside provider
@@ -52,164 +44,73 @@ export enum AsyncStateSubscriptionMode {
   OUTSIDE_PROVIDER = "OUTSIDE_PROVIDER", // standalone outside provider
 }
 
-export type AsyncStateWatchKey = string | symbol;
-
-// manager types
-
-export type AsyncStateEntry<T> = {
-  initiallyHoisted: boolean,
-  value: AsyncStateInterface<T>,
-}
-
-export type AsyncStateEntries = {
-  [id: AsyncStateKey]: AsyncStateEntry<any>,
-}
-
-export type AsyncStateKeyOrSource<T> = string | AsyncStateSource<T>;
-
-export type AsyncStateSelector<T> =
-  SimpleSelector<any, T>
-  | ArraySelector<T>
-  | FunctionSelector<T>;
-
-
-export type HoistToProviderConfig = {
-  override: boolean,
-}
-
-export type ManagerHoistConfig<T> = {
-  initialValue?: T,
-  runEffect?: ProducerRunEffects,
-  runEffectDurationMs?: number,
-  resetStateOnDispose?: boolean,
-  skipPendingDelayMs?: number,
-  producer?: Producer<T>,
-
-  key: AsyncStateKey,
-  hoistToProviderConfig?: HoistToProviderConfig,
-  cacheConfig?: CacheConfig<T>,
-}
-
-export type ManagerWatchCallbackValue<T> = AsyncStateInterface<T> | null;
-export type ManagerWatchCallback<T> = (
-  value: ManagerWatchCallbackValue<T>,
-  additionalInfo: AsyncStateKey
-) => void;
-
-export type WatcherType = {
-  cleanup: AbortFn,
-  notify: ManagerWatchCallback<any>,
-}
-
-export type ManagerWatchers = {
-  meter: number,
-  watchers: {
-    [id: string | symbol]: WatcherType
-  }
-}
-
-
-export type AsyncStateManagerInterface = {
-  entries: AsyncStateEntries,
-  watchers: ManagerWatchers,
-  run<T>(
-    asyncState: AsyncStateInterface<T>,
-    ...args: any[]
-  ): AbortFn,
-  get<T>(key: AsyncStateKey): AsyncStateInterface<T>,
-  fork<T>(
-    key: AsyncStateKey,
-    config: ForkConfig
-  ): AsyncStateInterface<T> | undefined,
-  hoist<T>(config: ManagerHoistConfig<T>): AsyncStateInterface<T>,
-  dispose<T>(asyncState: AsyncStateInterface<T>): boolean,
-  watch<T>(
-    key: AsyncStateWatchKey,
-    value: ManagerWatchCallback<T>
-  ): AbortFn,
-  notifyWatchers<T>(
-    key: AsyncStateKey,
-    value: ManagerWatchCallbackValue<T>
-  ): void,
-  runAsyncState<T>(
-    keyOrSource: AsyncStateKeyOrSource<T>,
-    ...args: any[]
-  ): AbortFn,
-  runAsyncStateLane<T>(
-    keyOrSource: AsyncStateKeyOrSource<T>,
-    lane: string | undefined,
-    ...args: any[]
-  ): AbortFn,
-  getAllKeys(): AsyncStateKey[],
-  watchAll(cb: ManagerWatchCallback<any>),
-  setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[],
-
-  producerEffectsCreator<T>(props: ProducerProps<T>): ProducerEffects,
-}
-
-// end manager types
-
-export type AsyncStateContextValue = {
+export type StateContextValue = {
   manager: AsyncStateManagerInterface,
-  payload: { [id: string]: any },
-  run<T>(
-    asyncState: AsyncStateInterface<T>,
-    ...args: any[]
-  ): AbortFn,
-  get<T>(key: AsyncStateKey): AsyncStateInterface<T>,
-  fork<T>(
-    key: AsyncStateKey,
-    config?: ForkConfig
-  ): AsyncStateInterface<T> | undefined,
-  hoist<T>(config: ManagerHoistConfig<T>): AsyncStateInterface<T>,
-  dispose<T>(asyncState: AsyncStateInterface<T>): boolean,
-  watch<T>(
-    key: AsyncStateWatchKey,
-    value: ManagerWatchCallback<T>
-  ): AbortFn,
-  notifyWatchers<T>(
-    key: AsyncStateKey,
-    value: ManagerWatchCallbackValue<T>
-  ): void,
+
+  getAllKeys(): string[],
+  get<T>(key: string): StateInterface<T>,
+  dispose<T>(asyncState: StateInterface<T>): boolean,
+  hoist<T>(key: string, instance: StateInterface<T>, hoistConfig?: HoistToProviderConfig): StateInterface<T>,
+
+  watchAll(cb: ManagerWatchCallback<any>),
+  notifyWatchers<T>(key: string, value: ManagerWatchCallbackValue<T>): void,
+  watch<T>(key: AsyncStateWatchKey, value: ManagerWatchCallback<T>): AbortFn,
+
+  run<T>(instance: StateInterface<T>, ...args: any[]): AbortFn,
   runAsyncState<T>(
     keyOrSource: AsyncStateKeyOrSource<T>,
     lane: string | undefined,
     ...args: any[]
   ): AbortFn,
-  getAllKeys(): AsyncStateKey[],
-  watchAll(cb: ManagerWatchCallback<any>),
 
   producerEffectsCreator<T>(props: ProducerProps<T>): ProducerEffects,
+
+  getPayload(): Record<string, any>,
+  mergePayload(partialPayload: Record<string, any>): void,
 }
 
 
 // use async state
 
 interface BaseUseAsyncState<T, E = State<T>> {
-  key: AsyncStateKey,
+  key: string,
 
-  source?: AsyncStateSource<T>,
-  mode: AsyncStateSubscriptionMode,
+  source?: Source<T>,
+  mode: SubscriptionMode,
 
-  payload: { [id: string]: any } | null,
+  payload: Record<string, any> | null,
 
-  replay: () => AbortFn,
-  abort: ((reason?: any) => void),
-  run: (...args: any[]) => AbortFn,
+  replay(): AbortFn,
+  abort(reason?: any): void,
+  run(...args: any[]): AbortFn,
+  setState: StateUpdater<T>,
   replaceState: StateUpdater<T>,
-  mergePayload: (argv: { [id: string]: any }) => void,
+  mergePayload(argv: Record<string, any>): void,
 
   uniqueId: number | undefined,
-  invalidateCache: (cacheKey?: string) => void,
-
+  invalidateCache(cacheKey?: string): void,
 }
 
 export interface UseAsyncState<T, E = State<T>> extends BaseUseAsyncState<T, E> {
   state: E,
-  read: () => E,
+  read(): E,
   version?: number,
   lastSuccess?: State<T>,
 }
+
+// interface NewUseAsyncState<T, E = State<T>> extends Source<T> {
+//
+//   key: string,
+//   version?: number,
+//   mode: SubscriptionMode,
+//   uniqueId: number | undefined,
+//   source?: Source<T> | undefined,
+//
+//   state: E | undefined,
+//   read(): E | undefined,
+//   lastSuccess?: State<T>,
+//
+// }
 
 export type EqualityFn<T> = (
   prev: T,
@@ -218,21 +119,20 @@ export type EqualityFn<T> = (
 
 
 export interface BaseConfig<T> extends ProducerConfig<T>{
-  key?: AsyncStateKey,
-  subscriptionKey?: AsyncStateKey,
+  key?: string,
+  lane?: string,
+  autoRunArgs?: any[],
+  subscriptionKey?: string,
+  payload?: Record<string, any>,
+  events?: UseAsyncStateEvents<T>,
 
   lazy?: boolean,
   condition?: boolean,
-  payload?: { [id: string]: any },
 
   fork?: boolean,
   forkConfig?: ForkConfig,
-
   hoistToProvider?: boolean,
   hoistToProviderConfig?: HoistToProviderConfig,
-
-  events?: UseAsyncStateEvents<T>,
-  lane?: string,
 }
 
 export interface ConfigWithKeyWithSelector<T, E> extends ConfigWithKeyWithoutSelector<T> {
@@ -240,7 +140,7 @@ export interface ConfigWithKeyWithSelector<T, E> extends ConfigWithKeyWithoutSel
   areEqual?: EqualityFn<E>,
 }
 export interface ConfigWithKeyWithoutSelector<T> extends BaseConfig<T> {
-  key: AsyncStateKey,
+  key: string,
 }
 
 export interface ConfigWithSourceWithSelector<T, E> extends ConfigWithSourceWithoutSelector<T> {
@@ -249,7 +149,7 @@ export interface ConfigWithSourceWithSelector<T, E> extends ConfigWithSourceWith
 }
 
 export interface ConfigWithSourceWithoutSelector<T> extends BaseConfig<T> {
-  source: AsyncStateSource<T>,
+  source: Source<T>,
 }
 
 export interface ConfigWithProducerWithSelector<T, E> extends ConfigWithProducerWithoutSelector<T> {
@@ -261,7 +161,7 @@ export interface ConfigWithProducerWithoutSelector<T> extends BaseConfig<T> {
   producer?: Producer<T>,
 }
 
-export type MixedConfig<T, E> = AsyncStateKey | AsyncStateSource<T> | Producer<T> |
+export type MixedConfig<T, E> = string | Source<T> | Producer<T> |
   ConfigWithKeyWithSelector<T, E> |
   ConfigWithKeyWithoutSelector<T> |
   ConfigWithSourceWithSelector<T, E> |
@@ -273,35 +173,31 @@ export type MixedConfig<T, E> = AsyncStateKey | AsyncStateSource<T> | Producer<T
 
 
 export type UseAsyncStateConfiguration<T, E = State<T>> = {
-  subscriptionKey?: AsyncStateKey,
-
-  key?: AsyncStateKey,
-  source?: AsyncStateSource<T>,
-
+  key?: string,
+  lane?: string,
+  source?: Source<T>,
   producer?: Producer<T>,
-  initialValue?: T | ((cache: Record<string, CachedState<T>>) => T),
-
-  lazy?: boolean,
-  condition?: boolean,
-  payload?: { [id: string]: any },
-
-  runEffect?: ProducerRunEffects,
   skipPendingDelayMs?: number,
+  skipPendingStatus?: boolean,
+  cacheConfig?: CacheConfig<T>,
   runEffectDurationMs?: number,
   resetStateOnDispose?: boolean,
-  cacheConfig?: CacheConfig<T>,
+  payload?: Record<string, any>,
+  runEffect?: ProducerRunEffects,
+  initialValue?: T | ((cache: Record<string, CachedState<T>>) => T),
 
   fork?: boolean,
   forkConfig?: ForkConfig,
-
   hoistToProvider?: boolean,
   hoistToProviderConfig?: HoistToProviderConfig,
 
-  selector: useSelector<T, E>,
+  lazy?: boolean,
+  autoRunArgs?: any[],
+  condition?: boolean,
   areEqual: EqualityFn<E>,
-
+  subscriptionKey?: string,
+  selector: useSelector<T, E>,
   events?: UseAsyncStateEvents<T>,
-  lane?: string,
 }
 
 export type StateBoundaryProps<T, E> = {
@@ -320,7 +216,7 @@ export type UseAsyncStateEventProps<T> = {
   state: State<T>,
 };
 
-type UseAsyncStateChangeEventHandler<T> =
+export type UseAsyncStateChangeEventHandler<T> =
   ((props: UseAsyncStateEventProps<T>) => void)
 
 export type UseAsyncStateEventFn<T> =
@@ -345,21 +241,21 @@ export type UseAsyncStateEvents<T> = {
 export type SubscribeEventProps<T> = {
   getState: () => State<T>,
   run: (...args: any[]) => AbortFn,
-  mode: AsyncStateSubscriptionMode,
+  mode: SubscriptionMode,
   invalidateCache: (cacheKey?: string) => void,
 }
 
 export type useSelector<T, E> =
   (
     currentState: State<T>, lastSuccess: State<T>,
-    cache: { [id: string]: CachedState<T> }
+    cache: { [id: string]: CachedState<T> } | null
   ) => E;
 
 export type PartialUseAsyncStateConfiguration<T, E> = Partial<UseAsyncStateConfiguration<T, E>>
 
 export type SubscriptionInfo<T, E> = {
-  mode: AsyncStateSubscriptionMode,
-  asyncState: AsyncStateInterface<T>,
+  mode: SubscriptionMode,
+  asyncState: StateInterface<T>,
   configuration: UseAsyncStateConfiguration<T, E>,
 
   guard: Object,
@@ -371,18 +267,8 @@ export type SubscriptionInfo<T, E> = {
   baseReturn: BaseUseAsyncState<T, E>,
 }
 
-export type UseAsyncStateContextType = AsyncStateContextValue | null;
+export type UseAsyncStateContextType = StateContextValue | null;
 
-export type InitialStatesObject = { [id: string]: ExtendedInitialAsyncState<any> };
-
-export type InitialStates = ExtendedInitialAsyncState<any>[]
-  | InitialStatesObject;
-
-export type StateProviderProps = {
-  children: any,
-  initialStates?: InitialStates,
-  payload?: { [id: string]: any },
-}
 
 export type CleanupFn = AbortFn
   | (() => void)
@@ -431,24 +317,12 @@ export interface UseAsyncStateType<T, E> {
   ): UseAsyncState<T, E>,
 }
 
-export type BaseSelectorKey = AsyncStateKey | AsyncStateSource<any>
+export type BaseSelectorKey = string | Source<any>
 
-export type UseSelectorFunctionKeys = ((allKeys: AsyncStateKey[]) => BaseSelectorKey[]);
+export type UseSelectorFunctionKeys = ((allKeys: string[]) => BaseSelectorKey[]);
 
 export type SelectorKeysArg =
   BaseSelectorKey
   | BaseSelectorKey[]
   | UseSelectorFunctionKeys
 
-export interface FunctionSelectorItem<T> extends Partial<State<T>> {
-  key: AsyncStateKey,
-  lastSuccess?: State<T>,
-  cache?: Record<string, CachedState<T>>,
-}
-
-export type FunctionSelectorArgument = Record<AsyncStateKey, FunctionSelectorItem<any> | undefined>;
-
-export type FunctionSelector<T> = (arg: FunctionSelectorArgument) => T;
-
-export type SimpleSelector<T, E> = (props: FunctionSelectorItem<T> | undefined) => E;
-export type ArraySelector<T> = (...states: (FunctionSelectorItem<any> | undefined)[]) => T;

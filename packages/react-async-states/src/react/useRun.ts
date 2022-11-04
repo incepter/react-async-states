@@ -1,6 +1,5 @@
 import * as React from "react";
-import {AbortFn} from "../async-state";
-import {AsyncStateKeyOrSource} from "../types.internal";
+import {AbortFn, AsyncStateKeyOrSource} from "../async-state";
 import {AsyncStateContext} from "./context";
 import {
   insideContextRunFn,
@@ -18,7 +17,7 @@ export function useRun<T>():
       return outsideContextRunFn;
     }
     return insideContextRunFn(contextValue);
-  }, []);
+  }, [contextValue]);
 }
 
 export function useRunLane<T>():
@@ -30,5 +29,5 @@ export function useRunLane<T>():
       return outsideContextRunLaneFn;
     }
     return insideContextRunLaneFn(contextValue);
-  }, []);
+  }, [contextValue]);
 }

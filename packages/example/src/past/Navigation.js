@@ -38,7 +38,7 @@ export default function Navigation() {
         <Link to="/">Basique usage</Link>
       </li>
       <li>
-        <Link to="/users/1">Routing</Link>
+        <Link id="back" to="/users/1">Routing</Link>
       </li>
       <li>
         <Link to="/reducers">Reducers</Link>
@@ -50,7 +50,7 @@ export default function Navigation() {
         <Link to="/standalone">Standalone</Link>
       </li>
       <li>
-        <Link to="/selectors">Selectors</Link>
+        <Link id="action" to="/selectors">Selectors</Link>
       </li>
       <li>
         <Link to="/redux">Redux</Link>

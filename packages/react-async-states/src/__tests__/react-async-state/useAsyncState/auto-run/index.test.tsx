@@ -5,9 +5,9 @@ import {useAsyncState} from "../../../../react/useAsyncState";
 import {AsyncStateStatus} from "../../../../async-state";
 
 describe('should auto run async state', () => {
-  it('should auto run -- sync ', async () => {
+  it('should auto run -- sync with autoRunArgs', async () => {
     // given
-    function producer(props) {
+    function producer(props): number {
       return props.args[0] ?? 0;
     }
 
@@ -16,6 +16,7 @@ describe('should auto run async state', () => {
         state,
       }: UseAsyncState<number> = useAsyncState.auto({
         producer,
+        autoRunArgs: [5],
         initialValue: 99,
       });
 
@@ -30,7 +31,7 @@ describe('should auto run async state', () => {
     )
 
     // then
-    expect(screen.getByTestId("result").innerHTML).toEqual("0");
+    expect(screen.getByTestId("result").innerHTML).toEqual("5");
   });
 
   it('should auto run async with payload', async () => {

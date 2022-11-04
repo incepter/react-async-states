@@ -1,5 +1,4 @@
-import { AsyncStateStatus } from "shared";
-import AsyncState, { StateBuilder } from "../../async-state";
+import AsyncState, { AsyncStateStatus, StateBuilder } from "../../async-state";
 import { timeout } from "./test-utils";
 import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
 
@@ -21,7 +20,7 @@ describe('AsyncState - setState', () => {
 
   it('should synchronously mutate the state after setState call and notify subscribers', () => {
     // when
-    myAsyncState.setState(StateBuilder.pending({}));
+    myAsyncState.replaceState(StateBuilder.pending({}));
     // then
     let expectedState = {
       props: {},
@@ -29,7 +28,7 @@ describe('AsyncState - setState', () => {
       timestamp: TESTS_TS,
       status: AsyncStateStatus.pending,
     };
-    expect(myAsyncState.currentState).toEqual(expectedState);
+    expect(myAsyncState.state).toEqual(expectedState);
 
     expect(subscription).toHaveBeenCalledTimes(1);
     expect(subscription).toHaveBeenCalledWith(expectedState);
@@ -37,7 +36,7 @@ describe('AsyncState - setState', () => {
   it('should update state and do not notify subscribers', async () => {
     let lastSuccess = myAsyncState.lastSuccess;
 
-    myAsyncState.setState(StateBuilder.success({}), false);
+    myAsyncState.replaceState(StateBuilder.success({}), false);
     // then
     expect(subscription).not.toHaveBeenCalled();
   });

@@ -1,6 +1,5 @@
 import { act } from "@testing-library/react-hooks";
-import AsyncState from "../../async-state";
-import { AsyncStateStatus } from "shared";
+import AsyncState, { AsyncStateStatus } from "../../async-state";
 import { rejectionTimeout, timeout } from "./test-utils";
 import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
 
@@ -19,7 +18,7 @@ describe('AsyncState - run', () => {
 
     // then
     // should have initial status
-    expect(myAsyncState.currentState).toEqual({
+    expect(myAsyncState.state).toEqual({
       props: null,
       data: null,
       timestamp: TESTS_TS,
@@ -28,7 +27,7 @@ describe('AsyncState - run', () => {
 
     myAsyncState.run(() => {});
     // should transition synchronously to pending state
-    expect(myAsyncState.currentState).toEqual({
+    expect(myAsyncState.state).toEqual({
       props: {
         args: [],
         payload: {},
@@ -47,7 +46,7 @@ describe('AsyncState - run', () => {
       await jest.advanceTimersByTime(50);
     });
     // should be still in pending state while producer did not resolve yet
-    expect(myAsyncState.currentState).toEqual({
+    expect(myAsyncState.state).toEqual({
       props: {
         args: [],
         payload: {},
@@ -66,7 +65,7 @@ describe('AsyncState - run', () => {
       await jest.advanceTimersByTime(50);
     });
     // async state should be in success state with data
-    expect(myAsyncState.currentState).toEqual({
+    expect(myAsyncState.state).toEqual({
       props: {
         args: [],
         payload: {},
@@ -96,7 +95,7 @@ describe('AsyncState - run', () => {
       await jest.advanceTimersByTime(50);
     });
     // async state should be in success state with data
-    expect(myAsyncState.currentState).toEqual({
+    expect(myAsyncState.state).toEqual({
       props: {
         args: [],
         payload: {},

@@ -1,8 +1,7 @@
 import * as React from "react";
 import {act, render, screen} from "@testing-library/react";
-import {createSource} from "../../../../async-state/create-async-state";
 import {
-  AsyncStateStatus,
+  AsyncStateStatus, createSource,
   Producer,
   ProducerProps
 } from "../../../../async-state";

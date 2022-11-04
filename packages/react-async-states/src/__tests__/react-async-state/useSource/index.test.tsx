@@ -1,9 +1,8 @@
 import * as React from "react";
 import {act, render, screen} from "@testing-library/react";
 import {useSource} from "../../../react/useAsyncStateBase";
-import {AsyncStateSubscriptionMode} from "../../../types.internal";
-import {createSource} from "../../../async-state/create-async-state";
-import {replaceState} from "../../../async-state/source-utils";
+import {SubscriptionMode} from "../../../types.internal";
+import {createSource} from "../../../async-state";
 
 describe('should useSource', () => {
   it('should use a source and subscribe to it ', async () => {
@@ -41,10 +40,10 @@ describe('should useSource', () => {
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("8");
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual(AsyncStateSubscriptionMode.SOURCE);
+      .toEqual(SubscriptionMode.SOURCE);
 
     act(() => {
-      replaceState(source, 5);
+      source.setState(5);
     });
 
     expect(screen.getByTestId("result").innerHTML).toEqual("5");

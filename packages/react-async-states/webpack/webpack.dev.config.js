@@ -1,36 +1,89 @@
 const path = require("path");
 const webpack = require("webpack");
+const CopyPlugin = require("copy-webpack-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
+const CompressionPlugin = require("compression-webpack-plugin");
 const CircularDependencyPlugin = require("circular-dependency-plugin");
 
-module.exports = require("./webpack.base.config")({
-  mode: "development",
+let currentDir = process.cwd();
 
-  // Add hot reloading in development
-  entry: [
-    "webpack-hot-middleware/client?reload=true",
-    path.join(process.cwd(), "src/index.ts"),
-  ],
+function build({
+                 mode,
+                 entry,
+                 target,
+                 outputDir,
+                 externals,
+                 libraryName,
+                 globalObject,
+                 outputFilename,
+               }) {
+  return {
+    mode,
+    entry,
+    externals,
+    watch: true,
+    devtool: "source-map",
 
-  // Don't use hashes in dev mode for better performance
-  output: {
-    filename: "index.js"
-  },
+    performance: {
+      hints: false,
+    },
 
-  // Add development plugins
-  plugins: [
-    // new ErrorOverlayPlugin(),
-    new webpack.HotModuleReplacementPlugin(), // Tell webpack we want hot reloading
-    new CircularDependencyPlugin({
-      exclude: /a\.js|node_modules/, // exclude node_modules
-      failOnError: false, // show a warning when there is a circular dependency
-    })
-  ],
+    output: {
+      globalObject,
+      path: outputDir,
+      library: libraryName,
+      libraryTarget: target,
+      filename: outputFilename,
+    },
 
-  devtool: "source-map",
+    module: {
+      rules: [
+        {
+          test: /\.(t|j)sx?$/,
+          exclude: /node_modules/,
+          use: {
+            loader: "ts-loader",
+          },
+        },
+        {
+          enforce: "pre",
+          test: /\.js$/,
+          exclude: /node_modules/,
+          loader: "source-map-loader"
+        }
+      ],
+    },
 
-  performance: {
-    hints: false,
-  },
+    plugins: [
+      new webpack.HotModuleReplacementPlugin(),
+      new webpack.EnvironmentPlugin({
+        NODE_ENV: JSON.stringify(process.env.NODE_ENV),
+      }),
+      new CircularDependencyPlugin({
+        failOnError: false,
+        exclude: /a\.js|node_modules/,
+      }),
+    ],
 
-  watch: true
-});
+    resolve: {
+      modules: ["node_modules", "src"],
+      extensions: [".js", ".ts", ".tsx"]
+    },
+  }
+}
+
+module.exports = [
+  build({
+    target: "umd",
+    mode: "development",
+    globalObject: "this",
+    outputFilename: "index.js",
+    externals: {react: "react"},
+    libraryName: "ReactAsyncStates",
+    outputDir: path.join(currentDir, "dist"),
+    entry: [
+      "webpack-hot-middleware/client?reload=true",
+      path.join(currentDir, "src/index.ts"),
+    ],
+  })
+];

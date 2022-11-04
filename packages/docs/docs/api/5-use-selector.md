@@ -8,7 +8,7 @@ Now that we know how to define and share asynchronous states (or states in gener
 from multiple states at once, and derive its data. Let's get back to `useSelector` signature:
 
 ```javascript
-// keys: string or array (or function: not yet)
+// keys: (string or source or array of either) (or function)
 function useSelector(keys, selector = identity, areEqual = shallowEqual) {
   // returns whathever the selector returns
 }

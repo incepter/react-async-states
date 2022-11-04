@@ -1,7 +1,7 @@
 import * as React from "react";
 import {fireEvent, render, screen} from "@testing-library/react";
 import {
-  AsyncStateSubscriptionMode,
+  SubscriptionMode,
   UseAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../react/useAsyncState";
@@ -60,7 +60,7 @@ describe('should declare a standalone producer inside a provider', () => {
     const decrementBtn = screen.getByTestId("decrement");
     // then
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual(AsyncStateSubscriptionMode.STANDALONE);
+      .toEqual(SubscriptionMode.STANDALONE);
 
     // +1
     fireEvent.click(incrementBtn);
@@ -104,6 +104,6 @@ describe('should declare a standalone producer inside a provider', () => {
 
     // then
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual(AsyncStateSubscriptionMode.STANDALONE);
+      .toEqual(SubscriptionMode.STANDALONE);
   });
 });

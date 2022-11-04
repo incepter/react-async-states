@@ -1,6 +1,8 @@
 {
   "private": true,
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "start": "cd packages/react-async-states && yarn start",
     "start:docs": "cd packages/docs && yarn start",
@@ -10,5 +12,9 @@
     "build": "cd packages/react-async-states && yarn build",
     "build:all": "cd packages/react-async-states && yarn build && cd ../devtools-extension && yarn build",
     "publish:lib": "copyfiles -f README.MD packages/react-async-states && cd packages/react-async-states &&  npm publish && rimraf README.MD"
+  },
+  "devDependencies": {
+    "@svgr/webpack": "6.5.1",
+    "typescript": "^4.8.4"
   }
 }

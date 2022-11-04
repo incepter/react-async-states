@@ -1,6 +1,5 @@
 import { act } from "@testing-library/react-hooks";
-import AsyncState from "../../async-state";
-import { AsyncStateStatus } from "shared";
+import AsyncState, { AsyncStateStatus } from "../../async-state";
 import { timeout } from "./test-utils";
 import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
 
@@ -19,7 +18,7 @@ describe('AsyncState - subscriptions', () => {
     let myAsyncState = new AsyncState(key, producer, myConfig);
 
     // then
-    expect(myAsyncState.subscriptionsMeter).toBe(0);
+    expect(myAsyncState.subsIndex).toBe(0);
 
     let unsubscribe = myAsyncState.subscribe(subscriptionFn);
     expect(typeof unsubscribe).toBe("function");
@@ -61,7 +60,7 @@ describe('AsyncState - subscriptions', () => {
       ]
     );
     expect(subscriptionFn).toHaveBeenCalledTimes(2);
-    expect(myAsyncState.currentState).toEqual({
+    expect(myAsyncState.state).toEqual({
       props: {
         args: [],
         payload: {},
@@ -113,7 +112,7 @@ describe('AsyncState - subscriptions', () => {
       ]
     );
     expect(subscriptionFn).toHaveBeenCalledTimes(1);
-    expect(myAsyncState.currentState).toEqual({
+    expect(myAsyncState.state).toEqual({
       props: null,
       status: AsyncStateStatus.initial,
       data: null,
@@ -142,7 +141,7 @@ describe('AsyncState - subscriptions', () => {
 
     expect(subscriptionFn.mock.calls).toEqual([]);
     expect(subscriptionFn).toHaveBeenCalledTimes(0);
-    expect(myAsyncState.currentState).toEqual({ // original async state resolved, but we got notified neither by pending nor success
+    expect(myAsyncState.state).toEqual({ // original async state resolved, but we got notified neither by pending nor success
       props: {
         args: [],
         payload: {},

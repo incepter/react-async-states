@@ -1,14 +1,9 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {mockDateNow} from "../../utils/setup";
-import {createSource} from "../../../../async-state/create-async-state";
 import {useAsyncState} from "../../../../react/useAsyncState";
 import {AsyncStateProvider} from "../../../../react/AsyncStateProvider";
-import {
-  runpSourceLane,
-  runSource,
-  runSourceLane
-} from "../../../../async-state/source-utils";
+import {createSource} from "../../../../async-state";
 
 mockDateNow();
 
@@ -124,7 +119,7 @@ describe('subscribe to lane and operate on it', () => {
     // now, let's run counter-3
 
     act(() => {
-      runSourceLane(countersSource, "counter-2");
+      countersSource.getLaneSource("counter-2").run();
     });
 
     await act(async () => {
@@ -141,7 +136,7 @@ describe('subscribe to lane and operate on it', () => {
       .toEqual("counter-counter-2-extra-default-0");
 
     act(() => {
-      runpSourceLane(countersSource, "counter-2-extra");
+      countersSource.getLaneSource("counter-2-extra").run();
     });
 
     await act(async () => {

@@ -122,7 +122,11 @@ function UndefinedProducerDemoHoister() {
 }
 
 function UndefinedProducerDemoConsumer() {
-  const {state: {data}, run} = useAsyncState("user_input");
+  const {state, run} = useAsyncState("user_input");
+  if (!state) {
+    return null;
+  }
+  const {data} = state;
   return (
     <input style={{backgroundColor: "gray", border: "2px solid red"}}
            onChange={e => run(e.target.value)}

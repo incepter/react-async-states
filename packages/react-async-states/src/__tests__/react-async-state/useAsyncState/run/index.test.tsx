@@ -1,10 +1,13 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
-import {createSource} from "../../../../async-state/create-async-state";
 import AsyncStateComponent from "../../utils/AsyncStateComponent";
 import {UseAsyncState} from "../../../../types.internal";
 import {flushPromises} from "../../utils/test-utils";
-import {AsyncStateStatus, ProducerRunEffects} from "../../../../async-state";
+import {
+  AsyncStateStatus,
+  createSource,
+  ProducerRunEffects
+} from "../../../../async-state";
 
 describe('should run producer', () => {
   it('should delegate to replace state when no producer', async () => {

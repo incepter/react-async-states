@@ -1,126 +1,215 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 
+import {
+  AsyncStateProvider,
+  AsyncStateStatus,
+  useAsyncState,
+  AsyncStateManager,
+  createSource,
+  RenderStrategy,
+  StateBoundary, useCurrentState
+} from "react-async-states";
+
+import App from "./past/Subscription"
+
 import './index.css'
-import App from "./past/App";
 
-import App2 from './past/v2/Bug2';
+async function fetchProfiles(props) {
 
+  const controller = new AbortController();
 
-import { createSource, useSource, useAsyncState } from "react-async-states";
-
-function getOrCreateHost(id) {
-  const maybeElement = document.getElementById(id);
-  if (!maybeElement) {
-    const host = document.createElement("div");
-    host.setAttribute("id", id);
-    document.body.appendChild(host);
-    return host;
-  }
-  return maybeElement;
-}
-
-function initVanillaHost(host) {
-  const incrButton = document.createElement("button");
-  incrButton.innerHTML = "+";
-  incrButton.addEventListener("click", increment);
-  const decrButton = document.createElement("button");
-  decrButton.innerHTML = "-";
-  decrButton.addEventListener("click", decrement);
-  const span = document.createElement("span");
-  span.setAttribute("id", "vanilla-content");
-  span.innerHTML = "Counter value is " + counterSource.getState().data;
-  const title = document.createElement("h1");
-  title.innerHTML = "Vanilla js";
-  host.appendChild(title);
-  host.appendChild(decrButton);
-  host.appendChild(span);
-  host.appendChild(incrButton);
-
-}
-
-const root1Host = getOrCreateHost("root");
-const root2Host = getOrCreateHost("root2");
-const vanillaHost = getOrCreateHost("vanilla");
-
-const root = ReactDOM.createRoot(root1Host);
-const root2 = ReactDOM.createRoot(root2Host);
-
-const counterSource = createSource("counter", null, {initialValue: 0});
-const decrement = () => counterSource.setState(p => p.data - 1);
-const increment = () => counterSource.setState(p => p.data + 1);
-
-function userProducer() {
-  return fetch(`https://jsonplaceholder.typicode.com/users/1`).then((res) =>
-    res.json()
-  );
-}
-
-const source = createSource("user-1", userProducer, {skipPendingDelayMs: 400});
-
-function Toto() {
-  const {state, abort} = useAsyncState({
-    source,
-    events: {change: (e) => console.log("CHANGE EVENT", e.state)}
+  props.onAbort(() => {
+    controller.abort()
   });
 
+  await new Promise((resolve) => {
+    const id = setTimeout(resolve, 800);
+    props.onAbort(() => clearTimeout(id));
+  })
+
+  return await fetch(
+    `https://jsonplaceholder.typicode.com/users/${props.args[0] ?? ''}`,
+    {signal: controller.signal}
+  ).then(r => r.json());
+}
+
+const profilesList = createSource("profiles", fetchProfiles, {
+// runEffect: "delay",
+// runEffectDurationMs: 800
+});
+const root = ReactDOM.createRoot(document.getElementById("root"));
+
+// runpSource(profilesList)
+//   .then(() => {
+//     root.render(
+//       <React.StrictMode>
+//         <AsyncStateProvider>
+//           <Wrapper initialValue={true}>
+//             <ProfilesView/>
+//           </Wrapper>
+//         </AsyncStateProvider>
+//       </React.StrictMode>
+//     )
+//   });
+
+// const myManager = AsyncStateManager();
+//
+// setInterval(() => {
+//   console.log('manager', myManager.entries);
+// }, 2000)
+
+root.render(
+  <>
+    <React.StrictMode>
+      {/*<AsyncStateProvider manager={myManager}>*/}
+      {/*  <Wrapper initialValue={true}>*/}
+      {/*    <CounterDetails/>*/}
+      {/*  </Wrapper>*/}
+      {/*</AsyncStateProvider>*/}
+      {/*<hr/>*/}
+      {/*<AsyncStateProvider manager={myManager}>*/}
+      {/*  <Wrapper initialValue={false}>*/}
+      {/*    <CounterHoister/>*/}
+      {/*  </Wrapper>*/}
+      {/*</AsyncStateProvider>*/}
+
+      {/*<StateBoundary*/}
+      {/*  strategy={RenderStrategy.FetchThenRender}*/}
+      {/*  config={{*/}
+      {/*  source: profilesList,*/}
+      {/*  autoRunArgs: [2]*/}
+      {/*}} render={{*/}
+      {/*  [AsyncStateStatus.error]: ProfilesView,*/}
+      {/*  [AsyncStateStatus.success]: ProfilesView,*/}
+      {/*}} />*/}
+
+      {/*<hr/>*/}
+      <App/>
+    </React.StrictMode>
+  </>
+)
+
+function CounterDetails() {
+  const result = useAsyncState("counter")
   return (
-    <div>
-      <button onClick={() => source.run()}>run</button>
-      <button onClick={() => abort()}>abort</button>
-      <span>{state.timestamp}</span>
-      <details open>
-        <pre>{JSON.stringify(state, null, 4)}</pre>
+    <main>
+      <h1>Details</h1>
+      <button onClick={() => {
+        result.run(old => old.data + 1)
+      }}>increment
+      </button>
+      <details>
+        <summary>
+          {result.mode}
+        </summary>
+        <pre>
+          {JSON.stringify(result.state, null, 4)}
+        </pre>
       </details>
+    </main>
+  );
+}
+
+function CounterHoister() {
+  const result = useAsyncState.hoist({
+    key: "counter",
+    initialValue: 0,
+    resetStateOnDispose: true,
+  })
+  return (
+    <main>
+      <h1>Hoister</h1>
+      <button onClick={() => {
+        result.run(old => old.data + 1)
+      }}>increment
+      </button>
+      <details>
+        <summary>
+          {result.mode}
+        </summary>
+        <pre>
+          {JSON.stringify(result.state, null, 4)}
+        </pre>
+      </details>
+    </main>
+  );
+}
+
+//
+function ProfilesView(props) {
+  const {state, run} = useCurrentState();
+
+  if (state.status !== AsyncStateStatus.error && state.status !== AsyncStateStatus.success) {
+    return "Pending..." + state.status;
+  }
+
+  if (state.status === AsyncStateStatus.error) {
+    return <span>Error occurred!!! {state.data?.toString?.()}</span>
+  }
+  const data = Array.isArray(state.data) ? state.data : [state.data]
+  return (
+    <div style={{
+      height: "50vh",
+      display: "flex",
+      paddingBottom: 20,
+    }}>
+      <button onClick={() => React.startTransition(() => run(+state.data.id + 1 || 2))}>run again</button>
+      {data.map((profile, index) => <ProfileView key={profile.username}
+                                                 profile={profile}
+                                                 index={index}/>)}
     </div>
   );
 }
 
-root.render(<React.StrictMode><App/></React.StrictMode>);
-// root2.render(<Counter from="root2"/>);
-initVanillaHost(vanillaHost);
+function ProfileView({profile, index}) {
+  return (<div className="card" title={profile.username} style={{
+    opacity: 0,
+    width: 100,
+    height: 100,
+    marginTop: 20,
+    marginLeft: 20,
+    display: "flex",
+    textAlign: "center",
+    alignItems: "center",
+    justifyContent: "center",
+    animation: "fadeIn 800ms 1",
+    animationFillMode: 'forwards',
+    animationDelay: `${index * 50}ms`,
+    border: "1px solid red",
+  }}>{profile.id} - {profile.name}</div>)
+}
 
-counterSource.subscribe((newState) => {
-  document.getElementById("vanilla-content").innerHTML = `<span>Counter value is ${newState.data}</span>`;
-}, "vanilla-subscription");
+// function ProviderTest() {
+//   return (
+//     <Wrapper>
+//       <Hoister/>
+//     </Wrapper>
+//   );
+// }
 
-function Counter({from}) {
-  const {state} = useSource(counterSource);
+function Wrapper({children, initialValue = false}) {
+  const [mounted, setMounted] = React.useState(initialValue);
 
   return (
-    <div>
-      <h1>{from}</h1>
-      <button onClick={decrement}>-</button>
-      <span>Counter value is {state.data}</span>
-      <button onClick={increment}>+</button>
-    </div>
-  )
+    <>
+      <button
+        onClick={() => setMounted(old => !old)}>
+        {mounted ? "unmount" : "mount"}
+      </button>
+      {mounted && children}
+    </>
+  );
 }
 
-function MeTesting() {
-  return <div>Hello, world!</div>
-}
-
-
 //
-// const button = document.createElement("button");
-// button.innerHTML = "Click me";
-// button.onclick = function () {
-//   console.log("Root created");
-//   root.render(
-//     <App/>
-//   );
-//   console.log("rendered root!");
-//   Promise.resolve().then(() => console.log('promised did resolve !'));
-//   setTimeout(() => console.log('timeout passed'));
-// };
-// document.body.appendChild(button);
+// function Hoister() {
+//   const {state} = useAsyncState.hoist({
+//     key: "haha",
+//     initialValue: 5,
+//     producer: () => 3,
+//     resetStateOnDispose: true,
+//   });
 //
-
-// ReactDOM.render(
-//   <React.StrictMode><App/></React.StrictMode>, document.getElementById('root'));
-
-// const anotherRoot = document.createElement("div");
-// document.body.appendChild(anotherRoot);
-//
-// ReactDOM.render(<App2/>, anotherRoot);
+//   return state.data;
+// }

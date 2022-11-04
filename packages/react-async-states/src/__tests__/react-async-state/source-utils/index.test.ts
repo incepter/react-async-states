@@ -1,47 +1,38 @@
-import {createSource} from "../../../async-state/create-async-state";
-import {
-  getLaneSource,
-  getState,
-  replaceState,
-  runpSource,
-  runpSourceLane,
-  runSource,
-  runSourceLane
-} from "../../../async-state/source-utils";
+import {createSource} from "../../../async-state";
 
 describe('source utils', () => {
 
   const source = createSource("test-source", null, {initialValue: 0});
 
   it('should run a source', () => {
-    const abort = runSource(source, 1);
-    expect(getState(source).data).toBe(1);
+    const abort = source.run(1);
+    expect(source.getState().data).toBe(1);
     expect(typeof abort).toBe("function");
   });
   it('should runp a source', async () => {
-    const state = await runpSource(source, 2);
-    expect(getState(source).data).toBe(2);
+    const state = await source.runp(2);
+    expect(source.getState().data).toBe(2);
     expect(typeof state).toBe("object"); // promise
-    expect(state).toBe(getState(source));
+    expect(state).toBe(source.getState());
   });
   it('should run a source lane', () => {
-    const abort = runSourceLane(source, "test-lane", 3);
-    expect(getState(getLaneSource(source, "test-lane")).data).toBe(3);
+    const abort = source.getLaneSource("test-lane").run(3);
+    expect(source.getLaneSource("test-lane").getState().data).toBe(3);
     expect(typeof abort).toBe("function");
   });
   it('should runp a source lane', async () => {
-    const state = await runpSourceLane(source, "test-lane", 4);
-    expect(getState(getLaneSource(source, "test-lane")).data).toBe(4);
+    const state = await source.getLaneSource("test-lane").runp(4);
+    expect(source.getLaneSource("test-lane").getState().data).toBe(4);
     expect(typeof state).toBe("object"); // promise
-    expect(state).toBe(getState(getLaneSource(source, "test-lane")));
+    expect(state).toBe(source.getLaneSource("test-lane").getState());
   });
   it('should replace the state with a value', () => {
-    replaceState(source, 5);
-    expect(getState(source).data).toBe(5);
+    source.setState(5);
+    expect(source.getState().data).toBe(5);
   });
   it('should replace the state with an updater', () => {
-    const oldState = getState(source);
-    replaceState(source, old => old.data + 1);
-    expect(getState(source).data).toBe(oldState.data + 1);
+    const oldState = source.getState();
+    source.setState(old => old.data + 1);
+    expect(source.getState().data).toBe(oldState.data + 1);
   });
 });
