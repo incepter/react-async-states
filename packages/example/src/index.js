@@ -46,26 +46,26 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 //     )
 //   });
 
-const myManager = AsyncStateManager();
-
-setInterval(() => {
-  console.log('manager', myManager.entries);
-}, 2000)
+// const myManager = AsyncStateManager();
+//
+// setInterval(() => {
+//   console.log('manager', myManager.entries);
+// }, 2000)
 
 root.render(
   <>
     {/*<React.StrictMode>*/}
-      <AsyncStateProvider manager={myManager}>
-        <Wrapper initialValue={true}>
-          <CounterDetails/>
-        </Wrapper>
-      </AsyncStateProvider>
-      <hr/>
-      <AsyncStateProvider manager={myManager}>
-        <Wrapper initialValue={false}>
-          <CounterHoister/>
-        </Wrapper>
-      </AsyncStateProvider>
+    {/*  <AsyncStateProvider manager={myManager}>*/}
+    {/*    <Wrapper initialValue={true}>*/}
+    {/*      <CounterDetails/>*/}
+    {/*    </Wrapper>*/}
+    {/*  </AsyncStateProvider>*/}
+    {/*  <hr/>*/}
+    {/*  <AsyncStateProvider manager={myManager}>*/}
+    {/*    <Wrapper initialValue={false}>*/}
+    {/*      <CounterHoister/>*/}
+    {/*    </Wrapper>*/}
+    {/*  </AsyncStateProvider>*/}
       <hr/>
       <App/>
     {/*</React.StrictMode>*/}

@@ -110,6 +110,10 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
 
   React.useEffect(autoRunAsyncState, deps);
 
+  if (__DEV__) {
+    warnInDevAboutDeprecatedUseAsyncStateProperties(selectedValue, subscriptionKey);
+  }
+
   return selectedValue;
 
   function calculateStateValue(): Readonly<UseAsyncState<T, E>> {
@@ -187,6 +191,18 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   }
 }
 
+function warnInDevAboutDeprecatedUseAsyncStateProperties<T, E>(
+  returnValue: UseAsyncState<T, E>,
+  subscriptionKey: string | undefined,
+): void {
+  if (__DEV__) {
+    if (!didWarnAboutReplaceStateDeprecated) {
+      didWarnAboutReplaceStateDeprecated = true;
+      console.error(`replaceState (used in ${subscriptionKey} subscription) is deprecated in favor of setState and will be removed in the v1`);
+    }
+  }
+}
+
 // useContext
 // useRef
 // useState
@@ -239,6 +255,9 @@ export function useSourceLane<T>(
   // subscribe to async state
   React.useEffect(subscribeToAsyncState, [contextValue, asyncState]);
 
+  if (__DEV__) {
+    warnInDevAboutDeprecatedUseAsyncStateProperties(selectedValue, subscriptionKey);
+  }
   return selectedValue;
 
   function calculateSelectedValue(): Readonly<UseAsyncState<T, State<T>>> {
@@ -321,6 +340,9 @@ export function useProducer<T>(
   // subscribe to async state
   React.useEffect(subscribeToAsyncState, [contextValue, asyncState]);
 
+  if (__DEV__) {
+    warnInDevAboutDeprecatedUseAsyncStateProperties(selectedValue, subscriptionKey);
+  }
   return selectedValue;
 
   function createInstance() {
@@ -954,6 +976,8 @@ function returnsUndefined() {
   return undefined;
 }
 
+let didWarnAboutReplaceStateDeprecated = false;
+
 function makeUseAsyncStateBaseReturnValue<T, E>(
   asyncState: StateInterface<T>,
   configurationKey: string,
@@ -965,8 +989,9 @@ function makeUseAsyncStateBaseReturnValue<T, E>(
       mode,
       abort: noop,
       payload: null,
-      replaceState: noop,
+      setState: noop,
       mergePayload: noop,
+      replaceState: noop,
       uniqueId: undefined,
       key: configurationKey,
       invalidateCache: noop,
@@ -978,14 +1003,15 @@ function makeUseAsyncStateBaseReturnValue<T, E>(
   return {
     mode,
     key: asyncState.key,
-    version: asyncState.version,
-    source: asyncState._source,
-    payload: asyncState.payload,
-    uniqueId: asyncState.uniqueId,
     abort: asyncState.abort,
     replay: asyncState.replay,
-    mergePayload: asyncState.mergePayload,
+    source: asyncState._source,
+    payload: asyncState.payload,
+    version: asyncState.version,
+    setState: asyncState.setState,
+    uniqueId: asyncState.uniqueId,
     replaceState: asyncState.setState,
+    mergePayload: asyncState.mergePayload,
     invalidateCache: asyncState.invalidateCache,
 
     run: typeof run === "function" ?

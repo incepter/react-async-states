@@ -83,6 +83,7 @@ interface BaseUseAsyncState<T, E = State<T>> {
   replay(): AbortFn,
   abort(reason?: any): void,
   run(...args: any[]): AbortFn,
+  setState: StateUpdater<T>,
   replaceState: StateUpdater<T>,
   mergePayload(argv: Record<string, any>): void,
 

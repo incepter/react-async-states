@@ -4,7 +4,7 @@
     "strictNullChecks": true,
     "module": "esnext",
     "jsx": "react-jsx",
-    "target": "es3",
+    "target": "es5",
     "allowJs": true,
     "moduleResolution": "Node",
     "noImplicitAny": false,
