@@ -11,7 +11,6 @@ function build({
                  mode,
                  entry,
                  target,
-                 devtool,
                  outputDir,
                  externals,
                  libraryName,
@@ -21,9 +20,13 @@ function build({
   return {
     mode,
     entry,
-    devtool,
     externals,
     watch: true,
+    devtool: "source-map",
+
+    performance: {
+      hints: false,
+    },
 
     output: {
       globalObject,
@@ -53,36 +56,14 @@ function build({
 
     plugins: [
       new webpack.HotModuleReplacementPlugin(),
-      new webpack.EnvironmentPlugin({NODE_ENV: mode}),
+      new webpack.EnvironmentPlugin({
+        NODE_ENV: JSON.stringify(process.env.NODE_ENV),
+      }),
       new CircularDependencyPlugin({
         failOnError: false,
         exclude: /a\.js|node_modules/,
       }),
     ],
-
-    optimization: {
-      minimize: true,
-      minimizer: [
-        new TerserPlugin({
-          terserOptions: {
-            warnings: false,
-            compress: {
-              comparisons: false,
-            },
-            parse: {},
-            mangle: true,
-            output: {
-              comments: false,
-              ascii_only: true,
-            },
-          }
-        }),
-      ],
-      nodeEnv: mode,
-      usedExports: true,
-      sideEffects: true,
-      concatenateModules: true
-    },
 
     resolve: {
       modules: ["node_modules", "src"],
@@ -96,7 +77,6 @@ module.exports = [
     target: "umd",
     mode: "development",
     globalObject: "this",
-    devtool: "source-map",
     outputFilename: "index.js",
     externals: {react: "react"},
     libraryName: "ReactAsyncStates",

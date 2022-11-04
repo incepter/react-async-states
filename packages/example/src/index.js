@@ -4,8 +4,6 @@ import ReactDOM from 'react-dom/client'
 import {
   AsyncStateProvider,
   AsyncStateStatus,
-  createSource,
-  runpSource,
   useAsyncState,
   AsyncStateManager
 } from "react-async-states";
@@ -29,10 +27,10 @@ function fetchProfiles(props) {
 
 }
 
-const profilesList = createSource("profiles", fetchProfiles, {
-  // runEffect: "delay",
-  // runEffectDurationMs: 800
-});
+// const profilesList = createSource("profiles", fetchProfiles, {
+// runEffect: "delay",
+// runEffectDurationMs: 800
+// });
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 // runpSource(profilesList)
@@ -50,20 +48,28 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 
 const myManager = AsyncStateManager();
 
+setInterval(() => {
+  console.log('manager', myManager.entries);
+}, 2000)
+
 root.render(
-  <React.StrictMode>
-    <AsyncStateProvider manager={myManager}>
-      <Wrapper initialValue={true}>
-        <CounterDetails/>
-      </Wrapper>
-    </AsyncStateProvider>
-    <hr />
-    <AsyncStateProvider manager={myManager}>
-      <Wrapper initialValue={false}>
-        <CounterHoister/>
-      </Wrapper>
-    </AsyncStateProvider>
-  </React.StrictMode>
+  <>
+    {/*<React.StrictMode>*/}
+      <AsyncStateProvider manager={myManager}>
+        <Wrapper initialValue={true}>
+          <CounterDetails/>
+        </Wrapper>
+      </AsyncStateProvider>
+      <hr/>
+      <AsyncStateProvider manager={myManager}>
+        <Wrapper initialValue={false}>
+          <CounterHoister/>
+        </Wrapper>
+      </AsyncStateProvider>
+      <hr/>
+      <App/>
+    {/*</React.StrictMode>*/}
+  </>
 )
 
 function CounterDetails() {
@@ -71,7 +77,10 @@ function CounterDetails() {
   return (
     <main>
       <h1>Details</h1>
-      <button onClick={()=>{result.run(old => old.data + 1)}}>increment</button>
+      <button onClick={() => {
+        result.run(old => old.data + 1)
+      }}>increment
+      </button>
       <details>
         <summary>
           {result.mode}
@@ -88,11 +97,15 @@ function CounterHoister() {
   const result = useAsyncState.hoist({
     key: "counter",
     initialValue: 0,
+    resetStateOnDispose: true,
   })
   return (
     <main>
       <h1>Hoister</h1>
-      <button onClick={()=>{result.run(old => old.data + 1)}}>increment</button>
+      <button onClick={() => {
+        result.run(old => old.data + 1)
+      }}>increment
+      </button>
       <details>
         <summary>
           {result.mode}

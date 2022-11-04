@@ -33,7 +33,7 @@
     "test:watch": "react-scripts test --env=jsdom",
     "clean:dist": "rimraf dist",
     "build": "rimraf dist && cross-env webpack --config ./webpack/webpack.prod.config.js --color --progress",
-    "start": "rimraf dist && cross-env NODE_ENV=development webpack --watch --config ./webpack/webpack.dev.config.js --color --progress --mode development"
+    "start": "rimraf dist && cross-env NODE_ENV=development webpack --config ./webpack/webpack.dev.config.js --color --progress --mode development"
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.2 || ^18.0.0"

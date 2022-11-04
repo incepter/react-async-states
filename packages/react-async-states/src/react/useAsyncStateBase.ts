@@ -590,12 +590,12 @@ function disposeAsyncStateSubscriptionFn<T, E>(
     switch (mode) {
       case SubscriptionMode.FORK:
       case SubscriptionMode.HOIST:
+      case SubscriptionMode.LISTEN:
+      case SubscriptionMode.STANDALONE:
         return contextValue!.dispose(asyncState);
       // NoOp - should not happen
       case SubscriptionMode.SOURCE:
       case SubscriptionMode.SOURCE_FORK:
-      case SubscriptionMode.LISTEN:
-      case SubscriptionMode.STANDALONE:
       case SubscriptionMode.OUTSIDE_PROVIDER:
       case SubscriptionMode.NOOP:
       case SubscriptionMode.WAITING:
@@ -625,6 +625,10 @@ function inferStateInstance<T, E>(
       }
       return parentInstance.fork(configuration.forkConfig);
     case SubscriptionMode.HOIST:
+      if (candidate) {
+        return candidate;
+      }
+
       const {key, producer} = configuration;
 
       return new AsyncState(
@@ -804,7 +808,6 @@ function watchOverAsyncState<T, E = State<T>>(
       configuration.hoistToProviderConfig
     );
     if (hoistedInstance !== asyncState) {
-      console.log('Shouldnt be here!!!', hoistedInstance.uniqueId, asyncState.uniqueId)
       setGuard(old => old + 1);
       return;
     }
@@ -837,7 +840,15 @@ function watchOverAsyncState<T, E = State<T>>(
       if (typeof unwatch === "function") {
         unwatch();
       }
+
+      if (mode === SubscriptionMode.LISTEN) {
+        dispose();
+      }
     };
+  }
+
+  if (mode === SubscriptionMode.STANDALONE) {
+    dispose();
   }
 
   return undefined;
