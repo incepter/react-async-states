@@ -182,7 +182,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   function watchAsyncState() {
     return watchOverAsyncState(
       asyncState,
-      contextValue,
+      contextValue!,
       mode,
       configuration,
       setGuard,
@@ -528,10 +528,6 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
       configuration: newConfig,
     };
   } else {
-    if (!ownRef.subscriptionInfo) {
-      throw new Error("Cannot reuse ownRef.subscriptionInfo while it is not " +
-        "defined. This is a bug, please fill an issue.");
-    }
     output = shallowClone(ownRef.subscriptionInfo);
 
     output.guard = guard;
@@ -637,9 +633,6 @@ function inferStateInstance<T, E>(
   switch (mode) {
     case SubscriptionMode.FORK:
       const parentInstance = contextValue!.get<T>(configuration.key!);
-      if (!parentInstance) {
-        throw new Error("Fork mode with no existing parent instance. This is a bug please fill an issue.")
-      }
       return parentInstance.fork(configuration.forkConfig);
     case SubscriptionMode.HOIST:
       if (candidate) {
@@ -771,7 +764,7 @@ function watchOverAsyncState<T, E = State<T>>(
   // the instance
   asyncState: StateInterface<T>,
   // this function only works inside provider, todo: remove the | null
-  contextValue: StateContextValue | null,
+  contextValue: StateContextValue,
   // the watching mode (waiting, listen, hoist..)
   mode: SubscriptionMode,
   // the configuration, will read key and hoistToProviderConfig in case of hoist
@@ -781,10 +774,6 @@ function watchOverAsyncState<T, E = State<T>>(
   // the dispose function that serves to destroy the old instance in case we need a new one for hoist mode
   dispose: (() => (boolean | undefined)),
 ) {
-  if (contextValue === null) {
-    throw new Error("watchOverAsyncState is called outside the provider." +
-      " This is a bug, please fill an issue.");
-  }
   let didClean = false;
 
   // if we are waiting and do not have an asyncState

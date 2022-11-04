@@ -56,7 +56,7 @@ export function useSelector<T>(
     caller = useCallerName(3);
   }
 
-  ensureParamsAreOk(contextValue, keys, selector);
+  ensureParamsAreOk(contextValue, keys);
 
   // on every render, recheck the keys, because they are most likely to be inlined
   const [self, setSelf] = React.useState<SelectorSelf<T>>(computeSelf);
@@ -198,13 +198,9 @@ function readKeys(
 function ensureParamsAreOk<E>(
   contextValue: StateContextValue | null,
   keys: BaseSelectorKey | BaseSelectorKey[] | UseSelectorFunctionKeys,
-  selector: SimpleSelector<any, E> | ArraySelector<E> | FunctionSelector<E>
 ) {
   if (contextValue === null && typeof keys === "function") {
-    throw new Error('useSelector keys is passed as a function which is not supported outside the provider.')
-  }
-  if (typeof selector !== "function") {
-    throw new Error(`useSelector's selector (second arg) is not a function: '${typeof selector}'`);
+    throw new Error('useSelector received a function as keys outside provider');
   }
 }
 

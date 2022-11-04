@@ -6,8 +6,6 @@ export {useAsyncState} from "./react/useAsyncState";
 
 export {AsyncStateProvider} from "./react/AsyncStateProvider";
 
-export {StateBoundary, useCurrentState} from "./react/StateBoundary";
-
 export {useSource, useSourceLane, useProducer} from "./react/useAsyncStateBase";
 
 export {
@@ -83,15 +81,11 @@ export type {
   AsyncStateInitializer,
   UseAsyncStateConfiguration,
 
+  SelectorKeysArg,
   SubscribeEventProps,
   UseAsyncStateEvents,
   UseAsyncStateEventFn,
   UseAsyncStateEventProps,
   UseAsyncStateChangeEvent,
   UseAsyncStateChangeEventHandler,
-
-  SelectorKeysArg,
-
-  StateBoundaryProps,
-  StateBoundaryRenderProp,
 } from "./types.internal";
