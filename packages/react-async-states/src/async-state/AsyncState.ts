@@ -160,6 +160,10 @@ class AsyncState<T> implements StateInterface<T> {
     notify: boolean = true
   ): void {
 
+    if (newState.status === AsyncStateStatus.pending && this.config.skipPendingStatus) {
+      return;
+    }
+
     // pending update has always a pending status
     // setting the state should always clear this pending update
     // because it is stale, and we can safely skip it
@@ -1385,6 +1389,7 @@ export enum RenderStrategy {
 }
 
 export type ProducerConfig<T> = {
+  skipPendingStatus?: boolean,
   initialValue?: T | ((cache: Record<string, CachedState<T>>) => T),
   cacheConfig?: CacheConfig<T>,
   runEffectDurationMs?: number,

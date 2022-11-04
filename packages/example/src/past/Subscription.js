@@ -1,7 +1,7 @@
 import React from "react";
 import { isEqual } from "lodash";
-import { useAsyncState, useSelector } from 'react-async-states';
-import DemoProvider from "./Provider";
+import { useAsyncState, useSelector, AsyncStateProvider } from 'react-async-states';
+import { asyncStatesDemo } from "./Provider";
 
 
 function timeout(delay, ...resolveValues) {
@@ -21,7 +21,8 @@ export function Subscription({asyncStateConfig}) {
   return (
     <span style={{maxWidth: 400}}>
       <button onClick={() => run()}>RUN</button><br/>
-      {state.status === "pending" && <button onClick={() => abort("bghit")}>ABORT</button>}
+      {state.status === "pending" &&
+        <button onClick={() => abort("bghit")}>ABORT</button>}
       <pre>
         {state.status}
       </pre>
@@ -45,14 +46,15 @@ function usersSelector(usersState, postsState) {
 function SelectorDemo() {
   const selectedValue = useSelector(["users", "posts"], usersSelector, isEqual);
 
-  return <div>SELECTOR VALUE: <pre>{JSON.stringify(selectedValue ?? {}, null, "  ")}</pre></div>
+  return <div>SELECTOR
+    VALUE: <pre>{JSON.stringify(selectedValue ?? {}, null, "  ")}</pre></div>
 }
 
 export default function Wrapper() {
   return (
-    <DemoProvider>
-      <div style={{display: "flex", justifyContent: "space-between"}}>
-        <Subscription asyncStateConfig="users"/>
+    <AsyncStateProvider initialStates={asyncStatesDemo}>
+      {/*<div style={{display: "flex", justifyContent: "space-between"}}>*/}
+        {/*<Subscription asyncStateConfig="users"/>*/}
         {/*<Subscription asyncStateConfig="posts"/>*/}
         {/*<Subscription asyncStateConfig={{*/}
         {/*  key: "users",*/}
@@ -62,30 +64,40 @@ export default function Wrapper() {
         {/*    userId: 1,*/}
         {/*  },*/}
         {/*}}/>*/}
-      </div>
-      <div style={{backgroundColor: "gray"}}><SelectorDemo/></div>
+      {/*</div>*/}
+      {/*<div style={{backgroundColor: "gray"}}><SelectorDemo/></div>*/}
       <ReplaceStateOriginal/>
-      <ReplaceStateListener/>
-      <ReducerDemo/>
-    </DemoProvider>
+      {/*<ReducerDemo/>*/}
+    </AsyncStateProvider>
+
   );
 }
 
 
 const undefinedProducer = {
-  key: "undefined_producer",
+  initialValue: "",
   hoistToProvider: true,
-  lazy: false
+  key: "undefined_producer",
 };
 
 function ReplaceStateOriginal() {
-  const {state: {status, data}, replaceState} = useAsyncState(undefinedProducer, []);
+  const {
+    key,
+    version,
+    state: {data},
+    replaceState
+  } = useAsyncState(undefinedProducer, []);
 
   return (
     <>
-      <h3>{status}-{data}</h3>
+      <h3>{version}-{data}</h3>
       <input
-        style={{minWidth: 200, backgroundColor: "red", color: "white", border: "5px solid red"}} value={data}
+        style={{
+          minWidth: 200,
+          backgroundColor: "red",
+          color: "white",
+          border: "5px solid red"
+        }} value={data ?? ""}
         onChange={e => replaceState(e.target.value)}/>
     </>
   );

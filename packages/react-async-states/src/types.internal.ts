@@ -178,6 +178,7 @@ export type UseAsyncStateConfiguration<T, E = State<T>> = {
   source?: Source<T>,
   producer?: Producer<T>,
   skipPendingDelayMs?: number,
+  skipPendingStatus?: boolean,
   cacheConfig?: CacheConfig<T>,
   runEffectDurationMs?: number,
   resetStateOnDispose?: boolean,

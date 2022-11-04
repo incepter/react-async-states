@@ -5,14 +5,17 @@ import {
   AsyncStateProvider,
   AsyncStateStatus,
   useAsyncState,
-  AsyncStateManager
+  AsyncStateManager,
+  createSource,
+  RenderStrategy,
+  StateBoundary, useCurrentState
 } from "react-async-states";
 
-import App from "./past/App"
+import App from "./past/Subscription"
 
 import './index.css'
 
-function fetchProfiles(props) {
+async function fetchProfiles(props) {
 
   const controller = new AbortController();
 
@@ -20,17 +23,21 @@ function fetchProfiles(props) {
     controller.abort()
   });
 
-  return fetch(
+  await new Promise((resolve) => {
+    const id = setTimeout(resolve, 800);
+    props.onAbort(() => clearTimeout(id));
+  })
+
+  return await fetch(
     `https://jsonplaceholder.typicode.com/users/${props.args[0] ?? ''}`,
     {signal: controller.signal}
   ).then(r => r.json());
-
 }
 
-// const profilesList = createSource("profiles", fetchProfiles, {
+const profilesList = createSource("profiles", fetchProfiles, {
 // runEffect: "delay",
 // runEffectDurationMs: 800
-// });
+});
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 // runpSource(profilesList)
@@ -54,21 +61,32 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
   <>
-    {/*<React.StrictMode>*/}
-    {/*  <AsyncStateProvider manager={myManager}>*/}
-    {/*    <Wrapper initialValue={true}>*/}
-    {/*      <CounterDetails/>*/}
-    {/*    </Wrapper>*/}
-    {/*  </AsyncStateProvider>*/}
-    {/*  <hr/>*/}
-    {/*  <AsyncStateProvider manager={myManager}>*/}
-    {/*    <Wrapper initialValue={false}>*/}
-    {/*      <CounterHoister/>*/}
-    {/*    </Wrapper>*/}
-    {/*  </AsyncStateProvider>*/}
-      <hr/>
+    <React.StrictMode>
+      {/*<AsyncStateProvider manager={myManager}>*/}
+      {/*  <Wrapper initialValue={true}>*/}
+      {/*    <CounterDetails/>*/}
+      {/*  </Wrapper>*/}
+      {/*</AsyncStateProvider>*/}
+      {/*<hr/>*/}
+      {/*<AsyncStateProvider manager={myManager}>*/}
+      {/*  <Wrapper initialValue={false}>*/}
+      {/*    <CounterHoister/>*/}
+      {/*  </Wrapper>*/}
+      {/*</AsyncStateProvider>*/}
+
+      {/*<StateBoundary*/}
+      {/*  strategy={RenderStrategy.FetchThenRender}*/}
+      {/*  config={{*/}
+      {/*  source: profilesList,*/}
+      {/*  autoRunArgs: [2]*/}
+      {/*}} render={{*/}
+      {/*  [AsyncStateStatus.error]: ProfilesView,*/}
+      {/*  [AsyncStateStatus.success]: ProfilesView,*/}
+      {/*}} />*/}
+
+      {/*<hr/>*/}
       <App/>
-    {/*</React.StrictMode>*/}
+    </React.StrictMode>
   </>
 )
 
@@ -119,11 +137,11 @@ function CounterHoister() {
 }
 
 //
-function ProfilesView() {
-  const {state} = useAsyncState.auto({source: profilesList, autoRunArgs: [2]});
+function ProfilesView(props) {
+  const {state, run} = useCurrentState();
 
   if (state.status !== AsyncStateStatus.error && state.status !== AsyncStateStatus.success) {
-    return "Pending..."
+    return "Pending..." + state.status;
   }
 
   if (state.status === AsyncStateStatus.error) {
@@ -131,10 +149,12 @@ function ProfilesView() {
   }
   const data = Array.isArray(state.data) ? state.data : [state.data]
   return (
-    <div className="splash" style={{
+    <div style={{
+      height: "50vh",
       display: "flex",
       paddingBottom: 20,
     }}>
+      <button onClick={() => React.startTransition(() => run(+state.data.id + 1 || 2))}>run again</button>
       {data.map((profile, index) => <ProfileView key={profile.username}
                                                  profile={profile}
                                                  index={index}/>)}
@@ -156,7 +176,8 @@ function ProfileView({profile, index}) {
     animation: "fadeIn 800ms 1",
     animationFillMode: 'forwards',
     animationDelay: `${index * 50}ms`,
-  }}>{profile.name}</div>)
+    border: "1px solid red",
+  }}>{profile.id} - {profile.name}</div>)
 }
 
 // function ProviderTest() {

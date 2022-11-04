@@ -4,7 +4,7 @@ describe('source utils', () => {
 
   const source = createSource("test-source", null, {initialValue: 0});
 
-  it.skip('should run a source', () => {
+  it('should run a source', () => {
     const abort = source.run(1);
     expect(source.getState().data).toBe(1);
     expect(typeof abort).toBe("function");
@@ -15,7 +15,7 @@ describe('source utils', () => {
     expect(typeof state).toBe("object"); // promise
     expect(state).toBe(source.getState());
   });
-  it.skip('should run a source lane', () => {
+  it('should run a source lane', () => {
     const abort = source.getLaneSource("test-lane").run(3);
     expect(source.getLaneSource("test-lane").getState().data).toBe(3);
     expect(typeof abort).toBe("function");
@@ -26,11 +26,11 @@ describe('source utils', () => {
     expect(typeof state).toBe("object"); // promise
     expect(state).toBe(source.getLaneSource("test-lane").getState());
   });
-  it.skip('should replace the state with a value', () => {
+  it('should replace the state with a value', () => {
     source.setState(5);
     expect(source.getState().data).toBe(5);
   });
-  it.skip('should replace the state with an updater', () => {
+  it('should replace the state with an updater', () => {
     const oldState = source.getState();
     source.setState(old => old.data + 1);
     expect(source.getState().data).toBe(oldState.data + 1);

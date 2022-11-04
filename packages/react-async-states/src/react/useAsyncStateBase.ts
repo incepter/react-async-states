@@ -195,12 +195,7 @@ function warnInDevAboutDeprecatedUseAsyncStateProperties<T, E>(
   returnValue: UseAsyncState<T, E>,
   subscriptionKey: string | undefined,
 ): void {
-  if (__DEV__) {
-    if (!didWarnAboutReplaceStateDeprecated) {
-      didWarnAboutReplaceStateDeprecated = true;
-      console.error(`replaceState (used in ${subscriptionKey} subscription) is deprecated in favor of setState and will be removed in the v1`);
-    }
-  }
+
 }
 
 // useContext
@@ -991,7 +986,13 @@ function makeUseAsyncStateBaseReturnValue<T, E>(
       payload: null,
       setState: noop,
       mergePayload: noop,
-      replaceState: noop,
+      replaceState: __DEV__ ? function() {
+        if (!didWarnAboutReplaceStateDeprecated) {
+          didWarnAboutReplaceStateDeprecated = true;
+          console.error(`replaceState is deprecated in favor of setState and will be removed in the v1`);
+          return;
+        }
+      } : noop,
       uniqueId: undefined,
       key: configurationKey,
       invalidateCache: noop,
@@ -1010,9 +1011,15 @@ function makeUseAsyncStateBaseReturnValue<T, E>(
     version: asyncState.version,
     setState: asyncState.setState,
     uniqueId: asyncState.uniqueId,
-    replaceState: asyncState.setState,
     mergePayload: asyncState.mergePayload,
     invalidateCache: asyncState.invalidateCache,
+    replaceState: __DEV__ ? function() {
+      if (!didWarnAboutReplaceStateDeprecated) {
+        didWarnAboutReplaceStateDeprecated = true;
+        console.error(`replaceState is deprecated in favor of setState and will be removed in the v1`);
+      }
+      return asyncState.setState.apply(null, arguments);
+    } : asyncState.setState,
 
     run: typeof run === "function" ?
       run
