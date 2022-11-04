@@ -185,7 +185,7 @@ describe('dynamic provider states hoisting', () => {
 
 
     expect(screen.getByTestId("subscription-counter-1-dynamic-0-button").innerHTML)
-      .toEqual("counter-1 - WAITING - ");
+      .toEqual("counter-1 - WAIT - ");
 
     // then
     act(() => {

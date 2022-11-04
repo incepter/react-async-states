@@ -9,18 +9,6 @@ export {AsyncStateProvider} from "./react/AsyncStateProvider";
 export {useSource, useSourceLane, useProducer} from "./react/useAsyncStateBase";
 
 export {
-  runSourceLane,
-  runSource,
-  replaceLaneState,
-  getLaneSource,
-  getState,
-  replaceState,
-  runpSource,
-  runpSourceLane,
-  invalidateCache
-} from "./async-state/source-utils";
-
-export {
   createSource,
 
   ProducerType,

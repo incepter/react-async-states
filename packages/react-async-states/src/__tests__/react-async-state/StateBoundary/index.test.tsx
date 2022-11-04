@@ -40,7 +40,7 @@ describe('StateBoundary', () => {
 
     // then
     expect(screen.getByTestId("current-mode").innerHTML)
-      .toEqual(SubscriptionMode.SOURCE);
+      .toEqual(SubscriptionMode.SRC);
     expect(screen.getByTestId("current-status").innerHTML)
       .toEqual(AsyncStateStatus.pending);
 
@@ -87,7 +87,7 @@ describe('StateBoundary', () => {
     });
 
     expect(screen.getByTestId("current-mode")?.innerHTML)
-      .toEqual(SubscriptionMode.SOURCE);
+      .toEqual(SubscriptionMode.SRC);
     expect(screen.getByTestId("current-status").innerHTML)
       .toEqual(AsyncStateStatus.success);
   });

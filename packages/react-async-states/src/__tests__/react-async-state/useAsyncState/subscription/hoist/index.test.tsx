@@ -72,7 +72,7 @@ describe('should hoist an async state to provider', () => {
 
     // then
     expect(screen.getByTestId("mode-counter").innerHTML)
-      .toEqual(SubscriptionMode.WAITING);
+      .toEqual(SubscriptionMode.WAIT);
 
 
     act(() => {

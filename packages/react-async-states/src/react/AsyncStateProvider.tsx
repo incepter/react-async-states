@@ -106,22 +106,7 @@ export function AsyncStateProvider(
   }
 
   function makeContextValue(): StateContextValue {
-    return {
-      manager,
-
-      get: manager.get,
-      run: manager.run,
-      hoist: manager.hoist,
-      watch: manager.watch,
-      dispose: manager.dispose,
-      watchAll: manager.watchAll,
-      getAllKeys: manager.getAllKeys,
-      getPayload: manager.getPayload,
-      mergePayload: manager.mergePayload,
-      runAsyncState: manager.runAsyncState,
-      notifyWatchers: manager.notifyWatchers,
-      producerEffectsCreator: manager.producerEffectsCreator,
-    };
+    return manager;
   }
 }
 
