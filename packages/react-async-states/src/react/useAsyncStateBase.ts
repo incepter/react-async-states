@@ -952,15 +952,13 @@ function readStateFromAsyncState<T, E = State<T>>(
 
 //region useAsyncState value construction
 // @ts-ignore
-function noop() {
+function noop(): undefined {
   // that's a noop fn
 }
 
 function returnsUndefined() {
   return undefined;
 }
-
-let didWarnAboutReplaceStateDeprecated = false;
 
 function makeUseAsyncStateBaseReturnValue<T, E>(
   asyncState: StateInterface<T>,
@@ -971,15 +969,14 @@ function makeUseAsyncStateBaseReturnValue<T, E>(
   if (!asyncState) {
     return {
       mode,
+      run: noop,
       abort: noop,
-      payload: null,
+      replay: noop,
       setState: noop,
       mergePayload: noop,
       uniqueId: undefined,
       key: configurationKey,
       invalidateCache: noop,
-      run: returnsUndefined,
-      replay: returnsUndefined,
     };
   }
 
@@ -989,7 +986,6 @@ function makeUseAsyncStateBaseReturnValue<T, E>(
     abort: asyncState.abort,
     replay: asyncState.replay,
     source: asyncState._source,
-    payload: asyncState.payload,
     version: asyncState.version,
     setState: asyncState.setState,
     uniqueId: asyncState.uniqueId,
@@ -1021,6 +1017,7 @@ function makeUseAsyncStateReturnValue<T, E>(
     base.read = function () {
       return stateValue;
     };
+    base.payload = null;
     return Object.freeze(base);
   }
   base.payload = asyncState.payload;
@@ -1028,7 +1025,6 @@ function makeUseAsyncStateReturnValue<T, E>(
   base.read = createReadInConcurrentMode(asyncState, stateValue);
   return Object.freeze(base);
 }
-
 
 let didWarnAboutUnsupportedConcurrentFeatures = false;
 

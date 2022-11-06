@@ -46,8 +46,6 @@ interface BaseUseAsyncState<T, E = State<T>> {
   source?: Source<T>,
   mode: SubscriptionMode,
 
-  payload: Record<string, any> | null,
-
   replay(): AbortFn,
   abort(reason?: any): void,
   run(...args: any[]): AbortFn,
@@ -63,6 +61,7 @@ export interface UseAsyncState<T, E = State<T>> extends BaseUseAsyncState<T, E> 
   read(): E,
   version?: number,
   lastSuccess?: State<T>,
+  payload: Record<string, any> | null,
 }
 
 // interface NewUseAsyncState<T, E = State<T>> extends Source<T> {

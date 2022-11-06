@@ -4,7 +4,6 @@ import {
   useAsyncState,
   AsyncStateProvider,
   useRunLane,
-  runSourceLane
 } from "react-async-states";
 
 function getUserDetails({onAbort, payload: {id}}) {
@@ -132,8 +131,8 @@ function PropsRunsDemo() {
       >runLane
       </button>
       <button
-        onClick={() => runSourceLane(userDetailsSource, ref.current.value, ref.current.value)}
-      >runSourceLane
+        onClick={() => userDetailsSource.getLaneSource(ref.current.value).run(ref.current.value)}
+      >run Source Lane
       </button>
     </div>
   );

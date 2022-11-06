@@ -9,19 +9,20 @@ sidebar_label: TL;DR
 
 ```typescript
 const {
+  mode, // the subscription mode: listen, source, hoist, ...
+  read, // returns the selected value and suspends when pending
+  state, // The selected portion of the state
+  version, // the version of the state, incremented at each update
+  payload, // a capture of the payload of the state instance
+  source, // a special object hiding the state instance and manipulates it
+  lastSuccess, // the latest registered success state
+
   key, // The key of the state
   uniqueId, // the unique id of the state instance, for debugging purposes
-  state, // The selected portion of the state
-  read, // returns the selected value and suspends when pending
-  version, // the version of the state, incremented at each update
-  lastSuccess, // the latest registered success state
-  source, // a special object hiding the state instance and manipulates it
-  mode, // the subscription mode: listen, source, hoist, ...
-  payload, // a capture of the payload of the state instance
   replay, // replays the latest run, or does nothing
   abort, // aborts the current run, or does nothing
   run, // runs the producer, if not present, replaces the state
-  replaceState, // immediately replace the state value
+  setState, // immediately replace the state value
   mergePayload, // merges a partial payload inside the instance's payload
   invalidateCache, // invalidates a cache entry or the whole cache
 } = useAsyncState({
@@ -31,6 +32,7 @@ const {
   payload, // the payload to merge in the instance
   producer, // the producer to be defined in the state instance
   skipPendingDelayMs, // skips the pending status under that delay in Ms
+  skipPendingStatus, // never sets the status to pending, it will always notify only about resolve/abort
   cacheConfig: {
     enabled, // whether to enable cache or not
     getDeadline, // get the cache deadline for a succeeded state
@@ -83,7 +85,6 @@ function myProducer<T>({
   emit, // replaces state, works after resolve to support streaming/incremental resolve
   abort, // will abort its own run, if resolved
   lastSuccess, // the last success that was registered before this call, useful for reducers & infinite data
-  
   run, // runs a source or an instance or a producer and returns the abort function
   runp, // runs a source or an instance or a producer and returns a promise to resolve
   select, // selects from source or provider the current state of any state instance
@@ -104,6 +105,7 @@ const source = createSource(
     runEffectDurationMs, // the duration of the run effect in Ms
     resetStateOnDispose, // whether to reset state to initial status when no subscribers are left
     skipPendingDelayMs, // skips the pending status under that delay in Ms
+    skippendingStatus, // skips totally any pending status
     cacheConfig: {
       enabled, // whether to enable cache or not
       getDeadline, // get the cache deadline for a succeeded state
@@ -121,9 +123,17 @@ const {
   getState, // gets the current state
   setState, // sets state and notifies all subscribers
   run, // runs the producer and returns the abort function
+  runp, // runs the producer and returns a promise to the run's resolve
+  replay, // replays the latest run if exists, or else does nothing
+  abort, // aborts the current run or clears the abort callbacks if any
+  replaceProducer, // replaces the producer linked to the state
   getLaneSource, // gets the source of a child
+  removeLane, // removes a lane
   invalidateCache, // invalidates a cache entry or the whole cache
+  replaceCache, // replaces a cache entry
   mergePayload, // merges a partial payload inside the state instance's payload
   subscribe, // subscribes with a callback to state changes
+  getConfig, // gets the current used config
+  patchConfig, // patches the config related to the producer
 } = source;
 ```

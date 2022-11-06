@@ -23,7 +23,8 @@ So it can be:
 
 The main goal and purpose is to `run` your function,
 so it will receive a single argument like this:
-```javascript
+
+```typescript
 // somewhere in the code, simplified:
 producer({
   lastSuccess,
@@ -58,29 +59,29 @@ where:
 | `runp`        | runs an async state or a producer and returns a promise of its state                                                                       |
 | `emit`        | set the state from the producer after its resolve, this to support intervals and incoming events from an external system (like ws, sse...) |
 | `select`      | returns the state of the desired async state, by key or source                                                                             |
+| `getState`    | gets the current state. May be useful with emit                                                                                            |
 
 We believe that these properties will solve all sort of possible use cases.
 In fact, your function will run while having access to payload from the render,
 from either the provider and subscriptions, and can be merged imperatively anytime
-using `mergePayload` obtained from `useAsyncstate` and also execution args if
-you run it manually (not automatic).
-
-So basically you have three entry-points to your function (provider + subscription + exec args).
+using `mergePayload` also execution args.
 
 Your function will be notified with the cancellation by registering an `onAbort`
 callback, you can exploit this to abort an `AbortController` which will lead
 your fetches to be cancelled, or to clear a timeout, for example.
 
-The `isAborted` function that returns a boolean that's truthy if this current run is aborted,
-you may want to use it before calling a callback received from payload or
-execution arguments. If using a generator, only yielding is sufficient, since the
-library internally checks on cancellation before stepping any further in the generator.
+The `isAborted` function that returns a boolean that is truthy if 
+this current run is aborted, you may want to use it before calling a callback
+received from payload or execution arguments. If using a generator, only
+yielding is sufficient, since the library internally checks on cancellation 
+before stepping any further in the generator.
 
 The following functions are all supported by the library:
 
 ```javascript
 // retrives current user, his permissions and allowed stores before resolving
 function* getCurrentUser(props) {
+  // abort logic
   const controller = new AbortController();
   const {signal} = controller;
   props.onAbort(function abortFetch() {
@@ -93,11 +94,7 @@ function* getCurrentUser(props) {
     fetchUserStores(userData.id, {signal}),
   ]);
 
-  return {
-    stores,
-    permissions,
-    user: userData,
-  };
+  return // ... returned data
 }
 
 async function getCurrentUserPosts(props) {
@@ -107,7 +104,10 @@ async function getCurrentUserPosts(props) {
 
 async function getTransactionsList(props) {
   // abort logic
-  return await fetchUserTransactions(props.payload.principal.id, {query: props.payload.queryString, signal});
+  return await fetchUserTransactions(
+    props.payload.principal.id,
+    {query: props.payload.queryString, signal}
+  );
 }
 
 function timeout(props) {
@@ -127,9 +127,8 @@ function reducer(props) {
   switch(action.type) {
     case type1: return {...props.lastSuccess.data, ...action.newData};
     case type2: return {...action.data};
-    
+    case type3: return fetchSomething()
     // mixed sync and async reducers is possible
-    // case type3: return fetchSomething()
   }
 }
 ```
@@ -165,6 +164,7 @@ The supported configuration is:
 ```tsx
 
 export type ProducerConfig<T> = {
+  skipPendingStatus?: boolean,
   initialValue?: T | ((cache: Record<string, CachedState<T>>) => T),
   cacheConfig?: CacheConfig<T>,
   runEffectDurationMs?: number,
@@ -182,8 +182,8 @@ Where the supported cache config is:
 | `enabled`     | `boolean`                                                         | Whether to enable cache or not                                                   |
 | `hash`        | `(args?: any[], payload?: {[id: string]: any} or null) => string` | a function to calculate a hash for a producer run (from args and payload)        |
 | `getDeadline` | `(currentState: State<T>) => number`                              | returns the deadline after which the cache is invalid                            |
-| `load`        | `() => {[id: string]: CachedState<T>}`                     | loads the cached data when the async state instance is created                   |
-| `persist`     | `(cache: {[id: string]: CachedState<T>}) => void`          | a function to persist the whole cache, called when state is updated to success   |
+| `load`        | `() => {[id: string]: CachedState<T>}`                            | loads the cached data when the async state instance is created                   |
+| `persist`     | `(cache: {[id: string]: CachedState<T>}) => void`                 | a function to persist the whole cache, called when state is updated to success   |
 | `onCacheLoad` | `onCacheLoad?({cache, setState}): void`                           | a callback called when the cache loads, useful when asynchronously loading cache |
 
 Here is a small example of the usage of cache config:
