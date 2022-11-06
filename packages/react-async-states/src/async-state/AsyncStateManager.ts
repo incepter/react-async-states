@@ -58,7 +58,6 @@ export function AsyncStateManager(
     watchers,
     watchAll,
     getAllKeys,
-    runAsyncState,
     notifyWatchers,
     setInitialStates,
     getPayload(): Record<string, any> {
@@ -98,10 +97,10 @@ export function AsyncStateManager(
     for (const [key, entry] of Object.entries(asyncStateEntries)) {
       // notify only if new!
       if (newStatesMap[key] && !previousStates[key]) {
-        notifyWatchers(key, entry.value);
+        notifyWatchers(key, entry.instance);
       }
-      if (!newStatesMap[key] && entry.initiallyHoisted) {
-        entry.initiallyHoisted = false;
+      if (!newStatesMap[key] && entry.hoisted) {
+        entry.hoisted = false;
         entriesToRemove.push(entry);
       }
     }
@@ -112,7 +111,7 @@ export function AsyncStateManager(
   function get<T>(
     key: string
   ): StateInterface<T> {
-    return asyncStateEntries[key]?.value;
+    return asyncStateEntries[key]?.instance;
   }
 
   function run<T>(
@@ -120,30 +119,6 @@ export function AsyncStateManager(
     ...args: any[]
   ): AbortFn {
     return asyncState.run(output.producerEffectsCreator, ...args);
-  }
-
-  function runAsyncState<T>(
-    key: AsyncStateKeyOrSource<T>,
-    lane: string | undefined,
-    ...args: any[]
-  ): AbortFn {
-    let asyncState: StateInterface<T>;
-    // always attempt a source object
-    if (isAsyncStateSource(key)) {
-      asyncState = readAsyncStateFromSource(key as Source<T>);
-    } else {
-      asyncState = get(key as string);
-    }
-
-    if (!asyncState) {
-      return undefined;
-    }
-
-    if (lane) {
-      asyncState = asyncState.getLane(lane);
-    }
-
-    return run(asyncState, ...args);
   }
 
   function dispose<T>(
@@ -155,9 +130,9 @@ export function AsyncStateManager(
     const entry = asyncStateEntries[key]
     if (
       entry &&
-      !entry.initiallyHoisted &&
-      entry.value.subscriptions &&
-      Object.values(entry.value.subscriptions).length === 0
+      !entry.hoisted &&
+      entry.instance.subscriptions &&
+      Object.values(entry.instance.subscriptions).length === 0
     ) {
       delete asyncStateEntries[key];
       // notify watchers about disappearance
@@ -300,7 +275,7 @@ function createAsyncStateEntry<T>(
   asyncState: StateInterface<T>,
   initiallyHoisted: boolean,
 ): AsyncStateEntry<T> {
-  return {value: asyncState, initiallyHoisted};
+  return {instance: asyncState, hoisted: initiallyHoisted};
 }
 
 
@@ -314,9 +289,9 @@ function createInitialAsyncStatesReducer(
     const asyncState = readAsyncStateFromSource(
       current as Source<any>);
 
-    if (!existingEntry || asyncState !== existingEntry.value) {
+    if (!existingEntry || asyncState !== existingEntry.instance) {
       result[key] = createAsyncStateEntry(asyncState, true);
-      result[key].initiallyHoisted = true;
+      result[key].hoisted = true;
     }
 
     return result;
@@ -326,7 +301,7 @@ function createInitialAsyncStatesReducer(
     const existingEntry = result[key];
 
     if (existingEntry) {
-      const asyncState = existingEntry.value;
+      const asyncState = existingEntry.instance;
       if (
         asyncState.originalProducer === producer &&
         asyncState.config.initialValue === initialValue
@@ -338,7 +313,7 @@ function createInitialAsyncStatesReducer(
       new AsyncState(key, producer, config),
       true // initially hoisted
     );
-    result[key].initiallyHoisted = true;
+    result[key].hoisted = true;
 
     return result;
   }
@@ -457,10 +432,6 @@ export type AsyncStateManagerInterface = {
     key: string,
     value: ManagerWatchCallbackValue<T>
   ): void,
-  runAsyncState<T>(
-    keyOrSource: AsyncStateKeyOrSource<T>,
-    ...args: any[]
-  ): AbortFn,
   getAllKeys(): string[],
   watchAll(cb: ManagerWatchCallback<any>),
   setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[],
@@ -485,8 +456,8 @@ export type StateProviderProps = {
 
 
 export type AsyncStateEntry<T> = {
-  initiallyHoisted: boolean,
-  value: StateInterface<T>,
+  hoisted: boolean,
+  instance: StateInterface<T>,
 }
 
 export type AsyncStateEntries = Record<string, AsyncStateEntry<any>>

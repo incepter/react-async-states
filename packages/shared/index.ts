@@ -23,25 +23,16 @@ export function shallowEqual<T>(
 }
 
 export function cloneProducerProps<T>(props: ProducerProps<T>): ProducerSavedProps<T> {
-  const output: ProducerSavedProps<T> = {};
+  const output: ProducerSavedProps<T> = {
+    lastSuccess: shallowClone(props.lastSuccess),
+    payload: props.payload,
+    args: props.args,
+  };
 
-  if (props.lastSuccess !== undefined) {
-    output.lastSuccess = shallowClone(props.lastSuccess);
-    delete output.lastSuccess!.props;
-  }
-
-  output.payload = shallowClone(props.payload);
-
-  if (Array.isArray(props.args) && props.args.length) {
-    output.args = [...props.args];
-  } else {
-    output.args = emptyArray;
-  }
+  delete output.lastSuccess!.props;
 
   return output;
 }
-
-const emptyArray = [];
 
 export function isPromise(candidate) {
   return !!candidate &&

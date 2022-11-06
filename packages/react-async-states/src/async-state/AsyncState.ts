@@ -1360,9 +1360,9 @@ export type ProducerCallbacks<T> = {
 }
 
 export type ProducerSavedProps<T> = {
-  payload?: any,
   args?: any[],
-  lastSuccess?: State<T>
+  lastSuccess?: State<T>,
+  payload?: Record<string, any> | null,
 }
 
 export type Producer<T> =

@@ -4,13 +4,13 @@ import {StateInterface} from "./index";
 function Secret() {
   let key = null;
   let value = null;
-  return function Source(...args) {
-    if (args.length === 1 && args[0] === key) {
+  return function Source() {
+    if (arguments.length === 1 && arguments[0] === key) {
       return value;
     }
-    if (args.length === 2 && !key && !value) {
-      key = args[0];
-      value = args[1];
+    if (arguments.length === 2 && !key && !value) {
+      key = arguments[0];
+      value = arguments[1];
     }
   };
 }

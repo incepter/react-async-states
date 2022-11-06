@@ -375,12 +375,12 @@ function retainStateInstance(asyncState) {
 
 function formatEntriesToDevtools(entries) {
   return Object.entries(entries).reduce((result, [key, entry]) => {
-    result[entry.value.uniqueId] = {};
-    result[entry.value.uniqueId].key = entry.value.key;
-    result[entry.value.uniqueId].state = entry.value.state;
-    result[entry.value.uniqueId].uniqueId = entry.value.uniqueId;
-    result[entry.value.uniqueId].lastSuccess = entry.value.lastSuccess;
-    result[entry.value.uniqueId].subscriptions = Object.keys(entry.value.subscriptions);
+    result[entry.instance.uniqueId] = {};
+    result[entry.instance.uniqueId].key = entry.instance.key;
+    result[entry.instance.uniqueId].state = entry.instance.state;
+    result[entry.instance.uniqueId].uniqueId = entry.instance.uniqueId;
+    result[entry.instance.uniqueId].lastSuccess = entry.instance.lastSuccess;
+    result[entry.instance.uniqueId].subscriptions = Object.keys(entry.instance.subscriptions);
     return result;
   }, {});
 }

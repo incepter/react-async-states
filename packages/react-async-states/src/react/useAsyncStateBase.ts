@@ -72,7 +72,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   const [selectedValue, setSelectedValue] = React
     .useState<Readonly<UseAsyncState<T, E>>>(calculateStateValue);
 
-  // this reference inequality means that memo has been recalculated
+  // this reference inequality means that memo has been just recalculated
   if (selfMemo.subscriptionInfo !== subscriptionInfo) {
     selfMemo.subscriptionInfo = subscriptionInfo;
   }
@@ -94,9 +94,6 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   // check if the effect should do a no-op early
   // this hook is safe to be inside this precise condition, which, if changed
   // react during reconciliation would throw the old tree to GC.
-  // omitting context because we only manipulate get, dispose and some other
-  // functions which are safe to be excluded from dependencies and never change
-  // omitting dispose fn because it depends on from the mode and whether inside provider
   if (contextValue !== null) {
     React.useEffect(subscribeToAsyncState,
       [contextValue, subscriptionKey, areEqual, selector, asyncState, events]);
@@ -187,10 +184,6 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   }
 }
 
-// useContext
-// useRef
-// useState
-// useEffect
 // this is a mini version of useAsyncState
 // this hook uses fewer hooks and has fewer capabilities that useAsyncState
 // its usage should be when you want to have control over a source
@@ -274,11 +267,6 @@ export function useSourceLane<T>(
 }
 
 const emptyArray = [];
-// useContext
-// useRef
-// useState
-// useEffect
-// useLayoutEffect
 // this is a mini version of useAsyncState
 // this hook uses fewer hooks and has fewer capabilities that useAsyncState
 // its usage should be when you want to have control over a producer (may be inline)
@@ -294,7 +282,7 @@ export function useProducer<T>(
 ): UseAsyncState<T, State<T>> {
   let subscriptionKey: string | undefined = undefined;
   const contextValue = React.useContext(AsyncStateContext);
-  const asyncState = React.useMemo<StateInterface<T>>(createInstance, emptyArray);
+  const [asyncState] = React.useState<StateInterface<T>>(createInstance);
   const latestVersion = React.useRef<number | undefined>(asyncState.version);
 
   // declare a state snapshot initialized by the initial selected value

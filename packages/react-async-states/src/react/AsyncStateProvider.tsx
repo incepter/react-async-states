@@ -77,7 +77,7 @@ export function AsyncStateProvider(
     return function cleanup() {
       Promise.resolve().then(() => {
         Object.values(manager.entries)
-          .forEach(entry => entry.value.dispose())
+          .forEach(entry => entry.instance.dispose())
       });
     }
   }
@@ -90,7 +90,7 @@ export function AsyncStateProvider(
 
   function onDirtyStatesChange() {
     for (const entry of dirtyStates.data) {
-      manager.dispose(entry.value);
+      manager.dispose(entry.instance);
     }
     // mutating this object here means un-referencing these entries
     // which should throw them to gc.
@@ -101,7 +101,7 @@ export function AsyncStateProvider(
     // propagate the new payload
     manager.mergePayload(payload);
     for (const entry of Object.values(manager.entries)) {
-      entry.value.mergePayload(payload);
+      entry.instance.mergePayload(payload);
     }
   }
 
