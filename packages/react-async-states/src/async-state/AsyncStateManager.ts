@@ -77,7 +77,6 @@ export function AsyncStateManager(
       Object
         .values(initialStates ?? EMPTY_OBJECT)
         .reduce((result, current) => {
-          // @ts-ignore
           result[current.key] = current;
           return result;
         }, Object.create(null)) as Record<string, ExtendedInitialAsyncState<any>>;

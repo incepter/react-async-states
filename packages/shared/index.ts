@@ -27,9 +27,7 @@ export function cloneProducerProps<T>(props: ProducerProps<T>): ProducerSavedPro
 
   if (props.lastSuccess !== undefined) {
     output.lastSuccess = shallowClone(props.lastSuccess);
-    // @ts-ignore
-    // todo: whaaat
-    delete output.lastSuccess.props;
+    delete output.lastSuccess!.props;
   }
 
   output.payload = shallowClone(props.payload);

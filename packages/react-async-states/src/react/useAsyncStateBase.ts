@@ -110,10 +110,6 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
 
   React.useEffect(autoRunAsyncState, deps);
 
-  if (__DEV__) {
-    warnInDevAboutDeprecatedUseAsyncStateProperties(selectedValue, subscriptionKey);
-  }
-
   return selectedValue;
 
   function calculateStateValue(): Readonly<UseAsyncState<T, E>> {
@@ -191,13 +187,6 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   }
 }
 
-function warnInDevAboutDeprecatedUseAsyncStateProperties<T, E>(
-  returnValue: UseAsyncState<T, E>,
-  subscriptionKey: string | undefined,
-): void {
-
-}
-
 // useContext
 // useRef
 // useState
@@ -250,9 +239,6 @@ export function useSourceLane<T>(
   // subscribe to async state
   React.useEffect(subscribeToAsyncState, [contextValue, asyncState]);
 
-  if (__DEV__) {
-    warnInDevAboutDeprecatedUseAsyncStateProperties(selectedValue, subscriptionKey);
-  }
   return selectedValue;
 
   function calculateSelectedValue(): Readonly<UseAsyncState<T, State<T>>> {
@@ -335,9 +321,6 @@ export function useProducer<T>(
   // subscribe to async state
   React.useEffect(subscribeToAsyncState, [contextValue, asyncState]);
 
-  if (__DEV__) {
-    warnInDevAboutDeprecatedUseAsyncStateProperties(selectedValue, subscriptionKey);
-  }
   return selectedValue;
 
   function createInstance() {
