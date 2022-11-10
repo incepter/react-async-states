@@ -3,7 +3,8 @@ import {
 	createRoutesFromElements,
 	RouterProvider,
 } from "react-router-dom";
-import AppRoutes from "../../routes/appRoutes";
+import AppRoutes from "./routes/appRoutes";
+import "antd/dist/antd.css";
 
 const appRouter = createBrowserRouter(createRoutesFromElements(AppRoutes));
 
