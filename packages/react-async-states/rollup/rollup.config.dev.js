@@ -1,0 +1,42 @@
+const resolve = require('@rollup/plugin-node-resolve');
+const commonjs = require('@rollup/plugin-commonjs');
+const typescript = require('rollup-plugin-typescript2');
+const json = require('@rollup/plugin-json');
+const {babel} = require('@rollup/plugin-babel');
+
+module.exports = {
+  input: `src/index.ts`,
+  output: [
+    {
+      format: 'umd',
+      sourcemap: true,
+      file: `dist/umd/index.js`,
+      name: "ReactAsyncStates",
+      globals: {
+        react: 'React',
+        'react/jsx-runtime': 'jsxRuntime',
+      }
+    },
+    {
+      format: 'es',
+      sourcemap: true,
+      file: `dist/es/index.js`,
+      name: "ReactAsyncStates",
+      globals: {
+        react: 'React',
+        'react/jsx-runtime': 'jsxRuntime',
+      }
+    },
+  ],
+  external: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
+  watch: {
+    include: 'src/**',
+  },
+  plugins: [
+    json(),
+    resolve(),
+    typescript(),
+    commonjs(),
+    babel({babelHelpers: 'bundled'}),
+  ],
+};

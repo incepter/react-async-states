@@ -1,7 +1,8 @@
 {
   "private": false,
   "license": "MIT",
-  "main": "dist/index",
+  "main": "dist/umd/index",
+  "module": "dist/es/index",
   "types": "dist/react-async-states/src/index",
   "author": "incepter",
   "sideEffects": false,
@@ -33,12 +34,22 @@
     "test:watch": "react-scripts test --env=jsdom",
     "clean:dist": "rimraf dist",
     "build": "rimraf dist && cross-env webpack --config ./webpack/webpack.prod.config.js --color --progress",
-    "start": "rimraf dist && cross-env NODE_ENV=development webpack --config ./webpack/webpack.dev.config.js --color --progress --mode development"
+    "start": "rimraf dist && cross-env NODE_ENV=development webpack --config ./webpack/webpack.dev.config.js --color --progress --mode development",
+    "prebuild": "rimraf dist",
+    "build:rollup": "yarn clean:dist && rollup -c rollup/rollup.config.js",
+    "dev": "yarn clean:dist && rollup -c rollup/rollup.config.dev.js -w"
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.2 || ^18.0.0"
   },
   "devDependencies": {
+    "@rollup/plugin-babel": "^6.0.2",
+    "@rollup/plugin-commonjs": "^23.0.2",
+    "@rollup/plugin-json": "^5.0.1",
+    "@rollup/plugin-node-resolve": "^15.0.1",
+    "@rollup/plugin-replace": "^5.0.1",
+    "@rollup/plugin-terser": "^0.1.0",
+    "@rollup/plugin-typescript": "^9.0.2",
     "@testing-library/react": "13.4.0",
     "@testing-library/react-hooks": "^8.0.1",
     "@types/jest": "^29.2.1",
@@ -55,6 +66,14 @@
     "eslint-plugin-standard": "^3.1.0",
     "react-scripts": "5.0.1",
     "react-test-renderer": "18.2.0",
+    "rollup": "^3.2.5",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-copy": "^3.4.0",
+    "rollup-plugin-gzip": "3.0.1",
+    "rollup-plugin-json": "^4.0.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-sourcemaps": "^0.6.3",
+    "rollup-plugin-typescript2": "^0.34.1",
     "source-map-loader": "4.0.1",
     "terser-webpack-plugin": "5.3.6",
     "ts-loader": "9.4.1",
