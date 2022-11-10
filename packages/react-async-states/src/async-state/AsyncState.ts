@@ -677,7 +677,7 @@ function nextUniqueId() {
   return ++uniqueId;
 }
 
-function readAsyncStateFromSource<T>(possiblySource: Source<T>): StateInterface<T> {
+function readInstanceFromSource<T>(possiblySource: Source<T>): StateInterface<T> {
   try {
     const candidate = possiblySource.constructor(asyncStatesKey);
     if (!(candidate instanceof AsyncState)) {
@@ -895,7 +895,7 @@ export function standaloneProducerRunEffectFunction<T>(
   ...args: any[]
 ) {
   if (isAsyncStateSource(input)) {
-    let instance = readAsyncStateFromSource(input as Source<T>)
+    let instance = readInstanceFromSource(input as Source<T>)
       .getLane(config?.lane);
 
     return instance.run(standaloneProducerEffectsCreator, ...args);
@@ -918,7 +918,7 @@ export function standaloneProducerRunpEffectFunction<T>(
 ) {
 
   if (isAsyncStateSource(input)) {
-    let instance = readAsyncStateFromSource(input as Source<T>).getLane(config?.lane);
+    let instance = readInstanceFromSource(input as Source<T>).getLane(config?.lane);
     return runWhileSubscribingToNextResolve(instance, props, args);
   } else if (typeof input === "function") {
 
@@ -1196,7 +1196,7 @@ function stepAsyncAndContinueStartedGenerator(
 //region Exports
 export default AsyncState;
 export {
-  readAsyncStateFromSource,
+  readInstanceFromSource,
   standaloneProducerEffectsCreator,
 };
 //endregion

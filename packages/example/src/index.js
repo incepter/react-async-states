@@ -14,6 +14,7 @@ import {
 import App from "./past/Subscription"
 
 import './index.css'
+import RRDemo from "./RRDemo";
 
 async function fetchProfiles(props) {
 
@@ -62,12 +63,13 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <>
     <React.StrictMode>
-      {/*<AsyncStateProvider manager={myManager}>*/}
-      {/*  <Wrapper initialValue={true}>*/}
-      {/*    <CounterDetails/>*/}
-      {/*  </Wrapper>*/}
-      {/*</AsyncStateProvider>*/}
-      {/*<hr/>*/}
+      <AsyncStateProvider>
+        {/*<Wrapper initialValue={true}>*/}
+          <RRDemo />
+          {/*<CounterDetails/>*/}
+        {/*</Wrapper>*/}
+      </AsyncStateProvider>
+      <hr/>
       {/*<AsyncStateProvider manager={myManager}>*/}
       {/*  <Wrapper initialValue={false}>*/}
       {/*    <CounterHoister/>*/}
@@ -85,7 +87,7 @@ root.render(
       {/*}} />*/}
 
       {/*<hr/>*/}
-      <App/>
+      {/*<App/>*/}
     </React.StrictMode>
   </>
 )

@@ -18,7 +18,7 @@ export {
 
   AsyncStateManager,
 } from "./async-state";
-
+export {createLoaderProducer} from "./react/loader-producer"
 export {
   SubscriptionMode,
 } from "./types.internal";

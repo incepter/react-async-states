@@ -33,7 +33,7 @@ import {
 import {supportsConcurrentMode} from "./helpers/supports-concurrent-mode";
 import {isAsyncStateSource} from "../async-state/utils";
 import {
-  readAsyncStateFromSource,
+  readInstanceFromSource,
   standaloneProducerEffectsCreator
 } from "../async-state/AsyncState";
 import useInDevSubscriptionKey from "./helpers/useCallerName";
@@ -206,7 +206,7 @@ export function useSourceLane<T>(
 ): UseAsyncState<T, State<T>> {
   let subscriptionKey;
   const contextValue = React.useContext(AsyncStateContext);
-  const asyncState = readAsyncStateFromSource(source).getLane(lane);
+  const asyncState = readInstanceFromSource(source).getLane(lane);
   const latestVersion = React.useRef<number | undefined>(asyncState.version);
 
   // declare a state snapshot initialized by the initial selected value
@@ -530,7 +530,7 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
 // when inside provider, the producerEffectsCreator has much more capabilities
 // it allows run, runp and select to have access to provider via string keys
 // and cascade down this power
-function runAsyncStateSubscriptionFn<T, E>(
+export function runAsyncStateSubscriptionFn<T, E>(
   // the subscription mode
   mode: SubscriptionMode,
   // the instance
@@ -627,10 +627,10 @@ function inferStateInstance<T, E>(
         configuration,
       );
     case SubscriptionMode.SRC:
-      return readAsyncStateFromSource(
+      return readInstanceFromSource(
         configuration.source as Source<T>);
     case SubscriptionMode.SRC_FORK: {
-      const sourceAsyncState = readAsyncStateFromSource(
+      const sourceAsyncState = readInstanceFromSource(
         configuration.source as Source<T>);
       return sourceAsyncState.fork(configuration.forkConfig);
     }
@@ -970,7 +970,7 @@ function makeUseAsyncStateBaseReturnValue<T, E>(
   };
 }
 
-function makeUseAsyncStateReturnValue<T, E>(
+export function makeUseAsyncStateReturnValue<T, E>(
   asyncState: StateInterface<T>,
   stateValue: E,
   configurationKey: string,
