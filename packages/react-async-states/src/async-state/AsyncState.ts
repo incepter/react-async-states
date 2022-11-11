@@ -98,7 +98,6 @@ class AsyncState<T> implements StateInterface<T> {
 
     this._source = makeSource(this);
 
-    console.log('did construct', this.key, this.uniqueId);
     Object.preventExtensions(this);
 
     if (__DEV__) {

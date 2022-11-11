@@ -39,7 +39,7 @@ module.exports = [
       typescript(),
       commonjs(),
       gzipPlugin.default(),
-      // terser(),
+      terser(),
       copy({
         targets: [
           {
