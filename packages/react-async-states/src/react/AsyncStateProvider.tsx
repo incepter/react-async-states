@@ -7,6 +7,7 @@ import {
   StateProviderProps
 } from "../async-state";
 import {StateContextValue, UseAsyncStateContextType} from "../types.internal";
+import {AsyncStateEntries} from "../async-state/AsyncStateManager";
 
 // let didWarnAboutProviderDeprecated = false;
 /**
@@ -76,7 +77,7 @@ export function AsyncStateProvider(
   function disposeManager() {
     return function cleanup() {
       Promise.resolve().then(() => {
-        Object.values(manager.entries)
+        Object.values(manager.entries as AsyncStateEntries)
           .forEach(entry => entry.instance.dispose())
       });
     }
@@ -100,7 +101,7 @@ export function AsyncStateProvider(
   function onPayloadChange() {
     // propagate the new payload
     manager.mergePayload(payload);
-    for (const entry of Object.values(manager.entries)) {
+    for (const entry of Object.values(manager.entries as AsyncStateEntries)) {
       entry.instance.mergePayload(payload);
     }
   }

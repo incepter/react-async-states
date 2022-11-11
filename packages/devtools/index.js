@@ -3,10 +3,10 @@ import {
   newDevtoolsEvents,
   newDevtoolsRequests,
 } from "./eventTypes";
-import { __DEV__, shallowClone } from "shared";
 
 let journalEventsId = 0;
 const source = "async-states-agent";
+const __DEV__ = process.env.NODE_ENV !== "production";
 const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
 
       let keys = {};
@@ -352,7 +352,7 @@ const devtools = !__DEV__ ? Object.create(null) : ((function makeDevtools() {
         retainStateInstance(asyncState);
         currentUpdate = {
           uniqueId: asyncState.uniqueId,
-          oldState: shallowClone(asyncState.state),
+          oldState: Object.assign({}, asyncState.state),
         };
       }
 

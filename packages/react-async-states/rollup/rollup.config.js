@@ -20,9 +20,9 @@ module.exports = [
     plugins: [
       json(),
       resolve(),
+      babel({babelHelpers: 'bundled'}),
       typescript(),
       commonjs(),
-      babel({babelHelpers: 'bundled'}),
     ],
   }),
   buildLibrary({
@@ -35,11 +35,11 @@ module.exports = [
       }),
       json(),
       resolve(),
+      babel({babelHelpers: 'bundled'}),
       typescript(),
       commonjs(),
       gzipPlugin.default(),
-      babel({babelHelpers: 'bundled'}),
-      terser(),
+      // terser(),
       copy({
         targets: [
           {
@@ -65,7 +65,16 @@ module.exports = [
           `dist/es/${libraryName}`,
           `dist/umd/${libraryName}`,
         ]
-      })
+      }),
+      copy({
+        hook: 'closeBundle',
+        targets: [
+          {
+            dest: 'dist',
+            src: `../../README.MD`,
+          },
+        ]
+      }),
     ],
   }),
 ];

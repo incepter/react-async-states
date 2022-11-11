@@ -117,7 +117,7 @@ export function useSelector<T>(
           let nextMeter = (as as AsyncState<any>).subsIndex;
           subscriptionKey = `${caller}-$4-$${nextMeter}`;// 4: useSelector
         }
-        return as!.subscribe(onUpdate, subscriptionKey);
+        return (as as StateInterface<T>)!.subscribe(onUpdate, subscriptionKey);
       });
 
     return () => {

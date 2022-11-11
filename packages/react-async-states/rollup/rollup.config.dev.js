@@ -39,9 +39,9 @@ module.exports = {
   plugins: [
     json(),
     resolve(),
+    babel({babelHelpers: 'bundled'}),
     typescript(),
     commonjs(),
-    babel({babelHelpers: 'bundled'}),
 
     copy({
       hook: 'closeBundle',

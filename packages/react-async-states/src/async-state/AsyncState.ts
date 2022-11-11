@@ -1,6 +1,5 @@
 import {
   __DEV__,
-  cloneProducerProps,
   isGenerator,
   isPromise,
   shallowClone,
@@ -99,6 +98,7 @@ class AsyncState<T> implements StateInterface<T> {
 
     this._source = makeSource(this);
 
+    console.log('did construct', this.key, this.uniqueId);
     Object.preventExtensions(this);
 
     if (__DEV__) {
@@ -569,6 +569,18 @@ class AsyncState<T> implements StateInterface<T> {
 }
 
 //region AsyncState methods helpers
+
+function cloneProducerProps<T>(props: ProducerProps<T>): ProducerSavedProps<T> {
+  const output: ProducerSavedProps<T> = {
+    lastSuccess: shallowClone(props.lastSuccess),
+    payload: props.payload,
+    args: props.args,
+  };
+
+  delete output.lastSuccess!.props;
+
+  return output;
+}
 
 function constructPropsObject<T>(
   instance: StateInterface<T>,

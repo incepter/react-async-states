@@ -16,8 +16,8 @@
     "copy": "copyfiles -f ./static/* ./build",
     "start": "react-scripts start",
     "build:clean": "rimraf ./build",
-    "build": "yarn build:clean && cross-env INLINE_RUNTIME_CHUNK=false react-scripts build && yarn copy",
-    "build:chrome": "yarn build && yarn chrome",
+    "build": "pnpm build:clean && cross-env INLINE_RUNTIME_CHUNK=false react-scripts build && pnpm copy",
+    "build:chrome": "pnpm build && pnpm chrome",
     "chrome": "chrome http://localhost:3000 --new-window --auto-open-devtools-for-tabs --load-extension=%cd%/build --profile-directory=Guest",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
