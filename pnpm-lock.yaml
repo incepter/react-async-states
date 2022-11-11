@@ -14,12 +14,15 @@ importers:
       copyfiles: ^2.4.1
       cpx: ^1.5.0
       cra-template: 1.1.2
+      cross-env: ^7.0.3
+      devtools: workspace:*
       lodash: ^4.17.21
       react: 18.2.0
       react-async-states: 1.0.0-rc-7
       react-dom: 18.2.0
       react-json-view: ^1.21.3
       react-scripts: 5.0.1
+      rimraf: ^3.0.2
     dependencies:
       antd: 4.24.1_biqbaboplfbrettd7655fr4n2y
       cra-template: 1.1.2
@@ -32,6 +35,9 @@ importers:
     devDependencies:
       copyfiles: 2.4.1
       cpx: 1.5.0
+      cross-env: 7.0.3
+      devtools: link:../devtools
+      rimraf: 3.0.2
 
   packages/docs:
     specifiers:
@@ -39,6 +45,7 @@ importers:
       '@docusaurus/plugin-google-analytics': 2.2.0
       '@docusaurus/preset-classic': 2.2.0
       '@docusaurus/theme-live-codeblock': 2.2.0
+      '@mdx-js/react': 1.6.22
       clsx: 1.1.1
       file-loader: 6.2.0
       prism-react-renderer: 1.2.1
@@ -50,6 +57,7 @@ importers:
       '@docusaurus/plugin-google-analytics': 2.2.0_yalvw3r2waubxycyb7k7qsruca
       '@docusaurus/preset-classic': 2.2.0_cuqacycu3pxuw5a2kqz4vb6b6i
       '@docusaurus/theme-live-codeblock': 2.2.0_yalvw3r2waubxycyb7k7qsruca
+      '@mdx-js/react': 1.6.22_react@18.2.0
       clsx: 1.1.1
       file-loader: 6.2.0_webpack@5.75.0
       prism-react-renderer: 1.2.1_react@18.2.0

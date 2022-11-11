@@ -15,8 +15,8 @@
   "scripts": {
     "copy": "copyfiles -f ./static/* ./build",
     "start": "react-scripts start",
-    "build:clean": "rimraf ./build",
-    "build": "pnpm build:clean && cross-env INLINE_RUNTIME_CHUNK=false react-scripts build && pnpm copy",
+    "build:clean": "pnpm rimraf ./build",
+    "build": "pnpm build:clean && pnpm cross-env INLINE_RUNTIME_CHUNK=false react-scripts build && pnpm copy",
     "build:chrome": "pnpm build && pnpm chrome",
     "chrome": "chrome http://localhost:3000 --new-window --auto-open-devtools-for-tabs --load-extension=%cd%/build --profile-directory=Guest",
     "test": "react-scripts test",
@@ -36,6 +36,9 @@
   },
   "devDependencies": {
     "copyfiles": "^2.4.1",
-    "cpx": "^1.5.0"
+    "cpx": "^1.5.0",
+    "cross-env": "^7.0.3",
+    "devtools": "workspace:*",
+    "rimraf": "^3.0.2"
   }
 }
