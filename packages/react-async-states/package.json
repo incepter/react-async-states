@@ -33,10 +33,9 @@
     "test": "cross-env CI=1 react-scripts test --env=jsdom",
     "test:watch": "react-scripts test --env=jsdom",
     "clean:dist": "rimraf dist",
-    "build": "rimraf dist && cross-env webpack --config ./webpack/webpack.prod.config.js --color --progress",
-    "start": "rimraf dist && cross-env NODE_ENV=development webpack --config ./webpack/webpack.dev.config.js --color --progress --mode development",
+    "start": "yarn dev",
     "prebuild": "rimraf dist",
-    "build:rollup": "yarn clean:dist && rollup -c rollup/rollup.config.js",
+    "build": "rollup -c rollup/rollup.config.js",
     "dev": "yarn clean:dist && rollup -c rollup/rollup.config.dev.js -w"
   },
   "peerDependencies": {
@@ -54,16 +53,12 @@
     "@testing-library/react-hooks": "^8.0.1",
     "@types/jest": "^29.2.1",
     "circular-dependency-plugin": "^5.2.2",
-    "compression-webpack-plugin": "10.0.0",
-    "copy-webpack-plugin": "11.0.0",
     "cross-env": "^7.0.3",
-    "eslint-config-standard": "^11.0.0",
-    "eslint-config-standard-react": "^6.0.0",
     "eslint-plugin-import": "^2.13.0",
-    "eslint-plugin-node": "^7.0.1",
-    "eslint-plugin-promise": "^4.0.0",
     "eslint-plugin-react": "^7.10.0",
     "eslint-plugin-standard": "^3.1.0",
+    "eslint-config-standard": "^11.0.0",
+    "eslint-config-standard-react": "^6.0.0",
     "react-scripts": "5.0.1",
     "react-test-renderer": "18.2.0",
     "rollup": "^3.2.5",
@@ -74,21 +69,13 @@
     "rollup-plugin-json": "^4.0.0",
     "rollup-plugin-node-resolve": "^5.2.0",
     "rollup-plugin-sourcemaps": "^0.6.3",
-    "rollup-plugin-typescript2": "^0.34.1",
-    "source-map-loader": "4.0.1",
-    "terser-webpack-plugin": "5.3.6",
-    "ts-loader": "9.4.1",
-    "webpack": "5.74.0",
-    "webpack-bundle-analyzer": "4.7.0",
-    "webpack-cli": "4.10.0",
-    "webpack-hot-middleware": "2.25.2"
+    "rollup-plugin-typescript2": "^0.34.1"
   },
   "jest": {
     "coveragePathIgnorePatterns": [
       "__tests__",
       "index-prod.js",
       "configuration-warn",
-      "AsyncStateComponent",
       "type*.ts"
     ],
     "testMatch": [
