@@ -23,7 +23,7 @@ module.exports = {
     {
       format: 'es',
       sourcemap: true,
-      file: `dist/es/index.js`,
+      file: `dist/index.js`,
       name: "ReactAsyncStates",
       globals: {
         react: 'React',
@@ -41,15 +41,5 @@ module.exports = {
     resolve(),
     commonjs(),
     typescript(),
-
-    copy({
-      hook: 'closeBundle',
-      targets: [
-        {
-          dest: 'dist',
-          src: `dist/umd/${libraryName}`,
-        },
-      ]
-    })
   ],
 };

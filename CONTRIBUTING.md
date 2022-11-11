@@ -4,11 +4,11 @@ First fork the project and clone it locally.
 ```shell
 git clone <repo_url>
 cd react-async-states
-yarn install
+pnpm i -r
 cd packages/react-async-states
-yarn start
+pnpm dev
 ```
 
-After working on something, make sure to add tests and that no existing test broke (`yarn test`).
+After working on something, make sure to add tests and that no existing test broke (`pnpm test`).
 
 Then push and create a pull request.

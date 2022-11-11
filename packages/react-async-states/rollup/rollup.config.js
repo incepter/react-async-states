@@ -1,4 +1,3 @@
-const path = require('path');
 const resolve = require('@rollup/plugin-node-resolve');
 const commonjs = require('@rollup/plugin-commonjs');
 const typescript = require('rollup-plugin-typescript2');
@@ -9,25 +8,139 @@ const gzipPlugin = require('rollup-plugin-gzip');
 const terser = require('@rollup/plugin-terser');
 const copy = require('rollup-plugin-copy');
 const del = require('rollup-plugin-delete');
-const tsConfig = require("../tsconfig.json");
 
 const libraryName = 'react-async-states';
 
-module.exports = [
-  buildLibrary({
-    sourcemap: true,
-    mode: "development",
+const esModulesBuild = [
+  {
+    input: `src/index.ts`,
+    output: {
+      format: "esm",
+      sourcemap: true,
+      file: `dist/index.js`,
+      globals: {
+        react: 'React',
+        'react/jsx-runtime': 'jsxRuntime',
+      }
+    },
+    external: ['react', 'react/jsx-runtime'],
+    treeshake: {
+      moduleSideEffects: false,
+    },
     plugins: [
       json(),
       resolve(),
       babel({babelHelpers: 'bundled'}),
       typescript(),
       commonjs(),
+    ]
+  }
+];
+
+const webModulesBuild = [
+  {
+    input: `src/index.ts`,
+    output: {
+      format: "esm",
+      sourcemap: true,
+      file: `dist/${libraryName}.development.js`,
+      globals: {
+        react: 'React',
+        'react/jsx-runtime': 'jsxRuntime',
+      }
+    },
+    external: ['react', 'react/jsx-runtime'],
+    treeshake: {
+      moduleSideEffects: false,
+    },
+    plugins: [
+      json(),
+      resolve(),
+      babel({babelHelpers: 'bundled'}),
+      typescript(),
+      commonjs(),
+      replace({
+        preventAssignment: true,
+        values: { "process.env.NODE_ENV": JSON.stringify("development") },
+      }),
+    ]
+  },
+  {
+    input: `src/index.ts`,
+    output: {
+      format: "esm",
+      sourcemap: false,
+      file: `dist/${libraryName}.production.js`,
+      globals: {
+        react: 'React',
+        'react/jsx-runtime': 'jsxRuntime',
+      }
+    },
+    external: ['react', 'react/jsx-runtime'],
+    treeshake: {
+      moduleSideEffects: false,
+    },
+    plugins: [
+      json(),
+      resolve(),
+      babel({babelHelpers: 'bundled'}),
+      typescript(),
+      commonjs(),
+      replace({
+        preventAssignment: true,
+        values: { "process.env.NODE_ENV": JSON.stringify("production") },
+      })
+    ]
+  }
+];
+
+const umdBuild = [
+  {
+    input: `src/index.ts`,
+    output: [
+      {
+        format: "umd",
+        sourcemap: true,
+        name: "ReactAsyncStates",
+        file: `dist/umd/${libraryName}.development.js`,
+        globals: {
+          react: 'React',
+          'react/jsx-runtime': 'jsxRuntime',
+        }
+      },
     ],
-  }),
-  buildLibrary({
-    sourcemap: false,
-    mode: "production",
+    external: ['react', 'react/jsx-runtime'],
+    treeshake: {
+      moduleSideEffects: false,
+    },
+    plugins: [
+      json(),
+      resolve(),
+      babel({
+        babelHelpers: "bundled",
+      }),
+      typescript(),
+      commonjs(),
+    ]
+  },
+  {
+    input: `src/index.ts`,
+    output: [
+      {
+        format: "umd",
+        sourcemap: true,
+        name: "ReactAsyncStates",
+        file: `dist/umd/${libraryName}.production.js`,
+        globals: {
+          react: 'React',
+          'react/jsx-runtime': 'jsxRuntime',
+        }
+      },
+    ],
+    external: ['react', 'react/jsx-runtime'],
+    treeshake: {
+      moduleSideEffects: false,
+    },
     plugins: [
       replace({
         preventAssignment: true,
@@ -43,27 +156,10 @@ module.exports = [
       copy({
         targets: [
           {
+            dest: 'dist/umd',
             rename: 'index.js',
             src: 'src/index-prod.js',
-            dest: ['dist/es', 'dist/umd'],
           },
-        ]
-      }),
-      copy({
-        targets: [
-          {
-            dest: 'dist',
-            src: `dist/umd/${libraryName}`,
-          },
-        ]
-      }),
-      del({
-        hook: 'closeBundle',
-        targets: [
-          `dist/es/shared`,
-          `dist/umd/shared`,
-          `dist/es/${libraryName}`,
-          `dist/umd/${libraryName}`,
         ]
       }),
       copy({
@@ -75,37 +171,19 @@ module.exports = [
           },
         ]
       }),
-    ],
-  }),
+      del({
+        hook: 'closeBundle',
+        targets: [
+          `dist/umd/shared`,
+          `dist/umd/${libraryName}`,
+        ]
+      }),
+    ]
+  }
 ];
 
-function buildLibrary({mode, sourcemap, plugins}) {
-  return {
-    plugins,
-    input: `src/index.ts`,
-    output: [
-      {
-        sourcemap,
-        format: "umd",
-        name: "ReactAsyncStates",
-        file: `dist/umd/${libraryName}.${mode}.js`,
-        globals: {
-          react: 'React',
-          'react/jsx-runtime': 'jsxRuntime',
-        }
-      },
-      {
-        format: "es",
-        file: `dist/es/${libraryName}.${mode}.js`,
-        globals: {
-          react: 'React',
-          'react/jsx-runtime': 'jsxRuntime',
-        }
-      },
-    ],
-    external: ['react', 'react/jsx-runtime'],
-    treeshake: {
-      moduleSideEffects: false,
-    },
-  };
-}
+module.exports = [
+  ...esModulesBuild,
+  ...webModulesBuild,
+  ...umdBuild,
+];
