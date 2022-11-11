@@ -18,7 +18,7 @@ import AsyncState, {
   FunctionSelectorItem,
   SimpleSelector
 } from "../async-state";
-import {readAsyncStateFromSource} from "../async-state/AsyncState";
+import {readInstanceFromSource} from "../async-state/AsyncState";
 import {useCallerName} from "./helpers/useCallerName";
 
 type SelectorSelf<T> = {
@@ -117,7 +117,7 @@ export function useSelector<T>(
           let nextMeter = (as as AsyncState<any>).subsIndex;
           subscriptionKey = `${caller}-$4-$${nextMeter}`;// 4: useSelector
         }
-        return as!.subscribe(onUpdate, subscriptionKey);
+        return (as as StateInterface<T>)!.subscribe(onUpdate, subscriptionKey);
       });
 
     return () => {
@@ -211,7 +211,7 @@ function computeInstancesMap(
   return fromKeys
     .reduce((result, current) => {
       if (isAsyncStateSource(current)) {
-        const asyncState = readAsyncStateFromSource(current as Source<any>);
+        const asyncState = readInstanceFromSource(current as Source<any>);
         result[asyncState.key] = asyncState;
       } else if (contextValue !== null) {
         result[current as string] = contextValue.get(current as string);
