@@ -33,7 +33,6 @@ const timeout = createSource(
   });
 
 
-// @ts-ignore
 function usersProducer(props) {
   const controller = new AbortController();
   const {signal} = controller;
@@ -45,7 +44,6 @@ function usersProducer(props) {
 }
 
 
-// @ts-ignore
 function producer(props) {
   return new Promise(res => {
     let id = setTimeout(() => res("12"), 2000);

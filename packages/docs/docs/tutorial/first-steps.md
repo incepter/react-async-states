@@ -384,6 +384,27 @@ array.
 The library's default dependencies are an empty array.
 :::
 
+:::note
+If you take a close look at how we used `useAsyncState` in the previous example,
+you'd see that our producer does not depend from any closure related to
+the component render:
+it can safely be moved to module level.
+```typescript
+const searchUserConfig = {
+  lazy: true,
+  producer: fetchUser,
+  runEffect: "debounce",
+  runEffectDurationMs: 400
+};
+
+export default function App() {
+  const {run, state}: UseAsyncState<User> = useAsyncState(searchUserConfig);
+  const {status, data, props} = state;
+  // the rest
+}
+```
+:::
+
 ### React to URL change
 
 Now, rather than writing the user id and reacting to a state variable, let's
@@ -440,7 +461,7 @@ allow-same-origin allow-scripts"
 
 
 
-### Skip the pending state
+### Skip the pending state if request is so fast
 
 To skip the pending state, the `skipPendingDelayMs` is used.
 

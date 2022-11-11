@@ -2,28 +2,20 @@ import * as React from "react";
 import {ReactNode} from "react";
 import {
   AbortFn,
-  AsyncStateKeyOrSource,
-  AsyncStateStatus, BaseSource,
+  AsyncStateManagerInterface,
+  AsyncStateStatus,
   CacheConfig,
   CachedState,
   ForkConfig,
   HoistToProviderConfig,
   Producer,
   ProducerConfig,
-  ProducerEffects,
-  ProducerProps,
   ProducerRunEffects,
   RenderStrategy,
   Source,
   State,
   StateInterface,
   StateUpdater
-} from "./async-state";
-import {
-  AsyncStateManagerInterface,
-  AsyncStateWatchKey,
-  ManagerWatchCallback,
-  ManagerWatchCallbackValue
 } from "./async-state";
 
 export interface AsyncStateInitializer<T> {
@@ -35,40 +27,16 @@ export interface AsyncStateInitializer<T> {
 export enum SubscriptionMode {
   LISTEN = "LISTEN", // simple listener
   HOIST = "HOIST", // hoisting a producer, for first time and intended to be shared, more like of an injection
-  STANDALONE = "STANDALONE", // working standalone even if inside provider
-  WAITING = "WAITING", // waits for the original to be hoisted
+  ALONE = "ALONE", // working standalone even if inside provider
+  WAIT = "WAIT", // waits for the original to be hoisted
   FORK = "FORK", // forking an existing one in the provider
-  NOOP = "NOOP", // a weird case that should not happen
-  SOURCE = "SOURCE", // subscription via source property
-  SOURCE_FORK = "SOURCE_FORK", // subscription via source property and fork
-  OUTSIDE_PROVIDER = "OUTSIDE_PROVIDER", // standalone outside provider
+  NA = "NA", // a weird case that should not happen
+  SRC = "SRC", // subscription via source property
+  SRC_FORK = "SRC_FORK", // subscription via source property and fork
+  OUTSIDE = "OUTSIDE", // standalone outside provider
 }
 
-export type StateContextValue = {
-  manager: AsyncStateManagerInterface,
-
-  getAllKeys(): string[],
-  get<T>(key: string): StateInterface<T>,
-  dispose<T>(asyncState: StateInterface<T>): boolean,
-  hoist<T>(key: string, instance: StateInterface<T>, hoistConfig?: HoistToProviderConfig): StateInterface<T>,
-
-  watchAll(cb: ManagerWatchCallback<any>),
-  notifyWatchers<T>(key: string, value: ManagerWatchCallbackValue<T>): void,
-  watch<T>(key: AsyncStateWatchKey, value: ManagerWatchCallback<T>): AbortFn,
-
-  run<T>(instance: StateInterface<T>, ...args: any[]): AbortFn,
-  runAsyncState<T>(
-    keyOrSource: AsyncStateKeyOrSource<T>,
-    lane: string | undefined,
-    ...args: any[]
-  ): AbortFn,
-
-  producerEffectsCreator<T>(props: ProducerProps<T>): ProducerEffects,
-
-  getPayload(): Record<string, any>,
-  mergePayload(partialPayload: Record<string, any>): void,
-}
-
+export type StateContextValue = AsyncStateManagerInterface;
 
 // use async state
 
@@ -78,13 +46,10 @@ interface BaseUseAsyncState<T, E = State<T>> {
   source?: Source<T>,
   mode: SubscriptionMode,
 
-  payload: Record<string, any> | null,
-
   replay(): AbortFn,
   abort(reason?: any): void,
   run(...args: any[]): AbortFn,
   setState: StateUpdater<T>,
-  replaceState: StateUpdater<T>,
   mergePayload(argv: Record<string, any>): void,
 
   uniqueId: number | undefined,
@@ -96,6 +61,7 @@ export interface UseAsyncState<T, E = State<T>> extends BaseUseAsyncState<T, E> 
   read(): E,
   version?: number,
   lastSuccess?: State<T>,
+  payload: Record<string, any> | null,
 }
 
 // interface NewUseAsyncState<T, E = State<T>> extends Source<T> {

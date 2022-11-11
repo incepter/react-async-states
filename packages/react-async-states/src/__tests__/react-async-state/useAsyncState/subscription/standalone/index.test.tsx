@@ -60,7 +60,7 @@ describe('should declare a standalone producer inside a provider', () => {
     const decrementBtn = screen.getByTestId("decrement");
     // then
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual(SubscriptionMode.STANDALONE);
+      .toEqual(SubscriptionMode.ALONE);
 
     // +1
     fireEvent.click(incrementBtn);
@@ -104,6 +104,6 @@ describe('should declare a standalone producer inside a provider', () => {
 
     // then
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual(SubscriptionMode.STANDALONE);
+      .toEqual(SubscriptionMode.ALONE);
   });
 });

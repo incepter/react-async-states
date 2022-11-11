@@ -7,6 +7,7 @@ import {
   StateProviderProps
 } from "../async-state";
 import {StateContextValue, UseAsyncStateContextType} from "../types.internal";
+import {AsyncStateEntries} from "../async-state/AsyncStateManager";
 
 // let didWarnAboutProviderDeprecated = false;
 /**
@@ -76,8 +77,8 @@ export function AsyncStateProvider(
   function disposeManager() {
     return function cleanup() {
       Promise.resolve().then(() => {
-        Object.values(manager.entries)
-          .forEach(entry => entry.value.dispose())
+        Object.values(manager.entries as AsyncStateEntries)
+          .forEach(entry => entry.instance.dispose())
       });
     }
   }
@@ -90,7 +91,7 @@ export function AsyncStateProvider(
 
   function onDirtyStatesChange() {
     for (const entry of dirtyStates.data) {
-      manager.dispose(entry.value);
+      manager.dispose(entry.instance);
     }
     // mutating this object here means un-referencing these entries
     // which should throw them to gc.
@@ -100,28 +101,13 @@ export function AsyncStateProvider(
   function onPayloadChange() {
     // propagate the new payload
     manager.mergePayload(payload);
-    for (const entry of Object.values(manager.entries)) {
-      entry.value.mergePayload(payload);
+    for (const entry of Object.values(manager.entries as AsyncStateEntries)) {
+      entry.instance.mergePayload(payload);
     }
   }
 
   function makeContextValue(): StateContextValue {
-    return {
-      manager,
-
-      get: manager.get,
-      run: manager.run,
-      hoist: manager.hoist,
-      watch: manager.watch,
-      dispose: manager.dispose,
-      watchAll: manager.watchAll,
-      getAllKeys: manager.getAllKeys,
-      getPayload: manager.getPayload,
-      mergePayload: manager.mergePayload,
-      runAsyncState: manager.runAsyncState,
-      notifyWatchers: manager.notifyWatchers,
-      producerEffectsCreator: manager.producerEffectsCreator,
-    };
+    return manager;
   }
 }
 

@@ -84,8 +84,8 @@ function ReplaceStateOriginal() {
   const {
     key,
     version,
-    state: {data},
-    replaceState
+    setState,
+    state: {data}
   } = useAsyncState(undefinedProducer, []);
 
   return (
@@ -98,7 +98,7 @@ function ReplaceStateOriginal() {
           color: "white",
           border: "5px solid red"
         }} value={data ?? ""}
-        onChange={e => replaceState(e.target.value)}/>
+        onChange={e => setState(e.target.value)}/>
     </>
   );
 }

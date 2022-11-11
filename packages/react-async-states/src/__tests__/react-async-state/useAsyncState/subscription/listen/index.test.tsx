@@ -63,7 +63,7 @@ describe('should subscribe to an async state in provider', () => {
       .toEqual(SubscriptionMode.LISTEN);
 
     expect(screen.getByTestId("mode-doesntExist").innerHTML)
-      .toEqual(SubscriptionMode.WAITING);
+      .toEqual(SubscriptionMode.WAIT);
 
     expect(screen.getByTestId("result-todos").innerHTML)
       .toEqual(JSON.stringify({

@@ -380,7 +380,6 @@ function makeContextValue(): AsyncStateContextValue {
       dispose: manager.dispose,
       watchAll: manager.watchAll,
       getAllKeys: manager.getAllKeys,
-      runAsyncState: manager.runAsyncState,
       notifyWatchers: manager.notifyWatchers,
       producerEffectsCreator: manager.producerEffectsCreator,
     };
@@ -428,7 +427,6 @@ const asyncStateEntries: AsyncStateEntries = Object
     watchers,
     watchAll,
     getAllKeys,
-    runAsyncState,
     notifyWatchers,
     setInitialStates
   };

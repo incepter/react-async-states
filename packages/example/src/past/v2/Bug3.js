@@ -5,7 +5,6 @@ import React from "react";
 import {
   createSource,
   useAsyncState,
-  runSource,
 } from "react-async-states";
 import SuspenseComponentTest from "./suspense";
 import SuspenseComponent2Test from "./suspense/index2";
@@ -39,13 +38,13 @@ async function fetchUser(props) {
 }
 
 const source = createSource("source", fetchUser, {resetStateOnDispose: false});
-runSource(source);
+source.run()
 
 const source2 = createSource("source2", fetchUser, {resetStateOnDispose: false});
-runSource(source2, 2);
+source2.run(2);
 
 const sourceNested = createSource("sourceNested", fetchUser, {resetStateOnDispose: false});
-runSource(sourceNested, 3);
+sourceNested.run(3);
 
 function DebouncedSpinner() {
   const [mounted, setMounted] = React.useState(true);

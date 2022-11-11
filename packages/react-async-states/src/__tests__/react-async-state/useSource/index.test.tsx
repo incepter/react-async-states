@@ -40,7 +40,7 @@ describe('should useSource', () => {
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("8");
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual(SubscriptionMode.SOURCE);
+      .toEqual(SubscriptionMode.SRC);
 
     act(() => {
       source.setState(5);

@@ -14,7 +14,7 @@ describe('should do basic subscription to an async state', () => {
       const {
         run,
         state,
-        replaceState
+        setState
       }: UseAsyncState<number, number> = useAsyncState({
         producer(props) {
           return props.args[0];
@@ -32,11 +32,11 @@ describe('should do basic subscription to an async state', () => {
       }
 
       function incrementReplaceState() {
-        replaceState(old => old.data + 1);
+        setState(old => old.data + 1);
       }
 
       function decrementReplaceState() {
-        replaceState(old => old.data - 1);
+        setState(old => old.data - 1);
       }
 
       return (

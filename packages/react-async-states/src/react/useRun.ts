@@ -1,33 +1,46 @@
 import * as React from "react";
-import {AbortFn, AsyncStateKeyOrSource} from "../async-state";
+import {AbortFn, AsyncStateKeyOrSource, Source} from "../async-state";
 import {AsyncStateContext} from "./context";
-import {
-  insideContextRunFn,
-  insideContextRunLaneFn,
-  outsideContextRunFn,
-  outsideContextRunLaneFn
-} from "../async-state/source-utils";
+import {isAsyncStateSource} from "../async-state/utils";
+import {StateContextValue} from "../types.internal";
 
-export function useRun<T>():
-  ((keyOrSource: AsyncStateKeyOrSource<T>, ...args: any[]) => AbortFn) {
-  const contextValue = React.useContext(AsyncStateContext);
+type RunFunction<T> = ((keyOrSource: AsyncStateKeyOrSource<T>, ...args: any[]) => AbortFn);
+type RunLaneFunction<T> = ((keyOrSource: AsyncStateKeyOrSource<T>, lane: string | undefined, ...args: any[]) => AbortFn);
 
-  return React.useMemo(() => {
-    if (contextValue === null) {
-      return outsideContextRunFn;
+function runLaneFn<T>(
+  contextValue: StateContextValue | null,
+  keyOrSource: AsyncStateKeyOrSource<T>,
+  lane: string | undefined,
+  ...args: any[]
+) {
+  if (isAsyncStateSource(keyOrSource)) {
+    return (keyOrSource as Source<T>).getLaneSource(lane).run(...args);
+  }
+  if (contextValue !== null) {
+    if (typeof keyOrSource === "string") {
+      let instance = contextValue.get<T>(keyOrSource);
+      if (instance) {
+        return contextValue.run(instance.getLane(lane), ...args);
+      }
     }
-    return insideContextRunFn(contextValue);
-  }, [contextValue]);
+  }
+  return undefined;
 }
 
-export function useRunLane<T>():
-  ((keyOrSource: AsyncStateKeyOrSource<T>, lane: string | undefined, ...args: any[]) => AbortFn) {
-  const contextValue = React.useContext(AsyncStateContext);
+function runFn<T>(
+  contextValue: StateContextValue | null,
+  keyOrSource: AsyncStateKeyOrSource<T>,
+  ...args: any[]
+) {
+  return runLaneFn(contextValue, keyOrSource, undefined, ...args);
+}
 
-  return React.useMemo(() => {
-    if (contextValue === null) {
-      return outsideContextRunLaneFn;
-    }
-    return insideContextRunLaneFn(contextValue);
-  }, [contextValue]);
+export function useRun<T>(): RunFunction<T> {
+  const contextValue = React.useContext(AsyncStateContext);
+  return React.useCallback(runFn.bind(null, contextValue), [contextValue]);
+}
+
+export function useRunLane<T>() : RunLaneFunction<T> {
+  const contextValue = React.useContext(AsyncStateContext);
+  return React.useCallback(runLaneFn.bind(null, contextValue), [contextValue]);
 }

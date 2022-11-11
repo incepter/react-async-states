@@ -9,18 +9,6 @@ export {AsyncStateProvider} from "./react/AsyncStateProvider";
 export {useSource, useSourceLane, useProducer} from "./react/useAsyncStateBase";
 
 export {
-  runSourceLane,
-  runSource,
-  replaceLaneState,
-  getLaneSource,
-  getState,
-  replaceState,
-  runpSource,
-  runpSourceLane,
-  invalidateCache
-} from "./async-state/source-utils";
-
-export {
   createSource,
 
   ProducerType,
@@ -30,7 +18,7 @@ export {
 
   AsyncStateManager,
 } from "./async-state";
-
+export {createLoaderProducer} from "./react/loader-producer"
 export {
   SubscriptionMode,
 } from "./types.internal";

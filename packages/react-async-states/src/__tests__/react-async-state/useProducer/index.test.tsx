@@ -48,7 +48,7 @@ describe('should useProducer', () => {
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("");
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual(SubscriptionMode.STANDALONE);
+      .toEqual(SubscriptionMode.ALONE);
 
     // +1
     fireEvent.click(incrementBtn);
@@ -101,7 +101,7 @@ describe('should useProducer', () => {
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("");
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual(SubscriptionMode.STANDALONE);
+      .toEqual(SubscriptionMode.ALONE);
 
     // +1
     fireEvent.click(incrementBtn);

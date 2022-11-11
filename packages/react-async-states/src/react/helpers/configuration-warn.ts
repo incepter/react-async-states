@@ -28,13 +28,13 @@ if (__DEV__) {
   irrelevantPropertiesByMode = {
     LISTEN: [...creationProperties, ...hoistProperties, ...forkProperties],
     HOIST: [...forkProperties],
-    STANDALONE: [...hoistProperties, ...forkProperties],
-    WAITING: [...creationProperties, ...hoistProperties, ...forkProperties],
+    ALONE: [...hoistProperties, ...forkProperties],
+    WAIT: [...creationProperties, ...hoistProperties, ...forkProperties],
     FORK: [...creationProperties, ...hoistProperties],
-    NOOP: [],
-    SOURCE: [...creationProperties, ...hoistProperties, ...forkProperties],
-    SOURCE_FORK: [...creationProperties, ...hoistProperties],
-    OUTSIDE_PROVIDER: [...hoistProperties, ...forkProperties],
+    NA: [],
+    SRC: [...creationProperties, ...hoistProperties, ...forkProperties],
+    SRC_FORK: [...creationProperties, ...hoistProperties],
+    OUTSIDE: [...hoistProperties, ...forkProperties],
   };
 }
 
