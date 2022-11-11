@@ -4,7 +4,6 @@ const typescript = require('rollup-plugin-typescript2');
 const json = require('@rollup/plugin-json');
 const {babel} = require('@rollup/plugin-babel');
 const copy = require('rollup-plugin-copy');
-const del = require('rollup-plugin-delete');
 
 const libraryName = 'react-async-states';
 
@@ -37,11 +36,11 @@ module.exports = {
     include: 'src/**',
   },
   plugins: [
+    babel({babelHelpers: 'bundled'}),
     json(),
     resolve(),
-    babel({babelHelpers: 'bundled'}),
-    typescript(),
     commonjs(),
+    typescript(),
 
     copy({
       hook: 'closeBundle',
