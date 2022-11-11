@@ -3,6 +3,10 @@ const commonjs = require('@rollup/plugin-commonjs');
 const typescript = require('rollup-plugin-typescript2');
 const json = require('@rollup/plugin-json');
 const {babel} = require('@rollup/plugin-babel');
+const copy = require('rollup-plugin-copy');
+const del = require('rollup-plugin-delete');
+
+const libraryName = 'react-async-states';
 
 module.exports = {
   input: `src/index.ts`,
@@ -38,5 +42,15 @@ module.exports = {
     typescript(),
     commonjs(),
     babel({babelHelpers: 'bundled'}),
+
+    copy({
+      hook: 'closeBundle',
+      targets: [
+        {
+          dest: 'dist',
+          src: `dist/umd/${libraryName}`,
+        },
+      ]
+    })
   ],
 };

@@ -24,10 +24,10 @@ const router = createBrowserRouter([
 
 function MyApp() {
   const result = useLoaderData();
-  console.log('useLoaderData', result);
+  console.log('useLoaderData', result.version);
 
   const watchedResult = useSource(result.source);
-  console.log('useSourceResult', watchedResult);
+  console.log('useSourceResult', watchedResult.version);
 
   const {state} = watchedResult;
   return <button onClick={() => result.replay()}>replay

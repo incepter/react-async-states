@@ -7,8 +7,7 @@ import {
   useAsyncState,
   AsyncStateManager,
   createSource,
-  RenderStrategy,
-  StateBoundary, useCurrentState
+  RenderStrategy, useSource
 } from "react-async-states";
 
 import App from "./past/Subscription"
@@ -140,7 +139,7 @@ function CounterHoister() {
 
 //
 function ProfilesView(props) {
-  const {state, run} = useCurrentState();
+  const {state, run} = useSource(profilesList);
 
   if (state.status !== AsyncStateStatus.error && state.status !== AsyncStateStatus.success) {
     return "Pending..." + state.status;

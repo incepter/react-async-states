@@ -1,7 +1,6 @@
 const path = require('path');
 const resolve = require('@rollup/plugin-node-resolve');
 const commonjs = require('@rollup/plugin-commonjs');
-const sourceMaps = require('rollup-plugin-sourcemaps');
 const typescript = require('rollup-plugin-typescript2');
 const json = require('@rollup/plugin-json');
 const replace = require('@rollup/plugin-replace');
@@ -9,6 +8,7 @@ const {babel} = require('@rollup/plugin-babel');
 const gzipPlugin = require('rollup-plugin-gzip');
 const terser = require('@rollup/plugin-terser');
 const copy = require('rollup-plugin-copy');
+const del = require('rollup-plugin-delete');
 const tsConfig = require("../tsconfig.json");
 
 const libraryName = 'react-async-states';
@@ -43,9 +43,27 @@ module.exports = [
       copy({
         targets: [
           {
-            dest: path.join(process.cwd(), "dist/umd/index.js"),
-            src: path.join(process.cwd(), "src/index-prod.js")
+            rename: 'index.js',
+            src: 'src/index-prod.js',
+            dest: ['dist/es', 'dist/umd'],
           },
+        ]
+      }),
+      copy({
+        targets: [
+          {
+            dest: 'dist',
+            src: `dist/umd/${libraryName}`,
+          },
+        ]
+      }),
+      del({
+        hook: 'closeBundle',
+        targets: [
+          `dist/es/shared`,
+          `dist/umd/shared`,
+          `dist/es/${libraryName}`,
+          `dist/umd/${libraryName}`,
         ]
       })
     ],

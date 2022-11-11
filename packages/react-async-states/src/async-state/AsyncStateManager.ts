@@ -10,12 +10,7 @@ import AsyncState, {
   ProducerRunInput,
   Source,
   State,
-  StateInterface
-} from "./AsyncState";
-
-import {isAsyncStateSource,} from "./utils";
-
-import {
+  StateInterface,
   readInstanceFromSource,
   runWhileSubscribingToNextResolve,
   standaloneProducerRunEffectFunction,
@@ -23,7 +18,7 @@ import {
   standaloneProducerSelectEffectFunction
 } from "./AsyncState";
 
-import {EMPTY_OBJECT} from "shared";
+import {isAsyncStateSource,} from "./utils";
 
 const listenersKey = Symbol();
 
@@ -35,13 +30,13 @@ export function AsyncStateManager(
 ): AsyncStateManagerInterface {
 
   let asyncStateEntries: AsyncStateEntries = Object
-    .values(initializer ?? EMPTY_OBJECT)
+    .values(initializer ?? {})
     .reduce(
       createInitialAsyncStatesReducer,
       Object.create(null)
     ) as AsyncStateEntries;
 
-  let payload : Record<string, any> = {};
+  let payload: Record<string, any> = {};
   // stores all listeners/watchers about an async state
   let watchers: ManagerWatchers = Object.create(null);
 
@@ -71,14 +66,17 @@ export function AsyncStateManager(
 
   return output;
 
+  function getInitialStatesMap(initialStates?: InitialStates) {
+    const values = Object.values(initialStates ?? {});
+
+    return values.reduce((acc, current) => {
+      acc[current.key] = current;
+      return acc;
+    }, {} as Record<string, ExtendedInitialAsyncState<any>>);
+  }
+
   function setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[] {
-    const newStatesMap: Record<string, ExtendedInitialAsyncState<any>> =
-      Object
-        .values(initialStates ?? EMPTY_OBJECT)
-        .reduce((result, current) => {
-          result[current.key] = current;
-          return result;
-        }, Object.create(null)) as Record<string, ExtendedInitialAsyncState<any>>;
+    const newStatesMap = getInitialStatesMap(initialStates);
 
     const previousStates = {...asyncStateEntries};
     // basically, this is the same object reference...
@@ -367,7 +365,7 @@ function managerProducerRunpFunction<T>(
     }
     return runWhileSubscribingToNextResolve(instance, props, args);
   }
-  return standaloneProducerRunpEffectFunction(props,input, config, ...args);
+  return standaloneProducerRunpEffectFunction(props, input, config, ...args);
 }
 
 function managerProducerSelectFunction<T>(
@@ -422,7 +420,10 @@ export type AsyncStateManagerInterface = {
     ...args: any[]
   ): AbortFn,
   get<T>(key: string): StateInterface<T>,
-  hoist<T>(key: string, instance: StateInterface<T>, hoistConfig?: HoistToProviderConfig): StateInterface<T>,
+  hoist<T>(
+    key: string, instance: StateInterface<T>,
+    hoistConfig?: HoistToProviderConfig
+  ): StateInterface<T>,
   dispose<T>(asyncState: StateInterface<T>): boolean,
   watch<T>(
     key: AsyncStateWatchKey,
@@ -489,4 +490,5 @@ export interface FunctionSelectorItem<T> extends Partial<State<T>> {
   lastSuccess?: State<T>,
   cache?: Record<string, CachedState<T>> | null,
 }
+
 //endregion
