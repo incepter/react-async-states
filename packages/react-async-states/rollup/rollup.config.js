@@ -161,7 +161,7 @@ const umdBuild = [
     output: [
       {
         format: "umd",
-        sourcemap: true,
+        sourcemap: false,
         name: "ReactAsyncStates",
         file: `dist/umd/${libraryName}.production.js`,
         globals: {

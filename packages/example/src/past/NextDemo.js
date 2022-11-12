@@ -1,7 +1,7 @@
 import React from "react";
 import {
   createSource,
-  AsyncStateComponent,
+  StateBoundary,
   useAsyncState
 } from "react-async-states";
 
@@ -33,7 +33,7 @@ const usersList = createSource("global", () => timeout(400).then(() => fetchUser
 
 export default function Demo() {
   return (
-    <AsyncStateComponent
+    <StateBoundary
       strategy={1}
       error={Error}
       fallback={Loading}

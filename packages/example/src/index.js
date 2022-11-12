@@ -10,7 +10,7 @@ import {
   RenderStrategy, useSource
 } from "react-async-states";
 
-import App from "./past/Subscription"
+import App from "./past/App"
 
 import './index.css'
 import RRDemo from "./RRDemo";
@@ -79,7 +79,8 @@ root.render(
     <React.StrictMode>
       <AsyncStateProvider>
         {/*<Wrapper initialValue={true}>*/}
-          <RRDemo />
+          <App />
+          {/*<RRDemo />*/}
           {/*<CounterDetails/>*/}
         {/*</Wrapper>*/}
       </AsyncStateProvider>
