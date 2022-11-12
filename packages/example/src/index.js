@@ -16,7 +16,6 @@ import './index.css'
 import RRDemo from "./RRDemo";
 
 async function fetchProfiles(props) {
-
   const controller = new AbortController();
 
   props.onAbort(() => {
@@ -34,13 +33,29 @@ async function fetchProfiles(props) {
   ).then(r => r.json());
 }
 
-const profilesList = createSource("profiles", fetchProfiles, {
+const profileDetails = createSource("profiles", fetchProfiles, {
 // runEffect: "delay",
 // runEffectDurationMs: 800
 });
+
+//
+// profileDetails.runc({
+//   args: [1],
+//   onSuccess(successState) {
+//     console.log('user 1 OK!!!!', successState);
+//   },
+//   onError(errorState) {
+//     console.error('user 1 KO!!!!', errorState);
+//   },
+//   onAborted(abortedState) {
+//     console.log('user 1 abort!!!!', abortedState);
+//   },
+// });
+
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
-// runpSource(profilesList)
+// runpSource(profileDetails)
 //   .then(() => {
 //     root.render(
 //       <React.StrictMode>
@@ -78,7 +93,7 @@ root.render(
       {/*<StateBoundary*/}
       {/*  strategy={RenderStrategy.FetchThenRender}*/}
       {/*  config={{*/}
-      {/*  source: profilesList,*/}
+      {/*  source: profileDetails,*/}
       {/*  autoRunArgs: [2]*/}
       {/*}} render={{*/}
       {/*  [AsyncStateStatus.error]: ProfilesView,*/}
@@ -139,7 +154,7 @@ function CounterHoister() {
 
 //
 function ProfilesView(props) {
-  const {state, run} = useSource(profilesList);
+  const {state, run} = useSource(profileDetails);
 
   if (state.status !== AsyncStateStatus.error && state.status !== AsyncStateStatus.success) {
     return "Pending..." + state.status;

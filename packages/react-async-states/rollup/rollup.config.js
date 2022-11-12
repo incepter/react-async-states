@@ -31,7 +31,15 @@ const esModulesBuild = [
       json(),
       resolve(),
       babel({babelHelpers: 'bundled'}),
-      typescript(),
+      typescript({
+        tsconfigOverride: {
+          exclude: [
+            "node_modules",
+            "src/__tests__",
+            "src/index-prod.js"
+          ]
+        }
+      }),
       commonjs(),
     ]
   }
@@ -57,7 +65,15 @@ const webModulesBuild = [
       json(),
       resolve(),
       babel({babelHelpers: 'bundled'}),
-      typescript(),
+      typescript({
+        tsconfigOverride: {
+          exclude: [
+            "node_modules",
+            "src/__tests__",
+            "src/index-prod.js"
+          ]
+        }
+      }),
       commonjs(),
       replace({
         preventAssignment: true,
@@ -84,7 +100,15 @@ const webModulesBuild = [
       json(),
       resolve(),
       babel({babelHelpers: 'bundled'}),
-      typescript(),
+      typescript({
+        tsconfigOverride: {
+          exclude: [
+            "node_modules",
+            "src/__tests__",
+            "src/index-prod.js"
+          ]
+        }
+      }),
       commonjs(),
       replace({
         preventAssignment: true,
@@ -119,7 +143,15 @@ const umdBuild = [
       babel({
         babelHelpers: "bundled",
       }),
-      typescript(),
+      typescript({
+        tsconfigOverride: {
+          exclude: [
+            "node_modules",
+            "src/__tests__",
+            "src/index-prod.js"
+          ]
+        }
+      }),
       commonjs(),
     ]
   },
@@ -149,7 +181,15 @@ const umdBuild = [
       json(),
       resolve(),
       babel({babelHelpers: 'bundled'}),
-      typescript(),
+      typescript({
+        tsconfigOverride: {
+          exclude: [
+            "node_modules",
+            "src/__tests__",
+            "src/index-prod.js"
+          ]
+        }
+      }),
       commonjs(),
       gzipPlugin.default(),
       terser(),

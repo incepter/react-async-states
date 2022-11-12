@@ -3,7 +3,7 @@
     "sourceMap": true,
     "strictNullChecks": true,
     "module": "esnext",
-    "jsx": "react-jsx",
+    "jsx": "react",
     "target": "es5",
     "allowJs": true,
     "moduleResolution": "Node",
@@ -19,6 +19,7 @@
     "declarationDir": "dist",
     "lib": [
       "dom",
+      "ES2015",
       "dom.iterable",
       "esnext"
     ],
@@ -30,7 +31,6 @@
   ],
   "exclude": [
     "node_modules",
-    "src/__tests__",
     "src/index-prod.js"
   ]
 }

@@ -1,12 +1,10 @@
 import {
   createSource,
-  Producer,
   ProducerConfig,
   ProducerProps, Source, State
 } from "../async-state";
 import {
   makeUseAsyncStateReturnValue,
-  runAsyncStateSubscriptionFn
 } from "./useAsyncStateBase";
 import {readInstanceFromSource} from "../async-state/AsyncState";
 import {SubscriptionMode, UseAsyncState} from "../types.internal";
@@ -30,9 +28,7 @@ export function createLoaderProducer<T>(
     const result = await source.runp(props);
     let mode = SubscriptionMode.SRC;
 
-    return makeUseAsyncStateReturnValue(
-      instance, result, source.key,
-      runAsyncStateSubscriptionFn(mode, instance, null), mode);
+    return makeUseAsyncStateReturnValue(instance, result, source.key, null, mode);
   }
 }
 

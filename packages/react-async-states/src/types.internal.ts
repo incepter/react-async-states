@@ -17,6 +17,7 @@ import {
   StateInterface,
   StateUpdater
 } from "./async-state";
+import {RUNCProps} from "./async-state/AsyncState";
 
 export interface AsyncStateInitializer<T> {
   key?: string,
@@ -40,7 +41,7 @@ export type StateContextValue = AsyncStateManagerInterface;
 
 // use async state
 
-interface BaseUseAsyncState<T, E = State<T>> {
+export interface BaseUseAsyncState<T, E = State<T>> {
   key: string,
 
   source?: Source<T>,
@@ -49,6 +50,10 @@ interface BaseUseAsyncState<T, E = State<T>> {
   replay(): AbortFn,
   abort(reason?: any): void,
   run(...args: any[]): AbortFn,
+  runp(...args: any[]): Promise<State<T>>,
+
+  runc(props: RUNCProps<T>): AbortFn,
+  runpc(props: RUNCProps<T>): Promise<State<T>>,
   setState: StateUpdater<T>,
   mergePayload(argv: Record<string, any>): void,
 
@@ -228,7 +233,6 @@ export type SubscriptionInfo<T, E> = {
   deps: readonly any[],
 
   dispose: () => boolean | undefined,
-  run: (...args: any[]) => AbortFn,
 
   baseReturn: BaseUseAsyncState<T, E>,
 }

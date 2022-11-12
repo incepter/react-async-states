@@ -335,12 +335,41 @@ class AsyncState<T> implements StateInterface<T> {
   }
 
   runp(createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]) {
+    return this.runpWithCallbacks(createProducerEffects, undefined, args);
+  }
+
+  runc(createProducerEffects: ProducerEffectsCreator<T>, props?: RUNCProps<T>) {
+    return this.runWithCallbacks(createProducerEffects, props, props?.args ?? []);
+  }
+
+  runpc(createProducerEffects: ProducerEffectsCreator<T>, props?: RUNCProps<T>) {
+    return this.runpWithCallbacks(
+      createProducerEffects,
+      props,
+      props?.args || []
+    )
+  }
+
+  runpWithCallbacks(
+    createProducerEffects: ProducerEffectsCreator<T>,
+    userlandCallbacks: ProducerCallbacks<T> | undefined,
+    args: any[]
+  ) {
     const that = this;
     return new Promise<State<T>>(function runpPromise(resolve) {
       const callbacks: ProducerCallbacks<T> = {
-        onError: resolve,
-        onSuccess: resolve,
-        onAborted: resolve,
+        onError(state) {
+          resolve(state);
+          userlandCallbacks?.onError?.(state);
+        },
+        onSuccess(state) {
+          resolve(state);
+          userlandCallbacks?.onSuccess?.(state);
+        },
+        onAborted(state) {
+          resolve(state);
+          userlandCallbacks?.onAborted?.(state);
+        },
       };
       that.runWithCallbacks(createProducerEffects, callbacks, args);
     });
@@ -850,6 +879,8 @@ function makeSource<T>(instance: StateInterface<T>): Readonly<Source<T>> {
     replaceProducer: instance.replaceProducer,
     run: instance.run.bind(instance, standaloneProducerEffectsCreator),
     runp: instance.runp.bind(instance, standaloneProducerEffectsCreator),
+    runc: instance.runc.bind(instance, standaloneProducerEffectsCreator),
+    runpc: instance.runpc.bind(instance, standaloneProducerEffectsCreator),
 
     getLaneSource(lane?: string) {
       return instance.getLane(lane)._source;
@@ -1241,12 +1272,6 @@ export interface BaseSource<T> {
 
   replaceProducer(newProducer: Producer<any> | undefined),
 
-  run(
-    createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]): AbortFn,
-
-  runp(
-    createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]): Promise<State<T>>,
-
   // cache
   invalidateCache(cacheKey?: string): void,
 
@@ -1313,6 +1338,22 @@ export interface StateInterface<T> extends BaseSource<T> {
     callbacks: ProducerCallbacks<T> | undefined,
     args: any[]
   ),
+
+  run(
+    createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]): AbortFn,
+
+  runp(
+    createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]): Promise<State<T>>,
+
+  runc(
+    createProducerEffects: ProducerEffectsCreator<T>, props?: RUNCProps<T>): AbortFn,
+
+  runpc(
+    createProducerEffects: ProducerEffectsCreator<T>, props: RUNCProps<T>): Promise<State<T>>,
+}
+
+export interface RUNCProps<T> extends ProducerCallbacks<T> {
+  args?: any[],
 }
 
 export enum AsyncStateStatus {
@@ -1365,9 +1406,9 @@ export type RunIndicators = {
 }
 
 export type ProducerCallbacks<T> = {
-  onAborted(aborted: State<T>),
-  onError(errorState: State<T>),
-  onSuccess(successState: State<T>),
+  onAborted?(aborted: State<T>),
+  onError?(errorState: State<T>),
+  onSuccess?(successState: State<T>),
 }
 
 export type ProducerSavedProps<T> = {
@@ -1417,11 +1458,13 @@ export type StateUpdater<T> = (
 ) => void;
 
 export interface Source<T> extends BaseSource<T> {
-  run: (...args: any[]) => AbortFn,
-  runp: (...args: any[]) => Promise<State<T>>,
+  run(...args: any[]): AbortFn,
+  runp(...args: any[]): Promise<State<T>>,
+
+  runc(props: RUNCProps<T>): AbortFn,
+  runpc(props: RUNCProps<T>): Promise<State<T>>,
 
   removeLane(laneKey?: string): boolean,
-
   getLaneSource(laneKey?: string): Source<T>,
 }
 
