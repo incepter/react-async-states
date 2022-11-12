@@ -1,9 +1,4 @@
-import {
-  __DEV__,
-  isGenerator,
-  isPromise,
-  shallowClone,
-} from "shared";
+import {__DEV__, isGenerator, isPromise, shallowClone,} from "shared";
 import {
   asyncStatesKey,
   didNotExpire,
@@ -1432,12 +1427,6 @@ export enum ProducerType {
   promise = 2,
   generator = 3,
   notProvided = 4,
-}
-
-export enum RenderStrategy {
-  FetchAsYouRender = 0,
-  FetchThenRender = 1,
-  RenderThenFetch = 2,
 }
 
 export type ProducerConfig<T> = {

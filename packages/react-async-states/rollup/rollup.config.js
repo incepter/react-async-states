@@ -110,6 +110,7 @@ const webModulesBuild = [
         }
       }),
       commonjs(),
+      terser(),
       replace({
         preventAssignment: true,
         values: { "process.env.NODE_ENV": JSON.stringify("production") },

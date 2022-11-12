@@ -11,7 +11,6 @@ import {
   Producer,
   ProducerConfig,
   ProducerRunEffects,
-  RenderStrategy,
   Source,
   State,
   StateInterface,
@@ -169,6 +168,12 @@ export type UseAsyncStateConfiguration<T, E = State<T>> = {
   subscriptionKey?: string,
   selector: useSelector<T, E>,
   events?: UseAsyncStateEvents<T>,
+}
+
+export enum RenderStrategy {
+  FetchAsYouRender = 0,
+  FetchThenRender = 1,
+  RenderThenFetch = 2,
 }
 
 export type StateBoundaryProps<T, E> = {

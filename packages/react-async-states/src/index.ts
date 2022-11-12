@@ -8,11 +8,11 @@ export {AsyncStateProvider} from "./react/AsyncStateProvider";
 
 export {useSource, useSourceLane, useProducer} from "./react/useAsyncStateBase";
 
+
 export {
   createSource,
 
   ProducerType,
-  RenderStrategy,
   AsyncStateStatus,
   ProducerRunEffects,
 
@@ -20,8 +20,11 @@ export {
 } from "./async-state";
 export {createLoaderProducer} from "./react/loader-producer"
 export {
+  RenderStrategy,
   SubscriptionMode,
 } from "./types.internal";
+
+export {StateBoundary, useCurrentState} from "./react/StateBoundary";
 
 export type {
   State,
