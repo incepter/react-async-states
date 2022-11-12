@@ -52,7 +52,6 @@ export interface BaseUseAsyncState<T, E = State<T>> {
   runp(...args: any[]): Promise<State<T>>,
 
   runc(props: RUNCProps<T>): AbortFn,
-  runpc(props: RUNCProps<T>): Promise<State<T>>,
   setState: StateUpdater<T>,
   mergePayload(argv: Record<string, any>): void,
 

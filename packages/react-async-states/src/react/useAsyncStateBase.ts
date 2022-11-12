@@ -905,7 +905,6 @@ function makeUseAsyncStateBaseReturnValue<T, E>(
       // @ts-ignore
       runp: noop as ((...args: any[]) => Promise<State<T>>),
       // @ts-ignore
-      runpc: noop as ((...args: any[]) => Promise<State<T>>),
     } as BaseUseAsyncState<T, E>;
   }
 
@@ -926,7 +925,6 @@ function makeUseAsyncStateBaseReturnValue<T, E>(
     run: asyncState.run.bind(asyncState, effectsCreator),
     runp: asyncState.runp.bind(asyncState, effectsCreator),
     runc: asyncState.runc.bind(asyncState, effectsCreator),
-    runpc: asyncState.runpc.bind(asyncState, effectsCreator),
   };
 }
 

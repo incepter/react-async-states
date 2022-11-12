@@ -6,6 +6,7 @@
     "jsx": "react",
     "target": "es5",
     "allowJs": true,
+    "preserveSymlinks": true,
     "moduleResolution": "Node",
     "noImplicitAny": false,
     "skipLibCheck": true,
@@ -17,6 +18,7 @@
     "isolatedModules": true,
     "declaration": true,
     "declarationDir": "dist",
+    "types": ["node"],
     "lib": [
       "dom",
       "ES2015",
