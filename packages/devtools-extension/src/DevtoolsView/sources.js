@@ -2,7 +2,7 @@ import {
   createSource,
 } from "react-async-states";
 import { idsStateInitialValue, journalStateInitialValue } from "./dev-data";
-import { devtoolsJournalEvents, newDevtoolsEvents } from "devtools/eventTypes";
+import { devtoolsJournalEvents, devtoolsEvents } from "devtools/eventTypes";
 import { DevtoolsMessagesBuilder } from "./utils";
 
 const isDev = process.env.NODE_ENV !== "production";
@@ -60,15 +60,15 @@ function gatewayProducer() {
       return;
     }
     switch (message.type) {
-      case newDevtoolsEvents.setKeys: {
+      case devtoolsEvents.setKeys: {
         return keysSource.setState(message.payload);
       }
-      case newDevtoolsEvents.setAsyncState: {
+      case devtoolsEvents.setAsyncState: {
         console.log('received an async state', message);
         updatesMeter.setState(old => old.data + 1);
         return journalSource.getLaneSource(`${message.uniqueId}`).setState(message.payload);
       }
-      case newDevtoolsEvents.partialSync: {
+      case devtoolsEvents.partialSync: {
         applyPartialUpdate(message);
         return;
       }

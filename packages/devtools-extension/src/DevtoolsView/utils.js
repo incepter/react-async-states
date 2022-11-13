@@ -1,4 +1,4 @@
-import { newDevtoolsRequests } from "devtools/eventTypes";
+import { devtoolsRequests } from "devtools/eventTypes";
 
 export const DevtoolsMessagesBuilder = {
   init() {
@@ -10,7 +10,7 @@ export const DevtoolsMessagesBuilder = {
   },
   getKeys() {
     return {
-      type: newDevtoolsRequests.getKeys,
+      type: devtoolsRequests.getKeys,
       source: "async-states-devtools-panel",
       tabId: window.chrome.devtools.inspectedWindow.tabId
     };
@@ -19,7 +19,7 @@ export const DevtoolsMessagesBuilder = {
     return {
       uniqueId,
       source: "async-states-devtools-panel",
-      type: newDevtoolsRequests.getAsyncState,
+      type: devtoolsRequests.getAsyncState,
       tabId: window.chrome.devtools.inspectedWindow.tabId
     };
   },
@@ -30,7 +30,7 @@ export const DevtoolsMessagesBuilder = {
       isJson,
       uniqueId,
       source: "async-states-devtools-panel",
-      type: newDevtoolsRequests.changeAsyncState,
+      type: devtoolsRequests.changeAsyncState,
       tabId: window.chrome.devtools.inspectedWindow.tabId
     };
   },

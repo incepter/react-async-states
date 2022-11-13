@@ -6,7 +6,7 @@ import {
   isAsyncStateSource,
   sourceIsSourceSymbol,
 } from "./utils";
-import devtools from "devtools";
+import devtools from "../devtools";
 import {areRunEffectsSupported} from "shared/features";
 import {hideStateInstanceInNewObject} from "./hide-object";
 import {nextKey} from "./key-gen";
@@ -96,6 +96,7 @@ class AsyncState<T> implements StateInterface<T> {
     Object.preventExtensions(this);
 
     if (__DEV__) {
+      console.log('emitting creation', devtools)
       devtools.emitCreation(this);
     }
   }
@@ -217,7 +218,7 @@ class AsyncState<T> implements StateInterface<T> {
     function cleanup() {
       that.locks -= 1;
       delete that.subscriptions![subscriptionKey!];
-      if (__DEV__) devtools.emitUnsubscription(that, subscriptionKey);
+      if (__DEV__) devtools.emitUnsubscription(that, subscriptionKey!);
       if (that.config.resetStateOnDispose) {
         if (Object.values(that.subscriptions!).length === 0) {
           that.dispose();
@@ -232,7 +233,7 @@ class AsyncState<T> implements StateInterface<T> {
     };
     this.locks += 1;
 
-    if (__DEV__) devtools.emitSubscription(this, subscriptionKey);
+    if (__DEV__) devtools.emitSubscription(this, subscriptionKey!);
     return cleanup;
   }
 

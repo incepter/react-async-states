@@ -1,11 +1,11 @@
-export const newDevtoolsRequests = {
+export const devtoolsRequests = {
   init: "init",
   getKeys: "get-keys",
   getAsyncState: "get-async-state",
   changeAsyncState: "change-async-state",
 }
 
-export const newDevtoolsEvents = {
+export const devtoolsEvents = {
   setKeys: "set-keys",
   setAsyncState: "set-async-state",
 
