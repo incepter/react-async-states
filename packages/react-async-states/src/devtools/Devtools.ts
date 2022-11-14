@@ -2,7 +2,7 @@ import {
   ProducerSavedProps,
   State,
   StateInterface
-} from "./index";
+} from "../async-state";
 
 export enum DevtoolsRequest {
   init = "init",
@@ -78,10 +78,6 @@ interface DevtoolsInterface {
 function createDevtools(): DevtoolsInterface {
   if (!__DEV__) {
     return {} as DevtoolsInterface;
-  }
-
-  if (DEVTOOLS) {
-    return DEVTOOLS;
   }
 
   type CurrentUpdate = {
@@ -502,6 +498,6 @@ function createDevtools(): DevtoolsInterface {
   }
 }
 
-const DEVTOOLS = createDevtools();
+let DEVTOOLS = createDevtools();
 
 export default DEVTOOLS;

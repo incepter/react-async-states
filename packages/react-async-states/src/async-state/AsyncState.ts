@@ -6,7 +6,7 @@ import {
   isAsyncStateSource,
   sourceIsSourceSymbol,
 } from "./utils";
-import devtools from "./Devtools";
+import devtools from "../devtools/Devtools";
 import {areRunEffectsSupported} from "../shared/features";
 import {hideStateInstanceInNewObject} from "./hide-object";
 import {nextKey} from "./key-gen";
