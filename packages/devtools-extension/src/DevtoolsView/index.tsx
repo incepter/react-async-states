@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import Layout from "antd/lib/layout";
 import { useAsyncState, } from "react-async-states";
 import { gatewaySource } from "./sources";

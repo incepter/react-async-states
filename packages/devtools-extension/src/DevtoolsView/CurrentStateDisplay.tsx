@@ -5,6 +5,7 @@ import Button from "antd/lib/button";
 import Modal from "antd/lib/modal";
 import Select from "antd/lib/select";
 import { useSource, useSourceLane, AsyncStateStatus } from "react-async-states";
+import { DevtoolsJournalEvent } from "react-async-states/dist/devtools";
 import {
   currentJournal,
   currentState,
@@ -13,17 +14,17 @@ import {
 } from "./sources";
 import { addFormattedDate, DevtoolsMessagesBuilder } from "./utils";
 import CurrentJournalDisplay from "./CurrentJournalDisplay";
-import { devtoolsJournalEvents } from "devtools/eventTypes";
 
 const {Header, Content, Sider} = Layout;
 
-function CurrentJsonDisplay({lane, mode}) {
+function CurrentJsonDisplay({lane, mode}: {lane: string, mode: 'state' | 'journal'}) {
   if (mode === "state") {
     return <StateView lane={lane}/>;
   }
   if (mode === "journal") {
     return <CurrentJournalDisplay key={lane} lane={lane}/>;
   }
+  return null;
 }
 
 function CurrentTreeDisplay() {
@@ -59,14 +60,20 @@ function CurrentTreeDisplay() {
     </Layout>
   );
 }
-
+type SiderDisplayProps = {
+  uniqueId: number,
+  asyncStateKey: string,
+  isCurrent: boolean,
+  level?: number,
+  lanes?: string
+};
 export const SideKey = React.memo(function SiderKey({
                                                       uniqueId,
                                                       asyncStateKey,
                                                       isCurrent,
                                                       level = 0,
                                                       lanes
-                                                    }) {
+                                                    }: SiderDisplayProps) {
 
 
   React.useEffect(() => {
@@ -147,10 +154,8 @@ function StateView({lane}) {
                    padding: "1rem",
                    overflow: "auto"
                  }}
-                 className="scroll-y-auto"
                  theme="solarized"
                  collapsed={2}
-                 displayArrayKey={false}
                  displayDataTypes={false}
                  displayObjectSize={false}
                  enableClipboard={false}
@@ -175,7 +180,9 @@ function displayAsyncState(data) {
     config: data.config,
   };
   const {oldState} = data;
-  if (oldState) output.oldState = addFormattedDate(oldState);
+  if (oldState) { // @ts-ignore
+    output.oldState = addFormattedDate(oldState);
+  }
   return output;
 }
 
@@ -209,7 +216,7 @@ function RefreshButton({lane}) {
   );
 }
 
-const Actions = React.memo(function Actions({lane}) {
+const Actions = React.memo(function Actions({lane}: {lane: string}) {
 
   return (
     <>
@@ -233,8 +240,8 @@ const Actions = React.memo(function Actions({lane}) {
 
 function EditState({lane}) {
   const [open, setOpen] = React.useState(false);
-  const [data, setData] = React.useState("");
   const [isJson, setIsJson] = React.useState(true);
+  const [data, setData] = React.useState<string | null>("");
   const [status, setStatus] = React.useState(AsyncStateStatus.success);
   return (
     <>
@@ -260,7 +267,7 @@ function EditState({lane}) {
             )
         );
         setOpen(false);
-      }} visible={open}>
+      }} open={open}>
         {
           open && (
             <section className="w-full" style={{padding: '0px 8px'}}>
@@ -288,7 +295,7 @@ function EditState({lane}) {
                     Type data and choose if it should be parsed as json.
                     <br/>
                   </span>
-                  <textarea style={{width: '100%'}} rows={2} value={data}
+                  <textarea style={{width: '100%'}} rows={2} value={data ?? ''}
                             onChange={e => setData(e.target.value)}></textarea>
                   <br/>
                   <input id="is-json" type="checkbox"
@@ -316,7 +323,6 @@ function EditState({lane}) {
                            }}
                            theme="solarized"
                            collapsed={2}
-                           displayArrayKey={false}
                            displayDataTypes={false}
                            displayObjectSize={false}
                            enableClipboard={false}
@@ -335,10 +341,10 @@ function EditState({lane}) {
   );
 }
 
-function PreviewsStateChoiceDefault({lane, onChange}) {
+function PreviewsStateChoiceDefault({lane, onChange}: {lane: string, onChange: Function, status: any}) {
   const {state} = useSourceLane(journalSource, lane);
   const updateEvents = (state.data?.journal ?? [])
-    .filter(t => t.eventType === devtoolsJournalEvents.update)
+    .filter(t => t.eventType === DevtoolsJournalEvent.update)
     .reverse();
   return (
     <details>
@@ -352,6 +358,7 @@ function PreviewsStateChoiceDefault({lane, onChange}) {
           data: t,
         }))}
         onChange={(_v, option) => {
+          // @ts-ignore
           onChange(stringifyForSelect(option.data.eventPayload.newState.data))
         }}
       />
@@ -381,34 +388,4 @@ function stringifyForSelect(data) {
     return JSON.stringify(data);
   }
   return data;
-}
-function useWhyDidYouUpdate(name, props) {
-  // Get a mutable ref object where we can store props ...
-  // ... for comparison next time this hook runs.
-  const previousProps = React.useRef();
-  React.useEffect(() => {
-    if (previousProps.current) {
-      // Get all keys from previous and current props
-      const allKeys = Object.keys({ ...previousProps.current, ...props });
-      // Use this object to keep track of changed props
-      const changesObj = {};
-      // Iterate through keys
-      allKeys.forEach((key) => {
-        // If previous is different from current
-        if (previousProps.current[key] !== props[key]) {
-          // Add to changesObj
-          changesObj[key] = {
-            from: previousProps.current[key],
-            to: props[key],
-          };
-        }
-      });
-      // If changesObj not empty then output to console
-      if (Object.keys(changesObj).length) {
-        console.log("[why-did-you-update]", name, changesObj);
-      }
-    }
-    // Finally update previousProps with current props for next hook call
-    previousProps.current = props;
-  });
 }

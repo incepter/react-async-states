@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { useSource } from "react-async-states";
 import Layout from "antd/lib/layout";
 import Input from "antd/lib/input";
@@ -95,17 +95,18 @@ const SiderDisplay = React.memo(function () {
 
   const currentSort = `${sort.by}|${sort.direction}`;
 
-  const entries = React.useMemo(() => {
+  const entries = React.useMemo<any>(() => {
     const sortFn = getSortFunction(sort);
     let keysAndUniqueIds = Object.entries(data);
     if (search) {
-      keysAndUniqueIds = keysAndUniqueIds.filter(([, key]) => key?.includes(search));
+      keysAndUniqueIds = keysAndUniqueIds.filter(([, key]) => (key as string)?.includes(search));
     }
 
     let instancesGroupingMap = {};
     keysAndUniqueIds
       .forEach(([id, key]) => {
         let laneState = journalSource.getLaneSource(id).getState();
+        // @ts-ignore
         let {parent} = laneState.data ?? {};
 
         if (parent?.uniqueId) {
@@ -159,7 +160,7 @@ const SiderDisplay = React.memo(function () {
                   style={{marginLeft: 8, borderRadius: 20}}
                   value={currentSort}
                   options={sortOptions}
-                  onChange={(_, option) => setSort(option.sort)}/>
+                  onChange={(_, option: any) => setSort(option.sort)}/>
         </div>
       </Header>
       <Content className="scroll-y-auto"

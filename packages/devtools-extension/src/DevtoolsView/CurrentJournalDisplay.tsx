@@ -1,16 +1,16 @@
-import React from "react";
-import { devtoolsJournalEvents } from "devtools/eventTypes";
+import * as React from "react";
 import Select from "antd/lib/select";
 import ReactJson from "react-json-view";
 import Button from "antd/lib/button";
 import Layout from "antd/lib/layout";
 import { useSource, useSourceLane, } from "react-async-states";
+import { DevtoolsJournalEvent } from "react-async-states/dist/devtools";
 import { currentJournal, journalSource } from "./sources";
 import { addFormattedDate } from "./utils";
 
 const {Content, Sider} = Layout;
 
-const CurrentJournalDisplay = React.memo(function Journal({lane}) {
+const CurrentJournalDisplay = React.memo(function Journal({lane}: {lane: string}) {
 
   return (
     <Layout className='main-bg' style={{
@@ -34,12 +34,12 @@ const CurrentJournalDisplay = React.memo(function Journal({lane}) {
     </Layout>);
 });
 
-const JOURNAL_EVENT_TYPES_FILTER_OPTIONS = Object.values(devtoolsJournalEvents).map(t => ({
+const JOURNAL_EVENT_TYPES_FILTER_OPTIONS = Object.values(DevtoolsJournalEvent).map(t => ({
   label: t, value: t
 }));
 const initialSelectedEvents = [
-  devtoolsJournalEvents.creation,
-  devtoolsJournalEvents.update,
+  DevtoolsJournalEvent.creation,
+  DevtoolsJournalEvent.update,
 ];
 
 function sortByEventIdDesc(ev1, ev2) {
@@ -80,7 +80,7 @@ function JournalView({lane}) {
         <Button type="link" size="small" shape="round"
                 className="default-button"
                 style={{marginLeft: 8}}
-                onClick={() => setSelectedTypes(Object.values(devtoolsJournalEvents))}
+                onClick={() => setSelectedTypes(Object.values(DevtoolsJournalEvent))}
         >
           Select all
         </Button>
@@ -120,7 +120,7 @@ function JournalView({lane}) {
 
 function formJournalEventJson(entry) {
   switch (entry.eventType) {
-    case devtoolsJournalEvents.update: {
+    case DevtoolsJournalEvent.update: {
       const {oldState, newState, lastSuccess} = entry.eventPayload;
       return {
         eventDate: entry.eventDate,
@@ -132,10 +132,10 @@ function formJournalEventJson(entry) {
         lastSuccess: lastSuccess,
       };
     }
-    case devtoolsJournalEvents.run:
-    case devtoolsJournalEvents.dispose:
-    case devtoolsJournalEvents.creation:
-    case devtoolsJournalEvents.insideProvider: {
+    case DevtoolsJournalEvent.run:
+    case DevtoolsJournalEvent.dispose:
+    case DevtoolsJournalEvent.creation:
+    case DevtoolsJournalEvent.insideProvider: {
       return {
         eventId: entry.eventId,
         eventType: entry.eventType,
@@ -144,8 +144,8 @@ function formJournalEventJson(entry) {
         payload: entry.eventPayload,
       };
     }
-    case devtoolsJournalEvents.subscription:
-    case devtoolsJournalEvents.unsubscription: {
+    case DevtoolsJournalEvent.subscription:
+    case DevtoolsJournalEvent.unsubscription: {
       return {
         subscriptionKey: entry,
         eventDate: entry.eventDate,
@@ -171,7 +171,6 @@ function CurrentJson() {
                    padding: '1rem'
                  }}
                  collapsed={2}
-                 displayArrayKey={false}
                  displayDataTypes={false}
                  displayObjectSize={false}
                  enableClipboard={false}

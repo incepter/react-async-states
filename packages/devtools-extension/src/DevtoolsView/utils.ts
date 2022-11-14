@@ -1,26 +1,26 @@
-import { devtoolsRequests } from "devtools/eventTypes";
+import { DevtoolsRequest } from "react-async-states/dist/devtools";
 
 export const DevtoolsMessagesBuilder = {
   init() {
     return {
       type: "init",
       source: "async-states-devtools-panel",
-      tabId: window.chrome.devtools.inspectedWindow.tabId
+      tabId: (window as any).chrome.devtools.inspectedWindow.tabId
     };
   },
   getKeys() {
     return {
-      type: devtoolsRequests.getKeys,
+      type: DevtoolsRequest.getKeys,
       source: "async-states-devtools-panel",
-      tabId: window.chrome.devtools.inspectedWindow.tabId
+      tabId: (window as any).chrome.devtools.inspectedWindow.tabId
     };
   },
   getAsyncState(uniqueId) {
     return {
       uniqueId,
       source: "async-states-devtools-panel",
-      type: devtoolsRequests.getAsyncState,
-      tabId: window.chrome.devtools.inspectedWindow.tabId
+      type: DevtoolsRequest.getAsyncState,
+      tabId: (window as any).chrome.devtools.inspectedWindow.tabId
     };
   },
   changeAsyncState(uniqueId, status, data, isJson) {
@@ -30,8 +30,8 @@ export const DevtoolsMessagesBuilder = {
       isJson,
       uniqueId,
       source: "async-states-devtools-panel",
-      type: devtoolsRequests.changeAsyncState,
-      tabId: window.chrome.devtools.inspectedWindow.tabId
+      type: DevtoolsRequest.changeAsyncState,
+      tabId: (window as any).chrome.devtools.inspectedWindow.tabId
     };
   },
 }

@@ -1,25 +1,32 @@
 import {
   createSource,
 } from "react-async-states";
-import { idsStateInitialValue, journalStateInitialValue } from "./dev-data";
-import { devtoolsJournalEvents, devtoolsEvents } from "devtools/eventTypes";
-import { DevtoolsMessagesBuilder } from "./utils";
+import {idsStateInitialValue, journalStateInitialValue} from "./dev-data";
+import {
+  DevtoolsEvent,
+  DevtoolsJournalEvent
+} from "react-async-states/dist/devtools";
+import {DevtoolsMessagesBuilder} from "./utils";
 
 const isDev = process.env.NODE_ENV !== "production";
 
 // an update meter to trigger recalculation of the sort
 export const updatesMeter = createSource("update-meter", undefined, {initialValue: 0});
+
+type Journal = { key: string, journal: any[], subscriptions: string[] };
 // stores data related to any async state
-export const journalSource = createSource("journal", undefined);
+export const journalSource = createSource<Journal>("journal", undefined);
 // defines the gateway receiving messages from the app
 export const gatewaySource = createSource("gateway", gatewayProducer);
 // stores the keys with unique ids of created states
 export const keysSource = createSource("keys", undefined, {initialValue: isDev ? idsStateInitialValue : {}});
 
 // contains the current state unique Id to display, works with lanes
-export const currentState = createSource("current-state", undefined);
+export const currentState = createSource<string | null>("current-state", undefined);
+
+type CurrentJournal = { name: string, uniqueId: number, eventId: number, data: any };
 // the current journal to display from the current displayed state
-export const currentJournal = createSource("json", undefined);
+export const currentJournal = createSource<CurrentJournal | null>("json", undefined);
 
 if (isDev) {
   Object
@@ -50,7 +57,7 @@ setTimeout(() => {
 }, 20000);
 
 function gatewayProducer() {
-  const port = window.chrome.runtime.connect({name: "panel"});
+  const port = (window as any).chrome.runtime.connect({name: "panel"});
 
   port?.postMessage(DevtoolsMessagesBuilder.init());
   port?.postMessage(DevtoolsMessagesBuilder.getKeys());
@@ -60,15 +67,15 @@ function gatewayProducer() {
       return;
     }
     switch (message.type) {
-      case devtoolsEvents.setKeys: {
+      case DevtoolsEvent.setKeys: {
         return keysSource.setState(message.payload);
       }
-      case devtoolsEvents.setAsyncState: {
+      case DevtoolsEvent.setAsyncState: {
         console.log('received an async state', message);
         updatesMeter.setState(old => old.data + 1);
         return journalSource.getLaneSource(`${message.uniqueId}`).setState(message.payload);
       }
-      case devtoolsEvents.partialSync: {
+      case DevtoolsEvent.partialSync: {
         applyPartialUpdate(message);
         return;
       }
@@ -82,7 +89,7 @@ function gatewayProducer() {
 function applyPartialUpdate(message) {
   const {eventType} = message.payload;
   switch (eventType) {
-    case devtoolsJournalEvents.run: {
+    case DevtoolsJournalEvent.run: {
       journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
         return {
           ...old.data,
@@ -91,7 +98,7 @@ function applyPartialUpdate(message) {
       });
       return;
     }
-    case devtoolsJournalEvents.update: {
+    case DevtoolsJournalEvent.update: {
       updatesMeter.setState(old => old.data + 1);
       journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
         return {
@@ -104,7 +111,7 @@ function applyPartialUpdate(message) {
       });
       return;
     }
-    case devtoolsJournalEvents.subscription: {
+    case DevtoolsJournalEvent.subscription: {
       journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
         return {
           ...old.data,
@@ -114,7 +121,7 @@ function applyPartialUpdate(message) {
       });
       return;
     }
-    case devtoolsJournalEvents.unsubscription: {
+    case DevtoolsJournalEvent.unsubscription: {
       journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
         return {
           ...old.data,
