@@ -33,6 +33,9 @@ const esModulesBuild = [
       babel({babelHelpers: 'bundled'}),
       typescript({
         tsconfigOverride: {
+          compilerOptions: {
+            declaration: true,
+          },
           exclude: [
             "node_modules",
             "src/__tests__",
@@ -67,6 +70,9 @@ const webModulesBuild = [
       babel({babelHelpers: 'bundled'}),
       typescript({
         tsconfigOverride: {
+          compilerOptions: {
+            declaration: false,
+          },
           exclude: [
             "node_modules",
             "src/__tests__",
@@ -77,7 +83,7 @@ const webModulesBuild = [
       commonjs(),
       replace({
         preventAssignment: true,
-        values: { "process.env.NODE_ENV": JSON.stringify("development") },
+        values: {"process.env.NODE_ENV": JSON.stringify("development")},
       }),
     ]
   },
@@ -102,6 +108,9 @@ const webModulesBuild = [
       babel({babelHelpers: 'bundled'}),
       typescript({
         tsconfigOverride: {
+          compilerOptions: {
+            declaration: false,
+          },
           exclude: [
             "node_modules",
             "src/__tests__",
@@ -113,7 +122,7 @@ const webModulesBuild = [
       terser(),
       replace({
         preventAssignment: true,
-        values: { "process.env.NODE_ENV": JSON.stringify("production") },
+        values: {"process.env.NODE_ENV": JSON.stringify("production")},
       })
     ]
   }
@@ -146,6 +155,9 @@ const umdBuild = [
       }),
       typescript({
         tsconfigOverride: {
+          compilerOptions: {
+            declaration: false,
+          },
           exclude: [
             "node_modules",
             "src/__tests__",
@@ -184,6 +196,9 @@ const umdBuild = [
       babel({babelHelpers: 'bundled'}),
       typescript({
         tsconfigOverride: {
+          compilerOptions: {
+            declaration: false,
+          },
           exclude: [
             "node_modules",
             "src/__tests__",
@@ -210,13 +225,6 @@ const umdBuild = [
             dest: 'dist',
             src: `../../README.MD`,
           },
-        ]
-      }),
-      del({
-        hook: 'closeBundle',
-        targets: [
-          `dist/umd/shared`,
-          `dist/umd/${libraryName}`,
         ]
       }),
     ]

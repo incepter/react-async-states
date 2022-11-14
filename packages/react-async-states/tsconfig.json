@@ -28,11 +28,9 @@
     "strict": false,
     "noEmit": false
   },
-  "include": [
-    "src"
-  ],
   "exclude": [
     "node_modules",
+    "src/__tests__",
     "src/index-prod.js"
   ]
 }

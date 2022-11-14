@@ -1,5 +1,4 @@
 import * as React from "react";
-import {__DEV__, shallowEqual} from "shared";
 import {AsyncStateContext} from "./context";
 import {
   BaseSelectorKey,
@@ -20,6 +19,7 @@ import AsyncState, {
 } from "../async-state";
 import {readInstanceFromSource} from "../async-state/AsyncState";
 import {useCallerName} from "./helpers/useCallerName";
+import {__DEV__, shallowEqual} from "../shared";
 
 type SelectorSelf<T> = {
   currentValue: T,
@@ -139,12 +139,13 @@ export function useSelector<T>(
   // uses: selector
   function readValue(instances: Record<string, StateInterface<any> | undefined>) {
     const selectorStates = Object.entries(instances)
-      .map(([key, as]) => ({
-        ...as?.state,
-        key,
-        cache: as?.cache,
-        lastSuccess: as?.lastSuccess
-      }));
+      .map(([key, as]) => {
+        return Object.assign({}, as?.state, {
+          key,
+          cache: as?.cache,
+          lastSuccess: as?.lastSuccess
+        });
+      });
 
     if (typeof keys === "function") {
       const selectorParam: Record<string, FunctionSelectorItem<any>> = selectorStates

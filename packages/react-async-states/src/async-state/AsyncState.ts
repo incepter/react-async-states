@@ -1,4 +1,4 @@
-import {__DEV__, isGenerator, isPromise, shallowClone,} from "shared";
+import {__DEV__, isGenerator, isPromise, shallowClone,} from "../shared";
 import {
   asyncStatesKey,
   didNotExpire,
@@ -6,8 +6,8 @@ import {
   isAsyncStateSource,
   sourceIsSourceSymbol,
 } from "./utils";
-import devtools from "../devtools";
-import {areRunEffectsSupported} from "shared/features";
+import devtools from "./Devtools";
+import {areRunEffectsSupported} from "../shared/features";
 import {hideStateInstanceInNewObject} from "./hide-object";
 import {nextKey} from "./key-gen";
 
@@ -96,7 +96,6 @@ class AsyncState<T> implements StateInterface<T> {
     Object.preventExtensions(this);
 
     if (__DEV__) {
-      console.log('emitting creation', devtools)
       devtools.emitCreation(this);
     }
   }

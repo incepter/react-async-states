@@ -1,6 +1,6 @@
 import * as React from "react";
-import {__DEV__} from "shared";
 import AsyncState, {StateInterface} from "../../async-state";
+import {__DEV__} from "../../shared";
 
 const emptyArray = [];
 

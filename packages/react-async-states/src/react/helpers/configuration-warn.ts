@@ -1,9 +1,9 @@
-import {__DEV__} from "shared";
 import {
   SubscriptionMode,
   UseAsyncStateConfiguration
 } from "../../types.internal";
 import {computeCallerName} from "./useCallerName";
+import {__DEV__} from "../../shared";
 
 let creationProperties, hoistProperties, forkProperties, irrelevantPropertiesByMode;
 

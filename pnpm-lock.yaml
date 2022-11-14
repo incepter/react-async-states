@@ -93,7 +93,6 @@ importers:
       '@rollup/plugin-node-resolve': ^15.0.1
       '@rollup/plugin-replace': ^5.0.1
       '@rollup/plugin-terser': ^0.1.0
-      '@rollup/plugin-typescript': ^9.0.2
       '@testing-library/react': 13.4.0
       '@testing-library/react-hooks': ^8.0.1
       '@types/jest': ^29.2.1
@@ -101,12 +100,10 @@ importers:
       '@types/react': 18.0.25
       circular-dependency-plugin: ^5.2.2
       cross-env: ^7.0.3
-      devtools: workspace:*
       eslint-config-standard: 17.0.0
       eslint-config-standard-react: 12.0.0
       eslint-plugin-import: ^2.13.0
       eslint-plugin-react: ^7.10.0
-      eslint-plugin-standard: 5.0.0
       react: ^16.8.0 || ^17.0.2 || ^18.0.0
       react-scripts: 5.0.1
       react-test-renderer: 18.2.0
@@ -117,9 +114,8 @@ importers:
       rollup-plugin-gzip: 3.1.0
       rollup-plugin-sourcemaps: ^0.6.3
       rollup-plugin-typescript2: ^0.34.1
-      shared: workspace:*
       tslib: ^2.4.1
-      typescript: ^4.6.2
+      typescript: 4.8.4
     dependencies:
       react: 18.2.0
     devDependencies:
@@ -129,7 +125,6 @@ importers:
       '@rollup/plugin-node-resolve': 15.0.1_rollup@3.3.0
       '@rollup/plugin-replace': 5.0.1_rollup@3.3.0
       '@rollup/plugin-terser': 0.1.0_rollup@3.3.0
-      '@rollup/plugin-typescript': 9.0.2_uxzoppybjjm3iv3alceonunahm
       '@testing-library/react': 13.4.0_biqbaboplfbrettd7655fr4n2y
       '@testing-library/react-hooks': 8.0.1_djah6xjkh3i2bchfafvsnwdbb4
       '@types/jest': 29.2.2
@@ -137,12 +132,10 @@ importers:
       '@types/react': 18.0.25
       circular-dependency-plugin: 5.2.2_webpack@5.75.0
       cross-env: 7.0.3
-      devtools: link:../devtools
       eslint-config-standard: 17.0.0_tgschtermn73rglifclli5kydi
       eslint-config-standard-react: 12.0.0_crua5zzh5wtgko3a7bkv6w5n7m
       eslint-plugin-import: 2.26.0_jnohwm7eexgw7uduhweedcbnpe
       eslint-plugin-react: 7.31.10_eslint@8.27.0
-      eslint-plugin-standard: 5.0.0_eslint@8.27.0
       react-scripts: 5.0.1_uf773njghfwrphsm6ek7wep3um
       react-test-renderer: 18.2.0_react@18.2.0
       rimraf: 3.0.2
@@ -152,7 +145,6 @@ importers:
       rollup-plugin-gzip: 3.1.0_rollup@3.3.0
       rollup-plugin-sourcemaps: 0.6.3_7vbqep3za4ivbeapwe3dw2k3xm
       rollup-plugin-typescript2: 0.34.1_aoc4guvlpr5bfeyf2nus4ubkpu
-      shared: link:../shared
       tslib: 2.4.1
       typescript: 4.8.4
 
@@ -3541,26 +3533,6 @@ packages:
     dependencies:
       rollup: 3.3.0
       terser: 5.15.1
-    dev: true
-
-  /@rollup/plugin-typescript/9.0.2_uxzoppybjjm3iv3alceonunahm:
-    resolution: {integrity: sha512-/sS93vmHUMjzDUsl5scNQr1mUlNE1QjBBvOhmRwJCH8k2RRhDIm3c977B3wdu3t3Ap17W6dDeXP3hj1P1Un1bA==}
-    engines: {node: '>=14.0.0'}
-    peerDependencies:
-      rollup: ^2.14.0||^3.0.0
-      tslib: '*'
-      typescript: '>=3.7.0'
-    peerDependenciesMeta:
-      rollup:
-        optional: true
-      tslib:
-        optional: true
-    dependencies:
-      '@rollup/pluginutils': 5.0.2_rollup@3.3.0
-      resolve: 1.22.1
-      rollup: 3.3.0
-      tslib: 2.4.1
-      typescript: 4.8.4
     dev: true
 
   /@rollup/pluginutils/3.1.0_rollup@2.79.1:
@@ -7609,15 +7581,6 @@ packages:
       resolve: 2.0.0-next.4
       semver: 6.3.0
       string.prototype.matchall: 4.0.8
-
-  /eslint-plugin-standard/5.0.0_eslint@8.27.0:
-    resolution: {integrity: sha512-eSIXPc9wBM4BrniMzJRBm2uoVuXz2EPa+NXPk2+itrVt+r5SbKFERx/IgrK/HmfjddyKVz2f+j+7gBRvu19xLg==}
-    deprecated: 'standard 16.0.0 and eslint-config-standard 16.0.0 no longer require the eslint-plugin-standard package. You can remove it from your dependencies with ''npm rm eslint-plugin-standard''. More info here: https://github.com/standard/standard/issues/1316'
-    peerDependencies:
-      eslint: '>=5.0.0'
-    dependencies:
-      eslint: 8.27.0
-    dev: true
 
   /eslint-plugin-testing-library/5.9.1_rmayb2veg2btbq6mbmnyivgasy:
     resolution: {integrity: sha512-6BQp3tmb79jLLasPHJmy8DnxREe+2Pgf7L+7o09TSWPfdqqtQfRZmZNetr5mOs3yqZk/MRNxpN3RUpJe0wB4LQ==}

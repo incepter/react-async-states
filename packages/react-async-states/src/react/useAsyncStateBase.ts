@@ -1,5 +1,5 @@
 import * as React from "react";
-import {__DEV__, shallowClone, shallowEqual} from "shared";
+import {__DEV__, shallowClone, shallowEqual} from "../shared";
 import {AsyncStateContext} from "./context";
 import {
   BaseUseAsyncState,
