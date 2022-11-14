@@ -4,7 +4,7 @@ const typescript = require('rollup-plugin-typescript2');
 const json = require('@rollup/plugin-json');
 const {babel} = require('@rollup/plugin-babel');
 
-module.exports = {
+const umdBuild = {
   input: `src/index.ts`,
   globals: {
     react: 'React',
@@ -52,3 +52,38 @@ module.exports = {
     }),
   ],
 };
+
+const devtoolsSharedBuild = {
+  input: `src/devtools/index.ts`,
+  output: [
+    {
+      format: "esm",
+      sourcemap: true,
+      file: 'dist/devtools/index.js',
+    },
+  ],
+  plugins: [
+    json(),
+    resolve(),
+    babel({babelHelpers: 'bundled'}),
+    typescript({
+      tsconfigOverride: {
+        compilerOptions: {
+          declaration: true,
+        },
+        include: [
+          "src/devtools/index.ts",
+        ],
+        exclude: [
+          "node_modules",
+        ]
+      }
+    }),
+    commonjs(),
+  ]
+};
+
+module.exports = [
+  umdBuild,
+  devtoolsSharedBuild,
+];
