@@ -6,10 +6,9 @@ import {
 } from "../../../react/StateBoundary";
 import {
   AsyncStateStatus,
-  createSource,
-  RenderStrategy
+  createSource
 } from "../../../async-state";
-import {SubscriptionMode} from "../../../types.internal";
+import {RenderStrategy, SubscriptionMode} from "../../../types.internal";
 import {flushPromises} from "../utils/test-utils";
 
 describe('StateBoundary', () => {

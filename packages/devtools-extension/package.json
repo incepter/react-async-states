@@ -1,44 +1,28 @@
 {
-  "name": "devtools-extension",
-  "version": "0.1.0",
+  "name": "devtools-extension2",
   "private": true,
-  "dependencies": {
-    "antd": "^4.22.5",
-    "cra-template": "1.1.2",
-    "lodash": "^4.17.21",
-    "react": "18.2.0",
-    "react-async-states": "1.0.0-rc-7",
-    "react-dom": "18.2.0",
-    "react-json-view": "^1.21.3",
-    "react-scripts": "5.0.1"
-  },
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "copy": "copyfiles -f ./static/* ./build",
-    "start": "react-scripts start",
-    "build:clean": "pnpm rimraf ./build",
-    "build": "pnpm build:clean && pnpm cross-env INLINE_RUNTIME_CHUNK=false react-scripts build && pnpm copy",
-    "build:chrome": "pnpm build && pnpm chrome",
-    "chrome": "chrome http://localhost:3000 --new-window --auto-open-devtools-for-tabs --load-extension=%cd%/build --profile-directory=Guest",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "dependencies": {
+    "antd": "^4.24.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-json-view": "^1.21.3"
   },
   "devDependencies": {
-    "copyfiles": "^2.4.1",
-    "cpx": "^1.5.0",
-    "cross-env": "^7.0.3",
-    "devtools": "workspace:*",
-    "rimraf": "^3.0.2"
+    "@types/node": "^18.11.9",
+    "@types/react": "^18.0.24",
+    "@types/react-dom": "^18.0.8",
+    "@vitejs/plugin-react": "^2.2.0",
+    "react-async-states": "1.0.0-rc-7",
+    "rollup-plugin-copy": "^3.4.0",
+    "typescript": "^4.6.4",
+    "vite": "^3.2.3",
+    "vite-plugin-imp": "^2.3.1"
   }
 }

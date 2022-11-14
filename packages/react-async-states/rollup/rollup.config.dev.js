@@ -3,12 +3,13 @@ const commonjs = require('@rollup/plugin-commonjs');
 const typescript = require('rollup-plugin-typescript2');
 const json = require('@rollup/plugin-json');
 const {babel} = require('@rollup/plugin-babel');
-const copy = require('rollup-plugin-copy');
 
-const libraryName = 'react-async-states';
-
-module.exports = {
+const umdBuild = {
   input: `src/index.ts`,
+  globals: {
+    react: 'React',
+    'react/jsx-runtime': 'jsxRuntime',
+  },
   output: [
     {
       format: 'umd',
@@ -40,6 +41,49 @@ module.exports = {
     json(),
     resolve(),
     commonjs(),
-    typescript(),
+    typescript({
+      tsconfigOverride: {
+        exclude: [
+          "node_modules",
+          "src/__tests__",
+          "src/index-prod.js"
+        ]
+      }
+    }),
   ],
 };
+
+const devtoolsSharedBuild = {
+  input: `src/devtools/index.ts`,
+  output: [
+    {
+      format: "esm",
+      sourcemap: true,
+      file: 'dist/devtools/index.js',
+    },
+  ],
+  plugins: [
+    json(),
+    resolve(),
+    babel({babelHelpers: 'bundled'}),
+    typescript({
+      tsconfigOverride: {
+        compilerOptions: {
+          declaration: true,
+        },
+        include: [
+          "src/devtools/index.ts",
+        ],
+        exclude: [
+          "node_modules",
+        ]
+      }
+    }),
+    commonjs(),
+  ]
+};
+
+module.exports = [
+  umdBuild,
+  devtoolsSharedBuild,
+];

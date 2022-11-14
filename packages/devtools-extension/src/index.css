@@ -1,152 +1,152 @@
 @import '~antd/dist/antd.css';
 
 :root {
-    --bg-color: #1D2129;
-    --text-color: white;
+  --bg-color: #1D2129;
+  --text-color: white;
 }
 
 .main-bg {
-    background-color: var(--bg-color);
+  background-color: var(--bg-color);
 }
 
 .main-color {
-    color: var(--text-color);
+  color: var(--text-color);
 }
 
 .sorter > .ant-select-selector {
-    border-radius: 24px !important;
+  border-radius: 24px !important;
 }
 
 .default-button {
-    margin-top: 2px;
-    text-align: start;
-    border-bottom: none;
-    display: flex;
-    align-items: center;
+  margin-top: 2px;
+  text-align: start;
+  border-bottom: none;
+  display: flex;
+  align-items: center;
 }
 
 .sidebar-el-active {
-    background-color: antiquewhite;
+  background-color: antiquewhite;
 }
 
 .sidebar-container {
-    width: 20%;
-    border-right: 1px solid #7f7f7f;
+  width: 20%;
+  border-right: 1px solid #7f7f7f;
 }
 
 .content-container {
-    width: 80%;
-    overflow: auto;
+  width: 80%;
+  overflow: auto;
 }
 
 .sidebar {
-    height: 100%;
-    display: flex;
-    overflow: auto;
-    max-height: 100vh;
-    align-items: center;
-    align-content: center;
-    flex-direction: column;
+  height: 100%;
+  display: flex;
+  overflow: auto;
+  max-height: 100vh;
+  align-items: center;
+  align-content: center;
+  flex-direction: column;
 }
 
 .sidebar-button {
-    width: 100%;
-    min-height: 1rem;
-    height: 2rem;
-    max-height: 1rem;
-    border: none;
-    cursor: pointer;
-    font-size: 1rem;
-    /*background-color: lightgray;*/
+  width: 100%;
+  min-height: 1rem;
+  height: 2rem;
+  max-height: 1rem;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  /*background-color: lightgray;*/
 }
 
 .sidebar-button:hover {
-    background-color: darkgrey;
+  background-color: darkgrey;
 }
 
 .devtools-view-container {
-    overflow: auto;
+  overflow: auto;
 }
 
 .flex {
-    display: flex;
+  display: flex;
 }
 
 .items-center {
-    align-items: center;
+  align-items: center;
 }
 
 .justify-center {
-    align-items: center;
+  align-items: center;
 }
 
 .flex-row {
-    flex-direction: row;
+  flex-direction: row;
 }
 
 .flex-col {
-    flex-direction: column;
+  flex-direction: column;
 }
 
 .w-full {
-    width: 100%;
+  width: 100%;
 }
 
 .h-full {
-    height: 100%;
+  height: 100%;
 }
 
 .o-auto {
-    overflow: auto;
+  overflow: auto;
 }
 #components-layout-demo-top-side-2 .logo {
-    float: left;
-    width: 120px;
-    height: 31px;
-    margin: 16px 24px 16px 0;
-    background: rgba(255, 255, 255, 0.3);
+  float: left;
+  width: 120px;
+  height: 31px;
+  margin: 16px 24px 16px 0;
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .ant-row-rtl #components-layout-demo-top-side-2 .logo {
-    float: right;
-    margin: 16px 0 16px 24px;
+  float: right;
+  margin: 16px 0 16px 24px;
 }
 
 .site-layout-background {
-    background: #fff;
+  background: #fff;
 }
 
 .scroll-y-auto {
-    overflow-y: auto;
-    text-shadow: 0 0 black;
-    transition: color 0.3s ease;
-    color: rgba(255, 255, 255, 0);
-    /*box-shadow: 0 1px 6px rgba(255, 255, 255, 0.2);*/
+  overflow-y: auto;
+  text-shadow: 0 0 black;
+  transition: color 0.3s ease;
+  color: rgba(255, 255, 255, 0);
+  /*box-shadow: 0 1px 6px rgba(255, 255, 255, 0.2);*/
 }
 
 .scroll-y-auto::-webkit-scrollbar {
-     height: 16px;
-     width: 18px;
-     border-radius: 13px;
-     background-clip: padding-box;
-     border: 5px solid transparent;
- }
+  height: 16px;
+  width: 18px;
+  border-radius: 13px;
+  background-clip: padding-box;
+  border: 5px solid transparent;
+}
 
 .scroll-y-auto::-webkit-scrollbar-track {
-     background-color: transparent;
-     border-radius: 6px;
- }
+  background-color: transparent;
+  border-radius: 6px;
+}
 
 .scroll-y-auto::-webkit-scrollbar-thumb {
-     box-shadow: inset 0 0 0 10px;
-     height: 16px;
-     width: 16px;
-     border-radius: 13px;
-     background-clip: padding-box;
-     border: 5px solid transparent;
- }
+  box-shadow: inset 0 0 0 10px;
+  height: 16px;
+  width: 16px;
+  border-radius: 13px;
+  background-clip: padding-box;
+  border: 5px solid transparent;
+}
 
 .scroll-y-auto:hover {
-     color: #8c8c8c;
- }
+  color: #8c8c8c;
+}
 

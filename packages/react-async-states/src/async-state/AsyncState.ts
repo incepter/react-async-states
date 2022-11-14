@@ -1,9 +1,4 @@
-import {
-  __DEV__,
-  isGenerator,
-  isPromise,
-  shallowClone,
-} from "shared";
+import {__DEV__, isGenerator, isPromise, shallowClone,} from "../shared";
 import {
   asyncStatesKey,
   didNotExpire,
@@ -11,8 +6,8 @@ import {
   isAsyncStateSource,
   sourceIsSourceSymbol,
 } from "./utils";
-import devtools from "devtools";
-import {areRunEffectsSupported} from "shared/features";
+import devtools from "../devtools/Devtools";
+import {areRunEffectsSupported} from "../shared/features";
 import {hideStateInstanceInNewObject} from "./hide-object";
 import {nextKey} from "./key-gen";
 
@@ -222,7 +217,7 @@ class AsyncState<T> implements StateInterface<T> {
     function cleanup() {
       that.locks -= 1;
       delete that.subscriptions![subscriptionKey!];
-      if (__DEV__) devtools.emitUnsubscription(that, subscriptionKey);
+      if (__DEV__) devtools.emitUnsubscription(that, subscriptionKey!);
       if (that.config.resetStateOnDispose) {
         if (Object.values(that.subscriptions!).length === 0) {
           that.dispose();
@@ -237,7 +232,7 @@ class AsyncState<T> implements StateInterface<T> {
     };
     this.locks += 1;
 
-    if (__DEV__) devtools.emitSubscription(this, subscriptionKey);
+    if (__DEV__) devtools.emitSubscription(this, subscriptionKey!);
     return cleanup;
   }
 
@@ -344,6 +339,10 @@ class AsyncState<T> implements StateInterface<T> {
       };
       that.runWithCallbacks(createProducerEffects, callbacks, args);
     });
+  }
+
+  runc(createProducerEffects: ProducerEffectsCreator<T>, props?: RUNCProps<T>) {
+    return this.runWithCallbacks(createProducerEffects, props, props?.args ?? []);
   }
 
   private runWithEffect(
@@ -850,6 +849,7 @@ function makeSource<T>(instance: StateInterface<T>): Readonly<Source<T>> {
     replaceProducer: instance.replaceProducer,
     run: instance.run.bind(instance, standaloneProducerEffectsCreator),
     runp: instance.runp.bind(instance, standaloneProducerEffectsCreator),
+    runc: instance.runc.bind(instance, standaloneProducerEffectsCreator),
 
     getLaneSource(lane?: string) {
       return instance.getLane(lane)._source;
@@ -1241,12 +1241,6 @@ export interface BaseSource<T> {
 
   replaceProducer(newProducer: Producer<any> | undefined),
 
-  run(
-    createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]): AbortFn,
-
-  runp(
-    createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]): Promise<State<T>>,
-
   // cache
   invalidateCache(cacheKey?: string): void,
 
@@ -1313,6 +1307,20 @@ export interface StateInterface<T> extends BaseSource<T> {
     callbacks: ProducerCallbacks<T> | undefined,
     args: any[]
   ),
+
+  run(
+    createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]): AbortFn,
+
+  runp(
+    createProducerEffects: ProducerEffectsCreator<T>, ...args: any[]): Promise<State<T>>,
+
+  runc(
+    createProducerEffects: ProducerEffectsCreator<T>, props?: RUNCProps<T>): AbortFn,
+
+}
+
+export interface RUNCProps<T> extends ProducerCallbacks<T> {
+  args?: any[],
 }
 
 export enum AsyncStateStatus {
@@ -1365,9 +1373,9 @@ export type RunIndicators = {
 }
 
 export type ProducerCallbacks<T> = {
-  onAborted(aborted: State<T>),
-  onError(errorState: State<T>),
-  onSuccess(successState: State<T>),
+  onAborted?(aborted: State<T>),
+  onError?(errorState: State<T>),
+  onSuccess?(successState: State<T>),
 }
 
 export type ProducerSavedProps<T> = {
@@ -1393,12 +1401,6 @@ export enum ProducerType {
   notProvided = 4,
 }
 
-export enum RenderStrategy {
-  FetchAsYouRender = 0,
-  FetchThenRender = 1,
-  RenderThenFetch = 2,
-}
-
 export type ProducerConfig<T> = {
   skipPendingStatus?: boolean,
   initialValue?: T | ((cache: Record<string, CachedState<T>>) => T),
@@ -1417,11 +1419,12 @@ export type StateUpdater<T> = (
 ) => void;
 
 export interface Source<T> extends BaseSource<T> {
-  run: (...args: any[]) => AbortFn,
-  runp: (...args: any[]) => Promise<State<T>>,
+  run(...args: any[]): AbortFn,
+  runp(...args: any[]): Promise<State<T>>,
+
+  runc(props: RUNCProps<T>): AbortFn,
 
   removeLane(laneKey?: string): boolean,
-
   getLaneSource(laneKey?: string): Source<T>,
 }
 

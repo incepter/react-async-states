@@ -31,7 +31,18 @@ const esModulesBuild = [
       json(),
       resolve(),
       babel({babelHelpers: 'bundled'}),
-      typescript(),
+      typescript({
+        tsconfigOverride: {
+          compilerOptions: {
+            declaration: true,
+          },
+          exclude: [
+            "node_modules",
+            "src/__tests__",
+            "src/index-prod.js"
+          ]
+        }
+      }),
       commonjs(),
     ]
   }
@@ -57,11 +68,22 @@ const webModulesBuild = [
       json(),
       resolve(),
       babel({babelHelpers: 'bundled'}),
-      typescript(),
+      typescript({
+        tsconfigOverride: {
+          compilerOptions: {
+            declaration: false,
+          },
+          exclude: [
+            "node_modules",
+            "src/__tests__",
+            "src/index-prod.js"
+          ]
+        }
+      }),
       commonjs(),
       replace({
         preventAssignment: true,
-        values: { "process.env.NODE_ENV": JSON.stringify("development") },
+        values: {"process.env.NODE_ENV": JSON.stringify("development")},
       }),
     ]
   },
@@ -84,11 +106,23 @@ const webModulesBuild = [
       json(),
       resolve(),
       babel({babelHelpers: 'bundled'}),
-      typescript(),
+      typescript({
+        tsconfigOverride: {
+          compilerOptions: {
+            declaration: false,
+          },
+          exclude: [
+            "node_modules",
+            "src/__tests__",
+            "src/index-prod.js"
+          ]
+        }
+      }),
       commonjs(),
+      terser(),
       replace({
         preventAssignment: true,
-        values: { "process.env.NODE_ENV": JSON.stringify("production") },
+        values: {"process.env.NODE_ENV": JSON.stringify("production")},
       })
     ]
   }
@@ -119,7 +153,18 @@ const umdBuild = [
       babel({
         babelHelpers: "bundled",
       }),
-      typescript(),
+      typescript({
+        tsconfigOverride: {
+          compilerOptions: {
+            declaration: false,
+          },
+          exclude: [
+            "node_modules",
+            "src/__tests__",
+            "src/index-prod.js"
+          ]
+        }
+      }),
       commonjs(),
     ]
   },
@@ -128,7 +173,7 @@ const umdBuild = [
     output: [
       {
         format: "umd",
-        sourcemap: true,
+        sourcemap: false,
         name: "ReactAsyncStates",
         file: `dist/umd/${libraryName}.production.js`,
         globals: {
@@ -149,7 +194,18 @@ const umdBuild = [
       json(),
       resolve(),
       babel({babelHelpers: 'bundled'}),
-      typescript(),
+      typescript({
+        tsconfigOverride: {
+          compilerOptions: {
+            declaration: false,
+          },
+          exclude: [
+            "node_modules",
+            "src/__tests__",
+            "src/index-prod.js"
+          ]
+        }
+      }),
       commonjs(),
       gzipPlugin.default(),
       terser(),
@@ -171,13 +227,39 @@ const umdBuild = [
           },
         ]
       }),
-      del({
-        hook: 'closeBundle',
-        targets: [
-          `dist/umd/shared`,
-          `dist/umd/${libraryName}`,
-        ]
+    ]
+  }
+];
+
+const devtoolsSharedBuild = [
+  {
+    input: `src/devtools/index.ts`,
+    output: [
+      {
+        format: "esm",
+        sourcemap: true,
+        file: 'dist/devtools/index.js',
+      },
+    ],
+    plugins: [
+      json(),
+      resolve(),
+      babel({babelHelpers: 'bundled'}),
+      typescript({
+        tsconfigOverride: {
+          compilerOptions: {
+            declaration: true,
+          },
+          include: [
+            "src/devtools/index.ts",
+          ],
+          exclude: [
+            "node_modules",
+          ]
+        }
       }),
+      commonjs(),
+      terser(),
     ]
   }
 ];
@@ -186,4 +268,5 @@ module.exports = [
   ...esModulesBuild,
   ...webModulesBuild,
   ...umdBuild,
+  ...devtoolsSharedBuild,
 ];

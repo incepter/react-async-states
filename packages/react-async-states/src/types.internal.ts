@@ -11,12 +11,12 @@ import {
   Producer,
   ProducerConfig,
   ProducerRunEffects,
-  RenderStrategy,
   Source,
   State,
   StateInterface,
   StateUpdater
 } from "./async-state";
+import {RUNCProps} from "./async-state/AsyncState";
 
 export interface AsyncStateInitializer<T> {
   key?: string,
@@ -40,7 +40,7 @@ export type StateContextValue = AsyncStateManagerInterface;
 
 // use async state
 
-interface BaseUseAsyncState<T, E = State<T>> {
+export interface BaseUseAsyncState<T, E = State<T>> {
   key: string,
 
   source?: Source<T>,
@@ -49,6 +49,9 @@ interface BaseUseAsyncState<T, E = State<T>> {
   replay(): AbortFn,
   abort(reason?: any): void,
   run(...args: any[]): AbortFn,
+  runp(...args: any[]): Promise<State<T>>,
+
+  runc(props: RUNCProps<T>): AbortFn,
   setState: StateUpdater<T>,
   mergePayload(argv: Record<string, any>): void,
 
@@ -166,6 +169,12 @@ export type UseAsyncStateConfiguration<T, E = State<T>> = {
   events?: UseAsyncStateEvents<T>,
 }
 
+export enum RenderStrategy {
+  FetchAsYouRender = 0,
+  FetchThenRender = 1,
+  RenderThenFetch = 2,
+}
+
 export type StateBoundaryProps<T, E> = {
   children: React.ReactNode,
   config: MixedConfig<T, E>,
@@ -228,7 +237,6 @@ export type SubscriptionInfo<T, E> = {
   deps: readonly any[],
 
   dispose: () => boolean | undefined,
-  run: (...args: any[]) => AbortFn,
 
   baseReturn: BaseUseAsyncState<T, E>,
 }

@@ -3,9 +3,10 @@
     "sourceMap": true,
     "strictNullChecks": true,
     "module": "esnext",
-    "jsx": "react-jsx",
+    "jsx": "react",
     "target": "es5",
     "allowJs": true,
+    "preserveSymlinks": true,
     "moduleResolution": "Node",
     "noImplicitAny": false,
     "skipLibCheck": true,
@@ -17,17 +18,16 @@
     "isolatedModules": true,
     "declaration": true,
     "declarationDir": "dist",
+    "types": ["node"],
     "lib": [
       "dom",
+      "ES2015",
       "dom.iterable",
       "esnext"
     ],
     "strict": false,
     "noEmit": false
   },
-  "include": [
-    "src"
-  ],
   "exclude": [
     "node_modules",
     "src/__tests__",

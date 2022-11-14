@@ -6,7 +6,6 @@ export {
   createSource,
   StateBuilder,
   ProducerType,
-  RenderStrategy,
   AsyncStateStatus,
   ProducerRunEffects,
 } from "./AsyncState";

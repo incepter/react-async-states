@@ -1,7 +1,7 @@
 import * as React from "react";
-import {AsyncStateStatus, RenderStrategy, State} from "../async-state";
+import {AsyncStateStatus, State} from "../async-state";
 import {
-  MixedConfig,
+  MixedConfig, RenderStrategy,
   StateBoundaryProps,
   UseAsyncState, UseAsyncStateConfiguration,
 } from "../types.internal";

@@ -1,7 +1,8 @@
 import * as React from "react";
-import {__DEV__, shallowClone, shallowEqual} from "shared";
+import {__DEV__, shallowClone, shallowEqual} from "../shared";
 import {AsyncStateContext} from "./context";
 import {
+  BaseUseAsyncState,
   CleanupFn,
   MixedConfig,
   PartialUseAsyncStateConfiguration,
@@ -60,7 +61,8 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   const subscriptionInfo = React
     .useMemo<SubscriptionInfo<T, E>>(parseConfiguration, [contextValue, guard, ...deps]);
 
-  const {run, mode, asyncState, configuration} = subscriptionInfo;
+  const {mode, asyncState, configuration} = subscriptionInfo;
+  const run = subscriptionInfo.baseReturn.run;
   const {selector, areEqual, events} = configuration;
 
   let {subscriptionKey} = configuration;
@@ -235,13 +237,12 @@ export function useSourceLane<T>(
   return selectedValue;
 
   function calculateSelectedValue(): Readonly<UseAsyncState<T, State<T>>> {
-    let mode = SubscriptionMode.SRC;
     return makeUseAsyncStateReturnValue(
       asyncState,
       asyncState.state,
       source.key,
-      runAsyncStateSubscriptionFn(mode, asyncState, contextValue),
-      mode
+      contextValue,
+      SubscriptionMode.SRC
     );
   }
 
@@ -250,12 +251,12 @@ export function useSourceLane<T>(
   }
 
   function subscribeToAsyncState() {
-    let mode = SubscriptionMode.SRC;
-    let runFn = runAsyncStateSubscriptionFn(mode, asyncState, contextValue);
-
     return newSubscribeToAsyncState(
-      mode,
-      runFn,
+      SubscriptionMode.SRC,
+      asyncState.run.bind(
+        asyncState,
+        contextValue?.producerEffectsCreator ?? standaloneProducerEffectsCreator
+      ),
       () => latestVersion.current,
       asyncState,
       subscriptionKey,
@@ -266,7 +267,6 @@ export function useSourceLane<T>(
   }
 }
 
-const emptyArray = [];
 // this is a mini version of useAsyncState
 // this hook uses fewer hooks and has fewer capabilities that useAsyncState
 // its usage should be when you want to have control over a producer (may be inline)
@@ -316,13 +316,12 @@ export function useProducer<T>(
   }
 
   function calculateSelectedValue(): Readonly<UseAsyncState<T, State<T>>> {
-    let mode = SubscriptionMode.ALONE;
     return makeUseAsyncStateReturnValue(
       asyncState,
       asyncState.state,
       asyncState.key,
-      runAsyncStateSubscriptionFn(mode, asyncState, contextValue),
-      mode
+      contextValue,
+      SubscriptionMode.ALONE
     );
   }
 
@@ -331,12 +330,12 @@ export function useProducer<T>(
   }
 
   function subscribeToAsyncState() {
-    let mode = SubscriptionMode.ALONE;
-    let runFn = runAsyncStateSubscriptionFn(mode, asyncState, contextValue);
-
     return newSubscribeToAsyncState(
-      mode,
-      runFn,
+      SubscriptionMode.ALONE,
+      asyncState.run.bind(
+        asyncState,
+        contextValue?.producerEffectsCreator ?? standaloneProducerEffectsCreator
+      ),
       () => latestVersion.current,
       asyncState,
       subscriptionKey,
@@ -483,16 +482,14 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
 
   if (shouldCalculateNewOutput) {
     let configKey: string = newConfig.key as string; // not falsy
-    let runFn = runAsyncStateSubscriptionFn(newMode, newAsyncState, contextValue);
     let disposeFn = disposeAsyncStateSubscriptionFn(newMode, newAsyncState, contextValue);
 
     output = {
-      run: runFn,
       mode: newMode,
       dispose: disposeFn,
       asyncState: newAsyncState,
       baseReturn: Object.freeze(makeUseAsyncStateBaseReturnValue(
-        newAsyncState, configKey, runFn, newMode)),
+        newAsyncState, configKey, contextValue, newMode)),
 
       guard,
       deps: dependencies,
@@ -521,46 +518,6 @@ function parseUseAsyncStateConfiguration<T, E = State<T>>(
   }
 
   return output;
-}
-
-// this function returns a run function that's used to run the asyncState
-// what different from AsyncState.run ?
-// AsyncState.run expects a producerEffectsCreator to be able to add
-// select, run and runp as members of ProducerProps.
-// when inside provider, the producerEffectsCreator has much more capabilities
-// it allows run, runp and select to have access to provider via string keys
-// and cascade down this power
-export function runAsyncStateSubscriptionFn<T, E>(
-  // the subscription mode
-  mode: SubscriptionMode,
-  // the instance
-  asyncState: StateInterface<T>,
-  // the context value, if applicable
-  contextValue: UseAsyncStateContextType
-): (...args: any[]) => AbortFn {
-  return function run(...args) {
-    switch (mode) {
-      case SubscriptionMode.SRC:
-      case SubscriptionMode.ALONE:
-      case SubscriptionMode.SRC_FORK:
-        return contextValue !== null ?
-          contextValue.run(asyncState, ...args)
-          :
-          asyncState.run(standaloneProducerEffectsCreator, ...args);
-      case SubscriptionMode.OUTSIDE:
-        return asyncState.run(standaloneProducerEffectsCreator, ...args);
-      case SubscriptionMode.FORK:
-      case SubscriptionMode.HOIST:
-      case SubscriptionMode.LISTEN: {
-        return contextValue!.run(asyncState, ...args);
-      }
-      // NoOp - should not happen
-      case SubscriptionMode.NA:
-      case SubscriptionMode.WAIT:
-      default:
-        return undefined;
-    }
-  };
 }
 
 // we only dispose what we hoist, other states are disposed
@@ -927,20 +884,17 @@ function noop(): undefined {
   // that's a noop fn
 }
 
-function returnsUndefined() {
-  return undefined;
-}
-
 function makeUseAsyncStateBaseReturnValue<T, E>(
   asyncState: StateInterface<T>,
   configurationKey: string,
-  run: (...args: any[]) => AbortFn,
+  contextValue: UseAsyncStateContextType,
   mode: SubscriptionMode
 ) {
   if (!asyncState) {
     return {
       mode,
       run: noop,
+      runc: noop,
       abort: noop,
       replay: noop,
       setState: noop,
@@ -948,8 +902,13 @@ function makeUseAsyncStateBaseReturnValue<T, E>(
       uniqueId: undefined,
       key: configurationKey,
       invalidateCache: noop,
-    };
+      // @ts-ignore
+      runp: noop as ((...args: any[]) => Promise<State<T>>),
+      // @ts-ignore
+    } as BaseUseAsyncState<T, E>;
   }
+
+  const effectsCreator = contextValue?.producerEffectsCreator ?? standaloneProducerEffectsCreator;
 
   return {
     mode,
@@ -963,10 +922,9 @@ function makeUseAsyncStateBaseReturnValue<T, E>(
     mergePayload: asyncState.mergePayload,
     invalidateCache: asyncState.invalidateCache,
 
-    run: typeof run === "function" ?
-      run
-      :
-      asyncState.run.bind(asyncState, standaloneProducerEffectsCreator),
+    run: asyncState.run.bind(asyncState, effectsCreator),
+    runp: asyncState.runp.bind(asyncState, effectsCreator),
+    runc: asyncState.runc.bind(asyncState, effectsCreator),
   };
 }
 
@@ -974,14 +932,14 @@ export function makeUseAsyncStateReturnValue<T, E>(
   asyncState: StateInterface<T>,
   stateValue: E,
   configurationKey: string,
-  run: (...args: any[]) => AbortFn,
+  contextValue: UseAsyncStateContextType,
   mode: SubscriptionMode
 ): Readonly<UseAsyncState<T, E>> {
 
   // @ts-ignore
   // ok ts! I will append missing properties right now!
   const base: UseAsyncState<T, E> = makeUseAsyncStateBaseReturnValue(
-    asyncState, configurationKey, run, mode);
+    asyncState, configurationKey, contextValue, mode);
 
   base.state = stateValue;
   if (!asyncState) {
