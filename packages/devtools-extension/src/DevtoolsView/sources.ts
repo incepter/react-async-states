@@ -1,7 +1,6 @@
 import {
   createSource,
 } from "react-async-states";
-import {idsStateInitialValue, journalStateInitialValue} from "./dev-data";
 import {
   DevtoolsEvent,
   DevtoolsJournalEvent
@@ -15,30 +14,30 @@ export const updatesMeter = createSource("update-meter", undefined, {initialValu
 
 type Journal = { key: string, journal: any[], subscriptions: string[] };
 // stores data related to any async state
-export const journalSource = createSource<Journal>("journal", undefined);
+export const journalSource = createSource<Journal>("journal");
 // defines the gateway receiving messages from the app
 export const gatewaySource = createSource("gateway", gatewayProducer);
 // stores the keys with unique ids of created states
-export const keysSource = createSource("keys", undefined, {initialValue: isDev ? idsStateInitialValue : {}});
+export const keysSource = createSource("keys", undefined, {initialValue: {}});
 
 // contains the current state unique Id to display, works with lanes
-export const currentState = createSource<string | null>("current-state", undefined);
+export const currentState = createSource<string | null>("current-state");
 
 type CurrentJournal = { name: string, uniqueId: number, eventId: number, data: any };
 // the current journal to display from the current displayed state
-export const currentJournal = createSource<CurrentJournal | null>("json", undefined);
+export const currentJournal = createSource<CurrentJournal | null>("json");
+
+let systemSourcesIds;
 
 if (isDev) {
-  Object
-    .keys(keysSource.getState().data ?? {})
-    .forEach(id => {
-      journalSource.getLaneSource(`${id}`).setState(
-        journalStateInitialValue[`${id}`] ?? {
-          data: null,
-          messages: []
-        }
-      );
-    });
+  systemSourcesIds = {
+    [updatesMeter.uniqueId]: updatesMeter.key,
+    [journalSource.uniqueId]: journalSource.key,
+    [gatewaySource.uniqueId]: gatewaySource.key,
+    [keysSource.uniqueId]: keysSource.key,
+    [currentState.uniqueId]: currentState.key,
+    [currentJournal.uniqueId]: currentJournal.key,
+  }
 }
 
 setTimeout(() => {
@@ -56,27 +55,49 @@ setTimeout(() => {
   console.log(keysSource.getState());
 }, 20000);
 
-function gatewayProducer() {
+function gatewayProducer(props) {
   const port = (window as any).chrome.runtime.connect({name: "panel"});
 
-  port?.postMessage(DevtoolsMessagesBuilder.init());
-  port?.postMessage(DevtoolsMessagesBuilder.getKeys());
+  console.log('received port is', port);
+  if (!port) {
+    throw new Error('Cannot get port object');
+  }
 
-  port?.onMessage.addListener(message => {
+  port.postMessage(DevtoolsMessagesBuilder.init());
+  port.postMessage(DevtoolsMessagesBuilder.getKeys());
+
+  props.onAbort(() => port.onDisconnect());
+
+  port.onMessage.addListener(message => {
     if (message.source !== "async-states-agent") {
       return;
     }
+    if (isDev) {
+      let uniqueId = +(message.uniqueId || message.payload?.uniqueId);
+      if (systemSourcesIds.hasOwnProperty(uniqueId) || systemSourcesIds.hasOwnProperty(`${uniqueId}`)) {
+        console.log('received message about system stuff, ignoring them!')
+      } else {
+        console.log('====', message)
+      }
+    }
     switch (message.type) {
       case DevtoolsEvent.setKeys: {
-        return keysSource.setState(message.payload);
+        const nextKeys = !isDev ? message.payload :
+          Object.entries(message.payload)
+            .filter(([t]) => !systemSourcesIds.hasOwnProperty(t))
+            .reduce((acc, curr) => (acc[curr[0]] = curr[1], acc), {});
+
+        console.log('setKeys', nextKeys);
+        return keysSource.setState(nextKeys);
       }
       case DevtoolsEvent.setAsyncState: {
-        console.log('received an async state', message);
+        console.log('setAsyncState', message)
         updatesMeter.setState(old => old.data + 1);
-        return journalSource.getLaneSource(`${message.uniqueId}`).setState(message.payload);
+        return // journalSource.getLaneSource(`${message.uniqueId}`).setState(message.payload);
       }
       case DevtoolsEvent.partialSync: {
-        applyPartialUpdate(message);
+        console.log('partialSync', message.payload)
+        // applyPartialUpdate(message);
         return;
       }
       default:
