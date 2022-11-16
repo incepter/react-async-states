@@ -145,7 +145,6 @@ const SiderDisplay = React.memo(function () {
       <Header className='main-bg' style={{
         zIndex: 1,
         height: 40,
-        position: "fixed",
         padding: "0px 8px",
       }}>
         <div style={{
@@ -155,9 +154,8 @@ const SiderDisplay = React.memo(function () {
           alignItems: "center",
           justifyContent: "space-between",
         }}>
-          <div className="main-color">Sort by:</div>
           <Select size="small" className="sorter"
-                  style={{marginLeft: 8, borderRadius: 20}}
+                  style={{borderRadius: 20, width: '100%'}}
                   value={currentSort}
                   options={sortOptions}
                   onChange={(_, option: any) => setSort(option.sort)}/>

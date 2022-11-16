@@ -5,6 +5,23 @@ import vitePluginImp from 'vite-plugin-imp'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  build: {
+    lib: {
+      entry: 'src/index.tsx',
+      name: 'Devtools',
+      fileName: 'index'
+    },
+    rollupOptions: {
+      external: ['react', 'react/jsx-runtime'],
+      output: {
+        globals: {
+          react: 'React',
+          'react/jsx-runtime': 'jsxRuntime',
+        }
+      }
+    },
+  },
+
   plugins: [
     react(),
     vitePluginImp({
@@ -15,16 +32,6 @@ export default defineConfig({
           style: (name) => `antd/es/${name}/style`,
         },
       ],
-    }),
-    // @ts-ignore
-    copy({
-      hook: 'closeBundle',
-      targets: [
-        {
-          dest: 'dist/',
-          src: `src/static/*`,
-        },
-      ]
     }),
   ],
   css: {
@@ -39,5 +46,4 @@ export default defineConfig({
       {find: /^~/, replacement: ""},
     ],
   },
-});
-
+})
