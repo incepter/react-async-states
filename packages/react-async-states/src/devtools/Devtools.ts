@@ -67,7 +67,6 @@ function createDevtools(): DevtoolsInterface {
     if (!message.data || message.data.source !== "async-states-devtools-panel") {
       return;
     }
-    console.log('message from devtools', message.data.type, message.data);
     if (message.data) {
       if (message.data.type === DevtoolsRequest.init) {
         connect();

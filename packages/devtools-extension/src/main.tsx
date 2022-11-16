@@ -1,17 +1,17 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import './index.css'
-import {DevtoolsView} from "./DevtoolsView";
 import DevModeApp from "./DevModeApp";
+import {__DEV__} from "./utils";
+import {DevtoolsView} from "./DevtoolsView";
 
-const isDev = process.env.NODE_ENV !== "production";
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    {isDev && <>
+    {__DEV__ && <>
       <DevModeApp/>
       <hr/>
     </>
     }
-    <DevtoolsView/>
+    <DevtoolsView  />
   </React.StrictMode>
 )

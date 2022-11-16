@@ -1,15 +1,10 @@
-import {
-  State,
-  createSource,
-} from "react-async-states";
+import {createSource, State,} from "react-async-states";
 import {
   DevtoolsEvent,
   DevtoolsJournalEvent
 } from "react-async-states/dist/devtools";
 import {DevtoolsMessagesBuilder} from "./utils";
 import {shimChromeRuntime} from "./ShimChromeRuntime";
-
-const isDev = process.env.NODE_ENV !== "production";
 
 // an update meter to trigger recalculation of the sort
 export const updatesMeter = createSource("update-meter", undefined, {
@@ -49,27 +44,28 @@ export function resetAllSources() {
 }
 
 
-export function getPort() {
-  if (isDev) {
+export function getPort(isDevMode) {
+  if (isDevMode) {
     let shim = shimChromeRuntime();
     if (shim) {
       // @ts-ignore
       window.chrome = shim;
     }
+    return shim.runtime.connect({name: "panel"});
   }
   return (window as any).chrome.runtime.connect({name: "panel"});
 }
 
 function gatewayProducer(props) {
-  const port = getPort();
+  const {dev} = props.payload;
+  const port = getPort(dev);
 
-  console.log('received port is', port);
   if (!port) {
     throw new Error('Cannot get port object');
   }
 
-  port.postMessage(DevtoolsMessagesBuilder.init());
-  port.postMessage(DevtoolsMessagesBuilder.getKeys());
+  port.postMessage(DevtoolsMessagesBuilder.init(dev));
+  port.postMessage(DevtoolsMessagesBuilder.getKeys(dev));
 
   port.onMessage.addListener(message => {
     if (message.source !== "async-states-agent") {
@@ -77,16 +73,13 @@ function gatewayProducer(props) {
     }
     switch (message.type) {
       case DevtoolsEvent.setKeys: {
-        console.log('setKeys', message.payload, port);
         return keysSource.setState(message.payload);
       }
       case DevtoolsEvent.setAsyncState: {
-        console.log('setAsyncState', message, port)
         updatesMeter.setState(old => old.data + 1);
         return journalSource.getLaneSource(`${message.uniqueId}`).setState(message.payload);
       }
       case DevtoolsEvent.partialSync: {
-        console.log('partialSync', message.payload, port)
         applyPartialUpdate(message);
         return;
       }
@@ -96,7 +89,6 @@ function gatewayProducer(props) {
 
   });
 
-  props.onAbort(() => console.log('DISPOSING OF PORT OBJECT', port));
   props.onAbort(() => port.onDisconnect());
 
   return port;

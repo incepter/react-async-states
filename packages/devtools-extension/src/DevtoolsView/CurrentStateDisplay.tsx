@@ -14,6 +14,7 @@ import {
 } from "./sources";
 import {addFormattedDate, DevtoolsMessagesBuilder} from "./utils";
 import CurrentJournalDisplay from "./CurrentJournalDisplay";
+import {DevtoolsContext} from "./context";
 
 const {Header, Content, Sider} = Layout;
 
@@ -114,13 +115,14 @@ export const SideKey = React.memo(function SiderKey({
   lanes
 }: SiderDisplayProps) {
 
+  const {dev} = React.useContext(DevtoolsContext);
 
   React.useEffect(() => {
     gatewaySource
       .getState()
       .data
-      ?.postMessage?.(DevtoolsMessagesBuilder.getAsyncState(uniqueId));
-  }, [uniqueId]);
+      ?.postMessage?.(DevtoolsMessagesBuilder.getAsyncState(uniqueId, dev));
+  }, [uniqueId, dev]);
 
   const {state} = useSourceLane(journalSource, `${uniqueId}`);
 
@@ -287,6 +289,7 @@ function displayProducerType(value) {
 }
 
 function RefreshButton({lane}) {
+  const {dev} = React.useContext(DevtoolsContext);
   return (
     <Button
       type="link"
@@ -297,7 +300,7 @@ function RefreshButton({lane}) {
         gatewaySource
           .getState()
           .data
-          ?.postMessage?.(DevtoolsMessagesBuilder.getAsyncState(lane));
+          ?.postMessage?.(DevtoolsMessagesBuilder.getAsyncState(lane, dev));
       }}>Refresh</Button>
   );
 }
@@ -326,6 +329,7 @@ const Actions = React.memo(function Actions({lane}: { lane: string }) {
 
 function EditState({lane}) {
   const [open, setOpen] = React.useState(false);
+  const {dev} = React.useContext(DevtoolsContext);
   const [isJson, setIsJson] = React.useState(true);
   const [data, setData] = React.useState<string | null>("");
   const [status, setStatus] = React.useState(AsyncStateStatus.success);
@@ -349,7 +353,8 @@ function EditState({lane}) {
               lane,
               status,
               data,
-              isJson
+              isJson,
+              dev
             )
         );
         setOpen(false);

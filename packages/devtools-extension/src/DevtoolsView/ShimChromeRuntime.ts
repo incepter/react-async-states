@@ -18,7 +18,6 @@ export function shimChromeRuntime() {
           id: ++shimId,
           postMessage(msg) {
             window.postMessage(msg);
-            console.log('posting messages', msg);
           },
           onMessage: {
             addListener(fn) {
