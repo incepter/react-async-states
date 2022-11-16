@@ -7,6 +7,7 @@ import {
   DevtoolsJournalEvent
 } from "react-async-states/dist/devtools";
 import {DevtoolsMessagesBuilder} from "./utils";
+import {shimChromeRuntime} from "./ShimChromeRuntime";
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -47,8 +48,20 @@ export function resetAllSources() {
   journalSource.setState(undefined);
 }
 
+
+export function getPort() {
+  if (isDev) {
+    let shim = shimChromeRuntime();
+    if (shim) {
+      // @ts-ignore
+      window.chrome = shim;
+    }
+  }
+  return (window as any).chrome.runtime.connect({name: "panel"});
+}
+
 function gatewayProducer(props) {
-  const port = (window as any).chrome.runtime.connect({name: "panel"});
+  const port = getPort();
 
   console.log('received port is', port);
   if (!port) {
@@ -64,16 +77,16 @@ function gatewayProducer(props) {
     }
     switch (message.type) {
       case DevtoolsEvent.setKeys: {
-        console.log('setKeys', message.payload);
+        console.log('setKeys', message.payload, port);
         return keysSource.setState(message.payload);
       }
       case DevtoolsEvent.setAsyncState: {
-        console.log('setAsyncState', message)
+        console.log('setAsyncState', message, port)
         updatesMeter.setState(old => old.data + 1);
         return journalSource.getLaneSource(`${message.uniqueId}`).setState(message.payload);
       }
       case DevtoolsEvent.partialSync: {
-        console.log('partialSync', message.payload)
+        console.log('partialSync', message.payload, port)
         applyPartialUpdate(message);
         return;
       }
@@ -83,6 +96,7 @@ function gatewayProducer(props) {
 
   });
 
+  props.onAbort(() => console.log('DISPOSING OF PORT OBJECT', port));
   props.onAbort(() => port.onDisconnect());
 
   return port;

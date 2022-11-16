@@ -481,7 +481,7 @@ function createDevtools(): DevtoolsInterface {
       return;
     }
     const uniqueId = message.data.uniqueId;
-    if (!retainedInstances[uniqueId]) {
+    if (uniqueId && !retainedInstances[uniqueId]) {
       console.warn(`Devtools tried to communicate with a non retained state instance with uniqueId ${uniqueId}`);
       return;
     }

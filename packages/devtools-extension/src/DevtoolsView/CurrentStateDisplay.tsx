@@ -170,14 +170,35 @@ export const SideKey = React.memo(function SiderKey({
       <Button
         size="small"
         shape="round"
-        className="default-button w-full"
+        className={`default-button`}
+        style={{
+          marginLeft: level * 30,
+          width: level === 0 ? '100%' : `calc(100% - ${level * 30}px)`
+        }}
         type={isCurrent ? "primary" : "link"}
         onClick={() => {
           currentJournal.setState(null);
           currentState.setState(`${uniqueId}`);
         }}
+        loading={status === AsyncStateStatus.pending}
       >
-        <span style={{marginLeft: 8}}>{`› ${asyncStateKey}`}</span>
+        <div style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}>
+        <span style={{marginLeft: 8}}
+              title={`${asyncStateKey} (id: ${uniqueId})`}>{`› ${asyncStateKey}`}</span>
+          {status !== undefined && (
+            <div title={status} style={{
+              width: 10,
+              height: 10,
+              borderRadius: '50%',
+              backgroundColor: getBackgroundColorFromStatus(status),
+            }}></div>
+          )}
+        </div>
       </Button>
       <SiderLanes lanes={lanes} level={level + 1}/>
     </>

@@ -1,5 +1,6 @@
 import {resetAllSources} from "./sources";
 
+let shimId = 0;
 export function shimChromeRuntime() {
   return {
     devtools: {
@@ -10,9 +11,11 @@ export function shimChromeRuntime() {
     runtime: {
       connect(_argv: any) {
         let listeners: Function[] | null = [];
-        let listener = spyOnMessagesFromCurrentPage.bind(null, listeners);
+        let listener = spyOnMessagesFromCurrentPage.bind(null, () => listeners);
         (window as any).addEventListener("message", listener);
         return {
+          listeners,
+          id: ++shimId,
           postMessage(msg) {
             window.postMessage(msg);
             console.log('posting messages', msg);
@@ -23,7 +26,7 @@ export function shimChromeRuntime() {
             }
           },
           onDisconnect() {
-            listeners = null;
+            listeners = [];
             resetAllSources();
             (window as any).addEventListener("message", listener);
           }
@@ -35,6 +38,6 @@ export function shimChromeRuntime() {
 
 function spyOnMessagesFromCurrentPage(listeners, message) {
   if (message.data?.source === 'async-states-agent') {
-    listeners?.forEach?.(fn => fn(message.data));
+    listeners()?.forEach?.(fn => fn(message.data));
   }
 }
