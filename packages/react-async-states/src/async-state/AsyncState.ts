@@ -851,6 +851,13 @@ function makeSource<T>(instance: StateInterface<T>): Readonly<Source<T>> {
     runp: instance.runp.bind(instance, standaloneProducerEffectsCreator),
     runc: instance.runc.bind(instance, standaloneProducerEffectsCreator),
 
+    getAllLanes() {
+      if (!instance.lanes) {
+        return [];
+      }
+      return Object.values(instance.lanes).map(lane => lane._source);
+    },
+
     getLaneSource(lane?: string) {
       return instance.getLane(lane)._source;
     },
@@ -1429,6 +1436,8 @@ export interface Source<T> extends BaseSource<T> {
 
   removeLane(laneKey?: string): boolean,
   getLaneSource(laneKey?: string): Source<T>,
+
+  getAllLanes(): Source<T>[],
 }
 
 export type RunTask<T> = {
