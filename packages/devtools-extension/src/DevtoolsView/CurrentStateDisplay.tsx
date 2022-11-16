@@ -4,20 +4,23 @@ import ReactJson from "react-json-view";
 import Button from "antd/lib/button";
 import Modal from "antd/lib/modal";
 import Select from "antd/lib/select";
-import { useSource, useSourceLane, AsyncStateStatus } from "react-async-states";
-import { DevtoolsJournalEvent } from "react-async-states/dist/devtools";
+import {useSource, useSourceLane, AsyncStateStatus} from "react-async-states";
+import {DevtoolsJournalEvent} from "react-async-states/dist/devtools";
 import {
   currentJournal,
   currentState,
   gatewaySource,
   journalSource
 } from "./sources";
-import { addFormattedDate, DevtoolsMessagesBuilder } from "./utils";
+import {addFormattedDate, DevtoolsMessagesBuilder} from "./utils";
 import CurrentJournalDisplay from "./CurrentJournalDisplay";
 
 const {Header, Content, Sider} = Layout;
 
-function CurrentJsonDisplay({lane, mode}: {lane: string, mode: 'state' | 'journal'}) {
+function CurrentJsonDisplay({
+  lane,
+  mode
+}: { lane: string, mode: 'state' | 'journal' }) {
   if (mode === "state") {
     return <StateView lane={lane}/>;
   }
@@ -60,6 +63,7 @@ function CurrentTreeDisplay() {
     </Layout>
   );
 }
+
 type SiderDisplayProps = {
   uniqueId: number,
   asyncStateKey: string,
@@ -67,13 +71,48 @@ type SiderDisplayProps = {
   level?: number,
   lanes?: string
 };
+
+function getBackgroundColorFromStatus(status: AsyncStateStatus | undefined) {
+  switch (status) {
+    case AsyncStateStatus.error:
+      return "#EB6774";
+    case AsyncStateStatus.initial:
+      return "#DEDEDE";
+    case AsyncStateStatus.aborted:
+      return "#787878";
+    case AsyncStateStatus.pending:
+      return "#5B95DB";
+    case AsyncStateStatus.success:
+      return "#17A449";
+    default:
+      return undefined;
+  }
+}
+
+function getColorFromStatus(status: AsyncStateStatus | undefined) {
+  switch (status) {
+    case AsyncStateStatus.error:
+      return "white";
+    case AsyncStateStatus.initial:
+      return "black";
+    case AsyncStateStatus.aborted:
+      return "white";
+    case AsyncStateStatus.pending:
+      return "white";
+    case AsyncStateStatus.success:
+      return "white";
+    default:
+      return undefined;
+  }
+}
+
 export const SideKey = React.memo(function SiderKey({
-                                                      uniqueId,
-                                                      asyncStateKey,
-                                                      isCurrent,
-                                                      level = 0,
-                                                      lanes
-                                                    }: SiderDisplayProps) {
+  uniqueId,
+  asyncStateKey,
+  isCurrent,
+  level = 0,
+  lanes
+}: SiderDisplayProps) {
 
 
   React.useEffect(() => {
@@ -83,20 +122,44 @@ export const SideKey = React.memo(function SiderKey({
       ?.postMessage?.(DevtoolsMessagesBuilder.getAsyncState(uniqueId));
   }, [uniqueId]);
 
+  const {state} = useSourceLane(journalSource, `${uniqueId}`);
+
+  const {status} = state.data?.state ?? {};
+
   if (!lanes?.length) {
     return (
       <Button
         size="small"
         shape="round"
-        style={{marginLeft: level * 30, width: level === 0 ? '100%' : `calc(100% - ${level * 30}px)`}}
         className={`default-button`}
+        style={{
+          marginLeft: level * 30,
+          width: level === 0 ? '100%' : `calc(100% - ${level * 30}px)`
+        }}
         type={isCurrent ? "primary" : "link"}
         onClick={() => {
           currentJournal.setState(null);
           currentState.setState(`${uniqueId}`);
         }}
+        loading={status === AsyncStateStatus.pending}
       >
-        <span style={{marginLeft: 8}}>{`› ${asyncStateKey}`}</span>
+        <div style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}>
+        <span style={{marginLeft: 8}}
+              title={`${asyncStateKey} (id: ${uniqueId})`}>{`› ${asyncStateKey}`}</span>
+          {status !== undefined && (
+            <div title={status} style={{
+              width: 10,
+              height: 10,
+              borderRadius: '50%',
+              backgroundColor: getBackgroundColorFromStatus(status),
+            }}></div>
+          )}
+        </div>
       </Button>
     );
   }
@@ -116,7 +179,7 @@ export const SideKey = React.memo(function SiderKey({
       >
         <span style={{marginLeft: 8}}>{`› ${asyncStateKey}`}</span>
       </Button>
-      <SiderLanes lanes={lanes} level={level+1} />
+      <SiderLanes lanes={lanes} level={level + 1}/>
     </>
   );
 });
@@ -124,10 +187,10 @@ export const SideKey = React.memo(function SiderKey({
 function SiderLanes({lanes, level}) {
   const {state: {data: lane}} = useSource(currentState);
   return lanes.map(([id, key]) => <SideKey key={key} uniqueId={id}
-                                            asyncStateKey={key}
-                                            isCurrent={lane === id}
-                                            level={level}
-    />);
+                                           asyncStateKey={key}
+                                           isCurrent={lane === id}
+                                           level={level}
+  />);
 }
 
 
@@ -196,6 +259,8 @@ function displayProducerType(value) {
       return 'promise';
     case 3:
       return 'generator';
+    case 4:
+      return 'not provided';
   }
   return null;
 }
@@ -216,7 +281,7 @@ function RefreshButton({lane}) {
   );
 }
 
-const Actions = React.memo(function Actions({lane}: {lane: string}) {
+const Actions = React.memo(function Actions({lane}: { lane: string }) {
 
   return (
     <>
@@ -341,7 +406,10 @@ function EditState({lane}) {
   );
 }
 
-function PreviewsStateChoiceDefault({lane, onChange}: {lane: string, onChange: Function, status: any}) {
+function PreviewsStateChoiceDefault({
+  lane,
+  onChange
+}: { lane: string, onChange: Function, status: any }) {
   const {state} = useSourceLane(journalSource, lane);
   const updateEvents = (state.data?.journal ?? [])
     .filter(t => t.eventType === DevtoolsJournalEvent.update)

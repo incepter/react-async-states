@@ -167,6 +167,9 @@ export type UseAsyncStateConfiguration<T, E = State<T>> = {
   subscriptionKey?: string,
   selector: useSelector<T, E>,
   events?: UseAsyncStateEvents<T>,
+
+  // dev only
+  hideFromDevtools?: boolean,
 }
 
 export enum RenderStrategy {

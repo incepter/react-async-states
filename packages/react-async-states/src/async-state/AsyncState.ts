@@ -1409,6 +1409,9 @@ export type ProducerConfig<T> = {
   runEffect?: ProducerRunEffects,
   skipPendingDelayMs?: number,
   resetStateOnDispose?: boolean,
+
+  // dev only
+  hideFromDevtools?: boolean,
 }
 
 export type StateFunctionUpdater<T> = (updater: State<T>) => T;

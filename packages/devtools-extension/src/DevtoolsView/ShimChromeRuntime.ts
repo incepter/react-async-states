@@ -1,3 +1,5 @@
+import {resetAllSources} from "./sources";
+
 export function shimChromeRuntime() {
   return {
     devtools: {
@@ -22,6 +24,7 @@ export function shimChromeRuntime() {
           },
           onDisconnect() {
             listeners = null;
+            resetAllSources();
             (window as any).addEventListener("message", listener);
           }
         };

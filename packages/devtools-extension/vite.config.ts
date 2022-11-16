@@ -16,6 +16,7 @@ export default defineConfig({
         },
       ],
     }),
+    // @ts-ignore
     copy({
       hook: 'closeBundle',
       targets: [
