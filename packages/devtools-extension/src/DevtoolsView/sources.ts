@@ -1,68 +1,73 @@
-import {
-  createSource,
-} from "react-async-states";
-import {idsStateInitialValue, journalStateInitialValue} from "./dev-data";
+import {createSource, State,} from "react-async-states";
 import {
   DevtoolsEvent,
   DevtoolsJournalEvent
 } from "react-async-states/dist/devtools";
 import {DevtoolsMessagesBuilder} from "./utils";
-
-const isDev = process.env.NODE_ENV !== "production";
+import {shimChromeRuntime} from "./ShimChromeRuntime";
 
 // an update meter to trigger recalculation of the sort
-export const updatesMeter = createSource("update-meter", undefined, {initialValue: 0});
+export const updatesMeter = createSource("update-meter", undefined, {
+  initialValue: 0,
+  hideFromDevtools: true
+});
 
-type Journal = { key: string, journal: any[], subscriptions: string[] };
+type Journal = {
+  key: string,
+  journal: any[],
+  state: State<any>,
+  subscriptions: string[]
+};
 // stores data related to any async state
-export const journalSource = createSource<Journal>("journal", undefined);
+export const journalSource = createSource<Journal>("journal", null, {hideFromDevtools: true});
 // defines the gateway receiving messages from the app
-export const gatewaySource = createSource("gateway", gatewayProducer);
+export const gatewaySource = createSource("gateway", gatewayProducer, {hideFromDevtools: true});
 // stores the keys with unique ids of created states
-export const keysSource = createSource("keys", undefined, {initialValue: isDev ? idsStateInitialValue : {}});
+export const keysSource = createSource("keys", undefined, {
+  initialValue: {},
+  hideFromDevtools: true
+});
 
 // contains the current state unique Id to display, works with lanes
-export const currentState = createSource<string | null>("current-state", undefined);
+export const currentState = createSource<string | null>("current-state", null, {hideFromDevtools: true});
 
 type CurrentJournal = { name: string, uniqueId: number, eventId: number, data: any };
 // the current journal to display from the current displayed state
-export const currentJournal = createSource<CurrentJournal | null>("json", undefined);
+export const currentJournal = createSource<CurrentJournal | null>("json", null, {hideFromDevtools: true});
 
-if (isDev) {
-  Object
-    .keys(keysSource.getState().data ?? {})
-    .forEach(id => {
-      journalSource.getLaneSource(`${id}`).setState(
-        journalStateInitialValue[`${id}`] ?? {
-          data: null,
-          messages: []
-        }
-      );
-    });
+export function resetAllSources() {
+  keysSource.setState({});
+  currentState.setState(null);
+  currentJournal.setState(null);
+  // @ts-ignore
+  journalSource.setState(undefined);
 }
 
-setTimeout(() => {
-  let shape = {};
-  Object
-    .keys(keysSource.getState().data ?? {})
-    .forEach(id => {
-      shape[id] = journalSource.getLaneSource(`${id}`).getState().data
-    });
-  console.log('_______ state of all ________________');
 
-  console.log(shape);
+export function getPort(isDevMode) {
+  if (isDevMode) {
+    let shim = shimChromeRuntime();
+    if (shim) {
+      // @ts-ignore
+      window.chrome = shim;
+    }
+    return shim.runtime.connect({name: "panel"});
+  }
+  return (window as any).chrome.runtime.connect({name: "panel"});
+}
 
-  console.log('______________________ keys ___________________');
-  console.log(keysSource.getState());
-}, 20000);
+function gatewayProducer(props) {
+  const {dev} = props.payload;
+  const port = getPort(dev);
 
-function gatewayProducer() {
-  const port = (window as any).chrome.runtime.connect({name: "panel"});
+  if (!port) {
+    throw new Error('Cannot get port object');
+  }
 
-  port?.postMessage(DevtoolsMessagesBuilder.init());
-  port?.postMessage(DevtoolsMessagesBuilder.getKeys());
+  port.postMessage(DevtoolsMessagesBuilder.init(dev));
+  port.postMessage(DevtoolsMessagesBuilder.getKeys(dev));
 
-  port?.onMessage.addListener(message => {
+  port.onMessage.addListener(message => {
     if (message.source !== "async-states-agent") {
       return;
     }
@@ -71,7 +76,6 @@ function gatewayProducer() {
         return keysSource.setState(message.payload);
       }
       case DevtoolsEvent.setAsyncState: {
-        console.log('received an async state', message);
         updatesMeter.setState(old => old.data + 1);
         return journalSource.getLaneSource(`${message.uniqueId}`).setState(message.payload);
       }
@@ -82,7 +86,11 @@ function gatewayProducer() {
       default:
         return;
     }
+
   });
+
+  props.onAbort(() => port.onDisconnect());
+
   return port;
 }
 

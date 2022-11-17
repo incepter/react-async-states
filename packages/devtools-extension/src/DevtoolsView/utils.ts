@@ -1,29 +1,29 @@
 import { DevtoolsRequest } from "react-async-states/dist/devtools";
 
 export const DevtoolsMessagesBuilder = {
-  init() {
+  init(dev: boolean) {
     return {
       type: "init",
       source: "async-states-devtools-panel",
-      tabId: (window as any).chrome.devtools.inspectedWindow.tabId
+      tabId: dev ? -1 : (window as any).chrome.devtools.inspectedWindow.tabId
     };
   },
-  getKeys() {
+  getKeys(dev: boolean) {
     return {
       type: DevtoolsRequest.getKeys,
       source: "async-states-devtools-panel",
-      tabId: (window as any).chrome.devtools.inspectedWindow.tabId
+      tabId: dev ? -1 : (window as any).chrome.devtools.inspectedWindow.tabId
     };
   },
-  getAsyncState(uniqueId) {
+  getAsyncState(uniqueId, dev?: boolean) {
     return {
       uniqueId,
       source: "async-states-devtools-panel",
       type: DevtoolsRequest.getAsyncState,
-      tabId: (window as any).chrome.devtools.inspectedWindow.tabId
+      tabId: dev ? -1 : (window as any).chrome.devtools.inspectedWindow.tabId
     };
   },
-  changeAsyncState(uniqueId, status, data, isJson) {
+  changeAsyncState(uniqueId, status, data, isJson, dev?: boolean) {
     return {
       data,
       status,
@@ -31,7 +31,7 @@ export const DevtoolsMessagesBuilder = {
       uniqueId,
       source: "async-states-devtools-panel",
       type: DevtoolsRequest.changeAsyncState,
-      tabId: (window as any).chrome.devtools.inspectedWindow.tabId
+      tabId: dev ? -1 : (window as any).chrome.devtools.inspectedWindow.tabId
     };
   },
 }

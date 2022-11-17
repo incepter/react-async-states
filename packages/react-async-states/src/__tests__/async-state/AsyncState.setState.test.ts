@@ -2,6 +2,7 @@ import AsyncState, { AsyncStateStatus, StateBuilder } from "../../async-state";
 import { timeout } from "./test-utils";
 import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
 
+// @ts-ignore
 jest.useFakeTimers("modern");
 mockDateNow();
 
@@ -36,7 +37,7 @@ describe('AsyncState - setState', () => {
   it('should update state and do not notify subscribers', async () => {
     let lastSuccess = myAsyncState.lastSuccess;
 
-    myAsyncState.replaceState(StateBuilder.success({}), false);
+    myAsyncState.replaceState(StateBuilder.success({}, null), false);
     // then
     expect(subscription).not.toHaveBeenCalled();
   });

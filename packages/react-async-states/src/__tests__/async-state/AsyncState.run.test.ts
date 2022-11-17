@@ -2,7 +2,9 @@ import { act } from "@testing-library/react-hooks";
 import AsyncState, { AsyncStateStatus } from "../../async-state";
 import { rejectionTimeout, timeout } from "./test-utils";
 import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
+import {standaloneProducerEffectsCreator} from "../../async-state/AsyncState";
 
+// @ts-ignore
 jest.useFakeTimers("modern");
 mockDateNow();
 
@@ -25,7 +27,7 @@ describe('AsyncState - run', () => {
       status: AsyncStateStatus.initial,
     });
 
-    myAsyncState.run(() => {});
+    myAsyncState.run(standaloneProducerEffectsCreator);
     // should transition synchronously to pending state
     expect(myAsyncState.state).toEqual({
       props: {
@@ -90,7 +92,7 @@ describe('AsyncState - run', () => {
     let myAsyncState = new AsyncState(key, producer, myConfig);
 
     // then
-    myAsyncState.run(() => {});
+    myAsyncState.run(standaloneProducerEffectsCreator);
     await act(async () => {
       await jest.advanceTimersByTime(50);
     });

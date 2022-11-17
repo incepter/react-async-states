@@ -3,14 +3,14 @@ import Select from "antd/lib/select";
 import ReactJson from "react-json-view";
 import Button from "antd/lib/button";
 import Layout from "antd/lib/layout";
-import { useSource, useSourceLane, } from "react-async-states";
-import { DevtoolsJournalEvent } from "react-async-states/dist/devtools";
-import { currentJournal, journalSource } from "./sources";
-import { addFormattedDate } from "./utils";
+import {useSource, useSourceLane,} from "react-async-states";
+import {DevtoolsJournalEvent} from "react-async-states/dist/devtools";
+import {currentJournal, journalSource} from "./sources";
+import {addFormattedDate} from "./utils";
 
 const {Content, Sider} = Layout;
 
-const CurrentJournalDisplay = React.memo(function Journal({lane}: {lane: string}) {
+const CurrentJournalDisplay = React.memo(function Journal({lane}: { lane: string }) {
 
   return (
     <Layout className='main-bg' style={{
@@ -20,7 +20,7 @@ const CurrentJournalDisplay = React.memo(function Journal({lane}: {lane: string}
       <Sider style={{
         padding: 8,
         overflow: 'auto',
-        height: 'calc(100vh - 40px)',
+        // height: 'calc(100vh - 40px)',
         borderRight: '1px dashed #C3C3C3',
       }} className='main-bg scroll-y-auto' width={250}>
         <div className='main-color' style={{height: '100%'}}>
@@ -50,12 +50,12 @@ function JournalView({lane}) {
   const {state: json} = useSource(currentJournal);
   const {state: {data}} = useSourceLane(journalSource, lane);
 
-  const {journal: allLogs} = data ?? {};
+  const {journal: allLogs = []} = data ?? {};
   const [selectedTypes, setSelectedTypes] = React.useState(initialSelectedEvents);
   const filteredData = React.useMemo(() => {
     return allLogs
-      .filter(t => selectedTypes.includes(t.eventType))
-      .sort(sortByEventIdDesc)
+      ?.filter(t => selectedTypes.includes(t.eventType))
+      .sort(sortByEventIdDesc) ?? []
   }, [data, selectedTypes]);
 
   React.useEffect(() => {

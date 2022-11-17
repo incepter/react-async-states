@@ -3,7 +3,9 @@ import { shallowClone } from "../../shared";
 import { act } from "@testing-library/react-hooks";
 import { timeout } from "./test-utils";
 import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
+import {standaloneProducerEffectsCreator} from "../../async-state/AsyncState";
 
+// @ts-ignore
 jest.useFakeTimers("modern");
 mockDateNow();
 describe('AsyncState - fork', () => {
@@ -37,7 +39,7 @@ describe('AsyncState - fork', () => {
     expect(forkedAsyncState.producer).not.toBe(myAsyncState.producer);
     expect(forkedAsyncState.state).not.toBe(myAsyncState.state);// not same reference even if retrieved
   });
-  it('should fork and keep state and subscriptions after run', async () => {
+  it('should fork and keep state after run', async () => {
     // given
     let key = "simulated";
     let producer = timeout(100, [{id: 1, description: "value"}]);
@@ -45,7 +47,7 @@ describe('AsyncState - fork', () => {
 
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
-    myAsyncState.run(() => {});
+    myAsyncState.run(standaloneProducerEffectsCreator);
 
     await act(async () => {
       await jest.advanceTimersByTime(100);
@@ -53,7 +55,7 @@ describe('AsyncState - fork', () => {
 
     expect(myAsyncState.state.status).toBe(AsyncStateStatus.success); // make sure it resolved
 
-    let forkedAsyncState = myAsyncState.fork({keepSubscriptions: true, keepState: true});
+    let forkedAsyncState = myAsyncState.fork({keepState: true});
     // then
     // make sure they are deeply equal, but not with same reference ;)
     expect(myAsyncState.lastSuccess).toEqual(forkedAsyncState.lastSuccess);
@@ -61,7 +63,7 @@ describe('AsyncState - fork', () => {
     expect(myAsyncState.state).toEqual(forkedAsyncState.state);
     expect(myAsyncState.state).not.toBe(forkedAsyncState.state);
   });
-  it('should fork and keep state and subscriptions before run', async () => {
+  it('should fork and keep state before run', async () => {
     // given
     let key = "simulated";
     let producer = timeout(100, [{id: 1, description: "value"}]);
@@ -70,7 +72,7 @@ describe('AsyncState - fork', () => {
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
 
-    let forkedAsyncState = myAsyncState.fork({keepSubscriptions: true, keepState: true});
+    let forkedAsyncState = myAsyncState.fork({keepState: true});
 
     forkedAsyncState.run(() => {});
 

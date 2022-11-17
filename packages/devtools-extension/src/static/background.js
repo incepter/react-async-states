@@ -1,13 +1,4 @@
-/**
- * when a message is received from content-script
- * we send it to the corresponding devtools port
- */
 chrome.runtime.onMessage.addListener(onMessageFromContentScript); // content-script -> background (here) -> devtools
-/**
- * when devtools is connected, we listen to messages from it
- * and send them to content-script
- * devtools -> background (here) -> content-script
- */
 chrome.runtime.onConnect.addListener(onDevtoolsConnect);
 
 

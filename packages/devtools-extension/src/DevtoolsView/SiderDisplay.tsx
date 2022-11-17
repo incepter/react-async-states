@@ -135,7 +135,7 @@ const SiderDisplay = React.memo(function () {
     <Sider
       className='main-bg scroll-y-auto'
       style={{
-        height: '100vh',
+        height: 'auto',
         overflow: 'auto',
         padding: '0px 8px',
         borderRight: '1px dashed #C3C3C3',
@@ -145,7 +145,6 @@ const SiderDisplay = React.memo(function () {
       <Header className='main-bg' style={{
         zIndex: 1,
         height: 40,
-        position: "fixed",
         padding: "0px 8px",
       }}>
         <div style={{
@@ -155,9 +154,8 @@ const SiderDisplay = React.memo(function () {
           alignItems: "center",
           justifyContent: "space-between",
         }}>
-          <div className="main-color">Sort by:</div>
           <Select size="small" className="sorter"
-                  style={{marginLeft: 8, borderRadius: 20}}
+                  style={{borderRadius: 20, width: '100%'}}
                   value={currentSort}
                   options={sortOptions}
                   onChange={(_, option: any) => setSort(option.sort)}/>
@@ -166,7 +164,7 @@ const SiderDisplay = React.memo(function () {
       <Content className="scroll-y-auto"
                style={{
                  top: 40,
-                 height: 'calc(100vh - 45px)',
+                 // height: 'calc(100vh - 45px)',
                  overflow: 'auto',
                  marginTop: 40
                }}>

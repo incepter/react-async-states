@@ -1,18 +1,23 @@
 {
-  "name": "devtools-extension2",
+  "name": "async-states-devtools",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
+  "version": "0.0.0",
+  "types": "dist/index",
+  "module": "dist/index.js",
+  "main": "dist/index.umd.cjs",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:ext": "tsc && vite build --config vite.config.ts",
+    "build:lib": "tsc && vite build --config vite.config.lib.ts"
   },
   "dependencies": {
     "antd": "^4.24.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-json-view": "^1.21.3"
+    "react-json-view": "^1.21.3",
+    "react-resizable": "^3.0.4"
   },
   "devDependencies": {
     "@types/node": "^18.11.9",
@@ -23,6 +28,7 @@
     "rollup-plugin-copy": "^3.4.0",
     "typescript": "^4.6.4",
     "vite": "^3.2.3",
+    "vite-plugin-dts": "^1.7.1",
     "vite-plugin-imp": "^2.3.1"
   }
 }
