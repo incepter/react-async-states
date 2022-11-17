@@ -48,14 +48,14 @@ function CurrentTreeDisplay() {
       }} className="main-bg">
         <Actions lane={lane}/>
       </Header>
-      <Layout style={{height: "calc(100vh - 40px)"}}>
+      <Layout style={{height: "auto"}}>
         <Sider style={{
           borderRight: '1px dashed #C3C3C3',
         }} className="main-bg" width={400}>
           <CurrentJsonDisplay lane={lane} mode="state"/>
         </Sider>
         <Content style={{
-          maxHeight: 'calc(100vh - 40px)',
+          // maxHeight: 'calc(100vh - 40px)',
           overflow: 'auto'
         }} className="main-bg scroll-y-auto">
           <CurrentJsonDisplay lane={lane} mode="journal"/>
@@ -234,7 +234,9 @@ function StateView({lane}) {
     return <span>No state information</span>;
   }
   return (
-    <div style={{height: 'calc(100vh - 40px)'}} className="scroll-y-auto">
+    <div style={{
+      // height: 'calc(100vh - 40px)'
+    }} className="scroll-y-auto">
       <ReactJson name={data.key}
                  style={{
                    padding: "1rem",

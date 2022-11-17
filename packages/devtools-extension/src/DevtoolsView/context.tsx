@@ -6,7 +6,7 @@ type DevtoolsContextType = { dev?: boolean };
 export function DevtoolsProvider({
   dev,
   children
-}: { dev: boolean, children: React.ReactNode }) {
+}: { dev?: boolean, initialHeight?: number, children: React.ReactNode }) {
   return (
     <DevtoolsContext.Provider
       value={React.useMemo(() => ({dev}), [dev])}

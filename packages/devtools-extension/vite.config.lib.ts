@@ -1,5 +1,6 @@
+import dts from 'vite-plugin-dts'
 import {defineConfig} from 'vite'
-import copy from 'rollup-plugin-copy'
+
 import react from '@vitejs/plugin-react'
 import vitePluginImp from 'vite-plugin-imp'
 
@@ -33,6 +34,7 @@ export default defineConfig({
         },
       ],
     }),
+    dts()
   ],
   css: {
     preprocessorOptions: {

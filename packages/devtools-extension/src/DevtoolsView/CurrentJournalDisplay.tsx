@@ -20,7 +20,7 @@ const CurrentJournalDisplay = React.memo(function Journal({lane}: { lane: string
       <Sider style={{
         padding: 8,
         overflow: 'auto',
-        height: 'calc(100vh - 40px)',
+        // height: 'calc(100vh - 40px)',
         borderRight: '1px dashed #C3C3C3',
       }} className='main-bg scroll-y-auto' width={250}>
         <div className='main-color' style={{height: '100%'}}>

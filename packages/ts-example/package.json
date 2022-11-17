@@ -25,6 +25,7 @@
 		"@typescript-eslint/eslint-plugin": "5.0.0",
 		"@vitejs/plugin-react": "2.2.0",
 		"autoprefixer": "10.4.13",
+		"async-states-devtools": "workspace:*t",
 		"eslint": "8.0.1",
 		"eslint-config-prettier": "8.5.0",
 		"eslint-config-standard-with-typescript": "23.0.0",
