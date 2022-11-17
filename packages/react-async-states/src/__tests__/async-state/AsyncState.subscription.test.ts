@@ -2,7 +2,9 @@ import { act } from "@testing-library/react-hooks";
 import AsyncState, { AsyncStateStatus } from "../../async-state";
 import { timeout } from "./test-utils";
 import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
+import {standaloneProducerEffectsCreator} from "../../async-state/AsyncState";
 
+// @ts-ignore
 jest.useFakeTimers("modern");
 mockDateNow();
 
@@ -23,8 +25,7 @@ describe('AsyncState - subscriptions', () => {
     let unsubscribe = myAsyncState.subscribe(subscriptionFn);
     expect(typeof unsubscribe).toBe("function");
 
-    myAsyncState.run(() => {
-    });
+    myAsyncState.run(standaloneProducerEffectsCreator);
     await act(async () => {
       await jest.advanceTimersByTime(50);
     });
@@ -87,8 +88,7 @@ describe('AsyncState - subscriptions', () => {
 
     // then
 
-    myAsyncState.run(() => {
-    });
+    myAsyncState.run(standaloneProducerEffectsCreator);
     await act(async () => {
       await jest.advanceTimersByTime(49);
     });
@@ -133,8 +133,7 @@ describe('AsyncState - subscriptions', () => {
 
     // then
 
-    myAsyncState.run(() => {
-    });
+    myAsyncState.run(standaloneProducerEffectsCreator);
     await act(async () => {
       await jest.advanceTimersByTime(50);
     });
