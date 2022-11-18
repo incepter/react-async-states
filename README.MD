@@ -1,35 +1,127 @@
 # React async states
 
 ## What is this ?
-This is a multi-paradigm library for decentralized state management in React.
-It aims to facilitate and automate working with [a]synchronous states while 
-sharing them. It was designed to reduce the needed boilerplate to
-achieve great and effective results.
+This is a multi-paradigm library for state management.
+
+It aims to facilitate working with [a]synchronous states while sharing them.
+It was designed to reduce the needed boilerplate to achieve great and effective
+results.
+
+It introduces a new concept: the `producer` that is similar to reducer, async
+reducer or query from other libraries you might know, but with more power.
+
+This library provides utilities for low level state manipulation, and other
+libraries may appear just a small abstraction on top of it.
 
 ## Main features
 The features that make this library special are:
 
-- Easy to use and Minimal API (`useAsyncState`).
-- Tiny library with 0 dependencies, only react as a peer dependency.
-- Targets all react/javascript environments.
-- Cancellations friendly (`props.onAbort(cb)`)
-- Designed to support concurrency
-- Supports many forms on functions (async/await, promises, generators, reducers)
-- Run [side] effects either declaratively or imperatively.
-- Built-in `status` in the state (initial, pending, success, error and aborted).
-- Built-in `debounce` and `throttle`.
-- Cache support.
-- Events support.
-- Dynamic creation and sharing of states at runtime.
-- Share states inside and outside the provider without store.
-- Subscribe and react to `selected` portions of state while controlling 
-when to re-render.
-- Fork the state to have same behavior with separate subscribers.
-- Lanes support to have several `grouped` states sharing the same cache.
-- Hoist states to provider on demand at runtime.
-- Automatic cleanup/reset on dependencies change (includes unmount).
-- React 18+ friendly (already supported through the `read()` API).
-- Powerful selectors.
+### Easy to use and Minimal API (`useAsyncState`).
+The library has one main hook: `useAsyncState` which allows the creation,
+subscription and manipulation of the desired state.
+[Here is a sneak peek](https://incepter.github.io/react-async-states/docs/api/the-whole-api#useasyncstate) 
+at this hook full API.
+
+### Tiny library with no dependencies and works in all environments
+The library has no dependencies and very small on size compared to all the power
+it gives, and it should target all environments (browser, node, native...).
+
+### Synchronous and asynchronous; Imperative and declarative support
+The library adds the `status` property as part of the state, the possible values
+are: `initial`, `pending`, `success`, `error` and `aborted`.
+
+When your producer runs, it becomes asynchronous if the returned value is a
+`Thenable` object. But, you can control the `pending` status: eg, skip it
+totally if our promise resolves under `400ms`. Or skip it entirely if you want
+to perform some `fetch-then-render` patterns.
+
+The library allows you to perform declarative runs using `useAsyncState`
+hook configuration, while also providing a multiple imperative `run` functions
+with different signatures to answer your needs.
+
+### Promises, async/await & generators support
+The `producer`, the core concept of the library can be of different forms (you 
+can even omit it and manipulate the state directly, without a producer function):
+
+Either return a promise (thenable) to your state, use async/await syntax or go 
+generators. All of these are supported by the library out of the box and 
+no configuration is needed.
+
+```typescript
+useAsyncState();
+useAsyncState(function getSomeData() {  return fetchMyData(); });
+useAsyncState(function* someGenerator() {  yield fetchMyData(); });
+useAsyncState(async function getSomeData() {  return await fetchMyData(); });
+```
+
+[Here is a sneak peek](https://incepter.github.io/react-async-states/docs/api/the-whole-api#producer) at the producer signature:
+
+### Automatic and friendly cancellations
+The library was designed from the start to support cancellations in a standard
+way: an `onAbort` callback registration function that registers your callbacks,
+that are invoked once your run is cancelled (either decoratively or imperatively).
+
+In practice, we found ourselves writing the following, depending on context:
+```typescript
+onAbort((reason) => controller.abort(reason));
+onAbort(() => socket.disconnect());
+onAbort(() => worker.terminate());
+onAbort(() => clearInterval(id));
+onAbort(() => clearTimeout(id));
+```
+
+When your state loses all the subscriptions (and depending on the `resetStateOnDispose`)
+configuration, it will go back to its initial state and aborting any ongoing run.
+This behavior is opt-in, and it is not the default mode of the library.
+
+### Events and callbacks support
+The library supports two forms of imperative notifications when state is updated:
+
+- Via `events` as a configuration of `useAsyncState`: This allows you to react
+to updates occurring in a share piece of state.
+- Via `runc` function: It allows having callbacks `per run`, not by subscription.
+
+```typescript
+import {useAsyncState} from "react-async-states";
+
+const {runc} = useAsyncState({
+  // ... config
+  events: {
+    change: [
+      newState => console.log('state changed'), // will be invoked every state change
+      {
+        status: 'success', // handler will be invoked only in success status
+        handler : (successState) => {},
+      }
+    ],
+  }
+})
+
+// or per run callbacks:
+runc({
+  args: myOptionalArgs,
+  onError : () => {},
+  onSuccess : () => {},
+  onAborted : () => {}, // not called when the abort status is bailed out
+  // no onPending callback.
+});
+```
+
+### Dynamic creation and sharing of states at runtime
+
+
+### Works with or without a provider
+
+### Apply effects or runs: debounce, throttle...
+
+### On-demand cache support
+
+### Forks and lanes support
+
+### Powerful selectors
+
+### And many more
+
 
 ## Get started
 
