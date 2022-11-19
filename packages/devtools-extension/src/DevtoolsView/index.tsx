@@ -38,7 +38,7 @@ export function DevtoolsView({
           <SiderDisplay/>
           <Layout.Content
             style={{
-              overflow: 'auto',
+              height: '100%',
             }}
             className="scroll-y-auto"
           >

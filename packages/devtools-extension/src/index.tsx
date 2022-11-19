@@ -11,7 +11,7 @@ export default function DevtoolsViewLib() {
 
 export function AutoConfiguredDevtools() {
   return ReactDOM.createPortal(
-    <AutoConfiguredDevtoolsImpl wrapperStyle={{
+    <AutoConfiguredDevtoolsImpl allowResize wrapperStyle={{
       top: '50vh',
       width: '100%',
       height: '50vh',
@@ -25,23 +25,28 @@ let devtoolsRoot;
 
 export function autoConfigureDevtools(props?: { open?: boolean }) {
   if (!devtoolsRoot) {
-    devtoolsRoot = ReactDOMClient.createRoot(
-      createHostContainer("async-states-devtools", {
-        top: '50vh',
-        width: '100%',
-        height: '50vh',
-        position: "absolute"
-      })
-    );
+    let hostContainer = createHostContainer("async-states-devtools", {
+      top: '50vh',
+      width: '100%',
+      height: '50vh',
+      position: "absolute"
+    }, 'auto-devtools');
+
+    devtoolsRoot = ReactDOMClient.createRoot(hostContainer);
   }
-  devtoolsRoot.render(<AutoConfiguredDevtoolsImpl initiallyOpen={props?.open}
+  devtoolsRoot.render(<AutoConfiguredDevtoolsImpl allowResize
+                                                  initiallyOpen={props?.open}
                                                   wrapperStyle={{
                                                     width: '100%',
                                                     height: '100%',
                                                   }}/>);
 }
 
-function AutoConfiguredDevtoolsImpl({wrapperStyle, initiallyOpen = false}) {
+function AutoConfiguredDevtoolsImpl({
+  wrapperStyle,
+  initiallyOpen = false,
+  allowResize = false
+}) {
   const [visible, setVisible] = React.useState(initiallyOpen);
 
   React.useEffect(() => {
@@ -70,19 +75,63 @@ function AutoConfiguredDevtoolsImpl({wrapperStyle, initiallyOpen = false}) {
         </Button>
       )}
       {visible && (<div style={wrapperStyle}>
+        {allowResize && <Resizer/>}
         <DevtoolsView onClose={() => setVisible(false)}/>
       </div>)}
     </>
   );
 }
 
-function createHostContainer(id: string, style?: any) {
+const initial = {
+  startedAt: 0,
+  resizing: false,
+};
+
+function Resizer() {
+  function startCapture(e) {
+    let startPosition = e.clientY;
+    let host = document.getElementById("async-states-devtools");
+
+
+    if (!host) {
+      return;
+    }
+
+    let top = host.style.top;
+    let height = host.style.height;
+
+    function updateHeight(delta: string) {
+       host!.style.top = `calc(${top} - ${delta})`;
+       host!.style.height = `calc(${height} + ${delta})`;
+    }
+
+    function stopCapture(ev) {
+      document.removeEventListener('mouseup', stopCapture);
+      document.removeEventListener('mousemove', continueCapture);
+    }
+    function continueCapture(ev) {
+      updateHeight(`${startPosition - ev.clientY}px`);
+    }
+
+    document.addEventListener('mouseup', stopCapture);
+    document.addEventListener('mousemove', continueCapture);
+  }
+
+  return (
+    <div onMouseDown={startCapture} className="resizer"></div>
+  );
+}
+
+function createHostContainer(id: string, style?: any, className?: string) {
   let maybeNode = document.getElementById(id);
   if (maybeNode) {
     return maybeNode;
   }
   let node = document.createElement("div");
   node.setAttribute("id", id);
+  if (className) {
+    node.setAttribute("class", className);
+  }
   if (style) {
     Object.assign(node.style, style);
   }

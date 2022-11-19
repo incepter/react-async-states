@@ -38,7 +38,7 @@ function CurrentTreeDisplay() {
     return null;
   }
   return (
-    <Layout>
+    <Layout style={{height: '100%'}}>
       <Header style={{
         padding: 8,
         height: 40,
@@ -48,16 +48,16 @@ function CurrentTreeDisplay() {
       }} className="main-bg">
         <Actions lane={lane}/>
       </Header>
-      <Layout style={{height: "auto"}}>
+      <Layout>
         <Sider style={{
+          height: '100%',
           borderRight: '1px dashed #C3C3C3',
         }} className="main-bg" width={400}>
           <CurrentJsonDisplay lane={lane} mode="state"/>
         </Sider>
         <Content style={{
-          // maxHeight: 'calc(100vh - 40px)',
-          overflow: 'auto'
-        }} className="main-bg scroll-y-auto">
+          maxHeight: '100%',
+        }} className="main-bg">
           <CurrentJsonDisplay lane={lane} mode="journal"/>
         </Content>
       </Layout>
@@ -235,15 +235,28 @@ function StateView({lane}) {
   }
   return (
     <div style={{
-      // height: 'calc(100vh - 40px)'
+      height: '100%'
     }} className="scroll-y-auto">
+      <ReactJson name={`${data.key}'s state`}
+                 style={{
+                   padding: "1rem",
+                   overflow: "auto"
+                 }}
+                 theme="solarized"
+                 collapsed={5}
+                 displayDataTypes={false}
+                 displayObjectSize={false}
+                 enableClipboard={false}
+                 src={addFormattedDate(data.state)}
+      />
+      <hr />
       <ReactJson name={data.key}
                  style={{
                    padding: "1rem",
                    overflow: "auto"
                  }}
                  theme="solarized"
-                 collapsed={2}
+                 collapsed={1 }
                  displayDataTypes={false}
                  displayObjectSize={false}
                  enableClipboard={false}
