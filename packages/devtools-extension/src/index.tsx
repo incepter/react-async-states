@@ -1,6 +1,5 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import Button from "antd/es/button";
 import ReactDOMClient from "react-dom/client";
 import {DevtoolsView} from "./DevtoolsView";
 import './index.css';
@@ -59,15 +58,21 @@ function AutoConfiguredDevtoolsImpl({wrapperStyle, initiallyOpen = false}) {
   return (
     <>
       {!visible && (
-        <Button style={{
-          zIndex: 99,
-          right: "32px",
-          bottom: "32px",
-          position: "absolute",
-        }} onClick={() => setVisible(old => !old)} type="primary" size="large"
-                shape="circle">
+        <button style={{
+            width: 50,
+            zIndex: 99,
+            height: 50,
+            fontSize: 20,
+            color: '#fff',
+            right: "32px",
+            bottom: "32px",
+            border: 'none',
+            borderRadius: 100,
+            position: "absolute",
+            backgroundColor: '#1786ff',
+        }} className="bg-" onClick={() => setVisible(old => !old)}>
           +
-        </Button>
+        </button>
       )}
       {visible && (<div style={wrapperStyle}>
         <DevtoolsView onClose={() => setVisible(false)}/>
