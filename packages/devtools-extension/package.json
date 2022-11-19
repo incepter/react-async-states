@@ -1,7 +1,7 @@
 {
   "name": "async-states-devtools",
   "type": "module",
-  "version": "0.0.1-alpha-1",
+  "version": "0.0.1-alpha-2",
   "types": "dist/index",
   "module": "dist/index.js",
   "main": "dist/index.umd.cjs",
