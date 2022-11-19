@@ -16,11 +16,24 @@ libraries may appear just a small abstraction on top of it.
 ## Main features
 The features that make this library special are:
 
+### Multi-paradigm nature
+The library can work with the following modes:
+
+- `Imperative` and/or `declarative`
+- `Synchronous` and/or `Asynchronous`
+- Data fetching and/or any form of asynchrony
+- Inside and/or outside `React`
+- Inside and/or outside `React context provider`
+- With or without `Cache`
+- `Promises`, `async/await` and even `generators` or nothing at all
+- Allows abstractions on top of it
+- ...
+
 ### Easy to use and Minimal API (`useAsyncState`).
 The library has one main hook: `useAsyncState` which allows the creation,
 subscription and manipulation of the desired state.
 [Here is a sneak peek](https://incepter.github.io/react-async-states/docs/api/the-whole-api#useasyncstate) 
-at this hook full API.
+at this hook's full API.
 
 ### Tiny library with no dependencies and works in all environments
 The library has no dependencies and very small on size compared to all the power
@@ -108,25 +121,136 @@ runc({
 ```
 
 ### Dynamic creation and sharing of states at runtime
+Under the `AsyncStateProvider`, you can create and share state instances
+and access them by their `key` via the `hoistToProvider` option.
 
+You can even start listening to a state before it gets hoisted to the provider,
+and get notified once it gets added.
 
 ### Works with or without a provider
+The library can work without the provider and still share state via the
+`source` special object.
 
 ### Apply effects or runs: debounce, throttle...
+To avoid creating additional state pieces and third party utilities,
+the library has out-of-the box support for effects that can be applied to runs:
+such as `debounce`, and `throttle` and `delay`.
+This support allows you to create awesome user experience natively with the 
+minimum CPU and RAM fingerprints, without additional libraries or managed
+variables. It just works in the core of the library. Of course, this requires
+you to be in an environment where `setTimeout` exists.
+
+```tsx
+import {useAsyncState, ProducerRunEffects} from "react-async-states";
+
+const {run} = useAsyncState({
+  producer: userSearchByUsername,
+  // debounce runs
+  runEffect: ProducerRunEffects.debounce,
+  runEffectDurationMs: 300,
+  // skip pending status if it answers less than 200ms
+  skipPendingDelayMs: 200,
+});
+
+
+<input onChange={e => run(e.target.value)} /* ... */ />
+```
 
 ### On-demand cache support
+The library has a different cache support: it doesn't cache the value of you state,
+rather, it caches your producer runs when they succeed by hashing the run `args`
+and `payload`.
+
+Let's add cache support to the previous example:
+
+```tsx
+import {useAsyncState, ProducerRunEffects} from "react-async-states";
+
+// note that the whole configuration object does not depend on render
+// and can be moved to module level static object.
+const {run} = useAsyncState({
+  producer: userSearchByUsername,
+  // debounce runs
+  runEffect: ProducerRunEffects.debounce,
+  runEffectDurationMs: 300,
+  // skip pending status if it answers less than 200ms
+  skipPendingDelayMs: 200,
+  
+  // cache config:
+  cacheConfig: {
+    enabled: true, // enable cache
+    // run cache hash is the username passed to the producer, this allows to
+    // have cached entries such as: `incepter` : { state: {data}}
+    hash: (args) => args[0],
+    getDeadline: (state) => state.data.maxAge || Infinity,
+  }
+});
+
+
+<input onChange={e => run(e.target.value)} /* ... */ />
+```
+
+The library allows you also to `persist` and `load` cache, even asynchronously
+and then do something in the `onCacheLoad` event.
 
 ### Forks and lanes support
+Forking a state in the library means having a new state instance, with the same
+producer, and probably the same cache (configurable), while having a new isolated
+state with new subscribers.
+
+The library has two ways for forks
+- Normal forks: obtained by adding `fork: true` to `useAsyncState`, and these
+are standalone states.
+- Lanes: These are normal forks, but managed by their parent and share the same
+cache, they can be enumerated from their parent via `source.getAllLanes`,
+and removed by `source.removeLane`.
+
+```typescript
+import {useAsyncState, useSourceLane} from "react-async-states";
+
+const references = createSource("refs", referencesProducer, {
+  /* awesome config */
+});
+
+const {state} = useAsyncState({
+  source: references,
+  lane: 'cities',
+  lazy: false
+});
+const {state} = useAsyncState({source: references, lane: 'roles', lazy: false});
+// can be simplified to this:
+const {state} = useSourceLane(references, 'roles');
+
+// re-use a state with its producer called weather present in the provider
+const {state: weatherState} = useAsyncState({key: "weather", fork: true});
+
+```
 
 ### Powerful selectors
 
+The library has two ways to select data from states:
+- via `useAsyncState`: it supports a `selector` configuration can accept the
+current state and the whole cache (you can decide to just work with cache, if you want to!)
+- via `useSelector`: This hook allows you to select data from one or multiple
+pieces of states, it even allows combining `keys` and `source` object to select from them.
+It also can dynamically select states from the provider as they get hoisted.
+
 ### And many more
+
+The previous examples are just a few subset of the library's power, there are
+several other unique features like:
+
+- Cascade runs and cancellations
+- Run and wait for resolve
+- Producer states that emit updates after resolve (such as websockets)
+- Configurable state disposal and garbage collection
+- React 18 support, and no tearing even without `useSES`
+- StateBoundary and support for all three `render strategies`
+- post subscribe and change events
+- And many more..
 
 
 ## Get started
-
-To get started using the library, please make sure to read [the docs](https://incepter.github.io/react-async-states/docs/intro).
-[The tutorial section](https://incepter.github.io/react-async-states/docs/tutorial/first-steps) is a good starting point to get your hands dirty.
 
 The library is available as a package on NPM for use with a module bundler or in a Node application:
 
@@ -136,25 +260,14 @@ npm install react-async-states
 
 # YARN
 yarn add react-async-states
+
+# PNPM
+pnpm add react-async-states
 ```
 
+To get started using the library, please make sure to read [the docs](https://incepter.github.io/react-async-states/docs/intro).
+[The tutorial section](https://incepter.github.io/react-async-states/docs/tutorial/first-steps) is a good starting point to get your hands dirty.
 
-## Use cases
-
-The library supports several paradigms, which allows it to support almost
-every use case you can think of.
-
-In a nutshell, the library can manage:
-- Synchronous and asynchronous states
-- Cancellations
-- State sharing
-- Selectors
-- Caching
-- Inside and outside provider
-- Run effects such as debounce and throttle
-- Events
-
-[This section of the docs](https://incepter.github.io/react-async-states/docs/use-cases/) tells more about this.
 
 ## Contribution
 
