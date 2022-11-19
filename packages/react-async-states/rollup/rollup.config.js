@@ -261,15 +261,15 @@ const devtoolsSharedBuild = [
       commonjs(),
       terser(),
 
-      copy({
-        hook: 'closeBundle',
-        targets: [
-          {
-            dest: 'dist/devtools/view',
-            src: `../devtools-extension/dist/*`,
-          },
-        ]
-      }),
+      // copy({
+      //   hook: 'closeBundle',
+      //   targets: [
+      //     {
+      //       dest: 'dist/devtools/view',
+      //       src: `../devtools-extension/dist/*`,
+      //     },
+      //   ]
+      // }),
     ]
   }
 ];
