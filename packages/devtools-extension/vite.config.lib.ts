@@ -13,11 +13,12 @@ export default defineConfig({
       fileName: 'index'
     },
     rollupOptions: {
-      external: ['react', 'react/jsx-runtime'],
+      external: ['react', 'react/jsx-runtime', 'react-async-states'],
       output: {
         globals: {
           react: 'React',
           'react/jsx-runtime': 'jsxRuntime',
+          'react-async-states': 'ReactAsyncStates',
         }
       }
     },
