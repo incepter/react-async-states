@@ -2,7 +2,7 @@
   "name": "async-states-devtools",
   "private": true,
   "type": "module",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "types": "dist/index",
   "module": "dist/index.js",
   "main": "dist/index.umd.cjs",
