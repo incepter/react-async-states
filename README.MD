@@ -275,3 +275,6 @@ To get started using the library, please make sure to read [the docs](https://in
 ## Contribution
 
 To contribute, please refer take a look at [the issues section](https://github.com/incepter/react-async-states/issues).
+
+
+By [@incepter](https://twitter.com/incepterr), with 💜
