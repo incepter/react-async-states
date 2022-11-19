@@ -1,11 +1,14 @@
 {
   "name": "async-states-devtools",
-  "private": true,
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.0.1-alpha-1",
   "types": "dist/index",
   "module": "dist/index.js",
   "main": "dist/index.umd.cjs",
+  "files": [
+    "README.MD",
+    "dist"
+  ],
   "scripts": {
     "dev": "vite",
     "preview": "vite preview",

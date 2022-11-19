@@ -16,7 +16,7 @@
 		"react": "18.2.0",
 		"react-dom": "18.2.0",
 		"react-router-dom": "6.4.3",
-		"react-async-states": "1.0.0-rc-8",
+		"react-async-states": "1.0.0-rc-9",
 		"ts-node": "10.9.1"
 	},
 	"devDependencies": {
