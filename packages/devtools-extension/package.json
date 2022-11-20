@@ -13,7 +13,6 @@
     "build:lib": "tsc && vite build --config vite.config.lib.ts"
   },
   "dependencies": {
-    "antd": "^4.24.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-json-view": "^1.21.3",

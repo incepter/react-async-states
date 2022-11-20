@@ -436,10 +436,12 @@ function EditState({lane}) {
                 </header>
                 <hr/>
                 <div style={{
+                    width: '100%',
+                    padding: 0,
                     margin: '30px 0',
                 }}>
                     {open && (
-                        <section className="w-full" style={{padding: "0px 8px"}}>
+                        <section style={{margin: "0px 8px"}}>
                             <label style={{fontWeight: 600}}>Status:</label>
                             <select
                                 style={{
@@ -476,8 +478,8 @@ function EditState({lane}) {
                                         style={{
                                             border: "1px solid black",
                                             borderRadius: 5,
-                                            margin: 2,
-                                            width: "100%",
+                                            margin: '2px 0',
+                                            maxWidth: "100%",
                                         }}
                                         rows={2}
                                         value={data ?? ""}
