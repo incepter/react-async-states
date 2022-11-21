@@ -87,25 +87,27 @@ const initial = {
   resizing: false,
 };
 
-function Resizer() {
+
+
+function makeResizable(
+  target: HTMLElement | null | undefined,
+  resizer: HTMLElement | null | undefined,
+) {
   function startCapture(e) {
-    let startPosition = e.clientY;
-    let host = document.getElementById("async-states-devtools");
-
-
-    if (!host) {
+    if (!target || !resizer) {
       return;
     }
 
-    let top = host.style.top;
-    let height = host.style.height;
+    let startPosition = e.clientY;
+    let top = target.style.top;
+    let height = target.style.height;
 
     function updateHeight(delta: string) {
-       host!.style.top = `calc(${top} - ${delta})`;
-       host!.style.height = `calc(${height} + ${delta})`;
+      target!.style.top = `calc(${top} - ${delta})`;
+      target!.style.height = `calc(${height} + ${delta})`;
     }
 
-    function stopCapture(ev) {
+    function stopCapture() {
       document.removeEventListener('mouseup', stopCapture);
       document.removeEventListener('mousemove', continueCapture);
     }
@@ -117,8 +119,22 @@ function Resizer() {
     document.addEventListener('mousemove', continueCapture);
   }
 
+  resizer!.addEventListener("mousedown", startCapture);
+  return () => resizer!.removeEventListener("mousedown", startCapture);
+}
+
+function Resizer() {
+  const resizer = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    return makeResizable(
+      document.getElementById("async-states-devtools"),
+      resizer.current
+    );
+  }, []);
+
   return (
-    <div onMouseDown={startCapture} className="resizer"></div>
+    <div ref={resizer} className="resizer"></div>
   );
 }
 
