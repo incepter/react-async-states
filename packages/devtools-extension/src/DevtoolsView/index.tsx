@@ -12,54 +12,54 @@ import {__DEV__} from "../utils";
 import '../index.css';
 
 function DevtoolsViewInternal({
-	useDevMode,
-	onClose,
+  useDevMode,
+  onClose,
 }: {
-	useDevMode?: boolean;
-	onClose?: Function;
+  useDevMode?: boolean;
+  onClose?: Function;
 }) {
-	useAsyncState.auto(
-		{
-			source: gatewaySource,
-			payload: { dev: useDevMode ?? true },
-		},
-		[useDevMode]
-	);
+  useAsyncState.auto(
+    {
+      source: gatewaySource,
+      payload: {dev: useDevMode ?? true},
+    },
+    [useDevMode]
+  );
 
-	return (
-		<DevtoolsProvider dev={useDevMode}>
-			<div
-				className="main-bg scroll-y-auto devtools-root-animated"
-				style={{ height: "100%", overflow: "auto" }}
-			>
-				{onClose && (
-					<button
-						style={{
-							zIndex: 9,
-							top: "16px",
-							right: "16px",
-							position: "absolute",
-							borderRadius: 100,
-							width: 50,
-							height: 50,
-							color: "#000",
-							cursor: "pointer",
-						}}
-						onClick={() => onClose()}
-					>
-						X
-					</button>
-				)}
-				<div
-					className="main-bg scroll-y-auto flex flex-row"
-					style={{ height: "100%", overflow: "auto" }}
-				>
-					<SiderDisplay />
-					<CurrentStateDisplay />
-				</div>
-			</div>
-		</DevtoolsProvider>
-	);
+  return (
+    <DevtoolsProvider dev={useDevMode}>
+      <div
+        className="main-bg scroll-y-auto devtools-root-animated"
+        style={{height: "100%", overflow: "auto"}}
+      >
+        {onClose && (
+          <button
+            style={{
+              zIndex: 9,
+              top: "16px",
+              right: "16px",
+              position: "absolute",
+              borderRadius: 100,
+              width: 50,
+              height: 50,
+              color: "#000",
+              cursor: "pointer",
+            }}
+            onClick={() => onClose()}
+          >
+            X
+          </button>
+        )}
+        <div
+          className="main-bg scroll-y-auto flex flex-row"
+          style={{height: "100%", overflow: "auto"}}
+        >
+          <SiderDisplay/>
+          <CurrentStateDisplay/>
+        </div>
+      </div>
+    </DevtoolsProvider>
+  );
 }
 
 export function DevtoolsView() {
@@ -181,6 +181,7 @@ function makeResizable(
       document.removeEventListener('mouseup', stopCapture);
       document.removeEventListener('mousemove', continueCapture);
     }
+
     function continueCapture(ev) {
       updateHeight(`${startPosition - ev.clientY}px`);
     }
