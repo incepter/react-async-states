@@ -1,5 +1,6 @@
-import dts from 'vite-plugin-dts'
 import {defineConfig} from 'vite'
+import copy from 'rollup-plugin-copy'
+import replace from '@rollup/plugin-replace'
 
 import react from '@vitejs/plugin-react'
 import vitePluginImp from 'vite-plugin-imp'
@@ -7,10 +8,11 @@ import vitePluginImp from 'vite-plugin-imp'
 // https://vitejs.dev/config/
 export default defineConfig({
   build: {
+    emptyOutDir: false,
     lib: {
-      entry: 'src/index.tsx',
       name: 'Devtools',
-      fileName: 'index'
+      entry: 'src/lib-entry.tsx',
+      fileName: 'index.production'
     },
     rollupOptions: {
       external: ['react', 'react/jsx-runtime', 'react-async-states'],
@@ -20,8 +22,11 @@ export default defineConfig({
           'react/jsx-runtime': 'jsxRuntime',
           'react-async-states': 'ReactAsyncStates',
         }
-      }
+      },
     },
+  },
+  optimizeDeps: {
+    exclude: ["antd"],
   },
 
   plugins: [
@@ -35,7 +40,20 @@ export default defineConfig({
         },
       ],
     }),
-    dts()
+    replace({
+      preventAssignment: true,
+      values: {"process.env.NODE_ENV": JSON.stringify("production")},
+    }),
+
+    copy({
+      targets: [
+        {
+          dest: 'dist',
+          rename: 'index.umd.js',
+          src: 'src/index-prod.js',
+        },
+      ]
+    }),
   ],
   css: {
     preprocessorOptions: {

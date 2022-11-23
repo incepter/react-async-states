@@ -5,7 +5,7 @@ import ReactDOMClient from "react-dom/client";
 import {DevtoolsView} from "./DevtoolsView";
 import './index.css';
 
-export default function DevtoolsViewLib() {
+export function DevtoolsViewLib() {
   return <DevtoolsView/>;
 }
 
@@ -21,25 +21,29 @@ export function AutoConfiguredDevtools() {
   )
 }
 
-let devtoolsRoot;
-
 export function autoConfigureDevtools(props?: { open?: boolean }) {
-  if (!devtoolsRoot) {
-    let hostContainer = createHostContainer("async-states-devtools", {
-      top: '50vh',
-      width: '100%',
-      height: '50vh',
-      position: "absolute"
-    }, 'auto-devtools');
+  let hostContainer = createHostContainer("async-states-devtools", {
+    top: '50vh',
+    width: '100%',
+    height: '50vh',
+    position: "absolute"
+  }, 'auto-devtools');
 
-    devtoolsRoot = ReactDOMClient.createRoot(hostContainer);
+  ReactDomRender(hostContainer, <AutoConfiguredDevtoolsImpl allowResize
+                                                            initiallyOpen={props?.open}
+                                                            wrapperStyle={{
+                                                              width: '100%',
+                                                              height: '100%',
+                                                            }}/>)
+}
+
+function ReactDomRender(hostRoot, element) {
+  if (ReactDOMClient && typeof ReactDOMClient.createRoot === "function") {
+    const root = ReactDOMClient.createRoot(hostRoot);
+    root.render(element);
+  } else {
+    ReactDOM.render(element, hostRoot);
   }
-  devtoolsRoot.render(<AutoConfiguredDevtoolsImpl allowResize
-                                                  initiallyOpen={props?.open}
-                                                  wrapperStyle={{
-                                                    width: '100%',
-                                                    height: '100%',
-                                                  }}/>);
 }
 
 function AutoConfiguredDevtoolsImpl({
@@ -81,13 +85,6 @@ function AutoConfiguredDevtoolsImpl({
     </>
   );
 }
-
-const initial = {
-  startedAt: 0,
-  resizing: false,
-};
-
-
 
 function makeResizable(
   target: HTMLElement | null | undefined,
