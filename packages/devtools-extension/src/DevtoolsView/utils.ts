@@ -1,4 +1,4 @@
-import { DevtoolsRequest } from "react-async-states/dist/devtools";
+import {DevtoolsRequest} from "react-async-states/dist/devtools";
 
 export const DevtoolsMessagesBuilder = {
   init(dev: boolean) {
@@ -36,6 +36,7 @@ export const DevtoolsMessagesBuilder = {
   },
 }
 
-export function addFormattedDate(obj, prop = "timestamp", newProp = "formattedTimestamp") {
+export function addFormattedDate(
+  obj, prop = "timestamp", newProp = "formattedTimestamp") {
   return {...obj, [newProp]: new Date(obj[prop]).toISOString()};
 }

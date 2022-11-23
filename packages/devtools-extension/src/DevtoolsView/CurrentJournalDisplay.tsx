@@ -1,42 +1,38 @@
 import * as React from "react";
-import Select from "antd/lib/select";
 import ReactJson from "react-json-view";
-import Button from "antd/lib/button";
-import Layout from "antd/lib/layout";
 import {useSource, useSourceLane,} from "react-async-states";
 import {DevtoolsJournalEvent} from "react-async-states/dist/devtools";
 import {currentJournal, journalSource} from "./sources";
 import {addFormattedDate} from "./utils";
 
-const {Content, Sider} = Layout;
-
 const CurrentJournalDisplay = React.memo(function Journal({lane}: { lane: string }) {
 
   return (
-    <Layout className='main-bg' style={{
-      height: '100%',
-      padding: 0
-    }}>
-      <Sider style={{
+    <div className='main-bg'
+         style={{
+           display: 'flex',
+           flexDirection: 'row',
+           height: '100%',
+           padding: 0
+         }}>
+      <div style={{
+        width: 250,
+        minWidth: 250,
         padding: 8,
         overflow: 'auto',
-        // height: 'calc(100vh - 40px)',
         borderRight: '1px dashed #C3C3C3',
-      }} className='main-bg scroll-y-auto' width={250}>
+      }} className='main-bg scroll-y-auto'>
         <div className='main-color' style={{height: '100%'}}>
           <JournalView lane={lane}/>
         </div>
-      </Sider>
-      <Content className='main-bg main-color scroll-y-auto'
-               style={{height: '100%', overflowY: 'auto'}}>
+      </div>
+      <div className='main-bg main-color scroll-y-auto'
+           style={{height: '100%', overflowY: 'auto', width: '100%'}}>
         <CurrentJson/>
-      </Content>
-    </Layout>);
+      </div>
+    </div>);
 });
 
-const JOURNAL_EVENT_TYPES_FILTER_OPTIONS = Object.values(DevtoolsJournalEvent).map(t => ({
-  label: t, value: t
-}));
 const initialSelectedEvents = [
   DevtoolsJournalEvent.creation,
   DevtoolsJournalEvent.update,
@@ -70,37 +66,71 @@ function JournalView({lane}) {
     }
   }, [lane]);
 
+  // handel select or unselect selectType
+  function handleSelectChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const value: DevtoolsJournalEvent = e.target.value as DevtoolsJournalEvent;
+    if (selectedTypes.find((option: DevtoolsJournalEvent) => option === value) === undefined) {
+      return setSelectedTypes([...selectedTypes, value])
+    } else {
+      return setSelectedTypes(selectedTypes.filter((option: DevtoolsJournalEvent) => option !== value))
+    }
+  }
+
   return (
     <div>
       <span>Available: ({allLogs.length}), shown: ({filteredData.length})</span>
       <div style={{display: "flex"}}>
-        <Button type="link" size="small" shape="round"
-                className="default-button"
-                onClick={() => setSelectedTypes([])}>Clear all</Button>
-        <Button type="link" size="small" shape="round"
-                className="default-button"
-                style={{marginLeft: 8}}
+        <button className="default-button"
+                onClick={() => setSelectedTypes([])}
+                style={{
+                  backgroundColor: 'transparent',
+                  border: "none",
+                  color: '#00aaff',
+                  cursor: "pointer"
+                }}>Clear all
+        </button>
+        <button className="default-button"
+                style={{
+                  backgroundColor: 'transparent',
+                  border: "none",
+                  color: '#00aaff',
+                  marginLeft: 8,
+                  cursor: "pointer"
+                }}
                 onClick={() => setSelectedTypes(Object.values(DevtoolsJournalEvent))}
         >
           Select all
-        </Button>
+        </button>
       </div>
-      <Select
-        mode="multiple"
+      <select
+        multiple
         value={selectedTypes}
-        style={{width: '100%', marginTop: 8}}
-        onChange={setSelectedTypes}
-        defaultValue={selectedTypes}
-        options={JOURNAL_EVENT_TYPES_FILTER_OPTIONS}
-      />
+        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleSelectChange(e)}
+        style={{
+          color: '#000',
+          width: '100%',
+          marginTop: 8,
+          background: 'white',
+          borderRadius: 5,
+          outline: "none"
+        }}>
+        {Object.values(DevtoolsJournalEvent)?.map((t: string) => (
+          <option key={t} value={t}>{t}</option>))}
+      </select>
       <ul style={{marginTop: 8}}>
-        {filteredData.map((entry, id) => (
+        {filteredData.map((entry) => (
           <li
             className="w-full"
-            key={id}>
-            <Button
-              type={json.data?.eventId === entry.eventId ? "primary" : "link"}
-              size="small" shape="round" className="default-button"
+            key={entry?.eventId}>
+            <button
+              style={{
+                borderRadius: 100,
+                backgroundColor: json.data?.eventId === entry.eventId ? '#0059ff' : 'transparent',
+                color: json.data?.eventId === entry.eventId ? 'white' : '#00bbff',
+                padding: '3px 10px',
+                border: "none"
+              }}
+              className="default-button"
               onClick={() => {
                 currentJournal.setState({
                   data: formJournalEventJson(entry),
@@ -110,7 +140,7 @@ function JournalView({lane}) {
                 });
               }}>
               {`› ${entry.eventType}`}
-            </Button>
+            </button>
           </li>
         ))}
       </ul>

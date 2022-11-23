@@ -5,7 +5,7 @@ import DevModeApp from "./DevModeApp";
 import {__DEV__} from "./utils";
 import {AutoConfiguredDevtools, autoConfigureDevtools} from "./index";
 
-autoConfigureDevtools();
+autoConfigureDevtools({open: true});
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

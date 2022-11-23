@@ -1,27 +1,24 @@
 import React from "react";
-import Layout from "antd/lib/layout";
 import ReactJson from "react-json-view";
-import Button from "antd/lib/button";
-import Modal from "antd/lib/modal";
-import Select from "antd/lib/select";
-import {useSource, useSourceLane, AsyncStateStatus} from "react-async-states";
+import {AsyncStateStatus, useSource, useSourceLane} from "react-async-states";
 import {DevtoolsJournalEvent} from "react-async-states/dist/devtools";
 import {
   currentJournal,
   currentState,
   gatewaySource,
-  journalSource
+  journalSource,
 } from "./sources";
 import {addFormattedDate, DevtoolsMessagesBuilder} from "./utils";
 import CurrentJournalDisplay from "./CurrentJournalDisplay";
 import {DevtoolsContext} from "./context";
 
-const {Header, Content, Sider} = Layout;
-
 function CurrentJsonDisplay({
   lane,
-  mode
-}: { lane: string, mode: 'state' | 'journal' }) {
+  mode,
+}: {
+  lane: string;
+  mode: "state" | "journal";
+}) {
   if (mode === "state") {
     return <StateView lane={lane}/>;
   }
@@ -38,39 +35,52 @@ function CurrentTreeDisplay() {
     return null;
   }
   return (
-    <Layout>
-      <Header style={{
-        padding: 8,
-        height: 40,
-        display: "flex",
-        alignItems: "center",
-        borderBottom: '1px dashed #C3C3C3',
-      }} className="main-bg">
+    <div style={{height: '100%'}}>
+      <div
+        style={{
+          padding: 8,
+          height: 40,
+          display: "flex",
+          alignItems: "center",
+          borderBottom: "1px dashed #C3C3C3",
+        }}
+        className="main-bg"
+      >
         <Actions lane={lane}/>
-      </Header>
-      <Layout style={{height: "auto"}}>
-        <Sider style={{
-          borderRight: '1px dashed #C3C3C3',
-        }} className="main-bg" width={400}>
+      </div>
+      <div
+        style={{
+          height: "auto",
+          display: "flex",
+        }}
+      >
+        <div
+          style={{
+            borderRight: "1px dashed #C3C3C3",
+          }}
+          className="main-bg"
+        >
           <CurrentJsonDisplay lane={lane} mode="state"/>
-        </Sider>
-        <Content style={{
-          // maxHeight: 'calc(100vh - 40px)',
-          overflow: 'auto'
-        }} className="main-bg scroll-y-auto">
+        </div>
+        <div
+          style={{
+            overflow: "auto",
+          }}
+          className="main-bg scroll-y-auto"
+        >
           <CurrentJsonDisplay lane={lane} mode="journal"/>
-        </Content>
-      </Layout>
-    </Layout>
+        </div>
+      </div>
+    </div>
   );
 }
 
 type SiderDisplayProps = {
-  uniqueId: number,
-  asyncStateKey: string,
-  isCurrent: boolean,
-  level?: number,
-  lanes?: string
+  uniqueId: number;
+  asyncStateKey: string;
+  isCurrent: boolean;
+  level?: number;
+  lanes?: string;
 };
 
 function getBackgroundColorFromStatus(status: AsyncStateStatus | undefined) {
@@ -112,16 +122,16 @@ export const SideKey = React.memo(function SiderKey({
   asyncStateKey,
   isCurrent,
   level = 0,
-  lanes
+  lanes,
 }: SiderDisplayProps) {
-
   const {dev} = React.useContext(DevtoolsContext);
 
   React.useEffect(() => {
     gatewaySource
       .getState()
-      .data
-      ?.postMessage?.(DevtoolsMessagesBuilder.getAsyncState(uniqueId, dev));
+      .data?.postMessage?.(
+      DevtoolsMessagesBuilder.getAsyncState(uniqueId, dev)
+    );
   }, [uniqueId, dev]);
 
   const {state} = useSourceLane(journalSource, `${uniqueId}`);
@@ -130,92 +140,112 @@ export const SideKey = React.memo(function SiderKey({
 
   if (!lanes?.length) {
     return (
-      <Button
-        size="small"
-        shape="round"
+      <button
         className={`default-button`}
         style={{
+          border: "none",
+          borderRadius: 100,
           marginLeft: level * 30,
-          width: level === 0 ? '100%' : `calc(100% - ${level * 30}px)`
+          color: isCurrent ? "white" : "#00bbff",
+          backgroundColor: isCurrent ? "#0059ff" : "transparent",
+          width: level === 0 ? "100%" : `calc(100% - ${level * 30}px)`,
         }}
-        type={isCurrent ? "primary" : "link"}
         onClick={() => {
           currentJournal.setState(null);
           currentState.setState(`${uniqueId}`);
         }}
-        loading={status === AsyncStateStatus.pending}
+        disabled={status === AsyncStateStatus.pending}
       >
-        <div style={{
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}>
-        <span style={{marginLeft: 8}}
-              title={`${asyncStateKey} (id: ${uniqueId})`}>{`› ${asyncStateKey}`}</span>
+        <div
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+					<span
+            style={{marginLeft: 8}}
+            title={`${asyncStateKey} (id: ${uniqueId})`}
+          >{`› ${asyncStateKey}`}</span>
           {status !== undefined && (
-            <div title={status} style={{
-              width: 10,
-              height: 10,
-              borderRadius: '50%',
-              backgroundColor: getBackgroundColorFromStatus(status),
-            }}></div>
+            <div
+              title={status}
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                backgroundColor: getBackgroundColorFromStatus(status),
+              }}
+            ></div>
           )}
         </div>
-      </Button>
+      </button>
     );
   }
 
-
   return (
     <>
-      <Button
-        size="small"
-        shape="round"
+      <button
         className={`default-button`}
         style={{
+          border: "none",
+          borderRadius: 100,
+          color: isCurrent ? "white" : "#00bbff",
+          backgroundColor: isCurrent ? "#0059ff" : "transparent",
           marginLeft: level * 30,
-          width: level === 0 ? '100%' : `calc(100% - ${level * 30}px)`
+          width: level === 0 ? "100%" : `calc(100% - ${level * 30}px)`,
         }}
-        type={isCurrent ? "primary" : "link"}
         onClick={() => {
           currentJournal.setState(null);
           currentState.setState(`${uniqueId}`);
         }}
-        loading={status === AsyncStateStatus.pending}
+        disabled={status === AsyncStateStatus.pending}
       >
-        <div style={{
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}>
-        <span style={{marginLeft: 8}}
-              title={`${asyncStateKey} (id: ${uniqueId})`}>{`› ${asyncStateKey}`}</span>
+        <div
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+					<span
+            style={{marginLeft: 8}}
+            title={`${asyncStateKey} (id: ${uniqueId})`}
+          >{`› ${asyncStateKey}`}</span>
           {status !== undefined && (
-            <div title={status} style={{
-              width: 10,
-              height: 10,
-              borderRadius: '50%',
-              backgroundColor: getBackgroundColorFromStatus(status),
-            }}></div>
+            <div
+              title={status}
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                backgroundColor: getBackgroundColorFromStatus(status),
+              }}
+            ></div>
           )}
         </div>
-      </Button>
+      </button>
       <SiderLanes lanes={lanes} level={level + 1}/>
     </>
   );
 });
 
 function SiderLanes({lanes, level}) {
-  const {state: {data: lane}} = useSource(currentState);
-  return lanes.map(([id, key]) => <SideKey key={key} uniqueId={id}
-                                           asyncStateKey={key}
-                                           isCurrent={lane === id}
-                                           level={level}
-  />);
+  const {
+    state: {data: lane},
+  } = useSource(currentState);
+  return lanes.map(([id, key]) => (
+    <SideKey
+      key={key}
+      uniqueId={id}
+      asyncStateKey={key}
+      isCurrent={lane === id}
+      level={level}
+    />
+  ));
 }
-
 
 function StateView({lane}) {
   const {state} = useSourceLane(journalSource, lane);
@@ -234,16 +264,27 @@ function StateView({lane}) {
     return <span>No state information</span>;
   }
   return (
-    <div style={{
-      // height: 'calc(100vh - 40px)'
-    }} className="scroll-y-auto">
+    <div style={{height: '100%'}} className="scroll-y-auto">
+      <ReactJson name={`${data.key}'s state`}
+                 style={{
+                   padding: "1rem",
+                   overflow: "auto"
+                 }}
+                 theme="solarized"
+                 collapsed={5}
+                 displayDataTypes={false}
+                 displayObjectSize={false}
+                 enableClipboard={false}
+                 src={addFormattedDate(data.state)}
+      />
+      <hr/>
       <ReactJson name={data.key}
                  style={{
                    padding: "1rem",
                    overflow: "auto"
                  }}
                  theme="solarized"
-                 collapsed={2}
+                 collapsed={1}
                  displayDataTypes={false}
                  displayObjectSize={false}
                  enableClipboard={false}
@@ -268,7 +309,8 @@ function displayAsyncState(data) {
     config: data.config,
   };
   const {oldState} = data;
-  if (oldState) { // @ts-ignore
+  if (oldState) {
+    // @ts-ignore
     output.oldState = addFormattedDate(oldState);
   }
   return output;
@@ -277,15 +319,15 @@ function displayAsyncState(data) {
 function displayProducerType(value) {
   switch (value) {
     case 0:
-      return 'indeterminate';
+      return "indeterminate";
     case 1:
-      return 'sync';
+      return "sync";
     case 2:
-      return 'promise';
+      return "promise";
     case 3:
-      return 'generator';
+      return "generator";
     case 4:
-      return 'not provided';
+      return "not provided";
   }
   return null;
 }
@@ -293,38 +335,51 @@ function displayProducerType(value) {
 function RefreshButton({lane}) {
   const {dev} = React.useContext(DevtoolsContext);
   return (
-    <Button
-      type="link"
-      size="small"
-      shape="round"
+    <button
+      style={{
+        color: "#00bbff",
+        backgroundColor: "transparent",
+        borderRadius: 100,
+        border: "none",
+      }}
       className="default-button"
       onClick={() => {
         gatewaySource
           .getState()
-          .data
-          ?.postMessage?.(DevtoolsMessagesBuilder.getAsyncState(lane, dev));
-      }}>Refresh</Button>
+          .data?.postMessage?.(
+          DevtoolsMessagesBuilder.getAsyncState(lane, dev)
+        );
+      }}
+    >
+      Refresh
+    </button>
   );
 }
 
 const Actions = React.memo(function Actions({lane}: { lane: string }) {
-
   return (
     <>
       <RefreshButton lane={lane}/>
 
       <EditState key={lane} lane={lane}/>
 
-      <Button
-        type="link"
-        size="small"
-        shape="round"
-        style={{marginLeft: 8}}
+      <button
+        style={{
+          color: "#00bbff",
+          backgroundColor: "transparent",
+          borderRadius: 100,
+          marginLeft: 8,
+          border: "none",
+        }}
         className="default-button"
         onClick={() => {
           currentJournal.setState(null);
           currentState.setState(null);
-        }}> Close </Button>
+        }}
+      >
+        {" "}
+        Close
+      </button>
     </>
   );
 });
@@ -337,139 +392,266 @@ function EditState({lane}) {
   const [status, setStatus] = React.useState(AsyncStateStatus.success);
   return (
     <>
-      <Button
-        type="link"
-        style={{marginLeft: 8}}
-        onClick={() => setOpen(true)} size="small" shape="round"
-        className="default-button">Change state</Button>
-      <Modal
-        centered
-        title="Change state"
-        onCancel={() => setOpen(false)} onOk={() => {
-        gatewaySource
-          .getState()
-          .data
-          ?.postMessage?.(
-          DevtoolsMessagesBuilder
-            .changeAsyncState(
-              lane,
-              status,
-              data,
-              isJson,
-              dev
-            )
-        );
-        setOpen(false);
-      }} open={open}>
-        {
-          open && (
-            <section className="w-full" style={{padding: '0px 8px'}}>
+      <button
+        style={{
+          color: "#00bbff",
+          backgroundColor: "transparent",
+          borderRadius: 100,
+          marginLeft: 8,
+          border: "none",
+        }}
+        onClick={() => setOpen(true)}
+        className="default-button"
+      >
+        Change state
+      </button>
+      <div
+        style={{
+          color: "#000",
+          padding: 15,
+          width: 500,
+          display: open ? "inline-block" : "none",
+          position: "fixed",
+          backgroundColor: "#fff",
+          height: "fit-content",
+          top: "50%",
+          left: "50%",
+          zIndex: 99,
+          transform: "translate(-50%, -50%)",
+          maxHeight: 650,
+          overflow: "auto"
+        }}
+      >
+        <header
+          style={{
+            display: "flex",
+            width: "100%",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginTop: 0,
+            marginBottom: 10,
+          }}
+        >
+          <h1 style={{margin: 0}}>Change state</h1>
+          <button
+            style={{
+              backgroundColor: "transparent",
+              border: "none",
+              outline: "none",
+              fontSize: 24,
+              cursor: "pointer",
+            }}
+            onClick={() => setOpen(false)}
+          >
+            x
+          </button>
+        </header>
+        <hr/>
+        <div style={{
+          width: '100%',
+          padding: 0,
+          margin: '30px 0',
+        }}>
+          {open && (
+            <section style={{margin: "0px 8px"}}>
               <label style={{fontWeight: 600}}>Status:</label>
-              <Select
+              <select
+                style={{
+                  border: "1px solid black",
+                  borderRadius: 5,
+                  margin: 2,
+                }}
                 id="next-status"
                 value={status}
-                options={Object.values(AsyncStateStatus).map(t => ({
-                  label: t,
-                  value: t
-                }))}
-                onChange={v => {
-                  setStatus(v);
-                  if (v === AsyncStateStatus.pending) {
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                  const value = e.target.value as AsyncStateStatus;
+                  setStatus(value);
+                  if (value === AsyncStateStatus.pending) {
                     setData(null);
                   }
                 }}
-              />
+              >
+                {Object.values(AsyncStateStatus).map((t) => (
+                  <option value={t}>{t}</option>
+                ))}
+              </select>
               {status !== AsyncStateStatus.pending && (
-                <section style={{
-                  padding: '4px 0px',
-                }}>
+                <section
+                  style={{
+                    padding: "4px 0px",
+                  }}
+                >
                   <h4>Data:</h4>
                   <span>
-                    Type data and choose if it should be parsed as json.
-                    <br/>
-                  </span>
-                  <textarea style={{width: '100%'}} rows={2} value={data ?? ''}
-                            onChange={e => setData(e.target.value)}></textarea>
+									Type data and choose if it should be parsed as json.
+									<br/>
+								</span>
+                  <textarea
+                    style={{
+                      border: "1px solid black",
+                      borderRadius: 5,
+                      margin: '2px 0',
+                      maxWidth: "100%",
+                    }}
+                    rows={2}
+                    value={data ?? ""}
+                    onChange={(e) => setData(e.target.value)}
+                  ></textarea>
                   <br/>
-                  <input id="is-json" type="checkbox"
-                         checked={isJson}
-                         onChange={e => setIsJson(e.target.checked)}/>
-                  <label style={{marginLeft: 16}} htmlFor="is-json">is JSON
-                    data</label>
+                  <input
+                    id="is-json"
+                    type="checkbox"
+                    checked={isJson}
+                    onChange={(e) => setIsJson(e.target.checked)}
+                  />
+                  <label style={{marginLeft: 16}} htmlFor="is-json">
+                    is JSON data
+                  </label>
                   <br/>
                   <span>
-                    You can choose preview states from here:
-                    <br/>
-                    <PreviewsStateChoice status={status} onChange={setData}
-                                         lane={lane}/>
-                  </span>
+									You can choose preview states from here:
+									<br/>
+									<PreviewsStateChoice
+                    status={status}
+                    onChange={setData}
+                    lane={lane}
+                  />
+								</span>
                 </section>
               )}
               <details>
-                <summary>
-                  Preview:
-                </summary>
+                <summary>Preview:</summary>
 
-                <ReactJson name="New state"
-                           style={{
-                             padding: "1rem",
-                           }}
-                           theme="solarized"
-                           collapsed={2}
-                           displayDataTypes={false}
-                           displayObjectSize={false}
-                           enableClipboard={false}
-                           src={{
-                             status,
-                             data: isJson ? formatData(data) : data,
-                           }}
+                <ReactJson
+                  name="New state"
+                  style={{
+                    padding: "1rem",
+                  }}
+                  theme="solarized"
+                  collapsed={2}
+                  displayDataTypes={false}
+                  displayObjectSize={false}
+                  enableClipboard={false}
+                  src={{
+                    status,
+                    data: isJson ? formatData(data) : data,
+                  }}
                 />
               </details>
             </section>
-          )
-        }
-      </Modal>
+          )}
+        </div>
+        <hr/>
+        <footer style={{
+          marginTop: 20,
+          marginBottom: 10,
+          display: "flex",
+          justifyContent: 'end',
+          gap: 5
+        }}>
+          <button style={{
+            backgroundColor: '#fff',
+            color: '#0095ff',
+            padding: '5px 17px',
+            borderRadius: 5,
+            border: "1px solid #069",
+            outline: "none",
+            cursor: "pointer"
+          }}
+                  onClick={() => setOpen(false)}
+          >Cancel
+          </button>
+          <button style={{
+            backgroundColor: '#0095ff',
+            color: '#fff',
+            padding: '5px 17px',
+            borderRadius: 5,
+            border: "1px solid #069",
+            outline: "none",
+            cursor: "pointer"
+          }}
+                  onClick={() => {
+                    gatewaySource
+                      .getState()
+                      .data?.postMessage?.(
+                      DevtoolsMessagesBuilder.changeAsyncState(
+                        lane,
+                        status,
+                        data,
+                        isJson,
+                        dev
+                      )
+                    );
+                    setOpen(false);
+                  }}
 
+          >Save
+          </button>
+        </footer>
+      </div>
     </>
   );
 }
 
 function PreviewsStateChoiceDefault({
   lane,
-  onChange
-}: { lane: string, onChange: Function, status: any }) {
+  onChange,
+}: {
+  lane: string;
+  onChange: Function;
+  status: any;
+}) {
   const {state} = useSourceLane(journalSource, lane);
   const updateEvents = (state.data?.journal ?? [])
-    .filter(t => t.eventType === DevtoolsJournalEvent.update)
+    .filter((t) => t.eventType === DevtoolsJournalEvent.update)
     .reverse();
+
   return (
     <details>
       <summary>Choose from previous states</summary>
-
-      <Select
-        style={{width: '100%'}}
-        options={updateEvents.map(t => ({
-          label: `${t.eventPayload.newState.status} - ${stringifyForSelect(t.eventPayload.newState.data)}`,
-          value: `${t.eventId}`,
-          data: t,
-        }))}
-        onChange={(_v, option) => {
-          // @ts-ignore
-          onChange(stringifyForSelect(option.data.eventPayload.newState.data))
+      <select
+        style={{
+          border: "1px solid black",
+          borderRadius: 5,
+          margin: 2,
+          width: "100%",
+          height: 40,
         }}
-      />
+        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+          const data =
+            e.target.options[e.target.options.selectedIndex]?.dataset.data ??
+            "";
+          onChange(
+            stringifyForSelect(JSON.parse(data)?.eventPayload?.newState?.data)
+          );
+        }}
+      >
+        {updateEvents.map((t) => (
+          <option
+            style={{
+              padding: "10px 5px",
+            }}
+            data-data={JSON.stringify(t)}
+            key={t?.eventId}
+            value={`${t?.eventId}`}
+          >
+            {`${t?.eventPayload?.newState?.status} - ${stringifyForSelect(
+              t?.eventPayload?.newState?.data
+            )}`}
+          </option>
+        ))}
+      </select>
     </details>
   );
 }
 
 function formatData(data) {
   try {
-    return JSON.parse(data)
+    return JSON.parse(data);
   } catch (e) {
     return data;
   }
 }
-
 
 const CurrentStateDisplay = React.memo(CurrentTreeDisplay);
 const PreviewsStateChoice = React.memo(PreviewsStateChoiceDefault);
