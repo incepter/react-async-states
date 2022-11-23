@@ -1,4 +1,6 @@
-@import '~antd/dist/antd.css';
+body{
+  margin: 0;
+}
 
 :root {
   --bg-color: #1D2129;

@@ -1,6 +1,7 @@
 import {resetAllSources} from "./sources";
 
 let shimId = 0;
+
 export function shimChromeRuntime() {
   return {
     devtools: {
