@@ -1,8 +1,8 @@
 import * as React from "react";
-import Select from "antd/lib/select";
+import Select from "antd/es/select";
 import ReactJson from "react-json-view";
-import Button from "antd/lib/button";
-import Layout from "antd/lib/layout";
+import Button from "antd/es/button";
+import Layout from "antd/es/layout";
 import {useSource, useSourceLane,} from "react-async-states";
 import {DevtoolsJournalEvent} from "react-async-states/dist/devtools";
 import {currentJournal, journalSource} from "./sources";

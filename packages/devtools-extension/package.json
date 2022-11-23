@@ -1,11 +1,10 @@
 {
   "sideEffects": false,
-  "type": "module",
   "types": "dist/index",
   "version": "0.0.1-alpha-3",
   "main": "dist/index.umd.js",
   "name": "async-states-devtools",
-  "module": "dist/index.development.js",
+  "module": "dist/index.development.mjs",
   "files": [
     "README.MD",
     "dist"

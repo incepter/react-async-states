@@ -1,8 +1,8 @@
 import * as React from "react";
 import { useSource } from "react-async-states";
-import Layout from "antd/lib/layout";
-import Input from "antd/lib/input";
-import Select from "antd/lib/select";
+import Layout from "antd/es/layout";
+import Input from "antd/es/input";
+import Select from "antd/es/select";
 import {
   currentState,
   journalSource,

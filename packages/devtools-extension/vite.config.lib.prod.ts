@@ -11,22 +11,21 @@ export default defineConfig({
     emptyOutDir: false,
     lib: {
       name: 'Devtools',
+      formats: ['es', 'umd'],
       entry: 'src/lib-entry.tsx',
       fileName: 'index.production'
     },
     rollupOptions: {
-      external: ['react', 'react/jsx-runtime', 'react-async-states'],
+      external: ['react', 'react/jsx-runtime', 'react-dom', 'react-async-states'],
       output: {
         globals: {
           react: 'React',
+          'react-dom': 'ReactDOM',
           'react/jsx-runtime': 'jsxRuntime',
           'react-async-states': 'ReactAsyncStates',
         }
       },
     },
-  },
-  optimizeDeps: {
-    exclude: ["antd"],
   },
 
   plugins: [
