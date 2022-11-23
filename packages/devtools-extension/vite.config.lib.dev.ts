@@ -1,5 +1,6 @@
 import dts from 'vite-plugin-dts'
 import {defineConfig} from 'vite'
+import replace from '@rollup/plugin-replace'
 
 import react from '@vitejs/plugin-react'
 import vitePluginImp from 'vite-plugin-imp'
@@ -7,23 +8,28 @@ import vitePluginImp from 'vite-plugin-imp'
 // https://vitejs.dev/config/
 export default defineConfig({
   build: {
+    minify: false,
     lib: {
-      entry: 'src/index.tsx',
       name: 'Devtools',
-      fileName: 'index'
+      entry: 'src/index.tsx',
+      formats: ['es', 'umd'],
+      fileName: 'index.development'
     },
     rollupOptions: {
-      external: ['react', 'react/jsx-runtime'],
+      external: ['react', 'react/jsx-runtime', 'react-dom', 'react-async-states'],
       output: {
         globals: {
           react: 'React',
+          'react-dom': 'ReactDOM',
           'react/jsx-runtime': 'jsxRuntime',
+          'react-async-states': 'ReactAsyncStates',
         }
       }
     },
   },
 
   plugins: [
+    dts(),
     react(),
     vitePluginImp({
       libList: [
@@ -34,7 +40,6 @@ export default defineConfig({
         },
       ],
     }),
-    dts()
   ],
   css: {
     preprocessorOptions: {

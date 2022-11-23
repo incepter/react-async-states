@@ -121,20 +121,22 @@ function applyPartialUpdate(message) {
     }
     case DevtoolsJournalEvent.subscription: {
       journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
+        let prevData = old.data ?? {};
         return {
-          ...old.data,
-          subscriptions: [...old.data.subscriptions, message.payload.eventPayload],
-          journal: [...old.data.journal, message.payload],
+          ...prevData,
+          subscriptions: [...prevData.subscriptions, message.payload.eventPayload],
+          journal: [...prevData.journal, message.payload],
         }
       });
       return;
     }
     case DevtoolsJournalEvent.unsubscription: {
       journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
+        let prevData = old.data ?? {};
         return {
-          ...old.data,
-          subscriptions: old.data.subscriptions?.filter(t => t !== message.payload.eventPayload),
-          journal: [...old.data.journal, message.payload],
+          ...prevData,
+          subscriptions: prevData.subscriptions?.filter(t => t !== message.payload.eventPayload),
+          journal: [...prevData.journal, message.payload],
         }
       });
       return;

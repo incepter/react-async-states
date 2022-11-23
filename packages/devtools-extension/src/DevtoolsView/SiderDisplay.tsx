@@ -208,6 +208,7 @@ const SiderDisplay = React.memo(function () {
 				className="scroll-y-auto"
 				style={{
 					top: 40,
+          height: '100%',
 					overflow: "auto",
 					marginTop: 40,
 				}}

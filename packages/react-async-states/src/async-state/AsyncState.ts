@@ -919,7 +919,7 @@ export function standaloneProducerRunEffectFunction<T>(
     return instance.run(standaloneProducerEffectsCreator, ...args);
 
   } else if (typeof input === "function") {
-    let instance = new AsyncState(nextKey(), input);
+    let instance = new AsyncState(nextKey(), input, {hideFromDevtools: true});
     if (config?.payload) {
       instance.mergePayload(config.payload)
     }
@@ -940,7 +940,7 @@ export function standaloneProducerRunpEffectFunction<T>(
     return runWhileSubscribingToNextResolve(instance, props, args);
   } else if (typeof input === "function") {
 
-    let instance = new AsyncState(nextKey(), input);
+    let instance = new AsyncState(nextKey(), input, {hideFromDevtools: true});
     if (config?.payload) {
       instance.mergePayload(config.payload);
     }

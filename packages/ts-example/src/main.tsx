@@ -1,14 +1,17 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import {autoConfigureDevtools} from "async-states-devtools"
 
 import EntryPoint from "./entryPoint";
 import "./styles/index.css";
-import {createSource} from "react-async-states/src";
+import {createSource} from "react-async-states";
 
+import {autoConfigureDevtools} from "async-states-devtools"
+import "async-states-devtools/dist/style.css"
 autoConfigureDevtools({open: true});
 
-createSource("demo", null, {initialValue: 0});
+const src = createSource("demo", null, {initialValue: 0});
+
+src.setState(old => old.data + 1)
 
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
