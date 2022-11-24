@@ -96,6 +96,7 @@ export function autoConfigureDevtools(props?: { open?: boolean }) {
   }, 'auto-devtools');
 
   ReactDomRender(hostContainer, <AutoConfiguredDevtoolsImpl allowResize
+                                                            wrapperClassname='root-devtools-animated'
                                                             initiallyOpen={props?.open}
                                                             wrapperStyle={{
                                                               width: '100%',
@@ -114,9 +115,10 @@ function ReactDomRender(hostRoot, element) {
 
 function AutoConfiguredDevtoolsImpl({
   wrapperStyle,
+  wrapperClassname,
   initiallyOpen = false,
   allowResize = false
-}) {
+}: { wrapperStyle?: object, wrapperClassname?: string, initiallyOpen?: boolean, allowResize?: boolean }) {
   const [visible, setVisible] = React.useState(initiallyOpen);
 
   React.useEffect(() => {
@@ -152,7 +154,7 @@ function AutoConfiguredDevtoolsImpl({
         </button>
       )}
       {visible && (
-        <div style={wrapperStyle}>
+        <div className={wrapperClassname} style={wrapperStyle}>
           {allowResize && <Resizer/>}
           <DevtoolsViewInternal onClose={() => setVisible(false)}/>
         </div>
