@@ -36,7 +36,7 @@ function DevtoolsViewInternal({
           <button
             style={{
               zIndex: 9,
-              top: "16px",
+              bottom: "16px",
               right: "16px",
               position: "absolute",
               borderRadius: 100,
@@ -52,7 +52,7 @@ function DevtoolsViewInternal({
         )}
         <div
           className="main-bg scroll-y-auto flex flex-row"
-          style={{height: "100%", overflow: "auto"}}
+          style={{height: "100%"}}
         >
           <SiderDisplay/>
           <CurrentStateDisplay/>
@@ -135,26 +135,28 @@ function AutoConfiguredDevtoolsImpl({
     <>
       {!visible && (
         <button
+          className="main-bg main-color"
           style={{
             zIndex: 9,
-            top: "16px",
+            bottom: "16px",
             right: "16px",
             position: "absolute",
             borderRadius: 100,
             width: 50,
             height: 50,
-            color: "#000",
             cursor: "pointer",
           }}
           onClick={() => setVisible(old => !old)}
         >
-          X
+          +
         </button>
       )}
-      {visible && (<div style={wrapperStyle}>
-        {allowResize && <Resizer/>}
-        <DevtoolsViewInternal onClose={() => setVisible(false)}/>
-      </div>)}
+      {visible && (
+        <div style={wrapperStyle}>
+          {allowResize && <Resizer/>}
+          <DevtoolsViewInternal onClose={() => setVisible(false)}/>
+        </div>
+      )}
     </>
   );
 }

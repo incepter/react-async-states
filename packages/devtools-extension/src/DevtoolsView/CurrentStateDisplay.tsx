@@ -35,7 +35,7 @@ function CurrentTreeDisplay() {
     return null;
   }
   return (
-    <div style={{height: '100%'}}>
+    <div style={{height: '100%', width: "100%"}} className="scroll-y-auto">
       <div
         style={{
           padding: 8,
@@ -50,7 +50,7 @@ function CurrentTreeDisplay() {
       </div>
       <div
         style={{
-          height: "auto",
+          height: 'calc(100% - 60px)',
           display: "flex",
         }}
       >
@@ -58,15 +58,13 @@ function CurrentTreeDisplay() {
           style={{
             borderRight: "1px dashed #C3C3C3",
           }}
-          className="main-bg"
+          className="main-bg scroll-y-auto"
         >
           <CurrentJsonDisplay lane={lane} mode="state"/>
         </div>
         <div
-          style={{
-            overflow: "auto",
-          }}
-          className="main-bg scroll-y-auto"
+          style={{flexGrow: 10, height: '100%'}}
+          className="main-bg"
         >
           <CurrentJsonDisplay lane={lane} mode="journal"/>
         </div>

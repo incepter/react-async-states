@@ -21,13 +21,19 @@ const CurrentJournalDisplay = React.memo(function Journal({lane}: { lane: string
         padding: 8,
         overflow: 'auto',
         borderRight: '1px dashed #C3C3C3',
-      }} className='main-bg scroll-y-auto'>
-        <div className='main-color' style={{height: '100%'}}>
-          <JournalView lane={lane}/>
+      }} className='main-bg'>
+        <div className=' scroll-y-auto' style={{height: '100%'}}>
+          <div className="main-color main-bg">
+            <JournalView lane={lane}/>
+          </div>
         </div>
       </div>
       <div className='main-bg main-color scroll-y-auto'
-           style={{height: '100%', overflowY: 'auto', width: '100%'}}>
+           style={{
+             height: '100%',
+             overflowY: 'auto',
+             width: '100%',
+           }}>
         <CurrentJson/>
       </div>
     </div>);
@@ -194,11 +200,12 @@ function CurrentJson() {
     return null;
   }
   return (
-    <div>
+    <div style={{height: "100%"}} className="scroll-y-auto">
       <ReactJson name={json.data?.name}
                  theme="solarized"
                  style={{
-                   padding: '1rem'
+                   padding: '1rem',
+                   minHeight: 'calc(100% - 32px)'
                  }}
                  collapsed={2}
                  displayDataTypes={false}

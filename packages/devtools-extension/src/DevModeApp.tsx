@@ -2,7 +2,6 @@ import * as React from "react";
 import {createSource, useSource} from "react-async-states";
 
 
-const counterSource = createSource("counter", null, {initialValue: 0});
 
 let meter = 0;
 export default function DevModeApp() {

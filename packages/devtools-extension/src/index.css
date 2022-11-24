@@ -172,6 +172,9 @@ body{
 
 .resizer {
   z-index: 99;
+  position: absolute;
+  top: 0;
+  width: 100%;
   height: 4px;
   background-color: black;
   cursor: row-resize;
