@@ -7,7 +7,7 @@ import {
   StateContextValue,
   UseSelectorFunctionKeys,
 } from "../types.internal";
-import {isAsyncStateSource} from "../async-state/utils";
+import {isSource} from "../async-state/utils";
 import AsyncState, {
   ManagerWatchCallbackValue,
   Source,
@@ -17,7 +17,7 @@ import AsyncState, {
   FunctionSelectorItem,
   SimpleSelector
 } from "../async-state";
-import {readInstanceFromSource} from "../async-state/AsyncState";
+import {readSource} from "../async-state/AsyncState";
 import {useCallerName} from "./helpers/useCallerName";
 import {__DEV__, shallowEqual} from "../shared";
 
@@ -211,8 +211,8 @@ function computeInstancesMap(
 ): Record<string, StateInterface<any> | undefined> {
   return fromKeys
     .reduce((result, current) => {
-      if (isAsyncStateSource(current)) {
-        const asyncState = readInstanceFromSource(current as Source<any>);
+      if (isSource(current)) {
+        const asyncState = readSource(current as Source<any>);
         result[asyncState.key] = asyncState;
       } else if (contextValue !== null) {
         result[current as string] = contextValue.get(current as string);

@@ -90,6 +90,7 @@ export type EqualityFn<T> = (
 export interface BaseConfig<T> extends ProducerConfig<T>{
   key?: string,
   lane?: string,
+  source?: Source<T>,
   autoRunArgs?: any[],
   subscriptionKey?: string,
   payload?: Record<string, any>,

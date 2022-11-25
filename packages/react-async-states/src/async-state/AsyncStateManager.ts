@@ -11,14 +11,14 @@ import AsyncState, {
   Source,
   State,
   StateInterface,
-  readInstanceFromSource,
+  readSource,
   runWhileSubscribingToNextResolve,
   standaloneProducerRunEffectFunction,
   standaloneProducerRunpEffectFunction,
   standaloneProducerSelectEffectFunction
 } from "./AsyncState";
 
-import {isAsyncStateSource,} from "./utils";
+import {isSource,} from "./utils";
 
 const listenersKey = Symbol();
 
@@ -281,10 +281,10 @@ function createInitialAsyncStatesReducer(
   result: AsyncStateEntries,
   current: ExtendedInitialAsyncState<any>
 ): AsyncStateEntries {
-  if (isAsyncStateSource(current)) {
+  if (isSource(current)) {
     const key = current.key;
     const existingEntry = result[key];
-    const asyncState = readInstanceFromSource(
+    const asyncState = readSource(
       current as Source<any>);
 
     if (!existingEntry || asyncState !== existingEntry.instance) {

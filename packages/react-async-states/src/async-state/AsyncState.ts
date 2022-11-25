@@ -3,7 +3,7 @@ import {
   asyncStatesKey,
   didNotExpire,
   hash,
-  isAsyncStateSource,
+  isSource,
   sourceIsSourceSymbol,
 } from "./utils";
 import devtools from "../devtools/Devtools";
@@ -687,7 +687,7 @@ function nextUniqueId() {
   return ++uniqueId;
 }
 
-function readInstanceFromSource<T>(possiblySource: Source<T>): StateInterface<T> {
+function readSource<T>(possiblySource: Source<T>): StateInterface<T> {
   try {
     const candidate = possiblySource.constructor(asyncStatesKey);
     if (!(candidate instanceof AsyncState)) {
@@ -912,8 +912,8 @@ export function standaloneProducerRunEffectFunction<T>(
   config: ProducerRunConfig | null,
   ...args: any[]
 ) {
-  if (isAsyncStateSource(input)) {
-    let instance = readInstanceFromSource(input as Source<T>)
+  if (isSource(input)) {
+    let instance = readSource(input as Source<T>)
       .getLane(config?.lane);
 
     return instance.run(standaloneProducerEffectsCreator, ...args);
@@ -935,8 +935,8 @@ export function standaloneProducerRunpEffectFunction<T>(
   ...args: any[]
 ) {
 
-  if (isAsyncStateSource(input)) {
-    let instance = readInstanceFromSource(input as Source<T>).getLane(config?.lane);
+  if (isSource(input)) {
+    let instance = readSource(input as Source<T>).getLane(config?.lane);
     return runWhileSubscribingToNextResolve(instance, props, args);
   } else if (typeof input === "function") {
 
@@ -979,7 +979,7 @@ export function standaloneProducerSelectEffectFunction<T>(
   input: ProducerRunInput<T>,
   lane?: string,
 ) {
-  if (isAsyncStateSource(input)) {
+  if (isSource(input)) {
     return (input as Source<T>).getLaneSource(lane).getState()
   }
 }
@@ -1214,7 +1214,7 @@ function stepAsyncAndContinueStartedGenerator(
 //region Exports
 export default AsyncState;
 export {
-  readInstanceFromSource,
+  readSource,
   standaloneProducerEffectsCreator,
 };
 //endregion

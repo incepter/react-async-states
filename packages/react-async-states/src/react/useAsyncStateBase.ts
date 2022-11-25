@@ -32,9 +32,9 @@ import {
   warnInDevAboutIrrelevantUseAsyncStateConfiguration
 } from "./helpers/configuration-warn";
 import {supportsConcurrentMode} from "./helpers/supports-concurrent-mode";
-import {isAsyncStateSource} from "../async-state/utils";
+import {isSource} from "../async-state/utils";
 import {
-  readInstanceFromSource,
+  readSource,
   standaloneProducerEffectsCreator
 } from "../async-state/AsyncState";
 import useInDevSubscriptionKey from "./helpers/useCallerName";
@@ -208,7 +208,7 @@ export function useSourceLane<T>(
 ): UseAsyncState<T, State<T>> {
   let subscriptionKey;
   const contextValue = React.useContext(AsyncStateContext);
-  const asyncState = readInstanceFromSource(source).getLane(lane);
+  const asyncState = readSource(source).getLane(lane);
   const latestVersion = React.useRef<number | undefined>(asyncState.version);
 
   // declare a state snapshot initialized by the initial selected value
@@ -389,7 +389,7 @@ function readUserConfiguration<T, E>(
     );
   }
   // subscription via source directly as configuration
-  if (isAsyncStateSource(userConfig)) {
+  if (isSource(userConfig)) {
     return Object.assign(
       {},
       defaultUseASConfig,
@@ -399,7 +399,7 @@ function readUserConfiguration<T, E>(
   }
   // subscription via source using object configuration
   if (
-    isAsyncStateSource((userConfig as UseAsyncStateConfiguration<T, E>)?.source)
+    isSource((userConfig as UseAsyncStateConfiguration<T, E>)?.source)
   ) {
     return Object.assign(
       {},
@@ -584,10 +584,10 @@ function inferStateInstance<T, E>(
         configuration,
       );
     case SubscriptionMode.SRC:
-      return readInstanceFromSource(
+      return readSource(
         configuration.source as Source<T>);
     case SubscriptionMode.SRC_FORK: {
-      const sourceAsyncState = readInstanceFromSource(
+      const sourceAsyncState = readSource(
         configuration.source as Source<T>);
       return sourceAsyncState.fork(configuration.forkConfig);
     }

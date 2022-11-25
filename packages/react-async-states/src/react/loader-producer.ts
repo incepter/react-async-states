@@ -6,14 +6,14 @@ import {
 import {
   makeUseAsyncStateReturnValue,
 } from "./useAsyncStateBase";
-import {readInstanceFromSource} from "../async-state/AsyncState";
+import {readSource} from "../async-state/AsyncState";
 import {SubscriptionMode, UseAsyncState} from "../types.internal";
 
 export function createLoaderProducer<T>(
   producer: Loader<T>, loaderKey?: string, config?: ProducerConfig<T>): LoaderProducer<T> {
 
   const source = createSource(`loader-${loaderKey}`, undefined, config) as Source<T>;
-  let instance = readInstanceFromSource(source);
+  let instance = readSource(source);
 
   function wrapperProducer(props: ProducerProps<T>) {
 
