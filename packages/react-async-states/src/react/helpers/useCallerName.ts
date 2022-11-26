@@ -17,7 +17,7 @@ type WarnInDevSelf<T> = {
 
 export default function useInDevSubscriptionKey<T>(
   subKey: string | undefined,
-  asyncState: StateInterface<T>,
+  asyncState: StateInterface<T> | null,
   from: string, // 1: useAsyncState, 2: useSourceLane, 3: useProducer, 4: useSelector
 ): string | undefined {
   if (__DEV__) {

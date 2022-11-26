@@ -1,7 +1,6 @@
 import * as React from "react";
 import {fireEvent, render, screen} from "@testing-library/react";
 import {AsyncStateProvider} from "../../../react/AsyncStateProvider";
-import {SubscriptionMode} from "../../../types.internal";
 import {useProducer} from "../../../react/useAsyncStateBase";
 
 describe('should useProducer', () => {
@@ -20,8 +19,8 @@ describe('should useProducer', () => {
     function Component() {
       const {
         run,
-        mode,
         state,
+        devFlags,
       } = useProducer(producer);
 
       function increment() {
@@ -31,7 +30,7 @@ describe('should useProducer', () => {
       return (
         <div>
           <button data-testid="increment" onClick={increment}>increment</button>
-          <span data-testid="mode">{mode}</span>
+          <span data-testid="mode">{JSON.stringify(devFlags)}</span>
           <span data-testid="result">{state.data}</span>
         </div>);
     }
@@ -48,7 +47,7 @@ describe('should useProducer', () => {
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("");
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual(SubscriptionMode.ALONE);
+      .toEqual("[\"CONFIG_FUNCTION\",\"STANDALONE\"]");
 
     // +1
     fireEvent.click(incrementBtn);
@@ -73,7 +72,7 @@ describe('should useProducer', () => {
     function Component() {
       const {
         run,
-        mode,
+        devFlags,
         state,
       } = useProducer(producer);
 
@@ -84,7 +83,7 @@ describe('should useProducer', () => {
       return (
         <div>
           <button data-testid="increment" onClick={increment}>increment</button>
-          <span data-testid="mode">{mode}</span>
+          <span data-testid="mode">{JSON.stringify(devFlags)}</span>
           <span data-testid="result">{state.data}</span>
         </div>);
     }
@@ -101,7 +100,7 @@ describe('should useProducer', () => {
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("");
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual(SubscriptionMode.ALONE);
+      .toEqual("[\"CONFIG_FUNCTION\",\"INSIDE_PROVIDER\",\"STANDALONE\"]");
 
     // +1
     fireEvent.click(incrementBtn);

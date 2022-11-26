@@ -68,6 +68,7 @@ function gatewayProducer(props) {
   port.postMessage(DevtoolsMessagesBuilder.getKeys(dev));
 
   port.onMessage.addListener(message => {
+    console.log('received', message)
     if (message.source !== "async-states-agent") {
       return;
     }
@@ -77,7 +78,8 @@ function gatewayProducer(props) {
       }
       case DevtoolsEvent.setAsyncState: {
         updatesMeter.setState(old => old.data + 1);
-        return journalSource.getLaneSource(`${message.uniqueId}`).setState(message.payload);
+        journalSource.getLaneSource(`${message.uniqueId}`).setState(message.payload);
+        return ;
       }
       case DevtoolsEvent.partialSync: {
         applyPartialUpdate(message);
@@ -95,6 +97,7 @@ function gatewayProducer(props) {
 }
 
 function applyPartialUpdate(message) {
+
   const {eventType} = message.payload;
   switch (eventType) {
     case DevtoolsJournalEvent.run: {
@@ -124,8 +127,8 @@ function applyPartialUpdate(message) {
         let prevData = old.data ?? {};
         return {
           ...prevData,
-          subscriptions: [...prevData.subscriptions, message.payload.eventPayload],
-          journal: [...prevData.journal, message.payload],
+          subscriptions: [...(prevData.subscriptions ?? []), message.payload.eventPayload],
+          journal: [...(prevData.journal ?? []), message.payload],
         }
       });
       return;
@@ -135,8 +138,8 @@ function applyPartialUpdate(message) {
         let prevData = old.data ?? {};
         return {
           ...prevData,
-          subscriptions: prevData.subscriptions?.filter(t => t !== message.payload.eventPayload),
-          journal: [...prevData.journal, message.payload],
+          subscriptions: (prevData.subscriptions ?? [])?.filter(t => t !== message.payload.eventPayload),
+          journal: [...(prevData.journal ?? []), message.payload],
         }
       });
       return;

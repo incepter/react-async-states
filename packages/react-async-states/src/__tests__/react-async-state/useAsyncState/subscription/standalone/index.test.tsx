@@ -1,7 +1,6 @@
 import * as React from "react";
 import {fireEvent, render, screen} from "@testing-library/react";
 import {
-  SubscriptionMode,
   UseAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../react/useAsyncState";
@@ -21,7 +20,7 @@ describe('should declare a standalone producer inside a provider', () => {
     function Component() {
       const {
         run,
-        mode,
+        devFlags,
         state,
       }: UseAsyncState<number, number> = useAsyncState({
           selector: d => d.data,
@@ -43,7 +42,7 @@ describe('should declare a standalone producer inside a provider', () => {
         <div>
           <button data-testid="increment" onClick={increment}>increment</button>
           <button data-testid="decrement" onClick={decrement}>decrement</button>
-          <span data-testid="mode">{mode}</span>
+          <span data-testid="mode">{JSON.stringify(devFlags)}</span>
           <span data-testid="result">{state}</span>
         </div>);
     }
@@ -60,7 +59,7 @@ describe('should declare a standalone producer inside a provider', () => {
     const decrementBtn = screen.getByTestId("decrement");
     // then
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual(SubscriptionMode.ALONE);
+      .toEqual("[\"CONFIG_OBJECT\",\"INSIDE_PROVIDER\",\"SELECTOR\",\"STANDALONE\"]");
 
     // +1
     fireEvent.click(incrementBtn);
@@ -82,7 +81,7 @@ describe('should declare a standalone producer inside a provider', () => {
 
     function Component() {
       const {
-        mode,
+        devFlags,
       }: UseAsyncState<number, number> = useAsyncState({
         key: "standalone",
         producer(props) {
@@ -91,7 +90,7 @@ describe('should declare a standalone producer inside a provider', () => {
         initialValue: 0,
         selector: d => d.data,
       });
-      return <span data-testid="mode">{mode}</span>;
+      return <span data-testid="mode">{JSON.stringify(devFlags)}</span>;
     }
 
     // when
@@ -104,6 +103,6 @@ describe('should declare a standalone producer inside a provider', () => {
 
     // then
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual(SubscriptionMode.ALONE);
+      .toEqual("[\"CONFIG_OBJECT\",\"INSIDE_PROVIDER\",\"SELECTOR\",\"WAIT\"]");
   });
 });

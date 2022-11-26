@@ -132,7 +132,7 @@ export const SideKey = React.memo(function SiderKey({
     );
   }, [uniqueId, dev]);
 
-  const {state} = useSourceLane(journalSource, `${uniqueId}`);
+  const {state, devFlags, version, source} = useSourceLane(journalSource, `${uniqueId}`);
 
   const {status} = state.data?.state ?? {};
 

@@ -1,7 +1,6 @@
 import * as React from "react";
 import {act, render, screen} from "@testing-library/react";
 import {useSource} from "../../../react/useAsyncStateBase";
-import {SubscriptionMode} from "../../../types.internal";
 import {createSource} from "../../../async-state";
 
 describe('should useSource', () => {
@@ -18,13 +17,13 @@ describe('should useSource', () => {
     function Component() {
       const {
         run,
-        mode,
+        devFlags,
         state,
       } = useSource(source);
 
       return (
         <div>
-          <span data-testid="mode">{mode}</span>
+          <span data-testid="mode">{JSON.stringify(devFlags)}</span>
           <span data-testid="result">{state.data}</span>
         </div>);
     }
@@ -40,7 +39,7 @@ describe('should useSource', () => {
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("8");
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual(SubscriptionMode.SRC);
+      .toEqual("[\"CONFIG_SOURCE\",\"SOURCE\"]");
 
     act(() => {
       source.setState(5);

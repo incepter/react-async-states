@@ -1,7 +1,6 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {
-  SubscriptionMode,
   UseAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../react/useAsyncState";
@@ -26,11 +25,11 @@ describe('should hoist an async state to provider', () => {
     }
 
     function Hoister<T>() {
-      const {mode} = useAsyncState.hoist({
+      const {devFlags} = useAsyncState.hoist({
         key: "counter",
         initialValue: 0,
       });
-      return <span data-testid="hoister-mode">{mode}</span>;
+      return <span data-testid="hoister-mode">{JSON.stringify(devFlags)}</span>;
     }
 
     function Wrapper({children, initialValue = false}) {
@@ -50,13 +49,13 @@ describe('should hoist an async state to provider', () => {
       subscribesTo,
     }: { subscribesTo: string }) {
       const {
-        mode,
+        devFlags,
         state,
       }: UseAsyncState<number> = useAsyncState(subscribesTo);
 
       return (
         <div>
-          <span data-testid={`mode-${subscribesTo}`}>{mode}</span>
+          <span data-testid={`mode-${subscribesTo}`}>{JSON.stringify(devFlags)}</span>
           <span
             data-testid={`result-${subscribesTo}`}>{JSON.stringify(state)}</span>
         </div>);
@@ -72,7 +71,7 @@ describe('should hoist an async state to provider', () => {
 
     // then
     expect(screen.getByTestId("mode-counter").innerHTML)
-      .toEqual(SubscriptionMode.WAIT);
+      .toEqual("[\"CONFIG_STRING\",\"INSIDE_PROVIDER\",\"WAIT\"]");
 
 
     act(() => {
@@ -80,13 +79,13 @@ describe('should hoist an async state to provider', () => {
     });
 
     expect(screen.getByTestId("hoister-mode").innerHTML)
-      .toEqual(SubscriptionMode.HOIST);
+      .toEqual("[\"CONFIG_OBJECT\",\"HOIST\",\"INSIDE_PROVIDER\"]");
     await act(async () => {
       await flushPromises();
     });
 
     expect(screen.getByTestId("mode-counter").innerHTML)
-      .toEqual(SubscriptionMode.LISTEN);
+      .toEqual("[\"CONFIG_STRING\",\"INSIDE_PROVIDER\"]");
 
     expect(screen.getByTestId("result-counter").innerHTML)
       .toEqual(JSON.stringify({

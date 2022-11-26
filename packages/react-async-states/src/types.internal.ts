@@ -24,18 +24,6 @@ export interface AsyncStateInitializer<T> {
   config?: ProducerConfig<T>
 }
 
-export enum SubscriptionMode {
-  LISTEN = "LISTEN", // simple listener
-  HOIST = "HOIST", // hoisting a producer, for first time and intended to be shared, more like of an injection
-  ALONE = "ALONE", // working standalone even if inside provider
-  WAIT = "WAIT", // waits for the original to be hoisted
-  FORK = "FORK", // forking an existing one in the provider
-  NA = "NA", // a weird case that should not happen
-  SRC = "SRC", // subscription via source property
-  SRC_FORK = "SRC_FORK", // subscription via source property and fork
-  OUTSIDE = "OUTSIDE", // standalone outside provider
-}
-
 export type StateContextValue = AsyncStateManagerInterface;
 
 // use async state
@@ -43,8 +31,9 @@ export type StateContextValue = AsyncStateManagerInterface;
 export interface BaseUseAsyncState<T, E = State<T>> {
   key: string,
 
+  flags?: number,
+  devFlags?: number,
   source?: Source<T>,
-  mode: SubscriptionMode,
 
   replay(): AbortFn,
   abort(reason?: any): void,
@@ -71,7 +60,6 @@ export interface UseAsyncState<T, E = State<T>> extends BaseUseAsyncState<T, E> 
 //
 //   key: string,
 //   version?: number,
-//   mode: SubscriptionMode,
 //   uniqueId: number | undefined,
 //   source?: Source<T> | undefined,
 //
@@ -221,7 +209,6 @@ export type UseAsyncStateEvents<T> = {
 export type SubscribeEventProps<T> = {
   getState: () => State<T>,
   run: (...args: any[]) => AbortFn,
-  mode: SubscriptionMode,
   invalidateCache: (cacheKey?: string) => void,
 }
 
@@ -234,7 +221,6 @@ export type useSelector<T, E> =
 export type PartialUseAsyncStateConfiguration<T, E> = Partial<UseAsyncStateConfiguration<T, E>>
 
 export type SubscriptionInfo<T, E> = {
-  mode: SubscriptionMode,
   asyncState: StateInterface<T>,
   configuration: UseAsyncStateConfiguration<T, E>,
 

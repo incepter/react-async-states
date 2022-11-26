@@ -23,13 +23,13 @@ describe('dynamic provider states hoisting', () => {
 
   function Father() {
     const run = useRunLane();
-    const {key, mode, state, uniqueId} = useAsyncState({
+    const {key, devFlags, state} = useAsyncState({
       key: "counter",
       initialValue: 0,
       hoistToProvider: true
     });
     return <button data-testid={`father`} onClick={() => run(key, undefined, (old) => old.data + 1)}>
-      FATHER - {state.data} - {mode}
+      FATHER - {state?.data} - {JSON.stringify(devFlags)}
     </button>;
   }
 
@@ -60,7 +60,7 @@ describe('dynamic provider states hoisting', () => {
 
   function SimpleSub({subKey, alias, subIndex}) {
     const {
-      mode,
+      devFlags,
       state,
       run
     } = useAsyncState({key: subKey}, [subKey]) as UseAsyncState<number>;
@@ -72,7 +72,7 @@ describe('dynamic provider states hoisting', () => {
     return (
       <p>
         <button data-testid={`subscription-${subKey}-${alias}-${subIndex}-button`}
-                onClick={onClick}>{subKey} - {mode} - {state?.data}
+                onClick={onClick}>{subKey} - {JSON.stringify(devFlags)} - {state?.data}
         </button>
       </p>
     )
@@ -137,7 +137,7 @@ describe('dynamic provider states hoisting', () => {
     });
 
     expect(screen.getByTestId("subscription-counter-1-global-0-button").innerHTML)
-      .toEqual("counter-1 - LISTEN - 9");
+      .toEqual("counter-1 - [\"CONFIG_OBJECT\",\"INSIDE_PROVIDER\"] - 9");
 
 
     act(() => {
@@ -146,7 +146,7 @@ describe('dynamic provider states hoisting', () => {
     });
 
     expect(screen.getByTestId("subscription-counter-1-dynamic-0-button").innerHTML)
-      .toEqual("counter-1 - LISTEN - 9");
+      .toEqual("counter-1 - [\"CONFIG_OBJECT\",\"INSIDE_PROVIDER\"] - 9");
 
     act(() => {
       // increment value
@@ -155,9 +155,9 @@ describe('dynamic provider states hoisting', () => {
 
 
     expect(screen.getByTestId("subscription-counter-1-global-0-button").innerHTML)
-      .toEqual("counter-1 - LISTEN - 10");
+      .toEqual("counter-1 - [\"CONFIG_OBJECT\",\"INSIDE_PROVIDER\"] - 10");
     expect(screen.getByTestId("subscription-counter-1-dynamic-0-button").innerHTML)
-      .toEqual("counter-1 - LISTEN - 10");
+      .toEqual("counter-1 - [\"CONFIG_OBJECT\",\"INSIDE_PROVIDER\"] - 10");
   });
   it('should add subscriber and wait for entries', async () => {
     // given
@@ -185,7 +185,7 @@ describe('dynamic provider states hoisting', () => {
 
 
     expect(screen.getByTestId("subscription-counter-1-dynamic-0-button").innerHTML)
-      .toEqual("counter-1 - WAIT - ");
+      .toEqual("counter-1 - [\"CONFIG_OBJECT\",\"INSIDE_PROVIDER\",\"WAIT\"] - ");
 
     // then
     act(() => {
@@ -194,14 +194,14 @@ describe('dynamic provider states hoisting', () => {
     });
 
     expect(screen.getByTestId("subscription-counter-1-global-0-button").innerHTML)
-      .toEqual("counter-1 - LISTEN - 9");
+      .toEqual("counter-1 - [\"CONFIG_OBJECT\",\"INSIDE_PROVIDER\"] - 9");
 
 
     await act(async () => {
       await flushPromises();
     });
     expect(screen.getByTestId("subscription-counter-1-dynamic-0-button").innerHTML)
-      .toEqual("counter-1 - LISTEN - 9");
+      .toEqual("counter-1 - [\"CONFIG_OBJECT\",\"INSIDE_PROVIDER\"] - 9");
 
 
     act(() => {
@@ -211,8 +211,8 @@ describe('dynamic provider states hoisting', () => {
 
 
     expect(screen.getByTestId("subscription-counter-1-global-0-button").innerHTML)
-      .toEqual("counter-1 - LISTEN - 10");
+      .toEqual("counter-1 - [\"CONFIG_OBJECT\",\"INSIDE_PROVIDER\"] - 10");
     expect(screen.getByTestId("subscription-counter-1-dynamic-0-button").innerHTML)
-      .toEqual("counter-1 - LISTEN - 10");
+      .toEqual("counter-1 - [\"CONFIG_OBJECT\",\"INSIDE_PROVIDER\"] - 10");
   });
 });

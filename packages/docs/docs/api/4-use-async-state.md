@@ -860,29 +860,6 @@ const {source} = useAsyncState();
 ### `uniqueId`
 This is only used in development mode and was originally added with the devtools.
 
-### `mode`
-This corresponds to `AsyncStateSubscriptionMode`
-
-Here is the full list:
-
-```typescript
-
-enum AsyncStateSubscriptionMode {
-  LISTEN = "LISTEN",
-  HOIST = "HOIST",
-  STANDALONE = "STANDALONE",
-  WAITING = "WAITING",
-  FORK = "FORK",
-  NOOP = "NOOP",
-  SOURCE = "SOURCE",
-  SOURCE_FORK = "SOURCE_FORK",
-  OUTSIDE_PROVIDER = "OUTSIDE_PROVIDER",
-}
-
-```
-
-Read more about it [here](/docs/faq/how-the-library-works#how-useasyncstate-subscription-mode-works-).
-
 In general, you would never use this (unless you are a contributor and debugging things).
 
 ### `state`

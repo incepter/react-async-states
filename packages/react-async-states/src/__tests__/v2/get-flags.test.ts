@@ -1,4 +1,4 @@
-import {getFlagsFromConfig} from "../../react/v2";
+import {getFlagsFromConfig} from "../../react/useAsyncStateBase";
 import {
   AUTO_RUN, CONFIG_FUNCTION, CONFIG_OBJECT, CONFIG_SOURCE,
   CONFIG_STRING, FORK, HOIST, INSIDE_PROVIDER, LANE, SOURCE,
@@ -16,7 +16,7 @@ describe('getFlagsFromConfig', () => {
         lazy: false,
         hoistToProvider: true
       }))
-        .toEqual(CONFIG_STRING | STANDALONE | AUTO_RUN | HOIST);
+        .toEqual(CONFIG_STRING | AUTO_RUN | HOIST);
 
       expect(getFlagsFromConfig("key", null, {fork: true}))
         .toEqual(CONFIG_STRING | STANDALONE | FORK);
@@ -31,7 +31,7 @@ describe('getFlagsFromConfig', () => {
         .toEqual(CONFIG_OBJECT | STANDALONE);
 
       expect(getFlagsFromConfig({key, lazy: false, hoistToProvider: true}, null))
-        .toEqual(CONFIG_OBJECT | STANDALONE | AUTO_RUN | HOIST);
+        .toEqual(CONFIG_OBJECT | AUTO_RUN | HOIST);
 
       expect(getFlagsFromConfig({key}, null, {fork: true}))
         .toEqual(CONFIG_OBJECT | STANDALONE | FORK);
@@ -239,7 +239,7 @@ describe('getFlagsFromConfig', () => {
         .toEqual(CONFIG_OBJECT | INSIDE_PROVIDER | HOIST);
 
       expect(getFlagsFromConfig({key: "key2", producer}, manager, {hoistToProvider: true}))
-        .toEqual(CONFIG_OBJECT | INSIDE_PROVIDER | WAIT  | HOIST);
+        .toEqual(CONFIG_OBJECT | INSIDE_PROVIDER | HOIST);
     });
     it('should correctly infer configuration from object: -- remaining cases  --', () => {
 

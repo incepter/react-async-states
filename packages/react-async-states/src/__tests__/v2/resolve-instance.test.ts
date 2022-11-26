@@ -1,4 +1,4 @@
-import {createStateHook, resolveInstance, StateHook} from "../../react/v2";
+import {createStateHook, resolveInstance, StateHook} from "../../react/useAsyncStateBase";
 import {
   CONFIG_OBJECT,
   CONFIG_SOURCE, CONFIG_STRING, FORK, HOIST,
