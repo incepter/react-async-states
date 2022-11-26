@@ -102,8 +102,8 @@ function applyPartialUpdate(message) {
     case DevtoolsJournalEvent.run: {
       journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
         return {
-          ...old.data,
-          journal: [...old.data.journal, message.payload],
+          ...(old.data ?? {}),
+          journal: [...(old.data?.journal ?? []), message.payload],
         }
       });
       return;
@@ -112,11 +112,11 @@ function applyPartialUpdate(message) {
       updatesMeter.setState(old => old.data + 1);
       journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
         return {
-          ...old.data,
+          ...(old.data ?? {}),
           state: message.payload.eventPayload.newState,
           oldState: message.payload.eventPayload.oldState,
           lastSuccess: message.payload.eventPayload.lastSuccess,
-          journal: [...old.data.journal, message.payload],
+          journal: [...(old.data?.journal ?? []), message.payload],
         }
       });
       return;
