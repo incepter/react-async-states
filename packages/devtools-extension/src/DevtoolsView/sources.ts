@@ -68,7 +68,6 @@ function gatewayProducer(props) {
   port.postMessage(DevtoolsMessagesBuilder.getKeys(dev));
 
   port.onMessage.addListener(message => {
-    console.log('received', message)
     if (message.source !== "async-states-agent") {
       return;
     }

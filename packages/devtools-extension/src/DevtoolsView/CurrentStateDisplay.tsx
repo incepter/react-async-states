@@ -50,21 +50,24 @@ function CurrentTreeDisplay() {
       </div>
       <div
         style={{
+          borderRadius: 8,
           height: 'calc(100% - 60px)',
           display: "flex",
         }}
+        className="main-bg-2"
       >
         <div
           style={{
-            borderRight: "1px dashed #C3C3C3",
+            padding: 8,
+            borderRadius: 8,
           }}
-          className="main-bg scroll-y-auto"
+          className="main-bg-2 scroll-y-auto"
         >
           <CurrentJsonDisplay lane={lane} mode="state"/>
         </div>
         <div
-          style={{flexGrow: 10, height: '100%'}}
-          className="main-bg"
+          style={{height: 'calc(100% - 16px)', padding: 8, borderRadius: 8}}
+          className="main-bg-2"
         >
           <CurrentJsonDisplay lane={lane} mode="journal"/>
         </div>
@@ -262,32 +265,43 @@ function StateView({lane}) {
     return <span>No state information</span>;
   }
   return (
-    <div style={{height: '100%'}} className="scroll-y-auto">
-      <ReactJson name={`${data.key}'s state`}
-                 style={{
-                   padding: "1rem",
-                   overflow: "auto"
-                 }}
-                 theme="solarized"
-                 collapsed={5}
-                 displayDataTypes={false}
-                 displayObjectSize={false}
-                 enableClipboard={false}
-                 src={addFormattedDate(data.state)}
-      />
-      <hr/>
-      <ReactJson name={data.key}
-                 style={{
-                   padding: "1rem",
-                   overflow: "auto"
-                 }}
-                 theme="solarized"
-                 collapsed={1}
-                 displayDataTypes={false}
-                 displayObjectSize={false}
-                 enableClipboard={false}
-                 src={displayAsyncState(data)}
-      />
+    <div style={{height: '100%'}}>
+      <div style={{display: "flex", gap: 8, height: '100%'}}>
+        <div style={{maxWidth: '60%', height: '100%'}} className="scroll-y-auto">
+          <ReactJson name={`${data.key}'s state`}
+                     style={{
+
+                       backgroundColor: "#252b36",
+                       borderRadius: 8,
+                       padding: "1rem",
+                       overflow: "auto"
+                     }}
+                     theme="solarized"
+                     collapsed={5}
+                     displayDataTypes={false}
+                     displayObjectSize={false}
+                     enableClipboard={false}
+                     src={addFormattedDate(data.state)}
+          />
+        </div>
+        <div style={{maxWidth: '60%', height: '100%'}} className="scroll-y-auto">
+          <ReactJson name={data.key}
+                     style={{
+                       backgroundColor: "#252b36",
+                       borderRadius: 8,
+                       padding: "1rem",
+                       overflow: "auto"
+                     }}
+                     theme="solarized"
+                     collapsed={1}
+                     displayDataTypes={false}
+                     displayObjectSize={false}
+                     enableClipboard={false}
+                     src={displayAsyncState(data)}
+          />
+        </div>
+
+      </div>
     </div>
   );
 }
@@ -523,6 +537,8 @@ function EditState({lane}) {
                 <ReactJson
                   name="New state"
                   style={{
+                    backgroundColor: "#252b36",
+                    borderRadius: 8,
                     padding: "1rem",
                   }}
                   theme="solarized"
