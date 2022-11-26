@@ -92,6 +92,7 @@ export interface BaseConfig<T> extends ProducerConfig<T>{
   lane?: string,
   source?: Source<T>,
   autoRunArgs?: any[],
+  producer?: Producer<T>,
   subscriptionKey?: string,
   payload?: Record<string, any>,
   events?: UseAsyncStateEvents<T>,

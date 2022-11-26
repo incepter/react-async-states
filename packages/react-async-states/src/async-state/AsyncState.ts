@@ -109,7 +109,7 @@ class AsyncState<T> implements StateInterface<T> {
     return this.config;
   }
 
-  patchConfig(partialConfig: Partial<ProducerConfig<T>>) {
+  patchConfig(partialConfig?: Partial<ProducerConfig<T>>) {
     Object.assign(this.config, partialConfig);
   }
 
@@ -1253,7 +1253,7 @@ export interface BaseSource<T> {
 
   replaceCache(cacheKey: string, cache: CachedState<T>): void,
 
-  patchConfig(partialConfig: Partial<ProducerConfig<T>>),
+  patchConfig(partialConfig?: Partial<ProducerConfig<T>>),
 
   getConfig(): ProducerConfig<T>,
 }

@@ -1,5 +1,11 @@
 import * as React from "react";
-import {Source, State, StateInterface} from "../async-state";
+import AsyncState, {
+  createSource,
+  Producer,
+  Source,
+  State,
+  StateInterface
+} from "../async-state";
 import {
   BaseConfig,
   MixedConfig,
@@ -18,6 +24,7 @@ import {
   NO_MODE, SOURCE,
   STANDALONE, SUBSCRIBE_EVENTS, WAIT
 } from "./StateHookFlags";
+import {nextKey} from "../async-state/key-gen";
 
 
 export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
@@ -56,7 +63,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
       }
 
     },
-    [contextValue, hook.flags, hook.instance, ...deps]
+    [contextValue, hook.flags, hook.instance]
   );
 
 
@@ -76,18 +83,84 @@ class StateHookImpl<T, E> implements StateHook<T, E> {
     contextValue: StateContextValue | null,
     overrides?: PartialUseAsyncStateConfiguration<T, E>
   ) {
-    let prevFlags = this.flags;
     let nextFlags = getFlagsFromConfig(newConfig, contextValue, overrides);
     let instance = resolveInstance(nextFlags, newConfig, contextValue, this);
 
-    ensureInstanceResolveMatchesFlags(instance, nextFlags, contextValue);
+    if (!instance && !(nextFlags & WAIT)) {
+      throw new Error("Mode isn't wait and instance isn't defined! this is a bug");
+    }
 
+    this.flags = nextFlags;
     this.config = newConfig;
     this.instance = instance;
   }
 
 }
-function resolveInstance<T>(
+
+/**
+ * this is called only when the new mode is standalone
+ * so it is good to make some assumptions:
+ * - if the previous flags weren't standalone, instance cannot be reused
+ */
+function canReuseInstance<T, E>(
+  flags: number,
+  hook: StateHook<T, E>
+): boolean {
+  return !!hook.instance && !!(hook.flags & STANDALONE);
+}
+
+
+// come here only in standalone mode
+function patchInstance<T>(
+  instance: StateInterface<T>,
+  flags: number,
+  config: MixedConfig<T, any>
+) {
+  let key = readKeyFromConfig(flags, config, instance);
+  let producer = readProducerFromConfig(flags, config);
+  let producerConfig = flags & CONFIG_OBJECT ? (config as BaseConfig<T>) : undefined;
+
+  instance.key = key;
+  instance.replaceProducer(producer);
+  instance.patchConfig(producerConfig);
+}
+
+function readProducerFromConfig<T>(
+  flags: number,
+  config: MixedConfig<T, any>,
+): Producer<T> | undefined {
+  if (flags & CONFIG_FUNCTION) {
+    return config as Producer<T>;
+  }
+
+  if (flags & CONFIG_OBJECT) {
+    return (config as BaseConfig<T>).producer;
+  }
+
+  return undefined;
+}
+
+function readKeyFromConfig(
+  flags: number,
+  config: MixedConfig<any, any>,
+  prevInstance: StateInterface<any> | null
+): string {
+  if (flags & CONFIG_STRING) {
+    return config as string;
+  }
+
+  if (flags & CONFIG_OBJECT && (config as BaseConfig<any>).key) {
+    return (config as BaseConfig<any>).key!;
+  }
+
+  if (!prevInstance) {
+    return nextKey();
+  }
+
+  return prevInstance.key;
+}
+
+export function resolveInstance<T>(
   flags: number,
   config: MixedConfig<T, any>,
   contextValue: StateContextValue | null,
@@ -119,20 +192,36 @@ function resolveInstance<T>(
   }
 
   if (flags & STANDALONE) {
-    let canReuse = canReuseInstance(flags, config, previousHook);
+    let canReuse = !!previousHook?.instance && !!(previousHook.flags & STANDALONE);
     if (canReuse) {
-      patchInstance(previousHook.instance, flags, config);
+      patchInstance(previousHook.instance!, flags, config);
       return previousHook.instance;
     }
-    return constructNewInstance(flags, config);
+
+    let key = readKeyFromConfig(flags, config, null);
+    let producer = readProducerFromConfig(flags, config);
+    let producerConfig = flags & CONFIG_OBJECT ? (config as BaseConfig<T>) : undefined;
+
+    return new AsyncState(key, producer, producerConfig);
   }
 
   if (flags & INSIDE_PROVIDER) {
     let key: string = flags & CONFIG_STRING
       ? (config as string) : (config as BaseConfig<T>).key!;
 
-    let instance = contextValue!.get<T>(key);
+    if (
+      flags & HOIST &&
+      (config as BaseConfig<T>).hoistToProviderConfig?.override) {
+      // do not check on existing because it is guaranteed to exist
+      // or else we would have a WAIT flag and quit earlier!
+      let key = readKeyFromConfig(flags, config, null);
+      let producer = readProducerFromConfig(flags, config);
+      let producerConfig = flags & CONFIG_OBJECT ? (config as BaseConfig<T>) : undefined;
 
+      return new AsyncState(key, producer, producerConfig);
+    }
+
+    let instance = contextValue!.get<T>(key);
     if (flags & FORK) {
       instance = instance.fork((config as BaseConfig<T>).forkConfig);
     }
@@ -146,7 +235,7 @@ function resolveInstance<T>(
   return null;
 }
 
-interface StateHook<T, E> {
+export interface StateHook<T, E> {
   flags: number,
   config: MixedConfig<T, E>,
 
@@ -159,7 +248,7 @@ interface StateHook<T, E> {
   ),
 }
 
-function createStateHook<T, E>(): StateHook<T, E> {
+export function createStateHook<T, E>(): StateHook<T, E> {
   return new StateHookImpl();
 }
 
@@ -172,23 +261,6 @@ function useCurrentHook<T, E>(): StateHook<T, E> {
   return ref.current!;
 }
 
-
-//
-// function getMixedConfigTopLevelFlags<T, E>(mixedConfig: MixedConfig<T, E>): number {
-//   let flags = NO_MODE;
-//
-//   if (typeof mixedConfig === "string") {
-//     flags |= LISTEN;
-//   }
-//   if (typeof mixedConfig === "function") {
-//     flags = flags | LISTEN | STANDALONE;
-//   }
-//   if (isAsyncStateSource(mixedConfig)) {
-//     flags = flags | LISTEN | SOURCE;
-//   }
-//
-//   return flags;
-// }
 export function getFlagsFromConfig<T, E>(
   mixedConfig: MixedConfig<T, E>,
   contextValue: StateContextValue | null,

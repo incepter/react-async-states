@@ -235,8 +235,11 @@ describe('getFlagsFromConfig', () => {
         .toEqual(CONFIG_OBJECT | INSIDE_PROVIDER | STANDALONE | LANE);
 
       // listen to the existing!
-      expect(getFlagsFromConfig({key: "key", producer, hoistToProvider: true}, manager))
+      expect(getFlagsFromConfig({key: "key", producer}, manager, {hoistToProvider: true}))
         .toEqual(CONFIG_OBJECT | INSIDE_PROVIDER | HOIST);
+
+      expect(getFlagsFromConfig({key: "key2", producer}, manager, {hoistToProvider: true}))
+        .toEqual(CONFIG_OBJECT | INSIDE_PROVIDER | WAIT  | HOIST);
     });
     it('should correctly infer configuration from object: -- remaining cases  --', () => {
 
