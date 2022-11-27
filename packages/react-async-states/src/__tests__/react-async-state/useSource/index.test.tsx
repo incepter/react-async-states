@@ -1,6 +1,6 @@
 import * as React from "react";
 import {act, render, screen} from "@testing-library/react";
-import {useSource} from "../../../react/useAsyncStateBase";
+import {useSource} from "../../../react/useAsyncState";
 import {createSource} from "../../../async-state";
 
 describe('should useSource', () => {

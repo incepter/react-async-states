@@ -4,7 +4,7 @@ import {
   UseAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../react/useAsyncState";
-import {AsyncStateProvider} from "../../../../../react/AsyncStateProvider";
+import {AsyncStateProvider} from "../../../../../react/Provider";
 
 describe('should declare a standalone producer inside a provider', () => {
   it('should declare a standalone producer inside a provider ', async () => {

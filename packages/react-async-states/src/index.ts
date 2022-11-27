@@ -2,12 +2,11 @@ export {useSelector} from "./react/useSelector";
 
 export {useRun, useRunLane} from "./react/useRun";
 
-export {useAsyncState} from "./react/useAsyncState";
+export {AsyncStateProvider} from "./react/Provider";
 
-export {AsyncStateProvider} from "./react/AsyncStateProvider";
-
-export {useSource, useSourceLane, useProducer} from "./react/useAsyncStateBase";
-
+export {
+  useAsyncState, useSource, useSourceLane, useProducer
+} from "./react/useAsyncState";
 
 export {
   createSource,

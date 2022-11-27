@@ -2,7 +2,7 @@ import * as React from "react";
 import {render, screen} from "@testing-library/react";
 import {useAsyncState} from "../../../../react/useAsyncState";
 import {UseAsyncState} from "../../../../types.internal";
-import {AsyncStateProvider} from "../../../../react/AsyncStateProvider";
+import {AsyncStateProvider} from "../../../../react/Provider";
 import {createSource, Source, State} from "../../../../async-state";
 
 describe('should select from another async state', () => {

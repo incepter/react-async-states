@@ -4,7 +4,7 @@ import {
   UseAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../react/useAsyncState";
-import {AsyncStateProvider} from "../../../../../react/AsyncStateProvider";
+import {AsyncStateProvider} from "../../../../../react/Provider";
 import {mockDateNow, TESTS_TS} from "../../../utils/setup";
 import {createSource} from "../../../../../async-state";
 

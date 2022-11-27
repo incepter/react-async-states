@@ -6,6 +6,7 @@ import {
   UseAsyncState, UseAsyncStateConfiguration,
 } from "../types.internal";
 import {useAsyncState} from "./useAsyncState";
+import {emptyArray} from "./utils";
 
 const StateBoundaryContext = React.createContext<any>(null);
 
@@ -67,7 +68,6 @@ export function FetchAsYouRenderBoundary<T, E>(props: StateBoundaryProps<T, E>) 
   );
 }
 
-const emptyArray = [];
 function FetchThenRenderInitialBoundary<T, E>({
   dependencies = emptyArray, result, config
 }: {dependencies?: any[], result: UseAsyncState<T, E>, config: MixedConfig<T, E>}) {
