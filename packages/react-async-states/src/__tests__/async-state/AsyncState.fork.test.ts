@@ -1,4 +1,4 @@
-import AsyncState, { AsyncStateStatus } from "../../async-state";
+import AsyncState, { Status } from "../../async-state";
 import { shallowClone } from "../../shared";
 import { act } from "@testing-library/react-hooks";
 import { timeout } from "./test-utils";
@@ -24,8 +24,8 @@ describe('AsyncState - fork', () => {
     expect(myAsyncState.subscriptions).toBe(null);
     expect(typeof myAsyncState.run).toBe("function");
     expect(myAsyncState.config).toEqual(shallowClone(myConfig));
-    expect(myAsyncState.lastSuccess).toEqual({props: null, data: null, status: AsyncStateStatus.initial, timestamp: TESTS_TS});
-    expect(myAsyncState.state).toEqual({data: null, status: AsyncStateStatus.initial, props: null, timestamp: TESTS_TS});
+    expect(myAsyncState.lastSuccess).toEqual({props: null, data: null, status: Status.initial, timestamp: TESTS_TS});
+    expect(myAsyncState.state).toEqual({data: null, status: Status.initial, props: null, timestamp: TESTS_TS});
 
     let forkedAsyncState = myAsyncState.fork();
     expect(myAsyncState.forksIndex).toBe(1);
@@ -53,7 +53,7 @@ describe('AsyncState - fork', () => {
       await jest.advanceTimersByTime(100);
     });
 
-    expect(myAsyncState.state.status).toBe(AsyncStateStatus.success); // make sure it resolved
+    expect(myAsyncState.state.status).toBe(Status.success); // make sure it resolved
 
     let forkedAsyncState = myAsyncState.fork({keepState: true});
     // then
@@ -80,7 +80,7 @@ describe('AsyncState - fork', () => {
       await jest.advanceTimersByTime(100);
     });
 
-    expect(forkedAsyncState.state.status).toBe(AsyncStateStatus.success); // make sure it resolved
+    expect(forkedAsyncState.state.status).toBe(Status.success); // make sure it resolved
 
     // then
     expect(myAsyncState.lastSuccess).not.toEqual(forkedAsyncState.lastSuccess);// forked async state moved independently

@@ -1,4 +1,4 @@
-import {createStateHook, resolveInstance, StateHook} from "../../react/useAsyncStateBase";
+import {createStateHook} from "../../react/useAsyncStateBase";
 import {
   CONFIG_OBJECT,
   CONFIG_SOURCE, CONFIG_STRING, FORK, HOIST,
@@ -7,6 +7,7 @@ import {
   WAIT
 } from "../../react/StateHookFlags";
 import AsyncState, {AsyncStateManager} from "../../async-state";
+import {resolveInstance, StateHook} from "../../react/StateHook";
 
 describe('resolveInstance', () => {
   it('should resolve instance in WAIT mode', () => {
@@ -59,7 +60,7 @@ describe('resolveInstance', () => {
     expect(
       resolveInstance(
         CONFIG_OBJECT | INSIDE_PROVIDER | HOIST,
-        {key: "key", hoistToProviderConfig: {override: true}},
+        {key: "key", hoistConfig: {override: true}},
         manager,
         null)
     ).not.toBe(instance);

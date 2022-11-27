@@ -12,9 +12,9 @@ export {useSource, useSourceLane, useProducer} from "./react/useAsyncStateBase";
 export {
   createSource,
 
+  Status,
+  RunEffect,
   ProducerType,
-  AsyncStateStatus,
-  ProducerRunEffects,
 
   AsyncStateManager,
 } from "./async-state";
@@ -45,7 +45,7 @@ export type {
   InitialAsyncState,
   AsyncStateSelector,
   InitialStatesObject,
-  HoistToProviderConfig,
+  hoistConfig,
   ExtendedInitialAsyncState,
 
   AsyncStateManagerInterface,

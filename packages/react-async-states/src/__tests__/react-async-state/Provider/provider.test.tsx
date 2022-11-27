@@ -26,7 +26,7 @@ describe('dynamic provider states hoisting', () => {
     const {key, devFlags, state} = useAsyncState({
       key: "counter",
       initialValue: 0,
-      hoistToProvider: true
+      hoist: true
     });
     return <button data-testid={`father`} onClick={() => run(key, undefined, (old) => old.data + 1)}>
       FATHER - {state?.data} - {JSON.stringify(devFlags)}

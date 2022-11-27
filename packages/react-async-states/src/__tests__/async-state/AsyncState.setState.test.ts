@@ -1,4 +1,4 @@
-import AsyncState, { AsyncStateStatus, StateBuilder } from "../../async-state";
+import AsyncState, { Status, StateBuilder } from "../../async-state";
 import { timeout } from "./test-utils";
 import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
 
@@ -27,7 +27,7 @@ describe('AsyncState - setState', () => {
       props: {},
       data: null,
       timestamp: TESTS_TS,
-      status: AsyncStateStatus.pending,
+      status: Status.pending,
     };
     expect(myAsyncState.state).toEqual(expectedState);
 

@@ -154,7 +154,7 @@ class AsyncState<T> implements StateInterface<T> {
     notify: boolean = true
   ): void {
 
-    if (newState.status === AsyncStateStatus.pending && this.config.skipPendingStatus) {
+    if (newState.status === Status.pending && this.config.skipPendingStatus) {
       return;
     }
 
@@ -166,7 +166,7 @@ class AsyncState<T> implements StateInterface<T> {
       this.pendingUpdate = null;
     }
 
-    if (newState.status === AsyncStateStatus.pending) {
+    if (newState.status === Status.pending) {
       if (
         areRunEffectsSupported()
         && this.config.skipPendingDelayMs
@@ -182,14 +182,14 @@ class AsyncState<T> implements StateInterface<T> {
     this.version += 1;
     if (__DEV__) devtools.emitUpdate(this);
 
-    if (this.state.status === AsyncStateStatus.success) {
+    if (this.state.status === Status.success) {
       this.lastSuccess = this.state;
       if (isCacheEnabled(this)) {
         saveCacheAfterSuccessfulUpdate(this);
       }
     }
 
-    if (this.state.status !== AsyncStateStatus.pending) {
+    if (this.state.status !== Status.pending) {
       this.suspender = undefined;
     }
 
@@ -234,13 +234,13 @@ class AsyncState<T> implements StateInterface<T> {
 
   setState(
     newValue: T | StateFunctionUpdater<T>,
-    status = AsyncStateStatus.success,
+    status = Status.success,
   ): void {
     if (!StateBuilder[status]) {
       throw new Error(`Couldn't replace state to unknown status ${status}.`);
     }
     this.willUpdate = true;
-    if (this.state?.status === AsyncStateStatus.pending) {
+    if (this.state?.status === Status.pending) {
       this.abort();
       this.currentAbort = undefined;
     }
@@ -382,10 +382,10 @@ class AsyncState<T> implements StateInterface<T> {
       const now = Date.now();
 
       switch (this.config.runEffect) {
-        case ProducerRunEffects.delay:
-        case ProducerRunEffects.debounce:
-        case ProducerRunEffects.takeLast:
-        case ProducerRunEffects.takeLatest: {
+        case RunEffect.delay:
+        case RunEffect.debounce:
+        case RunEffect.takeLast:
+        case RunEffect.takeLatest: {
           if (this.pendingTimeout) {
             const deadline = this.pendingTimeout.startDate + effectDurationMs;
             if (now < deadline) {
@@ -394,9 +394,9 @@ class AsyncState<T> implements StateInterface<T> {
           }
           return scheduleDelayedRun(now);
         }
-        case ProducerRunEffects.throttle:
-        case ProducerRunEffects.takeFirst:
-        case ProducerRunEffects.takeLeading: {
+        case RunEffect.throttle:
+        case RunEffect.takeFirst:
+        case RunEffect.takeLeading: {
           if (this.pendingTimeout) {
             const deadline = this.pendingTimeout.startDate + effectDurationMs;
             if (now <= deadline) {
@@ -427,7 +427,7 @@ class AsyncState<T> implements StateInterface<T> {
   ): AbortFn {
     this.willUpdate = true;
 
-    if (this.state.status === AsyncStateStatus.pending || this.pendingUpdate) {
+    if (this.state.status === Status.pending || this.pendingUpdate) {
       if (this.pendingUpdate) {
         clearTimeout(this.pendingUpdate.timeoutId);
         // this.pendingUpdate.callback(); skip the callback!
@@ -615,9 +615,9 @@ function constructPropsObject<T>(
 
   function emit(
     updater: T | StateFunctionUpdater<T>,
-    status?: AsyncStateStatus
+    status?: Status
   ): void {
-    if (runIndicators.cleared && instance.state.status === AsyncStateStatus.aborted) {
+    if (runIndicators.cleared && instance.state.status === Status.aborted) {
       console.error("You are emitting while your producer is passing to aborted state." +
         "This has no effect and not supported by the library. The next " +
         "state value on aborted state is the reason of the abort.");
@@ -876,7 +876,7 @@ function isCacheEnabled(instance: StateInterface<any>): boolean {
 
 
 function state<T>(
-  status: AsyncStateStatus,
+  status: Status,
   data: T | any,
   props: ProducerSavedProps<T> | null
 ): State<T> {
@@ -884,20 +884,20 @@ function state<T>(
 }
 
 export const StateBuilder = Object.freeze({
-  initial: (initialValue) => state(AsyncStateStatus.initial, initialValue, null),
+  initial: (initialValue) => state(Status.initial, initialValue, null),
   error: (
     data,
     props
-  ) => state(AsyncStateStatus.error, data, props),
+  ) => state(Status.error, data, props),
   success: (
     data,
     props
-  ) => state(AsyncStateStatus.success, data, props),
-  pending: props => state(AsyncStateStatus.pending, null, props),
+  ) => state(Status.success, data, props),
+  pending: props => state(Status.pending, null, props),
   aborted: (
     reason,
     props
-  ) => state(AsyncStateStatus.aborted, reason, props),
+  ) => state(Status.aborted, reason, props),
 }) as StateBuilderInterface;
 //endregion
 
@@ -960,8 +960,8 @@ export function runWhileSubscribingToNextResolve<T>(
     props.onAbort(abort);
 
     function subscription(newState: State<T>) {
-      if (newState.status === AsyncStateStatus.success
-        || newState.status === AsyncStateStatus.error) {
+      if (newState.status === Status.success
+        || newState.status === Status.error) {
         if (typeof unsubscribe === "function") {
           unsubscribe();
         }
@@ -1010,15 +1010,15 @@ export function wrapProducerFunction<T>(instance: StateInterface<T>): ProducerFu
       instance.setState(props.args[0], props.args[1]);
       if (callbacks) {
         switch (instance.state.status) {
-          case AsyncStateStatus.success: {
+          case Status.success: {
             callbacks.onSuccess?.(instance.state);
             break;
           }
-          case AsyncStateStatus.aborted: {
+          case Status.aborted: {
             callbacks.onAborted?.(instance.state);
             break;
           }
-          case AsyncStateStatus.error: {
+          case Status.error: {
             callbacks.onError?.(instance.state);
             break;
           }
@@ -1231,7 +1231,7 @@ export interface BaseSource<T> {
 
   setState(
     updater: StateFunctionUpdater<T> | T,
-    status?: AsyncStateStatus,
+    status?: Status,
   ): void;
 
   // subscriptions
@@ -1333,7 +1333,7 @@ export interface RUNCProps<T> extends ProducerCallbacks<T> {
   args?: any[],
 }
 
-export enum AsyncStateStatus {
+export enum Status {
   error = "error",
   pending = "pending",
   success = "success",
@@ -1341,7 +1341,7 @@ export enum AsyncStateStatus {
   initial = "initial",
 }
 
-export enum ProducerRunEffects {
+export enum RunEffect {
   delay = "delay",
   debounce = "debounce",
   takeLast = "takeLast",
@@ -1355,7 +1355,7 @@ export enum ProducerRunEffects {
 export type State<T> = {
   data: T,
   timestamp: number,
-  status: AsyncStateStatus,
+  status: Status,
   props?: ProducerSavedProps<T> | null,
 };
 
@@ -1416,7 +1416,7 @@ export type ProducerConfig<T> = {
   initialValue?: T | ((cache: Record<string, CachedState<T>>) => T),
   cacheConfig?: CacheConfig<T>,
   runEffectDurationMs?: number,
-  runEffect?: ProducerRunEffects,
+  runEffect?: RunEffect,
   skipPendingDelayMs?: number,
   resetStateOnDispose?: boolean,
 
@@ -1428,7 +1428,7 @@ export type StateFunctionUpdater<T> = (updater: State<T>) => T;
 
 export type StateUpdater<T> = (
   updater: T | StateFunctionUpdater<T>,
-  status?: AsyncStateStatus
+  status?: Status
 ) => void;
 
 export interface Source<T> extends BaseSource<T> {
@@ -1457,7 +1457,7 @@ export type StateSubscription<T> = {
 export type OnCacheLoadProps<T> = {
   cache: Record<string, CachedState<T>>,
   setState(
-    newValue: T | StateFunctionUpdater<T>, status?: AsyncStateStatus): void
+    newValue: T | StateFunctionUpdater<T>, status?: Status): void
 }
 
 export type CacheConfig<T> = {

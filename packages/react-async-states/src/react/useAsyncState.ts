@@ -86,7 +86,7 @@ function useForkAutoAsyncState<T, E = State<T>>(
 }
 
 // hoist
-const hoistConfigOverrides = Object.freeze({hoistToProvider: true});
+const hoistConfigOverrides = Object.freeze({hoist: true});
 
 function useHoistAsyncState<T, E = State<T>>(
   subscriptionConfig: MixedConfig<T, E>,
@@ -101,7 +101,7 @@ function useHoistAsyncState<T, E = State<T>>(
 
 // hoistAuto
 const hoistAutoConfigOverrides = Object.freeze({
-  hoistToProvider: true,
+  hoist: true,
   lazy: false
 });
 

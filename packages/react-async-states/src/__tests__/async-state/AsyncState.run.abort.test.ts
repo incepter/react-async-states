@@ -1,5 +1,5 @@
 import { act } from "@testing-library/react-hooks";
-import AsyncState, { AsyncStateStatus } from "../../async-state";
+import AsyncState, { Status } from "../../async-state";
 import { rejectionTimeout, timeout } from "./test-utils";
 import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
 import {standaloneProducerEffectsCreator} from "../../async-state/AsyncState";
@@ -26,7 +26,7 @@ describe('AsyncState - run - abort', () => {
       props: null,
       data: null,
       timestamp: TESTS_TS,
-      status: AsyncStateStatus.initial,
+      status: Status.initial,
     });
 
     const abort = myAsyncState.run(standaloneProducerEffectsCreator);
@@ -43,12 +43,12 @@ describe('AsyncState - run - abort', () => {
         payload: {},
         lastSuccess: {
           timestamp: TESTS_TS,
-          data: null, status: AsyncStateStatus.initial,
+          data: null, status: Status.initial,
         },
       },
       data: null,
       timestamp: TESTS_TS,
-      status: AsyncStateStatus.pending,
+      status: Status.pending,
     });
 
     subscription.mockClear();
@@ -59,13 +59,13 @@ describe('AsyncState - run - abort', () => {
       props: {
         args: [],
         lastSuccess: {
-          data: null, status: AsyncStateStatus.initial, timestamp: TESTS_TS,
+          data: null, status: Status.initial, timestamp: TESTS_TS,
 
         },
         payload: {}
       },
       data: "reason", timestamp: TESTS_TS,
-      status: AsyncStateStatus.aborted,
+      status: Status.aborted,
     });
 
     expect(myAsyncState.state).toEqual({
@@ -73,13 +73,13 @@ describe('AsyncState - run - abort', () => {
         args: [],
         lastSuccess: {
           timestamp: TESTS_TS,
-          data: null, status: AsyncStateStatus.initial
+          data: null, status: Status.initial
         },
         payload: {}
       },
       timestamp: TESTS_TS,
       data: "reason",
-      status: AsyncStateStatus.aborted,
+      status: Status.aborted,
     });
 
     await act(async () => {
@@ -92,12 +92,12 @@ describe('AsyncState - run - abort', () => {
         args: [],
         lastSuccess: {
           timestamp: TESTS_TS,
-          data: null, status: AsyncStateStatus.initial
+          data: null, status: Status.initial
         },
         payload: {}
       },
       timestamp: TESTS_TS,
-      status: AsyncStateStatus.aborted,
+      status: Status.aborted,
       data: "reason",
     });
   });
@@ -122,7 +122,7 @@ describe('AsyncState - run - abort', () => {
 
     subscription.mockClear();
     abort("reason");
-    expect(subscription.mock.calls[0][0].status).toBe(AsyncStateStatus.aborted);
+    expect(subscription.mock.calls[0][0].status).toBe(Status.aborted);
 
     // now, let's check that a second call to the abort function does not update state or subscribers
     subscription.mockClear();
@@ -144,11 +144,11 @@ describe('AsyncState - run - abort', () => {
         lastSuccess: {
           data: null,
           timestamp: TESTS_TS,
-          status: AsyncStateStatus.initial,
+          status: Status.initial,
         },
       },
       timestamp: TESTS_TS,
-      status: AsyncStateStatus.aborted,
+      status: Status.aborted,
       data: "reason",
     });
   });
@@ -171,13 +171,13 @@ describe('AsyncState - run - abort', () => {
       await jest.advanceTimersByTime(50);
     });
 
-    expect(myAsyncState.state.status).toBe(AsyncStateStatus.pending);
+    expect(myAsyncState.state.status).toBe(Status.pending);
 
     // rerun while pending should interrupt previous
     subscription.mockClear();
     myAsyncState.run(standaloneProducerEffectsCreator);
 
-    expect(subscription.mock.calls[0][0].status).toBe(AsyncStateStatus.pending);
+    expect(subscription.mock.calls[0][0].status).toBe(Status.pending);
 
     expect(subscription).toHaveBeenCalledTimes(1);
 
@@ -192,12 +192,12 @@ describe('AsyncState - run - abort', () => {
         args: [],
         lastSuccess: {
           timestamp: TESTS_TS,
-          data: null, status: AsyncStateStatus.initial
+          data: null, status: Status.initial
         },
         payload: {}
       },
       timestamp: TESTS_TS,
-      status: AsyncStateStatus.success,
+      status: Status.success,
       data: "value",
     });
   });

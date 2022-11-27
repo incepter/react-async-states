@@ -31,7 +31,7 @@ The library can work with the following modes:
 #### <ins>Easy to use and Minimal API (`useAsyncState`).</ins>
 The library has one main hook: `useAsyncState` which allows the creation,
 subscription and manipulation of the desired state.
-[Here is a sneak peek](https://incepter.github.io/react-async-states/docs/api/the-whole-api#useasyncstate) 
+[Here is a sneak peek](https://incepter.github.io/react-async-states/docs/api/the-whole-api#useasyncstate)
 at this hook's full API.
 
 #### <ins>Tiny library with no dependencies and works in all environments</ins>
@@ -52,11 +52,11 @@ hook configuration, while also providing a multiple imperative `run` functions
 with different signatures to answer your needs.
 
 #### <ins>Promises, async/await & generators support</ins>
-The `producer`, the core concept of the library can be of different forms (you 
+The `producer`, the core concept of the library can be of different forms (you
 can even omit it and manipulate the state directly, without a producer function):
 
-Either return a promise (thenable) to your state, use async/await syntax or go 
-generators. All of these are supported by the library out of the box and 
+Either return a promise (thenable) to your state, use async/await syntax or go
+generators. All of these are supported by the library out of the box and
 no configuration is needed.
 
 ```typescript
@@ -121,7 +121,7 @@ runc({
 
 #### <ins>Dynamic creation and sharing of states at runtime</ins>
 Under the `AsyncStateProvider`, you can create and share state instances
-and access them by their `key` via the `hoistToProvider` option.
+and access them by their `key` via the `hoist` option.
 
 You can even start listening to a state before it gets hoisted to the provider,
 and get notified once it gets added.
@@ -134,18 +134,18 @@ The library can work without the provider and still share state via the
 To avoid creating additional state pieces and third party utilities,
 the library has out-of-the box support for effects that can be applied to runs:
 such as `debounce`, and `throttle` and `delay`.
-This support allows you to create awesome user experience natively with the 
+This support allows you to create awesome user experience natively with the
 minimum CPU and RAM fingerprints, without additional libraries or managed
 variables. It just works in the core of the library. Of course, this requires
 you to be in an environment where `setTimeout` exists.
 
 ```tsx
-import {useAsyncState, ProducerRunEffects} from "react-async-states";
+import {useAsyncState, RunEffect} from "react-async-states";
 
 const {run} = useAsyncState({
   producer: userSearchByUsername,
   // debounce runs
-  runEffect: ProducerRunEffects.debounce,
+  runEffect: RunEffect.debounce,
   runEffectDurationMs: 300,
   // skip pending status if it answers less than 200ms
   skipPendingDelayMs: 200,
@@ -163,18 +163,18 @@ and `payload`.
 Let's add cache support to the previous example:
 
 ```tsx
-import {useAsyncState, ProducerRunEffects} from "react-async-states";
+import {useAsyncState, RunEffect} from "react-async-states";
 
 // note that the whole configuration object does not depend on render
 // and can be moved to module level static object.
 const {run} = useAsyncState({
   producer: userSearchByUsername,
   // debounce runs
-  runEffect: ProducerRunEffects.debounce,
+  runEffect: RunEffect.debounce,
   runEffectDurationMs: 300,
   // skip pending status if it answers less than 200ms
   skipPendingDelayMs: 200,
-  
+
   // cache config:
   cacheConfig: {
     enabled: true, // enable cache

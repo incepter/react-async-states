@@ -98,7 +98,7 @@ function runImmediately(
 ...execArgs: any[]
 ): AbortFn
 {
-  if (this.currentState.status === AsyncStateStatus.pending) {
+  if (this.currentState.status === Status.pending) {
     this.abort();
     this.currentAborter = undefined;
   } else if (isFn(this.currentAborter)) {
@@ -130,7 +130,7 @@ function runImmediately(
 
   function emit(
     updater: T | StateFunctionUpdater<T>,
-    status?: AsyncStateStatus
+    status?: Status
   ): void {
     // (...) warning and quit execution
     that.replaceState(updater, status);
@@ -273,12 +273,12 @@ export function standaloneProducerEffectsCreator<T>(props: ProducerProps<T>): Pr
 ```typescript
 function replaceState(
   newValue: T | StateFunctionUpdater<T>,
-  status = AsyncStateStatus.success
+  status = Status.success
 ): void {
   if (!StateBuilder[status]) {
     throw new Error(`Couldn't replace state to unknown status ${status}.`);
   }
-  if (this.currentState.status === AsyncStateStatus.pending) {
+  if (this.currentState.status === Status.pending) {
     this.abort();
     this.currentAborter = undefined;
   }
@@ -381,7 +381,7 @@ function makeContextValue(): AsyncStateContextValue {
       watchAll: manager.watchAll,
       getAllKeys: manager.getAllKeys,
       notifyWatchers: manager.notifyWatchers,
-      producerEffectsCreator: manager.producerEffectsCreator,
+      createEffects: manager.createEffects,
     };
   }
 ```
@@ -428,9 +428,9 @@ const asyncStateEntries: AsyncStateEntries = Object
     watchAll,
     getAllKeys,
     notifyWatchers,
-    setInitialStates
+    setStates
   };
-  output.producerEffectsCreator = createProducerEffectsCreator(output);
+  output.createEffects = createProducerEffectsCreator(output);
 
   return output;
 ```

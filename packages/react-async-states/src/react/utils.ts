@@ -11,3 +11,11 @@ export function humanizeDevFlags(flags: number) {
   });
   return out;
 }
+
+//region useAsyncState value construction
+// @ts-ignore
+export function noop(): undefined {
+  // that's a noop fn
+}
+
+export const emptyArray = [];

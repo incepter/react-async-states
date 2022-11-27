@@ -3,14 +3,14 @@ import {ReactNode} from "react";
 import {
   AbortFn,
   AsyncStateManagerInterface,
-  AsyncStateStatus,
+  Status,
   CacheConfig,
   CachedState,
   ForkConfig,
-  HoistToProviderConfig,
+  hoistConfig,
   Producer,
   ProducerConfig,
-  ProducerRunEffects,
+  RunEffect,
   Source,
   State,
   StateInterface,
@@ -28,24 +28,10 @@ export type StateContextValue = AsyncStateManagerInterface;
 
 // use async state
 
-export interface BaseUseAsyncState<T, E = State<T>> {
-  key: string,
-
+export interface BaseUseAsyncState<T, E = State<T>> extends Source<T>{
   flags?: number,
-  devFlags?: number,
   source?: Source<T>,
-
-  replay(): AbortFn,
-  abort(reason?: any): void,
-  run(...args: any[]): AbortFn,
-  runp(...args: any[]): Promise<State<T>>,
-
-  runc(props: RUNCProps<T>): AbortFn,
-  setState: StateUpdater<T>,
-  mergePayload(argv: Record<string, any>): void,
-
-  uniqueId: number | undefined,
-  invalidateCache(cacheKey?: string): void,
+  devFlags?: string[],
 }
 
 export interface UseAsyncState<T, E = State<T>> extends BaseUseAsyncState<T, E> {
@@ -53,7 +39,6 @@ export interface UseAsyncState<T, E = State<T>> extends BaseUseAsyncState<T, E> 
   read(): E,
   version?: number,
   lastSuccess?: State<T>,
-  payload: Record<string, any> | null,
 }
 
 // interface NewUseAsyncState<T, E = State<T>> extends Source<T> {
@@ -90,8 +75,8 @@ export interface BaseConfig<T> extends ProducerConfig<T>{
 
   fork?: boolean,
   forkConfig?: ForkConfig,
-  hoistToProvider?: boolean,
-  hoistToProviderConfig?: HoistToProviderConfig,
+  hoist?: boolean,
+  hoistConfig?: hoistConfig,
 }
 
 export interface ConfigWithKeyWithSelector<T, E> extends ConfigWithKeyWithoutSelector<T> {
@@ -142,13 +127,14 @@ export type UseAsyncStateConfiguration<T, E = State<T>> = {
   runEffectDurationMs?: number,
   resetStateOnDispose?: boolean,
   payload?: Record<string, any>,
-  runEffect?: ProducerRunEffects,
+  runEffect?: RunEffect,
   initialValue?: T | ((cache: Record<string, CachedState<T>>) => T),
 
   fork?: boolean,
   forkConfig?: ForkConfig,
-  hoistToProvider?: boolean,
-  hoistToProviderConfig?: HoistToProviderConfig,
+
+  hoist?: boolean,
+  hoistConfig?: hoistConfig,
 
   lazy?: boolean,
   autoRunArgs?: any[],
@@ -178,7 +164,7 @@ export type StateBoundaryProps<T, E> = {
   render?: StateBoundaryRenderProp,
 }
 
-export type StateBoundaryRenderProp = Record<AsyncStateStatus, ReactNode>
+export type StateBoundaryRenderProp = Record<Status, ReactNode>
 
 export type UseAsyncStateEventProps<T> = {
   state: State<T>,
@@ -193,7 +179,7 @@ export type UseAsyncStateEventFn<T> =
   UseAsyncStateChangeEventHandler<T>;
 
 export type UseAsyncStateChangeEvent<T> = {
-  status: AsyncStateStatus
+  status: Status
   handler: UseAsyncStateChangeEventHandler<T>,
 }
 

@@ -5,7 +5,7 @@ import {
   useCurrentState
 } from "../../../react/StateBoundary";
 import {
-  AsyncStateStatus,
+  Status,
   createSource
 } from "../../../async-state";
 import {RenderStrategy} from "../../../types.internal";
@@ -41,14 +41,14 @@ describe('StateBoundary', () => {
     expect(screen.getByTestId("current-mode").innerHTML)
       .toEqual("[\"AUTO_RUN\",\"CONFIG_SOURCE\",\"SOURCE\"]");
     expect(screen.getByTestId("current-status").innerHTML)
-      .toEqual(AsyncStateStatus.pending);
+      .toEqual(Status.pending);
 
     await act(async () => {
       await flushPromises();
     });
 
     expect(screen.getByTestId("current-status").innerHTML)
-      .toEqual(AsyncStateStatus.success);
+      .toEqual(Status.success);
   });
   it('should render in FetchThenRender strategy', async () => {
     // given
@@ -88,7 +88,7 @@ describe('StateBoundary', () => {
     expect(screen.getByTestId("current-mode")?.innerHTML)
       .toEqual("[\"CONFIG_SOURCE\",\"SOURCE\"]");
     expect(screen.getByTestId("current-status").innerHTML)
-      .toEqual(AsyncStateStatus.success);
+      .toEqual(Status.success);
   });
   it('should render in FetchAsYouRender strategy', async () => {
     // given
@@ -127,6 +127,6 @@ describe('StateBoundary', () => {
     });
 
     expect(screen.getByTestId("current-status").innerHTML)
-      .toEqual(AsyncStateStatus.success);
+      .toEqual(Status.success);
   });
 });
