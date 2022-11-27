@@ -47,7 +47,9 @@ import {
 } from "./StateHookFlags";
 import {nextKey} from "../async-state/key-gen";
 import {__DEV__, shallowClone} from "../shared";
-import useInDevSubscriptionKey from "./helpers/useCallerName";
+import {
+  computeCallerName,
+} from "./helpers/useCallerName";
 import {supportsConcurrentMode} from "./helpers/supports-concurrent-mode";
 import {humanizeDevFlags} from "./utils";
 
@@ -63,15 +65,8 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   const [guard, setGuard] = React.useState<number>(0);
   const contextValue = React.useContext<StateContextValue>(AsyncStateContext);
 
-  React.useMemo(() => hook.update(mixedConfig, contextValue, overrides),
+  React.useMemo(() => hook.update(1, mixedConfig, contextValue, overrides),
     [contextValue, guard, ...deps]);
-
-  let subscriptionKey = hook.flags & CONFIG_OBJECT
-    ? (mixedConfig as BaseConfig<T>).subscriptionKey : undefined;
-
-  if (__DEV__) {
-    subscriptionKey = useInDevSubscriptionKey(subscriptionKey, hook.instance, "1");
-  }
 
   const [selectedValue, setSelectedValue] = React
     .useState<Readonly<UseAsyncState<T, E>>>(calculateStateValue.bind(null, hook));
@@ -91,8 +86,8 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   }
 
   React.useEffect(
-    hook.subscribe.bind(null, setGuard, updateSelectedValue, subscriptionKey),
-    [contextValue, hook.flags, hook.instance, subscriptionKey]
+    hook.subscribe.bind(null, setGuard, updateSelectedValue),
+    [contextValue, hook.flags, hook.instance]
   );
 
   React.useEffect(autoRunAsyncState, deps);
@@ -140,16 +135,11 @@ export function useSourceLane<T>(
   source: Source<T>,
   lane?: string,
 ): UseAsyncState<T, State<T>> {
-  let subscriptionKey;
   const hook: StateHook<T, State<T>> = useCurrentHook();
   const contextValue = React.useContext<StateContextValue>(AsyncStateContext);
 
-  React.useMemo(() => hook.update({source, lane}, contextValue),
+  React.useMemo(() => hook.update(2, source, contextValue, {lane}),
     [contextValue, lane]);
-
-  if (__DEV__) {
-    subscriptionKey = useInDevSubscriptionKey(subscriptionKey, hook.instance, "2");
-  }
 
   const [selectedValue, setSelectedValue] = React
     .useState<Readonly<UseAsyncState<T, State<T>>>>(calculateStateValue.bind(null, hook));
@@ -169,8 +159,8 @@ export function useSourceLane<T>(
   }
 
   React.useEffect(
-    hook.subscribe.bind(null, noop, updateSelectedValue, subscriptionKey),
-    [contextValue, hook.flags, hook.instance, subscriptionKey]
+    hook.subscribe.bind(null, noop, updateSelectedValue),
+    [contextValue, hook.flags, hook.instance]
   );
 
   return selectedValue;
@@ -196,15 +186,10 @@ export function useSourceLane<T>(
 export function useProducer<T>(
   producer: Producer<T>,
 ): UseAsyncState<T, State<T>> {
-  let subscriptionKey;
   const hook: StateHook<T, State<T>> = useCurrentHook();
   const contextValue = React.useContext<StateContextValue>(AsyncStateContext);
 
-  React.useMemo(() => hook.update(producer, contextValue), [contextValue]);
-
-  if (__DEV__) {
-    subscriptionKey = useInDevSubscriptionKey(subscriptionKey, hook.instance, "3");
-  }
+  React.useMemo(() => hook.update(3, producer, contextValue), [contextValue]);
 
   const [selectedValue, setSelectedValue] = React
     .useState<Readonly<UseAsyncState<T, State<T>>>>(calculateStateValue.bind(null, hook));
@@ -228,8 +213,8 @@ export function useProducer<T>(
   }
 
   React.useEffect(
-    hook.subscribe.bind(null, noop, updateSelectedValue, subscriptionKey),
-    [contextValue, hook.flags, hook.instance, subscriptionKey]
+    hook.subscribe.bind(null, noop, updateSelectedValue),
+    [contextValue, hook.flags, hook.instance]
   );
 
   return selectedValue;
@@ -308,7 +293,9 @@ function readStateFromInstance<T, E = State<T>>(
 class StateHookImpl<T, E> implements StateHook<T, E> {
   current: E;
   flags: number;
+  name: string | undefined;
   config: MixedConfig<T, E>;
+  origin: number | undefined;
   version: number | undefined;
   base: BaseUseAsyncState<T, E>;
   context: StateContextValue | null;
@@ -317,7 +304,6 @@ class StateHookImpl<T, E> implements StateHook<T, E> {
   subscribe: (
     setGuard: React.Dispatch<React.SetStateAction<number>>,
     onChange: () => void,
-    subscriptionKey?: string,
   ) => AbortFn
 
   constructor() {
@@ -326,12 +312,13 @@ class StateHookImpl<T, E> implements StateHook<T, E> {
   }
 
   update(
+    origin: number,
     newConfig: MixedConfig<T, E>,
     contextValue: StateContextValue | null,
     overrides?: PartialUseAsyncStateConfiguration<T, E>
   ) {
     let nextFlags = getFlagsFromConfig(newConfig, contextValue, overrides);
-    let instance = resolveInstance(nextFlags, newConfig, contextValue, this);
+    let instance = resolveInstance(nextFlags, newConfig, contextValue, this, overrides);
 
     if (!instance && !(nextFlags & WAIT)) {
       throw new Error("Mode isn't wait and instance isn't defined! this is a bug");
@@ -345,14 +332,30 @@ class StateHookImpl<T, E> implements StateHook<T, E> {
       instance.mergePayload(contextValue?.getPayload());
     }
 
+    this.origin = origin;
     this.flags = nextFlags;
     this.config = newConfig;
     this.instance = instance;
     this.context = contextValue;
     this.base = makeBaseReturn(this);
+    this.name = calculateSubscriptionKey(this);
     this.subscribe = createSubscribeAndWatchFunction(this);
   }
 
+}
+
+function calculateSubscriptionKey<T, E>(hook: StateHook<T, E>): string | undefined {
+  if (hook.flags & CONFIG_OBJECT && (hook.config as BaseConfig<T>).subscriptionKey) {
+    return (hook.config as BaseConfig<T>).subscriptionKey;
+  }
+  if (hook.flags & WAIT) {
+    return;
+  }
+  if (__DEV__) {
+    let callerName = computeCallerName(5);
+    let index = ++((hook.instance! as AsyncState<T>).subsIndex);
+    return `${callerName}-${index}`;
+  }
 }
 
 //region useAsyncState value construction
@@ -464,7 +467,8 @@ export function resolveInstance<T>(
   flags: number,
   config: MixedConfig<T, any>,
   contextValue: StateContextValue | null,
-  previousHook: StateHook<T, any>
+  previousHook: StateHook<T, any>,
+  overrides?: PartialUseAsyncStateConfiguration<T, any>
 ): StateInterface<T> | null {
 
   if (flags & WAIT) {
@@ -478,7 +482,8 @@ export function resolveInstance<T>(
         instance = instance.fork();
       }
       if (flags & LANE) {
-        instance = instance.getLane((config as BaseConfig<T>).lane);
+        let laneKey = (config as BaseConfig<T>).lane || overrides?.lane;
+        instance = instance.getLane(laneKey);
       }
       return instance;
     }
@@ -489,7 +494,8 @@ export function resolveInstance<T>(
       instance = instance.fork(givenConfig.forkConfig);
     }
     if (flags & LANE) {
-      return instance.getLane(givenConfig.lane!)
+      let laneKey = (config as BaseConfig<T>).lane || overrides?.lane;
+      return instance.getLane(laneKey)
     }
     return instance;
   }
@@ -548,19 +554,21 @@ export function resolveInstance<T>(
 export interface StateHook<T, E> {
   current: E,
   flags: number,
+  name: string | undefined;
   config: MixedConfig<T, E>,
+  origin: number | undefined;
   version: number | undefined,
   base: BaseUseAsyncState<T, E>,
   context: StateContextValue | null,
   subscribe: (
     setGuard: React.Dispatch<React.SetStateAction<number>>,
     onChange: () => void,
-    subscriptionKey?: string,
   ) => AbortFn,
 
   instance: StateInterface<T> | null,
 
   update(
+    origin: number,
     newConfig: MixedConfig<T, E>,
     contextValue: StateContextValue | null,
     overrides?: PartialUseAsyncStateConfiguration<T, E>
@@ -708,10 +716,8 @@ function createSubscribeAndWatchFunction<T, E>(
   return function subscribeAndWatch(
     setGuard: React.Dispatch<React.SetStateAction<number>>,
     onChange: () => void,
-    subscriptionKey?: string,
   ) {
 
-    let contextValue = hook.context!;
     let {flags, instance, config} = hook;
 
 
@@ -725,9 +731,12 @@ function createSubscribeAndWatchFunction<T, E>(
         }
       });
     }
+
+    let contextValue = hook.context;
+
     // if we are hoisting or forking, spread the instance for watchers
     if (flags & INSIDE_PROVIDER && flags & (HOIST | FORK)) {
-      const hoistedInstance = contextValue.hoist(
+      const hoistedInstance = contextValue!.hoist(
         instance!.key,
         instance!,
         (config as BaseConfig<T>).hoistToProviderConfig
@@ -768,7 +777,7 @@ function createSubscribeAndWatchFunction<T, E>(
     }
 
     function onStateChange() {
-      let newSelectedState = readStateFromInstance(instance!, flags, config);
+      let newSelectedState = readStateFromInstance(instance, flags, config);
 
       if (flags & EQUALITY_CHECK) {
         let areEqual = (config as PartialUseAsyncStateConfiguration<T, E>)
@@ -787,7 +796,12 @@ function createSubscribeAndWatchFunction<T, E>(
     }
     // subscription
 
-    cleanups.push(instance!.subscribe(onStateChange, subscriptionKey));
+    cleanups.push(instance!.subscribe({
+      key: hook.name,
+      flags: hook.flags,
+      cb: onStateChange,
+      origin: hook.origin,
+    }));
     if (instance!.version !== hook.version) {
       onChange();
     }
@@ -808,7 +822,6 @@ function createSubscribeAndWatchFunction<T, E>(
     }
 
     return function cleanup() {
-
       cleanups.forEach(cb => {
         if (cb) {
           cb();

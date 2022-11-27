@@ -8,7 +8,7 @@ import {
   UseSelectorFunctionKeys,
 } from "../types.internal";
 import {isSource} from "../async-state/utils";
-import AsyncState, {
+import {
   ManagerWatchCallbackValue,
   Source,
   StateInterface,
@@ -18,7 +18,7 @@ import AsyncState, {
   SimpleSelector
 } from "../async-state";
 import {readSource} from "../async-state/AsyncState";
-import {useCallerName} from "./helpers/useCallerName";
+import {computeCallerName} from "./helpers/useCallerName";
 import {__DEV__, shallowEqual} from "../shared";
 
 type SelectorSelf<T> = {
@@ -27,7 +27,6 @@ type SelectorSelf<T> = {
   currentInstances: Record<string, StateInterface<any> | undefined>,
 }
 
-// todo: enhance the typing of useSelector
 export function useSelector<T>(
   keys: BaseSelectorKey,
   selector?: SimpleSelector<any, T>,
@@ -49,12 +48,7 @@ export function useSelector<T>(
   selector?: SimpleSelector<any, T> | ArraySelector<T> | FunctionSelector<T> = identity,
   areEqual?: EqualityFn<T> = shallowEqual,
 ): T {
-  let caller;
   const contextValue = React.useContext(AsyncStateContext);
-
-  if (__DEV__) {
-    caller = useCallerName(3);
-  }
 
   ensureParamsAreOk(contextValue, keys);
 
@@ -114,10 +108,15 @@ export function useSelector<T>(
       .map(as => {
         let subscriptionKey: string | undefined = undefined;
         if (__DEV__) {
-          let nextMeter = (as as AsyncState<any>).subsIndex;
-          subscriptionKey = `${caller}-$4-$${nextMeter}`;// 4: useSelector
+          let caller = computeCallerName(4);
+          subscriptionKey = `${caller}`;// 4: useSelector
         }
-        return (as as StateInterface<T>)!.subscribe(onUpdate, subscriptionKey);
+        return (as as StateInterface<T>)!.subscribe({
+          origin: 4,
+          cb: onUpdate,
+          flags: undefined,
+          key: subscriptionKey,
+        });
       });
 
     return () => {

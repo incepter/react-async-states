@@ -199,8 +199,7 @@ class AsyncState<T> implements StateInterface<T> {
   }
 
   subscribe(
-    cb,
-    subKey?: string | undefined
+    props: AsyncStateSubscribeProps<T>
   ): AbortFn {
     if (!this.subscriptions) {
       this.subscriptions = {};
@@ -208,10 +207,11 @@ class AsyncState<T> implements StateInterface<T> {
 
     let that = this;
     this.subsIndex += 1;
-    let subscriptionKey: string | undefined = subKey;
 
-    if (subKey === undefined) {
-      subscriptionKey = `subscription-$${this.subsIndex}`;
+    let subscriptionKey: string | undefined = props.key;
+
+    if (subscriptionKey === undefined) {
+      subscriptionKey = `$${this.subsIndex}`;
     }
 
     function cleanup() {
@@ -225,14 +225,10 @@ class AsyncState<T> implements StateInterface<T> {
       }
     }
 
-    this.subscriptions[subscriptionKey!] = {
-      cleanup,
-      callback: cb,
-      key: subscriptionKey,
-    };
+    this.subscriptions[subscriptionKey] = {props, cleanup};
     this.locks += 1;
 
-    if (__DEV__) devtools.emitSubscription(this, subscriptionKey!);
+    if (__DEV__) devtools.emitSubscription(this, subscriptionKey);
     return cleanup;
   }
 
@@ -804,7 +800,7 @@ function notifySubscribers(instance: StateInterface<any>) {
     return;
   }
   Object.values(instance.subscriptions).forEach(subscription => {
-    subscription.callback(instance.state);
+    subscription.props.cb(instance.state);
   });
 }
 
@@ -957,7 +953,7 @@ export function runWhileSubscribingToNextResolve<T>(
   args
 ): Promise<State<T>> {
   return new Promise(resolve => {
-    let unsubscribe = instance.subscribe(subscription);
+    let unsubscribe = instance.subscribe({cb: subscription});
     props.onAbort(unsubscribe);
 
     let abort = instance.run(standaloneProducerEffectsCreator, ...args);
@@ -1239,7 +1235,7 @@ export interface BaseSource<T> {
   ): void;
 
   // subscriptions
-  subscribe(cb: Function, subscriptionKey?: string): AbortFn,
+  subscribe(AsyncStateSubscribeProps: AsyncStateSubscribeProps<T>): AbortFn,
 
   // producer
   replay(): AbortFn,
@@ -1256,6 +1252,13 @@ export interface BaseSource<T> {
   patchConfig(partialConfig?: Partial<ProducerConfig<T>>),
 
   getConfig(): ProducerConfig<T>,
+}
+
+export type AsyncStateSubscribeProps<T> = {
+  key?: string,
+  flags?: number,
+  origin?: number,
+  cb(s: State<T>): void,
 }
 
 export interface StateInterface<T> extends BaseSource<T> {
@@ -1447,9 +1450,8 @@ export type RunTask<T> = {
 }
 
 export type StateSubscription<T> = {
-  key: string, // subscription key
   cleanup: () => void,
-  callback: (newState: State<T>) => void,
+  props: AsyncStateSubscribeProps<T>
 };
 
 export type OnCacheLoadProps<T> = {

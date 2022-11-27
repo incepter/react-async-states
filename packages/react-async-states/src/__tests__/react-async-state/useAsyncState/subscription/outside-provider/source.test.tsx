@@ -1,5 +1,5 @@
 import * as React from "react";
-import {fireEvent, render, screen} from "@testing-library/react";
+import {fireEvent, render, screen, act} from "@testing-library/react";
 import {UseAsyncState} from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../react/useAsyncState";
 import AsyncStateComponent from "../../../utils/AsyncStateComponent";
@@ -61,7 +61,10 @@ describe('should subscribe to a module level source object', () => {
     expect(screen.getByTestId("count-a").innerHTML).toEqual("0");
     expect(screen.getByTestId("count-b").innerHTML).toEqual("0");
 
-    fireEvent.click(incrementBtn);
+
+    act(() => {
+      fireEvent.click(incrementBtn);
+    });
 
 
     expect(screen.getByTestId("count-a").innerHTML).toEqual("1");

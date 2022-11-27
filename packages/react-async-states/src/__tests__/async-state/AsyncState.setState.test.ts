@@ -13,7 +13,7 @@ describe('AsyncState - setState', () => {
   let myConfig = {initialValue: null};
   let myAsyncState = new AsyncState(key, producer, myConfig);
   let subscription = jest.fn();
-  myAsyncState.subscribe(subscription);
+  myAsyncState.subscribe({cb: subscription});
 
   beforeEach(() => {
     subscription.mockClear();

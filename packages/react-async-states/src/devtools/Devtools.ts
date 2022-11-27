@@ -1,5 +1,10 @@
 import {ProducerSavedProps, State, StateInterface} from "../async-state";
 import {DevtoolsEvent, DevtoolsJournalEvent, DevtoolsRequest} from "./index";
+import {humanizeDevFlags} from "../react/utils";
+import {
+  AsyncStateSubscribeProps,
+  StateSubscription
+} from "../async-state/AsyncState";
 
 let journalEventsId = 0;
 const source = "async-states-agent";
@@ -32,9 +37,11 @@ interface DevtoolsInterface {
 
   emitUnsubscription(instance: StateInterface<any>, subscriptionKey: string),
 
-  emitRunSync<T>(instance: StateInterface<T>, props: ProducerSavedProps<T>): void,
+  emitRunSync<T>(
+    instance: StateInterface<T>, props: ProducerSavedProps<T>): void,
 
-  emitRunPromise<T>(instance: StateInterface<T>, props: ProducerSavedProps<T>): void,
+  emitRunPromise<T>(
+    instance: StateInterface<T>, props: ProducerSavedProps<T>): void,
 
   emitRunGenerator<T>(
     instance: StateInterface<T>, props: ProducerSavedProps<T>): void,
@@ -43,7 +50,8 @@ interface DevtoolsInterface {
     instance: StateInterface<T>, props: ProducerSavedProps<T>): void,
 
   emitRunConsumedFromCache<T>(
-    instance: StateInterface<T>, payload: Record<string, any> | undefined | null,
+    instance: StateInterface<T>,
+    payload: Record<string, any> | undefined | null,
     args: any[]
   ): void,
 }
@@ -126,6 +134,9 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function emitKeys() {
+    if (!connected) {
+      return;
+    }
     emit({
       source,
       payload: keys,
@@ -192,6 +203,9 @@ function createDevtools(): DevtoolsInterface {
       return;
     }
     retainStateInstance(asyncState);
+    if (!connected) {
+      return;
+    }
     emit({
       source,
       uniqueId: asyncState.uniqueId,
@@ -204,15 +218,15 @@ function createDevtools(): DevtoolsInterface {
         uniqueId: asyncState.uniqueId,
         lastSuccess: asyncState.lastSuccess,
         producerType: asyncState.producerType,
-        subscriptions: asyncState.subscriptions ? Object.keys(asyncState.subscriptions) : [],
+        subscriptions: (asyncState.subscriptions ? Object.values(asyncState.subscriptions) : []).map(mapSubscriptionToDevtools),
         lanes: asyncState.lanes ? Object.keys(asyncState.lanes).map(key => ({
           uniqueId: asyncState.lanes![key].uniqueId,
           key
         })) : [],
-        parent: {
+        parent: asyncState.parent ? {
           key: asyncState.parent?.key,
           uniqueId: asyncState.parent?.uniqueId
-        },
+        }: null,
       },
       type: DevtoolsEvent.setAsyncState
     });
@@ -234,6 +248,9 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function emitPartialSync(uniqueId, evt) {
+    if (!connected) {
+      return;
+    }
     emit({
       source,
       payload: evt,
@@ -256,18 +273,6 @@ function createDevtools(): DevtoolsInterface {
       },
     });
     emitStateInterface(asyncState);
-    // listenToDevtoolsMessages(asyncState);
-  }
-
-  function emitInsideProvider(asyncState: StateInterface<any>, insideProvider = true) {
-    if (asyncState.config.hideFromDevtools) {
-      return;
-    }
-    retainStateInstance(asyncState);
-    emitJournalEvent(asyncState, {
-      payload: insideProvider,
-      type: DevtoolsJournalEvent.insideProvider,
-    });
   }
 
   function emitRunSync(asyncState: StateInterface<any>, props) {
@@ -279,7 +284,11 @@ function createDevtools(): DevtoolsInterface {
       payload: {props, type: "sync"},
       type: DevtoolsJournalEvent.run
     };
+
     emitJournalEvent(asyncState, evt);
+    if (!connected) {
+      return;
+    }
     emitPartialSync(asyncState.uniqueId, {
       key: asyncState.key,
       eventId: journalEventsId,
@@ -291,7 +300,8 @@ function createDevtools(): DevtoolsInterface {
     });
   }
 
-  function emitRunConsumedFromCache(asyncState: StateInterface<any>, payload, execArgs) {
+  function emitRunConsumedFromCache(
+    asyncState: StateInterface<any>, payload, execArgs) {
     if (asyncState.config.hideFromDevtools) {
       return;
     }
@@ -305,6 +315,9 @@ function createDevtools(): DevtoolsInterface {
       type: DevtoolsJournalEvent.run
     };
     emitJournalEvent(asyncState, evt);
+    if (!connected) {
+      return;
+    }
     emitPartialSync(asyncState.uniqueId, {
       key: asyncState.key,
       eventId: journalEventsId,
@@ -326,6 +339,9 @@ function createDevtools(): DevtoolsInterface {
       type: DevtoolsJournalEvent.run
     };
     emitJournalEvent(asyncState, evt);
+    if (!connected) {
+      return;
+    }
     emitPartialSync(asyncState.uniqueId, {
       key: asyncState.key,
       eventId: journalEventsId,
@@ -347,6 +363,9 @@ function createDevtools(): DevtoolsInterface {
       type: DevtoolsJournalEvent.run
     };
     emitJournalEvent(asyncState, evt);
+    if (!connected) {
+      return;
+    }
     emitPartialSync(asyncState.uniqueId, {
       key: asyncState.key,
       eventId: journalEventsId,
@@ -368,6 +387,9 @@ function createDevtools(): DevtoolsInterface {
       type: DevtoolsJournalEvent.run
     };
     emitJournalEvent(asyncState, evt);
+    if (!connected) {
+      return;
+    }
     emitPartialSync(asyncState.uniqueId, {
       key: asyncState.key,
       eventId: journalEventsId,
@@ -398,11 +420,20 @@ function createDevtools(): DevtoolsInterface {
       return;
     }
     retainStateInstance(asyncState);
+    let subscription = asyncState.subscriptions![subKey];
     let evt = {
-      payload: subKey,
-      type: DevtoolsJournalEvent.subscription
+      type: DevtoolsJournalEvent.subscription,
+      payload: {
+        key: subscription.props.key,
+        origin: subscription.props.origin,
+        flags: subscription.props.flags,
+        devFlags: humanizeDevFlags(subscription.props.flags || 0),
+      }
     };
     emitJournalEvent(asyncState, evt);
+    if (!connected) {
+      return;
+    }
     emitPartialSync(asyncState.uniqueId, {
       key: asyncState.key,
       eventId: journalEventsId,
@@ -507,6 +538,32 @@ function createDevtools(): DevtoolsInterface {
     const {uniqueId} = asyncState;
 
     retainedInstances[uniqueId] = asyncState;
+  }
+}
+
+function mapSubscriptionToDevtools(sub: StateSubscription<any>) {
+  return {
+    key: sub.props.key,
+    flags: sub.props.flags,
+    origin: getSubscriptionOrigin(sub.props.origin),
+    devFlags: humanizeDevFlags(sub.props.flags || 0),
+  }
+}
+
+function getSubscriptionOrigin(origin?: number) {
+  switch (origin) {
+    case 1:
+      return "useAsyncState";
+    case 2:
+      return "useSource";
+    case 3:
+      return "useProducer";
+    case 4:
+      return "useSelector";
+    case undefined:
+      return "undefined";
+    default:
+      return "unknown";
   }
 }
 

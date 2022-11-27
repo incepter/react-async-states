@@ -19,7 +19,7 @@ describe('AsyncState - run - abort', () => {
 
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
-    myAsyncState.subscribe(subscription);
+    myAsyncState.subscribe({cb: subscription});
     // then
     // should have initial status
     expect(myAsyncState.state).toEqual({
@@ -111,7 +111,7 @@ describe('AsyncState - run - abort', () => {
 
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
-    myAsyncState.subscribe(subscription);
+    myAsyncState.subscribe({cb: subscription});
     // then
 
     const abort = myAsyncState.run(standaloneProducerEffectsCreator);
@@ -162,7 +162,7 @@ describe('AsyncState - run - abort', () => {
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
 
-    myAsyncState.subscribe(subscription);
+    myAsyncState.subscribe({cb: subscription});
     // then
 
     myAsyncState.run(standaloneProducerEffectsCreator);

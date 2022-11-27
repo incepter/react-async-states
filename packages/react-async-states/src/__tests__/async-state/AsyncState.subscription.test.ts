@@ -22,7 +22,7 @@ describe('AsyncState - subscriptions', () => {
     // then
     expect(myAsyncState.subsIndex).toBe(0);
 
-    let unsubscribe = myAsyncState.subscribe(subscriptionFn);
+    let unsubscribe = myAsyncState.subscribe({cb: subscriptionFn});
     expect(typeof unsubscribe).toBe("function");
 
     myAsyncState.run(standaloneProducerEffectsCreator);
@@ -84,7 +84,7 @@ describe('AsyncState - subscriptions', () => {
 
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
-    let unsubscribe = myAsyncState.subscribe(subscriptionFn);
+    let unsubscribe = myAsyncState.subscribe({cb: subscriptionFn});
 
     // then
 
@@ -128,7 +128,7 @@ describe('AsyncState - subscriptions', () => {
 
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
-    let unsubscribe = myAsyncState.subscribe(subscriptionFn);
+    let unsubscribe = myAsyncState.subscribe({cb: subscriptionFn});
     unsubscribe();
 
     // then
