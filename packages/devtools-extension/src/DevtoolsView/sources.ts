@@ -16,7 +16,7 @@ type Journal = {
   key: string,
   journal: any[],
   state: State<any>,
-  subscriptions: string[]
+  subscriptions: any[]
 };
 // stores data related to any async state
 export const journalSource = createSource<Journal>("journal", null, {hideFromDevtools: true});
@@ -135,9 +135,11 @@ function applyPartialUpdate(message) {
     case DevtoolsJournalEvent.unsubscription: {
       journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
         let prevData = old.data ?? {};
+
+        console.log('haha', prevData.subscriptions, message.payload.eventPayload)
         return {
           ...prevData,
-          subscriptions: (prevData.subscriptions ?? [])?.filter(t => t !== message.payload.eventPayload),
+          subscriptions: (prevData.subscriptions ?? [])?.filter(t => t.key !== message.payload.eventPayload),
           journal: [...(prevData.journal ?? []), message.payload],
         }
       });

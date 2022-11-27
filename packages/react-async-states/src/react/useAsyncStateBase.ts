@@ -65,7 +65,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   const [guard, setGuard] = React.useState<number>(0);
   const contextValue = React.useContext<StateContextValue>(AsyncStateContext);
 
-  React.useMemo(() => hook.update(1, mixedConfig, contextValue, overrides),
+  React.useMemo(() => hook.update(1, mixedConfig, contextValue, overrides, 8),
     [contextValue, guard, ...deps]);
 
   const [selectedValue, setSelectedValue] = React
@@ -128,17 +128,18 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
 export function useSource<T>(
   source: Source<T>
 ): UseAsyncState<T, State<T>> {
-  return useSourceLane(source);
+  return useSourceLane(source, undefined, __DEV__ ? 9 : undefined);
 }
 
 export function useSourceLane<T>(
   source: Source<T>,
   lane?: string,
+  level: number = 8, // used in dev mode only
 ): UseAsyncState<T, State<T>> {
   const hook: StateHook<T, State<T>> = useCurrentHook();
   const contextValue = React.useContext<StateContextValue>(AsyncStateContext);
 
-  React.useMemo(() => hook.update(2, source, contextValue, {lane}),
+  React.useMemo(() => hook.update(2, source, contextValue, {lane}, level),
     [contextValue, lane]);
 
   const [selectedValue, setSelectedValue] = React
@@ -189,7 +190,7 @@ export function useProducer<T>(
   const hook: StateHook<T, State<T>> = useCurrentHook();
   const contextValue = React.useContext<StateContextValue>(AsyncStateContext);
 
-  React.useMemo(() => hook.update(3, producer, contextValue), [contextValue]);
+  React.useMemo(() => hook.update(3, producer, contextValue, undefined, 8), [contextValue]);
 
   const [selectedValue, setSelectedValue] = React
     .useState<Readonly<UseAsyncState<T, State<T>>>>(calculateStateValue.bind(null, hook));
@@ -315,7 +316,8 @@ class StateHookImpl<T, E> implements StateHook<T, E> {
     origin: number,
     newConfig: MixedConfig<T, E>,
     contextValue: StateContextValue | null,
-    overrides?: PartialUseAsyncStateConfiguration<T, E>
+    overrides?: PartialUseAsyncStateConfiguration<T, E>,
+    level?: number
   ) {
     let nextFlags = getFlagsFromConfig(newConfig, contextValue, overrides);
     let instance = resolveInstance(nextFlags, newConfig, contextValue, this, overrides);
@@ -338,13 +340,13 @@ class StateHookImpl<T, E> implements StateHook<T, E> {
     this.instance = instance;
     this.context = contextValue;
     this.base = makeBaseReturn(this);
-    this.name = calculateSubscriptionKey(this);
+    this.name = calculateSubscriptionKey(this, level);
     this.subscribe = createSubscribeAndWatchFunction(this);
   }
 
 }
 
-function calculateSubscriptionKey<T, E>(hook: StateHook<T, E>): string | undefined {
+function calculateSubscriptionKey<T, E>(hook: StateHook<T, E>, level = 9): string | undefined {
   if (hook.flags & CONFIG_OBJECT && (hook.config as BaseConfig<T>).subscriptionKey) {
     return (hook.config as BaseConfig<T>).subscriptionKey;
   }
@@ -352,7 +354,7 @@ function calculateSubscriptionKey<T, E>(hook: StateHook<T, E>): string | undefin
     return;
   }
   if (__DEV__) {
-    let callerName = computeCallerName(5);
+    let callerName = computeCallerName(level);
     let index = ++((hook.instance! as AsyncState<T>).subsIndex);
     return `${callerName}-${index}`;
   }
@@ -571,7 +573,8 @@ export interface StateHook<T, E> {
     origin: number,
     newConfig: MixedConfig<T, E>,
     contextValue: StateContextValue | null,
-    overrides?: PartialUseAsyncStateConfiguration<T, E>
+    overrides?: PartialUseAsyncStateConfiguration<T, E>,
+    level?: number
   ),
 }
 

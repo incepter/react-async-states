@@ -108,8 +108,8 @@ export function useSelector<T>(
       .map(as => {
         let subscriptionKey: string | undefined = undefined;
         if (__DEV__) {
-          let caller = computeCallerName(4);
-          subscriptionKey = `${caller}`;// 4: useSelector
+          let caller = computeCallerName(8);
+          subscriptionKey = `${caller}-$4`;// 4: useSelector
         }
         return (as as StateInterface<T>)!.subscribe({
           origin: 4,
