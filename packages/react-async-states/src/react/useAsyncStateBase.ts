@@ -50,7 +50,6 @@ import {__DEV__, shallowClone} from "../shared";
 import {
   computeCallerName,
 } from "./helpers/useCallerName";
-import {supportsConcurrentMode} from "./helpers/supports-concurrent-mode";
 import {humanizeDevFlags} from "./utils";
 
 const emptyArray = [];
@@ -99,6 +98,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
     setSelectedValue(calculateStateValue(hook));
     hook.version = hook.instance?.version;
   }
+
   function autoRunAsyncState(): CleanupFn {
     // auto run only if condition is met, and it is not lazy
     if (!(hook.flags & AUTO_RUN)) {
@@ -228,7 +228,6 @@ export function useProducer<T>(
 }
 
 
-
 function invokeSubscribeEvents<T>(
   events: UseAsyncStateEventSubscribe<T> | undefined,
   run: (...args: any[]) => AbortFn,
@@ -346,7 +345,8 @@ class StateHookImpl<T, E> implements StateHook<T, E> {
 
 }
 
-function calculateSubscriptionKey<T, E>(hook: StateHook<T, E>, level = 9): string | undefined {
+function calculateSubscriptionKey<T, E>(
+  hook: StateHook<T, E>, level = 9): string | undefined {
   if (hook.flags & CONFIG_OBJECT && (hook.config as BaseConfig<T>).subscriptionKey) {
     return (hook.config as BaseConfig<T>).subscriptionKey;
   }
@@ -365,6 +365,7 @@ function calculateSubscriptionKey<T, E>(hook: StateHook<T, E>, level = 9): strin
 function noop(): undefined {
   // that's a noop fn
 }
+
 function makeBaseReturn<T, E>(hook: StateHook<T, E>) {
   if (!hook.instance) {
     let output = {
@@ -701,13 +702,11 @@ function createReadInConcurrentMode<T, E>(
     if (!instance) {
       return stateValue;
     }
-    if (supportsConcurrentMode()) {
-      if (
-        AsyncStateStatus.pending === instance.state?.status &&
-        instance.suspender
-      ) {
-        throw instance.suspender;
-      }
+    if (
+      AsyncStateStatus.pending === instance.state?.status &&
+      instance.suspender
+    ) {
+      throw instance.suspender;
     }
     return stateValue;
   }
@@ -797,6 +796,7 @@ function createSubscribeAndWatchFunction<T, E>(
         invokeChangeEvents(instance!.state, (config as BaseConfig<T>).events);
       }
     }
+
     // subscription
 
     cleanups.push(instance!.subscribe({
@@ -833,6 +833,7 @@ function createSubscribeAndWatchFunction<T, E>(
     }
   }
 }
+
 function calculateStateValue<T, E>(
   hook: StateHook<T, E>,
 ): Readonly<UseAsyncState<T, E>> {
