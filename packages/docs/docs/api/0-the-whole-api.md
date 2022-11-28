@@ -9,22 +9,33 @@ sidebar_label: TL;DR
 
 ```typescript
 const {
-  mode, // the subscription mode: listen, source, hoist, ...
   read, // returns the selected value and suspends when pending
   state, // The selected portion of the state
-  version, // the version of the state, incremented at each update
-  payload, // a capture of the payload of the state instance
-  source, // a special object hiding the state instance and manipulates it
   lastSuccess, // the latest registered success state
-
-  key, // The key of the state
-  uniqueId, // the unique id of the state instance, for debugging purposes
-  replay, // replays the latest run, or does nothing
-  abort, // aborts the current run, or does nothing
-  run, // runs the producer, if not present, replaces the state
-  setState, // immediately replace the state value
-  mergePayload, // merges a partial payload inside the instance's payload
+  version, // the version of the state, incremented at each update
+  source, // a special object hiding the state instance and manipulates it
+  
+  key, // the key of the related state instance
+  uniqueId, // the uniqueId of the state instance
+  getState, // gets the current state
+  setState, // sets state and notifies all subscribers
+  run, // runs the producer and returns the abort function
+  runp, // runs the producer and returns a promise to the run's resolve
+  runc, // runs the producer with onSuccess, onError and onAborted callbacks
+  replay, // replays the latest run if exists, or else does nothing
+  abort, // aborts the current run or clears the abort callbacks if any
+  replaceProducer, // replaces the producer linked to the state
+  getLaneSource, // gets the source of a child
+  removeLane, // removes a lane
   invalidateCache, // invalidates a cache entry or the whole cache
+  replaceCache, // replaces a cache entry
+  mergePayload, // merges a partial payload inside the state instance's payload
+  subscribe, // subscribes with a callback to state changes
+  getConfig, // gets the current used config
+  patchConfig, // patches the config related to the producer
+
+  flags, // the subscription mode: listen, source, hoist, ...
+  devFlags, // the subscription mode: listen, source, hoist, ...
 } = useAsyncState({
   key, // the subscription key or the definition key
   lane, // the lane instance to use
@@ -65,7 +76,7 @@ const {
     change: { // called whenever state changes, may be a function, an object, or an array of either
       status, // the status at which this event should be invoked
       handler, // the event handler
-    },
+    }, // | (newState: State<T>) => void,
     // called when the subscription to the state instance occurs,
     // may be used to attach global events such as focus, scroll etc
     subscribe, // may be a function or an array of them
@@ -106,6 +117,7 @@ const source = createSource(
     resetStateOnDispose, // whether to reset state to initial status when no subscribers are left
     skipPendingDelayMs, // skips the pending status under that delay in Ms
     skippendingStatus, // skips totally any pending status
+    hideFromDevtools, // hides this state from the devtools
     cacheConfig: {
       enabled, // whether to enable cache or not
       getDeadline, // get the cache deadline for a succeeded state
@@ -124,6 +136,7 @@ const {
   setState, // sets state and notifies all subscribers
   run, // runs the producer and returns the abort function
   runp, // runs the producer and returns a promise to the run's resolve
+  runc, // runs the producer with onSuccess, onError and onAborted callbacks
   replay, // replays the latest run if exists, or else does nothing
   abort, // aborts the current run or clears the abort callbacks if any
   replaceProducer, // replaces the producer linked to the state

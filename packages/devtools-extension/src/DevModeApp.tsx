@@ -1,6 +1,6 @@
 import * as React from "react";
 import {createSource, useSource, useSourceLane, useProducer, useSelector} from "react-async-states";
-import {State} from "react-async-states/src";
+import type {State} from "react-async-states";
 
 
 
