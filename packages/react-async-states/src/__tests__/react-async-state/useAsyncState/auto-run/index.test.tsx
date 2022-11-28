@@ -2,7 +2,7 @@ import * as React from "react";
 import {act, render, screen} from "@testing-library/react";
 import {UseAsyncState} from "../../../../types.internal";
 import {useAsyncState} from "../../../../react/useAsyncState";
-import {AsyncStateStatus} from "../../../../async-state";
+import {Status} from "../../../../async-state";
 
 describe('should auto run async state', () => {
   it('should auto run -- sync with autoRunArgs', async () => {
@@ -73,7 +73,7 @@ describe('should auto run async state', () => {
     )
 
     expect(screen.getByTestId("status").innerHTML)
-      .toEqual(AsyncStateStatus.pending);
+      .toEqual(Status.pending);
 
     await act(async () => {
       await jest.advanceTimersByTime(100);
@@ -81,7 +81,7 @@ describe('should auto run async state', () => {
 
     // then
     expect(screen.getByTestId("status").innerHTML)
-      .toEqual(AsyncStateStatus.success);
+      .toEqual(Status.success);
 
     expect(screen.getByTestId("result").innerHTML).toEqual("Hello");
     expect(mockedProducer.mock.calls[0][0].payload).toEqual({content: "Hello"});

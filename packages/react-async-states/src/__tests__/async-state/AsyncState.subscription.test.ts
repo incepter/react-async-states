@@ -1,5 +1,5 @@
 import { act } from "@testing-library/react-hooks";
-import AsyncState, { AsyncStateStatus } from "../../async-state";
+import AsyncState, { Status } from "../../async-state";
 import { timeout } from "./test-utils";
 import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
 import {standaloneProducerEffectsCreator} from "../../async-state/AsyncState";
@@ -22,7 +22,7 @@ describe('AsyncState - subscriptions', () => {
     // then
     expect(myAsyncState.subsIndex).toBe(0);
 
-    let unsubscribe = myAsyncState.subscribe(subscriptionFn);
+    let unsubscribe = myAsyncState.subscribe({cb: subscriptionFn});
     expect(typeof unsubscribe).toBe("function");
 
     myAsyncState.run(standaloneProducerEffectsCreator);
@@ -38,12 +38,12 @@ describe('AsyncState - subscriptions', () => {
             payload: {},
             lastSuccess: {
               timestamp: TESTS_TS,
-              data: null, status: AsyncStateStatus.initial
+              data: null, status: Status.initial
             },
           },
           data: null,
           timestamp: TESTS_TS,
-          status: AsyncStateStatus.pending
+          status: Status.pending
         }],
         [{
           props: {
@@ -51,12 +51,12 @@ describe('AsyncState - subscriptions', () => {
             payload: {},
             lastSuccess: {
               timestamp: TESTS_TS,
-              data: null, status: AsyncStateStatus.initial
+              data: null, status: Status.initial
             },
           },
           data: "Some Value",
           timestamp: TESTS_TS,
-          status: AsyncStateStatus.success
+          status: Status.success
         }]
       ]
     );
@@ -67,10 +67,10 @@ describe('AsyncState - subscriptions', () => {
         payload: {},
         lastSuccess: {
           timestamp: TESTS_TS,
-          data: null, status: AsyncStateStatus.initial
+          data: null, status: Status.initial
         },
       },
-      status: AsyncStateStatus.success,
+      status: Status.success,
       data: "Some Value",
       timestamp: TESTS_TS,
     });
@@ -84,7 +84,7 @@ describe('AsyncState - subscriptions', () => {
 
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
-    let unsubscribe = myAsyncState.subscribe(subscriptionFn);
+    let unsubscribe = myAsyncState.subscribe({cb: subscriptionFn});
 
     // then
 
@@ -105,16 +105,16 @@ describe('AsyncState - subscriptions', () => {
             payload: {},
             lastSuccess: {
               timestamp: TESTS_TS,
-              data: null, status: AsyncStateStatus.initial
+              data: null, status: Status.initial
             },
-          }, data: null, status: AsyncStateStatus.pending, timestamp: TESTS_TS,
+          }, data: null, status: Status.pending, timestamp: TESTS_TS,
         }],
       ]
     );
     expect(subscriptionFn).toHaveBeenCalledTimes(1);
     expect(myAsyncState.state).toEqual({
       props: null,
-      status: AsyncStateStatus.initial,
+      status: Status.initial,
       data: null,
       timestamp: TESTS_TS,
     });
@@ -128,7 +128,7 @@ describe('AsyncState - subscriptions', () => {
 
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
-    let unsubscribe = myAsyncState.subscribe(subscriptionFn);
+    let unsubscribe = myAsyncState.subscribe({cb: subscriptionFn});
     unsubscribe();
 
     // then
@@ -146,10 +146,10 @@ describe('AsyncState - subscriptions', () => {
         payload: {},
         lastSuccess: {
           timestamp: TESTS_TS,
-          data: null, status: AsyncStateStatus.initial
+          data: null, status: Status.initial
         },
       },
-      status: AsyncStateStatus.success,
+      status: Status.success,
       data: "Some Value",
       timestamp: TESTS_TS,
     });

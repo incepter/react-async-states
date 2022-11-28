@@ -1,12 +1,13 @@
 import * as React from "react";
-import {createSource, useSource} from "react-async-states";
+import {createSource, useSource, useSourceLane, useProducer, useSelector} from "react-async-states";
+import {State} from "react-async-states/src";
 
 
 
 let meter = 0;
 export default function DevModeApp() {
   const source = React.useMemo(() => createSource<number>("devmodeapp", null, {initialValue: 0}), []);
-  const {state} = useSource(source);
+  const state: State<number> = useSelector(source);
   return <button
-    onClick={() => source.run(old => old.data + 1)}>{state.data}</button>
+    onClick={() => source!.run(old => old.data + 1)}>{state.data}</button>
 }

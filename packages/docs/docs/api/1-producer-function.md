@@ -168,7 +168,7 @@ export type ProducerConfig<T> = {
   initialValue?: T | ((cache: Record<string, CachedState<T>>) => T),
   cacheConfig?: CacheConfig<T>,
   runEffectDurationMs?: number,
-  runEffect?: ProducerRunEffects,
+  runEffect?: RunEffect,
   skipPendingDelayMs?: number,
   resetStateOnDispose?: boolean,
 }
@@ -331,7 +331,7 @@ instantly and imperatively to the desired value.
 Signature:
 
 ```typescript
-emit: (updater: T | StateFunctionUpdater<T>, status: AsyncStateStatus) => void
+emit: (updater: T | StateFunctionUpdater<T>, status: Status) => void
 ```
 
 This feature allows the following easily:

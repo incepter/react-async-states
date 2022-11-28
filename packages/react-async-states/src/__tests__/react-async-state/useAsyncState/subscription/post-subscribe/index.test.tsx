@@ -2,7 +2,7 @@ import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import AsyncStateComponent from "../../../utils/AsyncStateComponent";
 import {UseAsyncState} from "../../../../../types.internal";
-import {AsyncStateStatus, createSource} from "../../../../../async-state";
+import {Status, createSource} from "../../../../../async-state";
 import {mockDateNow, TESTS_TS} from "../../../utils/setup";
 
 // @ts-ignore
@@ -81,7 +81,7 @@ describe('should post subscribe', () => {
     )
     expect(mocked).toHaveBeenCalledTimes(2); // 1 strict mode
     expect(mocked).toHaveBeenCalledWith({
-      status: AsyncStateStatus.initial,
+      status: Status.initial,
       timestamp: TESTS_TS,
       props: null,
       data: 0
@@ -103,7 +103,7 @@ describe('should post subscribe', () => {
       await jest.advanceTimersByTime(9);
     });
 
-    expect(screen.getByTestId("status").innerHTML).toEqual(AsyncStateStatus.pending);
+    expect(screen.getByTestId("status").innerHTML).toEqual(Status.pending);
 
     onAbort.mockClear();
     act(() => {

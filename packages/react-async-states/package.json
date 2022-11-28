@@ -17,7 +17,7 @@
     "test:watch": "react-scripts test --env=jsdom",
     "clean:dist": "rimraf dist",
     "start": "pnpm dev",
-    "prebuild": "rimraf dist",
+    "prebuild": "pnpm test && rimraf dist",
     "build": "pnpm clean:dist && rollup -c rollup/rollup.config.js",
     "dev": "pnpm clean:dist && rollup -c rollup/rollup.config.dev.js -w"
   },

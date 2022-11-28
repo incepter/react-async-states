@@ -1,6 +1,6 @@
 import React from "react";
 import ReactJson from "react-json-view";
-import {AsyncStateStatus, useSource, useSourceLane} from "react-async-states";
+import {Status, useSource, useSourceLane} from "react-async-states";
 import {DevtoolsJournalEvent} from "react-async-states/dist/devtools";
 import {
   currentJournal,
@@ -50,21 +50,24 @@ function CurrentTreeDisplay() {
       </div>
       <div
         style={{
+          borderRadius: 8,
           height: 'calc(100% - 60px)',
           display: "flex",
         }}
+        className="main-bg-2"
       >
         <div
           style={{
-            borderRight: "1px dashed #C3C3C3",
+            padding: 8,
+            borderRadius: 8,
           }}
-          className="main-bg scroll-y-auto"
+          className="main-bg-2 scroll-y-auto"
         >
           <CurrentJsonDisplay lane={lane} mode="state"/>
         </div>
         <div
-          style={{flexGrow: 10, height: '100%'}}
-          className="main-bg"
+          style={{height: 'calc(100% - 16px)', padding: 8, borderRadius: 8}}
+          className="main-bg-2"
         >
           <CurrentJsonDisplay lane={lane} mode="journal"/>
         </div>
@@ -81,34 +84,34 @@ type SiderDisplayProps = {
   lanes?: string;
 };
 
-function getBackgroundColorFromStatus(status: AsyncStateStatus | undefined) {
+function getBackgroundColorFromStatus(status: Status | undefined) {
   switch (status) {
-    case AsyncStateStatus.error:
+    case Status.error:
       return "#EB6774";
-    case AsyncStateStatus.initial:
+    case Status.initial:
       return "#DEDEDE";
-    case AsyncStateStatus.aborted:
+    case Status.aborted:
       return "#787878";
-    case AsyncStateStatus.pending:
+    case Status.pending:
       return "#5B95DB";
-    case AsyncStateStatus.success:
+    case Status.success:
       return "#17A449";
     default:
       return undefined;
   }
 }
 
-function getColorFromStatus(status: AsyncStateStatus | undefined) {
+function getColorFromStatus(status: Status | undefined) {
   switch (status) {
-    case AsyncStateStatus.error:
+    case Status.error:
       return "white";
-    case AsyncStateStatus.initial:
+    case Status.initial:
       return "black";
-    case AsyncStateStatus.aborted:
+    case Status.aborted:
       return "white";
-    case AsyncStateStatus.pending:
+    case Status.pending:
       return "white";
-    case AsyncStateStatus.success:
+    case Status.success:
       return "white";
     default:
       return undefined;
@@ -132,7 +135,7 @@ export const SideKey = React.memo(function SiderKey({
     );
   }, [uniqueId, dev]);
 
-  const {state} = useSourceLane(journalSource, `${uniqueId}`);
+  const {state, devFlags, version, source} = useSourceLane(journalSource, `${uniqueId}`);
 
   const {status} = state.data?.state ?? {};
 
@@ -152,7 +155,7 @@ export const SideKey = React.memo(function SiderKey({
           currentJournal.setState(null);
           currentState.setState(`${uniqueId}`);
         }}
-        disabled={status === AsyncStateStatus.pending}
+        disabled={status === Status.pending}
       >
         <div
           style={{
@@ -198,7 +201,7 @@ export const SideKey = React.memo(function SiderKey({
           currentJournal.setState(null);
           currentState.setState(`${uniqueId}`);
         }}
-        disabled={status === AsyncStateStatus.pending}
+        disabled={status === Status.pending}
       >
         <div
           style={{
@@ -262,32 +265,43 @@ function StateView({lane}) {
     return <span>No state information</span>;
   }
   return (
-    <div style={{height: '100%'}} className="scroll-y-auto">
-      <ReactJson name={`${data.key}'s state`}
-                 style={{
-                   padding: "1rem",
-                   overflow: "auto"
-                 }}
-                 theme="solarized"
-                 collapsed={5}
-                 displayDataTypes={false}
-                 displayObjectSize={false}
-                 enableClipboard={false}
-                 src={addFormattedDate(data.state)}
-      />
-      <hr/>
-      <ReactJson name={data.key}
-                 style={{
-                   padding: "1rem",
-                   overflow: "auto"
-                 }}
-                 theme="solarized"
-                 collapsed={1}
-                 displayDataTypes={false}
-                 displayObjectSize={false}
-                 enableClipboard={false}
-                 src={displayAsyncState(data)}
-      />
+    <div style={{height: '100%'}}>
+      <div style={{display: "flex", gap: 8, height: '100%'}}>
+        <div style={{maxWidth: '60%', height: '100%'}} className="scroll-y-auto">
+          <ReactJson name={`${data.key}'s state`}
+                     style={{
+
+                       backgroundColor: "#252b36",
+                       borderRadius: 8,
+                       padding: "1rem",
+                       overflow: "auto"
+                     }}
+                     theme="solarized"
+                     collapsed={5}
+                     displayDataTypes={false}
+                     displayObjectSize={false}
+                     enableClipboard={false}
+                     src={addFormattedDate(data.state)}
+          />
+        </div>
+        <div style={{maxWidth: '60%', height: '100%'}} className="scroll-y-auto">
+          <ReactJson name={data.key}
+                     style={{
+                       backgroundColor: "#252b36",
+                       borderRadius: 8,
+                       padding: "1rem",
+                       overflow: "auto"
+                     }}
+                     theme="solarized"
+                     collapsed={1}
+                     displayDataTypes={false}
+                     displayObjectSize={false}
+                     enableClipboard={false}
+                     src={displayAsyncState(data)}
+          />
+        </div>
+
+      </div>
     </div>
   );
 }
@@ -387,7 +401,7 @@ function EditState({lane}) {
   const {dev} = React.useContext(DevtoolsContext);
   const [isJson, setIsJson] = React.useState(true);
   const [data, setData] = React.useState<string | null>("");
-  const [status, setStatus] = React.useState(AsyncStateStatus.success);
+  const [status, setStatus] = React.useState(Status.success);
   return (
     <>
       <button
@@ -462,18 +476,18 @@ function EditState({lane}) {
                 id="next-status"
                 value={status}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                  const value = e.target.value as AsyncStateStatus;
+                  const value = e.target.value as Status;
                   setStatus(value);
-                  if (value === AsyncStateStatus.pending) {
+                  if (value === Status.pending) {
                     setData(null);
                   }
                 }}
               >
-                {Object.values(AsyncStateStatus).map((t) => (
+                {Object.values(Status).map((t) => (
                   <option value={t}>{t}</option>
                 ))}
               </select>
-              {status !== AsyncStateStatus.pending && (
+              {status !== Status.pending && (
                 <section
                   style={{
                     padding: "4px 0px",
@@ -523,6 +537,8 @@ function EditState({lane}) {
                 <ReactJson
                   name="New state"
                   style={{
+                    backgroundColor: "#252b36",
+                    borderRadius: 8,
                     padding: "1rem",
                   }}
                   theme="solarized"

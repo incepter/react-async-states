@@ -1,4 +1,4 @@
-import AsyncState, {AsyncStateStatus, CachedState} from "../../../async-state";
+import AsyncState, {Status, CachedState} from "../../../async-state";
 import {flushPromises} from "../utils/test-utils";
 import {
   standaloneProducerEffectsCreator
@@ -28,7 +28,7 @@ describe('async state cache', () => {
           data: 1,
           timestamp: 122,
           props: {args: [1]},
-          status: AsyncStateStatus.success,
+          status: Status.success,
         },
         addedAt: 123,
         deadline: Infinity,
@@ -67,7 +67,7 @@ describe('async state cache', () => {
           data: 1,
           timestamp: 122,
           props: {args: [1]},
-          status: AsyncStateStatus.success,
+          status: Status.success,
         },
         addedAt: 123,
         deadline: Infinity,
@@ -99,7 +99,7 @@ describe('async state cache', () => {
           data: 1,
           timestamp: 122,
           props: {args: [1]},
-          status: AsyncStateStatus.success,
+          status: Status.success,
         },
         addedAt: 123,
         deadline: 125,
@@ -109,7 +109,7 @@ describe('async state cache', () => {
           data: 1,
           timestamp: 122,
           props: {args: [1]},
-          status: AsyncStateStatus.success,
+          status: Status.success,
         },
         addedAt: 123,
         deadline: 125,

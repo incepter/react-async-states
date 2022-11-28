@@ -1,11 +1,10 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {
-  SubscriptionMode,
   UseAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../react/useAsyncState";
-import {AsyncStateProvider} from "../../../../../react/AsyncStateProvider";
+import {AsyncStateProvider} from "../../../../../react/Provider";
 import {createSource, ForkConfig} from "../../../../../async-state";
 
 describe('should fork an initially hoisted async state', () => {
@@ -30,7 +29,7 @@ describe('should fork an initially hoisted async state', () => {
       const {
         key,
         run,
-        mode,
+        devFlags,
         state,
       }: UseAsyncState<number> = useAsyncState({
         fork,
@@ -43,7 +42,7 @@ describe('should fork an initially hoisted async state', () => {
           <button data-testid={`increment-${key}`}
                   onClick={() => run(old => old.data + 1)}>Increment
           </button>
-          <span data-testid={`mode-${key}`}>{mode}</span>
+          <span data-testid={`mode-${key}`}>{JSON.stringify(devFlags)}</span>
           <span
             data-testid={`result-${key}`}>{state.data}</span>
         </div>);
@@ -58,9 +57,9 @@ describe('should fork an initially hoisted async state', () => {
 
     // then
     expect(screen.getByTestId("mode-counter").innerHTML)
-      .toEqual(SubscriptionMode.LISTEN);
+      .toEqual("[\"CONFIG_OBJECT\",\"INSIDE_PROVIDER\"]");
     expect(screen.getByTestId("mode-counter-fork").innerHTML)
-      .toEqual(SubscriptionMode.FORK);
+      .toEqual("[\"CONFIG_OBJECT\",\"FORK\",\"INSIDE_PROVIDER\"]");
 
     expect(screen.getByTestId("result-counter").innerHTML).toEqual("0");
     expect(screen.getByTestId("result-counter-fork").innerHTML).toEqual("0");

@@ -4,11 +4,15 @@ body{
 
 :root {
   --bg-color: #1D2129;
+  --bg-2-color: #1a1c21;
   --text-color: white;
 }
 
 .main-bg {
   background-color: var(--bg-color);
+}
+.main-bg-2 {
+  background-color: var(--bg-2-color);
 }
 
 .main-color {

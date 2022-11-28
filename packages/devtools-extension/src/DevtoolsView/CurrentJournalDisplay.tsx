@@ -13,23 +13,30 @@ const CurrentJournalDisplay = React.memo(function Journal({lane}: { lane: string
            display: 'flex',
            flexDirection: 'row',
            height: '100%',
-           padding: 0
+           padding: 0,
+           borderRadius: 8,
          }}>
       <div style={{
+        padding: 8,
         width: 250,
         minWidth: 250,
-        padding: 8,
         overflow: 'auto',
-        borderRight: '1px dashed #C3C3C3',
+        borderRadius: 8,
+        // backgroundColor: "red",
       }} className='main-bg'>
-        <div className=' scroll-y-auto' style={{height: '100%'}}>
-          <div className="main-color main-bg">
+        <div className=' scroll-y-auto' style={{
+          // padding: 8,
+          height: '100%'
+        }}>
+          <div style={{
+          }} className="main-color main-bg">
             <JournalView lane={lane}/>
           </div>
         </div>
       </div>
-      <div className='main-bg main-color scroll-y-auto'
+      <div className='main-bg-2 main-color scroll-y-auto'
            style={{
+             borderRadius: 8,
              height: '100%',
              overflowY: 'auto',
              width: '100%',
@@ -204,7 +211,9 @@ function CurrentJson() {
       <ReactJson name={json.data?.name}
                  theme="solarized"
                  style={{
+                   borderRadius: 8,
                    padding: '1rem',
+                   backgroundColor: "#252b36",
                    minHeight: 'calc(100% - 32px)'
                  }}
                  collapsed={2}

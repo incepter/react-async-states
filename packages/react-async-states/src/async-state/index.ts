@@ -6,8 +6,8 @@ export {
   createSource,
   StateBuilder,
   ProducerType,
-  AsyncStateStatus,
-  ProducerRunEffects,
+  Status,
+  RunEffect,
 } from "./AsyncState";
 
 export type {
@@ -44,7 +44,7 @@ export type {
   InitialAsyncState,
   AsyncStateSelector,
   InitialStatesObject,
-  HoistToProviderConfig,
+  hoistConfig,
   ExtendedInitialAsyncState,
 
   AsyncStateManagerInterface,

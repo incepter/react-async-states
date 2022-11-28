@@ -2,26 +2,23 @@ export {useSelector} from "./react/useSelector";
 
 export {useRun, useRunLane} from "./react/useRun";
 
-export {useAsyncState} from "./react/useAsyncState";
+export {AsyncStateProvider} from "./react/Provider";
 
-export {AsyncStateProvider} from "./react/AsyncStateProvider";
-
-export {useSource, useSourceLane, useProducer} from "./react/useAsyncStateBase";
-
+export {
+  useAsyncState, useSource, useSourceLane, useProducer
+} from "./react/useAsyncState";
 
 export {
   createSource,
 
+  Status,
+  RunEffect,
   ProducerType,
-  AsyncStateStatus,
-  ProducerRunEffects,
 
   AsyncStateManager,
 } from "./async-state";
-export {createLoaderProducer} from "./react/loader-producer"
 export {
   RenderStrategy,
-  SubscriptionMode,
 } from "./types.internal";
 
 export {StateBoundary, useCurrentState} from "./react/StateBoundary";
@@ -47,7 +44,7 @@ export type {
   InitialAsyncState,
   AsyncStateSelector,
   InitialStatesObject,
-  HoistToProviderConfig,
+  hoistConfig,
   ExtendedInitialAsyncState,
 
   AsyncStateManagerInterface,

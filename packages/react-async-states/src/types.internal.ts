@@ -3,14 +3,14 @@ import {ReactNode} from "react";
 import {
   AbortFn,
   AsyncStateManagerInterface,
-  AsyncStateStatus,
+  Status,
   CacheConfig,
   CachedState,
   ForkConfig,
-  HoistToProviderConfig,
+  hoistConfig,
   Producer,
   ProducerConfig,
-  ProducerRunEffects,
+  RunEffect,
   Source,
   State,
   StateInterface,
@@ -24,39 +24,14 @@ export interface AsyncStateInitializer<T> {
   config?: ProducerConfig<T>
 }
 
-export enum SubscriptionMode {
-  LISTEN = "LISTEN", // simple listener
-  HOIST = "HOIST", // hoisting a producer, for first time and intended to be shared, more like of an injection
-  ALONE = "ALONE", // working standalone even if inside provider
-  WAIT = "WAIT", // waits for the original to be hoisted
-  FORK = "FORK", // forking an existing one in the provider
-  NA = "NA", // a weird case that should not happen
-  SRC = "SRC", // subscription via source property
-  SRC_FORK = "SRC_FORK", // subscription via source property and fork
-  OUTSIDE = "OUTSIDE", // standalone outside provider
-}
-
 export type StateContextValue = AsyncStateManagerInterface;
 
 // use async state
 
-export interface BaseUseAsyncState<T, E = State<T>> {
-  key: string,
-
+export interface BaseUseAsyncState<T, E = State<T>> extends Source<T>{
+  flags?: number,
   source?: Source<T>,
-  mode: SubscriptionMode,
-
-  replay(): AbortFn,
-  abort(reason?: any): void,
-  run(...args: any[]): AbortFn,
-  runp(...args: any[]): Promise<State<T>>,
-
-  runc(props: RUNCProps<T>): AbortFn,
-  setState: StateUpdater<T>,
-  mergePayload(argv: Record<string, any>): void,
-
-  uniqueId: number | undefined,
-  invalidateCache(cacheKey?: string): void,
+  devFlags?: string[],
 }
 
 export interface UseAsyncState<T, E = State<T>> extends BaseUseAsyncState<T, E> {
@@ -64,14 +39,12 @@ export interface UseAsyncState<T, E = State<T>> extends BaseUseAsyncState<T, E> 
   read(): E,
   version?: number,
   lastSuccess?: State<T>,
-  payload: Record<string, any> | null,
 }
 
 // interface NewUseAsyncState<T, E = State<T>> extends Source<T> {
 //
 //   key: string,
 //   version?: number,
-//   mode: SubscriptionMode,
 //   uniqueId: number | undefined,
 //   source?: Source<T> | undefined,
 //
@@ -90,7 +63,9 @@ export type EqualityFn<T> = (
 export interface BaseConfig<T> extends ProducerConfig<T>{
   key?: string,
   lane?: string,
+  source?: Source<T>,
   autoRunArgs?: any[],
+  producer?: Producer<T>,
   subscriptionKey?: string,
   payload?: Record<string, any>,
   events?: UseAsyncStateEvents<T>,
@@ -100,8 +75,8 @@ export interface BaseConfig<T> extends ProducerConfig<T>{
 
   fork?: boolean,
   forkConfig?: ForkConfig,
-  hoistToProvider?: boolean,
-  hoistToProviderConfig?: HoistToProviderConfig,
+  hoist?: boolean,
+  hoistConfig?: hoistConfig,
 }
 
 export interface ConfigWithKeyWithSelector<T, E> extends ConfigWithKeyWithoutSelector<T> {
@@ -152,13 +127,14 @@ export type UseAsyncStateConfiguration<T, E = State<T>> = {
   runEffectDurationMs?: number,
   resetStateOnDispose?: boolean,
   payload?: Record<string, any>,
-  runEffect?: ProducerRunEffects,
+  runEffect?: RunEffect,
   initialValue?: T | ((cache: Record<string, CachedState<T>>) => T),
 
   fork?: boolean,
   forkConfig?: ForkConfig,
-  hoistToProvider?: boolean,
-  hoistToProviderConfig?: HoistToProviderConfig,
+
+  hoist?: boolean,
+  hoistConfig?: hoistConfig,
 
   lazy?: boolean,
   autoRunArgs?: any[],
@@ -188,7 +164,7 @@ export type StateBoundaryProps<T, E> = {
   render?: StateBoundaryRenderProp,
 }
 
-export type StateBoundaryRenderProp = Record<AsyncStateStatus, ReactNode>
+export type StateBoundaryRenderProp = Record<Status, ReactNode>
 
 export type UseAsyncStateEventProps<T> = {
   state: State<T>,
@@ -203,7 +179,7 @@ export type UseAsyncStateEventFn<T> =
   UseAsyncStateChangeEventHandler<T>;
 
 export type UseAsyncStateChangeEvent<T> = {
-  status: AsyncStateStatus
+  status: Status
   handler: UseAsyncStateChangeEventHandler<T>,
 }
 
@@ -219,7 +195,6 @@ export type UseAsyncStateEvents<T> = {
 export type SubscribeEventProps<T> = {
   getState: () => State<T>,
   run: (...args: any[]) => AbortFn,
-  mode: SubscriptionMode,
   invalidateCache: (cacheKey?: string) => void,
 }
 
@@ -232,7 +207,6 @@ export type useSelector<T, E> =
 export type PartialUseAsyncStateConfiguration<T, E> = Partial<UseAsyncStateConfiguration<T, E>>
 
 export type SubscriptionInfo<T, E> = {
-  mode: SubscriptionMode,
   asyncState: StateInterface<T>,
   configuration: UseAsyncStateConfiguration<T, E>,
 

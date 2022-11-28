@@ -3,7 +3,7 @@ import {act, render, screen, fireEvent} from "@testing-library/react";
 import {useAsyncState} from "../../../../react/useAsyncState";
 import {UseAsyncState} from "../../../../types.internal";
 import {flushPromises} from "../../utils/test-utils";
-import {AsyncStateStatus} from "../../../../async-state";
+import {Status} from "../../../../async-state";
 
 describe('should emit from producer', () => {
   it('should emit after resolve when sync', async () => {
@@ -137,7 +137,7 @@ describe('should emit from producer', () => {
     expect(abortFn).toHaveBeenCalledTimes(2); // 1 strict mode
     expect(abortFn).toHaveBeenCalledWith("tt");
     expect(screen.getByTestId("status").innerHTML)
-      .toEqual(AsyncStateStatus.success);
+      .toEqual(Status.success);
 
     await act(async () => {
       await jest.advanceTimersByTime(100);

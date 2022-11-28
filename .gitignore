@@ -4,6 +4,7 @@ build
 node_modules
 stats.json
 dist
+packages/example
 
 # Cruft
 .DS_Store

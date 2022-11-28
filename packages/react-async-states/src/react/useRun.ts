@@ -1,7 +1,7 @@
 import * as React from "react";
 import {AbortFn, AsyncStateKeyOrSource, Source} from "../async-state";
 import {AsyncStateContext} from "./context";
-import {isAsyncStateSource} from "../async-state/utils";
+import {isSource} from "../async-state/utils";
 import {StateContextValue} from "../types.internal";
 
 type RunFunction<T> = ((keyOrSource: AsyncStateKeyOrSource<T>, ...args: any[]) => AbortFn);
@@ -13,7 +13,7 @@ function runLaneFn<T>(
   lane: string | undefined,
   ...args: any[]
 ) {
-  if (isAsyncStateSource(keyOrSource)) {
+  if (isSource(keyOrSource)) {
     return (keyOrSource as Source<T>).getLaneSource(lane).run(...args);
   }
   if (contextValue !== null) {

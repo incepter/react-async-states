@@ -23,7 +23,7 @@ export function didNotExpire<T>(cachedState: CachedState<T>) {
 
 export const sourceIsSourceSymbol: symbol = Symbol();
 
-export function isAsyncStateSource(possiblySource: any) {
+export function isSource(possiblySource: any) {
   return possiblySource && possiblySource[sourceIsSourceSymbol] === true;
 }
 
