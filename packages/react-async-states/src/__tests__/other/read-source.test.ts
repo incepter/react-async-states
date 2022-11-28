@@ -1,5 +1,5 @@
 import {
-  readInstanceFromSource
+  readSource
 } from "../../async-state/AsyncState";
 import {createSource} from "../../async-state";
 
@@ -9,7 +9,7 @@ describe('readSource', () => {
     const source = createSource("test", null, {initialValue: 0});
 
     // when
-    const asyncState = readInstanceFromSource(source);
+    const asyncState = readSource(source);
 
     // then
     expect(asyncState.state.data).toEqual(0);
@@ -20,7 +20,7 @@ describe('readSource', () => {
 
     // then
     // @ts-ignore
-    expect(() => readInstanceFromSource(source))
+    expect(() => readSource(source))
       .toThrow("You ve passed an incompatible source object. Please make sure to pass the received source object.");
   });
 });

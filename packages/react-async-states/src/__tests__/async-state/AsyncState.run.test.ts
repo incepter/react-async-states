@@ -1,5 +1,5 @@
 import { act } from "@testing-library/react-hooks";
-import AsyncState, { AsyncStateStatus } from "../../async-state";
+import AsyncState, { Status } from "../../async-state";
 import { rejectionTimeout, timeout } from "./test-utils";
 import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
 import {standaloneProducerEffectsCreator} from "../../async-state/AsyncState";
@@ -24,7 +24,7 @@ describe('AsyncState - run', () => {
       props: null,
       data: null,
       timestamp: TESTS_TS,
-      status: AsyncStateStatus.initial,
+      status: Status.initial,
     });
 
     myAsyncState.run(standaloneProducerEffectsCreator);
@@ -36,12 +36,12 @@ describe('AsyncState - run', () => {
         lastSuccess: {
           data: null,
           timestamp: TESTS_TS,
-          status: AsyncStateStatus.initial,
+          status: Status.initial,
         },
       },
       data: null,
       timestamp: TESTS_TS,
-      status: AsyncStateStatus.pending,
+      status: Status.pending,
     });
 
     await act(async () => {
@@ -55,12 +55,12 @@ describe('AsyncState - run', () => {
         lastSuccess: {
           data: null,
           timestamp: TESTS_TS,
-          status: AsyncStateStatus.initial,
+          status: Status.initial,
         },
       },
       data: null,
       timestamp: TESTS_TS,
-      status: AsyncStateStatus.pending,
+      status: Status.pending,
     });
 
     await act(async () => {
@@ -74,11 +74,11 @@ describe('AsyncState - run', () => {
         lastSuccess: {
           data: null,
           timestamp: TESTS_TS,
-          status: AsyncStateStatus.initial,
+          status: Status.initial,
         },
       },
       timestamp: TESTS_TS,
-      status: AsyncStateStatus.success,
+      status: Status.success,
       data: [{id: 1, description: "value"}],
     });
   });
@@ -104,11 +104,11 @@ describe('AsyncState - run', () => {
         lastSuccess: {
           data: null,
           timestamp: TESTS_TS,
-          status: AsyncStateStatus.initial,
+          status: Status.initial,
         },
       },
       timestamp: TESTS_TS,
-      status: AsyncStateStatus.error,
+      status: Status.error,
       data: "Some Error",
     });
   });

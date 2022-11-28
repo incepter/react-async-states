@@ -119,7 +119,11 @@ const webModulesBuild = [
         }
       }),
       commonjs(),
-      terser(),
+      terser({
+        compress: {
+          reduce_funcs: false,
+        }
+      }),
       replace({
         preventAssignment: true,
         values: {"process.env.NODE_ENV": JSON.stringify("production")},
@@ -208,7 +212,11 @@ const umdBuild = [
       }),
       commonjs(),
       gzipPlugin.default(),
-      terser(),
+      terser({
+        compress: {
+          reduce_funcs: false,
+        }
+      }),
       copy({
         targets: [
           {
@@ -259,7 +267,11 @@ const devtoolsSharedBuild = [
         }
       }),
       commonjs(),
-      terser(),
+      terser({
+        compress: {
+          reduce_funcs: false,
+        }
+      }),
 
       // copy({
       //   hook: 'closeBundle',

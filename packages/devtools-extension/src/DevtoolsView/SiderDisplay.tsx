@@ -151,7 +151,6 @@ const SiderDisplay = React.memo(function () {
     <div
       className="main-bg scroll-y-auto"
       style={{
-        height: "auto",
         overflow: "auto",
         padding: "0px 8px",
         borderRight: "1px dashed #C3C3C3",
@@ -208,9 +207,9 @@ const SiderDisplay = React.memo(function () {
         className="scroll-y-auto"
         style={{
           top: 40,
-          height: '100%',
+          height: 'calc(100% - 60px)',
           overflow: "auto",
-          marginTop: 40,
+          paddingTop: 20,
         }}
       >
         <div

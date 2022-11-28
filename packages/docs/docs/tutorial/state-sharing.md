@@ -182,7 +182,7 @@ This is a basic example of how to share state using the provider.
 
 :::tip
 The provider also supports adding dynamically states at runtime,
-in fact, useAsyncState accepts a configuration property [`hoistToProvider`](/docs/api/use-async-state#hoisttoprovider).
+in fact, useAsyncState accepts a configuration property [`hoist`](/docs/api/use-async-state#hoist).
 
 When provided while inside provider, the state will become available.
 

@@ -121,7 +121,7 @@ runc({
 
 #### <ins>Dynamic creation and sharing of states at runtime</ins>
 Under the `AsyncStateProvider`, you can create and share state instances
-and access them by their `key` via the `hoistToProvider` option.
+and access them by their `key` via the `hoist` option.
 
 You can even start listening to a state before it gets hoisted to the provider,
 and get notified once it gets added.
@@ -140,12 +140,12 @@ variables. It just works in the core of the library. Of course, this requires
 you to be in an environment where `setTimeout` exists.
 
 ```tsx
-import {useAsyncState, ProducerRunEffects} from "react-async-states";
+import {useAsyncState, RunEffect} from "react-async-states";
 
 const {run} = useAsyncState({
   producer: userSearchByUsername,
   // debounce runs
-  runEffect: ProducerRunEffects.debounce,
+  runEffect: RunEffect.debounce,
   runEffectDurationMs: 300,
   // skip pending status if it answers less than 200ms
   skipPendingDelayMs: 200,
@@ -163,14 +163,14 @@ and `payload`.
 Let's add cache support to the previous example:
 
 ```tsx
-import {useAsyncState, ProducerRunEffects} from "react-async-states";
+import {useAsyncState, RunEffect} from "react-async-states";
 
 // note that the whole configuration object does not depend on render
 // and can be moved to module level static object.
 const {run} = useAsyncState({
   producer: userSearchByUsername,
   // debounce runs
-  runEffect: ProducerRunEffects.debounce,
+  runEffect: RunEffect.debounce,
   runEffectDurationMs: 300,
   // skip pending status if it answers less than 200ms
   skipPendingDelayMs: 200,

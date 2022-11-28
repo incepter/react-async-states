@@ -1,12 +1,12 @@
 import * as React from "react";
 import {act, render, screen} from "@testing-library/react";
 import {
-  AsyncStateStatus, createSource,
+  Status, createSource,
   Producer,
   ProducerProps
 } from "../../../../async-state";
 import AsyncStateComponent from "../../utils/AsyncStateComponent";
-import {AsyncStateProvider} from "../../../../react/AsyncStateProvider";
+import {AsyncStateProvider} from "../../../../react/Provider";
 import {UseAsyncState} from "../../../../types.internal";
 import {flushPromises} from "../../utils/test-utils";
 import {mockDateNow, TESTS_TS} from "../../utils/setup";
@@ -54,7 +54,7 @@ describe('should runp another producer from producer', () => {
     expect(source1Producer).toHaveBeenCalledTimes(2); // 1 strict mode
     expect(source2Producer).toHaveBeenCalledTimes(2); // 1 strict mode
     expect(screen.getByTestId("status").innerHTML)
-      .toEqual(AsyncStateStatus.pending);
+      .toEqual(Status.pending);
 
     await act(async () => {
       await flushPromises();
@@ -62,7 +62,7 @@ describe('should runp another producer from producer', () => {
 
     expect(screen.getByTestId("result").innerHTML).toEqual("1");
     expect(screen.getByTestId("status").innerHTML)
-      .toEqual(AsyncStateStatus.success);
+      .toEqual(Status.success);
     expect(source1Producer.mock.calls[0][0].args[0]).toBe(1);
   });
   it('should runp producer by source inside provider', async () => {
@@ -105,7 +105,7 @@ describe('should runp another producer from producer', () => {
     expect(source1Producer).toHaveBeenCalledTimes(2); // 1 strict mode
     expect(source2Producer).toHaveBeenCalledTimes(2); // 1 strict mode
     expect(screen.getByTestId("status").innerHTML)
-      .toEqual(AsyncStateStatus.pending);
+      .toEqual(Status.pending);
 
     await act(async () => {
       await flushPromises();
@@ -113,7 +113,7 @@ describe('should runp another producer from producer', () => {
 
     expect(screen.getByTestId("result").innerHTML).toEqual("2");
     expect(screen.getByTestId("status").innerHTML)
-      .toEqual(AsyncStateStatus.success);
+      .toEqual(Status.success);
     expect(source1Producer.mock.calls[0][0].args[0]).toBe(2);
   });
   it('should runp producer by key', async () => {

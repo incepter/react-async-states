@@ -85,7 +85,7 @@ export function AsyncStateProvider(
 
   function onInitialStatesChange(): { data: AsyncStateEntry<any>[] } {
     const output = Object.create(null);
-    output.data = manager.setInitialStates(initialStates);
+    output.data = manager.setStates(initialStates);
     return output;
   }
 

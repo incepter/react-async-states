@@ -1,11 +1,10 @@
 import * as React from "react";
 import {render, screen} from "@testing-library/react";
 import {
-  SubscriptionMode,
   UseAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../react/useAsyncState";
-import {AsyncStateProvider} from "../../../../../react/AsyncStateProvider";
+import {AsyncStateProvider} from "../../../../../react/Provider";
 import {mockDateNow, TESTS_TS} from "../../../utils/setup";
 import {createSource} from "../../../../../async-state";
 
@@ -35,13 +34,13 @@ describe('should subscribe to an async state in provider', () => {
       subscribesTo,
     }: { subscribesTo: string }) {
       const {
-        mode,
+        devFlags,
         state,
       }: UseAsyncState<number> = useAsyncState(subscribesTo);
 
       return (
         <div>
-          <span data-testid={`mode-${subscribesTo}`}>{mode}</span>
+          <span data-testid={`mode-${subscribesTo}`}>{JSON.stringify(devFlags)}</span>
           <span
             data-testid={`result-${subscribesTo}`}>{JSON.stringify(state)}</span>
         </div>);
@@ -57,13 +56,13 @@ describe('should subscribe to an async state in provider', () => {
 
     // then
     expect(screen.getByTestId("mode-counter").innerHTML)
-      .toEqual(SubscriptionMode.LISTEN);
+      .toEqual("[\"CONFIG_STRING\",\"INSIDE_PROVIDER\"]");
 
     expect(screen.getByTestId("mode-todos").innerHTML)
-      .toEqual(SubscriptionMode.LISTEN);
+      .toEqual("[\"CONFIG_STRING\",\"INSIDE_PROVIDER\"]");
 
     expect(screen.getByTestId("mode-doesntExist").innerHTML)
-      .toEqual(SubscriptionMode.WAIT);
+      .toEqual("[\"CONFIG_STRING\",\"INSIDE_PROVIDER\",\"WAIT\"]");
 
     expect(screen.getByTestId("result-todos").innerHTML)
       .toEqual(JSON.stringify({

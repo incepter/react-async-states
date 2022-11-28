@@ -5,10 +5,10 @@ import {
   useCurrentState
 } from "../../../react/StateBoundary";
 import {
-  AsyncStateStatus,
+  Status,
   createSource
 } from "../../../async-state";
-import {RenderStrategy, SubscriptionMode} from "../../../types.internal";
+import {RenderStrategy} from "../../../types.internal";
 import {flushPromises} from "../utils/test-utils";
 
 describe('StateBoundary', () => {
@@ -19,10 +19,10 @@ describe('StateBoundary', () => {
     // when
 
     function Component() {
-      const {mode, state} = useCurrentState();
+      const {devFlags, state} = useCurrentState();
       return (
         <div>
-          <span data-testid="current-mode">{mode}</span>
+          <span data-testid="current-mode">{JSON.stringify(devFlags)}</span>
           <span data-testid="current-status">{state.status}</span>
         </div>
       );
@@ -39,16 +39,16 @@ describe('StateBoundary', () => {
 
     // then
     expect(screen.getByTestId("current-mode").innerHTML)
-      .toEqual(SubscriptionMode.SRC);
+      .toEqual("[\"AUTO_RUN\",\"CONFIG_SOURCE\",\"SOURCE\"]");
     expect(screen.getByTestId("current-status").innerHTML)
-      .toEqual(AsyncStateStatus.pending);
+      .toEqual(Status.pending);
 
     await act(async () => {
       await flushPromises();
     });
 
     expect(screen.getByTestId("current-status").innerHTML)
-      .toEqual(AsyncStateStatus.success);
+      .toEqual(Status.success);
   });
   it('should render in FetchThenRender strategy', async () => {
     // given
@@ -57,10 +57,10 @@ describe('StateBoundary', () => {
     // when
 
     function Component() {
-      const {mode, state} = useCurrentState();
+      const {devFlags, state} = useCurrentState();
       return (
         <div>
-          <span data-testid="current-mode">{mode}</span>
+          <span data-testid="current-mode">{JSON.stringify(devFlags)}</span>
           <span data-testid="current-status">{state.status}</span>
         </div>
       );
@@ -86,9 +86,9 @@ describe('StateBoundary', () => {
     });
 
     expect(screen.getByTestId("current-mode")?.innerHTML)
-      .toEqual(SubscriptionMode.SRC);
+      .toEqual("[\"CONFIG_SOURCE\",\"SOURCE\"]");
     expect(screen.getByTestId("current-status").innerHTML)
-      .toEqual(AsyncStateStatus.success);
+      .toEqual(Status.success);
   });
   it('should render in FetchAsYouRender strategy', async () => {
     // given
@@ -97,10 +97,10 @@ describe('StateBoundary', () => {
     // when
 
     function Component() {
-      const {mode, state} = useCurrentState();
+      const {devFlags, state} = useCurrentState();
       return (
         <div>
-          <span data-testid="current-mode">{mode}</span>
+          <span data-testid="current-mode">{JSON.stringify(devFlags)}</span>
           <span data-testid="current-status">{state.status}</span>
         </div>
       );
@@ -127,6 +127,6 @@ describe('StateBoundary', () => {
     });
 
     expect(screen.getByTestId("current-status").innerHTML)
-      .toEqual(AsyncStateStatus.success);
+      .toEqual(Status.success);
   });
 });

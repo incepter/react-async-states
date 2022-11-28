@@ -51,8 +51,8 @@ const {
     keepState, // copy the state from the initial instance
     keepCache, // copy the cache from the initial instance
   },
-  hoistToProvider, // whether to hoist the instance to the nearest provider
-  hoistToProviderConfig: {
+  hoist, // whether to hoist the instance to the nearest provider
+  hoistConfig: {
     override, // whether to override any existing instance
   },
   lazy, // whether to automatically run the producer if the condition is truthy

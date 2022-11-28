@@ -43,8 +43,11 @@ describe('subscribe to lane and operate on it', () => {
   function CounterSub({counterKey = "default", alias = "default"}) {
     const {state: {data}, run} = useAsyncState.lazy({
       lane: counterKey,
+      subscriptionKey: alias,
       source: countersSource,
     });
+    let formattedData = `counter-${counterKey}-${alias}-${data}`;
+
     return (
       <div>
         <button
@@ -55,7 +58,7 @@ describe('subscribe to lane and operate on it', () => {
         <span
           data-testid={`counter-sub-${counterKey}-${alias}-data`}
         >
-        counter-{counterKey}-{alias}-{data}
+        {formattedData}
       </span>
       </div>
     );
@@ -88,7 +91,6 @@ describe('subscribe to lane and operate on it', () => {
 
     const runDefaultCounter = screen.getByTestId("counter-sub-default-default-run");
     const runCounter1 = screen.getByTestId("counter-sub-counter-1-1-run");
-    const runCounter2 = screen.getByTestId("counter-sub-counter-2-2-run");
 
     // then
     act(() => {
@@ -174,13 +176,13 @@ describe('subscribe to lane and operate on it', () => {
     expect(screen.getByTestId("counter-sub-counter-2-extra-default-data").innerHTML)
       .toEqual("counter-counter-2-extra-default-0");
     act(() => {
-        createSource(
-          "temporary-will-run-counter-2",
-          async function (props) {
-            props.run(countersSource, {lane: "counter-2-extra"})
-            props.runp(countersSource, {lane: "counter-2"})
-          }
-        ).run();
+      createSource(
+        "temporary-will-run-counter-2",
+        async function (props) {
+          props.run(countersSource, {lane: "counter-2-extra"})
+          props.runp(countersSource, {lane: "counter-2"})
+        }
+      ).run();
     });
 
     await act(async () => {

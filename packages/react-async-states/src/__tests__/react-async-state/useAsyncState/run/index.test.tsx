@@ -4,9 +4,9 @@ import AsyncStateComponent from "../../utils/AsyncStateComponent";
 import {UseAsyncState} from "../../../../types.internal";
 import {flushPromises} from "../../utils/test-utils";
 import {
-  AsyncStateStatus,
+  Status,
   createSource,
-  ProducerRunEffects
+  RunEffect
 } from "../../../../async-state";
 
 describe('should run producer', () => {
@@ -111,7 +111,7 @@ describe('should run producer', () => {
         let id = setTimeout(() => resolve(props.args[0]), 100);
         props.onAbort(() => clearTimeout(id));
       });
-    }, {runEffect: ProducerRunEffects.throttle, runEffectDurationMs: 100});
+    }, {runEffect: RunEffect.throttle, runEffectDurationMs: 100});
 
     function Test() {
       return (
@@ -134,7 +134,7 @@ describe('should run producer', () => {
       </React.StrictMode>
     )
     expect(screen.getByTestId("status").innerHTML)
-      .toEqual(AsyncStateStatus.initial);
+      .toEqual(Status.initial);
     expect(screen.getByTestId("result").innerHTML).toEqual("");
 
     // then
@@ -144,14 +144,14 @@ describe('should run producer', () => {
     });
 
     expect(screen.getByTestId("status").innerHTML)
-      .toEqual(AsyncStateStatus.initial); // fires after 100ms
+      .toEqual(Status.initial); // fires after 100ms
 
     await act(async () => {
       await jest.advanceTimersByTime(200);
     });
 
     expect(screen.getByTestId("status").innerHTML)
-      .toEqual(AsyncStateStatus.success);
+      .toEqual(Status.success);
     expect(screen.getByTestId("result").innerHTML).toEqual("1");
 
   });
@@ -164,7 +164,7 @@ describe('should run producer', () => {
         let id = setTimeout(() => resolve(props.args[0]), 100);
         props.onAbort(() => clearTimeout(id));
       });
-    }, {runEffect: ProducerRunEffects.debounce, runEffectDurationMs: 100});
+    }, {runEffect: RunEffect.debounce, runEffectDurationMs: 100});
 
     function Test() {
       return (
@@ -195,14 +195,14 @@ describe('should run producer', () => {
     });
 
     expect(screen.getByTestId("status").innerHTML)
-      .toEqual(AsyncStateStatus.initial); // fires after 100 millis
+      .toEqual(Status.initial); // fires after 100 millis
 
     await act(async () => {
       await jest.advanceTimersByTime(200);
     });
 
     expect(screen.getByTestId("status").innerHTML)
-      .toEqual(AsyncStateStatus.success);
+      .toEqual(Status.success);
     expect(screen.getByTestId("result").innerHTML).toEqual("3");
   });
 });

@@ -88,8 +88,8 @@ Let's see in details the supported configuration:
 | `skipPendingDelayMs`    | `number > 0`          | `undefined`                            | The duration under which a state update with a pending status may be skipped. The component in this case won't render with a pending status if it gets updated to something else under that delay. |
 | `initialValue`          | `any`                 | `null`                                 | The initial state value,  the initializer receives the cache as unique parameter                                                                                                                   |
 | `events`                | `UseAsyncStateEvents` | `undefined`                            | Defines events that will be invoked with this subscription.                                                                                                                                        |
-| `hoistToProvider`       | `boolean`             | `false`                                | Defines whether to hoist this state to the provider or not                                                                                                                                         |
-| `hoistToProviderConfig` | `HoistConfig`         | `{override: false}`                    | Defines the configuration associated with `hoistToProvider = true`                                                                                                                                 |
+| `hoist`       | `boolean`             | `false`                                | Defines whether to hoist this state to the provider or not                                                                                                                                         |
+| `hoistConfig` | `HoistConfig`         | `{override: false}`                    | Defines the configuration associated with `hoist = true`                                                                                                                                 |
 
 The returned object from `useAsyncState` contains the following properties:
 
@@ -138,7 +138,7 @@ const {state: {data, status}} = useAsyncState({key: "current-user", producer: cu
 const {state: {data: transactions, status}} = useAsyncState("transactions");
 
 // injects the users list state
-const {state: {data, status}} = useAsyncState({key: "users-list", producer: usersListPromise, lazy: false, payload: {storeId}, hoistToProvider: true});
+const {state: {data, status}} = useAsyncState({key: "users-list", producer: usersListPromise, lazy: false, payload: {storeId}, hoist: true});
 
 // forks the list of transactions for another store (for preview for example)
 // this will create another async state issued from users-list -with a new key (forked)- without impacting its state
@@ -205,7 +205,7 @@ useAsyncState({
     }
     return {...props.lastSuccess.data, [name]: value};
   },
-  hoistToProvider: true,
+  hoist: true,
   initialValue: {}
 });
 // later
@@ -281,13 +281,13 @@ useAsyncState(function* myProducer() {
 The key received by `useAsyncState` works as the following:
 - If inside a provider
   - If the `key` matches something in the provider
-    - If neither `hoistToProvider` nor `fork` is truthy,
+    - If neither `hoist` nor `fork` is truthy,
       then we are `listening` to a state
-    - If `hoistToProvider = true`, attempts to override it with a new
+    - If `hoist = true`, attempts to override it with a new
       created state from given `producer` and `hositToProviderConfiguration`.
     - If `fork = true`, forks from the matched state.
   - If there is no such a `key` in the provider
-    - If `hoistToProvider = true`, hoists the created state with the given
+    - If `hoist = true`, hoists the created state with the given
       `producer` and other related properties.
 - If outside the provider, a new state is created.
 
@@ -340,7 +340,7 @@ useAsyncState({
 useAsyncState({
   key: "my-key",
   producer: myProducer,
-  hoistToProvider: true,
+  hoist: true,
 });
 
 // defines a new state with the given producer and hoists it to provider
@@ -351,8 +351,8 @@ useAsyncState({
 useAsyncState({
   key: "my-key",
   producer: myProducer,
-  hoistToProvider: true,
-  hoistToProviderConfig: {
+  hoist: true,
+  hoistConfig: {
     override: true,
   }
 });
@@ -522,11 +522,11 @@ useAsyncState({
 })
 ```
 
-### `hoistToProvider`
+### `hoist`
 This property is relevant only if inside a provider,
-If set to true, it will `hoist` the state with the given `hoistToProviderConfig`.
+If set to true, it will `hoist` the state with the given `hoistConfig`.
 
-### `hoistToProviderConfig`
+### `hoistConfig`
 A configuration object containing the following:
 
 | Property   | Type      | Default Value | Description                                              |
@@ -546,7 +546,7 @@ It is a function with the following in order parameters:
 
 ```typescript
 // extend the given state
-import {State, AsyncStateStatus, useAsyncState, UseAsyncState} from "react-async-states";
+import {State, Status, useAsyncState, UseAsyncState} from "react-async-states";
 
 // syncSelector
 // if you want that your state is always synchronous
@@ -559,7 +559,7 @@ function syncSelector(state: State<T>): E {
 // error boundary
 function errorBoundarySelector(state: State<T>): E {
   // assuming you have an error boundary
-  if (state.status === AsyncStateStatus.error) {
+  if (state.status === Status.error) {
     throw state.data;
   }
   return state;
@@ -567,7 +567,7 @@ function errorBoundarySelector(state: State<T>): E {
 
 // this selector gives the last success data
 function keepPreviousDataSelector(state: State<T>, lastSuccess): E {
-  if (state.status === AsyncStateStatus.pending) {
+  if (state.status === Status.pending) {
     return {
       ...state,
       data: lastSuccess.data,
@@ -588,8 +588,8 @@ function errorBoundarySelector(state, lastSuccess, cache): E {
 function lazyDeveloperSelector(state: State<T>) {
   return {
     ...state,
-    isError: state.status === AsyncStateStatus.error,
-    isPending: state.status === AsyncStateStatus.pending,
+    isError: state.status === Status.error,
+    isPending: state.status === Status.pending,
     isWeird: false,
     ...
   }
@@ -860,29 +860,6 @@ const {source} = useAsyncState();
 ### `uniqueId`
 This is only used in development mode and was originally added with the devtools.
 
-### `mode`
-This corresponds to `AsyncStateSubscriptionMode`
-
-Here is the full list:
-
-```typescript
-
-enum AsyncStateSubscriptionMode {
-  LISTEN = "LISTEN",
-  HOIST = "HOIST",
-  STANDALONE = "STANDALONE",
-  WAITING = "WAITING",
-  FORK = "FORK",
-  NOOP = "NOOP",
-  SOURCE = "SOURCE",
-  SOURCE_FORK = "SOURCE_FORK",
-  OUTSIDE_PROVIDER = "OUTSIDE_PROVIDER",
-}
-
-```
-
-Read more about it [here](/docs/faq/how-the-library-works#how-useasyncstate-subscription-mode-works-).
-
 In general, you would never use this (unless you are a contributor and debugging things).
 
 ### `state`
@@ -1098,7 +1075,7 @@ replaceState is of type : `StateUpdater`:
 ```typescript
 type StateUpdater<T> = (
   updater: T | StateFunctionUpdater<T>,
-  status?: AsyncStateStatus
+  status?: Status
 ) => void;
 ```
 
@@ -1137,8 +1114,8 @@ The following are all hooks with the same signature as `useAsyncState`, but each
 - `useAsyncState.auto`: adds `lazy: false` to configuration
 - `useAsyncState.lazy`: adds `lazy: true` to configuration
 - `useAsyncState.fork`: adds `fork: true` to configuration
-- `useAsyncState.hoist`: adds `hoistToProvider: true` to configuration
-- `useAsyncState.hoistAuto`: adds `lazy: false, hoistToProvider: true` to configuration
+- `useAsyncState.hoist`: adds `hoist: true` to configuration
+- `useAsyncState.hoistAuto`: adds `lazy: false, hoist: true` to configuration
 - `useAsyncState.forkAudo`: adds `lazy: false, fork: true` to configuration
 
 The following snippets results from the previous hooks:

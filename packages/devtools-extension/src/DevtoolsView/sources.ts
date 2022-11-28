@@ -16,7 +16,7 @@ type Journal = {
   key: string,
   journal: any[],
   state: State<any>,
-  subscriptions: string[]
+  subscriptions: any[]
 };
 // stores data related to any async state
 export const journalSource = createSource<Journal>("journal", null, {hideFromDevtools: true});
@@ -77,7 +77,8 @@ function gatewayProducer(props) {
       }
       case DevtoolsEvent.setAsyncState: {
         updatesMeter.setState(old => old.data + 1);
-        return journalSource.getLaneSource(`${message.uniqueId}`).setState(message.payload);
+        journalSource.getLaneSource(`${message.uniqueId}`).setState(message.payload);
+        return ;
       }
       case DevtoolsEvent.partialSync: {
         applyPartialUpdate(message);
@@ -95,13 +96,14 @@ function gatewayProducer(props) {
 }
 
 function applyPartialUpdate(message) {
+
   const {eventType} = message.payload;
   switch (eventType) {
     case DevtoolsJournalEvent.run: {
       journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
         return {
-          ...old.data,
-          journal: [...old.data.journal, message.payload],
+          ...(old.data ?? {}),
+          journal: [...(old.data?.journal ?? []), message.payload],
         }
       });
       return;
@@ -110,11 +112,11 @@ function applyPartialUpdate(message) {
       updatesMeter.setState(old => old.data + 1);
       journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
         return {
-          ...old.data,
+          ...(old.data ?? {}),
           state: message.payload.eventPayload.newState,
           oldState: message.payload.eventPayload.oldState,
           lastSuccess: message.payload.eventPayload.lastSuccess,
-          journal: [...old.data.journal, message.payload],
+          journal: [...(old.data?.journal ?? []), message.payload],
         }
       });
       return;
@@ -124,8 +126,8 @@ function applyPartialUpdate(message) {
         let prevData = old.data ?? {};
         return {
           ...prevData,
-          subscriptions: [...prevData.subscriptions, message.payload.eventPayload],
-          journal: [...prevData.journal, message.payload],
+          subscriptions: [...(prevData.subscriptions ?? []), message.payload.eventPayload],
+          journal: [...(prevData.journal ?? []), message.payload],
         }
       });
       return;
@@ -133,10 +135,12 @@ function applyPartialUpdate(message) {
     case DevtoolsJournalEvent.unsubscription: {
       journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
         let prevData = old.data ?? {};
+
+        console.log('haha', prevData.subscriptions, message.payload.eventPayload)
         return {
           ...prevData,
-          subscriptions: prevData.subscriptions?.filter(t => t !== message.payload.eventPayload),
-          journal: [...prevData.journal, message.payload],
+          subscriptions: (prevData.subscriptions ?? [])?.filter(t => t.key !== message.payload.eventPayload),
+          journal: [...(prevData.journal ?? []), message.payload],
         }
       });
       return;

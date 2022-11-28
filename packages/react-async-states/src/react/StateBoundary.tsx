@@ -1,11 +1,12 @@
 import * as React from "react";
-import {AsyncStateStatus, State} from "../async-state";
+import {Status, State} from "../async-state";
 import {
   MixedConfig, RenderStrategy,
   StateBoundaryProps,
   UseAsyncState, UseAsyncStateConfiguration,
 } from "../types.internal";
 import {useAsyncState} from "./useAsyncState";
+import {emptyArray} from "./utils";
 
 const StateBoundaryContext = React.createContext<any>(null);
 
@@ -67,7 +68,6 @@ export function FetchAsYouRenderBoundary<T, E>(props: StateBoundaryProps<T, E>) 
   );
 }
 
-const emptyArray = [];
 function FetchThenRenderInitialBoundary<T, E>({
   dependencies = emptyArray, result, config
 }: {dependencies?: any[], result: UseAsyncState<T, E>, config: MixedConfig<T, E>}) {
@@ -95,17 +95,17 @@ export function FetchThenRenderBoundary<T, E>(props: StateBoundaryProps<T, E>) {
   const result = useAsyncState(props.config, props.dependencies);
 
   switch (result.source?.getState().status) {
-    case AsyncStateStatus.pending:
-    case AsyncStateStatus.aborted:
-    case AsyncStateStatus.initial: {
+    case Status.pending:
+    case Status.aborted:
+    case Status.initial: {
       return <FetchThenRenderInitialBoundary
         result={result}
         config={props.config}
         dependencies={props.dependencies}
       />;
     }
-    case AsyncStateStatus.error:
-    case AsyncStateStatus.success: {
+    case Status.error:
+    case Status.success: {
       const children = inferBoundaryChildren(result, props);
       return (
         <StateBoundaryContext.Provider value={result}>

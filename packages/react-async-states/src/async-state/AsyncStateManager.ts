@@ -11,14 +11,14 @@ import AsyncState, {
   Source,
   State,
   StateInterface,
-  readInstanceFromSource,
+  readSource,
   runWhileSubscribingToNextResolve,
   standaloneProducerRunEffectFunction,
   standaloneProducerRunpEffectFunction,
   standaloneProducerSelectEffectFunction
 } from "./AsyncState";
 
-import {isAsyncStateSource,} from "./utils";
+import {isSource,} from "./utils";
 
 const listenersKey = Symbol();
 
@@ -41,7 +41,7 @@ export function AsyncStateManager(
   let watchers: ManagerWatchers = Object.create(null);
 
   // @ts-ignore
-  // ts is yelling at producerEffectsCreator property which will be assigned
+  // ts is yelling at createEffects property which will be assigned
   // in the next statement.
   const output: AsyncStateManagerInterface = {
     entries: asyncStateEntries,
@@ -54,7 +54,7 @@ export function AsyncStateManager(
     watchAll,
     getAllKeys,
     notifyWatchers,
-    setInitialStates,
+    setStates: setInitialStates,
     getPayload(): Record<string, any> {
       return payload;
     },
@@ -62,7 +62,7 @@ export function AsyncStateManager(
       Object.assign(payload, partialPayload);
     }
   };
-  output.producerEffectsCreator = createProducerEffectsCreator(output);
+  output.createEffects = createProducerEffectsCreator(output);
 
   return output;
 
@@ -116,7 +116,7 @@ export function AsyncStateManager(
     asyncState: StateInterface<T>,
     ...args: any[]
   ): AbortFn {
-    return asyncState.run(output.producerEffectsCreator, ...args);
+    return asyncState.run(output.createEffects, ...args);
   }
 
   function dispose<T>(
@@ -239,7 +239,7 @@ export function AsyncStateManager(
   function hoist<T>(
     key: string,
     instance: StateInterface<T>,
-    hoistConfig?: HoistToProviderConfig
+    hoistConfig?: hoistConfig
   ): StateInterface<T> {
 
     const existing = get(key);
@@ -281,10 +281,10 @@ function createInitialAsyncStatesReducer(
   result: AsyncStateEntries,
   current: ExtendedInitialAsyncState<any>
 ): AsyncStateEntries {
-  if (isAsyncStateSource(current)) {
+  if (isSource(current)) {
     const key = current.key;
     const existingEntry = result[key];
-    const asyncState = readInstanceFromSource(
+    const asyncState = readSource(
       current as Source<any>);
 
     if (!existingEntry || asyncState !== existingEntry.instance) {
@@ -343,7 +343,7 @@ function managerProducerRunFunction<T>(
     if (config?.lane) {
       instance = instance.getLane(config.lane);
     }
-    return instance.run(manager.producerEffectsCreator, ...args);
+    return instance.run(manager.createEffects, ...args);
   }
   return standaloneProducerRunEffectFunction(input, config, ...args);
 }
@@ -389,7 +389,7 @@ function managerProducerSelectFunction<T>(
 //endregion
 
 //region TYPES
-export type HoistToProviderConfig = {
+export type hoistConfig = {
   override: boolean,
 }
 
@@ -422,7 +422,7 @@ export type AsyncStateManagerInterface = {
   get<T>(key: string): StateInterface<T>,
   hoist<T>(
     key: string, instance: StateInterface<T>,
-    hoistConfig?: HoistToProviderConfig
+    hoistConfig?: hoistConfig
   ): StateInterface<T>,
   dispose<T>(asyncState: StateInterface<T>): boolean,
   watch<T>(
@@ -435,12 +435,12 @@ export type AsyncStateManagerInterface = {
   ): void,
   getAllKeys(): string[],
   watchAll(cb: ManagerWatchCallback<any>),
-  setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[],
+  setStates(initialStates?: InitialStates): AsyncStateEntry<any>[],
 
   getPayload(): Record<string, any>,
   mergePayload(partialPayload?: Record<string, any>): void,
 
-  producerEffectsCreator<T>(props: ProducerProps<T>): ProducerEffects,
+  createEffects<T>(props: ProducerProps<T>): ProducerEffects,
 }
 
 export type InitialStatesObject = { [id: string]: ExtendedInitialAsyncState<any> };

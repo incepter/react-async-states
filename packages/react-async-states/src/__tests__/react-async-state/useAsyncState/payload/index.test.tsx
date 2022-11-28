@@ -1,7 +1,6 @@
 import * as React from "react";
 import {fireEvent, render, screen} from "@testing-library/react";
 import {
-  SubscriptionMode,
   UseAsyncState
 } from "../../../../types.internal";
 import {useAsyncState} from "../../../../react/useAsyncState";
@@ -19,7 +18,7 @@ describe('should add static payload to async state', () => {
     function Component() {
       const {
         run,
-        mode,
+        devFlags,
         state,
       }: UseAsyncState<number> = useAsyncState({
         initialValue: 0,
@@ -36,7 +35,7 @@ describe('should add static payload to async state', () => {
       return (
         <div>
           <button data-testid="increment" onClick={increment}>increment</button>
-          <span data-testid="mode">{mode}</span>
+          <span data-testid="mode">{JSON.stringify(devFlags)}</span>
           <span data-testid="result">{state.data}</span>
         </div>);
     }
@@ -52,7 +51,7 @@ describe('should add static payload to async state', () => {
     const incrementBtn = screen.getByTestId("increment");
     // then
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual(SubscriptionMode.OUTSIDE);
+      .toEqual("[\"CONFIG_OBJECT\",\"STANDALONE\"]");
 
     // +1
     fireEvent.click(incrementBtn);

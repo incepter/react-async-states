@@ -2,7 +2,7 @@ import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {UseAsyncState} from "../../../../types.internal";
 import {useAsyncState} from "../../../../react/useAsyncState";
-import {AsyncStateStatus} from "../../../../async-state";
+import {Status} from "../../../../async-state";
 
 describe('should run async state with generator', () => {
   it('should run sync generator', async () => {
@@ -54,7 +54,7 @@ describe('should run async state with generator', () => {
     )
 
     // then
-    expect(screen.getByTestId("status").innerHTML).toEqual(AsyncStateStatus.error);
+    expect(screen.getByTestId("status").innerHTML).toEqual(Status.error);
     expect(screen.getByTestId("result").innerHTML).toEqual("Error: Error there!");
   });
   it('should run sync generator try and catch', async () => {
@@ -86,7 +86,7 @@ describe('should run async state with generator', () => {
     )
 
     // then
-    expect(screen.getByTestId("status").innerHTML).toEqual(AsyncStateStatus.success);
+    expect(screen.getByTestId("status").innerHTML).toEqual(Status.success);
     expect(screen.getByTestId("result").innerHTML).toEqual("15");
   });
   it('should run async generator and throw', async () => {
@@ -119,7 +119,7 @@ describe('should run async state with generator', () => {
     });
 
     // then
-    expect(screen.getByTestId("status").innerHTML).toEqual(AsyncStateStatus.error);
+    expect(screen.getByTestId("status").innerHTML).toEqual(Status.error);
     expect(screen.getByTestId("result").innerHTML).toEqual("Error: Error there!!");
   });
   it('should run async generator and abort it and make sure it doesnt continute', async () => {
@@ -172,7 +172,7 @@ describe('should run async state with generator', () => {
 
     // then
     expect(mockedFn).toHaveBeenCalledTimes(2); // 1 strict mode
-    expect(screen.getByTestId("status").innerHTML).toEqual(AsyncStateStatus.success);
+    expect(screen.getByTestId("status").innerHTML).toEqual(Status.success);
     expect(screen.getByTestId("result").innerHTML).toEqual(JSON.stringify({
       "a": {},
       "b": {},
@@ -189,7 +189,7 @@ describe('should run async state with generator', () => {
       fireEvent.click(screen.getByTestId("abort"));
     });
 
-    expect(screen.getByTestId("status").innerHTML).toEqual(AsyncStateStatus.aborted);
+    expect(screen.getByTestId("status").innerHTML).toEqual(Status.aborted);
     expect(mockedFn).not.toHaveBeenCalled();
   });
 });

@@ -1,11 +1,10 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {
-  SubscriptionMode,
   UseAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../react/useAsyncState";
-import {AsyncStateStatus, createSource} from "../../../../../async-state";
+import {Status, createSource} from "../../../../../async-state";
 
 describe('useAsyncState - events', () => {
   it('add several change events with different forms', async () => {
@@ -24,11 +23,11 @@ describe('useAsyncState - events', () => {
             mockedFn,
             {
               handler: mockedFn2,
-              status: AsyncStateStatus.success,
+              status: Status.success,
             },
             {
               handler: mockedFn3,
-              status: AsyncStateStatus.error,
+              status: Status.error,
             }
           ],
         },
@@ -40,7 +39,7 @@ describe('useAsyncState - events', () => {
                   onClick={() => run(old => old.data + 1)}>Increment
           </button>
           <button data-testid={`force-error-${key}`}
-                  onClick={() => run(0, AsyncStateStatus.error)}>run error
+                  onClick={() => run(0, Status.error)}>run error
           </button>
           <span
             data-testid={`result-${key}`}>{state.data}</span>

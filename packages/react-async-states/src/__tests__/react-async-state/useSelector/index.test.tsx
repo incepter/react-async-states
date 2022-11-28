@@ -1,6 +1,6 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
-import {AsyncStateProvider} from "../../../react/AsyncStateProvider";
+import {AsyncStateProvider} from "../../../react/Provider";
 import {useSelector} from "../../../react/useSelector";
 import {useRun} from "../../../react/useRun";
 import {createSource} from "../../../async-state";
