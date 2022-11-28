@@ -178,43 +178,48 @@ export function resolveFlags<T, E>(
   }
 }
 
-function getConfigFlags<T, E>(
+function getKeyFlags(
+  config: PartialUseAsyncStateConfiguration<any, any>,
+  key: string,
+) {
+  switch (key) {
+    case "hoist": return config.hoist ? HOIST : NO_MODE;
+    case "fork": return config.fork ? FORK : NO_MODE;
+    case "lane": return config.lane ? LANE : NO_MODE;
+    case "selector": return typeof config.selector === "function" ? SELECTOR : NO_MODE;
+    case "areEqual": return typeof config.areEqual === "function" ? EQUALITY_CHECK : NO_MODE;
+
+    case "events": {
+      let flags = NO_MODE;
+      if (config.events!.change) {
+        flags |= CHANGE_EVENTS;
+      }
+      if (config.events!.subscribe) {
+        flags |= SUBSCRIBE_EVENTS;
+      }
+      return flags;
+    }
+
+    case "lazy":
+    case "condition": {
+      if (config.lazy === false && config.condition !== false) {
+        return AUTO_RUN;
+      }
+      return NO_MODE;
+    }
+    default: return NO_MODE;
+  }
+}
+
+export function getConfigFlags<T, E>(
   config?: PartialUseAsyncStateConfiguration<T, E>
 ): number {
   if (!config) {
     return NO_MODE;
   }
-
-  let flags = NO_MODE;
-
-  if (config.hoist) {
-    flags |= HOIST;
-  }
-  if (config.fork) {
-    flags |= FORK;
-  }
-  if (config.lane) {
-    flags |= LANE;
-  }
-  if (config.selector) {
-    flags |= SELECTOR;
-  }
-  if (config.areEqual) {
-    flags |= EQUALITY_CHECK;
-  }
-  if (config.events) {
-    if (config.events.change) {
-      flags |= CHANGE_EVENTS;
-    }
-    if (config.events.subscribe) {
-      flags |= SUBSCRIBE_EVENTS;
-    }
-  }
-  // default behavior is lazy=true; so only change if specified explicitly
-  if (config.lazy === false && config.condition !== false) {
-    flags |= AUTO_RUN;
-  }
-  return flags;
+  return Object.keys(config)
+    .reduce((flags, key) =>
+      (flags | getKeyFlags(config, key)), NO_MODE);
 }
 
 
