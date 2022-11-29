@@ -3,7 +3,7 @@ import {act, render, screen} from "@testing-library/react";
 import {
   Status, createSource,
   Producer,
-  ProducerProps
+  ProducerProps, Source
 } from "../../../../async-state";
 import AsyncStateComponent from "../../utils/AsyncStateComponent";
 import {AsyncStateProvider} from "../../../../react/Provider";
@@ -130,7 +130,7 @@ describe('should runp another producer from producer', () => {
       const doesntExistData = (await props.runp("doesntExist", null, 3))?.data;
       return {source2Data, doesntExistData};
     });
-    const source1 = createSource("source1", source1Producer);
+    const source1 = createSource("source1", source1Producer) as Source<TestType>;
 
     function Test() {
 

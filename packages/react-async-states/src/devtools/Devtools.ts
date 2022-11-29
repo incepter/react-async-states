@@ -236,6 +236,9 @@ function createDevtools(): DevtoolsInterface {
     if (asyncState.config.hideFromDevtools) {
       return;
     }
+    if (!asyncState.journal) {
+      asyncState.journal = [];
+    }
     asyncState.journal.push({
       key: asyncState.key,
       eventId: ++journalEventsId,

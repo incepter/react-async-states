@@ -14,37 +14,35 @@ import {nextKey} from "./key-gen";
 class AsyncState<T> implements StateInterface<T> {
   //region properties
   key: string;
-  journal: any[];
   uniqueId: number;
   _source: Source<T>;
   version: number = 0;
   config: ProducerConfig<T>;
-  payload: Record<string, any> | null = null;
 
   state: State<T>;
   lastSuccess: State<T>;
+
+
+  originalProducer: Producer<T> | undefined;
   producerType: ProducerType;
 
-  cache: Record<string, CachedState<T>> | null = null;
+  //
+  payload?: Record<string, any>;
+  journal?: any[];
+  cache?: Record<string, CachedState<T>>;
+  forksIndex?: number;
+  parent?: StateInterface<T> | null;
+  lanes?: Record<string, StateInterface<T>> | null;
+  subsIndex?: number;
+  subscriptions?: Record<number, StateSubscription<T>> | null;
+  suspender?: Promise<T>;
+  pendingUpdate?: PendingUpdate | null;
+  private pendingTimeout?: PendingTimeout | null;
+  private latestRun?: RunTask<T> | null;
+  willUpdate?: boolean;
+  currentAbort?: AbortFn;
+  private locks?: number;
 
-  forksIndex: number = 0;
-  parent: StateInterface<T> | null = null;
-  lanes: Record<string, StateInterface<T>> | null = null;
-
-  subsIndex: number = 0;
-  subscriptions: Record<number, StateSubscription<T>> | null = null;
-
-  suspender: Promise<T> | undefined = undefined;
-  originalProducer: Producer<T> | undefined;
-
-  pendingUpdate: PendingUpdate | null = null;
-
-  private locks: number = 0;
-  private pendingTimeout: PendingTimeout | null = null;
-
-  willUpdate: boolean = false;
-  currentAbort: AbortFn = undefined;
-  private latestRun: RunTask<T> | null = null;
 
   //endregion
 
@@ -91,8 +89,6 @@ class AsyncState<T> implements StateInterface<T> {
     this.replaceProducer = this.replaceProducer.bind(this);
 
     this._source = makeSource(this);
-
-    Object.preventExtensions(this);
 
     if (__DEV__) {
       devtools.emitCreation(this);
@@ -309,6 +305,10 @@ class AsyncState<T> implements StateInterface<T> {
   subscribe(
     props: AsyncStateSubscribeProps<T>
   ): AbortFn {
+    if (!this.subsIndex) {
+      this.subsIndex = 0;
+      this.locks = 0;
+    }
     if (!this.subscriptions) {
       this.subscriptions = {};
     }
@@ -323,7 +323,7 @@ class AsyncState<T> implements StateInterface<T> {
     }
 
     function cleanup() {
-      that.locks -= 1;
+      that.locks! -= 1;
       delete that.subscriptions![subscriptionKey!];
       if (__DEV__) devtools.emitUnsubscription(that, subscriptionKey!);
       if (that.config.resetStateOnDispose) {
@@ -334,7 +334,7 @@ class AsyncState<T> implements StateInterface<T> {
     }
 
     this.subscriptions[subscriptionKey] = {props, cleanup};
-    this.locks += 1;
+    this.locks! += 1;
 
     if (__DEV__) devtools.emitSubscription(this, subscriptionKey);
     return cleanup;
@@ -606,7 +606,10 @@ class AsyncState<T> implements StateInterface<T> {
   }
 
   dispose() {
-    if (this.locks > 0) {
+    if (this.locks === undefined) {
+      return true;
+    }
+    if (this.locks && this.locks > 0) {
       return false;
     }
 
@@ -626,6 +629,9 @@ class AsyncState<T> implements StateInterface<T> {
   }
 
   fork(forkConfig?: ForkConfig) {
+    if (!this.forksIndex) {
+      this.forksIndex = 0;
+    }
     const mergedConfig: ForkConfig = shallowClone(defaultForkConfig, forkConfig);
 
     let {key} = mergedConfig;
@@ -888,7 +894,7 @@ function loadCache<T>(instance: StateInterface<T>) {
   }
 
   // inherit cache from the parent if exists!
-  if (instance.parent !== null) {
+  if (instance.parent) {
     const topLevelParent: StateInterface<T> = getTopLevelParent(instance);
     instance.cache = topLevelParent.cache;
     return;
@@ -918,7 +924,7 @@ function notifySubscribers(instance: StateInterface<any>) {
 
 function getTopLevelParent<T>(base: StateInterface<T>): StateInterface<T> {
   let current = base;
-  while (current.parent !== null) {
+  while (current.parent) {
     current = current.parent;
   }
   return current;
@@ -1265,7 +1271,7 @@ export interface StateInterface<T> extends BaseSource<T> {
   version: number,
   _source: Source<T>,
   config: ProducerConfig<T>,
-  payload: Record<string, any> | null,
+  payload?: Record<string, any> | null,
 
   // state
   state: State<T>,
@@ -1274,28 +1280,28 @@ export interface StateInterface<T> extends BaseSource<T> {
   replaceState(newState: State<T>, notify?: boolean): void,
 
   // subscriptions
-  subsIndex: number;
-  subscriptions: Record<number, StateSubscription<T>> | null,
+  subsIndex?: number;
+  subscriptions?: Record<number, StateSubscription<T>> | null,
 
   // producer
-  producerType: ProducerType,
+  producerType?: ProducerType,
   producer: ProducerFunction<T>,
-  suspender: Promise<T> | undefined,
-  originalProducer: Producer<T> | undefined,
+  suspender?: Promise<T>,
+  originalProducer: Producer<T> | undefined | null,
 
-  willUpdate: boolean;
-  currentAbort: AbortFn;
+  willUpdate?: boolean;
+  currentAbort?: AbortFn;
 
   // lanes and forks
-  forksIndex: number,
-  parent: StateInterface<T> | null,
-  lanes: Record<string, StateInterface<T>> | null,
+  forksIndex?: number,
+  parent?: StateInterface<T> | null,
+  lanes?: Record<string, StateInterface<T>> | null,
 
   // cache
-  cache: Record<string, CachedState<T>> | null,
+  cache?: Record<string, CachedState<T>> | null,
 
   // dev properties
-  journal: any[], // for devtools, dev only
+  journal?: any[], // for devtools, dev only
 
   // methods & overrides
   dispose(): boolean,

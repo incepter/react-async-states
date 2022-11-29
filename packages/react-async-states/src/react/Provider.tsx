@@ -77,8 +77,8 @@ export function AsyncStateProvider(
   function disposeManager() {
     return function cleanup() {
       Promise.resolve().then(() => {
-        Object.values(manager.entries as AsyncStateEntries)
-          .forEach(entry => entry.instance.dispose())
+        Object.values(manager.entries)
+          .forEach(entry => manager.dispose(entry.instance))
       });
     }
   }

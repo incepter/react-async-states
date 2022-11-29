@@ -20,8 +20,8 @@ describe('AsyncState - fork', () => {
 
     // then
     expect(myAsyncState.key).toBe(key);
-    expect(myAsyncState.forksIndex).toBe(0);
-    expect(myAsyncState.subscriptions).toBe(null);
+    expect(myAsyncState.forksIndex).toBe(undefined);
+    expect(myAsyncState.subscriptions).toBe(undefined);
     expect(typeof myAsyncState.run).toBe("function");
     expect(myAsyncState.config).toEqual(shallowClone(myConfig));
     expect(myAsyncState.lastSuccess).toEqual({props: null, data: null, status: Status.initial, timestamp: TESTS_TS});
@@ -29,7 +29,7 @@ describe('AsyncState - fork', () => {
 
     let forkedAsyncState = myAsyncState.fork();
     expect(myAsyncState.forksIndex).toBe(1);
-    expect(forkedAsyncState.forksIndex).toBe(0);
+    expect(forkedAsyncState.forksIndex).toBe(undefined);
     expect(forkedAsyncState.config).toEqual(myAsyncState.config);
     expect(forkedAsyncState.lastSuccess).toEqual(myAsyncState.lastSuccess);
     expect(forkedAsyncState.originalProducer).toBe(myAsyncState.originalProducer);

@@ -431,7 +431,10 @@ function calculateSubscriptionKey<T, E>(
   }
   if (__DEV__) {
     let callerName = computeCallerName(level);
-    let index = ++((hook.instance! as AsyncState<T>).subsIndex);
+    if ((hook.instance! as AsyncState<T>).subsIndex === undefined) {
+      (hook.instance! as AsyncState<T>).subsIndex = 0;
+    }
+    let index = ++((hook.instance! as AsyncState<T>).subsIndex!);
     return `${callerName}-${index}`;
   }
 }
@@ -647,5 +650,5 @@ function readStateFromInstance<T, E = State<T>>(
     ? (config as PartialUseAsyncStateConfiguration<T, E>).selector!
     :
     (<K>(obj): K => obj);
-  return selector(asyncState.state, asyncState.lastSuccess, asyncState.cache);
+  return selector(asyncState.state, asyncState.lastSuccess, asyncState.cache || null);
 }
