@@ -78,8 +78,8 @@ export function AsyncStateManager(
   function setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[] {
     const newStatesMap = getInitialStatesMap(initialStates);
 
-    const previousStates = {...asyncStateEntries};
-    // basically, this is the same object reference...
+    const previousStates = Object.assign({}, asyncStateEntries);
+    // basically, this is the same object reference..
     asyncStateEntries = Object
       .values(newStatesMap)
       .reduce(
@@ -116,7 +116,9 @@ export function AsyncStateManager(
     asyncState: StateInterface<T>,
     ...args: any[]
   ): AbortFn {
-    return asyncState.run(output.createEffects, ...args);
+    return asyncState.run
+      .bind(asyncState, output.createEffects)
+      .apply(null, args);
   }
 
   function dispose<T>(
@@ -124,7 +126,7 @@ export function AsyncStateManager(
   ): boolean {
     const {key} = asyncState;
 
-    // delete only if it was not initially hoisted
+    // delete only if it was not initially hoistedQ
     const entry = asyncStateEntries[key]
     if (
       entry &&

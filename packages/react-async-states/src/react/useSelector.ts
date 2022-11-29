@@ -52,7 +52,6 @@ export function useSelector<T>(
 
   ensureParamsAreOk(contextValue, keys);
 
-  // on every render, recheck the keys, because they are most likely to be inlined
   const [self, setSelf] = React.useState<SelectorSelf<T>>(computeSelf);
 
   // when the content of the keys array change, recalculate
@@ -98,7 +97,7 @@ export function useSelector<T>(
     function onUpdate() {
       const newValue = readValue(self.currentInstances);
       if (!areEqual(self.currentValue, newValue)) {
-        setSelf(old => ({...old, currentValue: newValue}));
+        setSelf(old => Object.assign({}, old, {currentValue: newValue}));
       }
     }
 
@@ -157,7 +156,7 @@ export function useSelector<T>(
     }
 
     if (Array.isArray(keys)) {
-      return (selector as ArraySelector<T>)(...selectorStates);
+      return (selector as ArraySelector<T>).apply(null, selectorStates);
     }
 
     return (selector as SimpleSelector<any, T>)(selectorStates[0]);
@@ -200,7 +199,7 @@ function ensureParamsAreOk<E>(
   keys: BaseSelectorKey | BaseSelectorKey[] | UseSelectorFunctionKeys,
 ) {
   if (contextValue === null && typeof keys === "function") {
-    throw new Error('useSelector received a function as keys outside provider');
+    throw new Error('useSelector function as keys outside provider');
   }
 }
 
@@ -222,9 +221,9 @@ function computeInstancesMap(
     }, {});
 }
 
-function identity(...args: any[]): any {
-  if (!args || !args.length) {
+function identity(): any {
+  if (!arguments.length) {
     return undefined;
   }
-  return args.length === 1 ? args[0] : args;
+  return arguments.length === 1 ? arguments[0] : arguments;
 }

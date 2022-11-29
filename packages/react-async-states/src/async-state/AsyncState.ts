@@ -345,7 +345,7 @@ class AsyncState<T> implements StateInterface<T> {
     status = Status.success,
   ): void {
     if (!StateBuilder[status]) {
-      throw new Error(`Couldn't replace state to unknown status ${status}.`);
+      throw new Error(`Unknown status ('${status}')`);
     }
     this.willUpdate = true;
     if (this.state?.status === Status.pending) {
@@ -726,14 +726,18 @@ function constructPropsObject<T>(
     status?: Status
   ): void {
     if (runIndicators.cleared && instance.state.status === Status.aborted) {
-      console.error("You are emitting while your producer is passing to aborted state." +
-        "This has no effect and not supported by the library. The next " +
-        "state value on aborted state is the reason of the abort.");
+      if (__DEV__) {
+        console.error("You are emitting while your producer is passing to aborted state." +
+          "This has no effect and not supported by the library. The next " +
+          "state value on aborted state is the reason of the abort.");
+      }
       return;
     }
     if (!runIndicators.fulfilled) {
-      console.error("Called props.emit before the producer resolves. This is" +
-        " not supported in the library and will have no effect");
+      if (__DEV__) {
+        console.error("Called props.emit before the producer resolves. This is" +
+          " not supported in the library and will have no effect");
+      }
       return;
     }
     instance.setState(updater, status);
@@ -799,7 +803,7 @@ function readSource<T>(possiblySource: Source<T>): StateInterface<T> {
     }
     return candidate; // async state instance
   } catch (e) {
-    throw new Error("You ve passed an incompatible source object. Please make sure to pass the received source object.");
+    throw new Error("Incompatible Source object.");
   }
 }
 

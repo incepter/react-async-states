@@ -11,11 +11,11 @@ import {emptyArray} from "./utils";
 const StateBoundaryContext = React.createContext<any>(null);
 
 export function StateBoundary<T, E>(props: StateBoundaryProps<T, E>) {
-  return (
-    <StateBoundaryImpl key={props.strategy} {...props}>
-      {props.children}
-    </StateBoundaryImpl>
-  )
+  return React.createElement(
+    StateBoundaryImpl,
+    Object.assign({key: props.strategy}, props),
+    props.children
+  );
 }
 
 function StateBoundaryImpl<T, E>(props: StateBoundaryProps<T, E>) {
@@ -81,7 +81,7 @@ function FetchThenRenderInitialBoundary<T, E>({
       const autoRunArgs = (config as UseAsyncStateConfiguration<T, E>).autoRunArgs;
 
       if (Array.isArray(autoRunArgs)) {
-        return result.run(...autoRunArgs);
+        return result.run.apply(null, autoRunArgs);
       }
 
       return result.run();
@@ -121,7 +121,7 @@ export function useCurrentState<T, E = State<T>>(): UseAsyncState<T, E> {
   const ctxValue = React.useContext(StateBoundaryContext);
 
   if (ctxValue === null) {
-    throw new Error('You cannot use useCurrentState outside a StateBoundary');
+    throw new Error('useCurrentState used outside StateBoundary');
   }
 
   return ctxValue;

@@ -106,7 +106,7 @@ export class StateHookImpl<T, E> implements StateHook<T, E> {
     let instance = resolveInstance(nextFlags, newConfig, contextValue, this, overrides);
 
     if (!instance && !(nextFlags & WAIT)) {
-      throw new Error("Mode isn't wait and instance isn't defined! this is a bug");
+      throw new Error("Undefined instance with no WAIT mode. This is a bug.");
     }
 
     if (instance && (nextFlags & CONFIG_OBJECT && (newConfig as BaseConfig<T>).payload)) {

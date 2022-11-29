@@ -39,7 +39,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   const contextValue = React.useContext<StateContextValue>(AsyncStateContext);
 
   React.useMemo(() => hook.update(1, mixedConfig, contextValue, overrides, 8),
-    [contextValue, guard, ...deps]);
+    deps.concat([contextValue, guard]));
 
   const [selectedValue, setSelectedValue] = React
     .useState<Readonly<UseAsyncState<T, E>>>(calculateStateValue.bind(null, hook));
@@ -82,7 +82,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
     let config = (hook.config as BaseConfig<T>);
 
     if (config.autoRunArgs && Array.isArray(config.autoRunArgs)) {
-      return hook.base.run(...config.autoRunArgs);
+      return hook.base.run.apply(null, config.autoRunArgs);
     }
     return hook.base.run();
   }
@@ -98,7 +98,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
 // functions that allows controlling the external source. So, may be better ?
 // this hook can use directly useSES on the asyncState instance
 // but this will require additional memoization to add the other properties
-// that UseAsyncState has (abort, mergePayload, invalidateCache, run, replaceState ...)
+// that UseAsyncState has (abort, mergePayload, invalidateCache, run, replaceState ..)
 export function useSource<T>(
   source: Source<T>
 ): UseAsyncState<T, State<T>> {
@@ -157,7 +157,7 @@ export function useSourceLane<T>(
 // functions that allows controlling the external source. So, may be better ?
 // this hook can use directly useSES on the asyncState instance
 // but this will require additional memoization to add the other properties
-// that UseAsyncState has (abort, mergePayload, invalidateCache, run, replaceState ...)
+// that UseAsyncState has (abort, mergePayload, invalidateCache, run, replaceState ..)
 export function useProducer<T>(
   producer: Producer<T>,
 ): UseAsyncState<T, State<T>> {
