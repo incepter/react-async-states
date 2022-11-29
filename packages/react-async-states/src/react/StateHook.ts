@@ -39,7 +39,7 @@ import {
   SUBSCRIBE_EVENTS,
   WAIT
 } from "./StateHookFlags";
-import {__DEV__, shallowClone} from "../shared";
+import {__DEV__, isFunction, shallowClone} from "../shared";
 import {humanizeDevFlags} from "./utils";
 import {
   readSource,
@@ -186,8 +186,8 @@ function getKeyFlags(
     case "hoist": return config.hoist ? HOIST : NO_MODE;
     case "fork": return config.fork ? FORK : NO_MODE;
     case "lane": return config.lane ? LANE : NO_MODE;
-    case "selector": return typeof config.selector === "function" ? SELECTOR : NO_MODE;
-    case "areEqual": return typeof config.areEqual === "function" ? EQUALITY_CHECK : NO_MODE;
+    case "selector": return isFunction(config.selector) ? SELECTOR : NO_MODE;
+    case "areEqual": return isFunction(config.areEqual) ? EQUALITY_CHECK : NO_MODE;
 
     case "events": {
       let flags = NO_MODE;

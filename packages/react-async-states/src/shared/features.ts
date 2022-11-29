@@ -1,3 +1,5 @@
+import {isFunction} from "./index";
+
 export function areRunEffectsSupported() {
-  return typeof setTimeout === "function";
+  return isFunction(setTimeout);
 }

@@ -7,6 +7,7 @@ import {
 } from "../types.internal";
 import {useAsyncState} from "./useAsyncState";
 import {emptyArray} from "./utils";
+import {isFunction} from "../shared";
 
 const StateBoundaryContext = React.createContext<any>(null);
 
@@ -42,7 +43,7 @@ function inferBoundaryChildren<T, E = State<T>>(
 }
 
 function renderChildren(children) {
-  return typeof children === "function" ? React.createElement(children) : children;
+  return isFunction(children) ? React.createElement(children) : children;
 }
 
 export function RenderThenFetchBoundary<T, E>(props: StateBoundaryProps<T, E>) {

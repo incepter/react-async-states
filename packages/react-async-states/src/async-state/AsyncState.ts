@@ -1,4 +1,10 @@
-import {__DEV__, isGenerator, isPromise, shallowClone,} from "../shared";
+import {
+  __DEV__,
+  isFunction,
+  isGenerator,
+  isPromise,
+  shallowClone,
+} from "../shared";
 import {
   asyncStatesKey,
   didNotExpire,
@@ -64,8 +70,8 @@ class AsyncState<T> implements StateInterface<T> {
     loadCache(this);
 
     let initializer = this.config.initialValue;
-    let initialStateValue = typeof initializer === "function" ?
-      initializer.call(null, this.cache)
+    let initialStateValue = isFunction(initializer) ?
+      (initializer as Function).call(null, this.cache)
       :
       initializer;
     this.state = StateBuilder.initial(initialStateValue);
@@ -115,7 +121,7 @@ class AsyncState<T> implements StateInterface<T> {
   ): AbortFn {
     let instance = this;
     const currentProducer = this.originalProducer;
-    if (typeof currentProducer !== "function") {
+    if (!isFunction(currentProducer)) {
       indicators.fulfilled = true;
       instance.producerType = ProducerType.notProvided;
       instance.setState(props.args[0], props.args[1]);
@@ -145,7 +151,7 @@ class AsyncState<T> implements StateInterface<T> {
     const savedProps = cloneProducerProps(props);
 
     try {
-      executionValue = currentProducer(props);
+      executionValue = currentProducer!(props);
     } catch (e) {
       if (__DEV__) devtools.emitRunSync(instance, savedProps);
       indicators.fulfilled = true;
@@ -354,7 +360,7 @@ class AsyncState<T> implements StateInterface<T> {
     }
 
     let effectiveValue = newValue;
-    if (typeof newValue === "function") {
+    if (isFunction(newValue)) {
       effectiveValue = (newValue as StateFunctionUpdater<T>)(this.state);
     }
     // @ts-ignore
@@ -398,9 +404,9 @@ class AsyncState<T> implements StateInterface<T> {
 
       if (
         topLevelParent.cache &&
-        typeof topLevelParent.config.cacheConfig?.persist === "function"
+        isFunction(topLevelParent.config.cacheConfig?.persist)
       ) {
-        topLevelParent.config.cacheConfig.persist(topLevelParent.cache);
+        topLevelParent.config.cacheConfig!.persist!(topLevelParent.cache);
       }
 
       spreadCacheChangeOnLanes(topLevelParent);
@@ -480,8 +486,8 @@ class AsyncState<T> implements StateInterface<T> {
       return function abortCleanup(reason) {
         clearTimeout(timeoutId);
         that.pendingTimeout = null;
-        if (typeof runAbortCallback === "function") {
-          runAbortCallback(reason);
+        if (isFunction(runAbortCallback)) {
+          runAbortCallback!(reason);
         }
       }
     }
@@ -543,7 +549,7 @@ class AsyncState<T> implements StateInterface<T> {
       }
       this.abort();
       this.currentAbort = undefined;
-    } else if (typeof this.currentAbort === "function") {
+    } else if (isFunction(this.currentAbort)) {
       this.abort();
     }
 
@@ -565,9 +571,9 @@ class AsyncState<T> implements StateInterface<T> {
 
           if (
             topLevelParent.cache &&
-            typeof topLevelParent.config.cacheConfig?.persist === "function"
+            isFunction(topLevelParent.config.cacheConfig?.persist)
           ) {
-            topLevelParent.config.cacheConfig.persist(topLevelParent.cache);
+            topLevelParent.config.cacheConfig!.persist!(topLevelParent.cache);
           }
 
           spreadCacheChangeOnLanes(topLevelParent);
@@ -600,8 +606,8 @@ class AsyncState<T> implements StateInterface<T> {
   }
 
   abort(reason: any = undefined) {
-    if (typeof this.currentAbort === "function") {
-      this.currentAbort(reason);
+    if (isFunction(this.currentAbort)) {
+      this.currentAbort!(reason);
     }
   }
 
@@ -617,10 +623,12 @@ class AsyncState<T> implements StateInterface<T> {
     this.abort();
 
     this.locks = 0;
-    const initialState = this.config.initialValue;
-    const newState: State<T> = StateBuilder.initial(
-      typeof initialState === "function" ? initialState.call(null, this.cache) : initialState
-    );
+    let initialState = this.config.initialValue;
+    if (isFunction(initialState)) {
+      let initializer = initialState as ((cache?: Record<string, CachedState<T>>) => T);
+      initialState = initializer(this.cache);
+    }
+    const newState: State<T> = StateBuilder.initial<T>(initialState as T);
     this.replaceState(newState);
     if (__DEV__) devtools.emitDispose(this);
 
@@ -711,7 +719,7 @@ function constructPropsObject<T>(
     // but has low priority since getState returns the very current state
     lastSuccess: instance.lastSuccess,
     onAbort(cb: AbortFn) {
-      if (typeof cb === "function") {
+      if (isFunction(cb)) {
         onAbortCallbacks.push(cb);
       }
     },
@@ -773,8 +781,8 @@ function constructPropsObject<T>(
     runIndicators.cleared = true;
     onAbortCallbacks.forEach(function clean(func) {
 
-      if (typeof func === "function") {
-        func(reason);
+      if (isFunction(func)) {
+        func!(reason);
       }
     });
     instance.currentAbort = undefined;
@@ -829,8 +837,8 @@ function resolveCache<T>(
   instance.cache = resolvedCache;
   const cacheConfig = instance.config.cacheConfig;
 
-  if (typeof cacheConfig!.onCacheLoad === "function") {
-    cacheConfig!.onCacheLoad({
+  if (isFunction(cacheConfig!.onCacheLoad)) {
+    cacheConfig!.onCacheLoad!({
       cache: instance.cache,
       setState: instance.setState
     });
@@ -877,8 +885,10 @@ function saveCacheAfterSuccessfulUpdate<T>(instance: StateInterface<T>) {
       addedAt: Date.now(),
     };
 
-    if (typeof topLevelParent.config.cacheConfig?.persist === "function") {
-      topLevelParent.config.cacheConfig.persist(topLevelParent.cache);
+    if (
+      topLevelParent.config.cacheConfig &&
+      isFunction(topLevelParent.config.cacheConfig.persist)) {
+      topLevelParent.config.cacheConfig.persist!(topLevelParent.cache);
     }
 
     spreadCacheChangeOnLanes(topLevelParent);
@@ -888,7 +898,7 @@ function saveCacheAfterSuccessfulUpdate<T>(instance: StateInterface<T>) {
 function loadCache<T>(instance: StateInterface<T>) {
   if (
     !isCacheEnabled(instance) ||
-    typeof instance.config.cacheConfig?.load !== "function"
+    !isFunction(instance.config.cacheConfig?.load)
   ) {
     return;
   }
@@ -900,7 +910,8 @@ function loadCache<T>(instance: StateInterface<T>) {
     return;
   }
 
-  const loadedCache = instance.config.cacheConfig.load();
+  const loadedCache = instance.config.cacheConfig!.load!();
+  console.log(')==============', loadedCache)
 
   if (!loadedCache) {
     return;
@@ -1032,8 +1043,9 @@ export function standaloneProducerRunEffectFunction<T>(
 
     return instance.run(standaloneProducerEffectsCreator, ...args);
 
-  } else if (typeof input === "function") {
-    let instance = new AsyncState(nextKey(), input, {hideFromDevtools: true});
+  } else if (isFunction(input)) {
+    let instance = new AsyncState(
+      nextKey(), input as Producer<T>, {hideFromDevtools: true});
     if (config?.payload) {
       instance.mergePayload(config.payload)
     }
@@ -1052,9 +1064,10 @@ export function standaloneProducerRunpEffectFunction<T>(
   if (isSource(input)) {
     let instance = readSource(input as Source<T>).getLane(config?.lane);
     return runWhileSubscribingToNextResolve(instance, props, args);
-  } else if (typeof input === "function") {
+  } else if (isFunction(input)) {
 
-    let instance = new AsyncState(nextKey(), input, {hideFromDevtools: true});
+    let instance = new AsyncState(nextKey(),
+      input as Producer<T>, {hideFromDevtools: true});
     if (config?.payload) {
       instance.mergePayload(config.payload);
     }
@@ -1080,8 +1093,8 @@ export function runWhileSubscribingToNextResolve<T>(
     function subscription(newState: State<T>) {
       if (newState.status === Status.success
         || newState.status === Status.error) {
-        if (typeof unsubscribe === "function") {
-          unsubscribe();
+        if (isFunction(unsubscribe)) {
+          unsubscribe!();
         }
         resolve(newState);
       }
