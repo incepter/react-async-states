@@ -231,9 +231,6 @@ function useAsyncStateExport<T, E = State<T>>(
   return useAsyncStateBase(mixedConfig, deps);
 }
 
-// auto runs
-const autoConfigOverrides = Object.freeze({lazy: false});
-
 function useAutoAsyncState<T, E = State<T>>(
   subscriptionConfig: MixedConfig<T, E>,
   dependencies?: any[]
@@ -241,12 +238,9 @@ function useAutoAsyncState<T, E = State<T>>(
   return useAsyncStateBase(
     subscriptionConfig,
     dependencies,
-    autoConfigOverrides
+    {lazy: false}
   );
 }
-
-// lazy
-const lazyConfigOverrides = Object.freeze({lazy: true});
 
 function useLazyAsyncState<T, E = State<T>>(
   subscriptionConfig: MixedConfig<T, E>,
@@ -255,12 +249,9 @@ function useLazyAsyncState<T, E = State<T>>(
   return useAsyncStateBase(
     subscriptionConfig,
     dependencies,
-    lazyConfigOverrides
+    {lazy: true}
   );
 }
-
-// fork
-const forkConfigOverrides = Object.freeze({fork: true});
 
 function useForkAsyncState<T, E = State<T>>(
   subscriptionConfig: MixedConfig<T, E>,
@@ -269,12 +260,10 @@ function useForkAsyncState<T, E = State<T>>(
   return useAsyncStateBase(
     subscriptionConfig,
     dependencies,
-    forkConfigOverrides
+    {fork: true}
   );
 }
 
-// fork auto
-const forkAutoConfigOverrides = Object.freeze({fork: true, lazy: false});
 
 function useForkAutoAsyncState<T, E = State<T>>(
   subscriptionConfig: MixedConfig<T, E>,
@@ -283,12 +272,9 @@ function useForkAutoAsyncState<T, E = State<T>>(
   return useAsyncStateBase(
     subscriptionConfig,
     dependencies,
-    forkAutoConfigOverrides
+    {fork: true, lazy: false}
   );
 }
-
-// hoist
-const hoistConfigOverrides = Object.freeze({hoist: true});
 
 function useHoistAsyncState<T, E = State<T>>(
   subscriptionConfig: MixedConfig<T, E>,
@@ -297,15 +283,9 @@ function useHoistAsyncState<T, E = State<T>>(
   return useAsyncStateBase(
     subscriptionConfig,
     dependencies,
-    hoistConfigOverrides
+    {hoist: true}
   );
 }
-
-// hoistAuto
-const hoistAutoConfigOverrides = Object.freeze({
-  hoist: true,
-  lazy: false
-});
 
 function useHoistAutoAsyncState<T, E = State<T>>(
   subscriptionConfig: MixedConfig<T, E>,
@@ -314,7 +294,7 @@ function useHoistAutoAsyncState<T, E = State<T>>(
   return useAsyncStateBase(
     subscriptionConfig,
     dependencies,
-    hoistAutoConfigOverrides
+    {hoist: true, lazy: false}
   );
 }
 

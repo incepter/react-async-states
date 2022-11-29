@@ -21,6 +21,6 @@ describe('readSource', () => {
     // then
     // @ts-ignore
     expect(() => readSource(source))
-      .toThrow("You ve passed an incompatible source object. Please make sure to pass the received source object.");
+      .toThrow("Incompatible Source object.");
   });
 });

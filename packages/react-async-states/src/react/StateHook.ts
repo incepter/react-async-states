@@ -112,8 +112,8 @@ export class StateHookImpl<T, E> implements StateHook<T, E> {
     if (instance && (nextFlags & CONFIG_OBJECT && (newConfig as BaseConfig<T>).payload)) {
       instance.mergePayload((newConfig as BaseConfig<T>).payload);
     }
-    if (instance && (nextFlags & INSIDE_PROVIDER) && contextValue?.getPayload()) {
-      instance.mergePayload(contextValue.getPayload());
+    if (instance && (nextFlags & INSIDE_PROVIDER) && contextValue!.getPayload()) {
+      instance.mergePayload(contextValue!.getPayload()!);
     }
 
     this.origin = origin;
@@ -566,7 +566,7 @@ function createSubscribeAndWatchFunction<T, E>(
         contextValue!.createEffects : standaloneProducerEffectsCreator;
 
       let unsubscribeFns = invokeSubscribeEvents(
-        (config as BaseConfig<T>).events!.subscribe!,
+        (config as BaseConfig<T>).events!.subscribe,
         instance!.run.bind(instance!, effectsCreator),
         instance!,
       );

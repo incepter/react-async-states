@@ -36,7 +36,7 @@ export function AsyncStateManager(
       Object.create(null)
     ) as AsyncStateEntries;
 
-  let payload: Record<string, any> = {};
+  let payload: Record<string, any> | null = null;
   // stores all listeners/watchers about an async state
   let watchers: ManagerWatchers = Object.create(null);
 
@@ -45,7 +45,6 @@ export function AsyncStateManager(
   // in the next statement.
   const output: AsyncStateManagerInterface = {
     entries: asyncStateEntries,
-    run,
     get,
     hoist,
     watch,
@@ -55,11 +54,18 @@ export function AsyncStateManager(
     getAllKeys,
     notifyWatchers,
     setStates: setInitialStates,
-    getPayload(): Record<string, any> {
+    getPayload(): Record<string, any> | null {
       return payload;
     },
     mergePayload(partialPayload: Record<string, any>): void {
+      if (!payload) {
+        payload = {};
+      }
       Object.assign(payload, partialPayload);
+
+      for (const entry of Object.values(asyncStateEntries)) {
+        entry.instance.mergePayload(partialPayload);
+      }
     }
   };
   output.createEffects = createProducerEffectsCreator(output);
@@ -110,15 +116,6 @@ export function AsyncStateManager(
     key: string
   ): StateInterface<T> {
     return asyncStateEntries[key]?.instance;
-  }
-
-  function run<T>(
-    asyncState: StateInterface<T>,
-    ...args: any[]
-  ): AbortFn {
-    return asyncState.run
-      .bind(asyncState, output.createEffects)
-      .apply(null, args);
   }
 
   function dispose<T>(
@@ -417,10 +414,6 @@ export type ManagerWatchers = {
 export type AsyncStateManagerInterface = {
   entries: AsyncStateEntries,
   watchers: ManagerWatchers,
-  run<T>(
-    asyncState: StateInterface<T>,
-    ...args: any[]
-  ): AbortFn,
   get<T>(key: string): StateInterface<T>,
   hoist<T>(
     key: string, instance: StateInterface<T>,
@@ -439,7 +432,7 @@ export type AsyncStateManagerInterface = {
   watchAll(cb: ManagerWatchCallback<any>),
   setStates(initialStates?: InitialStates): AsyncStateEntry<any>[],
 
-  getPayload(): Record<string, any>,
+  getPayload(): Record<string, any> | null,
   mergePayload(partialPayload?: Record<string, any>): void,
 
   createEffects<T>(props: ProducerProps<T>): ProducerEffects,

@@ -101,9 +101,6 @@ export function AsyncStateProvider(
   function onPayloadChange() {
     // propagate the new payload
     manager.mergePayload(payload);
-    for (const entry of Object.values(manager.entries as AsyncStateEntries)) {
-      entry.instance.mergePayload(payload);
-    }
   }
 
   function makeContextValue(): StateContextValue {
