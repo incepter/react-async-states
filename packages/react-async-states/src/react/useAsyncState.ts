@@ -19,36 +19,36 @@ import {AUTO_RUN} from "./StateHookFlags";
 import {__DEV__} from "../shared";
 import {emptyArray, noop} from "./utils";
 import {calculateStateValue, StateHook, StateHookImpl} from "./StateHook";
+import {useCallerName} from "./helpers/useCallerName";
 
-export function useCurrentHook<T, E>(): StateHook<T, E> {
+export function useCurrentHook<T, E>(caller?: string): StateHook<T, E> {
+  if (__DEV__) {
+    return React.useMemo<StateHook<T, E>>(
+      createStateHookFromCaller.bind(null, caller), emptyArray);
+  }
   return React.useMemo<StateHook<T, E>>(createStateHook, emptyArray);
+}
+
+export function createStateHookFromCaller<T, E>(caller?: string): StateHook<T, E> {
+  let stateHook = new StateHookImpl<T, E>();
+  stateHook.caller = caller;
+  return stateHook;
 }
 
 export function createStateHook<T, E>(): StateHook<T, E> {
   return new StateHookImpl();
 }
 
-export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
-  mixedConfig: MixedConfig<T, E>,
-  deps: any[] = emptyArray,
-  overrides?: PartialUseAsyncStateConfiguration<T, E>,
-): UseAsyncState<T, E> {
-
-  const hook: StateHook<T, E> = useCurrentHook();
-  const [guard, setGuard] = React.useState<number>(0);
-  const contextValue = React.useContext<StateContextValue>(AsyncStateContext);
-
-  React.useMemo(() => hook.update(1, mixedConfig, contextValue, overrides, 8),
-    deps.concat([contextValue, guard]));
-
-  const [selectedValue, setSelectedValue] = React
-    .useState<Readonly<UseAsyncState<T, E>>>(calculateStateValue.bind(null, hook));
-
+function ensureStateHookVersionIsLatest(
+  hook: StateHook<any, any>,
+  selectedValue: UseAsyncState<any, any>,
+  onMismatch: () => void,
+) {
   if (
     selectedValue.version !== hook.instance?.version ||
     selectedValue.source !== hook.instance?._source
   ) {
-    updateSelectedValue();
+    onMismatch();
   }
 
   if (hook.current !== selectedValue.state) {
@@ -57,6 +57,30 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   if (hook.version !== selectedValue.version) {
     hook.version = selectedValue.version;
   }
+
+}
+
+export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
+  mixedConfig: MixedConfig<T, E>,
+  deps: any[] = emptyArray,
+  overrides?: PartialUseAsyncStateConfiguration<T, E>,
+): UseAsyncState<T, E> {
+
+  let caller;
+  if (__DEV__) {
+    caller = useCallerName(4);
+  }
+  let hook: StateHook<T, E> = useCurrentHook(caller);
+  let [guard, setGuard] = React.useState<number>(0);
+  let contextValue = React.useContext<StateContextValue>(AsyncStateContext);
+
+  React.useMemo(() => hook.update(1, mixedConfig, contextValue, overrides),
+    deps.concat([contextValue, guard]));
+
+  let [selectedValue, setSelectedValue] = React
+    .useState<Readonly<UseAsyncState<T, E>>>(calculateStateValue.bind(null, hook));
+
+  ensureStateHookVersionIsLatest(hook, selectedValue, updateSelectedValue);
 
   React.useEffect(
     hook.subscribe.bind(null, setGuard, updateSelectedValue),
@@ -99,39 +123,25 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
 // this hook can use directly useSES on the asyncState instance
 // but this will require additional memoization to add the other properties
 // that UseAsyncState has (abort, mergePayload, invalidateCache, run, replaceState ..)
-export function useSource<T>(
-  source: Source<T>
-): UseAsyncState<T, State<T>> {
-  return useSourceLane(source, undefined, __DEV__ ? 9 : undefined);
-}
-
+export const useSource = useSourceLane;
 export function useSourceLane<T>(
   source: Source<T>,
   lane?: string,
-  level: number = 8, // used in dev mode only
 ): UseAsyncState<T, State<T>> {
-  const hook: StateHook<T, State<T>> = useCurrentHook();
-  const contextValue = React.useContext<StateContextValue>(AsyncStateContext);
+  let caller;
+  if (__DEV__) {
+    caller = useCallerName(3);
+  }
+  let hook: StateHook<T, State<T>> = useCurrentHook(caller);
+  let contextValue = React.useContext<StateContextValue>(AsyncStateContext);
 
-  React.useMemo(() => hook.update(2, source, contextValue, {lane}, level),
+  React.useMemo(() => hook.update(2, source, contextValue, {lane}),
     [contextValue, lane]);
 
-  const [selectedValue, setSelectedValue] = React
+  let [selectedValue, setSelectedValue] = React
     .useState<Readonly<UseAsyncState<T, State<T>>>>(calculateStateValue.bind(null, hook));
 
-  if (
-    selectedValue.version !== hook.instance?.version ||
-    selectedValue.source !== hook.instance?._source
-  ) {
-    updateSelectedValue();
-  }
-
-  if (hook.current !== selectedValue.state) {
-    hook.current = selectedValue.state;
-  }
-  if (hook.version !== selectedValue.version) {
-    hook.version = selectedValue.version;
-  }
+  ensureStateHookVersionIsLatest(hook, selectedValue, updateSelectedValue);
 
   React.useEffect(
     hook.subscribe.bind(null, noop, updateSelectedValue),
@@ -161,27 +171,19 @@ export function useSourceLane<T>(
 export function useProducer<T>(
   producer: Producer<T>,
 ): UseAsyncState<T, State<T>> {
-  const hook: StateHook<T, State<T>> = useCurrentHook();
-  const contextValue = React.useContext<StateContextValue>(AsyncStateContext);
+  let caller;
+  if (__DEV__) {
+    caller = useCallerName(3);
+  }
+  let hook: StateHook<T, State<T>> = useCurrentHook(caller);
+  let contextValue = React.useContext<StateContextValue>(AsyncStateContext);
 
-  React.useMemo(() => hook.update(3, producer, contextValue, undefined, 8), [contextValue]);
+  React.useMemo(() => hook.update(3, producer, contextValue, undefined), [contextValue]);
 
-  const [selectedValue, setSelectedValue] = React
+  let [selectedValue, setSelectedValue] = React
     .useState<Readonly<UseAsyncState<T, State<T>>>>(calculateStateValue.bind(null, hook));
 
-  if (
-    selectedValue.version !== hook.instance?.version ||
-    selectedValue.source !== hook.instance?._source
-  ) {
-    updateSelectedValue();
-  }
-
-  if (hook.current !== selectedValue.state) {
-    hook.current = selectedValue.state;
-  }
-  if (hook.version !== selectedValue.version) {
-    hook.version = selectedValue.version;
-  }
+  ensureStateHookVersionIsLatest(hook, selectedValue, updateSelectedValue);
 
   if (hook.instance!.originalProducer !== producer) {
     hook.instance!.replaceProducer(producer);

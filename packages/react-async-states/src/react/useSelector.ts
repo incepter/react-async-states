@@ -9,16 +9,16 @@ import {
 } from "../types.internal";
 import {isSource} from "../async-state/utils";
 import {
-  ManagerWatchCallbackValue,
-  Source,
-  StateInterface,
   ArraySelector,
   FunctionSelector,
   FunctionSelectorItem,
-  SimpleSelector
+  ManagerWatchCallbackValue,
+  SimpleSelector,
+  Source,
+  StateInterface
 } from "../async-state";
 import {readSource} from "../async-state/AsyncState";
-import {computeCallerName} from "./helpers/useCallerName";
+import {useCallerName} from "./helpers/useCallerName";
 import {__DEV__, shallowEqual} from "../shared";
 
 type SelectorSelf<T> = {
@@ -48,6 +48,10 @@ export function useSelector<T>(
   selector?: SimpleSelector<any, T> | ArraySelector<T> | FunctionSelector<T> = identity,
   areEqual?: EqualityFn<T> = shallowEqual,
 ): T {
+  let caller;
+  if (__DEV__) {
+    caller = useCallerName(3);
+  }
   const contextValue = React.useContext(AsyncStateContext);
 
   ensureParamsAreOk(contextValue, keys);
@@ -107,7 +111,6 @@ export function useSelector<T>(
       .map(as => {
         let subscriptionKey: string | undefined = undefined;
         if (__DEV__) {
-          let caller = computeCallerName(8);
           subscriptionKey = `${caller}-$4`;// 4: useSelector
         }
         return (as as StateInterface<T>)!.subscribe({

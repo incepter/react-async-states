@@ -52,6 +52,7 @@ import {computeCallerName} from "./helpers/useCallerName";
 export interface StateHook<T, E> {
   current: E,
   flags: number,
+  caller?: string,
   name: string | undefined;
   config: MixedConfig<T, E>,
   origin: number | undefined;
@@ -70,13 +71,13 @@ export interface StateHook<T, E> {
     newConfig: MixedConfig<T, E>,
     contextValue: StateContextValue | null,
     overrides?: PartialUseAsyncStateConfiguration<T, E>,
-    level?: number
   ),
 }
 
 export class StateHookImpl<T, E> implements StateHook<T, E> {
   current: E;
   flags: number;
+  caller?: string;
   name: string | undefined;
   config: MixedConfig<T, E>;
   origin: number | undefined;
@@ -100,7 +101,6 @@ export class StateHookImpl<T, E> implements StateHook<T, E> {
     newConfig: MixedConfig<T, E>,
     contextValue: StateContextValue | null,
     overrides?: PartialUseAsyncStateConfiguration<T, E>,
-    level?: number
   ) {
     let nextFlags = resolveFlags(newConfig, contextValue, overrides);
     let instance = resolveInstance(nextFlags, newConfig, contextValue, this, overrides);
@@ -122,7 +122,7 @@ export class StateHookImpl<T, E> implements StateHook<T, E> {
     this.instance = instance;
     this.context = contextValue;
     this.base = makeBaseReturn(this);
-    this.name = calculateSubscriptionKey(this, level);
+    this.name = calculateSubscriptionKey(this);
     this.subscribe = createSubscribeAndWatchFunction(this);
   }
 }
@@ -430,7 +430,7 @@ function calculateSubscriptionKey<T, E>(
     return;
   }
   if (__DEV__) {
-    let callerName = computeCallerName(level);
+    let callerName = hook.caller;
     if ((hook.instance! as AsyncState<T>).subsIndex === undefined) {
       (hook.instance! as AsyncState<T>).subsIndex = 0;
     }
