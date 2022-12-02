@@ -354,7 +354,7 @@ class AsyncState<T> implements StateInterface<T> {
       throw new Error(`Unknown status ('${status}')`);
     }
     this.willUpdate = true;
-    if (this.state?.status === Status.pending) {
+    if (this.state?.status === Status.pending || isFunction(this.currentAbort)) {
       this.abort();
       this.currentAbort = undefined;
     }
@@ -911,7 +911,6 @@ function loadCache<T>(instance: StateInterface<T>) {
   }
 
   const loadedCache = instance.config.cacheConfig!.load!();
-  console.log(')==============', loadedCache)
 
   if (!loadedCache) {
     return;
