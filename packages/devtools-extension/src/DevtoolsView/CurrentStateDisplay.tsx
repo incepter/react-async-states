@@ -77,6 +77,7 @@ function CurrentTreeDisplay() {
 }
 
 type SiderDisplayProps = {
+  index: number,
   uniqueId: number;
   asyncStateKey: string;
   isCurrent: boolean;
@@ -123,6 +124,7 @@ export const SideKey = React.memo(function SiderKey({
   asyncStateKey,
   isCurrent,
   level = 0,
+  index,
   lanes,
 }: SiderDisplayProps) {
   const {dev} = React.useContext(DevtoolsContext);
@@ -135,14 +137,14 @@ export const SideKey = React.memo(function SiderKey({
     );
   }, [uniqueId, dev]);
 
-  const {state, devFlags, version, source} = useSourceLane(journalSource, `${uniqueId}`);
+  const {state} = useSourceLane(journalSource, `${uniqueId}`);
 
   const {status} = state.data?.state ?? {};
 
   if (!lanes?.length) {
     return (
       <button
-        className={`default-button`}
+        className={`default-button side-key`}
         style={{
           border: "none",
           borderRadius: 100,
@@ -188,7 +190,7 @@ export const SideKey = React.memo(function SiderKey({
   return (
     <>
       <button
-        className={`default-button`}
+        className={`default-button side-key`}
         style={{
           border: "none",
           borderRadius: 100,
@@ -237,9 +239,10 @@ function SiderLanes({lanes, level}) {
   const {
     state: {data: lane},
   } = useSource(currentState);
-  return lanes.map(([id, key]) => (
+  return lanes.map(([id, key], index) => (
     <SideKey
       key={key}
+      index={index}
       uniqueId={id}
       asyncStateKey={key}
       isCurrent={lane === id}

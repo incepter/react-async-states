@@ -136,7 +136,6 @@ function applyPartialUpdate(message) {
       journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
         let prevData = old.data ?? {};
 
-        console.log('haha', prevData.subscriptions, message.payload.eventPayload)
         return {
           ...prevData,
           subscriptions: (prevData.subscriptions ?? [])?.filter(t => t.key !== message.payload.eventPayload),
