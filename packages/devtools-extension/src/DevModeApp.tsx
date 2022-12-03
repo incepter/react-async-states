@@ -17,7 +17,23 @@ function DevModeApp({alias}) {
   const source = React.useMemo(() => createSource<number>(alias, null, {initialValue: 0}), []);
   const {state} = useSourceLane(source);
   return <button
-    onClick={() => source.run(old => old.data + 1)}>{state.data}</button>
+    onClick={() => source.run(old => old.data + 1)}>{alias} - {state.data}</button>
+}
+
+function intevalProducer(props) {
+  let id = setInterval(() => {
+    props.emit(old => old.data + 1);
+  }, props.payload.delay);
+  props.onAbort(() => clearInterval(id));
+
+  return props.lastSuccess.data;
+}
+
+function Interval({alias, delay}) {
+  const source = React.useMemo(() => createSource<number>(alias, intevalProducer, {initialValue: 0}), []);
+  const {state} = useAsyncState.auto({source, payload: {delay}}, [delay]);
+  return <button
+    onClick={() => source.run(old => old.data + 1)}>Interval {alias} - {state.data}</button>
 }
 
 export default function DevModeAppExp() {
@@ -26,6 +42,8 @@ export default function DevModeAppExp() {
       <DevModeApp alias="devmodeapp"/>
       <hr />
       <DevModeApp alias="random"/>
+      <hr />
+      <Interval alias="interval-demo" delay={3000} />
     </>
   );
 }

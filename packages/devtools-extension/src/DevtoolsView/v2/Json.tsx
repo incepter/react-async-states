@@ -1,15 +1,14 @@
 import * as React from "react";
 import ReactJson from "react-json-view";
 
-export default function Json({name, src, level = 2}) {
+export default React.memo<{ name: string, src: any, level?: number }>(function Json({
+  name,
+  src,
+  level = 2
+}) {
   return (
     <ReactJson
       name={name}
-      style={{
-        backgroundColor: "#252b36",
-        borderRadius: 8,
-        padding: "1rem",
-      }}
       theme="solarized"
       collapsed={level}
       displayDataTypes={false}
@@ -18,4 +17,4 @@ export default function Json({name, src, level = 2}) {
       src={src}
     />
   );
-}
+})

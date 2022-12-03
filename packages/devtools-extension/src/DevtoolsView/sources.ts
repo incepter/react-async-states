@@ -8,10 +8,11 @@ import {shimChromeRuntime} from "./ShimChromeRuntime";
 import {ProducerProps} from "react-async-states/src";
 
 export function resetAllSources() {
-  // devtoolsInfo.setState({connected: false});
-  // instanceDetails.setState(null);
-  // // @ts-ignore
-  // journalSource.setState(undefined);
+  // currentView.setState(null);
+  instancesList.setState({});
+  devtoolsInfo.setState({connected: false});
+  instanceDetails.setState(null);
+  instanceDetails.getAllLanes().forEach(src => src.setState(null));
 }
 
 type Info = {
@@ -112,15 +113,17 @@ function gatewayProducer(props) {
     if (message.source !== "async-states-agent") {
       return;
     }
-    console.log('received this', message)
+    // console.log('received this', message)
     switch (message.type) {
       case DevtoolsEvent.setKeys: {
         devtoolsInfo.setState({connected: true});
+
         let newKeys = Object.entries(message.payload as Record<number, string>)
           .reduce((acc, [uniqueId, key]) => {
             acc[`${uniqueId}`] = {uniqueId: +uniqueId, key};
             return acc;
           }, {} as InstancesList);
+
         instancesList.setState(newKeys);
         return;
       }
