@@ -9,7 +9,7 @@ import {
 import {Status, useSource, useAsyncState, State} from "react-async-states";
 
 export default function Sider() {
-  let {state} = useAsyncState(instancesList);
+  let [state] = useAsyncState(instancesList);
 
   if (state.status !== Status.success) {
     return null;
@@ -68,7 +68,7 @@ function sortLastUpdatedDesc([, aDetails], [, bDetails]) {
 
 const InstanceGroupDetails = React.memo<{ instances: Record<string, InstancePlaceholder>, display: string }>(
   function InstanceGroupDetails(props) {
-    const {state: {data}} = useSource(currentView);
+    const [{data}] = useSource(currentView);
     let entries = Object.entries(props.instances).sort(sortLastUpdatedDesc);
     return (
       <section>
@@ -120,7 +120,7 @@ function getColorFromStatus(status: Status | undefined) {
 const InstanceDetailsView = React.memo(function InstanceDetailsView(props: { current: boolean, instance: InstancePlaceholder }) {
   let uniqueId = props.instance.uniqueId;
 
-  let {state} = useAsyncState.auto({
+  let [state] = useAsyncState.auto({
     source: instanceDetails.getLaneSource(`${uniqueId}`),
     payload: {uniqueId: uniqueId},
   }, [uniqueId]);

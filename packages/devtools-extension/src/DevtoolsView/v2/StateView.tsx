@@ -4,23 +4,20 @@ import Json from "./Json";
 import {useSource} from "react-async-states";
 
 export default function StateView() {
-  let {state: {data: currentId}} = useSource(currentView);
+  let [{data: currentId}] = useSource(currentView);
   if (!currentId) {
     return <span>Please select</span>;
   }
   return <StateDetails id={currentId}/>
 }
+
 const emptyObject = {}
 
 function StateDetails({id}) {
   let [displayedTabs, setDisplayedTabs] = React.useState<Record<string, boolean>>(emptyObject);
-  let {
-    state, version,
-    source
-  } = useSource(instanceDetails, id);
+  let [state] = useSource(instanceDetails, id);
 
   if (!id || !state.data) {
-    console.log(state)
     return (
       <div>
         <span>State not synced yet!</span>
