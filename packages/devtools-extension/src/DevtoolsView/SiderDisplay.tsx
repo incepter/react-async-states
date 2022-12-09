@@ -222,15 +222,22 @@ const SiderDisplay = React.memo(function () {
             onChange={(e) => setSearch(e.target.value)}
           />
           <div
-            style={{display: "flex", marginTop: 8, flexDirection: "column"}}
+            style={{
+              position: "relative",
+              display: "flex",
+              marginTop: 8,
+              height: (entries.length + 1)* 16,
+              flexDirection: "column"
+            }}
           >
-            {entries.map(({data: [uniqueId, key], children}) => (
+            {entries.map(({data: [uniqueId, key], children}, index) => (
               <SideKey
+                index={index}
                 key={uniqueId}
+                lanes={children}
                 uniqueId={uniqueId}
                 asyncStateKey={key}
                 isCurrent={lane === uniqueId}
-                lanes={children}
               />
             ))}
           </div>

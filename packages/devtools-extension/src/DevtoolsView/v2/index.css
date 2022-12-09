@@ -1,0 +1,165 @@
+.devtools-root {
+    display: flex;
+    height: 100%;
+    overflow-y: hidden;
+}
+
+.sider-root {
+    color: black;
+    display: flex;
+    flex-direction: column;
+    width: 200px;
+    padding: 8px 8px 0px;
+}
+
+.sider-group {
+    /*gap: 4px;*/
+    display: flex;
+    flex-direction: column;
+}
+
+
+.sider-key-root {
+    color: black;
+    margin-top: 0.125rem;
+    position: relative;
+    margin-left: 1rem;
+    font-size: 1rem;
+
+    /*border-radius: 12px;*/
+    border: none;
+    padding: 4px 4px 4px 1rem;
+    max-width: 200px;
+    cursor: pointer;
+
+    text-align: start;
+
+    background-color: rgba(230, 230, 230, 0.2);
+    transition: background-color 500ms ease;
+}
+
+.sider-key-root:hover {
+    background-color: rgba(230, 230, 230, 0.7);
+}
+
+.sider-key-root-current {
+    background-color: #5e9ad9 !important;
+}
+
+.sider-key-subscriptions {
+    position: absolute;
+    font-size: 0.5rem;
+    right: -2px;
+    top: -2px;
+    border-radius: 100%;
+    height: 12px;
+    width: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+
+.state-view-root {
+    padding: 8px;
+    width: calc(100vw - 250px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+}
+
+.state-view-header {
+    height: 20px;
+    display: flex;
+    align-items: center;
+    align-content: center;
+}
+
+.state-view-container {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    height: calc(100% - 36px);
+}
+
+.state-view-section {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+}
+
+.react-json-view {
+    border-radius: 12px;
+    height: calc(100% - 24px);
+    padding: 8px;
+    overflow-y: auto;
+}
+
+.react-json-view {
+    overflow-y: auto;
+    text-shadow: 0 0 black;
+    transition: color 0.3s ease;
+    color: rgba(255, 255, 255, 0);
+    /*box-shadow: 0 1px 6px rgba(255, 255, 255, 0.2);*/
+}
+
+.react-json-view::-webkit-scrollbar {
+    height: 16px;
+    width: 18px;
+    border-radius: 13px;
+    background-clip: padding-box;
+    border: 5px solid transparent;
+}
+
+.react-json-view::-webkit-scrollbar-track {
+    background-color: transparent;
+    border-radius: 6px;
+}
+
+.react-json-view::-webkit-scrollbar-thumb {
+    box-shadow: inset 0 0 0 10px;
+    height: 16px;
+    width: 16px;
+    border-radius: 13px;
+    background-clip: padding-box;
+    border: 5px solid transparent;
+}
+
+.react-json-view:hover {
+    color: #8c8c8c;
+}
+
+.scroll-y-auto {
+    overflow-y: auto;
+    text-shadow: 0 0 black;
+    transition: color 0.3s ease;
+    color: rgba(255, 255, 255, 0);
+}
+
+.scroll-y-auto::-webkit-scrollbar {
+    height: 16px;
+    width: 18px;
+    border-radius: 13px;
+    background-clip: padding-box;
+    border: 5px solid transparent;
+}
+
+.scroll-y-auto::-webkit-scrollbar-track {
+    background-color: transparent;
+    border-radius: 6px;
+}
+
+.scroll-y-auto::-webkit-scrollbar-thumb {
+    box-shadow: inset 0 0 0 10px;
+    height: 16px;
+    width: 16px;
+    border-radius: 13px;
+    background-clip: padding-box;
+    border: 5px solid transparent;
+}
+
+.scroll-y-auto:hover {
+    color: #8c8c8c;
+}

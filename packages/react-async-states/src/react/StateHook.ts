@@ -445,7 +445,7 @@ export function calculateStateValue<T, E>(
 ): Readonly<UseAsyncState<T, E>> {
   let instance = hook.instance;
 
-  const newState = shallowClone(hook.base);
+  const newState = shallowClone(hook.base) as UseAsyncState<T, E>;
   const newValue = readStateFromInstance(instance, hook.flags, hook.config);
   if (instance) {
     newState.read = createReadInConcurrentMode.bind(null, instance, newValue);
@@ -453,7 +453,17 @@ export function calculateStateValue<T, E>(
   }
   newState.state = newValue;
   newState.lastSuccess = instance?.lastSuccess;
-  return newState;
+
+  newState[Symbol.iterator] = function*() {
+    yield newState.state;
+    yield newState.setState;
+    yield newState;
+  }
+  newState.toArray = function() {
+    return [newState.state, newState.setState, newState];
+  }
+
+  return Object.freeze(newState);
 }
 
 function createReadInConcurrentMode<T, E>(

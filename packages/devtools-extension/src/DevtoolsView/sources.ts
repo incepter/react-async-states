@@ -1,47 +1,92 @@
-import {createSource, State,} from "react-async-states";
+import {createSource, State, ProducerConfig, Status} from "react-async-states";
 import {
   DevtoolsEvent,
   DevtoolsJournalEvent
 } from "react-async-states/dist/devtools";
 import {DevtoolsMessagesBuilder} from "./utils";
 import {shimChromeRuntime} from "./ShimChromeRuntime";
+import {ProducerProps} from "react-async-states/src";
 
-// an update meter to trigger recalculation of the sort
-export const updatesMeter = createSource("update-meter", undefined, {
-  initialValue: 0,
+export function resetAllSources() {
+  // currentView.setState(null);
+  instancesList.setState({});
+  devtoolsInfo.setState({connected: false});
+  instanceDetails.setState(null);
+  instanceDetails.getAllLanes().forEach(src => src.setState(null));
+}
+
+type Info = {
+  connected: boolean,
+}
+export let devtoolsInfo = createSource<Info>("info", devtoolsInfoProducer, {
+  hideFromDevtools: true,
+  initialValue: {connected: false}
+});
+
+function devtoolsInfoProducer(props) {
+  let {data: port} = gatewaySource.getState();
+  if (!port) {
+    throw new Error("Couldn't know port, this is a bug");
+  }
+
+  let {dev} = gatewaySource.getPayload();
+  port.postMessage(DevtoolsMessagesBuilder.init(dev));
+  port.postMessage(DevtoolsMessagesBuilder.getKeys(dev));
+
+  let id = setTimeout(() => {
+    props.emit("Timeout", Status.error);
+  }, 3000);
+  props.onAbort(() => clearTimeout(id));
+
+  return Promise.resolve({connected: false});
+}
+
+export type InstanceDetails = {
+  key?: string,
+  journal?: any[],
+  state?: State<any>,
+  lastSuccess?: State<any>,
+  previousState?: State<any>,
+  config?: ProducerConfig<any>,
+  subscriptions?: any[],
+  cache: any,
+}
+export let instanceDetails = createSource<InstanceDetails | null>("instance-details", instanceDetailsProducer, {
+  initialValue: null,
   hideFromDevtools: true
 });
 
-type Journal = {
-  key: string,
-  journal: any[],
-  state: State<any>,
-  subscriptions: any[]
-};
-// stores data related to any async state
-export const journalSource = createSource<Journal>("journal", null, {hideFromDevtools: true});
-// defines the gateway receiving messages from the app
-export const gatewaySource = createSource("gateway", gatewayProducer, {hideFromDevtools: true});
-// stores the keys with unique ids of created states
-export const keysSource = createSource("keys", undefined, {
+export let currentView = createSource<string | null>("current-view", null, {
+  initialValue: null,
+  hideFromDevtools: true
+});
+
+function instanceDetailsProducer(props: ProducerProps<InstanceDetails | null>) {
+  let {data: port} = gatewaySource.getState();
+  if (!port) {
+    throw new Error("Couldn't know port, this is a bug");
+  }
+
+  let {dev} = gatewaySource.getPayload();
+  port.postMessage(DevtoolsMessagesBuilder.init(dev));
+  port.postMessage(DevtoolsMessagesBuilder.getKeys(dev));
+
+  const {uniqueId} = props.payload;
+  port.postMessage?.(DevtoolsMessagesBuilder.getAsyncState(uniqueId, dev));
+
+  return null;
+}
+
+
+export type InstancePlaceholder = { uniqueId: number, key: string, status?: Status, lastUpdate?: number };
+export type InstancesList = Record<string, InstancePlaceholder>
+export let instancesList = createSource<InstancesList>("instances", null, {
   initialValue: {},
   hideFromDevtools: true
 });
 
-// contains the current state unique Id to display, works with lanes
-export const currentState = createSource<string | null>("current-state", null, {hideFromDevtools: true});
-
-type CurrentJournal = { name: string, uniqueId: number, eventId: number, data: any };
-// the current journal to display from the current displayed state
-export const currentJournal = createSource<CurrentJournal | null>("json", null, {hideFromDevtools: true});
-
-export function resetAllSources() {
-  keysSource.setState({});
-  currentState.setState(null);
-  currentJournal.setState(null);
-  // @ts-ignore
-  journalSource.setState(undefined);
-}
+// defines the gateway receiving messages from the app
+export let gatewaySource = createSource("gateway", gatewayProducer, {hideFromDevtools: true});
 
 
 export function getPort(isDevMode) {
@@ -64,21 +109,27 @@ function gatewayProducer(props) {
     throw new Error('Cannot get port object');
   }
 
-  port.postMessage(DevtoolsMessagesBuilder.init(dev));
-  port.postMessage(DevtoolsMessagesBuilder.getKeys(dev));
-
   port.onMessage.addListener(message => {
     if (message.source !== "async-states-agent") {
       return;
     }
+    // console.log('received this', message)
     switch (message.type) {
       case DevtoolsEvent.setKeys: {
-        return keysSource.setState(message.payload);
+        devtoolsInfo.setState({connected: true});
+
+        let newKeys = Object.entries(message.payload as Record<number, string>)
+          .reduce((acc, [uniqueId, key]) => {
+            acc[`${uniqueId}`] = {uniqueId: +uniqueId, key};
+            return acc;
+          }, {} as InstancesList);
+
+        instancesList.setState(newKeys);
+        return;
       }
       case DevtoolsEvent.setAsyncState: {
-        updatesMeter.setState(old => old.data + 1);
-        journalSource.getLaneSource(`${message.uniqueId}`).setState(message.payload);
-        return ;
+        instanceDetails.getLaneSource(`${message.uniqueId}`).setState(message.payload);
+        return;
       }
       case DevtoolsEvent.partialSync: {
         applyPartialUpdate(message);
@@ -98,51 +149,50 @@ function gatewayProducer(props) {
 function applyPartialUpdate(message) {
 
   const {eventType} = message.payload;
+  let uniqueId = message.uniqueId;
+  let currentSource = instanceDetails.getLaneSource(`${uniqueId}`);
   switch (eventType) {
     case DevtoolsJournalEvent.run: {
-      journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
-        return {
-          ...(old.data ?? {}),
-          journal: [...(old.data?.journal ?? []), message.payload],
-        }
-      });
+      let currentDetails = currentSource.getState().data || {} as InstanceDetails;
+      currentDetails.journal = ((currentDetails.journal || []).push(message.payload), currentDetails.journal);
+      currentSource.setState(currentDetails);
       return;
     }
     case DevtoolsJournalEvent.update: {
-      updatesMeter.setState(old => old.data + 1);
-      journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
-        return {
-          ...(old.data ?? {}),
-          state: message.payload.eventPayload.newState,
-          oldState: message.payload.eventPayload.oldState,
-          lastSuccess: message.payload.eventPayload.lastSuccess,
-          journal: [...(old.data?.journal ?? []), message.payload],
-        }
-      });
+      // i want some optimizations by mutating this state here!
+      let prevListState = instancesList.getState().data;
+      let prevPlaceholder = prevListState[`${uniqueId}`];
+      if (!prevPlaceholder) {
+        console.warn("received a non managed key", message);
+        return;
+      }
+      prevPlaceholder.lastUpdate = message.payload.eventPayload.newState.timestamp;
+      instancesList.setState(prevListState);
+
+      let currentDetails = currentSource.getState().data || {} as InstanceDetails;
+      currentDetails.state = message.payload.eventPayload.newState;
+      currentDetails.previousState = message.payload.eventPayload.oldState;
+      currentDetails.lastSuccess = message.payload.eventPayload.lastSuccess;
+      currentDetails.state = message.payload.eventPayload.newState;
+      currentDetails.journal = ((currentDetails.journal || []).push(message.payload), currentDetails.journal);
+
+      currentSource.setState(currentDetails);
       return;
     }
     case DevtoolsJournalEvent.subscription: {
-      journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
-        let prevData = old.data ?? {};
-        return {
-          ...prevData,
-          subscriptions: [...(prevData.subscriptions ?? []), message.payload.eventPayload],
-          journal: [...(prevData.journal ?? []), message.payload],
-        }
-      });
+      let currentDetails = currentSource.getState().data || {} as InstanceDetails;
+      currentDetails.subscriptions = ((currentDetails.subscriptions || []).push(message.payload.eventPayload), currentDetails.subscriptions);
+      currentDetails.journal = ((currentDetails.journal || [])?.push(message.payload), currentDetails.journal);
+
+      currentSource.setState(currentDetails);
       return;
     }
     case DevtoolsJournalEvent.unsubscription: {
-      journalSource.getLaneSource(`${message.uniqueId}`).setState(old => {
-        let prevData = old.data ?? {};
+      let currentDetails = currentSource.getState().data || {} as InstanceDetails;
+      currentDetails.subscriptions = ((currentDetails.subscriptions || []).filter(t => t.key !== message.payload.eventPayload));
+      currentDetails.journal = ((currentDetails.journal || []).push(message.payload), currentDetails.journal);
 
-        console.log('haha', prevData.subscriptions, message.payload.eventPayload)
-        return {
-          ...prevData,
-          subscriptions: (prevData.subscriptions ?? [])?.filter(t => t.key !== message.payload.eventPayload),
-          journal: [...(prevData.journal ?? []), message.payload],
-        }
-      });
+      currentSource.setState(currentDetails);
       return;
     }
     default:

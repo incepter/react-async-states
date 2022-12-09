@@ -48,6 +48,7 @@ class AsyncState<T> implements StateInterface<T> {
   willUpdate?: boolean;
   currentAbort?: AbortFn;
   private locks?: number;
+  isEmitting?: boolean;
 
 
   //endregion
@@ -354,7 +355,9 @@ class AsyncState<T> implements StateInterface<T> {
       throw new Error(`Unknown status ('${status}')`);
     }
     this.willUpdate = true;
-    if (this.state?.status === Status.pending) {
+    if (this.state?.status === Status.pending || (
+      isFunction(this.currentAbort) && !this.isEmitting
+    )) {
       this.abort();
       this.currentAbort = undefined;
     }
@@ -754,7 +757,9 @@ function constructPropsObject<T>(
       }
       return;
     }
+    instance.isEmitting = true;
     instance.setState(updater, status);
+    instance.isEmitting = false;
   }
 
   function abort(reason: any): AbortFn | undefined {
@@ -911,7 +916,6 @@ function loadCache<T>(instance: StateInterface<T>) {
   }
 
   const loadedCache = instance.config.cacheConfig!.load!();
-  console.log(')==============', loadedCache)
 
   if (!loadedCache) {
     return;
@@ -1302,6 +1306,7 @@ export interface StateInterface<T> extends BaseSource<T> {
   suspender?: Promise<T>,
   originalProducer: Producer<T> | undefined | null,
 
+  isEmitting?: boolean;
   willUpdate?: boolean;
   currentAbort?: AbortFn;
 
