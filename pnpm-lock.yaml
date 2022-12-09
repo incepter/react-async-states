@@ -25,7 +25,7 @@ importers:
       vite-plugin-replace: ^0.1.1
     dependencies:
       react: 18.2.0
-      react-async-states: link:../react-async-states
+      react-async-states: 1.0.0-rc-9_react@18.2.0
       react-dom: 18.2.0_react@18.2.0
       react-json-view: 1.21.3_2zx2umvpluuhvlq44va5bta2da
       react-resizable: 3.0.4_biqbaboplfbrettd7655fr4n2y
@@ -12242,6 +12242,16 @@ packages:
       raf: 3.4.1
       regenerator-runtime: 0.13.10
       whatwg-fetch: 3.6.2
+
+  /react-async-states/1.0.0-rc-9_react@18.2.0:
+    resolution: {integrity: sha512-sHpo2J/XSUICAZ88qbD9rC0QnRuAkx3K/qXRE4K2z+23h627hs6AvUQ3cz+m7iSdVEoOj8dNlX7FkRINa5E9NA==}
+    engines: {node: '>=8', npm: '>=5'}
+    requiresBuild: true
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.2 || ^18.0.0
+    dependencies:
+      react: 18.2.0
+    dev: false
 
   /react-base16-styling/0.6.0:
     resolution: {integrity: sha512-yvh/7CArceR/jNATXOKDlvTnPKPmGZz7zsenQ3jUwLzHkNUR0CvY3yGYJbWJ/nnxsL8Sgmt5cO3/SILVuPO6TQ==}
