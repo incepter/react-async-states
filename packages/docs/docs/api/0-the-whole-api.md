@@ -14,7 +14,6 @@ const {
   lastSuccess, // the latest registered success state
   version, // the version of the state, incremented at each update
   source, // a special object hiding the state instance and manipulates it
-  
   key, // the key of the related state instance
   uniqueId, // the uniqueId of the state instance
   getState, // gets the current state
@@ -33,9 +32,9 @@ const {
   subscribe, // subscribes with a callback to state changes
   getConfig, // gets the current used config
   patchConfig, // patches the config related to the producer
-
   flags, // the subscription mode: listen, source, hoist, ...
   devFlags, // the subscription mode: listen, source, hoist, ...
+  toArray, // when invoked returns the same iterable that corresponds to this hook
 } = useAsyncState({
   key, // the subscription key or the definition key
   lane, // the lane instance to use
@@ -84,6 +83,26 @@ const {
 });
 ```
 
+:::note
+All the library hooks return the same object with the same structure.
+
+It is an iterable object that yields three values, like this:
+
+```typescript
+let result = useAsyncState();
+
+const [state, setState, sameResultObject] = result;
+expect(sameResultObject).toBe(result);
+
+const {state, setState, run, ...} = result;
+```
+
+The previous `state` from both writings refer to the same object.
+
+The iterable behavior was added for convenience when needing only the state.
+
+:::
+
 ## `producer`
 
 ```typescript
@@ -100,7 +119,7 @@ function myProducer<T>({
   runp, // runs a source or an instance or a producer and returns a promise to resolve
   select, // selects from source or provider the current state of any state instance
 }) {
-  return T | Promise<T>;
+  return T | Promise<T> | Generator<any, T, any>;
 }
 ```
 
