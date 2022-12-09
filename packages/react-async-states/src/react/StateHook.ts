@@ -39,14 +39,13 @@ import {
   SUBSCRIBE_EVENTS,
   WAIT
 } from "./StateHookFlags";
-import {__DEV__, isFunction, shallowClone} from "../shared";
+import {__DEV__, humanizeDevFlags, isFunction, shallowClone} from "../shared";
 import {
   readSource,
   standaloneProducerEffectsCreator
 } from "../async-state/AsyncState";
 import {isSource} from "../async-state/utils";
 import {nextKey} from "../async-state/key-gen";
-import {humanizeDevFlags} from "./shared";
 
 export interface StateHook<T, E> {
   current: E,

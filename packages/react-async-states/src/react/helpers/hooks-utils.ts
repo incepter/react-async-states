@@ -1,8 +1,7 @@
 import * as React from "react";
 import {StateHook, StateHookImpl} from "../StateHook";
 import {UseAsyncState} from "../../types.internal";
-import {__DEV__} from "../../shared";
-import {emptyArray} from "../shared";
+import {__DEV__, emptyArray} from "../../shared";
 
 export function useCurrentHook<T, E>(caller?: string): StateHook<T, E> {
   if (__DEV__) {

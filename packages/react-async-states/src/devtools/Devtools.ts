@@ -4,7 +4,7 @@ import {
   AsyncStateSubscribeProps,
   StateSubscription
 } from "../async-state/AsyncState";
-import {humanizeDevFlags} from "../react/shared";
+import {humanizeDevFlags} from "../shared";
 
 let journalEventsId = 0;
 const source = "async-states-agent";

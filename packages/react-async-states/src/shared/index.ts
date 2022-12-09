@@ -1,3 +1,5 @@
+import * as Flags from "../react/StateHookFlags";
+
 export const __DEV__ = process.env.NODE_ENV !== "production";
 
 // avoid spreading penalty!
@@ -27,6 +29,22 @@ export function isFunction(fn) {
   return typeof fn === "function";
 }
 
-export function isString(str) {
-  return typeof str === "string";
+export function humanizeDevFlags(flags: number) {
+  let out: string[] = [];
+  Object
+    .entries(Flags)
+    .forEach(([name, value]) => {
+      if (value & flags) {
+        out.push(name);
+      }
+    });
+  return out;
 }
+
+//region useAsyncState value construction
+export function noop(): undefined {
+  // that's a noop fn
+  return undefined;
+}
+
+export const emptyArray = [];

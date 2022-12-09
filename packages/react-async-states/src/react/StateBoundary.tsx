@@ -7,8 +7,7 @@ import {
   UseAsyncStateConfiguration,
 } from "../types.internal";
 import {useAsyncState} from "./useAsyncState";
-import {isFunction} from "../shared";
-import {emptyArray} from "./shared";
+import {emptyArray, isFunction} from "../shared";
 
 const StateBoundaryContext = React.createContext<any>(null);
 

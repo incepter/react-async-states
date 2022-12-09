@@ -16,14 +16,13 @@ import {
 } from "../types.internal";
 import {AsyncStateContext} from "./context";
 import {AUTO_RUN} from "./StateHookFlags";
-import {__DEV__} from "../shared";
+import {__DEV__, emptyArray} from "../shared";
 import {calculateStateValue, StateHook} from "./StateHook";
 import {useCallerName} from "./helpers/useCallerName";
 import {
   ensureStateHookVersionIsLatest,
   useCurrentHook
 } from "./helpers/hooks-utils";
-import {emptyArray} from "./shared";
 
 export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   mixedConfig: MixedConfig<T, E>,

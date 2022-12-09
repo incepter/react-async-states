@@ -13,7 +13,6 @@ import {
   sourceIsSourceSymbol,
 } from "./utils";
 import devtools from "../devtools/Devtools";
-import {areRunEffectsSupported} from "../shared/features";
 import {hideStateInstanceInNewObject} from "./hide-object";
 import {nextKey} from "./key-gen";
 
@@ -279,7 +278,7 @@ class AsyncState<T> implements StateInterface<T> {
 
     if (newState.status === Status.pending) {
       if (
-        areRunEffectsSupported()
+        isFunction(setTimeout)
         && this.config.skipPendingDelayMs
         && this.config.skipPendingDelayMs > 0
       ) {
@@ -428,7 +427,7 @@ class AsyncState<T> implements StateInterface<T> {
     const effectDurationMs = Number(this.config.runEffectDurationMs) || 0;
 
     if (
-      !areRunEffectsSupported() ||
+      !isFunction(setTimeout) ||
       !this.config.runEffect ||
       effectDurationMs === 0
     ) {
@@ -495,7 +494,7 @@ class AsyncState<T> implements StateInterface<T> {
       }
     }
 
-    if (areRunEffectsSupported() && this.config.runEffect) {
+    if (isFunction(setTimeout) && this.config.runEffect) {
       const now = Date.now();
 
       switch (this.config.runEffect) {

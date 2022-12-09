@@ -1,14 +1,13 @@
 import * as React from "react";
 import {Source, State} from "../async-state";
 import {StateContextValue, UseAsyncState} from "../types.internal";
-import {__DEV__} from "../shared";
+import {__DEV__, noop} from "../shared";
 import {useCallerName} from "./helpers/useCallerName";
 import {calculateStateValue, StateHook} from "./StateHook";
 import {
   ensureStateHookVersionIsLatest, useCurrentHook
 } from "./helpers/hooks-utils";
 import {AsyncStateContext} from "./context";
-import {noop} from "./shared";
 
 // this is a mini version of useAsyncState
 // this hook uses fewer hooks and has fewer capabilities that useAsyncState
