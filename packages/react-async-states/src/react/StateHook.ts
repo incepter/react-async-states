@@ -40,14 +40,13 @@ import {
   WAIT
 } from "./StateHookFlags";
 import {__DEV__, isFunction, shallowClone} from "../shared";
-import {humanizeDevFlags} from "./utils";
 import {
   readSource,
   standaloneProducerEffectsCreator
 } from "../async-state/AsyncState";
 import {isSource} from "../async-state/utils";
 import {nextKey} from "../async-state/key-gen";
-import {computeCallerName} from "./helpers/useCallerName";
+import {humanizeDevFlags} from "./shared";
 
 export interface StateHook<T, E> {
   current: E,

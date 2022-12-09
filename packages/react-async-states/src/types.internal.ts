@@ -3,7 +3,6 @@ import {ReactNode} from "react";
 import {
   AbortFn,
   AsyncStateManagerInterface,
-  Status,
   CacheConfig,
   CachedState,
   ForkConfig,
@@ -13,10 +12,10 @@ import {
   RunEffect,
   Source,
   State,
-  StateInterface,
-  StateUpdater, StateFunctionUpdater
+  StateFunctionUpdater,
+  Status
 } from "./async-state";
-import {RUNCProps} from "./async-state/AsyncState";
+import {RenderStrategy} from "./react/StateBoundary";
 
 export interface AsyncStateInitializer<T> {
   key?: string,
@@ -154,12 +153,6 @@ export type UseAsyncStateConfiguration<T, E = State<T>> = {
 
   // dev only
   hideFromDevtools?: boolean,
-}
-
-export enum RenderStrategy {
-  FetchAsYouRender = 0,
-  FetchThenRender = 1,
-  RenderThenFetch = 2,
 }
 
 export type StateBoundaryProps<T, E> = {

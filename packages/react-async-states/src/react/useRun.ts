@@ -20,6 +20,7 @@ export function useRunLane<T>(): RunLaneFunction<T> {
   const contextValue = React.useContext(AsyncStateContext);
   return contextValue !== null ? runLaneInside.bind(null, contextValue) : runLaneOutside;
 }
+
 function runLaneOutside<T>(
   keyOrSource: AsyncStateKeyOrSource<T>,
   lane: string | undefined,

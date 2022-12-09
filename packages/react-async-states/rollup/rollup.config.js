@@ -17,7 +17,9 @@ const esModulesBuild = [
     output: {
       format: "esm",
       sourcemap: true,
-      file: `dist/index.js`,
+      preserveModules: true,
+      dir: 'dist/es',
+      // file: `dist/index.js`,
       globals: {
         react: 'React',
         'react/jsx-runtime': 'jsxRuntime',
@@ -30,10 +32,22 @@ const esModulesBuild = [
     plugins: [
       json(),
       resolve(),
-      babel({babelHelpers: 'bundled'}),
+      // terser({
+      //   compress: {
+      //     keep_fargs: true,
+      //     keep_fnames: true,
+      //     reduce_funcs: false,
+      //   },
+      //   mangle: {
+      //     keep_fnames: true,
+      //
+      //   },
+      // }),
+      // babel({babelHelpers: 'bundled'}),
       typescript({
         tsconfigOverride: {
           compilerOptions: {
+            target: 'ESNEXT',
             declaration: true,
           },
           exclude: [
@@ -44,90 +58,6 @@ const esModulesBuild = [
         }
       }),
       commonjs(),
-    ]
-  }
-];
-
-const webModulesBuild = [
-  {
-    input: `src/index.ts`,
-    output: {
-      format: "esm",
-      sourcemap: true,
-      file: `dist/${libraryName}.development.js`,
-      globals: {
-        react: 'React',
-        'react/jsx-runtime': 'jsxRuntime',
-      }
-    },
-    external: ['react', 'react/jsx-runtime'],
-    treeshake: {
-      moduleSideEffects: false,
-    },
-    plugins: [
-      json(),
-      resolve(),
-      babel({babelHelpers: 'bundled'}),
-      typescript({
-        tsconfigOverride: {
-          compilerOptions: {
-            declaration: false,
-          },
-          exclude: [
-            "node_modules",
-            "src/__tests__",
-            "src/index-prod.js"
-          ]
-        }
-      }),
-      commonjs(),
-      replace({
-        preventAssignment: true,
-        values: {"process.env.NODE_ENV": JSON.stringify("development")},
-      }),
-    ]
-  },
-  {
-    input: `src/index.ts`,
-    output: {
-      format: "esm",
-      sourcemap: false,
-      file: `dist/${libraryName}.production.js`,
-      globals: {
-        react: 'React',
-        'react/jsx-runtime': 'jsxRuntime',
-      }
-    },
-    external: ['react', 'react/jsx-runtime'],
-    treeshake: {
-      moduleSideEffects: false,
-    },
-    plugins: [
-      json(),
-      resolve(),
-      babel({babelHelpers: 'bundled'}),
-      typescript({
-        tsconfigOverride: {
-          compilerOptions: {
-            declaration: false,
-          },
-          exclude: [
-            "node_modules",
-            "src/__tests__",
-            "src/index-prod.js"
-          ]
-        }
-      }),
-      commonjs(),
-      terser({
-        compress: {
-          reduce_funcs: false,
-        }
-      }),
-      replace({
-        preventAssignment: true,
-        values: {"process.env.NODE_ENV": JSON.stringify("production")},
-      })
     ]
   }
 ];
@@ -288,7 +218,6 @@ const devtoolsSharedBuild = [
 
 module.exports = [
   ...esModulesBuild,
-  ...webModulesBuild,
   ...umdBuild,
   ...devtoolsSharedBuild,
 ];

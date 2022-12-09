@@ -1,13 +1,14 @@
 import * as React from "react";
-import {Status, State} from "../async-state";
+import {State, Status} from "../async-state";
 import {
-  MixedConfig, RenderStrategy,
+  MixedConfig,
   StateBoundaryProps,
-  UseAsyncState, UseAsyncStateConfiguration,
+  UseAsyncState,
+  UseAsyncStateConfiguration,
 } from "../types.internal";
 import {useAsyncState} from "./useAsyncState";
-import {emptyArray} from "./utils";
 import {isFunction} from "../shared";
+import {emptyArray} from "./shared";
 
 const StateBoundaryContext = React.createContext<any>(null);
 
@@ -17,6 +18,12 @@ export function StateBoundary<T, E>(props: StateBoundaryProps<T, E>) {
     Object.assign({key: props.strategy}, props),
     props.children
   );
+}
+
+export enum RenderStrategy {
+  FetchAsYouRender = 0,
+  FetchThenRender = 1,
+  RenderThenFetch = 2,
 }
 
 function StateBoundaryImpl<T, E>(props: StateBoundaryProps<T, E>) {

@@ -1,10 +1,10 @@
 import {ProducerSavedProps, State, StateInterface} from "../async-state";
 import {DevtoolsEvent, DevtoolsJournalEvent, DevtoolsRequest} from "./index";
-import {humanizeDevFlags} from "../react/utils";
 import {
   AsyncStateSubscribeProps,
   StateSubscription
 } from "../async-state/AsyncState";
+import {humanizeDevFlags} from "../react/shared";
 
 let journalEventsId = 0;
 const source = "async-states-agent";
