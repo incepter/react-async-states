@@ -9,7 +9,7 @@ autoConfigureDevtools({open: true});
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <div style={{height: "100vh", backgroundColor: 'gray'}}>
+    <div style={{height: "100vh"}}>
       {__DEV__ && <>
         <DevModeApp/>
         <hr/>

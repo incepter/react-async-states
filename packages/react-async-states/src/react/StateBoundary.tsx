@@ -1,21 +1,28 @@
 import * as React from "react";
-import {Status, State} from "../async-state";
+import {State, Status} from "../async-state";
 import {
-  MixedConfig, RenderStrategy,
+  MixedConfig,
   StateBoundaryProps,
-  UseAsyncState, UseAsyncStateConfiguration,
+  UseAsyncState,
+  UseAsyncStateConfiguration,
 } from "../types.internal";
 import {useAsyncState} from "./useAsyncState";
-import {emptyArray} from "./utils";
+import {emptyArray, isFunction} from "../shared";
 
 const StateBoundaryContext = React.createContext<any>(null);
 
 export function StateBoundary<T, E>(props: StateBoundaryProps<T, E>) {
-  return (
-    <StateBoundaryImpl key={props.strategy} {...props}>
-      {props.children}
-    </StateBoundaryImpl>
-  )
+  return React.createElement(
+    StateBoundaryImpl,
+    Object.assign({key: props.strategy}, props),
+    props.children
+  );
+}
+
+export enum RenderStrategy {
+  FetchAsYouRender = 0,
+  FetchThenRender = 1,
+  RenderThenFetch = 2,
 }
 
 function StateBoundaryImpl<T, E>(props: StateBoundaryProps<T, E>) {
@@ -42,7 +49,7 @@ function inferBoundaryChildren<T, E = State<T>>(
 }
 
 function renderChildren(children) {
-  return typeof children === "function" ? React.createElement(children) : children;
+  return isFunction(children) ? React.createElement(children) : children;
 }
 
 export function RenderThenFetchBoundary<T, E>(props: StateBoundaryProps<T, E>) {
@@ -81,7 +88,7 @@ function FetchThenRenderInitialBoundary<T, E>({
       const autoRunArgs = (config as UseAsyncStateConfiguration<T, E>).autoRunArgs;
 
       if (Array.isArray(autoRunArgs)) {
-        return result.run(...autoRunArgs);
+        return result.run.apply(null, autoRunArgs);
       }
 
       return result.run();
@@ -121,7 +128,7 @@ export function useCurrentState<T, E = State<T>>(): UseAsyncState<T, E> {
   const ctxValue = React.useContext(StateBoundaryContext);
 
   if (ctxValue === null) {
-    throw new Error('You cannot use useCurrentState outside a StateBoundary');
+    throw new Error('useCurrentState used outside StateBoundary');
   }
 
   return ctxValue;

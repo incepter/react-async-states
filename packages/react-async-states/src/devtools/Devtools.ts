@@ -1,10 +1,10 @@
 import {ProducerSavedProps, State, StateInterface} from "../async-state";
 import {DevtoolsEvent, DevtoolsJournalEvent, DevtoolsRequest} from "./index";
-import {humanizeDevFlags} from "../react/utils";
 import {
   AsyncStateSubscribeProps,
   StateSubscription
 } from "../async-state/AsyncState";
+import {humanizeDevFlags} from "../shared";
 
 let journalEventsId = 0;
 const source = "async-states-agent";
@@ -235,6 +235,9 @@ function createDevtools(): DevtoolsInterface {
   function emitJournalEvent(asyncState: StateInterface<any>, evt) {
     if (asyncState.config.hideFromDevtools) {
       return;
+    }
+    if (!asyncState.journal) {
+      asyncState.journal = [];
     }
     asyncState.journal.push({
       key: asyncState.key,

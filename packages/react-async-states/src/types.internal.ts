@@ -3,7 +3,6 @@ import {ReactNode} from "react";
 import {
   AbortFn,
   AsyncStateManagerInterface,
-  Status,
   CacheConfig,
   CachedState,
   ForkConfig,
@@ -13,10 +12,10 @@ import {
   RunEffect,
   Source,
   State,
-  StateInterface,
-  StateUpdater
+  StateFunctionUpdater,
+  Status
 } from "./async-state";
-import {RUNCProps} from "./async-state/AsyncState";
+import {RenderStrategy} from "./react/StateBoundary";
 
 export interface AsyncStateInitializer<T> {
   key?: string,
@@ -34,11 +33,19 @@ export interface BaseUseAsyncState<T, E = State<T>> extends Source<T>{
   devFlags?: string[],
 }
 
-export interface UseAsyncState<T, E = State<T>> extends BaseUseAsyncState<T, E> {
+type IterableUseAsyncState<T, E = State<T>> = [
+  E,
+  (updater: StateFunctionUpdater<T> | T, status?: Status,)=>void,
+  UseAsyncState<T, E>
+]
+
+export interface UseAsyncState<T, E = State<T>> extends BaseUseAsyncState<T, E>, Iterable<any> {
   state: E,
   read(): E,
   version?: number,
   lastSuccess?: State<T>,
+
+  toArray(): IterableUseAsyncState<T, E>
 }
 
 // interface NewUseAsyncState<T, E = State<T>> extends Source<T> {
@@ -148,12 +155,6 @@ export type UseAsyncStateConfiguration<T, E = State<T>> = {
   hideFromDevtools?: boolean,
 }
 
-export enum RenderStrategy {
-  FetchAsYouRender = 0,
-  FetchThenRender = 1,
-  RenderThenFetch = 2,
-}
-
 export type StateBoundaryProps<T, E> = {
   children: React.ReactNode,
   config: MixedConfig<T, E>,
@@ -206,30 +207,12 @@ export type useSelector<T, E> =
 
 export type PartialUseAsyncStateConfiguration<T, E> = Partial<UseAsyncStateConfiguration<T, E>>
 
-export type SubscriptionInfo<T, E> = {
-  asyncState: StateInterface<T>,
-  configuration: UseAsyncStateConfiguration<T, E>,
-
-  guard: Object,
-  deps: readonly any[],
-
-  dispose: () => boolean | undefined,
-
-  baseReturn: BaseUseAsyncState<T, E>,
-}
-
 export type UseAsyncStateContextType = StateContextValue | null;
 
 
 export type CleanupFn = AbortFn
   | (() => void)
   | undefined;
-
-export type UseAsyncStateRef<T, E = State<T>> = {
-  latestData: E,
-  latestVersion?: number,
-  subscriptionInfo: SubscriptionInfo<T, E>,
-}
 
 export interface UseAsyncStateType<T, E> {
   (

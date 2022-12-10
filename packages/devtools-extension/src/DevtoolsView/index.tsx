@@ -1,66 +1,67 @@
 import * as React from "react";
 import ReactDOM from "react-dom";
 import ReactDOMClient from "react-dom/client";
-import {useAsyncState,} from "react-async-states";
+// import {useAsyncState,} from "react-async-states";
+import DevtoolsViewInternalV2 from "./DevtoolsView";
 
 import {gatewaySource} from "./sources";
-import CurrentStateDisplay from "./CurrentStateDisplay";
-import SiderDisplay from "./SiderDisplay";
-import {DevtoolsProvider} from "./context";
+// import CurrentStateDisplay from "./CurrentStateDisplay";
+// import SiderDisplay from "./SiderDisplay";
+// import {DevtoolsProvider} from "./context";
 import {__DEV__} from "../utils";
 
 import '../index.css';
 
-function DevtoolsViewInternal({
-  useDevMode,
-  onClose,
-}: {
-  useDevMode?: boolean;
-  onClose?: Function;
-}) {
-  useAsyncState.auto(
-    {
-      source: gatewaySource,
-      payload: {dev: useDevMode ?? true},
-    },
-    [useDevMode]
-  );
-
-  return (
-    <DevtoolsProvider dev={useDevMode}>
-      <div
-        className="main-bg scroll-y-auto devtools-root-animated"
-        style={{height: "100%", overflow: "auto"}}
-      >
-        {onClose && (
-          <button
-            style={{
-              zIndex: 9,
-              bottom: "16px",
-              right: "16px",
-              position: "absolute",
-              borderRadius: 100,
-              width: 50,
-              height: 50,
-              color: "#000",
-              cursor: "pointer",
-            }}
-            onClick={() => onClose()}
-          >
-            X
-          </button>
-        )}
-        <div
-          className="main-bg scroll-y-auto flex flex-row"
-          style={{height: "100%"}}
-        >
-          <SiderDisplay/>
-          <CurrentStateDisplay/>
-        </div>
-      </div>
-    </DevtoolsProvider>
-  );
-}
+// function DevtoolsViewInternal({
+//   useDevMode,
+//   onClose,
+// }: {
+//   useDevMode?: boolean;
+//   onClose?: Function;
+// }) {
+//   useAsyncState.auto(
+//     {
+//       source: gatewaySource,
+//       payload: {dev: useDevMode ?? true},
+//     },
+//     [useDevMode]
+//   );
+//
+//   return (
+//     <DevtoolsProvider dev={useDevMode}>
+//       <div
+//         className="main-bg scroll-y-auto devtools-root-animated"
+//         style={{height: "100%", overflow: "auto"}}
+//       >
+//         {onClose && (
+//           <button
+//             style={{
+//               zIndex: 9,
+//               bottom: "16px",
+//               right: "16px",
+//               position: "absolute",
+//               borderRadius: 100,
+//               width: 50,
+//               height: 50,
+//               color: "#000",
+//               cursor: "pointer",
+//             }}
+//             onClick={() => onClose()}
+//           >
+//             X
+//           </button>
+//         )}
+//         <div
+//           className="main-bg scroll-y-auto flex flex-row"
+//           style={{height: "100%"}}
+//         >
+//           <SiderDisplay/>
+//           <CurrentStateDisplay/>
+//         </div>
+//       </div>
+//     </DevtoolsProvider>
+//   );
+// }
 
 export function DevtoolsView() {
   if (!__DEV__) {
@@ -93,7 +94,7 @@ export function autoConfigureDevtools(props?: { open?: boolean }) {
     width: '100%',
     height: '50vh',
     position: "absolute"
-  }, 'auto-devtools');
+  });
 
   ReactDomRender(hostContainer, <AutoConfiguredDevtoolsImpl allowResize
                                                             wrapperClassname='root-devtools-animated'
@@ -130,14 +131,16 @@ function AutoConfiguredDevtoolsImpl({
 
     window && window.addEventListener("keydown", listener);
 
-    return () => window && window.removeEventListener("keydown", listener);
+    return () => {
+      window && window.removeEventListener("keydown", listener);
+    };
   }, []);
 
   return (
     <>
       {!visible && (
         <button
-          className="main-bg main-color"
+          className="devtools-button"
           style={{
             zIndex: 9,
             bottom: "16px",
@@ -154,9 +157,9 @@ function AutoConfiguredDevtoolsImpl({
         </button>
       )}
       {visible && (
-        <div className={wrapperClassname} style={wrapperStyle}>
+        <div className={`${wrapperClassname} async-states-devtools`} style={wrapperStyle}>
           {allowResize && <Resizer/>}
-          <DevtoolsViewInternal onClose={() => setVisible(false)}/>
+          <DevtoolsViewInternalV2 onClose={() => setVisible(false)} />
         </div>
       )}
     </>

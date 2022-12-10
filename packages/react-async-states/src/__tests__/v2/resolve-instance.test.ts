@@ -1,4 +1,3 @@
-import {createStateHook} from "../../react/useAsyncState";
 import {
   CONFIG_OBJECT,
   CONFIG_SOURCE, CONFIG_STRING, FORK, HOIST,
@@ -8,6 +7,7 @@ import {
 } from "../../react/StateHookFlags";
 import AsyncState, {AsyncStateManager} from "../../async-state";
 import {resolveInstance, StateHook} from "../../react/StateHook";
+import {createStateHook} from "../../react/helpers/hooks-utils";
 
 describe('resolveInstance', () => {
   it('should resolve instance in WAIT mode', () => {

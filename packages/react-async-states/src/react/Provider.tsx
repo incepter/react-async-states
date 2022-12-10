@@ -77,8 +77,8 @@ export function AsyncStateProvider(
   function disposeManager() {
     return function cleanup() {
       Promise.resolve().then(() => {
-        Object.values(manager.entries as AsyncStateEntries)
-          .forEach(entry => entry.instance.dispose())
+        Object.values(manager.entries)
+          .forEach(entry => manager.dispose(entry.instance))
       });
     }
   }
@@ -101,9 +101,6 @@ export function AsyncStateProvider(
   function onPayloadChange() {
     // propagate the new payload
     manager.mergePayload(payload);
-    for (const entry of Object.values(manager.entries as AsyncStateEntries)) {
-      entry.instance.mergePayload(payload);
-    }
   }
 
   function makeContextValue(): StateContextValue {

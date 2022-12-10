@@ -39,19 +39,18 @@ import {
   SUBSCRIBE_EVENTS,
   WAIT
 } from "./StateHookFlags";
-import {__DEV__, shallowClone} from "../shared";
-import {humanizeDevFlags} from "./utils";
+import {__DEV__, humanizeDevFlags, isFunction, shallowClone} from "../shared";
 import {
   readSource,
   standaloneProducerEffectsCreator
 } from "../async-state/AsyncState";
 import {isSource} from "../async-state/utils";
 import {nextKey} from "../async-state/key-gen";
-import {computeCallerName} from "./helpers/useCallerName";
 
 export interface StateHook<T, E> {
   current: E,
   flags: number,
+  caller?: string,
   name: string | undefined;
   config: MixedConfig<T, E>,
   origin: number | undefined;
@@ -70,13 +69,13 @@ export interface StateHook<T, E> {
     newConfig: MixedConfig<T, E>,
     contextValue: StateContextValue | null,
     overrides?: PartialUseAsyncStateConfiguration<T, E>,
-    level?: number
   ),
 }
 
 export class StateHookImpl<T, E> implements StateHook<T, E> {
   current: E;
   flags: number;
+  caller?: string;
   name: string | undefined;
   config: MixedConfig<T, E>;
   origin: number | undefined;
@@ -100,20 +99,19 @@ export class StateHookImpl<T, E> implements StateHook<T, E> {
     newConfig: MixedConfig<T, E>,
     contextValue: StateContextValue | null,
     overrides?: PartialUseAsyncStateConfiguration<T, E>,
-    level?: number
   ) {
     let nextFlags = resolveFlags(newConfig, contextValue, overrides);
     let instance = resolveInstance(nextFlags, newConfig, contextValue, this, overrides);
 
     if (!instance && !(nextFlags & WAIT)) {
-      throw new Error("Mode isn't wait and instance isn't defined! this is a bug");
+      throw new Error("Undefined instance with no WAIT mode. This is a bug.");
     }
 
     if (instance && (nextFlags & CONFIG_OBJECT && (newConfig as BaseConfig<T>).payload)) {
       instance.mergePayload((newConfig as BaseConfig<T>).payload);
     }
-    if (instance && (nextFlags & INSIDE_PROVIDER) && contextValue?.getPayload()) {
-      instance.mergePayload(contextValue.getPayload());
+    if (instance && (nextFlags & INSIDE_PROVIDER) && contextValue!.getPayload()) {
+      instance.mergePayload(contextValue!.getPayload()!);
     }
 
     this.origin = origin;
@@ -122,7 +120,7 @@ export class StateHookImpl<T, E> implements StateHook<T, E> {
     this.instance = instance;
     this.context = contextValue;
     this.base = makeBaseReturn(this);
-    this.name = calculateSubscriptionKey(this, level);
+    this.name = calculateSubscriptionKey(this);
     this.subscribe = createSubscribeAndWatchFunction(this);
   }
 }
@@ -186,8 +184,8 @@ function getKeyFlags(
     case "hoist": return config.hoist ? HOIST : NO_MODE;
     case "fork": return config.fork ? FORK : NO_MODE;
     case "lane": return config.lane ? LANE : NO_MODE;
-    case "selector": return typeof config.selector === "function" ? SELECTOR : NO_MODE;
-    case "areEqual": return typeof config.areEqual === "function" ? EQUALITY_CHECK : NO_MODE;
+    case "selector": return isFunction(config.selector) ? SELECTOR : NO_MODE;
+    case "areEqual": return isFunction(config.areEqual) ? EQUALITY_CHECK : NO_MODE;
 
     case "events": {
       let flags = NO_MODE;
@@ -430,8 +428,11 @@ function calculateSubscriptionKey<T, E>(
     return;
   }
   if (__DEV__) {
-    let callerName = computeCallerName(level);
-    let index = ++((hook.instance! as AsyncState<T>).subsIndex);
+    let callerName = hook.caller;
+    if ((hook.instance! as AsyncState<T>).subsIndex === undefined) {
+      (hook.instance! as AsyncState<T>).subsIndex = 0;
+    }
+    let index = ++((hook.instance! as AsyncState<T>).subsIndex!);
     return `${callerName}-${index}`;
   }
 }
@@ -442,7 +443,7 @@ export function calculateStateValue<T, E>(
 ): Readonly<UseAsyncState<T, E>> {
   let instance = hook.instance;
 
-  const newState = shallowClone(hook.base);
+  const newState = shallowClone(hook.base) as UseAsyncState<T, E>;
   const newValue = readStateFromInstance(instance, hook.flags, hook.config);
   if (instance) {
     newState.read = createReadInConcurrentMode.bind(null, instance, newValue);
@@ -450,7 +451,17 @@ export function calculateStateValue<T, E>(
   }
   newState.state = newValue;
   newState.lastSuccess = instance?.lastSuccess;
-  return newState;
+
+  newState[Symbol.iterator] = function*() {
+    yield newState.state;
+    yield newState.setState;
+    yield newState;
+  }
+  newState.toArray = function() {
+    return [newState.state, newState.setState, newState];
+  }
+
+  return Object.freeze(newState);
 }
 
 function createReadInConcurrentMode<T, E>(
@@ -566,7 +577,7 @@ function createSubscribeAndWatchFunction<T, E>(
         contextValue!.createEffects : standaloneProducerEffectsCreator;
 
       let unsubscribeFns = invokeSubscribeEvents(
-        (config as BaseConfig<T>).events!.subscribe!,
+        (config as BaseConfig<T>).events!.subscribe,
         instance!.run.bind(instance!, effectsCreator),
         instance!,
       );
@@ -647,5 +658,5 @@ function readStateFromInstance<T, E = State<T>>(
     ? (config as PartialUseAsyncStateConfiguration<T, E>).selector!
     :
     (<K>(obj): K => obj);
-  return selector(asyncState.state, asyncState.lastSuccess, asyncState.cache);
+  return selector(asyncState.state, asyncState.lastSuccess, asyncState.cache || null);
 }

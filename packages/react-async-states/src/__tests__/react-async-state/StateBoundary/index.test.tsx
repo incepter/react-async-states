@@ -1,6 +1,7 @@
 import * as React from "react";
 import {act, render, screen} from "@testing-library/react";
 import {
+  RenderStrategy,
   StateBoundary,
   useCurrentState
 } from "../../../react/StateBoundary";
@@ -8,7 +9,6 @@ import {
   Status,
   createSource
 } from "../../../async-state";
-import {RenderStrategy} from "../../../types.internal";
 import {flushPromises} from "../utils/test-utils";
 
 describe('StateBoundary', () => {

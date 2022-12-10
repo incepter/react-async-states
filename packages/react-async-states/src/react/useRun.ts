@@ -4,11 +4,24 @@ import {AsyncStateContext} from "./context";
 import {isSource} from "../async-state/utils";
 import {StateContextValue} from "../types.internal";
 
-type RunFunction<T> = ((keyOrSource: AsyncStateKeyOrSource<T>, ...args: any[]) => AbortFn);
-type RunLaneFunction<T> = ((keyOrSource: AsyncStateKeyOrSource<T>, lane: string | undefined, ...args: any[]) => AbortFn);
+type RunFunction<T> = ((
+  keyOrSource: AsyncStateKeyOrSource<T>, ...args: any[]) => AbortFn);
+type RunLaneFunction<T> = ((
+  keyOrSource: AsyncStateKeyOrSource<T>, lane: string | undefined,
+  ...args: any[]
+) => AbortFn);
 
-function runLaneFn<T>(
-  contextValue: StateContextValue | null,
+export function useRun<T>(): RunFunction<T> {
+  const contextValue = React.useContext(AsyncStateContext);
+  return contextValue !== null ? runInside.bind(null, contextValue) : runOutside;
+}
+
+export function useRunLane<T>(): RunLaneFunction<T> {
+  const contextValue = React.useContext(AsyncStateContext);
+  return contextValue !== null ? runLaneInside.bind(null, contextValue) : runLaneOutside;
+}
+
+function runLaneOutside<T>(
   keyOrSource: AsyncStateKeyOrSource<T>,
   lane: string | undefined,
   ...args: any[]
@@ -16,31 +29,39 @@ function runLaneFn<T>(
   if (isSource(keyOrSource)) {
     return (keyOrSource as Source<T>).getLaneSource(lane).run(...args);
   }
-  if (contextValue !== null) {
-    if (typeof keyOrSource === "string") {
-      let instance = contextValue.get<T>(keyOrSource);
-      if (instance) {
-        return contextValue.run(instance.getLane(lane), ...args);
-      }
+  return undefined;
+}
+function runOutside<T>(
+  keyOrSource: AsyncStateKeyOrSource<T>,
+  ...args: any[]
+) {
+  return runLaneOutside(keyOrSource, undefined, ...args);
+}
+
+function runLaneInside<T>(
+  contextValue: StateContextValue,
+  keyOrSource: AsyncStateKeyOrSource<T>,
+  lane: string | undefined,
+  ...args: any[]
+) {
+  if (isSource(keyOrSource)) {
+    return (keyOrSource as Source<T>).getLaneSource(lane).run(...args);
+  }
+  if (typeof keyOrSource === "string") {
+    let instance = contextValue.get<T>(keyOrSource);
+    if (instance) {
+      return instance.run
+        .bind(instance, contextValue.createEffects)
+        .apply(null, args);
     }
   }
   return undefined;
 }
 
-function runFn<T>(
-  contextValue: StateContextValue | null,
+function runInside<T>(
+  contextValue: StateContextValue,
   keyOrSource: AsyncStateKeyOrSource<T>,
   ...args: any[]
 ) {
-  return runLaneFn(contextValue, keyOrSource, undefined, ...args);
-}
-
-export function useRun<T>(): RunFunction<T> {
-  const contextValue = React.useContext(AsyncStateContext);
-  return React.useCallback(runFn.bind(null, contextValue), [contextValue]);
-}
-
-export function useRunLane<T>() : RunLaneFunction<T> {
-  const contextValue = React.useContext(AsyncStateContext);
-  return React.useCallback(runLaneFn.bind(null, contextValue), [contextValue]);
+  return runLaneInside(contextValue, keyOrSource, undefined, ...args);
 }

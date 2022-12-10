@@ -1,13 +1,3 @@
 {
-  "private": true,
-  "scripts": {
-    "start": "cd packages/react-async-states && pnpm start",
-    "start:docs": "cd packages/docs && pnpm start",
-    "start:devtools": "cd packages/devtools-extension && pnpm start",
-    "start:example": "cd packages/example && pnpm start",
-    "build:devtools": "cd packages/devtools-extension && pnpm build",
-    "build": "cd packages/react-async-states && pnpm build",
-    "build:all": "cd packages/react-async-states && pnpm build && cd ../devtools-extension && pnpm build",
-    "publish:lib": "copyfiles -f README.MD packages/react-async-states && cd packages/react-async-states &&  npm publish && rimraf README.MD"
-  }
+  "private": true
 }

@@ -9,22 +9,22 @@ import {
 } from "../types.internal";
 import {isSource} from "../async-state/utils";
 import {
-  ManagerWatchCallbackValue,
-  Source,
-  StateInterface,
   ArraySelector,
   FunctionSelector,
   FunctionSelectorItem,
-  SimpleSelector
+  ManagerWatchCallbackValue,
+  SimpleSelector,
+  Source,
+  StateInterface
 } from "../async-state";
 import {readSource} from "../async-state/AsyncState";
-import {computeCallerName} from "./helpers/useCallerName";
-import {__DEV__, shallowEqual} from "../shared";
+import {useCallerName} from "./helpers/useCallerName";
+import {__DEV__, isFunction, shallowEqual} from "../shared";
 
 type SelectorSelf<T> = {
-  currentValue: T,
-  currentKeys: (string | Source<any>)[],
-  currentInstances: Record<string, StateInterface<any> | undefined>,
+  value: T,
+  keys: (string | Source<any>)[],
+  instances: Record<string, StateInterface<any> | undefined>,
 }
 
 export function useSelector<T>(
@@ -48,16 +48,19 @@ export function useSelector<T>(
   selector?: SimpleSelector<any, T> | ArraySelector<T> | FunctionSelector<T> = identity,
   areEqual?: EqualityFn<T> = shallowEqual,
 ): T {
+  let caller;
+  if (__DEV__) {
+    caller = useCallerName(3);
+  }
   const contextValue = React.useContext(AsyncStateContext);
 
   ensureParamsAreOk(contextValue, keys);
 
-  // on every render, recheck the keys, because they are most likely to be inlined
   const [self, setSelf] = React.useState<SelectorSelf<T>>(computeSelf);
 
   // when the content of the keys array change, recalculate
   // const keysToWatch = readKeys(keys, contextValue);
-  // if (didKeysChange(self.currentKeys, keysToWatch)) {
+  // if (didKeysChange(self.keys, keysToWatch)) {
   //   setSelf(computeSelf());
   // }
 
@@ -70,45 +73,44 @@ export function useSelector<T>(
 
         // if we are interested in what happened, recalculate and quit
         if (
-          self.currentInstances.hasOwnProperty(notificationKey) &&
-          self.currentInstances[notificationKey] !== value
+          self.instances.hasOwnProperty(notificationKey) &&
+          self.instances[notificationKey] !== value
         ) {
           setSelf(computeSelf());
           return;
         }
         // re-attempt calculating keys if the given keys is a function:
-        if (typeof keys === "function") {
+        if (isFunction(keys)) {
           const newKeys = readKeys(keys, contextValue);
-          if (didKeysChange(self.currentKeys, newKeys)) {
+          if (didKeysChange(self.keys, newKeys)) {
             setSelf(computeSelf());
           }
         }
       }
 
       return contextValue.watchAll(onChange);
-    }, [contextValue, self.currentInstances, self.currentKeys, keys]);
+    }, [contextValue, self.instances, self.keys, keys]);
   }
 
   // uses:
-  //    - self.currentInstances
-  //    - self.currentValue
+  //    - self.instances
+  //    - self.value
   //    - areEqual
   //    - selector (readValue uses it)
   React.useEffect(() => {
     function onUpdate() {
-      const newValue = readValue(self.currentInstances);
-      if (!areEqual(self.currentValue, newValue)) {
-        setSelf(old => ({...old, currentValue: newValue}));
+      const newValue = readValue(self.instances);
+      if (!areEqual(self.value, newValue)) {
+        setSelf(old => Object.assign({}, old, {value: newValue}));
       }
     }
 
     const unsubscribeFns = Object
-      .values(self.currentInstances)
+      .values(self.instances)
       .filter(Boolean)
       .map(as => {
         let subscriptionKey: string | undefined = undefined;
         if (__DEV__) {
-          let caller = computeCallerName(8);
           subscriptionKey = `${caller}-$4`;// 4: useSelector
         }
         return (as as StateInterface<T>)!.subscribe({
@@ -122,16 +124,16 @@ export function useSelector<T>(
     return () => {
       unsubscribeFns.forEach((cleanup => cleanup?.()));
     }
-  }, [contextValue, self.currentInstances, self.currentValue, areEqual]);
+  }, [contextValue, self.instances, self.value, areEqual]);
 
   function computeSelf() {
     const currentKeys = readKeys(keys, contextValue);
     const currentInstances = computeInstancesMap(contextValue, currentKeys);
     const currentValue = readValue(currentInstances);
     return {
-      currentKeys,
-      currentValue,
-      currentInstances,
+      keys: currentKeys,
+      value: currentValue,
+      instances: currentInstances,
     };
   }
 
@@ -146,7 +148,7 @@ export function useSelector<T>(
         });
       });
 
-    if (typeof keys === "function") {
+    if (isFunction(keys)) {
       const selectorParam: Record<string, FunctionSelectorItem<any>> = selectorStates
         .reduce((
           result, current) => {
@@ -157,13 +159,13 @@ export function useSelector<T>(
     }
 
     if (Array.isArray(keys)) {
-      return (selector as ArraySelector<T>)(...selectorStates);
+      return (selector as ArraySelector<T>).apply(null, selectorStates);
     }
 
     return (selector as SimpleSelector<any, T>)(selectorStates[0]);
   }
 
-  return self.currentValue;
+  return self.value;
 }
 
 function didKeysChange(
@@ -185,22 +187,22 @@ function readKeys(
   keys: SelectorKeysArg,
   ctx: StateContextValue | null
 ): (string | Source<any>)[] {
-  if (typeof keys === "function") {
+  if (isFunction(keys)) {
     const availableKeys = ctx !== null ? ctx.getAllKeys() : [];
-    return readKeys(keys(availableKeys), ctx);
+    return readKeys((keys as UseSelectorFunctionKeys)(availableKeys), ctx);
   }
   if (Array.isArray(keys)) {
     return keys;
   }
-  return [keys];
+  return [keys as string];
 }
 
 function ensureParamsAreOk<E>(
   contextValue: StateContextValue | null,
   keys: BaseSelectorKey | BaseSelectorKey[] | UseSelectorFunctionKeys,
 ) {
-  if (contextValue === null && typeof keys === "function") {
-    throw new Error('useSelector received a function as keys outside provider');
+  if (contextValue === null && isFunction(keys)) {
+    throw new Error('useSelector function as keys outside provider');
   }
 }
 
@@ -222,9 +224,9 @@ function computeInstancesMap(
     }, {});
 }
 
-function identity(...args: any[]): any {
-  if (!args || !args.length) {
+function identity(): any {
+  if (!arguments.length) {
     return undefined;
   }
-  return args.length === 1 ? args[0] : args;
+  return arguments.length === 1 ? arguments[0] : arguments;
 }
