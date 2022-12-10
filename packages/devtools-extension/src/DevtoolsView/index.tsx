@@ -94,7 +94,7 @@ export function autoConfigureDevtools(props?: { open?: boolean }) {
     width: '100%',
     height: '50vh',
     position: "absolute"
-  }, 'auto-devtools');
+  });
 
   ReactDomRender(hostContainer, <AutoConfiguredDevtoolsImpl allowResize
                                                             wrapperClassname='root-devtools-animated'
@@ -131,7 +131,9 @@ function AutoConfiguredDevtoolsImpl({
 
     window && window.addEventListener("keydown", listener);
 
-    return () => window && window.removeEventListener("keydown", listener);
+    return () => {
+      window && window.removeEventListener("keydown", listener);
+    };
   }, []);
 
   return (
@@ -155,7 +157,7 @@ function AutoConfiguredDevtoolsImpl({
         </button>
       )}
       {visible && (
-        <div className={wrapperClassname} style={wrapperStyle}>
+        <div className={`${wrapperClassname} async-states-devtools`} style={wrapperStyle}>
           {allowResize && <Resizer/>}
           <DevtoolsViewInternalV2 onClose={() => setVisible(false)} />
         </div>

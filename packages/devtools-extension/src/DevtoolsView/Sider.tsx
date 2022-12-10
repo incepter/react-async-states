@@ -133,7 +133,7 @@ const InstanceDetailsView = React.memo(function InstanceDetailsView(props: { cur
   let status = state.data?.state?.status;
   let styleToAdd: any = {};
   if (props.current) {
-    styleToAdd.backgroundColor = "background-color: #5e9ad9 !important";
+    styleToAdd.backgroundColor = "#5e9ad9";
   }
   return (
     <button title={title} onClick={() => currentView.setState(`${uniqueId}`)}
