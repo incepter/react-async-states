@@ -3,17 +3,22 @@
     height: 100%;
     overflow-y: hidden;
 }
+.sider-root-mediator {
+    min-width: 300px !important;
+    max-width: 300px !important;
+    min-height: 100%;
+}
 
 .sider-root {
     color: black;
+    min-height: 100%;
     display: flex;
     flex-direction: column;
-    width: 200px;
     padding: 8px 8px 0px;
 }
 
 .sider-group {
-    /*gap: 4px;*/
+    gap: 4px;
     display: flex;
     flex-direction: column;
 }
@@ -42,10 +47,6 @@
     background-color: rgba(230, 230, 230, 0.7);
 }
 
-.sider-key-root-current {
-    background-color: #5e9ad9 !important;
-}
-
 .sider-key-subscriptions {
     position: absolute;
     font-size: 0.5rem;
@@ -62,19 +63,54 @@
 
 
 .state-view-root {
-    padding: 8px;
+    padding: 0.5rem;
     width: calc(100vw - 250px);
     display: flex;
     flex-direction: column;
     gap: 8px;
-    height: 100%;
+    /*height: 100%;*/
+
+    height: calc(100% - 0.5rem);
 }
 
 .state-view-header {
-    height: 20px;
+    display: flex;
+    justify-content: space-between;
+}
+.state-view-header-change-state {
+    gap: 8px;
     display: flex;
     align-items: center;
     align-content: center;
+}
+
+.journal-root {
+    display: flex;
+    gap: 4px;
+    height: 100%;
+}
+.journal-filter {
+    display: flex;
+    gap: 8px;
+    flex-direction: column;
+    height: 100%;
+    color: white;
+}
+.journal-content {
+    flex-grow: 1;
+    overflow-y: scroll;
+
+    height: 100%;
+}
+
+.state-view-header-actions {
+    gap: 8px;
+    display: flex;
+    align-items: center;
+    align-content: center;
+}
+.journal-button-active {
+    background-color: #5e9ad9;
 }
 
 .state-view-container {
@@ -142,7 +178,7 @@
     height: 16px;
     width: 18px;
     border-radius: 13px;
-    background-clip: padding-box;
+    /*background-clip: padding-box;*/
     border: 5px solid transparent;
 }
 
@@ -162,4 +198,87 @@
 
 .scroll-y-auto:hover {
     color: #8c8c8c;
+}
+
+.state-view-unselected {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    align-content: center;
+    background-color: #1a1a1a;
+}
+
+.devtools-side-button {
+    border-radius: 12px !important;
+    padding: 8px 4px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    background-color: rgba(169, 169, 169, 1) !important;
+}
+.devtools-button {
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: 0.5em 1em;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: rgba(26, 26, 26, 1);
+    cursor: pointer;
+    transition: border-color 0.25s;
+}
+.devtools-button:hover {
+    background-color: rgba(26, 26, 26, 0.5) !important;
+    border-color: #646cff;
+}
+.devtools-side-button:hover {
+    background-color: rgba(169, 169, 169, 0.8) !important;
+    border-color: #646cff;
+}
+.devtools-button:focus,
+.devtools-button:focus-visible {
+    /*outline: 4px auto -webkit-focus-ring-color;*/
+}
+
+
+#async-states-devtools {
+    font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+    font-weight: 400;
+
+    color-scheme: light dark;
+    color: rgba(255, 255, 255, 0.87);
+    background-color: #242424;
+
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-color-scheme: light) {
+    #async-states-devtools {
+        color: #213547;
+        background-color: #ffffff;
+    }
+    .devtools-button {
+        background-color: #f9f9f9;
+    }
+    .sider-root-mediator {
+        background-color: gray;
+    }
+    .sider-root {
+        color: black;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .sider-root-mediator {
+        background-color: #1a1a1a;
+    }
+    .sider-root {
+        color: white;
+    }
 }

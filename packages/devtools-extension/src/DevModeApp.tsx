@@ -9,7 +9,7 @@ import {
 } from "react-async-states";
 import type {State} from "react-async-states";
 
-createSource<number>("test-1", null, {initialValue: 0})
+createSource<number>("test-1", null, {initialValue: 0}).getLaneSource("test-1-lane")
 createSource<number>("test-2", null, {initialValue: 0})
 
 

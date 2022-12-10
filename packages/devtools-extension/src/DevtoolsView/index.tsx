@@ -2,7 +2,7 @@ import * as React from "react";
 import ReactDOM from "react-dom";
 import ReactDOMClient from "react-dom/client";
 // import {useAsyncState,} from "react-async-states";
-import DevtoolsViewInternalV2 from "./v2";
+import DevtoolsViewInternalV2 from "./DevtoolsView";
 
 import {gatewaySource} from "./sources";
 // import CurrentStateDisplay from "./CurrentStateDisplay";
@@ -138,7 +138,7 @@ function AutoConfiguredDevtoolsImpl({
     <>
       {!visible && (
         <button
-          className="main-bg main-color"
+          className="devtools-button"
           style={{
             zIndex: 9,
             bottom: "16px",
@@ -157,8 +157,7 @@ function AutoConfiguredDevtoolsImpl({
       {visible && (
         <div className={wrapperClassname} style={wrapperStyle}>
           {allowResize && <Resizer/>}
-          <DevtoolsViewInternalV2 />
-          {/*<DevtoolsViewInternal onClose={() => setVisible(false)}/>*/}
+          <DevtoolsViewInternalV2 onClose={() => setVisible(false)} />
         </div>
       )}
     </>

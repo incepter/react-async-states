@@ -5,7 +5,7 @@ import {
   InstancePlaceholder,
   InstancesList,
   instancesList
-} from "../sources";
+} from "./sources";
 import {Status, useSource, useAsyncState, State} from "react-async-states";
 
 export default function Sider() {
@@ -17,7 +17,7 @@ export default function Sider() {
 
   let instancesToDisplay = formatInstances(state.data);
   return (
-    <div className="scroll-y-auto">
+    <div className="sider-root-mediator scroll-y-auto">
       <div className="sider-root">
         {
           Object.entries(instancesToDisplay)
@@ -131,9 +131,15 @@ const InstanceDetailsView = React.memo(function InstanceDetailsView(props: { cur
   let key = props.instance.key;
   let title = `${key} - ${uniqueId}`;
   let status = state.data?.state?.status;
+  let styleToAdd: any = {};
+  if (props.current) {
+    styleToAdd.backgroundColor = "background-color: #5e9ad9 !important";
+  }
   return (
     <button title={title} onClick={() => currentView.setState(`${uniqueId}`)}
-            className={`sider-key-root ${props.current ? 'sider-key-root-current' : ''}`}>
+            className={"devtools-button sider-key-root devtools-side-button"}
+            style={styleToAdd}
+    >
       <span>{key}</span>
       <span
         title={`status=${status}, subscriptions count=${subscriptionsCount}, flags: ${subscriptionsFlags}`}

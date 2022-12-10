@@ -5,7 +5,7 @@ import {
 } from "react-async-states/dist/devtools";
 import {DevtoolsMessagesBuilder} from "./utils";
 import {shimChromeRuntime} from "./ShimChromeRuntime";
-import {ProducerProps} from "react-async-states/src";
+import type {ProducerProps} from "react-async-states/dist/es/src";
 
 export function resetAllSources() {
   // currentView.setState(null);

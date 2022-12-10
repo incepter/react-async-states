@@ -22,7 +22,7 @@
     "react-resizable": "^3.0.4"
   },
   "peerDependencies": {
-    "react-async-states": ">=1.0.0-rc-8"
+    "react-async-states": ">=1.0.0-rc-11"
   },
   "devDependencies": {
     "@rollup/plugin-replace": "^5.0.1",

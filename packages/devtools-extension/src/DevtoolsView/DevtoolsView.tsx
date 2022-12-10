@@ -1,7 +1,7 @@
 // sources
 import * as React from "react";
 import {Status, useAsyncState} from "react-async-states";
-import {devtoolsInfo, gatewaySource} from "../sources";
+import {devtoolsInfo, gatewaySource} from "./sources";
 import Sider from "./Sider";
 import StateView from "./StateView";
 import "./index.css";
@@ -21,7 +21,7 @@ export default function DevtoolsView({
   let {state: {status, data}} = useAsyncState.auto(devtoolsInfo);
 
   if (status === Status.pending || (status === Status.success && !data.connected)) {
-    return "Trying to connect...";
+    return <span>Trying to connect...</span>;
   }
 
   if (status === Status.success) {
@@ -30,7 +30,7 @@ export default function DevtoolsView({
 
   if (status === Status.error) {
     console.error(data);
-    return "It doesn't seem that you are using the library";
+    return <span>It doesn't seem that you are using the library</span>
   }
 
   return null;
