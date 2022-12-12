@@ -7,15 +7,16 @@ import {
   useProducer,
   useSelector
 } from "react-async-states";
-import type {State} from "react-async-states";
 
-createSource<number>("test-1", null, {initialValue: 0}).getLaneSource("test-1-lane")
 createSource<number>("test-2", null, {initialValue: 0})
+createSource<number>("test-1", null, {initialValue: 0})
+  .getLaneSource("test-1-lane")
+  .getLaneSource("test-1-lane-lane-nested");
 
 
 function DevModeApp({alias}) {
   const source = React.useMemo(() => createSource<number>(alias, null, {initialValue: 0}), []);
-  const {state} = useSourceLane(source);
+  const {state} = useSourceLane(source, `${alias}-lane`);
   return <button
     onClick={() => source.run(old => old.data + 1)}>{alias} - {state.data}</button>
 }
