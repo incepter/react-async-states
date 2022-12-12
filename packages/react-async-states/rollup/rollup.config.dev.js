@@ -4,7 +4,7 @@ const typescript = require('rollup-plugin-typescript2');
 const json = require('@rollup/plugin-json');
 const {babel} = require('@rollup/plugin-babel');
 
-const umdBuild = {
+const devBuild = {
   input: `src/index.ts`,
   globals: {
     react: 'React',
@@ -23,8 +23,10 @@ const umdBuild = {
     },
     {
       format: 'es',
+      dir: "dist/es",
       sourcemap: true,
-      file: `dist/index.js`,
+      preserveModules: true,
+      // file: `dist/index.js`,
       name: "ReactAsyncStates",
       globals: {
         react: 'React',
@@ -84,6 +86,6 @@ const devtoolsSharedBuild = {
 };
 
 module.exports = [
-  umdBuild,
+  devBuild,
   devtoolsSharedBuild,
 ];

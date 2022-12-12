@@ -308,9 +308,12 @@ class AsyncState<T> implements StateInterface<T> {
     }
   }
 
-  subscribe(
-    props: AsyncStateSubscribeProps<T>
-  ): AbortFn {
+
+  subscribe(cb: (s: State<T>) => void): AbortFn
+  subscribe(subProps: AsyncStateSubscribeProps<T>): AbortFn
+  subscribe(argv: ((s: State<T>) => void) | AsyncStateSubscribeProps<T>): AbortFn {
+    let props = (isFunction(argv) ? {cb: argv} : argv) as AsyncStateSubscribeProps<T>;
+
     if (!this.subsIndex) {
       this.subsIndex = 0;
       this.locks = 0;
@@ -1256,7 +1259,9 @@ export interface BaseSource<T> {
   ): void;
 
   // subscriptions
-  subscribe(AsyncStateSubscribeProps: AsyncStateSubscribeProps<T>): AbortFn,
+  subscribe(cb: (s: State<T>) => void): AbortFn
+  subscribe(subProps: AsyncStateSubscribeProps<T>): AbortFn
+  subscribe(argv: ((s: State<T>) => void) | AsyncStateSubscribeProps<T>): AbortFn
 
   // producer
   replay(): AbortFn,
