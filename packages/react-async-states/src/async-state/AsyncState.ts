@@ -87,6 +87,7 @@ class AsyncState<T> implements StateInterface<T> {
     this.mergePayload = this.mergePayload.bind(this);
 
     this.replay = this.replay.bind(this);
+    this.hasLane = this.hasLane.bind(this);
     this.getConfig = this.getConfig.bind(this);
     this.removeLane = this.removeLane.bind(this);
     this.patchConfig = this.patchConfig.bind(this);
@@ -230,6 +231,13 @@ class AsyncState<T> implements StateInterface<T> {
     return this.payload;
   }
 
+  hasLane(laneKey: string): boolean {
+    if (!this.lanes) {
+      return false;
+    }
+    return !!this.lanes[laneKey];
+  }
+
   removeLane(laneKey?: string): boolean {
     if (!this.lanes || !laneKey) {
       return false;
@@ -313,6 +321,9 @@ class AsyncState<T> implements StateInterface<T> {
   subscribe(subProps: AsyncStateSubscribeProps<T>): AbortFn
   subscribe(argv: ((s: State<T>) => void) | AsyncStateSubscribeProps<T>): AbortFn {
     let props = (isFunction(argv) ? {cb: argv} : argv) as AsyncStateSubscribeProps<T>;
+    if (!isFunction(props.cb)) {
+      return;
+    }
 
     if (!this.subsIndex) {
       this.subsIndex = 0;
@@ -967,6 +978,7 @@ function makeSource<T>(instance: StateInterface<T>): Readonly<Source<T>> {
 
     abort: instance.abort,
     replay: instance.replay,
+    hasLane: instance.hasLane,
     getState: instance.getState,
     setState: instance.setState,
     getConfig: instance.getConfig,
@@ -1328,6 +1340,7 @@ export interface StateInterface<T> extends BaseSource<T> {
   // methods & overrides
   dispose(): boolean,
 
+  hasLane(laneKey: string): boolean,
   getLane(laneKey?: string): StateInterface<T>,
 
   fork(forkConfig?: ForkConfig): StateInterface<T>,
@@ -1464,6 +1477,7 @@ export interface Source<T> extends BaseSource<T> {
 
   runc(props: RUNCProps<T>): AbortFn,
 
+  hasLane(laneKey: string): boolean,
   removeLane(laneKey?: string): boolean,
   getLaneSource(laneKey?: string): Source<T>,
 
