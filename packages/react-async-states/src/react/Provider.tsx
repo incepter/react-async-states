@@ -3,7 +3,7 @@ import {AsyncStateContext} from "./context";
 import {
   AsyncStateEntry,
   AsyncStateManager,
-  AsyncStateManagerInterface,
+  ManagerInterface,
   StateProviderProps
 } from "../async-state";
 import {StateContextValue, UseAsyncStateContextType} from "../types.internal";
@@ -36,7 +36,7 @@ export function AsyncStateProvider(
   // }
 
   const manager = React
-    .useMemo<AsyncStateManagerInterface>(initialize, [providedManager]);
+    .useMemo<ManagerInterface>(initialize, [providedManager]);
 
   // this function should only tell the manager to execute a diffing
   // of items he has and the new ones

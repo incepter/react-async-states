@@ -245,7 +245,7 @@ It allows the library to cascade the props:
 
 ```typescript
 
-export function createProducerEffectsCreator(manager: AsyncStateManagerInterface) {
+export function createProducerEffectsCreator(manager: ManagerInterface) {
   return function closeOverProps<T>(props: ProducerProps<T>): ProducerEffects {
     return {
       run: createRunFunction(manager, props),
@@ -415,7 +415,7 @@ const asyncStateEntries: AsyncStateEntries = Object
   // stores all listeners/watchers about an async state
   let watchers: ManagerWatchers = Object.create(null);
 
-  const output: AsyncStateManagerInterface = {
+  const output: ManagerInterface = {
     entries: asyncStateEntries,
     run,
     get,

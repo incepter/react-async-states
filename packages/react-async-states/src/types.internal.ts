@@ -2,7 +2,7 @@ import * as React from "react";
 import {ReactNode} from "react";
 import {
   AbortFn,
-  AsyncStateManagerInterface,
+  ManagerInterface,
   CacheConfig,
   CachedState,
   ForkConfig,
@@ -23,7 +23,7 @@ export interface AsyncStateInitializer<T> {
   config?: ProducerConfig<T>
 }
 
-export type StateContextValue = AsyncStateManagerInterface;
+export type StateContextValue = ManagerInterface;
 
 // use async state
 

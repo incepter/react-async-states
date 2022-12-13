@@ -22,29 +22,16 @@ import {isSource,} from "./utils";
 
 const listenersKey = Symbol();
 
-// the manager contains all functions responsible for managing the context provider
-// there is a manager per provider
-// the manager operates on the asyncStateEntries map after copying the oldManager watchers
-export function AsyncStateManager(
-  initializer?: InitialStates
-): AsyncStateManagerInterface {
+export function AsyncStateManager(initializer?: InitialStates): ManagerInterface {
 
-  let asyncStateEntries: AsyncStateEntries = Object
-    .values(initializer ?? {})
-    .reduce(
-      createInitialAsyncStatesReducer,
-      Object.create(null)
-    ) as AsyncStateEntries;
+  let asyncStateEntries = Object
+    .values(initializer || {}).reduce(createStateEntriesReducer, {});
 
   let payload: Record<string, any> | null = null;
-  // stores all listeners/watchers about an async state
   let watchers: ManagerWatchers = Object.create(null);
 
-  // @ts-ignore
-  // ts is yelling at createEffects property which will be assigned
-  // in the next statement.
-  const output: AsyncStateManagerInterface = {
-    entries: asyncStateEntries,
+  // @ts-ignore ts wants createEffects property that is assigned right next
+  const output: ManagerInterface = {
     get,
     hoist,
     watch,
@@ -53,6 +40,7 @@ export function AsyncStateManager(
     watchAll,
     getAllKeys,
     notifyWatchers,
+    entries: asyncStateEntries,
     setStates: setInitialStates,
     getPayload(): Record<string, any> | null {
       return payload;
@@ -72,35 +60,89 @@ export function AsyncStateManager(
 
   return output;
 
-  function getInitialStatesMap(initialStates?: InitialStates) {
-    const values = Object.values(initialStates ?? {});
-
-    return values.reduce((acc, current) => {
-      acc[current.key] = current;
-      return acc;
-    }, {} as Record<string, ExtendedInitialAsyncState<any>>);
+  function get<T>(key: string): StateInterface<T> {
+    return asyncStateEntries[key]?.instance;
   }
 
-  function setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[] {
-    const newStatesMap = getInitialStatesMap(initialStates);
+  function watchAll(notify: WatchCallback<any>) {
+    return watch(listenersKey, notify);
+  }
 
-    const previousStates = Object.assign({}, asyncStateEntries);
+  function getAllKeys(): string[] {
+    return Object.keys(asyncStateEntries);
+  }
+
+  function hoist<T>(
+    key: string, instance: StateInterface<T>, hoistConfig?: hoistConfig
+  ): StateInterface<T> {
+    let prevInstance = get<T>(key);
+    if (prevInstance && !hoistConfig?.override) {
+      return prevInstance;
+    }
+    if (prevInstance) {
+      let didDispose = dispose(prevInstance);
+      if (!didDispose) { // something is subscribing to it
+        return prevInstance;
+      }
+    }
+    asyncStateEntries[key] = {instance, hoisted: false};
+    notifyWatchers(key, instance);
+    return instance;
+  }
+
+  function watch<T>(key: AsyncStateWatchKey, notify: WatchCallback<T>): AbortFn {
+    let keyWatchers = watchers[key];
+    if (!keyWatchers) {
+      keyWatchers = watchers[key] = {meter: 0, watchers: {}};
+    }
+    let didUnwatch = false;
+    let index = ++keyWatchers.meter;
+    keyWatchers.watchers[index] = {notify: notification, cleanup};
+    return cleanup;
+
+    function notification(argv: ManagerWatchCallbackValue<T>, notifKey: string) {
+      if (!didUnwatch) {
+        notify(argv, notifKey);
+      }
+    }
+    function cleanup() {
+      didUnwatch = true;
+      delete keyWatchers.watchers[index];
+    }
+  }
+
+  function dispose<T>(asyncState: StateInterface<T>): boolean {
+    let {key} = asyncState;
+    let maybeEntry = asyncStateEntries[key];
+    if (!maybeEntry || maybeEntry.instance !== asyncState) {
+      return false;
+    }
+
+    if (
+      !maybeEntry.hoisted && maybeEntry.instance.subscriptions &&
+      Object.values(maybeEntry.instance.subscriptions).length === 0
+    ) {
+      delete asyncStateEntries[key];
+      notifyWatchers(key, null);
+      return true;
+    }
+
+    return false;
+  }
+
+
+  function setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[] {
+    let newStatesMap = getInitialStatesMap(initialStates);
+
+    let previousStates = Object.assign({}, asyncStateEntries);
     // basically, this is the same object reference..
     asyncStateEntries = Object
       .values(newStatesMap)
-      .reduce(
-        createInitialAsyncStatesReducer,
-        asyncStateEntries,
-      );
+      .reduce(createStateEntriesReducer, asyncStateEntries);
 
-    // we should remove the states that were initially hoisted
-    // but do no-longer exist in provider.
-    // these states should not exist unless there is a subscriber to them
-    // in this case, we should mark them as not initially hoisted
-    const entriesToRemove: AsyncStateEntry<any>[] = [];
+    let entriesToRemove: AsyncStateEntry<any>[] = [];
     for (const [key, entry] of Object.entries(asyncStateEntries)) {
-      // notify only if new!
-      if (newStatesMap[key] && !previousStates[key]) {
+      if (newStatesMap[key] && !previousStates[key]) { // notify only if new
         notifyWatchers(key, entry.instance);
       }
       if (!newStatesMap[key] && entry.hoisted) {
@@ -112,213 +154,57 @@ export function AsyncStateManager(
     return entriesToRemove;
   }
 
-  function get<T>(
-    key: string
-  ): StateInterface<T> {
-    return asyncStateEntries[key]?.instance;
-  }
-
-  function dispose<T>(
-    asyncState: StateInterface<T>
-  ): boolean {
-    const {key} = asyncState;
-
-    // delete only if it was not initially hoistedQ
-    const entry = asyncStateEntries[key]
-    if (
-      entry &&
-      !entry.hoisted &&
-      entry.instance.subscriptions &&
-      Object.values(entry.instance.subscriptions).length === 0
-    ) {
-      delete asyncStateEntries[key];
-      // notify watchers about disappearance
-      notifyWatchers(key, null);
-
-      return true;
-    }
-
-    return false;
-  }
-
-  // there is two types of watchers: per key, and watching everything
-  // the everything watcher is the useSelector with a function selecting keys
-  // (cannot statically predict them, so it needs to be notified about everything happening)
-  // watch: watches only a key
-  // watchAll: watches everything and uses a special key to watch (a symbol)
-  // watchers have this shape
-  // {
-  //    listenersKey(symbol): { // watching everything
-  //      meter: 3,
-  //      watchers: {
-  //        1: {notify, cleanup}
-  //        2: {notify, cleanup}
-  //        3: {notify, cleanup}
-  //      }
-  //    },
-  //    users: {
-  //      meter: 1,
-  //      watchers: {
-  //        1: {notify, cleanup}
-  //      }
-  //    }
-  // }
-  function watch<T>(
-    key: AsyncStateWatchKey,
-    notify: ManagerWatchCallback<T>
-  ): AbortFn {
-    if (!watchers[key]) {
-      watchers[key] = {meter: 0, watchers: {}};
-    }
-
-    // these are the watchers about the specified key
-    let keyWatchers = watchers[key];
-    const index = ++keyWatchers.meter;
-
-    let didUnwatch = false;
-
-    function notification(
-      argv: ManagerWatchCallbackValue<T>,
-      notificationKey: string
-    ) {
-      if (!didUnwatch) {
-        notify(
-          argv,
-          notificationKey
-        );
-      }
-    }
-
-    keyWatchers.watchers[index] = {notify: notification, cleanup};
-
-    function cleanup() {
-      didUnwatch = true;
-      delete keyWatchers.watchers[index];
-    }
-
-    return cleanup;
-  }
-
-  function watchAll(notify: ManagerWatchCallback<any>) {
-    return watch(listenersKey, notify);
-  }
 
   function notifyWatchers<T>(
     key: string,
     value: ManagerWatchCallbackValue<T>
   ): void {
-    function notify() {
-      // it is important to close over the notifications to be sent
-      // to avoid sending notifications to old closures that aren't relevant anymore
-      // if this occurs, the component will receive a false notification
-      // that may let him enter an infinite loop
+    Promise.resolve().then(function notify() {
       let notifications: WatcherType[] = [];
-
       if (watchers[listenersKey]?.watchers) {
         notifications = Object.values(watchers[listenersKey].watchers);
       }
       if (watchers[key]) {
-        notifications = notifications.concat(
-          Object.values(watchers[key].watchers));
+        notifications = notifications.concat(Object.values(watchers[key].watchers));
       }
-
       notifications.forEach(function notifyWatcher(watcher) {
         watcher.notify(value, key);
       });
-    }
-
-    // the notification should not go synchronous
-    // because it occurs when a component A is rendering,
-    // if we notify a component B that schedules a render
-    // react would throw a warning in the console about scheduling
-    // an update in a component in the render phase from another one
-    Promise.resolve().then(notify);
+    });
   }
 
-  function hoist<T>(
-    key: string,
-    instance: StateInterface<T>,
-    hoistConfig?: hoistConfig
-  ): StateInterface<T> {
-
-    const existing = get(key);
-
-    if (existing && !hoistConfig?.override) {
-      return existing as StateInterface<T>;
-    }
-
-    if (existing) {
-      let didDispose = dispose(existing);
-
-      if (!didDispose) {
-        return existing as StateInterface<T>;
-      }
-    }
-
-    asyncStateEntries[key] = createAsyncStateEntry(instance, false);
-
-    notifyWatchers(key, instance); // this is async
-
-    return instance;
-  }
-
-  // used in function selector in useSelector
-  function getAllKeys(): string[] {
-    return Object.keys(asyncStateEntries);
-  }
 }
 
-function createAsyncStateEntry<T>(
-  asyncState: StateInterface<T>,
-  initiallyHoisted: boolean,
-): AsyncStateEntry<T> {
-  return {instance: asyncState, hoisted: initiallyHoisted};
-}
-
-
-function createInitialAsyncStatesReducer(
+function createStateEntriesReducer(
   result: AsyncStateEntries,
-  current: ExtendedInitialAsyncState<any>
+  current: SourceOrDefinition<any>
 ): AsyncStateEntries {
   if (isSource(current)) {
-    const key = current.key;
-    const existingEntry = result[key];
-    const asyncState = readSource(
-      current as Source<any>);
-
-    if (!existingEntry || asyncState !== existingEntry.instance) {
-      result[key] = createAsyncStateEntry(asyncState, true);
-      result[key].hoisted = true;
+    let prevEntry = result[current.key];
+    let instance = readSource(current as Source<any>);
+    if (!prevEntry || instance !== prevEntry.instance) {
+      result[current.key] = {instance, hoisted: true};
     }
-
     return result;
   } else {
-    const {key, producer, config} = current as InitialAsyncState<any>;
-    const initialValue = config?.initialValue;
-    const existingEntry = result[key];
-
-    if (existingEntry) {
-      const asyncState = existingEntry.instance;
-      if (
-        asyncState.originalProducer === producer &&
-        asyncState.config.initialValue === initialValue
-      ) {
-        return result;
+    const prevEntry = result[current.key];
+    if (prevEntry && prevEntry.hoisted) {
+      let nextProducer = (current as StateDefinition<any>).producer;
+      if (nextProducer !== prevEntry.instance.originalProducer) {
+        prevEntry.instance.replaceProducer(nextProducer);
       }
+      return result;
     }
-    result[key] = createAsyncStateEntry(
-      new AsyncState(key, producer, config),
-      true // initially hoisted
-    );
-    result[key].hoisted = true;
-
+    let {key, producer, config} = current as StateDefinition<any>;
+    let instance = new AsyncState(key, producer, config);
+    result[current.key] = {instance, hoisted: true};
     return result;
   }
 }
 
 //region Producer effects creator
 
-export function createProducerEffectsCreator(manager: AsyncStateManagerInterface) {
+export function createProducerEffectsCreator(manager: ManagerInterface) {
   return function closeOverProps<T>(props: ProducerProps<T>): ProducerEffects {
     return {
       run: managerProducerRunFunction.bind(null, manager),
@@ -329,7 +215,7 @@ export function createProducerEffectsCreator(manager: AsyncStateManagerInterface
 }
 
 function managerProducerRunFunction<T>(
-  manager: AsyncStateManagerInterface,
+  manager: ManagerInterface,
   input: ProducerRunInput<T>,
   config: ProducerRunConfig | null,
   ...args: any[]
@@ -348,7 +234,7 @@ function managerProducerRunFunction<T>(
 }
 
 function managerProducerRunpFunction<T>(
-  manager: AsyncStateManagerInterface,
+  manager: ManagerInterface,
   props: ProducerProps<T>,
   input: ProducerRunInput<T>,
   config: ProducerRunConfig | null,
@@ -368,7 +254,7 @@ function managerProducerRunpFunction<T>(
 }
 
 function managerProducerSelectFunction<T>(
-  manager: AsyncStateManagerInterface,
+  manager: ManagerInterface,
   input: AsyncStateKeyOrSource<T>,
   lane?: string,
 ): State<T> | undefined {
@@ -385,6 +271,16 @@ function managerProducerSelectFunction<T>(
   return standaloneProducerSelectEffectFunction(input, lane);
 }
 
+
+function getInitialStatesMap(initialStates?: InitialStates) {
+  const values = Object.values(initialStates || {});
+
+  return values.reduce((acc, current) => {
+    acc[current.key] = current;
+    return acc;
+  }, {} as Record<string, SourceOrDefinition<any>>);
+}
+
 //endregion
 
 //region TYPES
@@ -394,14 +290,14 @@ export type hoistConfig = {
 
 export type ManagerWatchCallbackValue<T> = StateInterface<T> | null;
 
-export type ManagerWatchCallback<T> = (
+export type WatchCallback<T> = (
   value: ManagerWatchCallbackValue<T>,
   additionalInfo: string
 ) => void;
 
 export type WatcherType = {
   cleanup: AbortFn,
-  notify: ManagerWatchCallback<any>,
+  notify: WatchCallback<any>,
 }
 
 export type ManagerWatchers = {
@@ -411,7 +307,7 @@ export type ManagerWatchers = {
   }
 }
 
-export type AsyncStateManagerInterface = {
+export interface ManagerInterface {
   entries: AsyncStateEntries,
   watchers: ManagerWatchers,
   get<T>(key: string): StateInterface<T>,
@@ -422,14 +318,14 @@ export type AsyncStateManagerInterface = {
   dispose<T>(asyncState: StateInterface<T>): boolean,
   watch<T>(
     key: AsyncStateWatchKey,
-    value: ManagerWatchCallback<T>
+    value: WatchCallback<T>
   ): AbortFn,
   notifyWatchers<T>(
     key: string,
     value: ManagerWatchCallbackValue<T>
   ): void,
   getAllKeys(): string[],
-  watchAll(cb: ManagerWatchCallback<any>),
+  watchAll(cb: WatchCallback<any>),
   setStates(initialStates?: InitialStates): AsyncStateEntry<any>[],
 
   getPayload(): Record<string, any> | null,
@@ -438,13 +334,13 @@ export type AsyncStateManagerInterface = {
   createEffects<T>(props: ProducerProps<T>): ProducerEffects,
 }
 
-export type InitialStatesObject = { [id: string]: ExtendedInitialAsyncState<any> };
+export type InitialStatesObject = { [id: string]: SourceOrDefinition<any> };
 
-export type InitialStates = ExtendedInitialAsyncState<any>[]
+export type InitialStates = SourceOrDefinition<any>[]
   | InitialStatesObject;
 
 export type StateProviderProps = {
-  manager?: AsyncStateManagerInterface,
+  manager?: ManagerInterface,
   children: any,
   initialStates?: InitialStates,
   payload?: { [id: string]: any },
@@ -466,11 +362,9 @@ export type AsyncStateSelector<T> =
 export type SimpleSelector<T, E> = (props: FunctionSelectorItem<T> | undefined) => E;
 export type ArraySelector<T> = (...states: (FunctionSelectorItem<any> | undefined)[]) => T;
 
-export type ExtendedInitialAsyncState<T> =
-  InitialAsyncState<T>
-  | Source<T>;
+export type SourceOrDefinition<T> = Source<T> | StateDefinition<T>;
 
-export type InitialAsyncState<T> = {
+export type StateDefinition<T> = {
   key: string,
   producer?: Producer<T>,
   config?: ProducerConfig<T>
