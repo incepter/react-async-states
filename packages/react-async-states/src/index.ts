@@ -38,7 +38,6 @@ export type {
 
   InitialStates,
   StateDefinition,
-  AsyncStateSelector,
   hoistConfig,
   SourceOrDefinition,
 

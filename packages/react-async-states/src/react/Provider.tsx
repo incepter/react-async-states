@@ -1,5 +1,5 @@
 import * as React from "react";
-import {AsyncStateContext} from "./context";
+import {StateContext} from "./context";
 import {
   StateEntry,
   AsyncStateManager,
@@ -62,9 +62,9 @@ export function AsyncStateProvider(
   React.useEffect(disposeManager, [manager]);
 
   return (
-    <AsyncStateContext.Provider value={contextValue}>
+    <StateContext.Provider value={contextValue}>
       {children}
-    </AsyncStateContext.Provider>
+    </StateContext.Provider>
   );
 
   function initialize() {

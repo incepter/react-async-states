@@ -14,7 +14,7 @@ import {
   StateContextValue,
   UseAsyncState,
 } from "../types.internal";
-import {AsyncStateContext} from "./context";
+import {StateContext} from "./context";
 import {AUTO_RUN} from "./StateHookFlags";
 import {__DEV__, emptyArray} from "../shared";
 import {calculateStateValue, StateHook} from "./StateHook";
@@ -36,7 +36,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
   }
   let hook: StateHook<T, E> = useCurrentHook(caller);
   let [guard, setGuard] = React.useState<number>(0);
-  let contextValue = React.useContext<StateContextValue>(AsyncStateContext);
+  let contextValue = React.useContext<StateContextValue>(StateContext);
 
   React.useMemo(() => hook.update(1, mixedConfig, contextValue, overrides),
     deps.concat([contextValue, guard]));

@@ -1,6 +1,6 @@
 import * as React from "react";
 import {AbortFn, AsyncStateKeyOrSource, Source} from "../async-state";
-import {AsyncStateContext} from "./context";
+import {StateContext} from "./context";
 import {isSource} from "../async-state/utils";
 import {StateContextValue} from "../types.internal";
 
@@ -12,12 +12,12 @@ type RunLaneFunction<T> = ((
 ) => AbortFn);
 
 export function useRun<T>(): RunFunction<T> {
-  const contextValue = React.useContext(AsyncStateContext);
+  const contextValue = React.useContext(StateContext);
   return contextValue !== null ? runInside.bind(null, contextValue) : runOutside;
 }
 
 export function useRunLane<T>(): RunLaneFunction<T> {
-  const contextValue = React.useContext(AsyncStateContext);
+  const contextValue = React.useContext(StateContext);
   return contextValue !== null ? runLaneInside.bind(null, contextValue) : runLaneOutside;
 }
 

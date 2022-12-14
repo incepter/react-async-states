@@ -1394,8 +1394,8 @@ export enum RunEffect {
 
 export type State<T> = {
   data: T,
-  timestamp: number,
   status: Status,
+  timestamp: number,
   props?: ProducerSavedProps<T> | null,
 };
 

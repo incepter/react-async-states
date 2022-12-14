@@ -8,7 +8,7 @@ import {
   ensureStateHookVersionIsLatest,
   useCurrentHook
 } from "./helpers/hooks-utils";
-import {AsyncStateContext} from "./context";
+import {StateContext} from "./context";
 
 // this is a mini version of useAsyncState
 // this hook uses fewer hooks and has fewer capabilities that useAsyncState
@@ -28,7 +28,7 @@ export function useProducer<T>(
     caller = useCallerName(3);
   }
   let hook: StateHook<T, State<T>> = useCurrentHook(caller);
-  let contextValue = React.useContext<StateContextValue>(AsyncStateContext);
+  let contextValue = React.useContext<StateContextValue>(StateContext);
 
   React.useMemo(() => hook.update(3, producer, contextValue, undefined), [contextValue]);
 

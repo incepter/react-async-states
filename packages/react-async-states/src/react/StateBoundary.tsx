@@ -48,8 +48,8 @@ function inferBoundaryChildren<T, E = State<T>>(
   return props.render[status] ? props.render[status] : props.children;
 }
 
-function renderChildren(children) {
-  return isFunction(children) ? React.createElement(children) : children;
+function renderChildren(children, props) {
+  return isFunction(children) ? React.createElement(children, props) : children;
 }
 
 export function RenderThenFetchBoundary<T, E>(props: StateBoundaryProps<T, E>) {
@@ -59,7 +59,7 @@ export function RenderThenFetchBoundary<T, E>(props: StateBoundaryProps<T, E>) {
 
   return (
     <StateBoundaryContext.Provider value={result}>
-      {renderChildren(children)}
+      {renderChildren(children, result)}
     </StateBoundaryContext.Provider>
   );
 }
@@ -70,7 +70,7 @@ export function FetchAsYouRenderBoundary<T, E>(props: StateBoundaryProps<T, E>) 
   const children = inferBoundaryChildren(result, props);
   return (
     <StateBoundaryContext.Provider value={result}>
-      {renderChildren(children)}
+      {renderChildren(children, result)}
     </StateBoundaryContext.Provider>
   );
 }
@@ -116,7 +116,7 @@ export function FetchThenRenderBoundary<T, E>(props: StateBoundaryProps<T, E>) {
       const children = inferBoundaryChildren(result, props);
       return (
         <StateBoundaryContext.Provider value={result}>
-          {renderChildren(children)}
+          {renderChildren(children, result)}
         </StateBoundaryContext.Provider>
       );
     }

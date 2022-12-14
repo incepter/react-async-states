@@ -468,10 +468,7 @@ function createReadInConcurrentMode<T, E>(
   instance: StateInterface<T>,
   stateValue: E
 ) {
-  if (
-    Status.pending === instance.state.status &&
-    instance.suspender
-  ) {
+  if (Status.pending === instance.state.status && instance.suspender) {
     throw instance.suspender;
   }
   return stateValue;

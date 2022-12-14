@@ -1,186 +1,76 @@
 import * as React from "react";
-import {AsyncStateContext} from "./context";
+import {StateContext} from "./context";
 import {
   BaseSelectorKey,
-  EqualityFn,
   SelectorKeysArg,
   StateContextValue,
   UseSelectorFunctionKeys,
 } from "../types.internal";
 import {isSource} from "../async-state/utils";
 import {
+  AbortFn,
   ArraySelector,
   FunctionSelector,
   FunctionSelectorItem,
-  InstanceOrNull,
+  InstanceOrNull, ManagerInterface,
   SimpleSelector,
   Source,
   StateInterface
 } from "../async-state";
 import {readSource} from "../async-state/AsyncState";
 import {useCallerName} from "./helpers/useCallerName";
-import {__DEV__, isFunction, shallowEqual} from "../shared";
-
-type SelectorSelf<T> = {
-  value: T,
-  keys: (string | Source<any>)[],
-  instances: Record<string, StateInterface<any> | undefined>,
-}
+import {__DEV__, isFunction} from "../shared";
 
 export function useSelector<T>(
   keys: BaseSelectorKey,
   selector?: SimpleSelector<any, T>,
-  areEqual?: EqualityFn<T>
 ): T
 export function useSelector<T>(
   keys: BaseSelectorKey[],
   selector?: ArraySelector<T>,
-  areEqual?: EqualityFn<T>,
 ): T
 export function useSelector<T>(
   keys: UseSelectorFunctionKeys,
   selector?: FunctionSelector<T>,
-  areEqual?: EqualityFn<T>,
 ): T
 export function useSelector<T>(
   keys: BaseSelectorKey | BaseSelectorKey[] | UseSelectorFunctionKeys,
-// @ts-ignore
-  selector?: SimpleSelector<any, T> | ArraySelector<T> | FunctionSelector<T> = identity,
-  areEqual?: EqualityFn<T> = shallowEqual,
+  selector: SimpleSelector<any, T> | ArraySelector<T> | FunctionSelector<T> = identity,
 ): T {
   let caller;
   if (__DEV__) {
     caller = useCallerName(3);
   }
-  const contextValue = React.useContext(AsyncStateContext);
+  let context = React.useContext(StateContext);
 
-  ensureParamsAreOk(contextValue, keys);
+  ensureParamsAreOk(context, keys);
 
-  const [self, setSelf] = React.useState<SelectorSelf<T>>(computeSelf);
+  let [guard, setGuard] = React.useState<number>(0);
+  let keysArray = React
+    .useMemo(() => readKeys(keys, context), [guard, keys, context]);
+  let instances = React
+    .useMemo(() => resolveInstances(keysArray, context), [keysArray]);
 
-  // when the content of the keys array change, recalculate
-  // const keysToWatch = readKeys(keys, contextValue);
-  // if (didKeysChange(self.keys, keysToWatch)) {
-  //   setSelf(computeSelf());
-  // }
+  let [state, setState] = React.useState<{value: T, guard: number}>(computeState);
 
-  if (contextValue !== null) {
-    React.useLayoutEffect(() => {
-      function onChange(
-        value: InstanceOrNull<T>,
-        notificationKey: string
-      ) {
+  React.useEffect(
+    () => subscribeAndWatch(context, keysArray, instances, onUpdate, setGuard, caller),
+    [context, keysArray, instances]
+  );
 
-        // if we are interested in what happened, recalculate and quit
-        if (
-          self.instances.hasOwnProperty(notificationKey) &&
-          self.instances[notificationKey] !== value
-        ) {
-          setSelf(computeSelf());
-          return;
-        }
-        // re-attempt calculating keys if the given keys is a function:
-        if (isFunction(keys)) {
-          const newKeys = readKeys(keys, contextValue);
-          if (didKeysChange(self.keys, newKeys)) {
-            setSelf(computeSelf());
-          }
-        }
-      }
-
-      return contextValue.watchAll(onChange);
-    }, [contextValue, self.instances, self.keys, keys]);
+  if (state.guard !== guard) {
+    onUpdate();
   }
 
-  // uses:
-  //    - self.instances
-  //    - self.value
-  //    - areEqual
-  //    - selector (readValue uses it)
-  React.useEffect(() => {
-    function onUpdate() {
-      const newValue = readValue(self.instances);
-      if (!areEqual(self.value, newValue)) {
-        setSelf(old => Object.assign({}, old, {value: newValue}));
-      }
-    }
+  return state.value;
 
-    const unsubscribeFns = Object
-      .values(self.instances)
-      .filter(Boolean)
-      .map(as => {
-        let subscriptionKey: string | undefined = undefined;
-        if (__DEV__) {
-          subscriptionKey = `${caller}-$4`;// 4: useSelector
-        }
-        return (as as StateInterface<T>)!.subscribe({
-          origin: 4,
-          cb: onUpdate,
-          flags: undefined,
-          key: subscriptionKey,
-        });
-      });
-
-    return () => {
-      unsubscribeFns.forEach((cleanup => cleanup?.()));
-    }
-  }, [contextValue, self.instances, self.value, areEqual]);
-
-  function computeSelf() {
-    const currentKeys = readKeys(keys, contextValue);
-    const currentInstances = computeInstancesMap(contextValue, currentKeys);
-    const currentValue = readValue(currentInstances);
-    return {
-      keys: currentKeys,
-      value: currentValue,
-      instances: currentInstances,
-    };
+  function computeState() {
+    return {value: selectValue(keys, selector, instances), guard};
   }
 
-  // uses: selector
-  function readValue(instances: Record<string, StateInterface<any> | undefined>) {
-    const selectorStates = Object.entries(instances)
-      .map(([key, as]) => {
-        return Object.assign({}, as?.state, {
-          key,
-          cache: as?.cache,
-          lastSuccess: as?.lastSuccess
-        });
-      });
-
-    if (isFunction(keys)) {
-      const selectorParam: Record<string, FunctionSelectorItem<any>> = selectorStates
-        .reduce((
-          result, current) => {
-          result[current.key] = current;
-          return result;
-        }, {});
-      return (selector as FunctionSelector<T>)(selectorParam);
-    }
-
-    if (Array.isArray(keys)) {
-      return (selector as ArraySelector<T>).apply(null, selectorStates);
-    }
-
-    return (selector as SimpleSelector<any, T>)(selectorStates[0]);
+  function onUpdate() {
+    setState({value: selectValue(keys, selector, instances), guard});
   }
-
-  return self.value;
-}
-
-function didKeysChange(
-  oldKeys: (string | Source<any>)[],
-  newKeys: (string | Source<any>)[]
-): boolean {
-  if (oldKeys.length !== newKeys.length) {
-    return true;
-  }
-  for (let i = 0; i < oldKeys.length; i++) {
-    if (oldKeys[i] !== newKeys[i]) {
-      return true;
-    }
-  }
-  return false;
 }
 
 function readKeys(
@@ -197,36 +87,113 @@ function readKeys(
   return [keys as string];
 }
 
+
+function identity<T>(): T {
+  if (!arguments.length) {
+    return undefined as T;
+  }
+  return (arguments.length === 1 ? arguments[0] : arguments) as T;
+}
+
 function ensureParamsAreOk<E>(
   contextValue: StateContextValue | null,
   keys: BaseSelectorKey | BaseSelectorKey[] | UseSelectorFunctionKeys,
 ) {
   if (contextValue === null && isFunction(keys)) {
-    throw new Error('useSelector function as keys outside provider');
+    throw new Error('useSelector function should be used inside provider');
   }
 }
 
-function computeInstancesMap(
-  contextValue: StateContextValue | null,
-  fromKeys: (string | Source<any>)[]
+function resolveInstances(
+  keysArray: (string | Source<any>)[],
+  context: ManagerInterface | null
 ): Record<string, StateInterface<any> | undefined> {
-  return fromKeys
-    .reduce((result, current) => {
-      if (isSource(current)) {
-        const asyncState = readSource(current as Source<any>);
-        result[asyncState.key] = asyncState;
-      } else if (contextValue !== null) {
-        result[current as string] = contextValue.get(current as string);
-      } else {
-        result[current as string] = undefined;
-      }
-      return result;
-    }, {});
+  return keysArray.reduce((result, current) => {
+    if (isSource(current)) {
+      let source = current as Source<any>;
+      result[source.key] = readSource(source);
+    } else {
+      let key = current as string;
+      result[key] = context?.get(key);
+    }
+    return result;
+  }, {} as Record<string, StateInterface<any> | undefined>);
 }
 
-function identity(): any {
-  if (!arguments.length) {
-    return undefined;
+function selectValue<T>(
+  keys: BaseSelectorKey | BaseSelectorKey[] | UseSelectorFunctionKeys,
+  selector: SimpleSelector<any, T> | ArraySelector<T> | FunctionSelector<T>,
+  instances: Record<string, StateInterface<any> | undefined>
+): T {
+  if (isFunction(keys)) {
+    const selectorParam = Object.entries(instances)
+      .reduce((result, [key, maybeInstance]) => {
+        if (!maybeInstance) {
+          result[key] = {key};
+        } else {
+          result[key] = Object.assign({
+            key,
+            cache: maybeInstance.cache,
+            lastSuccess: maybeInstance.lastSuccess
+          }, maybeInstance.state);
+        }
+
+        return result;
+      }, {} as Record<string, FunctionSelectorItem<any>>);
+    return (selector as FunctionSelector<T>)(selectorParam);
   }
-  return arguments.length === 1 ? arguments[0] : arguments;
+
+  return (selector as ArraySelector<T>).apply(
+    null,
+    Object.entries(instances)
+      .map(([key, maybeInstance]) => {
+        if (!maybeInstance) {
+          return {key};
+        } else {
+          return Object.assign({
+            key,
+            cache: maybeInstance.cache,
+            lastSuccess: maybeInstance.lastSuccess
+          }, maybeInstance.state);
+        }
+      })
+  );
+}
+
+function subscribeAndWatch<T>(
+  context: ManagerInterface | null,
+  keysArray: (string | Source<any>)[],
+  resolvedInstances: Record<string, StateInterface<any> | undefined>,
+  onUpdate:  () => void,
+  setGuard:  React.Dispatch<React.SetStateAction<number>>,
+  caller?: string | undefined,
+) {
+  let unwatch: AbortFn = undefined;
+  let subscriptionKey: string | undefined = undefined;
+  if (__DEV__) {
+    subscriptionKey = `${caller}-$4`;// 4: useSelector
+  }
+
+  if (context !== null) {
+    unwatch = context.watchAll(function (
+      value: InstanceOrNull<any>, key: string) {
+      if (resolvedInstances.hasOwnProperty(key) && resolvedInstances[key] !== value) {
+        setGuard(prev => prev + 1);
+      }
+    });
+  }
+
+  let unsubscribe = Object.entries(resolvedInstances)
+    .map(([key, maybeInstance]) => maybeInstance?.subscribe({
+      origin: 4,
+      cb: onUpdate,
+      flags: undefined,
+      key: subscriptionKey,
+    }));
+
+  return function cleanup() {
+    unwatch?.();
+    unsubscribe.forEach(fn => fn?.());
+  };
+
 }
