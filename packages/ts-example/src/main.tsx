@@ -11,7 +11,7 @@ autoConfigureDevtools({open: true});
 
 const src = createSource("demo", null, {initialValue: 0});
 
-src.setState(old => old.data + 1)
+src.setState(old => old.data! + 1)
 
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(

@@ -4,51 +4,51 @@ import {StateContext} from "./context";
 import {isSource} from "../async-state/utils";
 import {StateContextValue} from "../types.internal";
 
-type RunFunction<T> = ((
-  keyOrSource: AsyncStateKeyOrSource<T>, ...args: any[]) => AbortFn);
-type RunLaneFunction<T> = ((
-  keyOrSource: AsyncStateKeyOrSource<T>, lane: string | undefined,
+type RunFunction<T, E, R> = ((
+  keyOrSource: AsyncStateKeyOrSource<T, E, R>, ...args: any[]) => AbortFn);
+type RunLaneFunction<T, E, R> = ((
+  keyOrSource: AsyncStateKeyOrSource<T, E, R>, lane: string | undefined,
   ...args: any[]
 ) => AbortFn);
 
-export function useRun<T>(): RunFunction<T> {
+export function useRun<T, E, R>(): RunFunction<T, E, R> {
   const contextValue = React.useContext(StateContext);
   return contextValue !== null ? runInside.bind(null, contextValue) : runOutside;
 }
 
-export function useRunLane<T>(): RunLaneFunction<T> {
+export function useRunLane<T, E, R>(): RunLaneFunction<T, E, R> {
   const contextValue = React.useContext(StateContext);
   return contextValue !== null ? runLaneInside.bind(null, contextValue) : runLaneOutside;
 }
 
-function runLaneOutside<T>(
-  keyOrSource: AsyncStateKeyOrSource<T>,
+function runLaneOutside<T, E, R>(
+  keyOrSource: AsyncStateKeyOrSource<T, E, R>,
   lane: string | undefined,
   ...args: any[]
 ) {
   if (isSource(keyOrSource)) {
-    return (keyOrSource as Source<T>).getLaneSource(lane).run(...args);
+    return (keyOrSource as Source<T, E, R>).getLaneSource(lane).run(...args);
   }
   return undefined;
 }
-function runOutside<T>(
-  keyOrSource: AsyncStateKeyOrSource<T>,
+function runOutside<T, E, R>(
+  keyOrSource: AsyncStateKeyOrSource<T, E, R>,
   ...args: any[]
 ) {
   return runLaneOutside(keyOrSource, undefined, ...args);
 }
 
-function runLaneInside<T>(
+function runLaneInside<T, E, R>(
   contextValue: StateContextValue,
-  keyOrSource: AsyncStateKeyOrSource<T>,
+  keyOrSource: AsyncStateKeyOrSource<T, E, R>,
   lane: string | undefined,
   ...args: any[]
 ) {
   if (isSource(keyOrSource)) {
-    return (keyOrSource as Source<T>).getLaneSource(lane).run(...args);
+    return (keyOrSource as Source<T, E, R>).getLaneSource(lane).run(...args);
   }
   if (typeof keyOrSource === "string") {
-    let instance = contextValue.get<T>(keyOrSource);
+    let instance = contextValue.get<T, E, R>(keyOrSource);
     if (instance) {
       return instance.run
         .bind(instance, contextValue.createEffects)
@@ -58,9 +58,9 @@ function runLaneInside<T>(
   return undefined;
 }
 
-function runInside<T>(
+function runInside<T, E, R>(
   contextValue: StateContextValue,
-  keyOrSource: AsyncStateKeyOrSource<T>,
+  keyOrSource: AsyncStateKeyOrSource<T, E, R>,
   ...args: any[]
 ) {
   return runLaneInside(contextValue, keyOrSource, undefined, ...args);

@@ -11,7 +11,7 @@ import {emptyArray, isFunction} from "../shared";
 
 const StateBoundaryContext = React.createContext<any>(null);
 
-export function StateBoundary<T, E>(props: StateBoundaryProps<T, E>) {
+export function StateBoundary<T, E, R, S>(props: StateBoundaryProps<T, E, R, S>) {
   return React.createElement(
     StateBoundaryImpl,
     Object.assign({key: props.strategy}, props),
@@ -25,7 +25,7 @@ export enum RenderStrategy {
   RenderThenFetch = 2,
 }
 
-function StateBoundaryImpl<T, E>(props: StateBoundaryProps<T, E>) {
+function StateBoundaryImpl<T, E, R, S>(props: StateBoundaryProps<T, E, R, S>) {
   if (props.strategy === RenderStrategy.FetchThenRender) {
     return React.createElement(FetchThenRenderBoundary, props);
   }
@@ -35,9 +35,9 @@ function StateBoundaryImpl<T, E>(props: StateBoundaryProps<T, E>) {
   return React.createElement(RenderThenFetchBoundary, props);
 }
 
-function inferBoundaryChildren<T, E = State<T>>(
-  result: UseAsyncState<T, E>,
-  props: StateBoundaryProps<T, E>
+function inferBoundaryChildren<T, E, R, S = State<T, E, R>>(
+  result: UseAsyncState<T, E, R, S>,
+  props: StateBoundaryProps<T, E, R, S>
 ) {
   if (!props.render || !result.source) {
     return props.children;
@@ -52,7 +52,7 @@ function renderChildren(children, props) {
   return isFunction(children) ? React.createElement(children, props) : children;
 }
 
-export function RenderThenFetchBoundary<T, E>(props: StateBoundaryProps<T, E>) {
+export function RenderThenFetchBoundary<T, E, R, S>(props: StateBoundaryProps<T, E, R, S>) {
   const result = useAsyncState.auto(props.config, props.dependencies);
 
   const children = inferBoundaryChildren(result, props);
@@ -64,7 +64,7 @@ export function RenderThenFetchBoundary<T, E>(props: StateBoundaryProps<T, E>) {
   );
 }
 
-export function FetchAsYouRenderBoundary<T, E>(props: StateBoundaryProps<T, E>) {
+export function FetchAsYouRenderBoundary<T, E, R, S>(props: StateBoundaryProps<T, E, R, S>) {
   const result = useAsyncState.auto(props.config, props.dependencies);
   result.read(); // throws
   const children = inferBoundaryChildren(result, props);
@@ -75,17 +75,17 @@ export function FetchAsYouRenderBoundary<T, E>(props: StateBoundaryProps<T, E>) 
   );
 }
 
-function FetchThenRenderInitialBoundary<T, E>({
+function FetchThenRenderInitialBoundary<T, E, R, S>({
   dependencies = emptyArray, result, config
-}: {dependencies?: any[], result: UseAsyncState<T, E>, config: MixedConfig<T, E>}) {
+}: {dependencies?: any[], result: UseAsyncState<T, E, R, S>, config: MixedConfig<T, E, R, S>}) {
 
   result.source?.patchConfig({
     skipPendingStatus: true,
   });
 
   React.useEffect(() => {
-    if ((config as UseAsyncStateConfiguration<T, E>).condition !== false) {
-      const autoRunArgs = (config as UseAsyncStateConfiguration<T, E>).autoRunArgs;
+    if ((config as UseAsyncStateConfiguration<T, E, R, S>).condition !== false) {
+      const autoRunArgs = (config as UseAsyncStateConfiguration<T, E, R, S>).autoRunArgs;
 
       if (Array.isArray(autoRunArgs)) {
         return result.run.apply(null, autoRunArgs);
@@ -98,7 +98,7 @@ function FetchThenRenderInitialBoundary<T, E>({
   return null;
 }
 
-export function FetchThenRenderBoundary<T, E>(props: StateBoundaryProps<T, E>) {
+export function FetchThenRenderBoundary<T, E, R, S>(props: StateBoundaryProps<T, E, R, S>) {
   const result = useAsyncState(props.config, props.dependencies);
 
   switch (result.source?.getState().status) {
@@ -124,7 +124,7 @@ export function FetchThenRenderBoundary<T, E>(props: StateBoundaryProps<T, E>) {
   return null;
 }
 
-export function useCurrentState<T, E = State<T>>(): UseAsyncState<T, E> {
+export function useCurrentState<T, E, R, S = State<T, E, R>>(): UseAsyncState<T, E, R, S> {
   const ctxValue = React.useContext(StateBoundaryContext);
 
   if (ctxValue === null) {

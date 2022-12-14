@@ -493,10 +493,10 @@ some logic: like `focus`, `scroll` or any other event on any platform.
 ### How `useAsyncState` subscription config works ?
 The exposed `useAsyncState`'s signature is the following:
 ```typescript
-function useAsyncStateExport<T, E>(
-  subscriptionConfig: UseAsyncStateConfig<T, E>,
+function useAsyncStateExport<T, S>(
+  subscriptionConfig: UseAsyncStateConfig<T, S>,
   dependencies?: any[]
-): UseAsyncState<T, E> {
+): UseAsyncState<T, S> {
   return useAsyncStateBase(
     subscriptionConfig,
     dependencies

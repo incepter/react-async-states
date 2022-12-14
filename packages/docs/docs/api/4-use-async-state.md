@@ -510,13 +510,13 @@ import {State, Status, useAsyncState, UseAsyncState} from "react-async-states";
 // syncSelector
 // if you want that your state is always synchronous
 // you may be interested only by the data inside the state
-function syncSelector(state: State<T>): E {
+function syncSelector(state: State<T>): S {
   return state.data;
 }
 
 // this selector throws if the state is error so it is leveraged to the nearest
 // error boundary
-function errorBoundarySelector(state: State<T>): E {
+function errorBoundarySelector(state: State<T>): S {
   // assuming you have an error boundary
   if (state.status === Status.error) {
     throw state.data;
@@ -525,7 +525,7 @@ function errorBoundarySelector(state: State<T>): E {
 }
 
 // this selector gives the last success data
-function keepPreviousDataSelector(state: State<T>, lastSuccess): E {
+function keepPreviousDataSelector(state: State<T>, lastSuccess): S {
   if (state.status === Status.pending) {
     return {
       ...state,
@@ -536,7 +536,7 @@ function keepPreviousDataSelector(state: State<T>, lastSuccess): E {
 }
 
 // select from cache selector
-function errorBoundarySelector(state, lastSuccess, cache): E {
+function errorBoundarySelector(state, lastSuccess, cache): S {
   // this requires the cache to be enabled
   if (cache['user-1-details']) {
     return cache['user-1-details']; // or cache['user-1-details'].data depending or your needs
@@ -554,7 +554,7 @@ function lazyDeveloperSelector(state: State<T>) {
   }
 }
 
-const result: UseAsyncState<T, E> = useAsyncState({
+const result: UseAsyncState<T, S> = useAsyncState({
   key,
   selector: mySelector,
 })

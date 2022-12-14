@@ -23,7 +23,7 @@ import {__DEV__, isFunction} from "../shared";
 
 export function useSelector<T>(
   keys: BaseSelectorKey,
-  selector?: SimpleSelector<any, T>,
+  selector?: SimpleSelector<any, any, any, T>,
 ): T
 export function useSelector<T>(
   keys: BaseSelectorKey[],
@@ -35,7 +35,7 @@ export function useSelector<T>(
 ): T
 export function useSelector<T>(
   keys: BaseSelectorKey | BaseSelectorKey[] | UseSelectorFunctionKeys,
-  selector: SimpleSelector<any, T> | ArraySelector<T> | FunctionSelector<T> = identity,
+  selector: SimpleSelector<any, any, any, T> | ArraySelector<T> | FunctionSelector<T> = identity,
 ): T {
   let caller;
   if (__DEV__) {
@@ -76,7 +76,7 @@ export function useSelector<T>(
 function readKeys(
   keys: SelectorKeysArg,
   ctx: StateContextValue | null
-): (string | Source<any>)[] {
+): (string | Source<any, any, any>)[] {
   if (isFunction(keys)) {
     const availableKeys = ctx !== null ? ctx.getAllKeys() : [];
     return readKeys((keys as UseSelectorFunctionKeys)(availableKeys), ctx);
@@ -105,25 +105,25 @@ function ensureParamsAreOk<E>(
 }
 
 function resolveInstances(
-  keysArray: (string | Source<any>)[],
+  keysArray: (string | Source<any, any, any>)[],
   context: ManagerInterface | null
-): Record<string, StateInterface<any> | undefined> {
+): Record<string, StateInterface<any, any, any> | undefined> {
   return keysArray.reduce((result, current) => {
     if (isSource(current)) {
-      let source = current as Source<any>;
+      let source = current as Source<any, any, any>;
       result[source.key] = readSource(source);
     } else {
       let key = current as string;
       result[key] = context?.get(key);
     }
     return result;
-  }, {} as Record<string, StateInterface<any> | undefined>);
+  }, {} as Record<string, StateInterface<any, any, any> | undefined>);
 }
 
 function selectValue<T>(
   keys: BaseSelectorKey | BaseSelectorKey[] | UseSelectorFunctionKeys,
-  selector: SimpleSelector<any, T> | ArraySelector<T> | FunctionSelector<T>,
-  instances: Record<string, StateInterface<any> | undefined>
+  selector: SimpleSelector<any, any, any, T> | ArraySelector<T> | FunctionSelector<T>,
+  instances: Record<string, StateInterface<any, any, any> | undefined>
 ): T {
   if (isFunction(keys)) {
     const selectorParam = Object.entries(instances)
@@ -139,7 +139,7 @@ function selectValue<T>(
         }
 
         return result;
-      }, {} as Record<string, FunctionSelectorItem<any>>);
+      }, {} as Record<string, FunctionSelectorItem<any, any, any>>);
     return (selector as FunctionSelector<T>)(selectorParam);
   }
 
@@ -162,8 +162,8 @@ function selectValue<T>(
 
 function subscribeAndWatch<T>(
   context: ManagerInterface | null,
-  keysArray: (string | Source<any>)[],
-  resolvedInstances: Record<string, StateInterface<any> | undefined>,
+  keysArray: (string | Source<any, any, any>)[],
+  resolvedInstances: Record<string, StateInterface<any, any, any> | undefined>,
   onUpdate:  () => void,
   setGuard:  React.Dispatch<React.SetStateAction<number>>,
   caller?: string | undefined,
@@ -176,7 +176,7 @@ function subscribeAndWatch<T>(
 
   if (context !== null) {
     unwatch = context.watchAll(function (
-      value: InstanceOrNull<any>, key: string) {
+      value: InstanceOrNull<any, any, any>, key: string) {
       if (resolvedInstances.hasOwnProperty(key) && resolvedInstances[key] !== value) {
         setGuard(prev => prev + 1);
       }

@@ -24,17 +24,17 @@ import {
   useCurrentHook
 } from "./helpers/hooks-utils";
 
-export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
-  mixedConfig: MixedConfig<T, E>,
+export const useAsyncStateBase = function useAsyncStateImpl<T, E, R, S = State<T, E, R>>(
+  mixedConfig: MixedConfig<T, E, R, S>,
   deps: any[] = emptyArray,
-  overrides?: PartialUseAsyncStateConfiguration<T, E>,
-): UseAsyncState<T, E> {
+  overrides?: PartialUseAsyncStateConfiguration<T, E, R, S>,
+): UseAsyncState<T, E, R, S> {
 
   let caller;
   if (__DEV__) {
     caller = useCallerName(4);
   }
-  let hook: StateHook<T, E> = useCurrentHook(caller);
+  let hook: StateHook<T, E, R, S> = useCurrentHook(caller);
   let [guard, setGuard] = React.useState<number>(0);
   let contextValue = React.useContext<StateContextValue>(StateContext);
 
@@ -42,7 +42,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
     deps.concat([contextValue, guard]));
 
   let [selectedValue, setSelectedValue] = React
-    .useState<Readonly<UseAsyncState<T, E>>>(calculateStateValue.bind(null, hook));
+    .useState<Readonly<UseAsyncState<T, E, R, S>>>(calculateStateValue.bind(null, hook));
 
   ensureStateHookVersionIsLatest(hook, selectedValue, updateSelectedValue);
 
@@ -67,7 +67,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
       return;
     }
     // if dependencies change, if we run, the cleanup shall abort
-    let config = (hook.config as BaseConfig<T>);
+    let config = (hook.config as BaseConfig<T, E, R>);
 
     if (config.autoRunArgs && Array.isArray(config.autoRunArgs)) {
       return hook.base.run.apply(null, config.autoRunArgs);
@@ -77,40 +77,40 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = State<T>>(
 }
 
 
-function useAsyncStateExport<T>(key: string, deps?: any[]): UseAsyncState<T>
-function useAsyncStateExport<T>(source: Source<T>, deps?: any[])
-function useAsyncStateExport<T>(producer: Producer<T>, deps?: any[])
-function useAsyncStateExport<T, E>(
-  configWithKeyWithSelector: ConfigWithKeyWithSelector<T, E>, deps?: any[])
-function useAsyncStateExport<T>(
-  configWithKeyWithoutSelector: ConfigWithKeyWithoutSelector<T>, deps?: any[])
-function useAsyncStateExport<T, E>(
-  configWithSourceWithSelector: ConfigWithSourceWithSelector<T, E>,
+function useAsyncStateExport<T, E, R>(key: string, deps?: any[]): UseAsyncState<T, E, R>
+function useAsyncStateExport<T, E, R>(source: Source<T, E, R>, deps?: any[])
+function useAsyncStateExport<T, E, R>(producer: Producer<T, E, R>, deps?: any[])
+function useAsyncStateExport<T, E, R, S>(
+  configWithKeyWithSelector: ConfigWithKeyWithSelector<T, E, R, S>, deps?: any[])
+function useAsyncStateExport<T, E, R>(
+  configWithKeyWithoutSelector: ConfigWithKeyWithoutSelector<T, E, R>, deps?: any[])
+function useAsyncStateExport<T, E, R, S>(
+  configWithSourceWithSelector: ConfigWithSourceWithSelector<T, E, R, S>,
   deps?: any[]
 )
-function useAsyncStateExport<T>(
-  configWithSourceWithoutSelector: ConfigWithSourceWithoutSelector<T>,
+function useAsyncStateExport<T, E, R>(
+  configWithSourceWithoutSelector: ConfigWithSourceWithoutSelector<T, E, R>,
   deps?: any[]
 )
-function useAsyncStateExport<T, E>(
-  configWithProducerWithSelector: ConfigWithProducerWithSelector<T, E>,
+function useAsyncStateExport<T, E, R, S>(
+  configWithProducerWithSelector: ConfigWithProducerWithSelector<T, E, R, S>,
   deps?: any[]
 )
-function useAsyncStateExport<T>(
-  configWithProducerWithoutSelector: ConfigWithProducerWithoutSelector<T>,
+function useAsyncStateExport<T, E, R>(
+  configWithProducerWithoutSelector: ConfigWithProducerWithoutSelector<T, E, R>,
   deps?: any[]
-): UseAsyncState<T>
-function useAsyncStateExport<T, E>(
-  mixedConfig: MixedConfig<T, E>, deps?: any[]): UseAsyncState<T, E>
-function useAsyncStateExport<T, E = State<T>>(
-  mixedConfig: MixedConfig<T, E>, deps?: any[]): UseAsyncState<T, E> {
+): UseAsyncState<T, E, R>
+function useAsyncStateExport<T, E, R, S>(
+  mixedConfig: MixedConfig<T, E, R, S>, deps?: any[]): UseAsyncState<T, E, R, S>
+function useAsyncStateExport<T, E, R, S = State<T, E, R>>(
+  mixedConfig: MixedConfig<T, E, R, S>, deps?: any[]): UseAsyncState<T, E, R, S> {
   return useAsyncStateBase(mixedConfig, deps);
 }
 
-function useAutoAsyncState<T, E = State<T>>(
-  subscriptionConfig: MixedConfig<T, E>,
+function useAutoAsyncState<T, E, R, S = State<T, E, R>>(
+  subscriptionConfig: MixedConfig<T, E, R, S>,
   dependencies?: any[]
-): UseAsyncState<T, E> {
+): UseAsyncState<T, E, R, S> {
   return useAsyncStateBase(
     subscriptionConfig,
     dependencies,
@@ -118,10 +118,10 @@ function useAutoAsyncState<T, E = State<T>>(
   );
 }
 
-function useLazyAsyncState<T, E = State<T>>(
-  subscriptionConfig: MixedConfig<T, E>,
+function useLazyAsyncState<T, E, R, S = State<T, E, R>>(
+  subscriptionConfig: MixedConfig<T, E, R, S>,
   dependencies?: any[]
-): UseAsyncState<T, E> {
+): UseAsyncState<T, E, R, S> {
   return useAsyncStateBase(
     subscriptionConfig,
     dependencies,
@@ -129,10 +129,10 @@ function useLazyAsyncState<T, E = State<T>>(
   );
 }
 
-function useForkAsyncState<T, E = State<T>>(
-  subscriptionConfig: MixedConfig<T, E>,
+function useForkAsyncState<T, E, R, S = State<T, E, R>>(
+  subscriptionConfig: MixedConfig<T, E, R, S>,
   dependencies?: any[]
-): UseAsyncState<T, E> {
+): UseAsyncState<T, E, R, S> {
   return useAsyncStateBase(
     subscriptionConfig,
     dependencies,
@@ -141,10 +141,10 @@ function useForkAsyncState<T, E = State<T>>(
 }
 
 
-function useForkAutoAsyncState<T, E = State<T>>(
-  subscriptionConfig: MixedConfig<T, E>,
+function useForkAutoAsyncState<T, E, R, S = State<T, E, R>>(
+  subscriptionConfig: MixedConfig<T, E, R, S>,
   dependencies?: any[]
-): UseAsyncState<T, E> {
+): UseAsyncState<T, E, R, S> {
   return useAsyncStateBase(
     subscriptionConfig,
     dependencies,
@@ -152,10 +152,10 @@ function useForkAutoAsyncState<T, E = State<T>>(
   );
 }
 
-function useHoistAsyncState<T, E = State<T>>(
-  subscriptionConfig: MixedConfig<T, E>,
+function useHoistAsyncState<T, E, R, S = State<T, E, R>>(
+  subscriptionConfig: MixedConfig<T, E, R, S>,
   dependencies?: any[]
-): UseAsyncState<T, E> {
+): UseAsyncState<T, E, R, S> {
   return useAsyncStateBase(
     subscriptionConfig,
     dependencies,
@@ -163,10 +163,10 @@ function useHoistAsyncState<T, E = State<T>>(
   );
 }
 
-function useHoistAutoAsyncState<T, E = State<T>>(
-  subscriptionConfig: MixedConfig<T, E>,
+function useHoistAutoAsyncState<T, E, R, S = State<T, E, R>>(
+  subscriptionConfig: MixedConfig<T, E, R, S>,
   dependencies?: any[]
-): UseAsyncState<T, E> {
+): UseAsyncState<T, E, R, S> {
   return useAsyncStateBase(
     subscriptionConfig,
     dependencies,
