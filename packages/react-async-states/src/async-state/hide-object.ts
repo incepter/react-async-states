@@ -15,7 +15,7 @@ function Secret() {
   };
 }
 
-export function hideStateInstanceInNewObject<T>(asyncState: StateInterface<T>): {} {
+export function hideStateInstanceInNewObject<T, E, R>(asyncState: StateInterface<T, E, R>): {} {
   // @ts-ignore
   let output = new (Secret())();
   output.constructor(asyncStatesKey, asyncState);

@@ -16,48 +16,49 @@ import {
   Status
 } from "./async-state";
 import {RenderStrategy} from "./react/StateBoundary";
+import {InitialState, SuccessState} from "./async-state/AsyncState";
 
-export interface AsyncStateInitializer<T> {
+export interface AsyncStateInitializer<T, E, R> {
   key?: string,
-  producer?: Producer<T>,
-  config?: ProducerConfig<T>
+  producer?: Producer<T, E, R>,
+  config?: ProducerConfig<T, E, R>
 }
 
 export type StateContextValue = ManagerInterface;
 
 // use async state
 
-export interface BaseUseAsyncState<T, E = State<T>> extends Source<T>{
+export interface BaseUseAsyncState<T, E, R, S = State<T, E, R>> extends Source<T, E, R>{
   flags?: number,
-  source?: Source<T>,
+  source?: Source<T, E, R>,
   devFlags?: string[],
 }
 
-type IterableUseAsyncState<T, E = State<T>> = [
-  E,
-  (updater: StateFunctionUpdater<T> | T, status?: Status,)=>void,
-  UseAsyncState<T, E>
+type IterableUseAsyncState<T, E, R, S = State<T, E, R>> = [
+  S,
+  (updater: StateFunctionUpdater<T, E, R> | T, status?: Status)=>void,
+  UseAsyncState<T, E, R, S>
 ]
 
-export interface UseAsyncState<T, E = State<T>> extends BaseUseAsyncState<T, E>, Iterable<any> {
-  state: E,
-  read(): E,
+export interface UseAsyncState<T, E, R, S = State<T, E, R>> extends BaseUseAsyncState<T, E, R, S>, Iterable<any> {
+  state: S,
+  read(): S,
   version?: number,
-  lastSuccess?: State<T>,
+  lastSuccess?: SuccessState<T> | InitialState<T>,
 
-  toArray(): IterableUseAsyncState<T, E>
+  toArray(): IterableUseAsyncState<T, E, R, S>
 }
 
-// interface NewUseAsyncState<T, E = State<T>> extends Source<T> {
+// interface NewUseAsyncState<T, S, R, S = State<T, S, R>> extends Source<T, S, R> {
 //
 //   key: string,
 //   version?: number,
 //   uniqueId: number | undefined,
-//   source?: Source<T> | undefined,
+//   source?: Source<T, S, R> | undefined,
 //
-//   state: E | undefined,
-//   read(): E | undefined,
-//   lastSuccess?: State<T>,
+//   state: S | undefined,
+//   read(): S | undefined,
+//   lastSuccess?: State<T, S, R>,
 //
 // }
 
@@ -67,15 +68,15 @@ export type EqualityFn<T> = (
 ) => boolean;
 
 
-export interface BaseConfig<T> extends ProducerConfig<T>{
+export interface BaseConfig<T, E, R> extends ProducerConfig<T, E, R>{
   key?: string,
   lane?: string,
-  source?: Source<T>,
+  source?: Source<T, E, R>,
   autoRunArgs?: any[],
-  producer?: Producer<T>,
+  producer?: Producer<T, E, R>,
   subscriptionKey?: string,
   payload?: Record<string, any>,
-  events?: UseAsyncStateEvents<T>,
+  events?: UseAsyncStateEvents<T, E, R>,
 
   lazy?: boolean,
   condition?: boolean,
@@ -86,56 +87,56 @@ export interface BaseConfig<T> extends ProducerConfig<T>{
   hoistConfig?: hoistConfig,
 }
 
-export interface ConfigWithKeyWithSelector<T, E> extends ConfigWithKeyWithoutSelector<T> {
-  selector: useSelector<T, E>,
-  areEqual?: EqualityFn<E>,
+export interface ConfigWithKeyWithSelector<T, E, R, S> extends ConfigWithKeyWithoutSelector<T, E, R> {
+  selector: useSelector<T, E, R, S>,
+  areEqual?: EqualityFn<S>,
 }
-export interface ConfigWithKeyWithoutSelector<T> extends BaseConfig<T> {
+export interface ConfigWithKeyWithoutSelector<T, E, R> extends BaseConfig<T, E, R> {
   key: string,
 }
 
-export interface ConfigWithSourceWithSelector<T, E> extends ConfigWithSourceWithoutSelector<T> {
-  selector: useSelector<T, E>,
-  areEqual?: EqualityFn<E>,
+export interface ConfigWithSourceWithSelector<T, E, R, S> extends ConfigWithSourceWithoutSelector<T, E, R> {
+  selector: useSelector<T, E, R, S>,
+  areEqual?: EqualityFn<S>,
 }
 
-export interface ConfigWithSourceWithoutSelector<T> extends BaseConfig<T> {
-  source: Source<T>,
+export interface ConfigWithSourceWithoutSelector<T, E, R> extends BaseConfig<T, E, R> {
+  source: Source<T, E, R>,
 }
 
-export interface ConfigWithProducerWithSelector<T, E> extends ConfigWithProducerWithoutSelector<T> {
-  selector: useSelector<T, E>,
-  areEqual?: EqualityFn<E>,
+export interface ConfigWithProducerWithSelector<T, E, R, S> extends ConfigWithProducerWithoutSelector<T, E, R> {
+  selector: useSelector<T, E, R, S>,
+  areEqual?: EqualityFn<S>,
 }
 
-export interface ConfigWithProducerWithoutSelector<T> extends BaseConfig<T> {
-  producer?: Producer<T>,
+export interface ConfigWithProducerWithoutSelector<T, E, R> extends BaseConfig<T, E, R> {
+  producer?: Producer<T, E, R>,
 }
 
-export type MixedConfig<T, E> = string | Source<T> | Producer<T> |
-  ConfigWithKeyWithSelector<T, E> |
-  ConfigWithKeyWithoutSelector<T> |
-  ConfigWithSourceWithSelector<T, E> |
-  ConfigWithSourceWithoutSelector<T> |
-  ConfigWithProducerWithSelector<T, E> |
-  ConfigWithProducerWithoutSelector<T>;
+export type MixedConfig<T, E, R, S> = string | Source<T, E, R> | Producer<T, E, R> |
+  ConfigWithKeyWithSelector<T, E, R, S> |
+  ConfigWithKeyWithoutSelector<T, E, R> |
+  ConfigWithSourceWithSelector<T, E, R, S> |
+  ConfigWithSourceWithoutSelector<T, E, R> |
+  ConfigWithProducerWithSelector<T, E, R, S> |
+  ConfigWithProducerWithoutSelector<T, E, R>;
 
 
 
 
-export type UseAsyncStateConfiguration<T, E = State<T>> = {
+export type UseAsyncStateConfiguration<T, E, R, S = State<T, E, R>> = {
   key?: string,
   lane?: string,
-  source?: Source<T>,
-  producer?: Producer<T>,
+  source?: Source<T, E, R>,
+  producer?: Producer<T, E, R>,
   skipPendingDelayMs?: number,
   skipPendingStatus?: boolean,
-  cacheConfig?: CacheConfig<T>,
+  cacheConfig?: CacheConfig<T, E, R>,
   runEffectDurationMs?: number,
   resetStateOnDispose?: boolean,
   payload?: Record<string, any>,
   runEffect?: RunEffect,
-  initialValue?: T | ((cache: Record<string, CachedState<T>>) => T),
+  initialValue?: T | ((cache: Record<string, CachedState<T, E, R>>) => T),
 
   fork?: boolean,
   forkConfig?: ForkConfig,
@@ -146,18 +147,18 @@ export type UseAsyncStateConfiguration<T, E = State<T>> = {
   lazy?: boolean,
   autoRunArgs?: any[],
   condition?: boolean,
-  areEqual: EqualityFn<E>,
+  areEqual: EqualityFn<S>,
   subscriptionKey?: string,
-  selector: useSelector<T, E>,
-  events?: UseAsyncStateEvents<T>,
+  selector: useSelector<T, E, R, S>,
+  events?: UseAsyncStateEvents<T, E, R>,
 
   // dev only
   hideFromDevtools?: boolean,
 }
 
-export type StateBoundaryProps<T, E> = {
+export type StateBoundaryProps<T, E, R, S> = {
   children: React.ReactNode,
-  config: MixedConfig<T, E>,
+  config: MixedConfig<T, E, R, S>,
 
   dependencies?: any[],
   strategy?: RenderStrategy,
@@ -167,45 +168,45 @@ export type StateBoundaryProps<T, E> = {
 
 export type StateBoundaryRenderProp = Record<Status, ReactNode>
 
-export type UseAsyncStateEventProps<T> = {
-  state: State<T>,
+export type UseAsyncStateEventProps<T, E, R> = {
+  state: State<T, E, R>,
 };
 
-export type UseAsyncStateChangeEventHandler<T> =
-  ((props: UseAsyncStateEventProps<T>) => void)
+export type UseAsyncStateChangeEventHandler<T, E, R> =
+  ((props: UseAsyncStateEventProps<T, E, R>) => void)
 
-export type UseAsyncStateEventFn<T> =
-  UseAsyncStateChangeEvent<T>
+export type UseAsyncStateEventFn<T, E, R> =
+  UseAsyncStateChangeEvent<T, E, R>
   |
-  UseAsyncStateChangeEventHandler<T>;
+  UseAsyncStateChangeEventHandler<T, E, R>;
 
-export type UseAsyncStateChangeEvent<T> = {
+export type UseAsyncStateChangeEvent<T, E, R> = {
   status: Status
-  handler: UseAsyncStateChangeEventHandler<T>,
+  handler: UseAsyncStateChangeEventHandler<T, E, R>,
 }
 
-export type UseAsyncStateEventSubscribe<T> =
-  ((props: SubscribeEventProps<T>) => CleanupFn)
-  | ((props: SubscribeEventProps<T>) => CleanupFn)[]
+export type UseAsyncStateEventSubscribe<T, E, R> =
+  ((props: SubscribeEventProps<T, E, R>) => CleanupFn)
+  | ((props: SubscribeEventProps<T, E, R>) => CleanupFn)[]
 
-export type UseAsyncStateEvents<T> = {
-  change?: UseAsyncStateEventFn<T> | UseAsyncStateEventFn<T>[],
-  subscribe?: UseAsyncStateEventSubscribe<T>,
+export type UseAsyncStateEvents<T, E, R> = {
+  change?: UseAsyncStateEventFn<T, E, R> | UseAsyncStateEventFn<T, E, R>[],
+  subscribe?: UseAsyncStateEventSubscribe<T, E, R>,
 }
 
-export type SubscribeEventProps<T> = {
-  getState: () => State<T>,
+export type SubscribeEventProps<T, E, R> = {
+  getState: () => State<T, E, R>,
   run: (...args: any[]) => AbortFn,
   invalidateCache: (cacheKey?: string) => void,
 }
 
-export type useSelector<T, E> =
+export type useSelector<T, E, R, S> =
   (
-    currentState: State<T>, lastSuccess: State<T>,
-    cache: { [id: string]: CachedState<T> } | null
-  ) => E;
+    currentState: State<T, E, R>, lastSuccess: State<T, E, R>,
+    cache: { [id: string]: CachedState<T, E, R> } | null
+  ) => S;
 
-export type PartialUseAsyncStateConfiguration<T, E> = Partial<UseAsyncStateConfiguration<T, E>>
+export type PartialUseAsyncStateConfiguration<T, E, R, S> = Partial<UseAsyncStateConfiguration<T, E, R, S>>
 
 export type UseAsyncStateContextType = StateContextValue | null;
 
@@ -214,44 +215,44 @@ export type CleanupFn = AbortFn
   | (() => void)
   | undefined;
 
-export interface UseAsyncStateType<T, E> {
+export interface UseAsyncStateType<T, E, R, S> {
   (
-    subscriptionConfig: MixedConfig<T, E>,
+    subscriptionConfig: MixedConfig<T, E, R, S>,
     dependencies?: any[]
-  ): UseAsyncState<T, E>,
+  ): UseAsyncState<T, E, R, S>,
 
   auto(
-    subscriptionConfig: MixedConfig<T, E>,
+    subscriptionConfig: MixedConfig<T, E, R, S>,
     dependencies?: any[]
-  ): UseAsyncState<T, E>,
+  ): UseAsyncState<T, E, R, S>,
 
   lazy(
-    subscriptionConfig: MixedConfig<T, E>,
+    subscriptionConfig: MixedConfig<T, E, R, S>,
     dependencies?: any[]
-  ): UseAsyncState<T, E>,
+  ): UseAsyncState<T, E, R, S>,
 
   fork(
-    subscriptionConfig: MixedConfig<T, E>,
+    subscriptionConfig: MixedConfig<T, E, R, S>,
     dependencies?: any[]
-  ): UseAsyncState<T, E>,
+  ): UseAsyncState<T, E, R, S>,
 
   hoist(
-    subscriptionConfig: MixedConfig<T, E>,
+    subscriptionConfig: MixedConfig<T, E, R, S>,
     dependencies?: any[]
-  ): UseAsyncState<T, E>,
+  ): UseAsyncState<T, E, R, S>,
 
   forkAuto(
-    subscriptionConfig: MixedConfig<T, E>,
+    subscriptionConfig: MixedConfig<T, E, R, S>,
     dependencies?: any[]
-  ): UseAsyncState<T, E>,
+  ): UseAsyncState<T, E, R, S>,
 
   hoistAuto(
-    subscriptionConfig: MixedConfig<T, E>,
+    subscriptionConfig: MixedConfig<T, E, R, S>,
     dependencies?: any[]
-  ): UseAsyncState<T, E>,
+  ): UseAsyncState<T, E, R, S>,
 }
 
-export type BaseSelectorKey = string | Source<any>
+export type BaseSelectorKey = string | Source<any, any, any>
 
 export type UseSelectorFunctionKeys = ((allKeys: string[]) => BaseSelectorKey[]);
 

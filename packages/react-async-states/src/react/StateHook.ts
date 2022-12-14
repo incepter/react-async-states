@@ -47,42 +47,42 @@ import {
 import {isSource} from "../async-state/utils";
 import {nextKey} from "../async-state/key-gen";
 
-export interface StateHook<T, E> {
-  current: E,
+export interface StateHook<T, E, R, S> {
+  current: S,
   flags: number,
   caller?: string,
   name: string | undefined;
-  config: MixedConfig<T, E>,
+  config: MixedConfig<T, E, R, S>,
   origin: number | undefined;
   version: number | undefined,
-  base: BaseUseAsyncState<T, E>,
+  base: BaseUseAsyncState<T, E, R, S>,
   context: StateContextValue | null,
   subscribe: (
     setGuard: React.Dispatch<React.SetStateAction<number>>,
     onChange: () => void,
   ) => AbortFn,
 
-  instance: StateInterface<T> | null,
+  instance: StateInterface<T, E, R> | null,
 
   update(
     origin: number,
-    newConfig: MixedConfig<T, E>,
+    newConfig: MixedConfig<T, E, R, S>,
     contextValue: StateContextValue | null,
-    overrides?: PartialUseAsyncStateConfiguration<T, E>,
+    overrides?: PartialUseAsyncStateConfiguration<T, E, R, S>,
   ),
 }
 
-export class StateHookImpl<T, E> implements StateHook<T, E> {
-  current: E;
+export class StateHookImpl<T, E, R, S> implements StateHook<T, E, R, S> {
+  current: S;
   flags: number;
   caller?: string;
   name: string | undefined;
-  config: MixedConfig<T, E>;
+  config: MixedConfig<T, E, R, S>;
   origin: number | undefined;
   version: number | undefined;
-  base: BaseUseAsyncState<T, E>;
+  base: BaseUseAsyncState<T, E, R, S>;
   context: StateContextValue | null;
-  instance: StateInterface<T> | null;
+  instance: StateInterface<T, E, R> | null;
 
   subscribe: (
     setGuard: React.Dispatch<React.SetStateAction<number>>,
@@ -96,9 +96,9 @@ export class StateHookImpl<T, E> implements StateHook<T, E> {
 
   update(
     origin: number,
-    newConfig: MixedConfig<T, E>,
+    newConfig: MixedConfig<T, E, R, S>,
     contextValue: StateContextValue | null,
-    overrides?: PartialUseAsyncStateConfiguration<T, E>,
+    overrides?: PartialUseAsyncStateConfiguration<T, E, R, S>,
   ) {
     let nextFlags = resolveFlags(newConfig, contextValue, overrides);
     let instance = resolveInstance(nextFlags, newConfig, contextValue, this, overrides);
@@ -107,8 +107,8 @@ export class StateHookImpl<T, E> implements StateHook<T, E> {
       throw new Error("Undefined instance with no WAIT mode. This is a bug.");
     }
 
-    if (instance && (nextFlags & CONFIG_OBJECT && (newConfig as BaseConfig<T>).payload)) {
-      instance.mergePayload((newConfig as BaseConfig<T>).payload);
+    if (instance && (nextFlags & CONFIG_OBJECT && (newConfig as BaseConfig<T, E, R>).payload)) {
+      instance.mergePayload((newConfig as BaseConfig<T, E, R>).payload);
     }
     if (instance && (nextFlags & INSIDE_PROVIDER) && contextValue!.getPayload()) {
       instance.mergePayload(contextValue!.getPayload()!);
@@ -125,10 +125,10 @@ export class StateHookImpl<T, E> implements StateHook<T, E> {
   }
 }
 
-export function resolveFlags<T, E>(
-  mixedConfig: MixedConfig<T, E>,
+export function resolveFlags<T, E, R, S>(
+  mixedConfig: MixedConfig<T, E, R, S>,
   contextValue: StateContextValue | null,
-  overrides?: PartialUseAsyncStateConfiguration<T, E>,
+  overrides?: PartialUseAsyncStateConfiguration<T, E, R, S>,
 ): number {
 
   let flags = NO_MODE;
@@ -154,7 +154,7 @@ export function resolveFlags<T, E>(
 
     case "object": {
       // attempt source first
-      let baseConfig = mixedConfig as BaseConfig<T>;
+      let baseConfig = mixedConfig as BaseConfig<T, E, R>;
       if (isSource(baseConfig)) {
         return flags | CONFIG_SOURCE | SOURCE | getConfigFlags(overrides);
       } else if (isSource(baseConfig.source)) {
@@ -177,7 +177,7 @@ export function resolveFlags<T, E>(
 }
 
 function getKeyFlags(
-  config: PartialUseAsyncStateConfiguration<any, any>,
+  config: PartialUseAsyncStateConfiguration<any, any, any, any>,
   key: string,
 ) {
   switch (key) {
@@ -209,8 +209,8 @@ function getKeyFlags(
   }
 }
 
-export function getConfigFlags<T, E>(
-  config?: PartialUseAsyncStateConfiguration<T, E>
+export function getConfigFlags<T, E, R, S>(
+  config?: PartialUseAsyncStateConfiguration<T, E, R, S>
 ): number {
   if (!config) {
     return NO_MODE;
@@ -221,20 +221,20 @@ export function getConfigFlags<T, E>(
 }
 
 
-export function resolveInstance<T>(
+export function resolveInstance<T, E, R, S>(
   flags: number,
-  config: MixedConfig<T, any>,
+  config: MixedConfig<T, E, R, any>,
   contextValue: StateContextValue | null,
-  previousHook: StateHook<T, any>,
-  overrides?: PartialUseAsyncStateConfiguration<T, any>
-): StateInterface<T> | null {
+  previousHook: StateHook<T, E, R, any>,
+  overrides?: PartialUseAsyncStateConfiguration<T, E, R, any>
+): StateInterface<T, E, R> | null {
 
   if (flags & WAIT) {
     return null;
   }
 
   if (flags & SOURCE) {
-    return resolveSourceInstance(flags, config, overrides);
+    return resolveSourceInstance<T, E, R, S>(flags, config, overrides);
   }
 
   if (flags & STANDALONE) {
@@ -242,20 +242,20 @@ export function resolveInstance<T>(
   }
 
   if (flags & INSIDE_PROVIDER) {
-    return resolveProviderInstance(flags, contextValue, config);
+    return resolveProviderInstance<T, E, R, S>(flags, contextValue, config);
   }
 
   return null;
 }
 
 
-function resolveSourceInstance<T, E>(
+function resolveSourceInstance<T, E, R, S>(
   flags: number,
-  config: MixedConfig<T, E>,
-  overrides?: PartialUseAsyncStateConfiguration<T, any>
+  config: MixedConfig<T, E, R, S>,
+  overrides?: PartialUseAsyncStateConfiguration<T, E, R, any>
 ) {
   if (flags & CONFIG_SOURCE) {
-    let instance = readSource(config as Source<T>);
+    let instance = readSource(config as Source<T, E, R>);
     if (flags & FORK) {
       instance = instance.fork();
     }
@@ -266,22 +266,22 @@ function resolveSourceInstance<T, E>(
     return instance;
   }
 
-  let givenConfig = config as BaseConfig<T>;
+  let givenConfig = config as BaseConfig<T, E, R>;
   let instance = readSource(givenConfig.source!);
   if (flags & FORK) {
     instance = instance.fork(givenConfig.forkConfig);
   }
   if (flags & LANE) {
-    let laneKey = (config as BaseConfig<T>).lane || overrides?.lane;
+    let laneKey = (config as BaseConfig<T, E, R>).lane || overrides?.lane;
     return instance.getLane(laneKey)
   }
   return instance;
 }
 
-function resolveStandaloneInstance<T, E>(
-  hook: StateHook<T, E>,
+function resolveStandaloneInstance<T, E, R, S>(
+  hook: StateHook<T, E, R, S>,
   flags: number,
-  config: MixedConfig<T, E>
+  config: MixedConfig<T, E, R, S>
 ) {
 
   let canReuse = hook && !!hook.instance && !!(hook.flags & STANDALONE);
@@ -292,58 +292,58 @@ function resolveStandaloneInstance<T, E>(
 
   let key = readKeyFromConfig(flags, config, null);
   let producer = readProducerFromConfig(flags, config);
-  let producerConfig = flags & CONFIG_OBJECT ? (config as BaseConfig<T>) : undefined;
+  let producerConfig = flags & CONFIG_OBJECT ? (config as BaseConfig<T, E, R>) : undefined;
 
   return new AsyncState(key, producer, producerConfig);
 }
 
-function resolveProviderInstance<T, E>(
+function resolveProviderInstance<T, E, R, S>(
   flags: number,
   contextValue: StateContextValue | null,
-  config: MixedConfig<T, any>
+  config: MixedConfig<T, E, R, any>
 ) {
   let key: string = flags & CONFIG_STRING
-    ? (config as string) : (config as BaseConfig<T>).key!;
+    ? (config as string) : (config as BaseConfig<T, E, R>).key!;
 
   if (
     flags & HOIST &&
     flags & CONFIG_OBJECT &&
-    (config as BaseConfig<T>).hoistConfig?.override) {
+    (config as BaseConfig<T, E, R>).hoistConfig?.override) {
     // do not check on existing because it is guaranteed to exist
     // or else we would have a WAIT flag and quit earlier!
     let key = readKeyFromConfig(flags, config, null);
     let producer = readProducerFromConfig(flags, config);
-    let producerConfig = flags & CONFIG_OBJECT ? (config as BaseConfig<T>) : undefined;
+    let producerConfig = flags & CONFIG_OBJECT ? (config as BaseConfig<T, E, R>) : undefined;
 
     return new AsyncState(key, producer, producerConfig);
   }
 
-  let instance = contextValue!.get<T>(key);
+  let instance = contextValue!.get<T, E, R>(key);
   if (instance) {
     if (flags & FORK) {
-      instance = instance.fork((config as BaseConfig<T>).forkConfig);
+      instance = instance.fork((config as BaseConfig<T, E, R>).forkConfig);
     }
     if (flags & LANE) {
-      return instance.getLane((config as BaseConfig<T>).lane!)
+      return instance.getLane((config as BaseConfig<T, E, R>).lane!)
     }
     return instance;
   } else {
     let key = readKeyFromConfig(flags, config, null);
     let producer = readProducerFromConfig(flags, config);
-    let producerConfig = flags & CONFIG_OBJECT ? (config as BaseConfig<T>) : undefined;
+    let producerConfig = flags & CONFIG_OBJECT ? (config as BaseConfig<T, E, R>) : undefined;
 
     return new AsyncState(key, producer, producerConfig);
   }
 }
 
-function patchInstance<T>(
-  instance: StateInterface<T>,
+function patchInstance<T, E, R>(
+  instance: StateInterface<T, E, R>,
   flags: number,
-  config: MixedConfig<T, any>
+  config: MixedConfig<T, E, R, any>
 ) {
   let key = readKeyFromConfig(flags, config, instance);
   let producer = readProducerFromConfig(flags, config);
-  let producerConfig = flags & CONFIG_OBJECT ? (config as BaseConfig<T>) : undefined;
+  let producerConfig = flags & CONFIG_OBJECT ? (config as BaseConfig<T, E, R>) : undefined;
 
   instance.key = key;
   instance.replaceProducer(producer);
@@ -352,15 +352,15 @@ function patchInstance<T>(
 
 function readKeyFromConfig(
   flags: number,
-  config: MixedConfig<any, any>,
-  prevInstance: StateInterface<any> | null
+  config: MixedConfig<any, any, any, any>,
+  prevInstance: StateInterface<any, any, any> | null
 ): string {
   if (flags & CONFIG_STRING) {
     return config as string;
   }
 
-  if (flags & CONFIG_OBJECT && (config as BaseConfig<any>).key) {
-    return (config as BaseConfig<any>).key!;
+  if (flags & CONFIG_OBJECT && (config as BaseConfig<any, any, any>).key) {
+    return (config as BaseConfig<any, any, any>).key!;
   }
 
   if (!prevInstance) {
@@ -371,27 +371,27 @@ function readKeyFromConfig(
 }
 
 
-function readProducerFromConfig<T>(
+function readProducerFromConfig<T, E, R>(
   flags: number,
-  config: MixedConfig<T, any>,
-): Producer<T> | undefined {
+  config: MixedConfig<T, E, R, any>,
+): Producer<T, E, R> | undefined {
   if (flags & CONFIG_FUNCTION) {
-    return config as Producer<T>;
+    return config as Producer<T, E, R>;
   }
 
   if (flags & CONFIG_OBJECT) {
-    return (config as BaseConfig<T>).producer;
+    return (config as BaseConfig<T, E, R>).producer;
   }
 
   return undefined;
 }
 
 
-export function makeBaseReturn<T, E>(hook: StateHook<T, E>) {
+export function makeBaseReturn<T, E, R, S>(hook: StateHook<T, E, R, S>) {
   if (!hook.instance) {
     let {flags, config} = hook;
-    let key = flags & CONFIG_STRING ? config : (config as BaseConfig<T>).key;
-    let output = Object.assign({key, flags}) as BaseUseAsyncState<T, E>;
+    let key = flags & CONFIG_STRING ? config : (config as BaseConfig<T, E, R>).key;
+    let output = Object.assign({key, flags}) as BaseUseAsyncState<T, E, R, S>;
     if (__DEV__) {
       output.devFlags = humanizeDevFlags(hook.flags);
     }
@@ -410,7 +410,7 @@ export function makeBaseReturn<T, E>(hook: StateHook<T, E>) {
       runp: instance.runp.bind(instance, effectsCreator),
       runc: instance.runc.bind(instance, effectsCreator)
     }
-  ) as BaseUseAsyncState<T, E>;
+  ) as BaseUseAsyncState<T, E, R, S>;
 
   if (__DEV__) {
     output.devFlags = humanizeDevFlags(hook.flags);
@@ -419,31 +419,31 @@ export function makeBaseReturn<T, E>(hook: StateHook<T, E>) {
 }
 
 
-function calculateSubscriptionKey<T, E>(
-  hook: StateHook<T, E>, level = 9): string | undefined {
-  if (hook.flags & CONFIG_OBJECT && (hook.config as BaseConfig<T>).subscriptionKey) {
-    return (hook.config as BaseConfig<T>).subscriptionKey;
+function calculateSubscriptionKey<T, E, R, S>(
+  hook: StateHook<T, E, R, S>, level = 9): string | undefined {
+  if (hook.flags & CONFIG_OBJECT && (hook.config as BaseConfig<T, E, R>).subscriptionKey) {
+    return (hook.config as BaseConfig<T, E, R>).subscriptionKey;
   }
   if (hook.flags & WAIT) {
     return;
   }
   if (__DEV__) {
     let callerName = hook.caller;
-    if ((hook.instance! as AsyncState<T>).subsIndex === undefined) {
-      (hook.instance! as AsyncState<T>).subsIndex = 0;
+    if ((hook.instance! as AsyncState<T, E, R>).subsIndex === undefined) {
+      (hook.instance! as AsyncState<T, E, R>).subsIndex = 0;
     }
-    let index = ++((hook.instance! as AsyncState<T>).subsIndex!);
+    let index = ++((hook.instance! as AsyncState<T, E, R>).subsIndex!);
     return `${callerName}-${index}`;
   }
 }
 
 
-export function calculateStateValue<T, E>(
-  hook: StateHook<T, E>,
-): Readonly<UseAsyncState<T, E>> {
+export function calculateStateValue<T, E, R, S>(
+  hook: StateHook<T, E, R, S>,
+): Readonly<UseAsyncState<T, E, R, S>> {
   let instance = hook.instance;
 
-  const newState = shallowClone(hook.base) as UseAsyncState<T, E>;
+  const newState = shallowClone(hook.base) as UseAsyncState<T, E, R, S>;
   const newValue = readStateFromInstance(instance, hook.flags, hook.config);
   if (instance) {
     newState.read = createReadInConcurrentMode.bind(null, instance, newValue);
@@ -464,21 +464,18 @@ export function calculateStateValue<T, E>(
   return Object.freeze(newState);
 }
 
-function createReadInConcurrentMode<T, E>(
-  instance: StateInterface<T>,
-  stateValue: E
+function createReadInConcurrentMode<T, E, R, S>(
+  instance: StateInterface<T, E, R>,
+  stateValue: S
 ) {
-  if (
-    Status.pending === instance.state.status &&
-    instance.suspender
-  ) {
+  if (Status.pending === instance.state.status && instance.suspender) {
     throw instance.suspender;
   }
   return stateValue;
 }
 
-function createSubscribeAndWatchFunction<T, E>(
-  hook: StateHook<T, E>,
+function createSubscribeAndWatchFunction<T, E, R, S>(
+  hook: StateHook<T, E, R, S>,
 ): ((...args) => AbortFn) {
   return function subscribeAndWatch(
     setGuard: React.Dispatch<React.SetStateAction<number>>,
@@ -488,7 +485,7 @@ function createSubscribeAndWatchFunction<T, E>(
 
     if (flags & WAIT) {
       let key: string = flags & CONFIG_STRING
-        ? (config as string) : (config as BaseConfig<T>).key!;
+        ? (config as string) : (config as BaseConfig<T, E, R>).key!;
 
       return hook.context!.watch(key, (maybeInstance) => {
         if (maybeInstance !== instance) {
@@ -504,7 +501,7 @@ function createSubscribeAndWatchFunction<T, E>(
       const hoistedInstance = contextValue!.hoist(
         instance!.key,
         instance!,
-        (config as BaseConfig<T>).hoistConfig
+        (config as BaseConfig<T, E, R>).hoistConfig
       );
       if (hoistedInstance !== instance) {
         setGuard(old => old + 1);
@@ -545,7 +542,7 @@ function createSubscribeAndWatchFunction<T, E>(
       let newSelectedState = readStateFromInstance(instance, flags, config);
 
       if (flags & EQUALITY_CHECK) {
-        let areEqual = (config as PartialUseAsyncStateConfiguration<T, E>)
+        let areEqual = (config as PartialUseAsyncStateConfiguration<T, E, R, S>)
           .areEqual!(newSelectedState, hook.current);
 
         if (!areEqual) {
@@ -556,7 +553,7 @@ function createSubscribeAndWatchFunction<T, E>(
       }
 
       if (flags & CHANGE_EVENTS) {
-        invokeChangeEvents(instance!.state, (config as BaseConfig<T>).events);
+        invokeChangeEvents(instance!.state, (config as BaseConfig<T, E, R>).events);
       }
     }
 
@@ -577,7 +574,7 @@ function createSubscribeAndWatchFunction<T, E>(
         contextValue!.createEffects : standaloneProducerEffectsCreator;
 
       let unsubscribeFns = invokeSubscribeEvents(
-        (config as BaseConfig<T>).events!.subscribe,
+        (config as BaseConfig<T, E, R>).events!.subscribe,
         instance!.run.bind(instance!, effectsCreator),
         instance!,
       );
@@ -597,36 +594,36 @@ function createSubscribeAndWatchFunction<T, E>(
   }
 }
 
-function invokeSubscribeEvents<T>(
-  events: UseAsyncStateEventSubscribe<T> | undefined,
+function invokeSubscribeEvents<T, E, R>(
+  events: UseAsyncStateEventSubscribe<T, E, R> | undefined,
   run: (...args: any[]) => AbortFn,
-  instance?: StateInterface<T>,
+  instance?: StateInterface<T, E, R>,
 ): CleanupFn[] | null {
   if (!events || !instance) {
     return null;
   }
 
-  let eventProps: SubscribeEventProps<T> = {
+  let eventProps: SubscribeEventProps<T, E, R> = {
     run,
     getState: () => instance.state,
     invalidateCache: instance.invalidateCache,
   };
 
-  let handlers: ((props: SubscribeEventProps<T>) => CleanupFn)[]
+  let handlers: ((props: SubscribeEventProps<T, E, R>) => CleanupFn)[]
     = Array.isArray(events) ? events : [events];
 
   return handlers.map(handler => handler(eventProps));
 }
 
-function invokeChangeEvents<T>(
-  nextState: State<T>,
-  events: UseAsyncStateEvents<T> | undefined
+function invokeChangeEvents<T, E, R>(
+  nextState: State<T, E, R>,
+  events: UseAsyncStateEvents<T, E, R> | undefined
 ) {
   if (!events?.change) {
     return;
   }
 
-  const changeHandlers: UseAsyncStateEventFn<T>[]
+  const changeHandlers: UseAsyncStateEventFn<T, E, R>[]
     = Array.isArray(events.change) ? events.change : [events.change];
 
   const eventProps = {state: nextState};
@@ -646,16 +643,16 @@ function invokeChangeEvents<T>(
 // come here only in standalone mode
 
 
-function readStateFromInstance<T, E = State<T>>(
-  asyncState: StateInterface<T> | null,
+function readStateFromInstance<T, E, R, S = State<T, E, R>>(
+  asyncState: StateInterface<T, E, R> | null,
   flags: number,
-  config: MixedConfig<T, E>
-): E {
+  config: MixedConfig<T, E, R, S>
+): S {
   if (!asyncState) {
-    return undefined as E;
+    return undefined as S;
   }
   const selector = flags & SELECTOR
-    ? (config as PartialUseAsyncStateConfiguration<T, E>).selector!
+    ? (config as PartialUseAsyncStateConfiguration<T, E, R, S>).selector!
     :
     (<K>(obj): K => obj);
   return selector(asyncState.state, asyncState.lastSuccess, asyncState.cache || null);

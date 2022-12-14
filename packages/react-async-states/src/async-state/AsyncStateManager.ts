@@ -15,7 +15,10 @@ import AsyncState, {
   runWhileSubscribingToNextResolve,
   standaloneProducerRunEffectFunction,
   standaloneProducerRunpEffectFunction,
-  standaloneProducerSelectEffectFunction
+  standaloneProducerSelectEffectFunction,
+  InitialState,
+  PendingState,
+  AbortedState, SuccessState, ErrorState, LastSuccessSavedState
 } from "./AsyncState";
 
 import {isSource,} from "./utils";
@@ -25,7 +28,7 @@ const listenersKey = Symbol();
 export function AsyncStateManager(initializer?: InitialStates): ManagerInterface {
 
   let asyncStateEntries = Object
-    .values(initializer || {}).reduce(createStateEntriesReducer, {});
+    .values(initializer || {}).reduce(stateEntriesReducer, {});
 
   let payload: Record<string, any> | null = null;
   let watchers: ManagerWatchers = Object.create(null);
@@ -60,11 +63,11 @@ export function AsyncStateManager(initializer?: InitialStates): ManagerInterface
 
   return output;
 
-  function get<T>(key: string): StateInterface<T> {
+  function get<T, E, R>(key: string): StateInterface<T, E, R> {
     return asyncStateEntries[key]?.instance;
   }
 
-  function watchAll(notify: WatchCallback<any>) {
+  function watchAll(notify: WatchCallback<any, any, any>) {
     return watch(listenersKey, notify);
   }
 
@@ -72,10 +75,10 @@ export function AsyncStateManager(initializer?: InitialStates): ManagerInterface
     return Object.keys(asyncStateEntries);
   }
 
-  function hoist<T>(
-    key: string, instance: StateInterface<T>, hoistConfig?: hoistConfig
-  ): StateInterface<T> {
-    let prevInstance = get<T>(key);
+  function hoist<T, E, R>(
+    key: string, instance: StateInterface<T, E, R>, hoistConfig?: hoistConfig
+  ): StateInterface<T, E, R> {
+    let prevInstance = get<T, E, R>(key);
     if (prevInstance && !hoistConfig?.override) {
       return prevInstance;
     }
@@ -90,7 +93,7 @@ export function AsyncStateManager(initializer?: InitialStates): ManagerInterface
     return instance;
   }
 
-  function watch<T>(key: AsyncStateWatchKey, notify: WatchCallback<T>): AbortFn {
+  function watch<T, E, R>(key: AsyncStateWatchKey, notify: WatchCallback<T, E, R>): AbortFn {
     let keyWatchers = watchers[key];
     if (!keyWatchers) {
       keyWatchers = watchers[key] = {meter: 0, watchers: {}};
@@ -100,7 +103,7 @@ export function AsyncStateManager(initializer?: InitialStates): ManagerInterface
     keyWatchers.watchers[index] = {notify: notification, cleanup};
     return cleanup;
 
-    function notification(argv: ManagerWatchCallbackValue<T>, notifKey: string) {
+    function notification(argv: InstanceOrNull<T, E, R>, notifKey: string) {
       if (!didUnwatch) {
         notify(argv, notifKey);
       }
@@ -111,7 +114,7 @@ export function AsyncStateManager(initializer?: InitialStates): ManagerInterface
     }
   }
 
-  function dispose<T>(asyncState: StateInterface<T>): boolean {
+  function dispose<T, E, R>(asyncState: StateInterface<T, E, R>): boolean {
     let {key} = asyncState;
     let maybeEntry = asyncStateEntries[key];
     if (!maybeEntry || maybeEntry.instance !== asyncState) {
@@ -119,8 +122,9 @@ export function AsyncStateManager(initializer?: InitialStates): ManagerInterface
     }
 
     if (
-      !maybeEntry.hoisted && maybeEntry.instance.subscriptions &&
-      Object.values(maybeEntry.instance.subscriptions).length === 0
+      !maybeEntry.hoisted &&
+      (!maybeEntry.instance.subscriptions || maybeEntry.instance.subscriptions &&
+      Object.values(maybeEntry.instance.subscriptions).length === 0)
     ) {
       delete asyncStateEntries[key];
       notifyWatchers(key, null);
@@ -131,21 +135,20 @@ export function AsyncStateManager(initializer?: InitialStates): ManagerInterface
   }
 
 
-  function setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[] {
-    let newStatesMap = getInitialStatesMap(initialStates);
-
-    let previousStates = Object.assign({}, asyncStateEntries);
+  function setInitialStates(initialStates?: InitialStates): StateEntry<any, any, any>[] {
+    let newEntries = getInitialStatesMap(initialStates);
+    let previousEntries = Object.assign({}, asyncStateEntries);
     // basically, this is the same object reference..
     asyncStateEntries = Object
-      .values(newStatesMap)
-      .reduce(createStateEntriesReducer, asyncStateEntries);
+      .values(newEntries)
+      .reduce(stateEntriesReducer, asyncStateEntries);
 
-    let entriesToRemove: AsyncStateEntry<any>[] = [];
+    let entriesToRemove: StateEntry<any, any, any>[] = [];
     for (const [key, entry] of Object.entries(asyncStateEntries)) {
-      if (newStatesMap[key] && !previousStates[key]) { // notify only if new
+      if (newEntries[key] && !previousEntries[key]) { // notify only if new
         notifyWatchers(key, entry.instance);
       }
-      if (!newStatesMap[key] && entry.hoisted) {
+      if (!newEntries[key] && entry.hoisted) {
         entry.hoisted = false;
         entriesToRemove.push(entry);
       }
@@ -155,10 +158,7 @@ export function AsyncStateManager(initializer?: InitialStates): ManagerInterface
   }
 
 
-  function notifyWatchers<T>(
-    key: string,
-    value: ManagerWatchCallbackValue<T>
-  ): void {
+  function notifyWatchers<T, E, R>(key: string, value: InstanceOrNull<T, E, R>): void {
     Promise.resolve().then(function notify() {
       let notifications: WatcherType[] = [];
       if (watchers[listenersKey]?.watchers) {
@@ -175,27 +175,27 @@ export function AsyncStateManager(initializer?: InitialStates): ManagerInterface
 
 }
 
-function createStateEntriesReducer(
-  result: AsyncStateEntries,
-  current: SourceOrDefinition<any>
-): AsyncStateEntries {
+function stateEntriesReducer(
+  result: StateEntries,
+  current: SourceOrDefinition<any, any, any>
+): StateEntries {
   if (isSource(current)) {
     let prevEntry = result[current.key];
-    let instance = readSource(current as Source<any>);
+    let instance = readSource(current as Source<any, any, any>);
     if (!prevEntry || instance !== prevEntry.instance) {
       result[current.key] = {instance, hoisted: true};
     }
     return result;
   } else {
-    const prevEntry = result[current.key];
+    let prevEntry = result[current.key];
     if (prevEntry && prevEntry.hoisted) {
-      let nextProducer = (current as StateDefinition<any>).producer;
+      let nextProducer = (current as StateDefinition<any, any, any>).producer;
       if (nextProducer !== prevEntry.instance.originalProducer) {
         prevEntry.instance.replaceProducer(nextProducer);
       }
       return result;
     }
-    let {key, producer, config} = current as StateDefinition<any>;
+    let {key, producer, config} = current as StateDefinition<any, any, any>;
     let instance = new AsyncState(key, producer, config);
     result[current.key] = {instance, hoisted: true};
     return result;
@@ -205,7 +205,7 @@ function createStateEntriesReducer(
 //region Producer effects creator
 
 export function createProducerEffectsCreator(manager: ManagerInterface) {
-  return function closeOverProps<T>(props: ProducerProps<T>): ProducerEffects {
+  return function closeOverProps<T, E, R>(props: ProducerProps<T, E, R>): ProducerEffects {
     return {
       run: managerProducerRunFunction.bind(null, manager),
       select: managerProducerSelectFunction.bind(null, manager),
@@ -214,9 +214,9 @@ export function createProducerEffectsCreator(manager: ManagerInterface) {
   }
 }
 
-function managerProducerRunFunction<T>(
+function managerProducerRunFunction<T, E, R>(
   manager: ManagerInterface,
-  input: ProducerRunInput<T>,
+  input: ProducerRunInput<T, E, R>,
   config: ProducerRunConfig | null,
   ...args: any[]
 ): AbortFn {
@@ -233,15 +233,15 @@ function managerProducerRunFunction<T>(
   return standaloneProducerRunEffectFunction(input, config, ...args);
 }
 
-function managerProducerRunpFunction<T>(
+function managerProducerRunpFunction<T, E, R>(
   manager: ManagerInterface,
-  props: ProducerProps<T>,
-  input: ProducerRunInput<T>,
+  props: ProducerProps<T, E, R>,
+  input: ProducerRunInput<T, E, R>,
   config: ProducerRunConfig | null,
   ...args: any[]
-): Promise<State<T>> | undefined {
+): Promise<State<T, E, R>> | undefined {
   if (typeof input === "string") {
-    let instance = manager.get<T>(input);
+    let instance = manager.get<T, E, R>(input);
     if (!instance) {
       return;
     }
@@ -253,13 +253,13 @@ function managerProducerRunpFunction<T>(
   return standaloneProducerRunpEffectFunction(props, input, config, ...args);
 }
 
-function managerProducerSelectFunction<T>(
+function managerProducerSelectFunction<T, E, R>(
   manager: ManagerInterface,
-  input: AsyncStateKeyOrSource<T>,
+  input: AsyncStateKeyOrSource<T, E, R>,
   lane?: string,
-): State<T> | undefined {
+): State<T, E, R> | undefined {
   if (typeof input === "string") {
-    let instance = manager.get<T>(input);
+    let instance = manager.get<T, E, R>(input);
     if (!instance) {
       return;
     }
@@ -278,7 +278,7 @@ function getInitialStatesMap(initialStates?: InitialStates) {
   return values.reduce((acc, current) => {
     acc[current.key] = current;
     return acc;
-  }, {} as Record<string, SourceOrDefinition<any>>);
+  }, {} as Record<string, SourceOrDefinition<any, any, any>>);
 }
 
 //endregion
@@ -288,17 +288,11 @@ export type hoistConfig = {
   override: boolean,
 }
 
-export type ManagerWatchCallbackValue<T> = StateInterface<T> | null;
+export type InstanceOrNull<T, E, R> = StateInterface<T, E, R> | null;
 
-export type WatchCallback<T> = (
-  value: ManagerWatchCallbackValue<T>,
-  additionalInfo: string
-) => void;
+export type WatchCallback<T, E, R> = (value: InstanceOrNull<T, E, R>, key: string) => void;
 
-export type WatcherType = {
-  cleanup: AbortFn,
-  notify: WatchCallback<any>,
-}
+export type WatcherType = { cleanup: AbortFn, notify: WatchCallback<any, any, any> }
 
 export type ManagerWatchers = {
   meter: number,
@@ -308,76 +302,99 @@ export type ManagerWatchers = {
 }
 
 export interface ManagerInterface {
-  entries: AsyncStateEntries,
+  entries: StateEntries,
   watchers: ManagerWatchers,
-  get<T>(key: string): StateInterface<T>,
-  hoist<T>(
-    key: string, instance: StateInterface<T>,
+  get<T, E, R>(key: string): StateInterface<T, E, R>,
+  hoist<T, E, R>(
+    key: string, instance: StateInterface<T, E, R>,
     hoistConfig?: hoistConfig
-  ): StateInterface<T>,
-  dispose<T>(asyncState: StateInterface<T>): boolean,
-  watch<T>(
+  ): StateInterface<T, E, R>,
+  dispose<T, E, R>(asyncState: StateInterface<T, E, R>): boolean,
+  watch<T, E, R>(
     key: AsyncStateWatchKey,
-    value: WatchCallback<T>
+    value: WatchCallback<T, E, R>
   ): AbortFn,
-  notifyWatchers<T>(
+  notifyWatchers<T, E, R>(
     key: string,
-    value: ManagerWatchCallbackValue<T>
+    value: InstanceOrNull<T, E, R>
   ): void,
   getAllKeys(): string[],
-  watchAll(cb: WatchCallback<any>),
-  setStates(initialStates?: InitialStates): AsyncStateEntry<any>[],
+  watchAll(cb: WatchCallback<any, any, any>),
+  setStates(initialStates?: InitialStates): StateEntry<any, any, any>[],
 
   getPayload(): Record<string, any> | null,
   mergePayload(partialPayload?: Record<string, any>): void,
 
-  createEffects<T>(props: ProducerProps<T>): ProducerEffects,
+  createEffects<T, E, R>(props: ProducerProps<T, E, R>): ProducerEffects,
 }
 
-export type InitialStatesObject = { [id: string]: SourceOrDefinition<any> };
+export type SourceOrDefinition<T, E, R> = Source<T, E, R> | StateDefinition<T, E, R>;
 
-export type InitialStates = SourceOrDefinition<any>[]
-  | InitialStatesObject;
+export type InitialStates = SourceOrDefinition<any, any, any>[] | Record<string, SourceOrDefinition<any, any, any>>;
 
 export type StateProviderProps = {
-  manager?: ManagerInterface,
   children: any,
+  manager?: ManagerInterface,
   initialStates?: InitialStates,
-  payload?: { [id: string]: any },
+  payload?: Record<string, any>,
 }
 
 
-export type AsyncStateEntry<T> = {
+export type StateEntry<T, E, R> = {
   hoisted: boolean,
-  instance: StateInterface<T>,
+  instance: StateInterface<T, E, R>,
 }
 
-export type AsyncStateEntries = Record<string, AsyncStateEntry<any>>
+export type StateEntries = Record<string, StateEntry<any, any, any>>
 
-export type AsyncStateSelector<T> =
-  SimpleSelector<any, T>
-  | ArraySelector<T>
-  | FunctionSelector<T>;
+export type SimpleSelector<T, E, R, D> = (props: FunctionSelectorItem<T, E, R> | undefined) => D;
+export type ArraySelector<T> = (...states: (FunctionSelectorItem<any, any, any> | undefined)[]) => T;
 
-export type SimpleSelector<T, E> = (props: FunctionSelectorItem<T> | undefined) => E;
-export type ArraySelector<T> = (...states: (FunctionSelectorItem<any> | undefined)[]) => T;
 
-export type SourceOrDefinition<T> = Source<T> | StateDefinition<T>;
-
-export type StateDefinition<T> = {
+export type StateDefinition<T, E, R> = {
   key: string,
-  producer?: Producer<T>,
-  config?: ProducerConfig<T>
+  producer?: Producer<T, E, R>,
+  config?: ProducerConfig<T, E, R>
 }
 export type AsyncStateWatchKey = string | symbol;
 
 export type FunctionSelector<T> = (arg: FunctionSelectorArgument) => T;
-export type FunctionSelectorArgument = Record<string, FunctionSelectorItem<any> | undefined>;
+export type FunctionSelectorArgument = Record<string, FunctionSelectorItem<any, any, any> | undefined>;
 
-export interface FunctionSelectorItem<T> extends Partial<State<T>> {
+export interface InitialFunctionSelectorItem<T, E, R> extends Partial<InitialState<T>> {
   key: string,
-  lastSuccess?: State<T>,
-  cache?: Record<string, CachedState<T>> | null,
+  lastSuccess?: LastSuccessSavedState<T>,
+  cache?: Record<string, CachedState<T, E, R>> | null,
 }
+
+export interface PendingFunctionSelectorItem<T, E, R> extends Partial<PendingState<T>> {
+  key: string,
+  lastSuccess?: LastSuccessSavedState<T>,
+  cache?: Record<string, CachedState<T, E, R>> | null,
+}
+
+export interface AbortedFunctionSelectorItem<T, E, R> extends Partial<AbortedState<T, E, R>> {
+  key: string,
+  lastSuccess?: LastSuccessSavedState<T>,
+  cache?: Record<string, CachedState<T, E, R>> | null,
+}
+
+export interface SuccessFunctionSelectorItem<T, E, R> extends Partial<SuccessState<T>> {
+  key: string,
+  lastSuccess?: LastSuccessSavedState<T>,
+  cache?: Record<string, CachedState<T, E, R>> | null,
+}
+
+export interface ErrorFunctionSelectorItem<T, E, R> extends Partial<ErrorState<T, E>> {
+  key: string,
+  lastSuccess?: LastSuccessSavedState<T>,
+  cache?: Record<string, CachedState<T, E, R>> | null,
+}
+
+export type FunctionSelectorItem<T, E, R> = InitialFunctionSelectorItem<T, E, R> |
+  PendingFunctionSelectorItem<T, E, R> |
+  AbortedFunctionSelectorItem<T, E, R> |
+  SuccessFunctionSelectorItem<T, E, R> |
+  ErrorFunctionSelectorItem<T, E, R>;
 
 //endregion
