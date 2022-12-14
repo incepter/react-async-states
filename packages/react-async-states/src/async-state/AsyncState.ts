@@ -809,7 +809,7 @@ function constructPropsObject<T, E, R>(
 
 }
 
-export function createSource<T, E, R>(
+export function createSource<T, E = any, R = any>(
   key: string,
   producer?: Producer<T, E, R> | undefined | null,
   config?: ProducerConfig<T, E, R>
@@ -1031,7 +1031,7 @@ export const StateBuilder = Object.freeze({
       timestamp: Date.now()
     });
   },
-  error<T, E>(data, props): ErrorState<T, E> {
+  error<T, E = any>(data, props): ErrorState<T, E> {
     return Object.freeze({
       status: Status.error,
       data,
@@ -1055,7 +1055,7 @@ export const StateBuilder = Object.freeze({
       timestamp: Date.now()
     });
   },
-  aborted<T, E = T, R = T>(reason, props): AbortedState<T, E, R> {
+  aborted<T, E = any, R = any>(reason, props): AbortedState<T, E, R> {
     return Object.freeze({
       status: Status.aborted,
       data: reason,
@@ -1429,7 +1429,7 @@ export type SuccessState<T> = {
   props: ProducerSavedProps<T>,
 }
 
-export type ErrorState<T, E = T> = {
+export type ErrorState<T, E = any> = {
   data: E,
   timestamp: number,
   status: Status.error,
@@ -1442,19 +1442,19 @@ export type PendingState<T> = {
   props: ProducerSavedProps<T>,
 }
 export type InitialState<T> = {
-  data: T,
   props: null,
   timestamp: number,
+  data: T | undefined,
   status: Status.initial,
 }
-export type AbortedState<T, E, R = T> = {
+export type AbortedState<T, E = any, R = any> = {
   data: R,
   timestamp: number,
   status: Status.aborted,
   props: ProducerSavedProps<T>,
 }
 
-export type State<T, E, R> = InitialState<T> |
+export type State<T, E = any, R = any> = InitialState<T> |
   PendingState<T> |
   AbortedState<T, E, R> |
   SuccessState<T> |
@@ -1464,7 +1464,7 @@ export type AbortFn = ((reason?: any) => void) | undefined;
 
 export type OnAbortFn = (cb?: ((reason?: any) => void)) => void;
 
-export interface ProducerProps<T, E, R> extends ProducerEffects {
+export interface ProducerProps<T, E = any, R = any> extends ProducerEffects {
   abort: AbortFn,
   onAbort: OnAbortFn,
   emit: StateUpdater<T, E, R>,

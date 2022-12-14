@@ -16,6 +16,7 @@ import {
   Status
 } from "./async-state";
 import {RenderStrategy} from "./react/StateBoundary";
+import {InitialState, SuccessState} from "./async-state/AsyncState";
 
 export interface AsyncStateInitializer<T, E, R> {
   key?: string,
@@ -43,7 +44,7 @@ export interface UseAsyncState<T, E, R, S = State<T, E, R>> extends BaseUseAsync
   state: S,
   read(): S,
   version?: number,
-  lastSuccess?: State<T, E, R>,
+  lastSuccess?: SuccessState<T> | InitialState<T>,
 
   toArray(): IterableUseAsyncState<T, E, R, S>
 }
