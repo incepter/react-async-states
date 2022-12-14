@@ -1,13 +1,13 @@
 import * as React from "react";
 import {AsyncStateContext} from "./context";
 import {
-  AsyncStateEntry,
+  StateEntry,
   AsyncStateManager,
   ManagerInterface,
   StateProviderProps
 } from "../async-state";
 import {StateContextValue, UseAsyncStateContextType} from "../types.internal";
-import {AsyncStateEntries} from "../async-state/AsyncStateManager";
+import {StateEntries} from "../async-state/AsyncStateManager";
 
 // let didWarnAboutProviderDeprecated = false;
 /**
@@ -42,7 +42,7 @@ export function AsyncStateProvider(
   // of items he has and the new ones
   // we need to figure out a way to un-reference these dirty states
   const dirtyStates = React
-    .useMemo<{ data: AsyncStateEntry<any>[] }>
+    .useMemo<{ data: StateEntry<any>[] }>
     (onInitialStatesChange, [manager, initialStates]);
 
   // this will serve to dispose old async states that were hoisted
@@ -83,7 +83,7 @@ export function AsyncStateProvider(
     }
   }
 
-  function onInitialStatesChange(): { data: AsyncStateEntry<any>[] } {
+  function onInitialStatesChange(): { data: StateEntry<any>[] } {
     const output = Object.create(null);
     output.data = manager.setStates(initialStates);
     return output;

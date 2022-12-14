@@ -12,7 +12,7 @@ import {
   ArraySelector,
   FunctionSelector,
   FunctionSelectorItem,
-  ManagerWatchCallbackValue,
+  InstanceOrNull,
   SimpleSelector,
   Source,
   StateInterface
@@ -67,7 +67,7 @@ export function useSelector<T>(
   if (contextValue !== null) {
     React.useLayoutEffect(() => {
       function onChange(
-        value: ManagerWatchCallbackValue<T>,
+        value: InstanceOrNull<T>,
         notificationKey: string
       ) {
 

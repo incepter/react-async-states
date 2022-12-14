@@ -405,12 +405,12 @@ is added (`hoisted`), that's why `watchAll` exists in a nutshell.
 It simply uses a special symbol as a record to save watchers into it.
 
 ```typescript
-const asyncStateEntries: AsyncStateEntries = Object
+const asyncStateEntries: StateEntries = Object
     .values(initializer ?? EMPTY_OBJECT)
     .reduce(
       createInitialAsyncStatesReducer,
       Object.create(null)
-    ) as AsyncStateEntries;
+    ) as StateEntries;
 
   // stores all listeners/watchers about an async state
   let watchers: ManagerWatchers = Object.create(null);

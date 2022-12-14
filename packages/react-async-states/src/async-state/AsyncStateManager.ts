@@ -25,7 +25,7 @@ const listenersKey = Symbol();
 export function AsyncStateManager(initializer?: InitialStates): ManagerInterface {
 
   let asyncStateEntries = Object
-    .values(initializer || {}).reduce(createStateEntriesReducer, {});
+    .values(initializer || {}).reduce(stateEntriesReducer, {});
 
   let payload: Record<string, any> | null = null;
   let watchers: ManagerWatchers = Object.create(null);
@@ -100,7 +100,7 @@ export function AsyncStateManager(initializer?: InitialStates): ManagerInterface
     keyWatchers.watchers[index] = {notify: notification, cleanup};
     return cleanup;
 
-    function notification(argv: ManagerWatchCallbackValue<T>, notifKey: string) {
+    function notification(argv: InstanceOrNull<T>, notifKey: string) {
       if (!didUnwatch) {
         notify(argv, notifKey);
       }
@@ -119,8 +119,9 @@ export function AsyncStateManager(initializer?: InitialStates): ManagerInterface
     }
 
     if (
-      !maybeEntry.hoisted && maybeEntry.instance.subscriptions &&
-      Object.values(maybeEntry.instance.subscriptions).length === 0
+      !maybeEntry.hoisted &&
+      (!maybeEntry.instance.subscriptions || maybeEntry.instance.subscriptions &&
+      Object.values(maybeEntry.instance.subscriptions).length === 0)
     ) {
       delete asyncStateEntries[key];
       notifyWatchers(key, null);
@@ -131,21 +132,20 @@ export function AsyncStateManager(initializer?: InitialStates): ManagerInterface
   }
 
 
-  function setInitialStates(initialStates?: InitialStates): AsyncStateEntry<any>[] {
-    let newStatesMap = getInitialStatesMap(initialStates);
-
-    let previousStates = Object.assign({}, asyncStateEntries);
+  function setInitialStates(initialStates?: InitialStates): StateEntry<any>[] {
+    let newEntries = getInitialStatesMap(initialStates);
+    let previousEntries = Object.assign({}, asyncStateEntries);
     // basically, this is the same object reference..
     asyncStateEntries = Object
-      .values(newStatesMap)
-      .reduce(createStateEntriesReducer, asyncStateEntries);
+      .values(newEntries)
+      .reduce(stateEntriesReducer, asyncStateEntries);
 
-    let entriesToRemove: AsyncStateEntry<any>[] = [];
+    let entriesToRemove: StateEntry<any>[] = [];
     for (const [key, entry] of Object.entries(asyncStateEntries)) {
-      if (newStatesMap[key] && !previousStates[key]) { // notify only if new
+      if (newEntries[key] && !previousEntries[key]) { // notify only if new
         notifyWatchers(key, entry.instance);
       }
-      if (!newStatesMap[key] && entry.hoisted) {
+      if (!newEntries[key] && entry.hoisted) {
         entry.hoisted = false;
         entriesToRemove.push(entry);
       }
@@ -155,10 +155,7 @@ export function AsyncStateManager(initializer?: InitialStates): ManagerInterface
   }
 
 
-  function notifyWatchers<T>(
-    key: string,
-    value: ManagerWatchCallbackValue<T>
-  ): void {
+  function notifyWatchers<T>(key: string, value: InstanceOrNull<T>): void {
     Promise.resolve().then(function notify() {
       let notifications: WatcherType[] = [];
       if (watchers[listenersKey]?.watchers) {
@@ -175,10 +172,10 @@ export function AsyncStateManager(initializer?: InitialStates): ManagerInterface
 
 }
 
-function createStateEntriesReducer(
-  result: AsyncStateEntries,
+function stateEntriesReducer(
+  result: StateEntries,
   current: SourceOrDefinition<any>
-): AsyncStateEntries {
+): StateEntries {
   if (isSource(current)) {
     let prevEntry = result[current.key];
     let instance = readSource(current as Source<any>);
@@ -187,7 +184,7 @@ function createStateEntriesReducer(
     }
     return result;
   } else {
-    const prevEntry = result[current.key];
+    let prevEntry = result[current.key];
     if (prevEntry && prevEntry.hoisted) {
       let nextProducer = (current as StateDefinition<any>).producer;
       if (nextProducer !== prevEntry.instance.originalProducer) {
@@ -288,17 +285,11 @@ export type hoistConfig = {
   override: boolean,
 }
 
-export type ManagerWatchCallbackValue<T> = StateInterface<T> | null;
+export type InstanceOrNull<T> = StateInterface<T> | null;
 
-export type WatchCallback<T> = (
-  value: ManagerWatchCallbackValue<T>,
-  additionalInfo: string
-) => void;
+export type WatchCallback<T> = (value: InstanceOrNull<T>, key: string) => void;
 
-export type WatcherType = {
-  cleanup: AbortFn,
-  notify: WatchCallback<any>,
-}
+export type WatcherType = { cleanup: AbortFn, notify: WatchCallback<any> }
 
 export type ManagerWatchers = {
   meter: number,
@@ -308,7 +299,7 @@ export type ManagerWatchers = {
 }
 
 export interface ManagerInterface {
-  entries: AsyncStateEntries,
+  entries: StateEntries,
   watchers: ManagerWatchers,
   get<T>(key: string): StateInterface<T>,
   hoist<T>(
@@ -322,11 +313,11 @@ export interface ManagerInterface {
   ): AbortFn,
   notifyWatchers<T>(
     key: string,
-    value: ManagerWatchCallbackValue<T>
+    value: InstanceOrNull<T>
   ): void,
   getAllKeys(): string[],
   watchAll(cb: WatchCallback<any>),
-  setStates(initialStates?: InitialStates): AsyncStateEntry<any>[],
+  setStates(initialStates?: InitialStates): StateEntry<any>[],
 
   getPayload(): Record<string, any> | null,
   mergePayload(partialPayload?: Record<string, any>): void,
@@ -334,35 +325,28 @@ export interface ManagerInterface {
   createEffects<T>(props: ProducerProps<T>): ProducerEffects,
 }
 
-export type InitialStatesObject = { [id: string]: SourceOrDefinition<any> };
+export type SourceOrDefinition<T> = Source<T> | StateDefinition<T>;
 
-export type InitialStates = SourceOrDefinition<any>[]
-  | InitialStatesObject;
+export type InitialStates = SourceOrDefinition<any>[] | Record<string, SourceOrDefinition<any>>;
 
 export type StateProviderProps = {
-  manager?: ManagerInterface,
   children: any,
+  manager?: ManagerInterface,
   initialStates?: InitialStates,
-  payload?: { [id: string]: any },
+  payload?: Record<string, any>,
 }
 
 
-export type AsyncStateEntry<T> = {
+export type StateEntry<T> = {
   hoisted: boolean,
   instance: StateInterface<T>,
 }
 
-export type AsyncStateEntries = Record<string, AsyncStateEntry<any>>
-
-export type AsyncStateSelector<T> =
-  SimpleSelector<any, T>
-  | ArraySelector<T>
-  | FunctionSelector<T>;
+export type StateEntries = Record<string, StateEntry<any>>
 
 export type SimpleSelector<T, E> = (props: FunctionSelectorItem<T> | undefined) => E;
 export type ArraySelector<T> = (...states: (FunctionSelectorItem<any> | undefined)[]) => T;
 
-export type SourceOrDefinition<T> = Source<T> | StateDefinition<T>;
 
 export type StateDefinition<T> = {
   key: string,
