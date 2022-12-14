@@ -3,7 +3,7 @@
   "license": "MIT",
   "author": "incepter",
   "sideEffects": false,
-  "version": "1.0.0-rc-13",
+  "version": "1.0.0-rc-14",
   "main": "dist/umd/index",
   "module": "dist/es/index",
   "name": "react-async-states",
@@ -83,6 +83,7 @@
   ],
   "files": [
     "dist/*",
-    "README.MD"
+    "README.MD",
+    "package.json"
   ]
 }

@@ -1,5 +1,5 @@
 import * as React from "react";
 import {StateContextValue} from "../types.internal";
 
-export const AsyncStateContext =
+export const StateContext =
   React.createContext<StateContextValue | null>(null);

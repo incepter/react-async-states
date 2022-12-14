@@ -41,18 +41,16 @@ export {
 
 export type {
   InitialStates,
-  InitialAsyncState,
-  AsyncStateSelector,
-  InitialStatesObject,
+  StateDefinition,
   hoistConfig,
-  ExtendedInitialAsyncState,
+  SourceOrDefinition,
 
-  AsyncStateManagerInterface,
+  ManagerInterface,
   AsyncStateWatchKey,
-  ManagerWatchCallback,
-  ManagerWatchCallbackValue,
+  WatchCallback,
+  InstanceOrNull,
 
-  AsyncStateEntry,
+  StateEntry,
   StateProviderProps,
 
   ArraySelector,

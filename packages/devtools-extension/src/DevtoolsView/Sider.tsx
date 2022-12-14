@@ -4,12 +4,13 @@ import {
   instanceDetails,
   InstancePlaceholder,
   InstancesList,
-  instancesList
+  instancesList, shapeSource
 } from "./sources";
 import {Status, useSource, useAsyncState, State} from "react-async-states";
 
 export default function Sider() {
   let [state] = useAsyncState(instancesList);
+  // console.log('this is sider', useAsyncState(shapeSource).state.data);
 
   if (state.status !== Status.success) {
     return null;

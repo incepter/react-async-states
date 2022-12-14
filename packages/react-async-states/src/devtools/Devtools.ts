@@ -23,34 +23,34 @@ interface DevtoolsInterface {
   formatData(data: any, isJson: boolean),
 
   // instance specific
-  emitUpdate(instance: StateInterface<any>),
+  emitUpdate(instance: StateInterface<any, any, any>),
 
-  startUpdate(instance: StateInterface<any>),
+  startUpdate(instance: StateInterface<any, any, any>),
 
-  emitDispose(instance: StateInterface<any>),
+  emitDispose(instance: StateInterface<any, any, any>),
 
-  emitCreation(instance: StateInterface<any>): void,
+  emitCreation(instance: StateInterface<any, any, any>): void,
 
-  emitStateInterface(instance: StateInterface<any>): void,
+  emitStateInterface(instance: StateInterface<any, any, any>): void,
 
-  emitSubscription(instance: StateInterface<any>, subscriptionKey: string),
+  emitSubscription(instance: StateInterface<any, any, any>, subscriptionKey: string),
 
-  emitUnsubscription(instance: StateInterface<any>, subscriptionKey: string),
+  emitUnsubscription(instance: StateInterface<any, any, any>, subscriptionKey: string),
 
-  emitRunSync<T>(
-    instance: StateInterface<T>, props: ProducerSavedProps<T>): void,
+  emitRunSync<T, E, R>(
+    instance: StateInterface<T, E, R>, props: ProducerSavedProps<T>): void,
 
-  emitRunPromise<T>(
-    instance: StateInterface<T>, props: ProducerSavedProps<T>): void,
+  emitRunPromise<T, E, R>(
+    instance: StateInterface<T, E, R>, props: ProducerSavedProps<T>): void,
 
-  emitRunGenerator<T>(
-    instance: StateInterface<T>, props: ProducerSavedProps<T>): void,
+  emitRunGenerator<T, E, R>(
+    instance: StateInterface<T, E, R>, props: ProducerSavedProps<T>): void,
 
-  emitReplaceState<T>(
-    instance: StateInterface<T>, props: ProducerSavedProps<T>): void,
+  emitReplaceState<T, E, R>(
+    instance: StateInterface<T, E, R>, props: ProducerSavedProps<T>): void,
 
-  emitRunConsumedFromCache<T>(
-    instance: StateInterface<T>,
+  emitRunConsumedFromCache<T, E, R>(
+    instance: StateInterface<T, E, R>,
     payload: Record<string, any> | undefined | null,
     args: any[]
   ): void,
@@ -63,13 +63,13 @@ function createDevtools(): DevtoolsInterface {
 
   type CurrentUpdate = {
     uniqueId: number,
-    oldState: State<any>,
+    oldState: State<any, any, any>,
   }
 
   let keys = {};
   let connected = false;
   let currentUpdate: CurrentUpdate | null = null;
-  let retainedInstances: Record<number, StateInterface<any>> = {};
+  let retainedInstances: Record<number, StateInterface<any, any, any>> = {};
 
   function listener(message) {
     if (!message.data || message.data.source !== "async-states-devtools-panel") {
@@ -198,7 +198,7 @@ function createDevtools(): DevtoolsInterface {
     }
   }
 
-  function emitStateInterface(asyncState: StateInterface<any>) {
+  function emitStateInterface(asyncState: StateInterface<any, any, any>) {
     if (!asyncState || asyncState.config.hideFromDevtools) {
       return;
     }
@@ -232,7 +232,7 @@ function createDevtools(): DevtoolsInterface {
     });
   }
 
-  function emitJournalEvent(asyncState: StateInterface<any>, evt) {
+  function emitJournalEvent(asyncState: StateInterface<any, any, any>, evt) {
     if (asyncState.config.hideFromDevtools) {
       return;
     }
@@ -262,7 +262,7 @@ function createDevtools(): DevtoolsInterface {
     });
   }
 
-  function emitCreation(asyncState: StateInterface<any>) {
+  function emitCreation(asyncState: StateInterface<any, any, any>) {
     if (asyncState.config.hideFromDevtools) {
       return;
     }
@@ -278,7 +278,7 @@ function createDevtools(): DevtoolsInterface {
     emitStateInterface(asyncState);
   }
 
-  function emitRunSync(asyncState: StateInterface<any>, props) {
+  function emitRunSync(asyncState: StateInterface<any, any, any>, props) {
     if (asyncState.config.hideFromDevtools) {
       return;
     }
@@ -304,7 +304,7 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function emitRunConsumedFromCache(
-    asyncState: StateInterface<any>, payload, execArgs) {
+    asyncState: StateInterface<any, any, any>, payload, execArgs) {
     if (asyncState.config.hideFromDevtools) {
       return;
     }
@@ -332,7 +332,7 @@ function createDevtools(): DevtoolsInterface {
     });
   }
 
-  function emitReplaceState(asyncState: StateInterface<any>, props) {
+  function emitReplaceState(asyncState: StateInterface<any, any, any>, props) {
     if (asyncState.config.hideFromDevtools) {
       return;
     }
@@ -356,7 +356,7 @@ function createDevtools(): DevtoolsInterface {
     });
   }
 
-  function emitRunGenerator(asyncState: StateInterface<any>, props) {
+  function emitRunGenerator(asyncState: StateInterface<any, any, any>, props) {
     if (asyncState.config.hideFromDevtools) {
       return;
     }
@@ -380,7 +380,7 @@ function createDevtools(): DevtoolsInterface {
     });
   }
 
-  function emitRunPromise(asyncState: StateInterface<any>, props) {
+  function emitRunPromise(asyncState: StateInterface<any, any, any>, props) {
     if (asyncState.config.hideFromDevtools) {
       return;
     }
@@ -404,7 +404,7 @@ function createDevtools(): DevtoolsInterface {
     });
   }
 
-  function emitDispose(asyncState: StateInterface<any>) {
+  function emitDispose(asyncState: StateInterface<any, any, any>) {
     if (asyncState.config.hideFromDevtools) {
       return;
     }
@@ -418,7 +418,7 @@ function createDevtools(): DevtoolsInterface {
     delete retainedInstances[asyncState.uniqueId];
   }
 
-  function emitSubscription(asyncState: StateInterface<any>, subKey) {
+  function emitSubscription(asyncState: StateInterface<any, any, any>, subKey) {
     if (asyncState.config.hideFromDevtools) {
       return;
     }
@@ -448,7 +448,7 @@ function createDevtools(): DevtoolsInterface {
     });
   }
 
-  function emitUnsubscription(asyncState: StateInterface<any>, subKey) {
+  function emitUnsubscription(asyncState: StateInterface<any, any, any>, subKey) {
     if (asyncState.config.hideFromDevtools) {
       return;
     }
@@ -469,7 +469,7 @@ function createDevtools(): DevtoolsInterface {
     });
   }
 
-  function emitUpdate(asyncState: StateInterface<any>) {
+  function emitUpdate(asyncState: StateInterface<any, any, any>) {
     if (asyncState.config.hideFromDevtools) {
       return;
     }
@@ -494,7 +494,7 @@ function createDevtools(): DevtoolsInterface {
     });
   }
 
-  function startUpdate(asyncState: StateInterface<any>) {
+  function startUpdate(asyncState: StateInterface<any, any, any>) {
     if (asyncState.config.hideFromDevtools) {
       return;
     }
@@ -529,7 +529,7 @@ function createDevtools(): DevtoolsInterface {
     }
   }
 
-  function retainStateInstance(asyncState: StateInterface<any>) {
+  function retainStateInstance(asyncState: StateInterface<any, any, any>) {
     if (asyncState.config.hideFromDevtools) {
       return;
     }
@@ -544,7 +544,7 @@ function createDevtools(): DevtoolsInterface {
   }
 }
 
-function mapSubscriptionToDevtools(sub: StateSubscription<any>) {
+function mapSubscriptionToDevtools(sub: StateSubscription<any, any, any>) {
   return {
     key: sub.props.key,
     flags: sub.props.flags,

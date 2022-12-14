@@ -8,7 +8,6 @@ import {shimChromeRuntime} from "./ShimChromeRuntime";
 import type {ProducerProps} from "react-async-states/dist/es/src";
 
 export function resetAllSources() {
-  // currentView.setState(null);
   instancesList.setState({});
   devtoolsInfo.setState({connected: false});
   instanceDetails.setState(null);
@@ -101,6 +100,23 @@ export function getPort(isDevMode) {
   return (window as any).chrome.runtime.connect({name: "panel"});
 }
 
+
+export type SideShapeItem = {
+  key: string,
+  uniqueId: number,
+
+  parent?: number,
+  lanes?: Record<string, string>,
+}
+
+export type SideShape = Record<string, SideShapeItem>
+
+export let shapeSource = createSource<SideShape>("shape", null, {
+  initialValue: {},
+  hideFromDevtools: true
+});
+
+
 function gatewayProducer(props) {
   const {dev} = props.payload;
   const port = getPort(dev);
@@ -114,11 +130,12 @@ function gatewayProducer(props) {
       return;
     }
     // console.log('received this', message)
+    let payload = message.payload;
     switch (message.type) {
       case DevtoolsEvent.setKeys: {
         devtoolsInfo.setState({connected: true});
 
-        let newKeys = Object.entries(message.payload as Record<number, string>)
+        let newKeys = Object.entries(payload as Record<number, string>)
           .reduce((acc, [uniqueId, key]) => {
             acc[`${uniqueId}`] = {uniqueId: +uniqueId, key};
             return acc;
@@ -128,7 +145,41 @@ function gatewayProducer(props) {
         return;
       }
       case DevtoolsEvent.setAsyncState: {
-        instanceDetails.getLaneSource(`${message.uniqueId}`).setState(message.payload);
+
+        let uniqueIdString = `${message.uniqueId}`;
+        instanceDetails.getLaneSource(uniqueIdString).setState(payload);
+
+        // let shapeData = shapeSource.getState().data;
+        // let nextShape = {...shapeData};
+        //
+        // if (!nextShape[uniqueIdString]) {
+        //   nextShape[uniqueIdString] = {
+        //     key: payload.key,
+        //     uniqueId: payload.uniqueId,
+        //   }
+        //   if (payload.parent) {
+        //     nextShape[uniqueIdString].parent = payload.parent.uniqueId;
+        //   }
+        // }
+        //
+        // if (payload.parent) {
+        //   let parentKey = payload.parent.key;
+        //   let parentId = payload.parent.uniqueId;
+        //   if (!nextShape[`${parentId}`]) {
+        //     nextShape[`${parentId}`] = {
+        //       key: parentKey,
+        //       uniqueId: payload.parent.uniqueId,
+        //       lanes: {},
+        //     }
+        //   }
+        //   if (!nextShape[`${parentId}`].lanes) {
+        //     nextShape[`${parentId}`].lanes = {};
+        //   }
+        //   nextShape[`${parentId}`].lanes![uniqueIdString] = payload.key;
+        // }
+        //
+        // shapeSource.setState(nextShape);
+
         return;
       }
       case DevtoolsEvent.partialSync: {

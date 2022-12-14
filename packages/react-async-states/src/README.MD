@@ -68,7 +68,7 @@ even if some appear to be impossible:
 
 ## AsyncStateProvider
 
-The provider wires a `AsyncStateContext` in your tree, it accepts the following props:
+The provider wires a `StateContext` in your tree, it accepts the following props:
 
 |Prop                | PropType                  | Default value         | Usage                                     |
 |--------------------|---------------------------|-----------------------|-------------------------------------------|

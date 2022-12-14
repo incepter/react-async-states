@@ -8,7 +8,7 @@ import {
   ensureStateHookVersionIsLatest,
   useCurrentHook
 } from "./helpers/hooks-utils";
-import {AsyncStateContext} from "./context";
+import {StateContext} from "./context";
 
 // this is a mini version of useAsyncState
 // this hook uses fewer hooks and has fewer capabilities that useAsyncState
@@ -20,20 +20,20 @@ import {AsyncStateContext} from "./context";
 // this hook can use directly useSES on the asyncState instance
 // but this will require additional memoization to add the other properties
 // that UseAsyncState has (abort, mergePayload, invalidateCache, run, replaceState ..)
-export function useProducer<T>(
-  producer: Producer<T>,
-): UseAsyncState<T, State<T>> {
+export function useProducer<T, E, R>(
+  producer: Producer<T, E, R>,
+): UseAsyncState<T, E, R, State<T, E, R>> {
   let caller;
   if (__DEV__) {
     caller = useCallerName(3);
   }
-  let hook: StateHook<T, State<T>> = useCurrentHook(caller);
-  let contextValue = React.useContext<StateContextValue>(AsyncStateContext);
+  let hook: StateHook<T, E, R, State<T, E, R>> = useCurrentHook(caller);
+  let contextValue = React.useContext<StateContextValue>(StateContext);
 
   React.useMemo(() => hook.update(3, producer, contextValue, undefined), [contextValue]);
 
   let [selectedValue, setSelectedValue] = React
-    .useState<Readonly<UseAsyncState<T, State<T>>>>(calculateStateValue.bind(null, hook));
+    .useState<Readonly<UseAsyncState<T, E, R, State<T, E, R>>>>(calculateStateValue.bind(null, hook));
 
   ensureStateHookVersionIsLatest(hook, selectedValue, updateSelectedValue);
 

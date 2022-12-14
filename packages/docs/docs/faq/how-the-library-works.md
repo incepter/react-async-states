@@ -245,7 +245,7 @@ It allows the library to cascade the props:
 
 ```typescript
 
-export function createProducerEffectsCreator(manager: AsyncStateManagerInterface) {
+export function createProducerEffectsCreator(manager: ManagerInterface) {
   return function closeOverProps<T>(props: ProducerProps<T>): ProducerEffects {
     return {
       run: createRunFunction(manager, props),
@@ -405,17 +405,17 @@ is added (`hoisted`), that's why `watchAll` exists in a nutshell.
 It simply uses a special symbol as a record to save watchers into it.
 
 ```typescript
-const asyncStateEntries: AsyncStateEntries = Object
+const asyncStateEntries: StateEntries = Object
     .values(initializer ?? EMPTY_OBJECT)
     .reduce(
       createInitialAsyncStatesReducer,
       Object.create(null)
-    ) as AsyncStateEntries;
+    ) as StateEntries;
 
   // stores all listeners/watchers about an async state
   let watchers: ManagerWatchers = Object.create(null);
 
-  const output: AsyncStateManagerInterface = {
+  const output: ManagerInterface = {
     entries: asyncStateEntries,
     run,
     get,
@@ -493,10 +493,10 @@ some logic: like `focus`, `scroll` or any other event on any platform.
 ### How `useAsyncState` subscription config works ?
 The exposed `useAsyncState`'s signature is the following:
 ```typescript
-function useAsyncStateExport<T, E>(
-  subscriptionConfig: UseAsyncStateConfig<T, E>,
+function useAsyncStateExport<T, S>(
+  subscriptionConfig: UseAsyncStateConfig<T, S>,
   dependencies?: any[]
-): UseAsyncState<T, E> {
+): UseAsyncState<T, S> {
   return useAsyncStateBase(
     subscriptionConfig,
     dependencies
