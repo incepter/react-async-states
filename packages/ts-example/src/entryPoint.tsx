@@ -14,26 +14,18 @@ import {
 
 const appRouter = createBrowserRouter(createRoutesFromElements(AppRoutes));
 
-type User = { username: string, password: string };
-let producer = function producer(props: ProducerProps<User, Error, "Timeout">): Promise<User> {
-  if (!props.args[0] || !props.args[1]) {
-    throw new Error("username or password is incorrect");
-  }
-  return Promise.resolve({
-    username: 'admin',
-    password: 'admin',
-  });
-}
-
-let source = createSource("source-demo", producer, {
-  // initialValue: {
-  //   username: "admin",
-  //   password: "admin"
-  // } as User
-});
-
 function EntryPoint() {
-  let {state, lastSuccess, runc} = useAsyncState({source});
+
+  type User = { username: string, password: string };
+
+
+
+  function producer(props: ProducerProps<User, Error, "Timeout">): Promise<User> {
+    if (!props.args[0]) throw new Error("username or password is incorrect");
+    return Promise.resolve({username: 'admin', password: 'admin'});
+  }
+
+  let {state, runc} = useAsyncState(producer);
 
   if (state.status === Status.initial) {
     let data = state.data; // ts type of data <- User
@@ -50,8 +42,7 @@ function EntryPoint() {
   if (state.status === Status.aborted) {
     let data = state.data; // ts type of data <- "Timeout"
   }
-
-
+  //
   // runc({
   //   onSuccess(state) {
   //     let {data, status} = state; // <- data type is User, status is success

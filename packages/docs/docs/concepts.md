@@ -4,7 +4,7 @@ sidebar_label: Concepts
 ---
 # Concepts and definitions
 
-The library a piece of state in the memory and gives you full control
+The library gives you a piece of state in the memory and gives you full control
 over it.
 
 ## The state
@@ -17,13 +17,53 @@ The library's state value is composed of four properties:
 | `props`     | `ProducerProps`                         | The argument object that the producer was ran with (the `props`) |
 | `timestamp` | `number`                                | the time (`Date.now()`) where the state was constructed          |
 
+The type of the data goes with the status, this means:
+
+```typescript
+type User = { username: string, password: string };
+function producer(props: ProducerProps<User, Error, "Timeout">): Promise<User> {
+  if (!props.args[0]) throw new Error("username or password is incorrect");
+  return Promise.resolve({username: 'admin', password: 'admin'});
+}
+
+let {state, runc} = useAsyncState(producer);
+if (state.status === Status.initial) {
+  let data = state.data; // type of data: User | undefined
+}
+if (state.status === Status.pending) {
+  let data = state.data; // type of data: null
+}
+if (state.status === Status.success) {
+  let data = state.data; // type of data: User
+}
+if (state.status === Status.error) {
+  let data = state.data; // type of data: Error
+}
+if (state.status === Status.aborted) {
+  let data = state.data; // type of data: "Timeout"
+}
+
+runc({
+  onSuccess(state) {
+    let {data, status} = state; // <- data type is User, status is success
+  },
+  onError(state) {
+    let {data, status} = state; // <- data type is Error, status is error
+  },
+  onAborted(state) {
+    let {data, status} = state; // <- data type is "Timeout", status is aborted
+  },
+});
+```
+
 ## The producer
 The producer function is a javascript function, and it is responsible for
 returning the state's `data`.
 
 ```typescript
-export type Producer<T> =
-  ((props: ProducerProps<T>) => (T | Promise<T> | Generator<any, T, any>));
+// T: data type, E: error type, R: abort reason type
+export type Producer<T, E, R> =
+        ((props: ProducerProps<T, E, R>) => (T | Promise<T> | Generator<any, T, any>));
 ```
 
 It may be:
