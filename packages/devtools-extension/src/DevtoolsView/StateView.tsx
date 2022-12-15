@@ -191,7 +191,9 @@ const JournalDisplay = function JournalDisplay({
               outline: "none",
               minHeight: 100,
             }}>
-            {Object.values(DevtoolsJournalEvent)?.map((t: string) => (
+            {
+              // @ts-ignore
+              Object.values(DevtoolsJournalEvent)?.map((t: string) => (
               <option key={t} value={t}>{t}</option>))}
           </select>
           <ul style={{marginTop: 8, paddingBottom: "1rem"}}>
