@@ -1,4 +1,4 @@
-import AsyncState, {Status, CachedState} from "../../../async-state";
+import AsyncState, {Status, CachedState} from "async-states-core";
 import {flushPromises} from "../utils/test-utils";
 import {
   standaloneProducerEffectsCreator

@@ -3,7 +3,7 @@ import {fireEvent, render, screen} from "@testing-library/react";
 import {
   UseAsyncState
 } from "../../../../types.internal";
-import {useAsyncState} from "../../../../react/useAsyncState";
+import {useAsyncState} from "../../../../useAsyncState";
 
 describe('should add static payload to async state', () => {
   it('should add payload to standalone subscription ', async () => {

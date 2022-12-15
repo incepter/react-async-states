@@ -7,6 +7,7 @@ import {
   instancesList, shapeSource
 } from "./sources";
 import {Status, useSource, useAsyncState, State} from "react-async-states";
+import {humanizeDevFlags} from "react-async-states/dist/devtools";
 
 export default function Sider() {
   let [state] = useAsyncState(instancesList);
@@ -127,7 +128,7 @@ const InstanceDetailsView = React.memo(function InstanceDetailsView(props: { cur
   }, [uniqueId]);
 
   let subscriptionsCount = selectSubscriptionsCount(state);
-  let subscriptionsFlags = state.data?.subscriptions?.map(t => t.devFlags.join(",")).join('|');
+  let subscriptionsFlags = state.data?.subscriptions?.map(t => humanizeDevFlags(t.flags).join(",")).join('|');
 
   let key = props.instance.key;
   let title = `${key} - ${uniqueId}`;

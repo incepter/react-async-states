@@ -1,5 +1,5 @@
 import * as React from "react";
-import {__DEV__} from "../../shared";
+import {__DEV__} from "../shared";
 
 export function computeCallerName(level = 3): undefined | string {
   const stack = new Error().stack?.toString();

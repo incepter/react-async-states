@@ -1,4 +1,5 @@
-import AsyncState, {
+import {
+  AsyncState,
   AbortFn,
   AsyncStateKeyOrSource,
   CachedState,

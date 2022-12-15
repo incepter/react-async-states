@@ -1,10 +1,8 @@
-import {ProducerSavedProps, State, StateInterface} from "../async-state";
+import {ProducerSavedProps, State, StateInterface} from "..";
 import {DevtoolsEvent, DevtoolsJournalEvent, DevtoolsRequest} from "./index";
 import {
-  AsyncStateSubscribeProps,
   StateSubscription
-} from "../async-state/AsyncState";
-import {humanizeDevFlags} from "../shared";
+} from "../AsyncState";
 
 let journalEventsId = 0;
 const source = "async-states-agent";
@@ -33,9 +31,11 @@ interface DevtoolsInterface {
 
   emitStateInterface(instance: StateInterface<any, any, any>): void,
 
-  emitSubscription(instance: StateInterface<any, any, any>, subscriptionKey: string),
+  emitSubscription(
+    instance: StateInterface<any, any, any>, subscriptionKey: string),
 
-  emitUnsubscription(instance: StateInterface<any, any, any>, subscriptionKey: string),
+  emitUnsubscription(
+    instance: StateInterface<any, any, any>, subscriptionKey: string),
 
   emitRunSync<T, E, R>(
     instance: StateInterface<T, E, R>, props: ProducerSavedProps<T>): void,
@@ -226,7 +226,7 @@ function createDevtools(): DevtoolsInterface {
         parent: asyncState.parent ? {
           key: asyncState.parent?.key,
           uniqueId: asyncState.parent?.uniqueId
-        }: null,
+        } : null,
       },
       type: DevtoolsEvent.setAsyncState
     });
@@ -430,7 +430,7 @@ function createDevtools(): DevtoolsInterface {
         key: subscription.props.key,
         origin: subscription.props.origin,
         flags: subscription.props.flags,
-        devFlags: humanizeDevFlags(subscription.props.flags || 0),
+        // devFlags: humanizeDevFlags(subscription.props.flags || 0),
       }
     };
     emitJournalEvent(asyncState, evt);
@@ -448,7 +448,8 @@ function createDevtools(): DevtoolsInterface {
     });
   }
 
-  function emitUnsubscription(asyncState: StateInterface<any, any, any>, subKey) {
+  function emitUnsubscription(
+    asyncState: StateInterface<any, any, any>, subKey) {
     if (asyncState.config.hideFromDevtools) {
       return;
     }
@@ -549,7 +550,7 @@ function mapSubscriptionToDevtools(sub: StateSubscription<any, any, any>) {
     key: sub.props.key,
     flags: sub.props.flags,
     origin: getSubscriptionOrigin(sub.props.origin),
-    devFlags: humanizeDevFlags(sub.props.flags || 0),
+    // devFlags: humanizeDevFlags(sub.props.flags || 0),
   }
 }
 

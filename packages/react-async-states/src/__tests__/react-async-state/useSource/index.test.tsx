@@ -1,7 +1,7 @@
 import * as React from "react";
 import {act, render, screen} from "@testing-library/react";
-import {createSource} from "../../../async-state";
-import {useSource} from "../../../react/useSource";
+import {createSource} from "async-states-core";
+import {useSource} from "../../../useSource";
 
 describe('should useSource', () => {
   it('should use a source and subscribe to it ', async () => {

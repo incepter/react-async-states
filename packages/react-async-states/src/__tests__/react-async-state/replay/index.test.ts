@@ -1,4 +1,4 @@
-import AsyncState from "../../../async-state";
+import AsyncState from "async-states-core";
 import {
   standaloneProducerEffectsCreator
 } from "../../../async-state/AsyncState";

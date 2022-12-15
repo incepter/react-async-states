@@ -3,9 +3,9 @@ import {act, fireEvent, render, screen} from "@testing-library/react";
 import {
   UseAsyncState
 } from "../../../../../types.internal";
-import {useAsyncState} from "../../../../../react/useAsyncState";
-import {AsyncStateProvider} from "../../../../../react/Provider";
-import {createSource, ForkConfig} from "../../../../../async-state";
+import {useAsyncState} from "../../../../../useAsyncState";
+import {AsyncStateProvider} from "../../../../../Provider";
+import {createSource, ForkConfig} from "../../async-states-core";
 
 describe('should fork an initially hoisted async state', () => {
   it('should fork and update both states ', async () => {

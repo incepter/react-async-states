@@ -1,9 +1,9 @@
 import * as React from "react";
 import {act, render, screen, fireEvent} from "@testing-library/react";
-import {useAsyncState} from "../../../../react/useAsyncState";
+import {useAsyncState} from "../../../../useAsyncState";
 import {UseAsyncState} from "../../../../types.internal";
 import {flushPromises} from "../../utils/test-utils";
-import {Status} from "../../../../async-state";
+import {Status} from "../async-states-core";
 
 describe('should emit from producer', () => {
   it('should emit after resolve when sync', async () => {

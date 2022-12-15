@@ -11,9 +11,9 @@ import {
   SOURCE,
   STANDALONE,
   WAIT
-} from "../../react/StateHookFlags";
-import {AsyncStateManager, createSource} from "../../async-state";
-import {resolveFlags} from "../../react/StateHook";
+} from "../../StateHookFlags";
+import {AsyncStateManager, createSource} from "async-states-core";
+import {resolveFlags} from "../../StateHook";
 
 describe('resolveFlags', () => {
   describe('get flags from config outside provider', () => {

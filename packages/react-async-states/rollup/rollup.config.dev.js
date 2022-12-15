@@ -56,7 +56,7 @@ const devBuild = {
 };
 
 const devtoolsSharedBuild = {
-  input: `src/devtools/index.ts`,
+  input: `src/devtools.ts`,
   output: [
     {
       format: "esm",
@@ -74,7 +74,7 @@ const devtoolsSharedBuild = {
           declaration: true,
         },
         include: [
-          "src/devtools/index.ts",
+          "src/devtools.ts",
         ],
         exclude: [
           "node_modules",

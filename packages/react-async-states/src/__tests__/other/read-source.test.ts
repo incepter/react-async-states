@@ -1,7 +1,4 @@
-import {
-  readSource
-} from "../../async-state/AsyncState";
-import {createSource} from "../../async-state";
+import {readSource, createSource} from "async-states-core";
 
 describe('readSource', () => {
   it('should correctly read the source', () => {

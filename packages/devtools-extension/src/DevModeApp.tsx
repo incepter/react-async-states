@@ -16,7 +16,7 @@ createSource<number>("test-1", null, {initialValue: 0})
 
 function DevModeApp({alias}) {
   const source = React.useMemo(() => createSource<number>(alias, null, {initialValue: 0}), []);
-  const {state} = useSourceLane(source, `${alias}-lane`);
+  const {state} = useAsyncState(source);
   return <button
     onClick={() => source.run(old => old.data + 1)}>{alias} - {state.data}</button>
 }

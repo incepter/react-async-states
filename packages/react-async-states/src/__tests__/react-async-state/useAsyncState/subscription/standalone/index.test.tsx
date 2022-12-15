@@ -3,8 +3,8 @@ import {fireEvent, render, screen} from "@testing-library/react";
 import {
   UseAsyncState
 } from "../../../../../types.internal";
-import {useAsyncState} from "../../../../../react/useAsyncState";
-import {AsyncStateProvider} from "../../../../../react/Provider";
+import {useAsyncState} from "../../../../../useAsyncState";
+import {AsyncStateProvider} from "../../../../../Provider";
 
 describe('should declare a standalone producer inside a provider', () => {
   it('should declare a standalone producer inside a provider ', async () => {

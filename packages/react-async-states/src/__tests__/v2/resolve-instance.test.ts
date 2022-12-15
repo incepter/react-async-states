@@ -4,10 +4,10 @@ import {
   INSIDE_PROVIDER, LANE,
   SOURCE, STANDALONE,
   WAIT
-} from "../../react/StateHookFlags";
-import AsyncState, {AsyncStateManager} from "../../async-state";
-import {resolveInstance, StateHook} from "../../react/StateHook";
-import {createStateHook} from "../../react/helpers/hooks-utils";
+} from "../../StateHookFlags";
+import {AsyncState,AsyncStateManager} from "async-states-core";
+import {resolveInstance, StateHook} from "../../StateHook";
+import {createStateHook} from "../../helpers/hooks-utils";
 
 describe('resolveInstance', () => {
   it('should resolve instance in WAIT mode', () => {
@@ -126,7 +126,7 @@ describe('resolveInstance', () => {
         null).key.startsWith("async-state-")
     ).toBe(true);
 
-    let hook: StateHook<any, any> = createStateHook();
+    let hook: StateHook<any> = createStateHook();
 
     hook.flags = CONFIG_STRING | STANDALONE;
     hook.instance = instance;

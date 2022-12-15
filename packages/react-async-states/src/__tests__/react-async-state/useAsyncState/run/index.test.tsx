@@ -7,7 +7,7 @@ import {
   Status,
   createSource,
   RunEffect
-} from "../../../../async-state";
+} from "../async-states-core";
 
 describe('should run producer', () => {
   it('should delegate to replace state when no producer', async () => {

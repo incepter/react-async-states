@@ -2,21 +2,22 @@ import * as React from "react";
 import {ReactNode} from "react";
 import {
   AbortFn,
-  ManagerInterface,
   CacheConfig,
   CachedState,
   ForkConfig,
   hoistConfig,
+  InitialState,
+  ManagerInterface,
   Producer,
   ProducerConfig,
   RunEffect,
   Source,
   State,
   StateFunctionUpdater,
-  Status
-} from "./async-state";
-import {RenderStrategy} from "./react/StateBoundary";
-import {InitialState, SuccessState} from "./async-state/AsyncState";
+  Status,
+  SuccessState
+} from "async-states-core";
+import {RenderStrategy} from "./StateBoundary";
 
 export interface AsyncStateInitializer<T, E, R> {
   key?: string,
@@ -28,7 +29,7 @@ export type StateContextValue = ManagerInterface;
 
 // use async state
 
-export interface BaseUseAsyncState<T, E, R, S = State<T, E, R>> extends Source<T, E, R>{
+export interface BaseUseAsyncState<T, E, R, S = State<T, E, R>> extends Source<T, E, R> {
   flags?: number,
   source?: Source<T, E, R>,
   devFlags?: string[],
@@ -36,13 +37,15 @@ export interface BaseUseAsyncState<T, E, R, S = State<T, E, R>> extends Source<T
 
 type IterableUseAsyncState<T, E, R, S = State<T, E, R>> = [
   S,
-  (updater: StateFunctionUpdater<T, E, R> | T, status?: Status)=>void,
+  (updater: StateFunctionUpdater<T, E, R> | T, status?: Status) => void,
   UseAsyncState<T, E, R, S>
 ]
 
 export interface UseAsyncState<T, E, R, S = State<T, E, R>> extends BaseUseAsyncState<T, E, R, S>, Iterable<any> {
   state: S,
+
   read(): S,
+
   version?: number,
   lastSuccess?: SuccessState<T> | InitialState<T>,
 
@@ -68,7 +71,7 @@ export type EqualityFn<T> = (
 ) => boolean;
 
 
-export interface BaseConfig<T, E, R> extends ProducerConfig<T, E, R>{
+export interface BaseConfig<T, E, R> extends ProducerConfig<T, E, R> {
   key?: string,
   lane?: string,
   source?: Source<T, E, R>,
@@ -91,6 +94,7 @@ export interface ConfigWithKeyWithSelector<T, E, R, S> extends ConfigWithKeyWith
   selector: useSelector<T, E, R, S>,
   areEqual?: EqualityFn<S>,
 }
+
 export interface ConfigWithKeyWithoutSelector<T, E, R> extends BaseConfig<T, E, R> {
   key: string,
 }
@@ -113,15 +117,22 @@ export interface ConfigWithProducerWithoutSelector<T, E, R> extends BaseConfig<T
   producer?: Producer<T, E, R>,
 }
 
-export type MixedConfig<T, E, R, S> = string | Source<T, E, R> | Producer<T, E, R> |
-  ConfigWithKeyWithSelector<T, E, R, S> |
-  ConfigWithKeyWithoutSelector<T, E, R> |
-  ConfigWithSourceWithSelector<T, E, R, S> |
-  ConfigWithSourceWithoutSelector<T, E, R> |
-  ConfigWithProducerWithSelector<T, E, R, S> |
+export type MixedConfig<T, E, R, S> =
+  string
+  | Source<T, E, R>
+  | Producer<T, E, R>
+  |
+  ConfigWithKeyWithSelector<T, E, R, S>
+  |
+  ConfigWithKeyWithoutSelector<T, E, R>
+  |
+  ConfigWithSourceWithSelector<T, E, R, S>
+  |
+  ConfigWithSourceWithoutSelector<T, E, R>
+  |
+  ConfigWithProducerWithSelector<T, E, R, S>
+  |
   ConfigWithProducerWithoutSelector<T, E, R>;
-
-
 
 
 export type UseAsyncStateConfiguration<T, E, R, S = State<T, E, R>> = {

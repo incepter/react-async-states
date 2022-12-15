@@ -4,7 +4,7 @@ import {
   isGenerator,
   isPromise,
   shallowClone,
-} from "../shared";
+} from "./shared";
 import {
   asyncStatesKey,
   didNotExpire,
@@ -12,11 +12,11 @@ import {
   isSource,
   sourceIsSourceSymbol,
 } from "./utils";
-import devtools from "../devtools/Devtools";
+import devtools from "./devtools/Devtools";
 import {hideStateInstanceInNewObject} from "./hide-object";
 import {nextKey} from "./key-gen";
 
-class AsyncState<T, E, R> implements StateInterface<T, E, R> {
+export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   //region properties
   key: string;
   uniqueId: number;
@@ -1262,7 +1262,6 @@ function stepAsyncAndContinueStartedGenerator(
 //endregion
 
 //region Exports
-export default AsyncState;
 export {
   readSource,
   standaloneProducerEffectsCreator,
@@ -1512,7 +1511,7 @@ export enum ProducerType {
   notProvided = 4,
 }
 
-export type ProducerConfig<T, E, R> = {
+export type ProducerConfig<T, E = any, R = any> = {
   skipPendingStatus?: boolean,
   initialValue?: T | ((cache: Record<string, CachedState<T, E, R>>) => T),
   cacheConfig?: CacheConfig<T, E, R>,

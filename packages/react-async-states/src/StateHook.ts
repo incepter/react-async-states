@@ -11,15 +11,20 @@ import {
   UseAsyncStateEventFn,
   UseAsyncStateEvents,
   UseAsyncStateEventSubscribe
-} from "../types.internal";
-import AsyncState, {
+} from "./types.internal";
+import {
+  AsyncState,
   AbortFn,
   Status,
   Producer,
   Source,
   State,
-  StateInterface
-} from "../async-state";
+  StateInterface,
+  readSource,
+  standaloneProducerEffectsCreator,
+  isSource,
+  nextKey
+} from "async-states-core";
 import {
   AUTO_RUN,
   CHANGE_EVENTS,
@@ -39,15 +44,9 @@ import {
   SUBSCRIBE_EVENTS,
   WAIT
 } from "./StateHookFlags";
-import {__DEV__, humanizeDevFlags, isFunction, shallowClone} from "../shared";
-import {
-  readSource,
-  standaloneProducerEffectsCreator
-} from "../async-state/AsyncState";
-import {isSource} from "../async-state/utils";
-import {nextKey} from "../async-state/key-gen";
+import {__DEV__, humanizeDevFlags, isFunction, shallowClone} from "./shared";
 
-export interface StateHook<T, E, R, S> {
+export interface StateHook<T, E = any, R = any, S = any> {
   current: S,
   flags: number,
   caller?: string,

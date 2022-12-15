@@ -1,5 +1,5 @@
 import * as React from "react";
-import {Producer, Source, State} from "../async-state";
+import {Producer, Source, State} from "async-states-core";
 import {
   BaseConfig,
   CleanupFn,
@@ -13,10 +13,10 @@ import {
   PartialUseAsyncStateConfiguration,
   StateContextValue,
   UseAsyncState,
-} from "../types.internal";
+} from "./types.internal";
 import {StateContext} from "./context";
 import {AUTO_RUN} from "./StateHookFlags";
-import {__DEV__, emptyArray} from "../shared";
+import {__DEV__, emptyArray} from "./shared";
 import {calculateStateValue, StateHook} from "./StateHook";
 import {useCallerName} from "./helpers/useCallerName";
 import {

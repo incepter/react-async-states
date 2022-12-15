@@ -1,10 +1,9 @@
 import {
   createSource,
   ProducerProps,
-  useAsyncState, Status
+  useAsyncState, Status, RunEffect
 } from "react-async-states";
 import User from "../pages/user";
-import {RunEffect} from "react-async-states/src";
 
 type User = {
   email: string,

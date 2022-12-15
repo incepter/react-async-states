@@ -16,10 +16,9 @@ const esModulesBuild = [
     input: `src/index.ts`,
     output: {
       format: "esm",
+      dir: 'dist/es',
       sourcemap: true,
       preserveModules: true,
-      dir: 'dist/es',
-      // file: `dist/index.js`,
       globals: {
         react: 'React',
         'react/jsx-runtime': 'jsxRuntime',
@@ -32,18 +31,6 @@ const esModulesBuild = [
     plugins: [
       json(),
       resolve(),
-      // terser({
-      //   compress: {
-      //     keep_fargs: true,
-      //     keep_fnames: true,
-      //     reduce_funcs: false,
-      //   },
-      //   mangle: {
-      //     keep_fnames: true,
-      //
-      //   },
-      // }),
-      // babel({babelHelpers: 'bundled'}),
       typescript({
         tsconfigOverride: {
           compilerOptions: {
@@ -171,7 +158,7 @@ const umdBuild = [
 
 const devtoolsSharedBuild = [
   {
-    input: `src/devtools/index.ts`,
+    input: `src/devtools.ts`,
     output: [
       {
         format: "esm",
@@ -189,7 +176,7 @@ const devtoolsSharedBuild = [
             declaration: true,
           },
           include: [
-            "src/devtools/index.ts",
+            "src/devtools.ts",
           ],
           exclude: [
             "node_modules",

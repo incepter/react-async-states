@@ -4,11 +4,11 @@ import {
   RenderStrategy,
   StateBoundary,
   useCurrentState
-} from "../../../react/StateBoundary";
+} from "../../../StateBoundary";
 import {
   Status,
   createSource
-} from "../../../async-state";
+} from "async-states-core";
 import {flushPromises} from "../utils/test-utils";
 
 describe('StateBoundary', () => {
