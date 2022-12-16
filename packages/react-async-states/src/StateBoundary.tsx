@@ -1,5 +1,5 @@
 import * as React from "react";
-import {State, Status} from "async-states-core";
+import {State, Status} from "@core";
 import {
   MixedConfig,
   StateBoundaryProps,

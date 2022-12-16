@@ -5,7 +5,7 @@ import {
   AsyncState,
   standaloneProducerEffectsCreator,
   Status
-} from "async-states-core";
+} from "@core";
 
 // @ts-ignore
 jest.useFakeTimers("modern");

@@ -10,7 +10,7 @@ module.exports = {
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   moduleNameMapper: {
-    'async-states-core': '<rootDir>/../core/src/'
+    '@core': '<rootDir>/../core/src/'
   },
   coveragePathIgnorePatterns: [
     "__tests__",

@@ -3,7 +3,7 @@ import {
   CachedState,
   standaloneProducerEffectsCreator,
   Status
-} from "async-states-core";
+} from "@core";
 import {flushPromises} from "../utils/test-utils";
 
 describe('async state cache', () => {

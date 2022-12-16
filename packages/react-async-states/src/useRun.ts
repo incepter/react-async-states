@@ -1,6 +1,6 @@
 import * as React from "react";
 import {StateContext} from "./context";
-import {isSource, AbortFn, AsyncStateKeyOrSource, Source} from "async-states-core";
+import {isSource, AbortFn, AsyncStateKeyOrSource, Source} from "@core";
 import {StateContextValue} from "./types.internal";
 
 type RunFunction<T, E, R> = ((

@@ -8,7 +8,7 @@ import {
 import {
   Status,
   createSource
-} from "async-states-core";
+} from "@core";
 import {flushPromises} from "../utils/test-utils";
 
 describe('StateBoundary', () => {

@@ -4,9 +4,9 @@
     "baseUrl": ".",
     "types": ["node", "jest"],
     "paths": {
-      "async-states-core": ["../core/"]
+      "@core": ["../core/"],
+      "tslib": ["node_modules/tslib"]
     },
-
   },
   "include": ["src"],
   "exclude": [

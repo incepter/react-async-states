@@ -5,7 +5,7 @@ import {
   SOURCE, STANDALONE,
   WAIT
 } from "../../StateHookFlags";
-import {AsyncState,AsyncStateManager} from "async-states-core";
+import {AsyncState,AsyncStateManager} from "@core";
 import {resolveInstance, StateHook} from "../../StateHook";
 import {createStateHook} from "../../helpers/hooks-utils";
 

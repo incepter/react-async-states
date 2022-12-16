@@ -3,7 +3,7 @@ import {act, fireEvent, render, screen} from "@testing-library/react";
 import {AsyncStateProvider} from "../../../Provider";
 import {useSelector} from "../../../useSelector";
 import {useRun} from "../../../useRun";
-import {createSource} from "async-states-core";
+import {createSource} from "@core";
 
 describe('useSelector', () => {
   it('should do basic selection', () => {

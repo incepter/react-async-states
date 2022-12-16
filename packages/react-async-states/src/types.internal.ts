@@ -16,7 +16,7 @@ import {
   StateFunctionUpdater,
   Status,
   SuccessState
-} from "async-states-core";
+} from "@core";
 import {RenderStrategy} from "./StateBoundary";
 
 export interface AsyncStateInitializer<T, E, R> {

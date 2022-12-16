@@ -13,7 +13,7 @@ export {useAsyncState} from "./useAsyncState";
 export {AsyncStateProvider} from "./Provider";
 
 export {
-  createSource, Status, RunEffect, ProducerType, AsyncStateManager} from "async-states-core";
+  createSource, Status, RunEffect, ProducerType, AsyncStateManager} from "@core";
 
 export {RenderStrategy, StateBoundary, useCurrentState} from "./StateBoundary";
 
@@ -65,7 +65,7 @@ export type {
   OnCacheLoadProps,
   StateFunctionUpdater,
   StateBuilderInterface,
-} from "async-states-core";
+} from "@core";
 
 export type {
   EqualityFn,

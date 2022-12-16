@@ -7,7 +7,6 @@ const {babel} = require('@rollup/plugin-babel');
 const gzipPlugin = require('rollup-plugin-gzip');
 const terser = require('@rollup/plugin-terser');
 const copy = require('rollup-plugin-copy');
-const del = require('rollup-plugin-delete');
 
 const libraryName = 'react-async-states';
 

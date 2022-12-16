@@ -3,7 +3,7 @@ import {fireEvent, render, screen, act} from "@testing-library/react";
 import {UseAsyncState} from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../useAsyncState";
 import AsyncStateComponent from "../../../utils/AsyncStateComponent";
-import {createSource} from "async-states-core";
+import {createSource} from "@core";
 
 describe('should subscribe to a module level source object', () => {
   it('should share state by source between two components', () => {

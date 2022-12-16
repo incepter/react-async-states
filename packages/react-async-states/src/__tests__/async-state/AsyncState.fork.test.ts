@@ -2,7 +2,7 @@ import {
   AsyncState,
   standaloneProducerEffectsCreator,
   Status
-} from "async-states-core";
+} from "@core";
 import { shallowClone } from "../../shared";
 import { act } from "@testing-library/react-hooks";
 import { timeout } from "./test-utils";

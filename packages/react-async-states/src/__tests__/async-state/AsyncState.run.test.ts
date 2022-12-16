@@ -3,7 +3,7 @@ import {
   AsyncState,
   standaloneProducerEffectsCreator,
   Status
-} from "async-states-core";
+} from "@core";
 import { rejectionTimeout, timeout } from "./test-utils";
 import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
 

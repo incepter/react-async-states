@@ -1,4 +1,4 @@
-import {AsyncState, standaloneProducerEffectsCreator} from "async-states-core";
+import {AsyncState, standaloneProducerEffectsCreator} from "@core";
 
 describe('AsyncState.reply', () => {
   it('should reply async state latest run', () => {
