@@ -114,7 +114,7 @@ describe('resolveInstance', () => {
         CONFIG_OBJECT | INSIDE_PROVIDER | STANDALONE,
         {initialValue: 5},
         manager,
-        null).config.initialValue
+        null)!.config.initialValue
     ).toBe(5);
 
 
@@ -123,7 +123,7 @@ describe('resolveInstance', () => {
         STANDALONE,
         undefined,
         null,
-        null).key.startsWith("async-state-")
+        null)!.key.startsWith("async-state-")
     ).toBe(true);
 
     let hook: StateHook<any> = createStateHook();
@@ -141,8 +141,8 @@ describe('resolveInstance', () => {
       hook);
 
     expect(newInstance).toBe(instance);
-    expect(newInstance.config.initialValue).toBe(15);
-    expect(newInstance.originalProducer).toBe(undefined);
+    expect(newInstance!.config.initialValue).toBe(15);
+    expect(newInstance!.originalProducer).toBe(undefined);
 
     // dont reuse becaue of flags
 
@@ -156,7 +156,7 @@ describe('resolveInstance', () => {
       hook);
 
     expect(newInstance).not.toBe(instance);
-    expect(newInstance.config.initialValue).toBe(15);
-    expect(newInstance.originalProducer).toBe(undefined);
+    expect(newInstance!.config.initialValue).toBe(15);
+    expect(newInstance!.originalProducer).toBe(undefined);
   });
 });

@@ -41,7 +41,7 @@ type IterableUseAsyncState<T, E, R, S = State<T, E, R>> = [
   UseAsyncState<T, E, R, S>
 ]
 
-export interface UseAsyncState<T, E, R, S = State<T, E, R>> extends BaseUseAsyncState<T, E, R, S>, Iterable<any> {
+export interface UseAsyncState<T, E = any, R = any, S = State<T, E, R>> extends BaseUseAsyncState<T, E, R, S>, Iterable<any> {
   state: S,
 
   read(): S,
@@ -117,8 +117,9 @@ export interface ConfigWithProducerWithoutSelector<T, E, R> extends BaseConfig<T
   producer?: Producer<T, E, R>,
 }
 
-export type MixedConfig<T, E, R, S> =
+export type MixedConfig<T, E = any, R = any, S = any> =
   string
+  | undefined
   | Source<T, E, R>
   | Producer<T, E, R>
   |

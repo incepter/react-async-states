@@ -1,36 +1,4 @@
 {
-  "compilerOptions": {
-    "sourceMap": true,
-    "strictNullChecks": true,
-    "module": "esnext",
-    "jsx": "react",
-    "target": "es5",
-    "allowJs": true,
-    "preserveSymlinks": true,
-    "moduleResolution": "Node",
-    "noImplicitAny": false,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "declaration": true,
-    "declarationDir": "dist",
-    "types": ["node"],
-    "lib": [
-      "dom",
-      "ES2015",
-      "dom.iterable",
-      "esnext"
-    ],
-    "strict": false,
-    "noEmit": false
-  },
-  "exclude": [
-    "node_modules",
-    "src/__tests__",
-    "src/index-prod.js"
-  ]
+  "extends": "../../tsconfig.json",
+  "exclude": ["node_modules"]
 }

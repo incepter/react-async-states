@@ -4,7 +4,7 @@ import {
   UseAsyncState,
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../useAsyncState";
-import {Status} from "../../async-states-core";
+import {Status} from "async-states-core";
 
 describe('should do basic subscription to an async state', () => {
   it('should subscribe and get initial value -- sync ' +
@@ -15,7 +15,7 @@ describe('should do basic subscription to an async state', () => {
         run,
         state,
         setState
-      }: UseAsyncState<number, number> = useAsyncState({
+      } = useAsyncState({
         producer(props) {
           return props.args[0];
         },

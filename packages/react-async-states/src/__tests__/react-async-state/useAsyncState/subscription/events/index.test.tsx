@@ -4,7 +4,7 @@ import {
   UseAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../useAsyncState";
-import {Status, createSource} from "../../async-states-core";
+import {Status, createSource} from "async-states-core";
 
 describe('useAsyncState - events', () => {
   it('add several change events with different forms', async () => {

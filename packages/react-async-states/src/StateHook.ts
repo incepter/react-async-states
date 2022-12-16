@@ -222,9 +222,9 @@ export function getConfigFlags<T, E, R, S>(
 
 export function resolveInstance<T, E, R, S>(
   flags: number,
-  config: MixedConfig<T, E, R, any>,
+  config: MixedConfig<T, E, R, S>,
   contextValue: StateContextValue | null,
-  previousHook: StateHook<T, E, R, any>,
+  previousHook: StateHook<T, E, R, S> | null,
   overrides?: PartialUseAsyncStateConfiguration<T, E, R, any>
 ): StateInterface<T, E, R> | null {
 
@@ -278,15 +278,15 @@ function resolveSourceInstance<T, E, R, S>(
 }
 
 function resolveStandaloneInstance<T, E, R, S>(
-  hook: StateHook<T, E, R, S>,
+  hook: StateHook<T, E, R, S> | null,
   flags: number,
   config: MixedConfig<T, E, R, S>
 ) {
 
   let canReuse = hook && !!hook.instance && !!(hook.flags & STANDALONE);
   if (canReuse) {
-    patchInstance(hook.instance!, flags, config);
-    return hook.instance;
+    patchInstance(hook!.instance!, flags, config);
+    return hook!.instance;
   }
 
   let key = readKeyFromConfig(flags, config, null);

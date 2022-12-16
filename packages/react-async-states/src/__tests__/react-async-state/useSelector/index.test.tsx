@@ -139,7 +139,6 @@ describe('useSelector', () => {
       const data = useSelector(
         allKeys => allKeys.filter(t => t === "data"),
         ({data: state}) => state!.data,
-        (prev, next) => prev === next
       );
       return <span data-testid="result">{data}</span>
     }

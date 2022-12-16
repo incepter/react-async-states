@@ -1295,7 +1295,7 @@ export interface BaseSource<T, E, R> {
   // producer
   replay(): AbortFn,
 
-  abort(reason: any): void,
+  abort(reason?: any): void,
 
   replaceProducer(newProducer: Producer<T, E, R> | undefined),
 
@@ -1494,7 +1494,7 @@ export type ProducerSavedProps<T> = {
   lastSuccess?: LastSuccessSavedState<T>,
 }
 
-export type Producer<T, E, R> =
+export type Producer<T, E = any, R = any> =
   ((props: ProducerProps<T, E, R>) => (T | Promise<T> | Generator<any, T, any>));
 
 export type ProducerFunction<T, E, R> = (
@@ -1531,7 +1531,7 @@ export type StateUpdater<T, E, R> = (
   status?: Status
 ) => void;
 
-export interface Source<T, E, R> extends BaseSource<T, E, R> {
+export interface Source<T, E = any, R = any> extends BaseSource<T, E, R> {
   run(...args: any[]): AbortFn,
 
   runp(...args: any[]): Promise<State<T, E, R>>,
@@ -1575,7 +1575,7 @@ export type CacheConfig<T, E, R> = {
   onCacheLoad?({cache, setState}: OnCacheLoadProps<T, E, R>): void,
 }
 
-export type CachedState<T, E, R> = {
+export type CachedState<T, E = any, R = any> = {
   state: State<T, E, R>,
   addedAt: number,
   deadline: number,
@@ -1584,7 +1584,7 @@ export type CachedState<T, E, R> = {
 export interface StateBuilderInterface {
   initial: <T> (initialValue: T) => InitialState<T>,
   pending: <T>(props: ProducerSavedProps<T>) => PendingState<T>,
-  success: <T>(data: T, props: ProducerSavedProps<T>) => SuccessState<T>,
+  success: <T>(data: T, props: ProducerSavedProps<T> | null) => SuccessState<T>,
   error: <T, E>(data: any, props: ProducerSavedProps<T>) => ErrorState<T, E>,
   aborted: <T, E, R>(reason: any, props: ProducerSavedProps<T>) => AbortedState<T, E, R>,
 }

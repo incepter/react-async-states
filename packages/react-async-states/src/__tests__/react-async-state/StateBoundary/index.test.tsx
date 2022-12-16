@@ -39,7 +39,7 @@ describe('StateBoundary', () => {
 
     // then
     expect(screen.getByTestId("current-mode").innerHTML)
-      .toEqual("[\"AUTO_RUN\",\"CONFIG_SOURCE\",\"SOURCE\"]");
+      .toEqual("[\"CONFIG_SOURCE\",\"SOURCE\",\"AUTO_RUN\"]");
     expect(screen.getByTestId("current-status").innerHTML)
       .toEqual(Status.pending);
 

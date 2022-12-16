@@ -100,7 +100,7 @@ describe('should useProducer', () => {
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("");
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual("[\"CONFIG_FUNCTION\",\"INSIDE_PROVIDER\",\"STANDALONE\"]");
+      .toEqual("[\"CONFIG_FUNCTION\",\"STANDALONE\",\"INSIDE_PROVIDER\"]");
 
     // +1
     fireEvent.click(incrementBtn);
