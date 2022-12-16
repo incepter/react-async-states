@@ -7,7 +7,7 @@ import {
   instancesList, shapeSource
 } from "./sources";
 import {Status, useSource, useAsyncState, State} from "react-async-states";
-import {humanizeDevFlags} from "react-async-states/dist/devtools";
+import {humanizeDevFlags} from "react-async-states/dist/es/react-async-states/src/shared/index";
 
 export default function Sider() {
   let [state] = useAsyncState(instancesList);

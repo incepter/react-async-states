@@ -155,55 +155,7 @@ const umdBuild = [
   }
 ];
 
-const devtoolsSharedBuild = [
-  {
-    input: `src/devtools.ts`,
-    output: [
-      {
-        format: "esm",
-        sourcemap: true,
-        file: 'dist/devtools/index.js',
-      },
-    ],
-    plugins: [
-      json(),
-      resolve(),
-      babel({babelHelpers: 'bundled'}),
-      typescript({
-        tsconfigOverride: {
-          compilerOptions: {
-            declaration: true,
-          },
-          include: [
-            "src/devtools.ts",
-          ],
-          exclude: [
-            "node_modules",
-          ]
-        }
-      }),
-      commonjs(),
-      terser({
-        compress: {
-          reduce_funcs: false,
-        }
-      }),
-
-      // copy({
-      //   hook: 'closeBundle',
-      //   targets: [
-      //     {
-      //       dest: 'dist/devtools/view',
-      //       src: `../devtools-extension/dist/*`,
-      //     },
-      //   ]
-      // }),
-    ]
-  }
-];
-
 module.exports = [
   ...esModulesBuild,
   ...umdBuild,
-  ...devtoolsSharedBuild,
 ];

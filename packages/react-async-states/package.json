@@ -6,7 +6,7 @@
   "version": "1.0.0-rc-14",
   "main": "dist/umd/index",
   "name": "react-async-states",
-  "types": "dist/es/src/index",
+  "types": "dist/es/react-async-states/src/index",
   "module": "dist/es/react-async-states/src/index",
   "repository": "https://github.com/incepter/react-async-states",
   "description": "A low-level multi paradigm state management library",

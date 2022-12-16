@@ -55,37 +55,6 @@ const devBuild = {
   ],
 };
 
-const devtoolsSharedBuild = {
-  input: `src/devtools.ts`,
-  output: [
-    {
-      format: "esm",
-      sourcemap: true,
-      file: 'dist/devtools/index.js',
-    },
-  ],
-  plugins: [
-    json(),
-    resolve(),
-    babel({babelHelpers: 'bundled'}),
-    typescript({
-      tsconfigOverride: {
-        compilerOptions: {
-          declaration: true,
-        },
-        include: [
-          "src/devtools.ts",
-        ],
-        exclude: [
-          "node_modules",
-        ]
-      }
-    }),
-    commonjs(),
-  ]
-};
-
 module.exports = [
   devBuild,
-  devtoolsSharedBuild,
 ];

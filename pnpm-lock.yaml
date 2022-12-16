@@ -6,7 +6,10 @@ importers:
     specifiers: {}
 
   packages/core:
-    specifiers: {}
+    specifiers:
+      '@types/node': ^18.11.9
+    devDependencies:
+      '@types/node': 18.11.15
 
   packages/devtools-extension:
     specifiers:

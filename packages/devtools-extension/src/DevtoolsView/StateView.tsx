@@ -6,7 +6,7 @@ import {
 } from "./sources";
 import Json from "./Json";
 import {useSource, Status} from "react-async-states";
-import {DevtoolsJournalEvent} from "react-async-states/dist/devtools";
+import {DevtoolsJournalEvent} from "react-async-states/dist/es/core/src/devtools";
 import {addFormattedDate, DevtoolsMessagesBuilder} from "./utils";
 
 export default function StateView() {
@@ -304,7 +304,7 @@ function ChangeState({uniqueId, displayKey}) {
                   }
                 }}
               >
-                {Object.values(Status).map((t) => (
+                {Object.values(Status as Record<string, string>).map((t) => (
                   <option value={t}>{t}</option>
                 ))}
               </select>
