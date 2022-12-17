@@ -153,7 +153,13 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
     try {
       executionValue = currentProducer!(props);
+      if (indicators.aborted) {
+        return;
+      }
     } catch (e) {
+      if (indicators.aborted) {
+        return;
+      }
       if (__DEV__) devtools.emitRunSync(instance, savedProps);
       indicators.fulfilled = true;
       let errorState = StateBuilder.error<T, E>(e, savedProps);
@@ -312,7 +318,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     }
 
     if (notify) {
-      notifySubscribers(this as StateInterface<any, any, any>);
+      notifySubscribers(this as StateInterface<any>);
     }
   }
 
@@ -942,7 +948,7 @@ function loadCache<T, E, R>(instance: StateInterface<T, E, R>) {
   }
 }
 
-function notifySubscribers(instance: StateInterface<any, any, any>) {
+function notifySubscribers(instance: StateInterface<any>) {
   if (!instance.subscriptions) {
     return;
   }
@@ -1018,7 +1024,7 @@ function makeSource<T, E, R>(instance: StateInterface<T, E, R>): Readonly<Source
 }
 
 
-function isCacheEnabled(instance: StateInterface<any, any, any>): boolean {
+function isCacheEnabled(instance: StateInterface<any>): boolean {
   return !!instance.config.cacheConfig?.enabled;
 }
 

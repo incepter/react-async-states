@@ -44,7 +44,7 @@ import {
   SUBSCRIBE_EVENTS,
   WAIT
 } from "./StateHookFlags";
-import {__DEV__, humanizeDevFlags, isFunction, shallowClone} from "./shared";
+import {__DEV__, humanizeDevFlags, isFunction} from "./shared";
 
 export interface StateHook<T, E = any, R = any, S = any> {
   current: S,
@@ -442,7 +442,7 @@ export function calculateStateValue<T, E, R, S>(
 ): Readonly<UseAsyncState<T, E, R, S>> {
   let instance = hook.instance;
 
-  const newState = shallowClone(hook.base) as UseAsyncState<T, E, R, S>;
+  const newState = Object.assign({}, hook.base) as UseAsyncState<T, E, R, S>;
   const newValue = readStateFromInstance(instance, hook.flags, hook.config);
   if (instance) {
     newState.read = createReadInConcurrentMode.bind(null, instance, newValue);
