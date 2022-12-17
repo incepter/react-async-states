@@ -3,8 +3,8 @@ import {act, fireEvent, render, screen} from "@testing-library/react";
 import {
   UseAsyncState,
 } from "../../../../../types.internal";
-import {useAsyncState} from "../../../../../react/useAsyncState";
-import {Status} from "../../../../../async-state";
+import {useAsyncState} from "../../../../../useAsyncState";
+import {Status} from "@core";
 
 describe('should do basic subscription to an async state', () => {
   it('should subscribe and get initial value -- sync ' +
@@ -15,7 +15,7 @@ describe('should do basic subscription to an async state', () => {
         run,
         state,
         setState
-      }: UseAsyncState<number, number> = useAsyncState({
+      } = useAsyncState({
         producer(props) {
           return props.args[0];
         },

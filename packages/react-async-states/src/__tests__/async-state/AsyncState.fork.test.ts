@@ -1,9 +1,12 @@
-import AsyncState, { Status } from "../../async-state";
+import {
+  AsyncState,
+  standaloneProducerEffectsCreator,
+  Status
+} from "@core";
 import { shallowClone } from "../../shared";
 import { act } from "@testing-library/react-hooks";
 import { timeout } from "./test-utils";
 import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
-import {standaloneProducerEffectsCreator} from "../../async-state/AsyncState";
 
 // @ts-ignore
 jest.useFakeTimers("modern");

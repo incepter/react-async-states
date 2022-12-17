@@ -7,7 +7,7 @@ const {babel} = require('@rollup/plugin-babel');
 const gzipPlugin = require('rollup-plugin-gzip');
 const terser = require('@rollup/plugin-terser');
 const copy = require('rollup-plugin-copy');
-const del = require('rollup-plugin-delete');
+const dts = require('rollup-plugin-dts').default;
 
 const libraryName = 'react-async-states';
 
@@ -16,10 +16,9 @@ const esModulesBuild = [
     input: `src/index.ts`,
     output: {
       format: "esm",
+      dir: 'dist/es',
       sourcemap: true,
       preserveModules: true,
-      dir: 'dist/es',
-      // file: `dist/index.js`,
       globals: {
         react: 'React',
         'react/jsx-runtime': 'jsxRuntime',
@@ -32,23 +31,11 @@ const esModulesBuild = [
     plugins: [
       json(),
       resolve(),
-      // terser({
-      //   compress: {
-      //     keep_fargs: true,
-      //     keep_fnames: true,
-      //     reduce_funcs: false,
-      //   },
-      //   mangle: {
-      //     keep_fnames: true,
-      //
-      //   },
-      // }),
-      // babel({babelHelpers: 'bundled'}),
       typescript({
         tsconfigOverride: {
           compilerOptions: {
             target: 'ESNEXT',
-            declaration: true,
+            declaration: false,
           },
           exclude: [
             "node_modules",
@@ -169,55 +156,43 @@ const umdBuild = [
   }
 ];
 
-const devtoolsSharedBuild = [
-  {
-    input: `src/devtools/index.ts`,
-    output: [
-      {
-        format: "esm",
-        sourcemap: true,
-        file: 'dist/devtools/index.js',
-      },
-    ],
-    plugins: [
-      json(),
-      resolve(),
-      babel({babelHelpers: 'bundled'}),
-      typescript({
-        tsconfigOverride: {
-          compilerOptions: {
-            declaration: true,
-          },
-          include: [
-            "src/devtools/index.ts",
-          ],
-          exclude: [
-            "node_modules",
-          ]
-        }
-      }),
-      commonjs(),
-      terser({
-        compress: {
-          reduce_funcs: false,
-        }
-      }),
-
-      // copy({
-      //   hook: 'closeBundle',
-      //   targets: [
-      //     {
-      //       dest: 'dist/devtools/view',
-      //       src: `../devtools-extension/dist/*`,
-      //     },
-      //   ]
-      // }),
-    ]
-  }
-];
+const declarationsBuild = {
+  input: `src/index.ts`,
+  output: [
+    {
+      format: 'es',
+      dir: "dist/es",
+      sourcemap: false,
+      preserveModules: true,
+      name: "ReactAsyncStates",
+      globals: {
+        react: 'React',
+        'react/jsx-runtime': 'jsxRuntime',
+      }
+    },
+  ],
+  external: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
+  plugins: [
+    typescript({
+      tsconfigOverride: {
+        compilerOptions: {
+          sourceMap: false,
+          declaration: false,
+          declarationMap: false,
+        },
+        exclude: [
+          "node_modules",
+          "src/__tests__",
+          "src/index-prod.js"
+        ]
+      }
+    }),
+    dts(),
+  ],
+};
 
 module.exports = [
   ...esModulesBuild,
   ...umdBuild,
-  ...devtoolsSharedBuild,
+  declarationsBuild,
 ];

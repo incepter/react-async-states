@@ -1,13 +1,13 @@
 import * as React from "react";
-import {State, Status} from "../async-state";
+import {State, Status} from "@core";
 import {
   MixedConfig,
   StateBoundaryProps,
   UseAsyncState,
   UseAsyncStateConfiguration,
-} from "../types.internal";
+} from "./types.internal";
 import {useAsyncState} from "./useAsyncState";
-import {emptyArray, isFunction} from "../shared";
+import {emptyArray, isFunction} from "./shared";
 
 const StateBoundaryContext = React.createContext<any>(null);
 

@@ -3,8 +3,8 @@ import {act, fireEvent, render, screen} from "@testing-library/react";
 import {
   UseAsyncState
 } from "../../../../../types.internal";
-import {useAsyncState} from "../../../../../react/useAsyncState";
-import {Status, createSource} from "../../../../../async-state";
+import {useAsyncState} from "../../../../../useAsyncState";
+import {Status, createSource} from "@core";
 
 describe('useAsyncState - events', () => {
   it('add several change events with different forms', async () => {

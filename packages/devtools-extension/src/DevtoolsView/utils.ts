@@ -1,4 +1,4 @@
-import {DevtoolsRequest} from "react-async-states/dist/devtools";
+import {DevtoolsRequest} from "react-async-states/dist/es/core/src/devtools";
 
 export const DevtoolsMessagesBuilder = {
   init(dev: boolean) {

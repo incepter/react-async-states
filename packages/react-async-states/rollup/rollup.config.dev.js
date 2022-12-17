@@ -2,6 +2,7 @@ const resolve = require('@rollup/plugin-node-resolve');
 const commonjs = require('@rollup/plugin-commonjs');
 const typescript = require('rollup-plugin-typescript2');
 const json = require('@rollup/plugin-json');
+const dts = require('rollup-plugin-dts').default;
 const {babel} = require('@rollup/plugin-babel');
 
 const devBuild = {
@@ -11,16 +12,6 @@ const devBuild = {
     'react/jsx-runtime': 'jsxRuntime',
   },
   output: [
-    {
-      format: 'umd',
-      sourcemap: true,
-      file: `dist/umd/index.js`,
-      name: "ReactAsyncStates",
-      globals: {
-        react: 'React',
-        'react/jsx-runtime': 'jsxRuntime',
-      }
-    },
     {
       format: 'es',
       dir: "dist/es",
@@ -45,6 +36,9 @@ const devBuild = {
     commonjs(),
     typescript({
       tsconfigOverride: {
+        compilerOptions: {
+          declaration: false,
+        },
         exclude: [
           "node_modules",
           "src/__tests__",
@@ -55,37 +49,45 @@ const devBuild = {
   ],
 };
 
-const devtoolsSharedBuild = {
-  input: `src/devtools/index.ts`,
+const declarationsBuild = {
+  input: `src/index.ts`,
   output: [
     {
-      format: "esm",
-      sourcemap: true,
-      file: 'dist/devtools/index.js',
+      format: 'es',
+      dir: "dist/es",
+      sourcemap: false,
+      preserveModules: true,
+      name: "ReactAsyncStates",
+      globals: {
+        react: 'React',
+        'react/jsx-runtime': 'jsxRuntime',
+      }
     },
   ],
+  external: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
+  watch: {
+    include: 'src/**',
+  },
   plugins: [
-    json(),
-    resolve(),
-    babel({babelHelpers: 'bundled'}),
     typescript({
       tsconfigOverride: {
         compilerOptions: {
-          declaration: true,
+          sourceMap: false,
+          declaration: false,
+          declarationMap: false,
         },
-        include: [
-          "src/devtools/index.ts",
-        ],
         exclude: [
           "node_modules",
+          "src/__tests__",
+          "src/index-prod.js"
         ]
       }
     }),
-    commonjs(),
-  ]
+    dts(),
+  ],
 };
 
 module.exports = [
   devBuild,
-  devtoolsSharedBuild,
+  declarationsBuild,
 ];

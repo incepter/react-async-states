@@ -4,13 +4,14 @@
     "baseUrl": ".",
     "types": ["node", "jest"],
     "paths": {
-      "@core": ["../core/"],
-      "tslib": ["node_modules/tslib"]
+      "@core": ["../core/"]
     },
+
   },
   "include": ["src"],
   "exclude": [
     "node_modules",
+    "src/__tests__",
     "src/index-prod.js"
   ]
 }

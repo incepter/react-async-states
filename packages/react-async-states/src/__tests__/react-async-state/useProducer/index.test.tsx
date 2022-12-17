@@ -1,7 +1,7 @@
 import * as React from "react";
 import {fireEvent, render, screen} from "@testing-library/react";
-import {AsyncStateProvider} from "../../../react/Provider";
-import {useProducer} from "../../../react/useProducer";
+import {AsyncStateProvider} from "../../../Provider";
+import {useProducer} from "../../../useProducer";
 
 describe('should useProducer', () => {
   it('should use a global producer ', async () => {
@@ -100,7 +100,7 @@ describe('should useProducer', () => {
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("");
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual("[\"CONFIG_FUNCTION\",\"INSIDE_PROVIDER\",\"STANDALONE\"]");
+      .toEqual("[\"CONFIG_FUNCTION\",\"STANDALONE\",\"INSIDE_PROVIDER\"]");
 
     // +1
     fireEvent.click(incrementBtn);

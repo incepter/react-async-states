@@ -3,8 +3,8 @@ import {fireEvent, render, screen} from "@testing-library/react";
 import {
   UseAsyncState
 } from "../../../../../types.internal";
-import {useAsyncState} from "../../../../../react/useAsyncState";
-import {AsyncStateProvider} from "../../../../../react/Provider";
+import {useAsyncState} from "../../../../../useAsyncState";
+import {AsyncStateProvider} from "../../../../../Provider";
 
 describe('should declare a standalone producer inside a provider', () => {
   it('should declare a standalone producer inside a provider ', async () => {
@@ -22,7 +22,7 @@ describe('should declare a standalone producer inside a provider', () => {
         run,
         devFlags,
         state,
-      }: UseAsyncState<number, number> = useAsyncState({
+      } = useAsyncState({
           selector: d => d.data,
           producer(props) {
             return props.args[0];
@@ -59,7 +59,7 @@ describe('should declare a standalone producer inside a provider', () => {
     const decrementBtn = screen.getByTestId("decrement");
     // then
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual("[\"CONFIG_OBJECT\",\"INSIDE_PROVIDER\",\"SELECTOR\",\"STANDALONE\"]");
+      .toEqual("[\"CONFIG_OBJECT\",\"STANDALONE\",\"INSIDE_PROVIDER\",\"SELECTOR\"]");
 
     // +1
     fireEvent.click(incrementBtn);
@@ -103,6 +103,6 @@ describe('should declare a standalone producer inside a provider', () => {
 
     // then
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual("[\"CONFIG_OBJECT\",\"INSIDE_PROVIDER\",\"SELECTOR\",\"WAIT\"]");
+      .toEqual("[\"CONFIG_OBJECT\",\"INSIDE_PROVIDER\",\"WAIT\",\"SELECTOR\"]");
   });
 });

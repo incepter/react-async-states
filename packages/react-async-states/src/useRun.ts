@@ -1,8 +1,7 @@
 import * as React from "react";
-import {AbortFn, AsyncStateKeyOrSource, Source} from "../async-state";
 import {StateContext} from "./context";
-import {isSource} from "../async-state/utils";
-import {StateContextValue} from "../types.internal";
+import {isSource, AbortFn, AsyncStateKeyOrSource, Source} from "@core";
+import {StateContextValue} from "./types.internal";
 
 type RunFunction<T, E, R> = ((
   keyOrSource: AsyncStateKeyOrSource<T, E, R>, ...args: any[]) => AbortFn);

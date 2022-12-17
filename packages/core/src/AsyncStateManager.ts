@@ -1,4 +1,5 @@
-import AsyncState, {
+import {
+  AsyncState,
   AbortFn,
   AsyncStateKeyOrSource,
   CachedState,
@@ -288,9 +289,9 @@ export type hoistConfig = {
   override: boolean,
 }
 
-export type InstanceOrNull<T, E, R> = StateInterface<T, E, R> | null;
+export type InstanceOrNull<T, E = any, R = any> = StateInterface<T, E, R> | null;
 
-export type WatchCallback<T, E, R> = (value: InstanceOrNull<T, E, R>, key: string) => void;
+export type WatchCallback<T, E = any, R = any> = (value: InstanceOrNull<T, E, R>, key: string) => void;
 
 export type WatcherType = { cleanup: AbortFn, notify: WatchCallback<any, any, any> }
 
@@ -328,7 +329,7 @@ export interface ManagerInterface {
   createEffects<T, E, R>(props: ProducerProps<T, E, R>): ProducerEffects,
 }
 
-export type SourceOrDefinition<T, E, R> = Source<T, E, R> | StateDefinition<T, E, R>;
+export type SourceOrDefinition<T, E = any, R = any> = Source<T, E, R> | StateDefinition<T, E, R>;
 
 export type InitialStates = SourceOrDefinition<any, any, any>[] | Record<string, SourceOrDefinition<any, any, any>>;
 
@@ -340,18 +341,18 @@ export type StateProviderProps = {
 }
 
 
-export type StateEntry<T, E, R> = {
+export type StateEntry<T, E = any, R = any> = {
   hoisted: boolean,
   instance: StateInterface<T, E, R>,
 }
 
 export type StateEntries = Record<string, StateEntry<any, any, any>>
 
-export type SimpleSelector<T, E, R, D> = (props: FunctionSelectorItem<T, E, R> | undefined) => D;
+export type SimpleSelector<T, E = any, R = any, D = State<T, E, R>> = (props: FunctionSelectorItem<T, E, R> | undefined) => D;
 export type ArraySelector<T> = (...states: (FunctionSelectorItem<any, any, any> | undefined)[]) => T;
 
 
-export type StateDefinition<T, E, R> = {
+export type StateDefinition<T, E = any, R = any> = {
   key: string,
   producer?: Producer<T, E, R>,
   config?: ProducerConfig<T, E, R>
@@ -391,7 +392,7 @@ export interface ErrorFunctionSelectorItem<T, E, R> extends Partial<ErrorState<T
   cache?: Record<string, CachedState<T, E, R>> | null,
 }
 
-export type FunctionSelectorItem<T, E, R> = InitialFunctionSelectorItem<T, E, R> |
+export type FunctionSelectorItem<T, E = any, R = any> = InitialFunctionSelectorItem<T, E, R> |
   PendingFunctionSelectorItem<T, E, R> |
   AbortedFunctionSelectorItem<T, E, R> |
   SuccessFunctionSelectorItem<T, E, R> |

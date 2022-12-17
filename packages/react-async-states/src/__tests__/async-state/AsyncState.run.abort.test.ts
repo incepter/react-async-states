@@ -1,8 +1,11 @@
-import { act } from "@testing-library/react-hooks";
-import AsyncState, { Status } from "../../async-state";
-import { rejectionTimeout, timeout } from "./test-utils";
-import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
-import {standaloneProducerEffectsCreator} from "../../async-state/AsyncState";
+import {act} from "@testing-library/react-hooks";
+import {rejectionTimeout, timeout} from "./test-utils";
+import {mockDateNow, TESTS_TS} from "../react-async-state/utils/setup";
+import {
+  AsyncState,
+  standaloneProducerEffectsCreator,
+  Status
+} from "@core";
 
 // @ts-ignore
 jest.useFakeTimers("modern");
@@ -52,7 +55,7 @@ describe('AsyncState - run - abort', () => {
     });
 
     subscription.mockClear();
-    abort("reason");
+    abort!("reason");
 
     expect(subscription).toHaveBeenCalledTimes(1);
     expect(subscription).toHaveBeenCalledWith({
@@ -121,13 +124,13 @@ describe('AsyncState - run - abort', () => {
     });
 
     subscription.mockClear();
-    abort("reason");
+    abort!("reason");
     expect(subscription.mock.calls[0][0].status).toBe(Status.aborted);
 
     // now, let's check that a second call to the abort function does not update state or subscribers
     subscription.mockClear();
     let currentStateReference = myAsyncState.state;
-    abort("whatever is ignored");
+    abort!("whatever is ignored");
     expect(myAsyncState.state).toBe(currentStateReference);
 
     expect(subscription).not.toHaveBeenCalled();

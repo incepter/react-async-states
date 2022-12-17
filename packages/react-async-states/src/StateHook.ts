@@ -11,15 +11,20 @@ import {
   UseAsyncStateEventFn,
   UseAsyncStateEvents,
   UseAsyncStateEventSubscribe
-} from "../types.internal";
-import AsyncState, {
+} from "./types.internal";
+import {
+  AsyncState,
   AbortFn,
   Status,
   Producer,
   Source,
   State,
-  StateInterface
-} from "../async-state";
+  StateInterface,
+  readSource,
+  standaloneProducerEffectsCreator,
+  isSource,
+  nextKey
+} from "@core";
 import {
   AUTO_RUN,
   CHANGE_EVENTS,
@@ -39,15 +44,9 @@ import {
   SUBSCRIBE_EVENTS,
   WAIT
 } from "./StateHookFlags";
-import {__DEV__, humanizeDevFlags, isFunction, shallowClone} from "../shared";
-import {
-  readSource,
-  standaloneProducerEffectsCreator
-} from "../async-state/AsyncState";
-import {isSource} from "../async-state/utils";
-import {nextKey} from "../async-state/key-gen";
+import {__DEV__, humanizeDevFlags, isFunction, shallowClone} from "./shared";
 
-export interface StateHook<T, E, R, S> {
+export interface StateHook<T, E = any, R = any, S = any> {
   current: S,
   flags: number,
   caller?: string,
@@ -223,9 +222,9 @@ export function getConfigFlags<T, E, R, S>(
 
 export function resolveInstance<T, E, R, S>(
   flags: number,
-  config: MixedConfig<T, E, R, any>,
+  config: MixedConfig<T, E, R, S>,
   contextValue: StateContextValue | null,
-  previousHook: StateHook<T, E, R, any>,
+  previousHook: StateHook<T, E, R, S> | null,
   overrides?: PartialUseAsyncStateConfiguration<T, E, R, any>
 ): StateInterface<T, E, R> | null {
 
@@ -279,15 +278,15 @@ function resolveSourceInstance<T, E, R, S>(
 }
 
 function resolveStandaloneInstance<T, E, R, S>(
-  hook: StateHook<T, E, R, S>,
+  hook: StateHook<T, E, R, S> | null,
   flags: number,
   config: MixedConfig<T, E, R, S>
 ) {
 
   let canReuse = hook && !!hook.instance && !!(hook.flags & STANDALONE);
   if (canReuse) {
-    patchInstance(hook.instance!, flags, config);
-    return hook.instance;
+    patchInstance(hook!.instance!, flags, config);
+    return hook!.instance;
   }
 
   let key = readKeyFromConfig(flags, config, null);

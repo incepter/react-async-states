@@ -1,8 +1,11 @@
-import { act } from "@testing-library/react-hooks";
-import AsyncState, { Status } from "../../async-state";
-import { timeout } from "./test-utils";
-import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
-import {standaloneProducerEffectsCreator} from "../../async-state/AsyncState";
+import {act} from "@testing-library/react-hooks";
+import {
+  AsyncState,
+  standaloneProducerEffectsCreator,
+  Status
+} from "@core";
+import {timeout} from "./test-utils";
+import {mockDateNow, TESTS_TS} from "../react-async-state/utils/setup";
 
 // @ts-ignore
 jest.useFakeTimers("modern");
@@ -92,7 +95,7 @@ describe('AsyncState - subscriptions', () => {
     await act(async () => {
       await jest.advanceTimersByTime(49);
     });
-    unsubscribe(); // unsubscribe one milli before resolve; we should only receive the pending notification
+    unsubscribe!(); // unsubscribe one milli before resolve; we should only receive the pending notification
     await act(async () => {
       await jest.advanceTimersByTime(5);
     });
@@ -129,7 +132,7 @@ describe('AsyncState - subscriptions', () => {
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
     let unsubscribe = myAsyncState.subscribe({cb: subscriptionFn});
-    unsubscribe();
+    unsubscribe!();
 
     // then
 

@@ -5,21 +5,22 @@ import {
   SelectorKeysArg,
   StateContextValue,
   UseSelectorFunctionKeys,
-} from "../types.internal";
-import {isSource} from "../async-state/utils";
+} from "./types.internal";
 import {
   AbortFn,
   ArraySelector,
   FunctionSelector,
   FunctionSelectorItem,
-  InstanceOrNull, ManagerInterface,
+  InstanceOrNull,
+  isSource,
+  ManagerInterface,
+  readSource,
   SimpleSelector,
   Source,
   StateInterface
-} from "../async-state";
-import {readSource} from "../async-state/AsyncState";
+} from "@core";
 import {useCallerName} from "./helpers/useCallerName";
-import {__DEV__, isFunction} from "../shared";
+import {__DEV__, isFunction} from "./shared";
 
 export function useSelector<T>(
   keys: BaseSelectorKey,

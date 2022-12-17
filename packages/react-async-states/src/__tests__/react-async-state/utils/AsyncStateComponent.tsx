@@ -1,7 +1,7 @@
 import * as React from "react";
 import {MixedConfig, UseAsyncState,} from "../../../types.internal";
-import {useAsyncState} from "../../../react/useAsyncState";
-import {State} from "../../../async-state";
+import {useAsyncState} from "../../../useAsyncState";
+import {State} from "@core";
 
 const defaultDeps = [];
 

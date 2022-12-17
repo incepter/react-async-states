@@ -4,11 +4,11 @@ import {
   RenderStrategy,
   StateBoundary,
   useCurrentState
-} from "../../../react/StateBoundary";
+} from "../../../StateBoundary";
 import {
   Status,
   createSource
-} from "../../../async-state";
+} from "@core";
 import {flushPromises} from "../utils/test-utils";
 
 describe('StateBoundary', () => {
@@ -39,7 +39,7 @@ describe('StateBoundary', () => {
 
     // then
     expect(screen.getByTestId("current-mode").innerHTML)
-      .toEqual("[\"AUTO_RUN\",\"CONFIG_SOURCE\",\"SOURCE\"]");
+      .toEqual("[\"CONFIG_SOURCE\",\"SOURCE\",\"AUTO_RUN\"]");
     expect(screen.getByTestId("current-status").innerHTML)
       .toEqual(Status.pending);
 

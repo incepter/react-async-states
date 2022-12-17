@@ -4,9 +4,9 @@ import {
   Status, createSource,
   Producer,
   ProducerProps, Source
-} from "../../../../async-state";
+} from "@core";
 import AsyncStateComponent from "../../utils/AsyncStateComponent";
-import {AsyncStateProvider} from "../../../../react/Provider";
+import {AsyncStateProvider} from "../../../../Provider";
 import {UseAsyncState} from "../../../../types.internal";
 import {flushPromises} from "../../utils/test-utils";
 import {mockDateNow, TESTS_TS} from "../../utils/setup";

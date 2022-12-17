@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "license": "MIT",
+  "author": "incepter",
+  "sideEffects": false,
+  "version": "0.0.1",
+  "types": "src/index.ts",
+  "module": "src/index.ts",
+  "name": "async-states-core",
+  "description": "Core of async-states",
+  "devDependencies": {
+    "@types/node": "^18.11.9"
+  }
+}

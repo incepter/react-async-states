@@ -9,9 +9,9 @@ import {autoConfigureDevtools} from "async-states-devtools"
 import "async-states-devtools/dist/style.css"
 autoConfigureDevtools({open: true});
 
-const src = createSource("demo", null, {initialValue: 0});
-
-src.setState(old => old.data + 1)
+// const src = createSource("demo", null, {initialValue: 0});
+//
+// src.setState(old => old.data + 1)
 
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(

@@ -1,9 +1,9 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {mockDateNow} from "../../utils/setup";
-import {useAsyncState} from "../../../../react/useAsyncState";
-import {AsyncStateProvider} from "../../../../react/Provider";
-import {createSource} from "../../../../async-state";
+import {useAsyncState} from "../../../../useAsyncState";
+import {AsyncStateProvider} from "../../../../Provider";
+import {createSource} from "@core";
 
 mockDateNow();
 

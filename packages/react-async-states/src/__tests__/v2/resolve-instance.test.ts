@@ -4,10 +4,10 @@ import {
   INSIDE_PROVIDER, LANE,
   SOURCE, STANDALONE,
   WAIT
-} from "../../react/StateHookFlags";
-import AsyncState, {AsyncStateManager} from "../../async-state";
-import {resolveInstance, StateHook} from "../../react/StateHook";
-import {createStateHook} from "../../react/helpers/hooks-utils";
+} from "../../StateHookFlags";
+import {AsyncState,AsyncStateManager} from "@core";
+import {resolveInstance, StateHook} from "../../StateHook";
+import {createStateHook} from "../../helpers/hooks-utils";
 
 describe('resolveInstance', () => {
   it('should resolve instance in WAIT mode', () => {
@@ -114,7 +114,7 @@ describe('resolveInstance', () => {
         CONFIG_OBJECT | INSIDE_PROVIDER | STANDALONE,
         {initialValue: 5},
         manager,
-        null).config.initialValue
+        null)!.config.initialValue
     ).toBe(5);
 
 
@@ -123,10 +123,10 @@ describe('resolveInstance', () => {
         STANDALONE,
         undefined,
         null,
-        null).key.startsWith("async-state-")
+        null)!.key.startsWith("async-state-")
     ).toBe(true);
 
-    let hook: StateHook<any, any> = createStateHook();
+    let hook: StateHook<any> = createStateHook();
 
     hook.flags = CONFIG_STRING | STANDALONE;
     hook.instance = instance;
@@ -141,8 +141,8 @@ describe('resolveInstance', () => {
       hook);
 
     expect(newInstance).toBe(instance);
-    expect(newInstance.config.initialValue).toBe(15);
-    expect(newInstance.originalProducer).toBe(undefined);
+    expect(newInstance!.config.initialValue).toBe(15);
+    expect(newInstance!.originalProducer).toBe(undefined);
 
     // dont reuse becaue of flags
 
@@ -156,7 +156,7 @@ describe('resolveInstance', () => {
       hook);
 
     expect(newInstance).not.toBe(instance);
-    expect(newInstance.config.initialValue).toBe(15);
-    expect(newInstance.originalProducer).toBe(undefined);
+    expect(newInstance!.config.initialValue).toBe(15);
+    expect(newInstance!.originalProducer).toBe(undefined);
   });
 });
