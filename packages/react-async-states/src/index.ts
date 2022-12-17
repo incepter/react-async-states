@@ -54,6 +54,7 @@ export type {
 
   AbortFn,
   BaseSource,
+  BaseState,
   ErrorState,
   InitialState,
   PendingState,

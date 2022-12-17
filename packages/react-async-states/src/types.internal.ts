@@ -19,7 +19,7 @@ import {
 } from "@core";
 import {RenderStrategy} from "./StateBoundary";
 
-export interface AsyncStateInitializer<T, E, R> {
+export interface AsyncStateInitializer<T, E = any, R = any> {
   key?: string,
   producer?: Producer<T, E, R>,
   config?: ProducerConfig<T, E, R>
@@ -136,7 +136,7 @@ export type MixedConfig<T, E = any, R = any, S = any> =
   ConfigWithProducerWithoutSelector<T, E, R>;
 
 
-export type UseAsyncStateConfiguration<T, E, R, S = State<T, E, R>> = {
+export type UseAsyncStateConfiguration<T, E = any, R = any, S = State<T, E, R>> = {
   key?: string,
   lane?: string,
   source?: Source<T, E, R>,
@@ -180,19 +180,19 @@ export type StateBoundaryProps<T, E, R, S> = {
 
 export type StateBoundaryRenderProp = Record<Status, ReactNode>
 
-export type UseAsyncStateEventProps<T, E, R> = {
+export type UseAsyncStateEventProps<T, E = any, R = any> = {
   state: State<T, E, R>,
 };
 
-export type UseAsyncStateChangeEventHandler<T, E, R> =
+export type UseAsyncStateChangeEventHandler<T, E = any, R = any> =
   ((props: UseAsyncStateEventProps<T, E, R>) => void)
 
-export type UseAsyncStateEventFn<T, E, R> =
+export type UseAsyncStateEventFn<T, E = any, R = any> =
   UseAsyncStateChangeEvent<T, E, R>
   |
   UseAsyncStateChangeEventHandler<T, E, R>;
 
-export type UseAsyncStateChangeEvent<T, E, R> = {
+export type UseAsyncStateChangeEvent<T, E = any, R = any> = {
   status: Status
   handler: UseAsyncStateChangeEventHandler<T, E, R>,
 }
@@ -201,12 +201,12 @@ export type UseAsyncStateEventSubscribe<T, E, R> =
   ((props: SubscribeEventProps<T, E, R>) => CleanupFn)
   | ((props: SubscribeEventProps<T, E, R>) => CleanupFn)[]
 
-export type UseAsyncStateEvents<T, E, R> = {
+export type UseAsyncStateEvents<T, E = any, R = any> = {
   change?: UseAsyncStateEventFn<T, E, R> | UseAsyncStateEventFn<T, E, R>[],
   subscribe?: UseAsyncStateEventSubscribe<T, E, R>,
 }
 
-export type SubscribeEventProps<T, E, R> = {
+export type SubscribeEventProps<T, E = any, R = any> = {
   getState: () => State<T, E, R>,
   run: (...args: any[]) => AbortFn,
   invalidateCache: (cacheKey?: string) => void,
@@ -227,7 +227,7 @@ export type CleanupFn = AbortFn
   | (() => void)
   | undefined;
 
-export interface UseAsyncStateType<T, E, R, S> {
+export interface UseAsyncStateType<T, E = any, R = any, S = State<T, E, R>> {
   (
     subscriptionConfig: MixedConfig<T, E, R, S>,
     dependencies?: any[]

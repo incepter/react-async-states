@@ -1270,7 +1270,7 @@ export {
 
 //region TYPES
 
-export interface BaseSource<T, E, R> {
+export interface BaseSource<T, E = any, R = any> {
   // identity
   key: string,
   uniqueId: number,
@@ -1316,7 +1316,7 @@ export type AsyncStateSubscribeProps<T, E, R> = {
   cb(s: State<T, E, R>): void,
 }
 
-export interface StateInterface<T, E, R> extends BaseSource<T, E, R> {
+export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R> {
   // identity
   version: number,
   _source: Source<T, E, R>,
@@ -1414,11 +1414,19 @@ export enum RunEffect {
   takeLeading = "takeLeading",
 }
 
+
 export type LastSuccessSavedState<T> = {
   data: T,
   timestamp: number,
   props?: ProducerSavedProps<T> | null,
   status: Status.success | Status.initial,
+}
+
+export interface BaseState<T> {
+  data: T,
+  status: Status,
+  timestamp: number,
+  props?: ProducerSavedProps<T> | null,
 }
 
 export type SuccessState<T> = {
@@ -1434,18 +1442,21 @@ export type ErrorState<T, E = any> = {
   status: Status.error,
   props: ProducerSavedProps<T>,
 }
+
 export type PendingState<T> = {
   data: null,
   timestamp: number,
   status: Status.pending,
   props: ProducerSavedProps<T>,
 }
+
 export type InitialState<T> = {
   props: null,
   timestamp: number,
   data: T | undefined,
   status: Status.initial,
 }
+
 export type AbortedState<T, E = any, R = any> = {
   data: R,
   timestamp: number,
@@ -1497,7 +1508,7 @@ export type ProducerSavedProps<T> = {
 export type Producer<T, E = any, R = any> =
   ((props: ProducerProps<T, E, R>) => (T | Promise<T> | Generator<any, T, any>));
 
-export type ProducerFunction<T, E, R> = (
+export type ProducerFunction<T, E = any, R = any> = (
   props: ProducerProps<T, E, R>,
   runIndicators: RunIndicators,
   internalCallbacks?: ProducerCallbacks<T, E, R>,
@@ -1524,9 +1535,9 @@ export type ProducerConfig<T, E = any, R = any> = {
   hideFromDevtools?: boolean,
 }
 
-export type StateFunctionUpdater<T, E, R> = (updater: State<T, E, R>) => T;
+export type StateFunctionUpdater<T, E = any, R = any> = (updater: State<T, E, R>) => T;
 
-export type StateUpdater<T, E, R> = (
+export type StateUpdater<T, E = any, R = any> = (
   updater: T | StateFunctionUpdater<T, E, R>,
   status?: Status
 ) => void;
@@ -1558,13 +1569,13 @@ export type StateSubscription<T, E, R> = {
   props: AsyncStateSubscribeProps<T, E, R>
 };
 
-export type OnCacheLoadProps<T, E, R> = {
+export type OnCacheLoadProps<T, E = any, R = any> = {
   cache: Record<string, CachedState<T, E, R>>,
   setState(
     newValue: T | StateFunctionUpdater<T, E, R>, status?: Status): void
 }
 
-export type CacheConfig<T, E, R> = {
+export type CacheConfig<T, E = any, R = any> = {
   enabled: boolean,
   getDeadline?(currentState: State<T, E, R>): number,
   hash?(args: any[] | undefined, payload: Record<string, any> | null): string,
@@ -1595,7 +1606,7 @@ export type ForkConfig = {
   keepCache?: boolean,
 }
 
-export type AsyncStateKeyOrSource<T, E, R> = string | Source<T, E, R>;
+export type AsyncStateKeyOrSource<T, E = any, R = any> = string | Source<T, E, R>;
 
 export interface ProducerEffects {
   run: <T, E, R>(
@@ -1614,7 +1625,7 @@ export interface ProducerEffects {
 
 export type ProducerEffectsCreator<T, E, R> = (props: ProducerProps<T, E, R>) => ProducerEffects;
 
-export type ProducerRunInput<T, E, R> = AsyncStateKeyOrSource<T, E, R> | Producer<T, E, R>;
+export type ProducerRunInput<T, E = any, R = any> = AsyncStateKeyOrSource<T, E, R> | Producer<T, E, R>;
 
 export type ProducerRunConfig = {
   lane?: string,

@@ -22,6 +22,7 @@ export type {
   CachedState,
   CacheConfig,
   ErrorState,
+  BaseState,
   InitialState,
   PendingState,
   AbortedState,
