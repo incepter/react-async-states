@@ -12,6 +12,7 @@ type User = {
 
 function fetchUser(props: ProducerProps<User, Error>) {
   if (!props.args[0]) {
+    props.abort!();
     throw new Error('User id is required!')
   }
   let controller = new AbortController();
