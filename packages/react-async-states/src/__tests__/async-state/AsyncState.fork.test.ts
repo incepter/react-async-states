@@ -1,12 +1,7 @@
-import {
-  AsyncState,
-  standaloneProducerEffectsCreator,
-  Status
-} from "@core";
-import { shallowClone } from "../../shared";
-import { act } from "@testing-library/react-hooks";
-import { timeout } from "./test-utils";
-import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
+import {AsyncState, standaloneProducerEffectsCreator, Status} from "@core";
+import {act} from "@testing-library/react-hooks";
+import {timeout} from "./test-utils";
+import {mockDateNow, TESTS_TS} from "../react-async-state/utils/setup";
 
 // @ts-ignore
 jest.useFakeTimers("modern");
@@ -23,10 +18,10 @@ describe('AsyncState - fork', () => {
 
     // then
     expect(myAsyncState.key).toBe(key);
+    expect(myAsyncState.config).toEqual(myConfig);
     expect(myAsyncState.forksIndex).toBe(undefined);
     expect(myAsyncState.subscriptions).toBe(undefined);
     expect(typeof myAsyncState.run).toBe("function");
-    expect(myAsyncState.config).toEqual(shallowClone(myConfig));
     expect(myAsyncState.lastSuccess).toEqual({props: null, data: null, status: Status.initial, timestamp: TESTS_TS});
     expect(myAsyncState.state).toEqual({data: null, status: Status.initial, props: null, timestamp: TESTS_TS});
 
