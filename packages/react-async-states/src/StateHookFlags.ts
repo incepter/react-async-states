@@ -9,11 +9,11 @@ export const STANDALONE /*       */ = 0b00000_00000_00001_00000;
 export const SOURCE /*           */ = 0b00000_00000_00010_00000;
 export const FORK /*             */ = 0b00000_00000_00100_00000;
 export const HOIST /*            */ = 0b00000_00000_01000_00000;
+export const LANE /*             */ = 0b00000_00000_10000_00000;
 
 export const INSIDE_PROVIDER /*  */ = 0b00000_00001_00000_00000;
 export const AUTO_RUN /*         */ = 0b00000_00010_00000_00000;
 export const WAIT /*             */ = 0b00000_00100_00000_00000;
-export const LANE /*             */ = 0b00000_01000_00000_00000;
 
 export const CHANGE_EVENTS /*    */ = 0b00001_00000_00000_00000;
 export const SUBSCRIBE_EVENTS/*  */ = 0b00010_00000_00000_00000;

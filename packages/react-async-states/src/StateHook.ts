@@ -465,10 +465,15 @@ export function calculateStateValue<T, E, R, S>(
 
 function createReadInConcurrentMode<T, E, R, S>(
   instance: StateInterface<T, E, R>,
-  stateValue: S
+  stateValue: S,
+  suspend: boolean = true,
+  throwError: boolean = true,
 ) {
-  if (Status.pending === instance.state.status && instance.suspender) {
+  if (suspend && Status.pending === instance.state.status && instance.suspender) {
     throw instance.suspender;
+  }
+  if (throwError && Status.error === instance.state.status) {
+    throw instance.state.data;
   }
   return stateValue;
 }

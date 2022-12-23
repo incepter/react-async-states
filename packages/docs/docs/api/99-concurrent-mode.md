@@ -9,11 +9,20 @@ sidebar_label: React 18+
 ## Components suspension
 
 React's concurrent features and components suspension is 
-supported by the library actually just in `useAsyncState` hook: It returns a 
-`read` function that suspends the component if it detects that the current 
-used React version is 18 or above, technically, it tests whether the `React`'s
-package exports a `useSyncExternalStore` function to decide if the current
-react version supports concurrent mode.
+supported by the library actually in `useAsyncState` or other hooks: It returns a 
+`read` function:
+
+```typescript
+read(suspend?: boolean = true, throwError?: boolean = true);
+```
+This function enable the react's concurrent feature: `Component suspension` and
+`Error boundary`.
+
+So calling read requires you to have a `Suspense` and/or `ErrorBoundary`
+up in your tree.
+
+You can pass this function to a child component that will read the data and
+suspend if pending.
 
 To suspend a component when it is pending, you can do the following:
 

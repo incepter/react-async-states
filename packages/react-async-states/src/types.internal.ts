@@ -4,10 +4,12 @@ import {
   AbortFn,
   CacheConfig,
   CachedState,
+  ErrorState,
   ForkConfig,
   hoistConfig,
   InitialState,
   ManagerInterface,
+  PendingState,
   Producer,
   ProducerConfig,
   RunEffect,
@@ -44,7 +46,7 @@ type IterableUseAsyncState<T, E, R, S = State<T, E, R>> = [
 export interface UseAsyncState<T, E = any, R = any, S = State<T, E, R>> extends BaseUseAsyncState<T, E, R, S>, Iterable<any> {
   state: S,
 
-  read(): S,
+  read(suspend?: boolean, throwError?: boolean): S,
 
   version?: number,
   lastSuccess?: SuccessState<T> | InitialState<T>,
@@ -88,6 +90,11 @@ export interface BaseConfig<T, E, R> extends ProducerConfig<T, E, R> {
   forkConfig?: ForkConfig,
   hoist?: boolean,
   hoistConfig?: hoistConfig,
+
+  throw?: boolean | ((
+    errorState: ErrorState<T, E>, source: Source<T, E, R>) => boolean),
+  suspend?: boolean | ((
+    pendingState: PendingState<T>, source: Source<T, E, R>) => boolean),
 }
 
 export interface ConfigWithKeyWithSelector<T, E, R, S> extends ConfigWithKeyWithoutSelector<T, E, R> {
