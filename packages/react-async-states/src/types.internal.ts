@@ -4,12 +4,10 @@ import {
   AbortFn,
   CacheConfig,
   CachedState,
-  ErrorState,
   ForkConfig,
   hoistConfig,
   InitialState,
   ManagerInterface,
-  PendingState,
   Producer,
   ProducerConfig,
   RunEffect,
@@ -90,11 +88,6 @@ export interface BaseConfig<T, E, R> extends ProducerConfig<T, E, R> {
   forkConfig?: ForkConfig,
   hoist?: boolean,
   hoistConfig?: hoistConfig,
-
-  throw?: boolean | ((
-    errorState: ErrorState<T, E>, source: Source<T, E, R>) => boolean),
-  suspend?: boolean | ((
-    pendingState: PendingState<T>, source: Source<T, E, R>) => boolean),
 }
 
 export interface ConfigWithKeyWithSelector<T, E, R, S> extends ConfigWithKeyWithoutSelector<T, E, R> {

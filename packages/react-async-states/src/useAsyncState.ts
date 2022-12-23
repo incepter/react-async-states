@@ -35,7 +35,6 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = any, R = any,
     caller = useCallerName(4);
   }
   let hook: StateHook<T, E, R, S> = useCurrentHook(caller);
-  let {flags, instance} = hook;
 
   let [guard, setGuard] = React.useState<number>(0);
   let contextValue = React.useContext<StateContextValue>(StateContext);
@@ -43,6 +42,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = any, R = any,
   React.useMemo(() => hook.update(1, mixedConfig, contextValue, overrides),
     deps.concat([contextValue, guard]));
 
+  let {flags, instance} = hook;
   let [selectedValue, setSelectedValue] = React
     .useState<Readonly<UseAsyncState<T, E, R, S>>>(() => calculateStateValue(hook));
 
