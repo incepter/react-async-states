@@ -3,7 +3,7 @@
   "license": "MIT",
   "author": "incepter",
   "sideEffects": false,
-  "version": "1.0.0-rc-15",
+  "version": "1.0.0-rc-16",
   "main": "dist/umd/index",
   "name": "react-async-states",
   "types": "dist/es/react-async-states/src/index",
