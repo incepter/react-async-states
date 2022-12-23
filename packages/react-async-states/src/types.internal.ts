@@ -82,7 +82,7 @@ export interface BaseConfig<T, E, R> extends ProducerConfig<T, E, R> {
   events?: UseAsyncStateEvents<T, E, R>,
 
   lazy?: boolean,
-  condition?: boolean,
+  condition?: boolean | ((state: State<T, E, R>) => boolean),
 
   fork?: boolean,
   forkConfig?: ForkConfig,
@@ -158,7 +158,7 @@ export type UseAsyncStateConfiguration<T, E = any, R = any, S = State<T, E, R>> 
 
   lazy?: boolean,
   autoRunArgs?: any[],
-  condition?: boolean,
+  condition?: boolean | ((state: State<T, E, R>) => boolean),
   areEqual: EqualityFn<S>,
   subscriptionKey?: string,
   selector: useSelector<T, E, R, S>,

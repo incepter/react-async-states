@@ -16,7 +16,7 @@ import {
 } from "./types.internal";
 import {StateContext} from "./context";
 import {AUTO_RUN} from "./StateHookFlags";
-import {__DEV__, emptyArray} from "./shared";
+import {__DEV__, emptyArray, isFunction} from "./shared";
 import {calculateStateValue, StateHook} from "./StateHook";
 import {useCallerName} from "./helpers/useCallerName";
 import {
@@ -62,17 +62,26 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = any, R = any,
   }
 
   function autoRunAsyncState(): CleanupFn {
+    let {flags, instance} = hook;
     // auto run only if condition is met, and it is not lazy
-    if (!(hook.flags & AUTO_RUN)) {
+    if (!(flags & AUTO_RUN)) {
       return;
     }
     // if dependencies change, if we run, the cleanup shall abort
     let config = (hook.config as BaseConfig<T, E, R>);
+    let shouldRun = true; // AUTO_RUN flag is set only if this is true
 
-    if (config.autoRunArgs && Array.isArray(config.autoRunArgs)) {
-      return hook.base.run.apply(null, config.autoRunArgs);
+    if (isFunction(config.condition)) {
+      let conditionFn = config.condition as ((state: State<T, E, R>) => boolean);
+      shouldRun = conditionFn(instance!.getState());
     }
-    return hook.base.run();
+
+    if (shouldRun) {
+      if (config.autoRunArgs && Array.isArray(config.autoRunArgs)) {
+        return hook.base.run.apply(null, config.autoRunArgs);
+      }
+      return hook.base.run();
+    }
   }
 }
 
