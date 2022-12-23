@@ -552,7 +552,7 @@ function createSubscribeAndWatchFunction<T, E, R, S>(
       }
 
       if (flags & CHANGE_EVENTS) {
-        invokeChangeEvents(instance!.state, (config as BaseConfig<T, E, R>).events);
+        invokeChangeEvents(instance!, (config as BaseConfig<T, E, R>).events);
       }
     }
 
@@ -602,11 +602,7 @@ function invokeSubscribeEvents<T, E, R>(
     return null;
   }
 
-  let eventProps: SubscribeEventProps<T, E, R> = {
-    run,
-    getState: () => instance.state,
-    invalidateCache: instance.invalidateCache,
-  };
+  let eventProps: SubscribeEventProps<T, E, R> = instance._source;
 
   let handlers: ((props: SubscribeEventProps<T, E, R>) => CleanupFn)[]
     = Array.isArray(events) ? events : [events];
@@ -615,17 +611,18 @@ function invokeSubscribeEvents<T, E, R>(
 }
 
 function invokeChangeEvents<T, E, R>(
-  nextState: State<T, E, R>,
+  instance: StateInterface<T, E, R>,
   events: UseAsyncStateEvents<T, E, R> | undefined
 ) {
   if (!events?.change) {
     return;
   }
 
+  let nextState = instance.state;
   const changeHandlers: UseAsyncStateEventFn<T, E, R>[]
     = Array.isArray(events.change) ? events.change : [events.change];
 
-  const eventProps = {state: nextState};
+  const eventProps = {state: nextState, source: instance._source};
 
   changeHandlers.forEach(event => {
     if (typeof event === "object") {

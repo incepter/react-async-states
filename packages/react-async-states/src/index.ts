@@ -13,7 +13,9 @@ export {useAsyncState} from "./useAsyncState";
 export {AsyncStateProvider} from "./Provider";
 
 export {
-  createSource, Status, RunEffect, ProducerType, AsyncStateManager} from "@core";
+  AsyncState as unstable_AsyncState,
+  createSource, Status, RunEffect, ProducerType, AsyncStateManager
+} from "@core";
 
 export {RenderStrategy, StateBoundary, useCurrentState} from "./StateBoundary";
 

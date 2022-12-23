@@ -24,7 +24,8 @@ const {
   replay, // replays the latest run if exists, or else does nothing
   abort, // aborts the current run or clears the abort callbacks if any
   replaceProducer, // replaces the producer linked to the state
-  getLaneSource, // gets the source of a child
+  hasLane, // returns true if the given lane key exists
+  getLaneSource, // gets the source of a child lane
   removeLane, // removes a lane
   invalidateCache, // invalidates a cache entry or the whole cache
   replaceCache, // replaces a cache entry
@@ -159,6 +160,7 @@ const {
   replay, // replays the latest run if exists, or else does nothing
   abort, // aborts the current run or clears the abort callbacks if any
   replaceProducer, // replaces the producer linked to the state
+  hasLane, // returns true if the given lane key exists
   getLaneSource, // gets the source of a child
   removeLane, // removes a lane
   invalidateCache, // invalidates a cache entry or the whole cache

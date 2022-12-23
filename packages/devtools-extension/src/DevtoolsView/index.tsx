@@ -79,7 +79,6 @@ export function AutoConfiguredDevtools() {
       top: '50vh',
       width: '100%',
       height: '50vh',
-      position: "absolute"
     }}/>,
     createHostContainer("async-states-devtools"),
   )
@@ -102,6 +101,8 @@ export function autoConfigureDevtools(props?: { open?: boolean }) {
                                                             wrapperStyle={{
                                                               width: '100%',
                                                               height: '100%',
+                                                              zIndex: 9999999999,
+                                                              position: 'absolute'
                                                             }}/>)
 }
 
@@ -135,6 +136,13 @@ function AutoConfiguredDevtoolsImpl({
       window && window.removeEventListener("keydown", listener);
     };
   }, []);
+  React.useEffect(() => {
+    if (visible) {
+      document.getElementById("async-states-devtools")!.style.display = "block";
+    } else {
+      document.getElementById("async-states-devtools")!.style.display = "none";
+    }
+  }, [visible])
 
   return (
     <>

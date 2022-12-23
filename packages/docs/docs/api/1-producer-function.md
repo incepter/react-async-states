@@ -9,7 +9,10 @@ The producer function is the function that returns the state's value,
 here is its declaration:
 
 ```typescript
-export type Producer<T> = ((props: ProducerProps<T>) => (T | Promise<T> | Generator<any, T, any>));
+export type Producer<T, E = any, R = any> =
+  ((props: ProducerProps<T, E, R>) => (T | Promise<T> | Generator<any, T, any>));
+
+// T: data type, E: error type, R: abort reason type
 ```
 
 So it can be:
@@ -22,28 +25,8 @@ So it can be:
 - `undefined`.
 
 The main goal and purpose is to `run` your function,
-so it will receive a single argument like this:
+so it will receive a single object argument with the following properties:
 
-```typescript
-// somewhere in the code, simplified:
-producer({
-  lastSuccess,
-
-  args,
-  payload,
-
-  isAborted,
-  onAbort,
-  abort,
-
-
-  run,
-  runp,
-  emit,
-  
-  select
-});
-```
 
 where:
 
@@ -83,18 +66,16 @@ The following functions are all supported by the library:
 function* getCurrentUser(props) {
   // abort logic
   const controller = new AbortController();
-  const {signal} = controller;
-  props.onAbort(function abortFetch() {
-    controller.abort();
-  });
+  props.onAbort(() =>controller.abort());
 
+  const {signal} = controller;
   const userData = yield fetchCurrentUser({signal});
   const [permissions, stores] = yield Promise.all([
     fetchUserPermissions(userData.id, {signal}),
     fetchUserStores(userData.id, {signal}),
   ]);
 
-  return // ... returned data
+  return {userData, permissions, stores};
 }
 
 async function getCurrentUserPosts(props) {
@@ -103,7 +84,7 @@ async function getCurrentUserPosts(props) {
 }
 
 async function getTransactionsList(props) {
-  // abort logic
+  // [...] abort logic
   return await fetchUserTransactions(
     props.payload.principal.id,
     {query: props.payload.queryString, signal}
@@ -112,10 +93,8 @@ async function getTransactionsList(props) {
 
 function timeout(props) {
   let timeoutId;
-  props.onAbort(function clear() {
-    clearTimeout(timeoutId);
-  });
-
+  props.onAbort(() => clearTimeout(timeoutId));
+  
   return new Promise(function resolver(resolve) {
     const callback = () => resolve(invokeIfPresent(props.payload.callback));
     timeoutId = setTimeout(callback, props.payload.delay);
@@ -132,58 +111,61 @@ function reducer(props) {
   }
 }
 ```
-You can even omit the producer function, it was supported along the with the `replaceState` API that we will see later.
-If you attempt to run it, it will delegate to replaceState while passing the arguments.
-
+You can even omit the producer function, if you attempt to run it,
+it will simply call setState and imperatively change the current state with
+either the value or the updater that it received.
 
 ### What do you need with the producer ?
 
-An AsyncState is an instance holding the state and wraps your producer function. 
+Generally, to define your state, you'd need three optional properties:
 
-The following properties are needed when using a production function,
-either at module scope or via `useAsyncState`:
-
-| Property        | Type                | Description                                        |
-|-----------------|---------------------|----------------------------------------------------|
-| `key`           | `string`            | The unique identifier of the async state           |
-| `producer`      | `producer function` | Returns the state value of type `T`                |
-| `configuration` | `ProducerConfig`    | The argument object that the producer was ran with |
+| Property        | Type                | Description                              |
+|-----------------|---------------------|------------------------------------------|
+| `key`           | `string`            | The unique identifier of the async state |
+| `producer`      | `Producer<T, E, R>` | Returns the state value of type `T`      |
+| `configuration` | `ProducerConfig`    | The configuration of the state           |
 
 The supported configuration is:
 
-| Property              | Type                                       | Description                                                                                                                                                                                           |
-|-----------------------|--------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `initialValue`        | `T`                                        | The initial value or the initializer of the state (status = `initial`), the initializer receives the cache as unique parameter                                                                        |
-| `runEffect`           | `oneOf('debounce', 'throttle', undefined)` | An effect to apply when running the producer, can be used to debounce or throttle                                                                                                                     |
-| `runEffectDurationMs` | `number > 0`, `undefined`                  | The debounce/throttle duration                                                                                                                                                                        |
-| `resetStateOnDispose` | `boolean`                                  | Whether to reset the state to its initial state when all subscribers unsubscribe or to keep it. Default to `false`.                                                                                   |
-| `skipPendingDelayMs`  | `number > 0` or `undefined`                | The duration under which a state update with a pending status may be skipped. The component in this case won't render with a pending status if it gets updated to something else under that duration. |
-| `cacheConfig`         | `CacheConfig`                              | The cache config                                                                                                                                                                                      |
+| Property              | Type                                                         | Description                                                                                                                                                                                           |
+|-----------------------|--------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `initialValue`        | `T or  ((cache: Record<string, CachedState<T, E, R>>) => T)` | The initial value or the initializer of the state (status = `initial`), the initializer receives the cache as unique parameter                                                                        |
+| `runEffect`           | `oneOf('debounce', 'throttle', undefined)`                   | An effect to apply when running the producer, can be used to debounce or throttle                                                                                                                     |
+| `runEffectDurationMs` | `number > 0`, `undefined`                                    | The debounce/throttle duration                                                                                                                                                                        |
+| `resetStateOnDispose` | `boolean`                                                    | Whether to reset the state to its initial state when all subscribers unsubscribe or to keep it. Default to `false`.                                                                                   |
+| `skipPendingDelayMs`  | `number > 0` or `undefined`                                  | The duration under which a state update with a pending status may be skipped. The component in this case won't render with a pending status if it gets updated to something else under that duration. |
+| `skipPendingStatus`   | `boolean`                                                    | Entirely disable the pending status of this state. this state won't step into a pending status                                                                                                        |
+| `cacheConfig`         | `CacheConfig<T, E, R>`                                       | The cache config                                                                                                                                                                                      |
+| `hideFromDevtools`    | `boolean`                                                    | Hide this state from the devtools                                                                                                                                                                     |
 
 
+Here is the internal declaration:
 ```tsx
 
-export type ProducerConfig<T> = {
+export type ProducerConfig<T, E = any, R = any> = {
   skipPendingStatus?: boolean,
-  initialValue?: T | ((cache: Record<string, CachedState<T>>) => T),
-  cacheConfig?: CacheConfig<T>,
+  initialValue?: T | ((cache: Record<string, CachedState<T, E, R>>) => T),
+  cacheConfig?: CacheConfig<T, E, R>,
   runEffectDurationMs?: number,
   runEffect?: RunEffect,
   skipPendingDelayMs?: number,
   resetStateOnDispose?: boolean,
+
+  // dev only
+  hideFromDevtools?: boolean,
 }
 
 ```
 
-Where the supported cache config is:
+The supported cache config is:
 
 | Property      | Type                                                              | Description                                                                      |
 |---------------|-------------------------------------------------------------------|----------------------------------------------------------------------------------|
 | `enabled`     | `boolean`                                                         | Whether to enable cache or not                                                   |
-| `hash`        | `(args?: any[], payload?: {[id: string]: any} or null) => string` | a function to calculate a hash for a producer run (from args and payload)        |
-| `getDeadline` | `(currentState: State<T>) => number`                              | returns the deadline after which the cache is invalid                            |
-| `load`        | `() => {[id: string]: CachedState<T>}`                            | loads the cached data when the async state instance is created                   |
-| `persist`     | `(cache: {[id: string]: CachedState<T>}) => void`                 | a function to persist the whole cache, called when state is updated to success   |
+| `hash`        | `(args?: any[], payload?: Record<string, any> or null) => string` | a function to calculate a hash for a producer run (from args and payload)        |
+| `getDeadline` | `(currentState: State<T, E, R>) => number`                        | returns the deadline after which the cache is invalid                            |
+| `load`        | `() => {[id: string]: CachedState<T, E, R>}`                      | loads the cached data when the async state instance is created                   |
+| `persist`     | `(cache: {[id: string]: CachedState<T, E, R>}) => void`           | a function to persist the whole cache, called when state is updated to success   |
 | `onCacheLoad` | `onCacheLoad?({cache, setState}): void`                           | a callback called when the cache loads, useful when asynchronously loading cache |
 
 Here is a small example of the usage of cache config:
