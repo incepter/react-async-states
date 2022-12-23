@@ -182,6 +182,7 @@ export type StateBoundaryRenderProp = Record<Status, ReactNode>
 
 export type UseAsyncStateEventProps<T, E = any, R = any> = {
   state: State<T, E, R>,
+  source: Source<T, E, R>,
 };
 
 export type UseAsyncStateChangeEventHandler<T, E = any, R = any> =
@@ -206,11 +207,7 @@ export type UseAsyncStateEvents<T, E = any, R = any> = {
   subscribe?: UseAsyncStateEventSubscribe<T, E, R>,
 }
 
-export type SubscribeEventProps<T, E = any, R = any> = {
-  getState: () => State<T, E, R>,
-  run: (...args: any[]) => AbortFn,
-  invalidateCache: (cacheKey?: string) => void,
-}
+export type SubscribeEventProps<T, E = any, R = any> = Source<T, E, R>
 
 export type useSelector<T, E, R, S> =
   (

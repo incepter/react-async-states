@@ -677,24 +677,23 @@ The supported events are:
 #### `subscribe`
 This event handler is called once a subscription to a state occurs.
 
+```typescript
+
+```
+
 This should be mainly used to attach event listeners that may `run` the producer
 or do another side effect.
 
 ```javascript
 // this is how the library invokes the subscribe events.
-unsubscribe = subscribe({
-  run,
-  mode,
-  invalidateCache,
-  getState: () => asyncState.state,
-})
+unsubscribe = subscribe(sourceObject);
 ```
 
 This functions returns its cleanup (if available.)
 
 Here is an example of how to use it to run your producer once your window gets focused:
 
-```javascript
+```typescript
 const {state: {status, data}, lastSuccess, abort} = useAsyncState({
     lazy: false,
     payload: {matchParams: params},
@@ -727,13 +726,13 @@ This should be mainly used to run side effects after a `status` change.
 
 Here are some examples of how to use it:
 
-```javascript
+```typescript
 const {state: {status, data}, lastSuccess, abort} = useAsyncState({
     lazy: false,
     payload: {matchParams: params},
     key: demoAsyncStates.updateUser.key,
     events: {
-      change: ({state}) => {
+      change: ({state, source}: {state: State, source: Source}) => {
         if (state.status === "success") {
           refreshList();
           closeModal();
