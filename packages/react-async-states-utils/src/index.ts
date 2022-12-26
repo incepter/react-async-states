@@ -15,3 +15,6 @@ export type {
   StateBoundaryProps,
   StateBoundaryRenderProp
 } from "./StateBoundary";
+
+export {addBooleanStatus} from "./selectors";
+export type {StateWithBooleanStatus} from "./selectors";
