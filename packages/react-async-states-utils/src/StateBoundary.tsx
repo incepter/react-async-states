@@ -1,26 +1,42 @@
 import * as React from "react";
-import {Source, State, Status} from "@core";
 import {
+  Source, State, Status,
   MixedConfig,
-  StateBoundaryProps,
   UseAsyncState,
   UseAsyncStateConfiguration,
-} from "./types.internal";
-import {useAsyncState} from "./useAsyncState";
-import {emptyArray, isFunction} from "./shared";
-import {useSource} from "./useSource";
+  useAsyncState,
+  useSource,
+} from "react-async-states";
+
+let emptyArray = [];
+function isFunction(fn) {
+  return typeof fn === "function";
+}
 
 
-type BoundaryContextValue<T, E = any, R = any, S = State<T, E, R>> =
+export type StateBoundaryProps<T, E, R, S> = {
+  children: React.ReactNode,
+  config: MixedConfig<T, E, R, S>,
+
+  dependencies?: any[],
+  strategy?: RenderStrategy,
+
+  render?: StateBoundaryRenderProp,
+}
+
+export type StateBoundaryRenderProp = Record<Status, React.ReactNode>
+
+
+export type BoundaryContextValue<T, E = any, R = any, S = State<T, E, R>> =
   BoundaryContext<T, E, R, S>
   | null;
 
-type BoundarySourceContextType = {
+export type BoundarySourceContextType = {
   source: Source<any>,
   parent: BoundarySourceContextType | null
 }
 
-type BoundaryContext<T, E = any, R = any, S = State<T, E, R>> = UseAsyncState<T, E, R, S>;
+export type BoundaryContext<T, E = any, R = any, S = State<T, E, R>> = UseAsyncState<T, E, R, S>;
 
 const StateBoundaryContext = React.createContext<BoundaryContextValue<any>>(null);
 

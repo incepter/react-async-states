@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "types": ["node", "jest", "react"],
+
+  },
+  "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "src/__tests__",
+    "src/index-prod.js"
+  ]
+}
