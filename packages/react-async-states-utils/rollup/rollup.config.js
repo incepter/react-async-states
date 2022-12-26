@@ -151,7 +151,7 @@ const umdBuild = [
         targets: [
           {
             dest: 'dist',
-            src: `../../README.MD`,
+            src: `../README.MD`,
           },
         ]
       }),
