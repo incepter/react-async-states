@@ -4,6 +4,7 @@ import {
   useAsyncState, Status, RunEffect
 } from "react-async-states";
 import User from "../pages/user";
+import {StateBoundary, useBoundary} from "react-async-states-utils";
 
 type User = {
   email: string,
@@ -29,7 +30,7 @@ function fetchUser(props: ProducerProps<User, Error>) {
 
 function Welcome() {
 
-  let {state, run} = useAsyncState({
+  let {source, state, run} = useAsyncState({
     key: "users",
     producer: fetchUser,
     skipPendingDelayMs: 300,
@@ -71,7 +72,53 @@ function Welcome() {
         }, null, 4)}
       </pre>
       </details>
+      <hr/>
+      <hr/>
+      <hr/>
+      <hr/>
+      <BoundaryDemo source={source}/>
     </div>
+  );
+}
+
+let counter = createSource("counter", null, {initialValue: 0});
+
+function BoundaryDemo({source}) {
+  return (
+    <StateBoundary config={source}>
+      <StateBoundary config={counter}>
+        <Counter/>
+        <div>
+          <BoundaryDemoChildren/>
+        </div>
+      </StateBoundary>
+    </StateBoundary>
+
+  );
+}
+
+function Counter() {
+  let {state, run} = useBoundary<number>();
+  return (
+    <details open>
+      <summary>Children</summary>
+      <button onClick={() => run(old => old.data + 1)}>increment</button>
+      <pre>
+        {JSON.stringify(state, null, 4)}
+      </pre>
+    </details>
+  );
+}
+
+function BoundaryDemoChildren() {
+  let {state} = useBoundary<number>("counter");
+  return (
+    <details>
+      <summary>Children</summary>
+      <pre>
+        {JSON.stringify(state, null, 4)}
+      </pre>
+    </details>
   );
 }
 

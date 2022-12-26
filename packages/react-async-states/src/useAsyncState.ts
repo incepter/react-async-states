@@ -35,20 +35,22 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = any, R = any,
     caller = useCallerName(4);
   }
   let hook: StateHook<T, E, R, S> = useCurrentHook(caller);
+
   let [guard, setGuard] = React.useState<number>(0);
   let contextValue = React.useContext<StateContextValue>(StateContext);
 
   React.useMemo(() => hook.update(1, mixedConfig, contextValue, overrides),
     deps.concat([contextValue, guard]));
 
+  let {flags, instance} = hook;
   let [selectedValue, setSelectedValue] = React
-    .useState<Readonly<UseAsyncState<T, E, R, S>>>(calculateStateValue.bind(null, hook));
+    .useState<Readonly<UseAsyncState<T, E, R, S>>>(() => calculateStateValue(hook));
 
   ensureStateHookVersionIsLatest(hook, selectedValue, updateSelectedValue);
 
   React.useEffect(
     hook.subscribe.bind(null, setGuard, updateSelectedValue),
-    [contextValue, hook.flags, hook.instance]
+    [contextValue, flags, instance]
   );
 
   React.useEffect(autoRunAsyncState, deps);
@@ -58,7 +60,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = any, R = any,
 
   function updateSelectedValue() {
     setSelectedValue(calculateStateValue(hook));
-    hook.version = hook.instance?.version;
+    hook.version = instance?.version;
   }
 
   function autoRunAsyncState(): CleanupFn {

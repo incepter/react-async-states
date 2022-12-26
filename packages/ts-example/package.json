@@ -17,6 +17,7 @@
 		"react-dom": "18.2.0",
 		"react-router-dom": "6.4.3",
 		"react-async-states": "workspace:*",
+		"react-async-states-utils": "workspace:*",
 		"ts-node": "10.9.1"
 	},
 	"devDependencies": {

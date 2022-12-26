@@ -17,8 +17,6 @@ export {
   createSource, Status, RunEffect, ProducerType, AsyncStateManager
 } from "@core";
 
-export {RenderStrategy, StateBoundary, useCurrentState} from "./StateBoundary";
-
 export type {
   State,
   Source,

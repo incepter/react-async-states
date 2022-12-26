@@ -47,34 +47,34 @@ Let's see in details the supported configuration:
 
 The returned object from `useAsyncState` contains the following properties:
 
-| Property          | Description                                                                                                                                                                             |
-|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `key`             | the key of the related state instance                                                                                                                                                   |
-| `read`            | returns the selected value and suspends when pending                                                                                                                                    |
-| `state`           | The selected portion of the state                                                                                                                                                       |
-| `lastSuccess`     | the latest registered success state                                                                                                                                                     |
-| `version`         | the version of the state, incremented at each update                                                                                                                                    |
-| `source`          | a special object hiding the state instance and manipulates it                                                                                                                           |
-| `uniqueId`        | the uniqueId of the state instance                                                                                                                                                      |
-| `getState`        | gets the current state                                                                                                                                                                  |
-| `setState`        | sets state and notifies all subscribers                                                                                                                                                 |
-| `run`             | runs the producer and returns the abort function                                                                                                                                        |
-| `runp`            | runs the producer and returns a promise to the run's resolve                                                                                                                            |
-| `runc`            | runs the producer with onSuccess, onError and onAborted callbacks                                                                                                                       |
-| `replay`          | replays the latest run if exists, or else does nothing                                                                                                                                  |
-| `abort`           | aborts the current run or clears the abort callbacks if any                                                                                                                             |
-| `replaceProducer` | replaces the producer linked to the state                                                                                                                                               |
-| `getLaneSource`   | gets the source of a child                                                                                                                                                              |
-| `removeLane`      | removes a lane                                                                                                                                                                          |
-| `invalidateCache` | invalidates a cache entry or the whole cache                                                                                                                                            |
-| `replaceCache`    | replaces a cache entry                                                                                                                                                                  |
-| `mergePayload`    | merges a partial payload inside the state instance's payload                                                                                                                            |
-| `subscribe`       | subscribes with a callback to state changes                                                                                                                                             |
-| `getConfig`       | gets the current used config                                                                                                                                                            |
-| `patchConfig`     | patches the config related to the producer                                                                                                                                              |
-| `flags`           | the subscription mode: listen, source, hoist, ...                                                                                                                                       |
-| `devFlags`        | the subscription mode: listen, source, hoist, ...                                                                                                                                       |
-| `toArray`         | when invoked returns the same iterable that corresponds to this hook                                                                                                                    |
+| Property                                                    | Description                                                             |
+|-------------------------------------------------------------|-------------------------------------------------------------------------|
+| `key`                                                       | the key of the related state instance                                   |
+| `read(suspend?: boolean = true, throwErr?: boolean = true)` | returns the selected value and suspends when pending or throws on error |
+| `state`                                                     | The selected portion of the state                                       |
+| `lastSuccess`                                               | the latest registered success state                                     |
+| `version`                                                   | the version of the state, incremented at each update                    |
+| `source`                                                    | a special object hiding the state instance and manipulates it           |
+| `uniqueId`                                                  | the uniqueId of the state instance                                      |
+| `getState`                                                  | gets the current state                                                  |
+| `setState`                                                  | sets state and notifies all subscribers                                 |
+| `run`                                                       | runs the producer and returns the abort function                        |
+| `runp`                                                      | runs the producer and returns a promise to the run's resolve            |
+| `runc`                                                      | runs the producer with onSuccess, onError and onAborted callbacks       |
+| `replay`                                                    | replays the latest run if exists, or else does nothing                  |
+| `abort`                                                     | aborts the current run or clears the abort callbacks if any             |
+| `replaceProducer`                                           | replaces the producer linked to the state                               |
+| `getLaneSource`                                             | gets the source of a child                                              |
+| `removeLane`                                                | removes a lane                                                          |
+| `invalidateCache`                                           | invalidates a cache entry or the whole cache                            |
+| `replaceCache`                                              | replaces a cache entry                                                  |
+| `mergePayload`                                              | merges a partial payload inside the state instance's payload            |
+| `subscribe`                                                 | subscribes with a callback to state changes                             |
+| `getConfig`                                                 | gets the current used config                                            |
+| `patchConfig`                                               | patches the config related to the producer                              |
+| `flags`                                                     | the subscription mode: listen, source, hoist, ...                       |
+| `devFlags`                                                  | the subscription mode: listen, source, hoist, ...                       |
+| `toArray`                                                   | when invoked returns the same iterable that corresponds to this hook    |
 
 :::note 
 Calling the `run`, `runp`, and `runc` functions when the status is `pending`
@@ -883,11 +883,16 @@ function defaultLibrarySelector(...args): State<T> {
 
 ```
 ### `read`
-This function enable the react's concurrent feature: `Component suspension`.
-That works with `Suspense`. So calling read requires you to have a `Suspense`
-up in your tree.
 
-This function warns if the used react version doesn't support concurrent features.
+
+```typescript
+read(suspend?: boolean = true, throwError?: boolean = true);
+```
+This function enable the react's concurrent feature: `Component suspension` and
+`Error boundary`.
+
+So calling read requires you to have a `Suspense` and/or `ErrorBoundary`
+up in your tree.
 
 You can pass this function to a child component that will read the data and
 suspend if pending.
@@ -919,14 +924,6 @@ function UserDetails({read}) {
   // when pending, this line will throw a Promise that react will catch
   // and display Suspense's fallback until present
   const {data, status} = read();
-  
-  const isError = status === "error";
-  const isSuccess = status === "success";
-  const isInitial = status === "initial";
-  const isAborted = status === "success";
-  if (isError && shouldThrowFromError(data)) {
-    throw data;
-  }
   
   return (
     // build the UI based on the statuses you need
@@ -1105,7 +1102,7 @@ const {state: user4} = useAsyncState.forkAuto({source: userPayloadSource, payloa
 ```
 
 :::tip
-To suspend a component in concurrent mode, 
-just call the `read` function returned by `useAsyncState`
+To suspend a component in concurrent mode, or throw to error boundary on error,
+just call the `read` function returned by `useAsyncState` or any other hook.
 :::
 

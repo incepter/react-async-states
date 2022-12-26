@@ -1,5 +1,3 @@
-import * as React from "react";
-import {ReactNode} from "react";
 import {
   AbortFn,
   CacheConfig,
@@ -17,7 +15,6 @@ import {
   Status,
   SuccessState
 } from "@core";
-import {RenderStrategy} from "./StateBoundary";
 
 export interface AsyncStateInitializer<T, E = any, R = any> {
   key?: string,
@@ -44,7 +41,7 @@ type IterableUseAsyncState<T, E, R, S = State<T, E, R>> = [
 export interface UseAsyncState<T, E = any, R = any, S = State<T, E, R>> extends BaseUseAsyncState<T, E, R, S>, Iterable<any> {
   state: S,
 
-  read(): S,
+  read(suspend?: boolean, throwError?: boolean): S,
 
   version?: number,
   lastSuccess?: SuccessState<T> | InitialState<T>,
@@ -167,18 +164,6 @@ export type UseAsyncStateConfiguration<T, E = any, R = any, S = State<T, E, R>> 
   // dev only
   hideFromDevtools?: boolean,
 }
-
-export type StateBoundaryProps<T, E, R, S> = {
-  children: React.ReactNode,
-  config: MixedConfig<T, E, R, S>,
-
-  dependencies?: any[],
-  strategy?: RenderStrategy,
-
-  render?: StateBoundaryRenderProp,
-}
-
-export type StateBoundaryRenderProp = Record<Status, ReactNode>
 
 export type UseAsyncStateEventProps<T, E = any, R = any> = {
   state: State<T, E, R>,

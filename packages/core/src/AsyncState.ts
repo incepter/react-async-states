@@ -89,6 +89,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     this.replay = this.replay.bind(this);
     this.hasLane = this.hasLane.bind(this);
     this.getConfig = this.getConfig.bind(this);
+    this.getVersion = this.getVersion.bind(this);
     this.removeLane = this.removeLane.bind(this);
     this.patchConfig = this.patchConfig.bind(this);
     this.replaceCache = this.replaceCache.bind(this);
@@ -100,6 +101,10 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     if (__DEV__) {
       devtools.emitCreation(this);
     }
+  }
+
+  getVersion(): number {
+    return this.version;
   }
 
   getState(): State<T, E, R> {
@@ -992,6 +997,7 @@ function makeSource<T, E, R>(instance: StateInterface<T, E, R>): Readonly<Source
     subscribe: instance.subscribe,
     getPayload: instance.getPayload,
     removeLane: instance.removeLane,
+    getVersion: instance.getVersion,
     patchConfig: instance.patchConfig,
     mergePayload: instance.mergePayload,
     replaceCache: instance.replaceCache,
@@ -1281,6 +1287,7 @@ export interface BaseSource<T, E = any, R = any> {
   key: string,
   uniqueId: number,
 
+  getVersion(): number,
   getPayload(): Record<string, any>,
 
   mergePayload(partialPayload?: Record<string, any>),

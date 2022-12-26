@@ -1,15 +1,15 @@
 {
   "private": false,
   "license": "MIT",
+  "version": "1.0.0-rc-2",
   "author": "incepter",
   "sideEffects": false,
-  "version": "1.0.0-rc-17",
   "main": "dist/umd/index",
-  "name": "react-async-states",
-  "types": "dist/es/react-async-states/src/index",
-  "module": "dist/es/react-async-states/src/index",
+  "types": "dist/es/index",
+  "module": "dist/es/index",
+  "name": "react-async-states-utils",
+  "description": "utilities for react-async-states package",
   "repository": "https://github.com/incepter/react-async-states",
-  "description": "A low-level multi paradigm state management library",
   "scripts": {
     "test": "cross-env CI=1 jest test",
     "test:cov": "cross-env CI=1 jest test --coverage",
@@ -20,6 +20,7 @@
     "dev": "pnpm clean:dist && rollup -c rollup/rollup.config.dev.js -w"
   },
   "peerDependencies": {
+    "react-async-states": ">=1.0.0-rc-11",
     "react": "^16.8.0 || ^17.0.2 || ^18.0.0"
   },
   "devDependencies": {
