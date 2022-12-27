@@ -39,12 +39,11 @@ This can be useful if you want to pass the read function to a child component
 to suspend only itself.
 
 ## Tearing
-The library doesn't include `useRef` at all, and schedules a render everytime
-the state changes, so it is immune to all tearing problems.
-
-Just don't make it tear with own custom selectors.
+The library performs an optimistic lock, so everytime a subscribed component
+renders, it will check the current version in the instance, if different, it
+will schedule an update.
 
 ## Transitions
 If your producer isn't used with a `runEffect`, then the transition to the
 `pending` state is scheduled immediately in a sync way. So you may benefit
-from `useTransition` ans `startTransition` APIs.
+from `useTransition` and `startTransition` APIs.
