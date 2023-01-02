@@ -7,7 +7,7 @@ import {createSource} from "react-async-states";
 
 import {autoConfigureDevtools} from "async-states-devtools"
 import "async-states-devtools/dist/style.css"
-autoConfigureDevtools({open: true});
+autoConfigureDevtools({open: false});
 
 // const src = createSource("demo", null, {initialValue: 0});
 //

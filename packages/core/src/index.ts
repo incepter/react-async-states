@@ -10,6 +10,8 @@ export {
   RunEffect,
   standaloneProducerEffectsCreator,
   readSource,
+  producerWrapper,
+  cloneProducerProps,
 } from "./AsyncState";
 
 export type {
@@ -36,8 +38,10 @@ export type {
   ProducerFunction,
   OnCacheLoadProps,
   ProducerRunInput,
+  ProducerCallbacks,
   ProducerRunConfig,
   ProducerSavedProps,
+  ProducerWrapperInput,
   StateFunctionUpdater,
   AsyncStateKeyOrSource,
   StateBuilderInterface,
@@ -71,3 +75,5 @@ export {
   DevtoolsEvent, DevtoolsRequest, DevtoolsJournalEvent
 } from "./devtools/index"
 export {default as devtools} from "./devtools/Devtools"
+
+export {runc} from "./runc"

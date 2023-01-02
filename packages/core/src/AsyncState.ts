@@ -49,6 +49,8 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   private locks?: number;
   isEmitting?: boolean;
 
+  readonly producer: ProducerFunction<T, E, R>;
+
 
   //endregion
 
@@ -81,7 +83,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     this.abort = this.abort.bind(this);
     this.getState = this.getState.bind(this);
     this.setState = this.setState.bind(this);
-    this.producer = this.producer.bind(this);
     this.subscribe = this.subscribe.bind(this);
     this.getPayload = this.getPayload.bind(this);
     this.mergePayload = this.mergePayload.bind(this);
@@ -95,6 +96,17 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     this.replaceCache = this.replaceCache.bind(this);
     this.invalidateCache = this.invalidateCache.bind(this);
     this.replaceProducer = this.replaceProducer.bind(this);
+
+    let instance = this;
+    this.producer = producerWrapper.bind(null, {
+      setProducerType: (type: ProducerType) => instance.producerType = type,
+      setState: instance.setState,
+      getState: instance.getState,
+      instance: instance,
+      setSuspender: (suspender: Promise<T>) => instance.suspender = suspender,
+      replaceState: instance.replaceState.bind(instance),
+      getProducer: () => instance.originalProducer,
+    });
 
     this._source = makeSource(this);
 
@@ -120,120 +132,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     Object.assign(this.config, partialConfig);
   }
 
-  producer(
-    props: ProducerProps<T, E, R>,
-    indicators: RunIndicators,
-    callbacks?: ProducerCallbacks<T, E, R>,
-  ): AbortFn {
-    let instance = this;
-    const currentProducer = this.originalProducer;
-    if (!isFunction(currentProducer)) {
-      indicators.fulfilled = true;
-      instance.producerType = ProducerType.notProvided;
-      instance.setState(props.args[0], props.args[1]);
-      if (callbacks) {
-        switch (instance.state.status) {
-          case Status.success: {
-            callbacks.onSuccess?.(instance.state);
-            break;
-          }
-          case Status.aborted: {
-            callbacks.onAborted?.(instance.state);
-            break;
-          }
-          case Status.error: {
-            callbacks.onError?.(instance.state);
-            break;
-          }
-        }
-      }
-      return;
-    }
-    // the running promise is used to pass the status to pending and as suspender in react18+
-    let runningPromise;
-    // the execution value is the return of the initial producer function
-    let executionValue;
-    // it is important to clone to capture properties and save only serializable stuff
-    const savedProps = cloneProducerProps(props);
 
-    try {
-      executionValue = currentProducer!(props);
-      if (indicators.aborted) {
-        return;
-      }
-    } catch (e) {
-      if (indicators.aborted) {
-        return;
-      }
-      if (__DEV__) devtools.emitRunSync(instance, savedProps);
-      indicators.fulfilled = true;
-      let errorState = StateBuilder.error<T, E>(e, savedProps);
-      instance.replaceState(errorState);
-      callbacks?.onError?.(errorState);
-      return;
-    }
-
-    if (isGenerator(executionValue)) {
-      instance.producerType = ProducerType.generator;
-      if (__DEV__) devtools.emitRunGenerator(instance, savedProps);
-      // generatorResult is either {done, value} or a promise
-      let generatorResult;
-      try {
-        generatorResult = wrapStartedGenerator(executionValue, props, indicators);
-      } catch (e) {
-        indicators.fulfilled = true;
-        let errorState = StateBuilder.error<T, E>(e, savedProps);
-        instance.replaceState(errorState);
-        callbacks?.onError?.(errorState);
-        return;
-      }
-      if (generatorResult.done) {
-        indicators.fulfilled = true;
-        let successState = StateBuilder.success(generatorResult.value, savedProps);
-        instance.replaceState(successState);
-        callbacks?.onSuccess?.(successState);
-        return;
-      } else {
-        runningPromise = generatorResult;
-        instance.suspender = runningPromise;
-        instance.replaceState(StateBuilder.pending(savedProps));
-      }
-    } else if (isPromise(executionValue)) {
-      instance.producerType = ProducerType.promise;
-      if (__DEV__) devtools.emitRunPromise(instance, savedProps);
-      runningPromise = executionValue;
-      instance.suspender = runningPromise;
-      instance.replaceState(StateBuilder.pending(savedProps));
-    } else { // final value
-      if (__DEV__) devtools.emitRunSync(instance, savedProps);
-      indicators.fulfilled = true;
-      instance.producerType = ProducerType.sync;
-      let successState = StateBuilder.success(executionValue, savedProps);
-      instance.replaceState(successState);
-      callbacks?.onSuccess?.(successState);
-      return;
-    }
-
-    runningPromise
-      .then(stateData => {
-        let aborted = indicators.aborted;
-        if (!aborted) {
-          indicators.fulfilled = true;
-          let successState = StateBuilder.success(stateData, savedProps);
-          instance.replaceState(successState);
-          callbacks?.onSuccess?.(successState);
-        }
-      })
-      .catch(stateError => {
-        let aborted = indicators.aborted;
-        if (!aborted) {
-          indicators.fulfilled = true;
-          let errorState = StateBuilder.error<T, E>(stateError, savedProps);
-          instance.replaceState(errorState);
-          callbacks?.onError?.(errorState);
-        }
-      });
-  };
 
   getPayload(): Record<string, any> {
     if (!this.payload) {
@@ -714,7 +613,135 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
 //region AsyncState methods helpers
 
-function cloneProducerProps<T, E, R>(props: ProducerProps<T, E, R>): ProducerSavedProps<T> {
+export type ProducerWrapperInput<T, E, R> = {
+  setProducerType(type: ProducerType): void,
+  setState: StateUpdater<T, E, R>,
+  getState(): State<T, E, R>,
+  instance?: StateInterface<T, E, R>,
+  setSuspender(p: Promise<T>): void,
+  replaceState(newState: State<T, E, R>, notify?: boolean),
+  getProducer(): Producer<T, E, R> | undefined | null,
+}
+export function producerWrapper<T, E = any, R = any>(
+  input: ProducerWrapperInput<T, E, R>,
+  props: ProducerProps<T, E, R>,
+  indicators: RunIndicators,
+  callbacks?: ProducerCallbacks<T, E, R>,
+): AbortFn {
+  const currentProducer = input.getProducer();
+  if (!isFunction(currentProducer)) {
+    indicators.fulfilled = true;
+    input.setProducerType(ProducerType.notProvided);
+    input.setState(props.args[0], props.args[1]);
+
+    console.log('hahahaaaaa', input, callbacks, input.setState.toString())
+
+    if (callbacks) {
+      let currentState = input.getState();
+      switch (currentState.status) {
+        case Status.success: {
+          callbacks.onSuccess?.(currentState);
+          break;
+        }
+        case Status.aborted: {
+          callbacks.onAborted?.(currentState);
+          break;
+        }
+        case Status.error: {
+          callbacks.onError?.(currentState);
+          break;
+        }
+      }
+    }
+    return;
+  }
+  // the running promise is used to pass the status to pending and as suspender in react18+
+  let runningPromise;
+  // the execution value is the return of the initial producer function
+  let executionValue;
+  // it is important to clone to capture properties and save only serializable stuff
+  const savedProps = cloneProducerProps(props);
+
+  try {
+    executionValue = currentProducer!(props);
+    if (indicators.aborted) {
+      return;
+    }
+  } catch (e) {
+    if (indicators.aborted) {
+      return;
+    }
+    if (__DEV__ && input.instance) devtools.emitRunSync(input.instance, savedProps);
+    indicators.fulfilled = true;
+    let errorState = StateBuilder.error<T, E>(e, savedProps);
+    input.replaceState(errorState);
+    callbacks?.onError?.(errorState);
+    return;
+  }
+
+  if (isGenerator(executionValue)) {
+    input.setProducerType(ProducerType.generator);
+    if (__DEV__ && input.instance) devtools.emitRunGenerator(input.instance, savedProps);
+    // generatorResult is either {done, value} or a promise
+    let generatorResult;
+    try {
+      generatorResult = wrapStartedGenerator(executionValue, props, indicators);
+    } catch (e) {
+      indicators.fulfilled = true;
+      let errorState = StateBuilder.error<T, E>(e, savedProps);
+      input.replaceState(errorState);
+      callbacks?.onError?.(errorState);
+      return;
+    }
+    if (generatorResult.done) {
+      indicators.fulfilled = true;
+      let successState = StateBuilder.success(generatorResult.value, savedProps);
+      input.replaceState(successState);
+      callbacks?.onSuccess?.(successState);
+      return;
+    } else {
+      runningPromise = generatorResult;
+      input.setSuspender(runningPromise);
+      input.replaceState(StateBuilder.pending(savedProps));
+    }
+  } else if (isPromise(executionValue)) {
+    input.setProducerType(ProducerType.promise);
+    if (__DEV__ && input.instance) devtools.emitRunPromise(input.instance, savedProps);
+    runningPromise = executionValue;
+    input.setSuspender(runningPromise);
+    input.replaceState(StateBuilder.pending(savedProps));
+  } else { // final value
+    if (__DEV__ && input.instance) devtools.emitRunSync(input.instance, savedProps);
+    indicators.fulfilled = true;
+    input.setProducerType(ProducerType.sync);
+    let successState = StateBuilder.success(executionValue, savedProps);
+    input.replaceState(successState);
+    callbacks?.onSuccess?.(successState);
+    return;
+  }
+
+  runningPromise
+    .then(stateData => {
+      let aborted = indicators.aborted;
+      if (!aborted) {
+        indicators.fulfilled = true;
+        let successState = StateBuilder.success(stateData, savedProps);
+        input.replaceState(successState);
+        callbacks?.onSuccess?.(successState);
+      }
+    })
+    .catch(stateError => {
+      let aborted = indicators.aborted;
+      if (!aborted) {
+        indicators.fulfilled = true;
+        let errorState = StateBuilder.error<T, E>(stateError, savedProps);
+        input.replaceState(errorState);
+        callbacks?.onError?.(errorState);
+      }
+    });
+}
+
+export function cloneProducerProps<T, E, R>(props: ProducerProps<T, E, R>): ProducerSavedProps<T> {
   const output: ProducerSavedProps<T> = {
     lastSuccess: shallowClone(props.lastSuccess),
     payload: props.payload,

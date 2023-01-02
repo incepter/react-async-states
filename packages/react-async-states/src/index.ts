@@ -13,6 +13,7 @@ export {useAsyncState} from "./useAsyncState";
 export {AsyncStateProvider} from "./Provider";
 
 export {
+  runc,
   AsyncState as unstable_AsyncState,
   createSource, Status, RunEffect, ProducerType, AsyncStateManager
 } from "@core";
