@@ -634,8 +634,6 @@ export function producerWrapper<T, E = any, R = any>(
     input.setProducerType(ProducerType.notProvided);
     input.setState(props.args[0], props.args[1]);
 
-    console.log('hahahaaaaa', input, callbacks, input.setState.toString())
-
     if (callbacks) {
       let currentState = input.getState();
       switch (currentState.status) {

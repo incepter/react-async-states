@@ -1,7 +1,7 @@
 {
   "private": false,
   "license": "MIT",
-  "version": "1.0.0-rc-2",
+  "version": "1.0.0-rc-3",
   "author": "incepter",
   "sideEffects": false,
   "main": "dist/umd/index",
@@ -20,7 +20,7 @@
     "dev": "pnpm clean:dist && rollup -c rollup/rollup.config.dev.js -w"
   },
   "peerDependencies": {
-    "react-async-states": ">=1.0.0-rc-11",
+    "react-async-states": "^1.0.0-rc-18",
     "react": "^16.8.0 || ^17.0.2 || ^18.0.0"
   },
   "devDependencies": {

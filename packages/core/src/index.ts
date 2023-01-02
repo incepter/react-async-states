@@ -73,7 +73,6 @@ export type {
 
 export {
   DevtoolsEvent, DevtoolsRequest, DevtoolsJournalEvent
-} from "./devtools/index"
-export {default as devtools} from "./devtools/Devtools"
+} from "./devtools/index";
 
-export {runc} from "./runc"
+export {default as devtools} from "./devtools/Devtools"
