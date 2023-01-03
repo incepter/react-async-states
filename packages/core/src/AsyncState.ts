@@ -26,6 +26,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
   state: State<T, E, R>;
   lastSuccess: SuccessState<T> | InitialState<T>;
+  events?: InstanceEvents<T, E, R>;
 
 
   originalProducer: Producer<T, E, R> | undefined;
@@ -80,23 +81,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     this.lastSuccess = this.state;
 
 
-    this.abort = this.abort.bind(this);
-    this.getState = this.getState.bind(this);
-    this.setState = this.setState.bind(this);
-    this.subscribe = this.subscribe.bind(this);
-    this.getPayload = this.getPayload.bind(this);
-    this.mergePayload = this.mergePayload.bind(this);
-
-    this.replay = this.replay.bind(this);
-    this.hasLane = this.hasLane.bind(this);
-    this.getConfig = this.getConfig.bind(this);
-    this.getVersion = this.getVersion.bind(this);
-    this.removeLane = this.removeLane.bind(this);
-    this.patchConfig = this.patchConfig.bind(this);
-    this.replaceCache = this.replaceCache.bind(this);
-    this.invalidateCache = this.invalidateCache.bind(this);
-    this.replaceProducer = this.replaceProducer.bind(this);
-
+    this.bindMethods();
     let instance = this;
     this.producer = producerWrapper.bind(null, {
       setProducerType: (type: ProducerType) => instance.producerType = type,
@@ -115,6 +100,26 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     }
   }
 
+  private bindMethods() {
+    this.on = this.on.bind(this);
+    this.abort = this.abort.bind(this);
+    this.getState = this.getState.bind(this);
+    this.setState = this.setState.bind(this);
+    this.subscribe = this.subscribe.bind(this);
+    this.getPayload = this.getPayload.bind(this);
+    this.mergePayload = this.mergePayload.bind(this);
+
+    this.replay = this.replay.bind(this);
+    this.hasLane = this.hasLane.bind(this);
+    this.getConfig = this.getConfig.bind(this);
+    this.getVersion = this.getVersion.bind(this);
+    this.removeLane = this.removeLane.bind(this);
+    this.patchConfig = this.patchConfig.bind(this);
+    this.replaceCache = this.replaceCache.bind(this);
+    this.invalidateCache = this.invalidateCache.bind(this);
+    this.replaceProducer = this.replaceProducer.bind(this);
+  }
+
   getVersion(): number {
     return this.version;
   }
@@ -128,10 +133,44 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     return this.config;
   }
 
+
+  on(
+    eventType: InstanceChangeEvent,
+    eventHandler: InstanceChangeEventHandlerType<T, E, R>
+  ): (() => void)
+  on(
+    eventType: InstanceDisposeEvent,
+    eventHandler: InstanceDisposeEventHandlerType<T, E, R>
+  ): (() => void)
+  on(
+    eventType: InstanceCacheLoadEvent,
+    eventHandler: InstanceCacheLoadEventHandlerType<T, E, R>
+  ): (() => void)
+  on(
+    eventType: InstanceEventType,
+    eventHandler: InstanceEventHandlerType<T, E, R>
+  ): (() => void)
+  {
+    let that = this;
+    if (!this.events) {
+      this.events = {} as InstanceEvents<T, E, R>;
+    }
+
+    // @ts-ignore
+    this.events[eventType] = eventHandler;
+
+    return function () {
+      let prevEvent = that.events![eventType];
+      if (prevEvent && prevEvent === eventHandler) {
+        delete that.events![eventType];
+      }
+    }
+
+  }
+
   patchConfig(partialConfig?: Partial<ProducerConfig<T, E, R>>) {
     Object.assign(this.config, partialConfig);
   }
-
 
 
   getPayload(): Record<string, any> {
@@ -208,6 +247,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     if (__DEV__) devtools.startUpdate(this);
     this.state = newState;
     this.version += 1;
+    invokeInstanceEvents(this, "change");
     if (__DEV__) devtools.emitUpdate(this);
 
     if (this.state.status === Status.success) {
@@ -378,7 +418,10 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     });
   }
 
-  runc(createProducerEffects: ProducerEffectsCreator<T, E, R>, props?: RUNCProps<T, E, R>) {
+  runc(
+    createProducerEffects: ProducerEffectsCreator<T, E, R>,
+    props?: RUNCProps<T, E, R>
+  ) {
     return this.runWithCallbacks(createProducerEffects, props, props?.args ?? []);
   }
 
@@ -560,6 +603,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     if (__DEV__) devtools.emitDispose(this);
 
     this.willUpdate = false;
+    invokeInstanceEvents(this, "dispose");
     return true;
   }
 
@@ -613,6 +657,36 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
 //region AsyncState methods helpers
 
+function invokeInstanceEvents<T, E, R>(
+  instance: StateInterface<T, E, R>, type: InstanceEventType) {
+  if (!instance.events || !instance.events[type]) {
+    return;
+  }
+  switch (type) {
+    case "change": {
+      let changeEvents = instance.events[type];
+      if (changeEvents) {
+        changeEvents.forEach(evt => evt(instance.getState()));
+      }
+      return;
+    }
+    case "dispose": {
+      let disposeEvents = instance.events[type];
+      if (disposeEvents) {
+        disposeEvents.forEach(evt => evt());
+      }
+      return;
+    }
+    case "cache-load": {
+      let cacheLoadEvents = instance.events[type];
+      if (cacheLoadEvents) {
+        cacheLoadEvents.forEach(evt => evt(instance.cache));
+      }
+      return;
+    }
+  }
+}
+
 export type ProducerWrapperInput<T, E, R> = {
   setProducerType(type: ProducerType): void,
   setState: StateUpdater<T, E, R>,
@@ -622,6 +696,7 @@ export type ProducerWrapperInput<T, E, R> = {
   replaceState(newState: State<T, E, R>, notify?: boolean),
   getProducer(): Producer<T, E, R> | undefined | null,
 }
+
 export function producerWrapper<T, E = any, R = any>(
   input: ProducerWrapperInput<T, E, R>,
   props: ProducerProps<T, E, R>,
@@ -897,6 +972,7 @@ function resolveCache<T, E, R>(
       cache: instance.cache,
       setState: instance.setState
     });
+    invokeInstanceEvents(instance, "cache-load");
   }
 }
 
@@ -1013,6 +1089,7 @@ function makeSource<T, E, R>(instance: StateInterface<T, E, R>): Readonly<Source
     key: instance.key,
     uniqueId: instance.uniqueId,
 
+    on: instance.on,
     abort: instance.abort,
     replay: instance.replay,
     hasLane: instance.hasLane,
@@ -1313,6 +1390,7 @@ export interface BaseSource<T, E = any, R = any> {
   uniqueId: number,
 
   getVersion(): number,
+
   getPayload(): Record<string, any>,
 
   mergePayload(partialPayload?: Record<string, any>),
@@ -1345,13 +1423,54 @@ export interface BaseSource<T, E = any, R = any> {
   patchConfig(partialConfig?: Partial<ProducerConfig<T, E, R>>),
 
   getConfig(): ProducerConfig<T, E, R>,
+
+  on(
+    eventType: InstanceChangeEvent,
+    eventHandler: InstanceChangeEventHandlerType<T, E, R>
+  ): (() => void),
+
+  on(
+    eventType: InstanceDisposeEvent,
+    eventHandler: InstanceDisposeEventHandlerType<T, E, R>
+  ): (() => void),
+
+  on(
+    eventType: InstanceCacheLoadEvent,
+    eventHandler: InstanceCacheLoadEventHandlerType<T, E, R>
+  ): (() => void),
+
 }
+
+
+export type InstanceEventHandlerType<T, E, R> = InstanceChangeEventHandlerType<T, E, R> |
+  InstanceDisposeEventHandlerType<T, E, R> |
+  InstanceCacheLoadEventHandlerType<T, E, R>;
+
+
+export type InstanceChangeEventHandlerType<T, E, R> = ((newState: State<T, E, R>) => void)[];
+
+export type InstanceDisposeEventHandlerType<T, E, R> = (() => void)[];
+export type InstanceCacheLoadEventHandlerType<T, E, R> = ((cache: Record<string, CachedState<T, E, R>> | null | undefined) => void)[];
+
+export type InstanceChangeEvent = "change";
+export type InstanceDisposeEvent = "dispose";
+export type InstanceCacheLoadEvent = "cache-load";
+
+export type InstanceEventType = InstanceChangeEvent |
+  InstanceDisposeEvent |
+  InstanceCacheLoadEvent;
 
 export type AsyncStateSubscribeProps<T, E, R> = {
   key?: string,
   flags?: number,
   origin?: number,
   cb(s: State<T, E, R>): void,
+}
+
+export type InstanceEvents<T, E, R> = {
+  change?: InstanceChangeEventHandlerType<T, E, R>,
+  dispose?: InstanceDisposeEventHandlerType<T, E, R>,
+  ['cache-load']?: InstanceCacheLoadEventHandlerType<T, E, R>,
 }
 
 export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R> {
@@ -1389,6 +1508,8 @@ export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R>
   // cache
   cache?: Record<string, CachedState<T, E, R>> | null,
 
+  events?: InstanceEvents<T, E, R>;
+
   // dev properties
   journal?: any[], // for devtools, dev only
 
@@ -1415,7 +1536,9 @@ export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R>
   ),
 
   run(
-    createProducerEffects: ProducerEffectsCreator<T, E, R>, ...args: any[]): AbortFn,
+    createProducerEffects: ProducerEffectsCreator<T, E, R>,
+    ...args: any[]
+  ): AbortFn,
 
   runp(
     createProducerEffects: ProducerEffectsCreator<T, E, R>,
@@ -1635,7 +1758,8 @@ export interface StateBuilderInterface {
   pending: <T>(props: ProducerSavedProps<T>) => PendingState<T>,
   success: <T>(data: T, props: ProducerSavedProps<T> | null) => SuccessState<T>,
   error: <T, E>(data: any, props: ProducerSavedProps<T>) => ErrorState<T, E>,
-  aborted: <T, E, R>(reason: any, props: ProducerSavedProps<T>) => AbortedState<T, E, R>,
+  aborted: <T, E, R>(
+    reason: any, props: ProducerSavedProps<T>) => AbortedState<T, E, R>,
 }
 
 export type ForkConfig = {
@@ -1644,7 +1768,9 @@ export type ForkConfig = {
   keepCache?: boolean,
 }
 
-export type AsyncStateKeyOrSource<T, E = any, R = any> = string | Source<T, E, R>;
+export type AsyncStateKeyOrSource<T, E = any, R = any> =
+  string
+  | Source<T, E, R>;
 
 export interface ProducerEffects {
   run: <T, E, R>(
@@ -1658,12 +1784,16 @@ export interface ProducerEffects {
   ) => Promise<State<T, E, R>> | undefined,
 
   select: <T, E, R>(
-    input: AsyncStateKeyOrSource<T, E, R>, lane?: string) => State<T, E, R> | undefined,
+    input: AsyncStateKeyOrSource<T, E, R>,
+    lane?: string
+  ) => State<T, E, R> | undefined,
 }
 
 export type ProducerEffectsCreator<T, E, R> = (props: ProducerProps<T, E, R>) => ProducerEffects;
 
-export type ProducerRunInput<T, E = any, R = any> = AsyncStateKeyOrSource<T, E, R> | Producer<T, E, R>;
+export type ProducerRunInput<T, E = any, R = any> =
+  AsyncStateKeyOrSource<T, E, R>
+  | Producer<T, E, R>;
 
 export type ProducerRunConfig = {
   lane?: string,
