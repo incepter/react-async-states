@@ -6,6 +6,7 @@ import {
 import User from "../pages/user";
 import {StateBoundary, useBoundary} from "react-async-states-utils";
 
+
 type User = {
   email: string,
   username: string,
@@ -28,22 +29,47 @@ function fetchUser(props: ProducerProps<User, Error>) {
     });
 }
 
-function Welcome() {
+let userDetails = createSource("user-details", fetchUser, {
+  // skipPendingDelayMs: 50,
+  // runEffectDurationMs: 200,
+  resetStateOnDispose: true,
+  runEffect: RunEffect.debounce,
+  cacheConfig: {
+    enabled: true,
+    hash: (args) => args![0],
+    getDeadline: (s) => s.data.maxAge || 10_000,
+    load: () => JSON.parse(localStorage.getItem("users") ?? "{}"),
+    persist: (cache) => localStorage.setItem("users", JSON.stringify(cache)),
+  }
+});
+userDetails.setState(old => old.data + 1);
+userDetails.on("dispose", () => {
+  console.log('disposed !!!');
+});
 
-  let {source, state, run} = useAsyncState({
-    key: "users",
-    producer: fetchUser,
-    skipPendingDelayMs: 300,
-    runEffectDurationMs: 400,
-    runEffect: RunEffect.debounce,
-    cacheConfig: {
-      enabled: true,
-      hash: (args) => args![0],
-      getDeadline: (s) => s.data.maxAge || 10_000,
-      load: () => JSON.parse(localStorage.getItem("users") ?? "{}"),
-      persist: (cache) => localStorage.setItem("users", JSON.stringify(cache)),
+userDetails.on("change", [
+  state => console.log('EVENT', 'CHANGE', state),
+  {
+    status: Status.success,
+    handler(successState) {
+      console.log('EVENT CHANGE TO STATUS SUCCESS', successState);
     }
-  });
+  },
+  {
+    status: Status.error,
+    handler(err) {
+      console.log('EVENT CHANGE TO STATUS ERROR', err);
+    }
+  },
+]);
+
+userDetails.on("cache-change", cache => {
+  console.log('EVENT', 'CACHE CHANGE', cache);
+});
+
+
+export default function Welcome() {
+  let {source, state, run} = useAsyncState(userDetails);
 
   let searchedUserId: string | null = state.status === Status.initial ? null : state.props.args![0];
 
@@ -121,5 +147,3 @@ function BoundaryDemoChildren() {
     </details>
   );
 }
-
-export default Welcome;

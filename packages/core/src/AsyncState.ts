@@ -143,8 +143,8 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     eventHandler: InstanceDisposeEventHandlerType<T, E, R>
   ): (() => void)
   on(
-    eventType: InstanceCacheLoadEvent,
-    eventHandler: InstanceCacheLoadEventHandlerType<T, E, R>
+    eventType: InstanceCacheChangeEvent,
+    eventHandler: InstanceCacheChangeEventHandlerType<T, E, R>
   ): (() => void)
   on(
     eventType: InstanceEventType,
@@ -657,6 +657,16 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
 //region AsyncState methods helpers
 
+function invokeSingleChangeEvent<T, E, R>(
+  state: State<T, E, R>,
+  event: StateChangeEventHandler<T, E, R>
+) {
+  if (isFunction(event)) {
+    (event as ((newState: State<T, E, R>) => void))(state);
+  } else if (typeof event === "object" && event.status === state.status) {
+    event.handler(state);
+  }
+}
 function invokeInstanceEvents<T, E, R>(
   instance: StateInterface<T, E, R>, type: InstanceEventType) {
   if (!instance.events || !instance.events[type]) {
@@ -666,21 +676,36 @@ function invokeInstanceEvents<T, E, R>(
     case "change": {
       let changeEvents = instance.events[type];
       if (changeEvents) {
-        changeEvents.forEach(evt => evt(instance.getState()));
+        let newState = instance.getState();
+        if (Array.isArray(changeEvents)) {
+          changeEvents.forEach(evt => {
+            invokeSingleChangeEvent(newState, evt);
+          });
+        } else {
+          invokeSingleChangeEvent(newState, changeEvents);
+        }
       }
       return;
     }
     case "dispose": {
       let disposeEvents = instance.events[type];
       if (disposeEvents) {
-        disposeEvents.forEach(evt => evt());
+        if (Array.isArray(disposeEvents)) {
+          disposeEvents.forEach(evt => evt());
+        } else {
+          disposeEvents();
+        }
       }
       return;
     }
-    case "cache-load": {
-      let cacheLoadEvents = instance.events[type];
-      if (cacheLoadEvents) {
-        cacheLoadEvents.forEach(evt => evt(instance.cache));
+    case "cache-change": {
+      let cacheChangeEvents = instance.events[type];
+      if (cacheChangeEvents) {
+        if (Array.isArray(cacheChangeEvents)) {
+          cacheChangeEvents.forEach(evt => evt(instance.cache));
+        } else {
+          cacheChangeEvents(instance.cache);
+        }
       }
       return;
     }
@@ -972,7 +997,6 @@ function resolveCache<T, E, R>(
       cache: instance.cache,
       setState: instance.setState
     });
-    invokeInstanceEvents(instance, "cache-load");
   }
 }
 
@@ -1072,6 +1096,7 @@ function getTopLevelParent<T, E, R>(base: StateInterface<T, E, R>): StateInterfa
 }
 
 function spreadCacheChangeOnLanes<T, E, R>(topLevelParent: StateInterface<T, E, R>) {
+  invokeInstanceEvents(topLevelParent, "cache-change");
   if (!topLevelParent.lanes) {
     return;
   }
@@ -1435,30 +1460,42 @@ export interface BaseSource<T, E = any, R = any> {
   ): (() => void),
 
   on(
-    eventType: InstanceCacheLoadEvent,
-    eventHandler: InstanceCacheLoadEventHandlerType<T, E, R>
+    eventType: InstanceCacheChangeEvent,
+    eventHandler: InstanceCacheChangeEventHandlerType<T, E, R>
   ): (() => void),
 
 }
 
 
+
 export type InstanceEventHandlerType<T, E, R> = InstanceChangeEventHandlerType<T, E, R> |
   InstanceDisposeEventHandlerType<T, E, R> |
-  InstanceCacheLoadEventHandlerType<T, E, R>;
+  InstanceCacheChangeEventHandlerType<T, E, R>;
 
 
-export type InstanceChangeEventHandlerType<T, E, R> = ((newState: State<T, E, R>) => void)[];
 
-export type InstanceDisposeEventHandlerType<T, E, R> = (() => void)[];
-export type InstanceCacheLoadEventHandlerType<T, E, R> = ((cache: Record<string, CachedState<T, E, R>> | null | undefined) => void)[];
+export type StateChangeEventHandler<T, E = any, R = any> =
+  ((newState: State<T, E, R>) => void)
+  |
+  InstanceChangeEventObject<T, E, R>;
+
+export type InstanceChangeEventObject<T, E = any, R = any> = {
+  status: Status
+  handler: ((newState: State<T, E, R>) => void),
+}
+
+export type InstanceChangeEventHandlerType<T, E, R> = StateChangeEventHandler<T, E, R> | StateChangeEventHandler<T, E, R>[];
+
+export type InstanceDisposeEventHandlerType<T, E, R> = (() => void) | (() => void)[];
+export type InstanceCacheChangeEventHandlerType<T, E, R> = ((cache: Record<string, CachedState<T, E, R>> | null | undefined) => void) | ((cache: Record<string, CachedState<T, E, R>> | null | undefined) => void)[];
 
 export type InstanceChangeEvent = "change";
 export type InstanceDisposeEvent = "dispose";
-export type InstanceCacheLoadEvent = "cache-load";
+export type InstanceCacheChangeEvent = "cache-change";
 
 export type InstanceEventType = InstanceChangeEvent |
   InstanceDisposeEvent |
-  InstanceCacheLoadEvent;
+  InstanceCacheChangeEvent;
 
 export type AsyncStateSubscribeProps<T, E, R> = {
   key?: string,
@@ -1470,7 +1507,7 @@ export type AsyncStateSubscribeProps<T, E, R> = {
 export type InstanceEvents<T, E, R> = {
   change?: InstanceChangeEventHandlerType<T, E, R>,
   dispose?: InstanceDisposeEventHandlerType<T, E, R>,
-  ['cache-load']?: InstanceCacheLoadEventHandlerType<T, E, R>,
+  ['cache-change']?: InstanceCacheChangeEventHandlerType<T, E, R>,
 }
 
 export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R> {
