@@ -149,8 +149,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   on(
     eventType: InstanceEventType,
     eventHandler: InstanceEventHandlerType<T, E, R>
-  ): (() => void)
-  {
+  ): (() => void) {
     let that = this;
     if (!this.events) {
       this.events = {} as InstanceEvents<T, E, R>;
@@ -667,6 +666,7 @@ function invokeSingleChangeEvent<T, E, R>(
     event.handler(state);
   }
 }
+
 function invokeInstanceEvents<T, E, R>(
   instance: StateInterface<T, E, R>, type: InstanceEventType) {
   if (!instance.events || !instance.events[type]) {
@@ -1467,11 +1467,12 @@ export interface BaseSource<T, E = any, R = any> {
 }
 
 
-
-export type InstanceEventHandlerType<T, E, R> = InstanceChangeEventHandlerType<T, E, R> |
-  InstanceDisposeEventHandlerType<T, E, R> |
+export type InstanceEventHandlerType<T, E, R> =
+  InstanceChangeEventHandlerType<T, E, R>
+  |
+  InstanceDisposeEventHandlerType<T, E, R>
+  |
   InstanceCacheChangeEventHandlerType<T, E, R>;
-
 
 
 export type StateChangeEventHandler<T, E = any, R = any> =
@@ -1484,10 +1485,16 @@ export type InstanceChangeEventObject<T, E = any, R = any> = {
   handler: ((newState: State<T, E, R>) => void),
 }
 
-export type InstanceChangeEventHandlerType<T, E, R> = StateChangeEventHandler<T, E, R> | StateChangeEventHandler<T, E, R>[];
+export type InstanceChangeEventHandlerType<T, E, R> =
+  StateChangeEventHandler<T, E, R>
+  | StateChangeEventHandler<T, E, R>[];
 
-export type InstanceDisposeEventHandlerType<T, E, R> = (() => void) | (() => void)[];
-export type InstanceCacheChangeEventHandlerType<T, E, R> = ((cache: Record<string, CachedState<T, E, R>> | null | undefined) => void) | ((cache: Record<string, CachedState<T, E, R>> | null | undefined) => void)[];
+export type InstanceDisposeEventHandlerType<T, E, R> =
+  (() => void)
+  | (() => void)[];
+export type InstanceCacheChangeEventHandlerType<T, E, R> =
+  ((cache: Record<string, CachedState<T, E, R>> | null | undefined) => void)
+  | ((cache: Record<string, CachedState<T, E, R>> | null | undefined) => void)[];
 
 export type InstanceChangeEvent = "change";
 export type InstanceDisposeEvent = "dispose";
