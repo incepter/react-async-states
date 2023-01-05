@@ -1,5 +1,5 @@
 import * as React from "react";
-import {Producer, State} from "@core";
+import {Producer, State} from "async-states";
 import {StateContextValue, UseAsyncState} from "./types.internal";
 import {__DEV__, noop} from "./shared";
 import {useCallerName} from "./helpers/useCallerName";

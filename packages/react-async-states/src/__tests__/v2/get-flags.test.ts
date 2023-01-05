@@ -12,7 +12,7 @@ import {
   STANDALONE,
   WAIT
 } from "../../StateHookFlags";
-import {AsyncStateManager, createSource} from "@core";
+import {AsyncStateManager, createSource} from "async-states";
 import {resolveFlags} from "../../StateHook";
 
 describe('resolveFlags', () => {

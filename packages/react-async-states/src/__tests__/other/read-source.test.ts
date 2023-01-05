@@ -1,4 +1,4 @@
-import {createSource, readSource} from "@core";
+import {createSource, readSource} from "async-states";
 
 describe('readSource', () => {
   it('should correctly read the source', () => {

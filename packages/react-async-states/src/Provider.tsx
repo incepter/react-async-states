@@ -5,7 +5,7 @@ import {
   AsyncStateManager,
   ManagerInterface,
   StateProviderProps
-} from "@core";
+} from "async-states";
 import {StateContextValue, UseAsyncStateContextType} from "./types.internal";
 
 // let didWarnAboutProviderDeprecated = false;

@@ -18,7 +18,7 @@ export {
   standaloneProducerEffectsCreator as unstable_defaultEffectsCreator,
   producerWrapper as unstable_producerWrapper,
   createSource, Status, RunEffect, ProducerType, AsyncStateManager
-} from "@core";
+} from "async-states";
 
 export type {
   State,
@@ -70,7 +70,7 @@ export type {
   StateFunctionUpdater,
   ProducerWrapperInput,
   StateBuilderInterface,
-} from "@core";
+} from "async-states";
 
 export type {
   EqualityFn,

@@ -2,7 +2,7 @@ import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import AsyncStateComponent from "../../../utils/AsyncStateComponent";
 import {UseAsyncState} from "../../../../../types.internal";
-import {Status, createSource} from "@core";
+import {Status, createSource} from "async-states";
 import {mockDateNow, TESTS_TS} from "../../../utils/setup";
 
 // @ts-ignore

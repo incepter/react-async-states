@@ -18,7 +18,7 @@ import {
   SimpleSelector,
   Source,
   StateInterface
-} from "@core";
+} from "async-states";
 import {useCallerName} from "./helpers/useCallerName";
 import {__DEV__, isFunction} from "./shared";
 

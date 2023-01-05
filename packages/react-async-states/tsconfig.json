@@ -4,7 +4,6 @@
     "baseUrl": ".",
     "types": ["node", "jest"],
     "paths": {
-      "@core": ["../core/"],
       "tslib": ["node_modules/tslib"]
     },
   },

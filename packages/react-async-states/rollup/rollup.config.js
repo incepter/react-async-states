@@ -22,9 +22,10 @@ const esModulesBuild = [
       globals: {
         react: 'React',
         'react/jsx-runtime': 'jsxRuntime',
+        'async-states': 'AsyncStates',
       }
     },
-    external: ['react', 'react/jsx-runtime'],
+    external: ['react', 'react/jsx-runtime', 'async-states'],
     treeshake: {
       moduleSideEffects: false,
     },
@@ -61,10 +62,11 @@ const umdBuild = [
         globals: {
           react: 'React',
           'react/jsx-runtime': 'jsxRuntime',
+          'async-states': 'AsyncStates',
         }
       },
     ],
-    external: ['react', 'react/jsx-runtime'],
+    external: ['react', 'react/jsx-runtime', 'async-states'],
     treeshake: {
       moduleSideEffects: false,
     },
@@ -100,10 +102,11 @@ const umdBuild = [
         globals: {
           react: 'React',
           'react/jsx-runtime': 'jsxRuntime',
+          'async-states': 'AsyncStates',
         }
       },
     ],
-    external: ['react', 'react/jsx-runtime'],
+    external: ['react', 'react/jsx-runtime', 'async-states'],
     treeshake: {
       moduleSideEffects: false,
     },
@@ -168,10 +171,11 @@ const declarationsBuild = {
       globals: {
         react: 'React',
         'react/jsx-runtime': 'jsxRuntime',
+        'async-states': 'AsyncStates',
       }
     },
   ],
-  external: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
+  external: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'async-states'],
   plugins: [
     typescript({
       tsconfigOverride: {

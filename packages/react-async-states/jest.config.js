@@ -9,9 +9,6 @@ module.exports = {
     '^.+\\.mjs$': 'babel-jest',
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  moduleNameMapper: {
-    '@core': '<rootDir>/../core/src/'
-  },
   coveragePathIgnorePatterns: [
     "__tests__",
     "index-prod.js",

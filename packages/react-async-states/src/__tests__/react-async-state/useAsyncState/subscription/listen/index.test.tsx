@@ -6,7 +6,7 @@ import {
 import {useAsyncState} from "../../../../../useAsyncState";
 import {AsyncStateProvider} from "../../../../../Provider";
 import {mockDateNow, TESTS_TS} from "../../../utils/setup";
-import {createSource} from "@core";
+import {createSource} from "async-states";
 
 mockDateNow();
 describe('should subscribe to an async state in provider', () => {
