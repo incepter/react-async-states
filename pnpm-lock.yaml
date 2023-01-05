@@ -175,7 +175,7 @@ importers:
       '@types/jest': ^29.2.4
       '@types/node': ^18.11.9
       '@types/react': 18.0.25
-      async-states: '>=1.0.0-rc-1'
+      async-states: ^1.0.0-rc-1
       babel-jest: ^29.3.1
       circular-dependency-plugin: ^5.2.2
       cross-env: ^7.0.3
@@ -260,6 +260,7 @@ importers:
       '@types/jest': ^29.2.4
       '@types/node': ^18.11.9
       '@types/react': 18.0.25
+      async-states: ^1.0.0-rc-1
       babel-jest: ^29.3.1
       circular-dependency-plugin: ^5.2.2
       cross-env: ^7.0.3
@@ -304,6 +305,7 @@ importers:
       '@types/jest': 29.2.4
       '@types/node': 18.11.15
       '@types/react': 18.0.25
+      async-states: link:../core
       babel-jest: 29.3.1_@babel+core@7.20.5
       circular-dependency-plugin: 5.2.2_webpack@5.75.0
       cross-env: 7.0.3

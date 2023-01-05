@@ -23,11 +23,12 @@ const devBuild = {
       globals: {
         react: 'React',
         'react/jsx-runtime': 'jsxRuntime',
+        'async-states': 'AsyncStates',
         'react-async-states': 'ReactAsyncStates',
       }
     },
   ],
-  external: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-async-states'],
+  external: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-async-states', 'async-states'],
   watch: {
     include: 'src/**',
   },
@@ -63,11 +64,12 @@ const declarationsBuild = {
       globals: {
         react: 'React',
         'react/jsx-runtime': 'jsxRuntime',
+        'async-states': 'AsyncStates',
         'react-async-states': 'ReactAsyncStates',
       }
     },
   ],
-  external: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-async-states'],
+  external: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-async-states', 'async-states'],
   watch: {
     include: 'src/**',
   },

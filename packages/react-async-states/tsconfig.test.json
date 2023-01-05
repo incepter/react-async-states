@@ -2,8 +2,9 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "types": ["node", "jest"]
-
+    "types": ["node", "jest"],
+    "moduleResolution": "Node",
+    "module": "ESNext"
   },
   "include": ["src"],
   "exclude": [
