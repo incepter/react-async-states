@@ -118,6 +118,12 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     this.replaceCache = this.replaceCache.bind(this);
     this.invalidateCache = this.invalidateCache.bind(this);
     this.replaceProducer = this.replaceProducer.bind(this);
+
+    this._source = makeSource(this);
+
+    if (__DEV__) {
+      devtools.emitCreation(this);
+    }
   }
 
   getVersion(): number {
