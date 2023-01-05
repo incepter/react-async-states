@@ -15,6 +15,7 @@ import {
 import devtools from "./devtools/Devtools";
 import {hideStateInstanceInNewObject} from "./hide-object";
 import {nextKey} from "./key-gen";
+import {Sources} from "./pool";
 
 export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   //region properties
@@ -59,7 +60,10 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     key: string,
     producer: Producer<T, E, R> | undefined | null,
     config?: ProducerConfig<T, E, R>,
+    poolName?: string,
   ) {
+
+
     this.key = key;
     this.uniqueId = nextUniqueId();
     this.config = shallowClone(config);
@@ -956,11 +960,7 @@ export function createSource<T, E = any, R = any>(
   producer?: Producer<T, E, R> | undefined | null,
   config?: ProducerConfig<T, E, R>
 ): Source<T, E, R> {
-  return new AsyncState(
-    key,
-    producer,
-    config
-  )._source;
+  return Sources.for(key, producer, config);
 }
 
 const defaultForkConfig: ForkConfig = Object.freeze({keepState: false});
