@@ -1,4 +1,4 @@
-import {runc, ProducerProps, useAsyncState} from "react-async-states"
+import {ProducerProps, useAsyncState} from "react-async-states"
 
 
 
@@ -12,7 +12,7 @@ function fetchUser(props: ProducerProps<any>) {
 
 	let id = setTimeout(() => {
 		console.log('I AM A TIMEOUTTTTT');
-		props.abort("api t3tlat");}, 20);
+		props.abort!("api t3tlat");}, 20);
 	props.onAbort(() => clearTimeout(id));
 
 	return fetch(`https://jsonplaceholder.typicode.com/users/${props.payload.userId}`,
@@ -27,11 +27,11 @@ function fetchUser(props: ProducerProps<any>) {
 }
 
 function Header() {
-	let {read, run} = useAsyncState();
+	// let {read, run} = useAsyncState();
 
-	let state = read();
-
-	state.status;
+	// let state = read();
+	//
+	// state.status;
 
 	return (
 		<div className="pt-4 flex items-center justify-start">
@@ -40,21 +40,21 @@ function Header() {
 
 
 
-
-
-
-				let abort = runc({
-					payload: {
-						// userId: 5,
-					},
-					producer:fetchUser,
-					onSuccess(s) {
-						console.log('user details', s.data)
-					},
-					onFulfillment(s) {
-						console.log('resolved state', s)
-					}
-				});
+				//
+				//
+				//
+				// let abort = runc({
+				// 	payload: {
+				// 		// userId: 5,
+				// 	},
+				// 	producer:fetchUser,
+				// 	onSuccess(s) {
+				// 		console.log('user details', s.data)
+				// 	},
+				// 	onFulfillment(s) {
+				// 		console.log('resolved state', s)
+				// 	}
+				// });
 				// abort("fi khatr lkhwatr")
 			}}>HAHAHAAAA</button>
 			<span className="font-bold text-2xl text-white">ASYNC STATE DEMO</span>

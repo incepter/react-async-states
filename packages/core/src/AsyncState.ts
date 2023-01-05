@@ -26,6 +26,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
   state: State<T, E, R>;
   lastSuccess: SuccessState<T> | InitialState<T>;
+  events?: InstanceEvents<T, E, R>;
 
 
   originalProducer: Producer<T, E, R> | undefined;
@@ -80,6 +81,27 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     this.lastSuccess = this.state;
 
 
+    this.bindMethods();
+    let instance = this;
+    this.producer = producerWrapper.bind(null, {
+      setProducerType: (type: ProducerType) => instance.producerType = type,
+      setState: instance.setState,
+      getState: instance.getState,
+      instance: instance,
+      setSuspender: (suspender: Promise<T>) => instance.suspender = suspender,
+      replaceState: instance.replaceState.bind(instance),
+      getProducer: () => instance.originalProducer,
+    });
+
+    this._source = makeSource(this);
+
+    if (__DEV__) {
+      devtools.emitCreation(this);
+    }
+  }
+
+  private bindMethods() {
+    this.on = this.on.bind(this);
     this.abort = this.abort.bind(this);
     this.getState = this.getState.bind(this);
     this.setState = this.setState.bind(this);
@@ -96,17 +118,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     this.replaceCache = this.replaceCache.bind(this);
     this.invalidateCache = this.invalidateCache.bind(this);
     this.replaceProducer = this.replaceProducer.bind(this);
-
-    let instance = this;
-    this.producer = producerWrapper.bind(null, {
-      setProducerType: (type: ProducerType) => instance.producerType = type,
-      setState: instance.setState,
-      getState: instance.getState,
-      instance: instance,
-      setSuspender: (suspender: Promise<T>) => instance.suspender = suspender,
-      replaceState: instance.replaceState.bind(instance),
-      getProducer: () => instance.originalProducer,
-    });
 
     this._source = makeSource(this);
 
@@ -128,10 +139,43 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     return this.config;
   }
 
+
+  on(
+    eventType: InstanceChangeEvent,
+    eventHandler: InstanceChangeEventHandlerType<T, E, R>
+  ): (() => void)
+  on(
+    eventType: InstanceDisposeEvent,
+    eventHandler: InstanceDisposeEventHandlerType<T, E, R>
+  ): (() => void)
+  on(
+    eventType: InstanceCacheChangeEvent,
+    eventHandler: InstanceCacheChangeEventHandlerType<T, E, R>
+  ): (() => void)
+  on(
+    eventType: InstanceEventType,
+    eventHandler: InstanceEventHandlerType<T, E, R>
+  ): (() => void) {
+    let that = this;
+    if (!this.events) {
+      this.events = {} as InstanceEvents<T, E, R>;
+    }
+
+    // @ts-ignore
+    this.events[eventType] = eventHandler;
+
+    return function () {
+      let prevEvent = that.events![eventType];
+      if (prevEvent && prevEvent === eventHandler) {
+        delete that.events![eventType];
+      }
+    }
+
+  }
+
   patchConfig(partialConfig?: Partial<ProducerConfig<T, E, R>>) {
     Object.assign(this.config, partialConfig);
   }
-
 
 
   getPayload(): Record<string, any> {
@@ -208,6 +252,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     if (__DEV__) devtools.startUpdate(this);
     this.state = newState;
     this.version += 1;
+    invokeInstanceEvents(this, "change");
     if (__DEV__) devtools.emitUpdate(this);
 
     if (this.state.status === Status.success) {
@@ -378,7 +423,10 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     });
   }
 
-  runc(createProducerEffects: ProducerEffectsCreator<T, E, R>, props?: RUNCProps<T, E, R>) {
+  runc(
+    createProducerEffects: ProducerEffectsCreator<T, E, R>,
+    props?: RUNCProps<T, E, R>
+  ) {
     return this.runWithCallbacks(createProducerEffects, props, props?.args ?? []);
   }
 
@@ -560,6 +608,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     if (__DEV__) devtools.emitDispose(this);
 
     this.willUpdate = false;
+    invokeInstanceEvents(this, "dispose");
     return true;
   }
 
@@ -613,6 +662,62 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
 //region AsyncState methods helpers
 
+function invokeSingleChangeEvent<T, E, R>(
+  state: State<T, E, R>,
+  event: StateChangeEventHandler<T, E, R>
+) {
+  if (isFunction(event)) {
+    (event as ((newState: State<T, E, R>) => void))(state);
+  } else if (typeof event === "object" && event.status === state.status) {
+    event.handler(state);
+  }
+}
+
+function invokeInstanceEvents<T, E, R>(
+  instance: StateInterface<T, E, R>, type: InstanceEventType) {
+  if (!instance.events || !instance.events[type]) {
+    return;
+  }
+  switch (type) {
+    case "change": {
+      let changeEvents = instance.events[type];
+      if (changeEvents) {
+        let newState = instance.getState();
+        if (Array.isArray(changeEvents)) {
+          changeEvents.forEach(evt => {
+            invokeSingleChangeEvent(newState, evt);
+          });
+        } else {
+          invokeSingleChangeEvent(newState, changeEvents);
+        }
+      }
+      return;
+    }
+    case "dispose": {
+      let disposeEvents = instance.events[type];
+      if (disposeEvents) {
+        if (Array.isArray(disposeEvents)) {
+          disposeEvents.forEach(evt => evt());
+        } else {
+          disposeEvents();
+        }
+      }
+      return;
+    }
+    case "cache-change": {
+      let cacheChangeEvents = instance.events[type];
+      if (cacheChangeEvents) {
+        if (Array.isArray(cacheChangeEvents)) {
+          cacheChangeEvents.forEach(evt => evt(instance.cache));
+        } else {
+          cacheChangeEvents(instance.cache);
+        }
+      }
+      return;
+    }
+  }
+}
+
 export type ProducerWrapperInput<T, E, R> = {
   setProducerType(type: ProducerType): void,
   setState: StateUpdater<T, E, R>,
@@ -622,6 +727,7 @@ export type ProducerWrapperInput<T, E, R> = {
   replaceState(newState: State<T, E, R>, notify?: boolean),
   getProducer(): Producer<T, E, R> | undefined | null,
 }
+
 export function producerWrapper<T, E = any, R = any>(
   input: ProducerWrapperInput<T, E, R>,
   props: ProducerProps<T, E, R>,
@@ -996,6 +1102,7 @@ function getTopLevelParent<T, E, R>(base: StateInterface<T, E, R>): StateInterfa
 }
 
 function spreadCacheChangeOnLanes<T, E, R>(topLevelParent: StateInterface<T, E, R>) {
+  invokeInstanceEvents(topLevelParent, "cache-change");
   if (!topLevelParent.lanes) {
     return;
   }
@@ -1013,6 +1120,7 @@ function makeSource<T, E, R>(instance: StateInterface<T, E, R>): Readonly<Source
     key: instance.key,
     uniqueId: instance.uniqueId,
 
+    on: instance.on,
     abort: instance.abort,
     replay: instance.replay,
     hasLane: instance.hasLane,
@@ -1313,6 +1421,7 @@ export interface BaseSource<T, E = any, R = any> {
   uniqueId: number,
 
   getVersion(): number,
+
   getPayload(): Record<string, any>,
 
   mergePayload(partialPayload?: Record<string, any>),
@@ -1345,13 +1454,73 @@ export interface BaseSource<T, E = any, R = any> {
   patchConfig(partialConfig?: Partial<ProducerConfig<T, E, R>>),
 
   getConfig(): ProducerConfig<T, E, R>,
+
+  on(
+    eventType: InstanceChangeEvent,
+    eventHandler: InstanceChangeEventHandlerType<T, E, R>
+  ): (() => void),
+
+  on(
+    eventType: InstanceDisposeEvent,
+    eventHandler: InstanceDisposeEventHandlerType<T, E, R>
+  ): (() => void),
+
+  on(
+    eventType: InstanceCacheChangeEvent,
+    eventHandler: InstanceCacheChangeEventHandlerType<T, E, R>
+  ): (() => void),
+
 }
+
+
+export type InstanceEventHandlerType<T, E, R> =
+  InstanceChangeEventHandlerType<T, E, R>
+  |
+  InstanceDisposeEventHandlerType<T, E, R>
+  |
+  InstanceCacheChangeEventHandlerType<T, E, R>;
+
+
+export type StateChangeEventHandler<T, E = any, R = any> =
+  ((newState: State<T, E, R>) => void)
+  |
+  InstanceChangeEventObject<T, E, R>;
+
+export type InstanceChangeEventObject<T, E = any, R = any> = {
+  status: Status
+  handler: ((newState: State<T, E, R>) => void),
+}
+
+export type InstanceChangeEventHandlerType<T, E, R> =
+  StateChangeEventHandler<T, E, R>
+  | StateChangeEventHandler<T, E, R>[];
+
+export type InstanceDisposeEventHandlerType<T, E, R> =
+  (() => void)
+  | (() => void)[];
+export type InstanceCacheChangeEventHandlerType<T, E, R> =
+  ((cache: Record<string, CachedState<T, E, R>> | null | undefined) => void)
+  | ((cache: Record<string, CachedState<T, E, R>> | null | undefined) => void)[];
+
+export type InstanceChangeEvent = "change";
+export type InstanceDisposeEvent = "dispose";
+export type InstanceCacheChangeEvent = "cache-change";
+
+export type InstanceEventType = InstanceChangeEvent |
+  InstanceDisposeEvent |
+  InstanceCacheChangeEvent;
 
 export type AsyncStateSubscribeProps<T, E, R> = {
   key?: string,
   flags?: number,
   origin?: number,
   cb(s: State<T, E, R>): void,
+}
+
+export type InstanceEvents<T, E, R> = {
+  change?: InstanceChangeEventHandlerType<T, E, R>,
+  dispose?: InstanceDisposeEventHandlerType<T, E, R>,
+  ['cache-change']?: InstanceCacheChangeEventHandlerType<T, E, R>,
 }
 
 export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R> {
@@ -1389,6 +1558,8 @@ export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R>
   // cache
   cache?: Record<string, CachedState<T, E, R>> | null,
 
+  events?: InstanceEvents<T, E, R>;
+
   // dev properties
   journal?: any[], // for devtools, dev only
 
@@ -1415,7 +1586,9 @@ export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R>
   ),
 
   run(
-    createProducerEffects: ProducerEffectsCreator<T, E, R>, ...args: any[]): AbortFn,
+    createProducerEffects: ProducerEffectsCreator<T, E, R>,
+    ...args: any[]
+  ): AbortFn,
 
   runp(
     createProducerEffects: ProducerEffectsCreator<T, E, R>,
@@ -1635,7 +1808,8 @@ export interface StateBuilderInterface {
   pending: <T>(props: ProducerSavedProps<T>) => PendingState<T>,
   success: <T>(data: T, props: ProducerSavedProps<T> | null) => SuccessState<T>,
   error: <T, E>(data: any, props: ProducerSavedProps<T>) => ErrorState<T, E>,
-  aborted: <T, E, R>(reason: any, props: ProducerSavedProps<T>) => AbortedState<T, E, R>,
+  aborted: <T, E, R>(
+    reason: any, props: ProducerSavedProps<T>) => AbortedState<T, E, R>,
 }
 
 export type ForkConfig = {
@@ -1644,7 +1818,9 @@ export type ForkConfig = {
   keepCache?: boolean,
 }
 
-export type AsyncStateKeyOrSource<T, E = any, R = any> = string | Source<T, E, R>;
+export type AsyncStateKeyOrSource<T, E = any, R = any> =
+  string
+  | Source<T, E, R>;
 
 export interface ProducerEffects {
   run: <T, E, R>(
@@ -1658,12 +1834,16 @@ export interface ProducerEffects {
   ) => Promise<State<T, E, R>> | undefined,
 
   select: <T, E, R>(
-    input: AsyncStateKeyOrSource<T, E, R>, lane?: string) => State<T, E, R> | undefined,
+    input: AsyncStateKeyOrSource<T, E, R>,
+    lane?: string
+  ) => State<T, E, R> | undefined,
 }
 
 export type ProducerEffectsCreator<T, E, R> = (props: ProducerProps<T, E, R>) => ProducerEffects;
 
-export type ProducerRunInput<T, E = any, R = any> = AsyncStateKeyOrSource<T, E, R> | Producer<T, E, R>;
+export type ProducerRunInput<T, E = any, R = any> =
+  AsyncStateKeyOrSource<T, E, R>
+  | Producer<T, E, R>;
 
 export type ProducerRunConfig = {
   lane?: string,
