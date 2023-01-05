@@ -24,7 +24,7 @@ import {
   standaloneProducerEffectsCreator,
   isSource,
   nextKey
-} from "@core";
+} from "async-states";
 import {
   AUTO_RUN,
   CHANGE_EVENTS,

@@ -10,6 +10,7 @@ const devBuild = {
   globals: {
     react: 'React',
     'react/jsx-runtime': 'jsxRuntime',
+    'async-states': 'AsyncStates',
     'react-async-states': 'ReactAsyncStates',
   },
   output: [
@@ -23,16 +24,17 @@ const devBuild = {
       globals: {
         react: 'React',
         'react/jsx-runtime': 'jsxRuntime',
+        'async-states': 'AsyncStates',
         'react-async-states': 'ReactAsyncStates',
       }
     },
   ],
-  external: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-async-states'],
+  external: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-async-states', 'async-states'],
   watch: {
     include: 'src/**',
   },
   plugins: [
-    babel({babelHelpers: 'bundled'}),
+    // babel({babelHelpers: 'bundled'}),
     json(),
     resolve(),
     commonjs(),
@@ -48,6 +50,7 @@ const devBuild = {
         ]
       }
     }),
+    // dts(),
   ],
 };
 
@@ -55,39 +58,16 @@ const declarationsBuild = {
   input: `src/index.ts`,
   output: [
     {
-      format: 'es',
       dir: "dist/es",
       sourcemap: false,
       preserveModules: true,
       name: "ReactAsyncStatesUtils",
-      globals: {
-        react: 'React',
-        'react/jsx-runtime': 'jsxRuntime',
-        'react-async-states': 'ReactAsyncStates',
-      }
     },
   ],
-  external: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-async-states'],
   watch: {
     include: 'src/**',
   },
-  plugins: [
-    typescript({
-      tsconfigOverride: {
-        compilerOptions: {
-          sourceMap: false,
-          declaration: false,
-          declarationMap: false,
-        },
-        exclude: [
-          "node_modules",
-          "src/__tests__",
-          "src/index-prod.js"
-        ]
-      }
-    }),
-    dts(),
-  ],
+  plugins: [dts()],
 };
 
 module.exports = [

@@ -1,4 +1,4 @@
-import {AsyncState, standaloneProducerEffectsCreator, Status} from "@core";
+import {AsyncState, standaloneProducerEffectsCreator, Status} from "async-states";
 import {act} from "@testing-library/react-hooks";
 import {timeout} from "./test-utils";
 import {mockDateNow, TESTS_TS} from "../react-async-state/utils/setup";

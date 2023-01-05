@@ -3,7 +3,7 @@ import {act, fireEvent, render, screen} from "@testing-library/react";
 import {mockDateNow} from "../../utils/setup";
 import {useAsyncState} from "../../../../useAsyncState";
 import {AsyncStateProvider} from "../../../../Provider";
-import {createSource} from "@core";
+import {createSource} from "async-states";
 
 mockDateNow();
 

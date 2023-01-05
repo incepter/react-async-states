@@ -7,10 +7,6 @@ const {babel} = require('@rollup/plugin-babel');
 
 const devBuild = {
   input: `src/index.ts`,
-  globals: {
-    react: 'React',
-    'react/jsx-runtime': 'jsxRuntime',
-  },
   output: [
     {
       format: 'es',
@@ -18,15 +14,9 @@ const devBuild = {
       sourcemap: true,
       preserveModules: true,
       // file: `dist/index.js`,
-      name: "ReactAsyncStates",
-      globals: {
-        react: 'React',
-        'react/jsx-runtime': 'jsxRuntime',
-        'async-states': 'AsyncStates',
-      }
+      name: "AsyncStates",
     },
   ],
-  external: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'async-states'],
   watch: {
     include: 'src/**',
   },
@@ -58,15 +48,9 @@ const declarationsBuild = {
       dir: "dist/es",
       sourcemap: false,
       preserveModules: true,
-      name: "ReactAsyncStates",
-      globals: {
-        react: 'React',
-        'react/jsx-runtime': 'jsxRuntime',
-        'async-states': 'AsyncStates',
-      }
+      name: "AsyncStates",
     },
   ],
-  external: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'async-states'],
   watch: {
     include: 'src/**',
   },

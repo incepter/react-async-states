@@ -3,10 +3,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "types": ["node", "jest"],
-    "paths": {
-      "@core": ["../core/"]
-    },
-
+    "moduleResolution": "Node",
+    "module": "ESNext"
   },
   "include": ["src"],
   "exclude": [

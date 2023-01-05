@@ -14,7 +14,7 @@ import {
   StateFunctionUpdater,
   Status,
   SuccessState
-} from "@core";
+} from "async-states";
 
 export interface AsyncStateInitializer<T, E = any, R = any> {
   key?: string,

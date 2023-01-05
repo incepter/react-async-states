@@ -1,5 +1,5 @@
 import * as React from "react";
-import {Producer, Source, State} from "@core";
+import {Producer, Source, State} from "async-states";
 import {
   BaseConfig,
   CleanupFn,

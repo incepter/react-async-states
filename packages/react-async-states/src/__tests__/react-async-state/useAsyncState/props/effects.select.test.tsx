@@ -3,7 +3,7 @@ import {render, screen} from "@testing-library/react";
 import {useAsyncState} from "../../../../useAsyncState";
 import {UseAsyncState} from "../../../../types.internal";
 import {AsyncStateProvider} from "../../../../Provider";
-import {createSource, Source, State} from "@core";
+import {createSource, Source, State} from "async-states";
 
 describe('should select from another async state', () => {
   it('should select by source', () => {

@@ -4,7 +4,7 @@ import {
   UseAsyncState,
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../useAsyncState";
-import {Status} from "@core";
+import {Status} from "async-states";
 
 describe('should do basic subscription to an async state', () => {
   it('should subscribe and get initial value -- sync ' +

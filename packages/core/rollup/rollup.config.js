@@ -9,7 +9,7 @@ const terser = require('@rollup/plugin-terser');
 const copy = require('rollup-plugin-copy');
 const dts = require('rollup-plugin-dts').default;
 
-const libraryName = 'react-async-states';
+const libraryName = 'async-states';
 
 const esModulesBuild = [
   {
@@ -19,13 +19,7 @@ const esModulesBuild = [
       dir: 'dist/es',
       sourcemap: true,
       preserveModules: true,
-      globals: {
-        react: 'React',
-        'react/jsx-runtime': 'jsxRuntime',
-        'async-states': 'AsyncStates',
-      }
     },
-    external: ['react', 'react/jsx-runtime', 'async-states'],
     treeshake: {
       moduleSideEffects: false,
     },
@@ -57,16 +51,10 @@ const umdBuild = [
       {
         format: "umd",
         sourcemap: true,
-        name: "ReactAsyncStates",
+        name: "AsyncStates",
         file: `dist/umd/${libraryName}.development.js`,
-        globals: {
-          react: 'React',
-          'react/jsx-runtime': 'jsxRuntime',
-          'async-states': 'AsyncStates',
-        }
       },
     ],
-    external: ['react', 'react/jsx-runtime', 'async-states'],
     treeshake: {
       moduleSideEffects: false,
     },
@@ -97,16 +85,10 @@ const umdBuild = [
       {
         format: "umd",
         sourcemap: false,
-        name: "ReactAsyncStates",
+        name: "AsyncStates",
         file: `dist/umd/${libraryName}.production.js`,
-        globals: {
-          react: 'React',
-          'react/jsx-runtime': 'jsxRuntime',
-          'async-states': 'AsyncStates',
-        }
       },
     ],
-    external: ['react', 'react/jsx-runtime', 'async-states'],
     treeshake: {
       moduleSideEffects: false,
     },
@@ -167,15 +149,9 @@ const declarationsBuild = {
       dir: "dist/es",
       sourcemap: false,
       preserveModules: true,
-      name: "ReactAsyncStates",
-      globals: {
-        react: 'React',
-        'react/jsx-runtime': 'jsxRuntime',
-        'async-states': 'AsyncStates',
-      }
+      name: "AsyncStates",
     },
   ],
-  external: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'async-states'],
   plugins: [
     typescript({
       tsconfigOverride: {

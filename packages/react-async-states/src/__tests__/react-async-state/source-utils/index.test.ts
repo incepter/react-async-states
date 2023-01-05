@@ -1,4 +1,4 @@
-import {createSource} from "@core";
+import {createSource} from "async-states";
 
 describe('source utils', () => {
 
