@@ -14,6 +14,9 @@ export {AsyncStateProvider} from "./Provider";
 
 export {
   AsyncState as unstable_AsyncState,
+  StateBuilder as unstable_StateBuilder,
+  standaloneProducerEffectsCreator as unstable_defaultEffectsCreator,
+  producerWrapper as unstable_producerWrapper,
   createSource, Status, RunEffect, ProducerType, AsyncStateManager
 } from "@core";
 
@@ -65,6 +68,7 @@ export type {
   StateInterface,
   OnCacheLoadProps,
   StateFunctionUpdater,
+  ProducerWrapperInput,
   StateBuilderInterface,
 } from "@core";
 

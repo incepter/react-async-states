@@ -16,5 +16,6 @@ export type {
   StateBoundaryRenderProp
 } from "./StateBoundary";
 
+export {runc} from "./runc";
 export {addBooleanStatus} from "./selectors";
 export type {StateWithBooleanStatus} from "./selectors";

@@ -208,7 +208,7 @@ importers:
       jest: ^29.3.1
       jest-environment-jsdom: ^29.3.1
       react: ^16.8.0 || ^17.0.2 || ^18.0.0
-      react-async-states: '>=1.0.0-rc-11'
+      react-async-states: ^1.0.0-rc-18
       react-test-renderer: 18.2.0
       rimraf: ^3.0.2
       rollup: ^3.3.0

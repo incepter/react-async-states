@@ -15,6 +15,11 @@ export function defaultHash(args?: any[], payload?: {[id: string]: any} | null):
   return JSON.stringify({args, payload});
 }
 
+//region useAsyncState value construction
+export function noop(): void {
+  // that's a noop fn
+}
+
 export function didNotExpire<T, E, R>(cachedState: CachedState<T, E, R>) {
   const {addedAt, deadline} = cachedState;
 
