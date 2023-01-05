@@ -286,7 +286,6 @@ importers:
       ttypescript: ^1.5.15
     dependencies:
       react: 18.2.0
-      react-async-states: link:../react-async-states
     devDependencies:
       '@babel/plugin-proposal-class-properties': 7.18.6_@babel+core@7.20.5
       '@babel/preset-env': 7.20.2_@babel+core@7.20.5
@@ -315,6 +314,7 @@ importers:
       eslint-plugin-react: 7.31.11_eslint@8.29.0
       jest: 29.3.1_44rj7wggyet6z6jbc7gz35fedq
       jest-environment-jsdom: 29.3.1
+      react-async-states: link:../react-async-states
       react-test-renderer: 18.2.0_react@18.2.0
       rimraf: 3.0.2
       rollup: 3.7.4
