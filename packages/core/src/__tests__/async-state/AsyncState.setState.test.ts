@@ -1,6 +1,6 @@
-import { AsyncState, Status, StateBuilder } from "async-states";
+import { AsyncState, Status, StateBuilder } from "../..";
 import { timeout } from "./test-utils";
-import { mockDateNow, TESTS_TS } from "../react-async-state/utils/setup";
+import { mockDateNow, TESTS_TS } from "../utils/setup";
 
 // @ts-ignore
 jest.useFakeTimers("modern");

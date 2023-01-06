@@ -45,7 +45,7 @@ describe('should run producer', () => {
 
   it('should run with payload after calling mergePayload', async () => {
     // given
-    const counterSource = createSource("counter", props => props.payload.userId);
+    const counterSource = createSource("counter-2", props => props.payload.userId);
 
 
     function Component({ run }) {

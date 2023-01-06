@@ -9,7 +9,7 @@ describe('useSelector', () => {
   it('should do basic selection', () => {
     // given
 
-    const dataSource = createSource("data", null, {initialValue: "hello!"});
+    const dataSource = createSource("data", null, {initialValue: "hello!", resetStateOnDispose: true});
 
     function Component() {
       const data = useSelector("data", d => d!.data);
@@ -88,8 +88,8 @@ describe('useSelector', () => {
       return props.args[0];
     }
 
-    const dataSource = createSource("data", producer, {initialValue: "hello!"});
-    const dataSource2 = createSource("data2", null, {initialValue: "hello!!"});
+    const dataSource = createSource("data", producer, {initialValue: "hello!", resetStateOnDispose: true});
+    const dataSource2 = createSource("data2", null, {initialValue: "hello!!", resetStateOnDispose: true});
 
     function Component() {
       const data = useSelector(

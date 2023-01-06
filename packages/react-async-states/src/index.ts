@@ -17,7 +17,8 @@ export {
   StateBuilder as unstable_StateBuilder,
   standaloneProducerEffectsCreator as unstable_defaultEffectsCreator,
   producerWrapper as unstable_producerWrapper,
-  createSource, Status, RunEffect, ProducerType, AsyncStateManager
+  createSource, Status, RunEffect, ProducerType, AsyncStateManager,
+  enableDiscovery
 } from "async-states";
 
 export type {

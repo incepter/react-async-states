@@ -21,8 +21,8 @@ const devBuild = {
     include: 'src/**',
   },
   plugins: [
-    babel({babelHelpers: 'bundled'}),
     json(),
+    babel({babelHelpers: 'bundled'}),
     resolve(),
     commonjs(),
     typescript({
@@ -55,6 +55,7 @@ const declarationsBuild = {
     include: 'src/**',
   },
   plugins: [
+    json(),
     typescript({
       tsconfigOverride: {
         compilerOptions: {

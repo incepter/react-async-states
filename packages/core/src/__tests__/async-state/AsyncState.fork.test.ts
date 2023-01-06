@@ -1,7 +1,6 @@
-import {AsyncState, standaloneProducerEffectsCreator, Status} from "async-states";
-import {act} from "@testing-library/react-hooks";
+import {AsyncState, standaloneProducerEffectsCreator, Status} from "../..";
 import {timeout} from "./test-utils";
-import {mockDateNow, TESTS_TS} from "../react-async-state/utils/setup";
+import {mockDateNow, TESTS_TS} from "../utils/setup";
 
 // @ts-ignore
 jest.useFakeTimers("modern");
@@ -9,7 +8,7 @@ mockDateNow();
 describe('AsyncState - fork', () => {
   it('should simulate async state and check fork count', () => {
     // given
-    let key = "simulated";
+    let key = "simulated-1";
     let producer = timeout(100, [{id: 1, description: "value"}]);
     let myConfig = {initialValue: null};
 
@@ -39,7 +38,7 @@ describe('AsyncState - fork', () => {
   });
   it('should fork and keep state after run', async () => {
     // given
-    let key = "simulated";
+    let key = "simulated-2";
     let producer = timeout(100, [{id: 1, description: "value"}]);
     let myConfig = {};
 
@@ -47,9 +46,7 @@ describe('AsyncState - fork', () => {
     let myAsyncState = new AsyncState(key, producer, myConfig);
     myAsyncState.run(standaloneProducerEffectsCreator);
 
-    await act(async () => {
-      await jest.advanceTimersByTime(100);
-    });
+    await jest.advanceTimersByTime(100);
 
     expect(myAsyncState.state.status).toBe(Status.success); // make sure it resolved
 
@@ -63,7 +60,7 @@ describe('AsyncState - fork', () => {
   });
   it('should fork and keep state before run', async () => {
     // given
-    let key = "simulated";
+    let key = "simulated-3";
     let producer = timeout(100, [{id: 1, description: "value"}]);
     let myConfig = {};
 
@@ -74,9 +71,7 @@ describe('AsyncState - fork', () => {
 
     forkedAsyncState.run(() => {});
 
-    await act(async () => {
-      await jest.advanceTimersByTime(100);
-    });
+    await jest.advanceTimersByTime(100);
 
     expect(forkedAsyncState.state.status).toBe(Status.success); // make sure it resolved
 

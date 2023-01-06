@@ -1,11 +1,10 @@
-import {act} from "@testing-library/react-hooks";
 import {
   AsyncState,
   standaloneProducerEffectsCreator,
   Status
-} from "async-states";
+} from "../..";
 import {timeout} from "./test-utils";
-import {mockDateNow, TESTS_TS} from "../react-async-state/utils/setup";
+import {mockDateNow, TESTS_TS} from "../utils/setup";
 
 // @ts-ignore
 jest.useFakeTimers("modern");
@@ -14,7 +13,7 @@ mockDateNow();
 describe('AsyncState - subscriptions', () => {
   it('should subscribe to async-state and get notified', async () => {
     // given
-    let myConfig = {initialValue: null};
+    let myConfig = {initialValue: null, resetStateOnDispose: true};
     let key = "simulated";
     let subscriptionFn = jest.fn();
     let producer = timeout(50, "Some Value");
@@ -29,9 +28,7 @@ describe('AsyncState - subscriptions', () => {
     expect(typeof unsubscribe).toBe("function");
 
     myAsyncState.run(standaloneProducerEffectsCreator);
-    await act(async () => {
-      await jest.advanceTimersByTime(50);
-    });
+    await jest.advanceTimersByTime(50);
 
     expect(subscriptionFn.mock.calls).toEqual(
       [
@@ -80,7 +77,7 @@ describe('AsyncState - subscriptions', () => {
   });
   it('should subscribe to async-state and unsubscribe before success and dispose when no subscribers', async () => {
     // given
-    let key = "simulated";
+    let key = "simulated-2";
     let subscriptionFn = jest.fn();
     let myConfig = {initialValue: null, resetStateOnDispose: true};
     let producer = timeout(50, "Some Value");
@@ -92,13 +89,9 @@ describe('AsyncState - subscriptions', () => {
     // then
 
     myAsyncState.run(standaloneProducerEffectsCreator);
-    await act(async () => {
-      await jest.advanceTimersByTime(49);
-    });
+    await jest.advanceTimersByTime(49);
     unsubscribe!(); // unsubscribe one milli before resolve; we should only receive the pending notification
-    await act(async () => {
-      await jest.advanceTimersByTime(5);
-    });
+    await jest.advanceTimersByTime(5);
 
     expect(subscriptionFn.mock.calls).toEqual(
       [
@@ -124,7 +117,7 @@ describe('AsyncState - subscriptions', () => {
   });
   it('should subscribe to async-state and unsubscribe before running', async () => {
     // given
-    let key = "simulated";
+    let key = "simulated-3";
     let subscriptionFn = jest.fn();
     let myConfig = {initialValue: null};
     let producer = timeout(50, "Some Value");
@@ -137,9 +130,7 @@ describe('AsyncState - subscriptions', () => {
     // then
 
     myAsyncState.run(standaloneProducerEffectsCreator);
-    await act(async () => {
-      await jest.advanceTimersByTime(50);
-    });
+    await jest.advanceTimersByTime(50);
 
     expect(subscriptionFn.mock.calls).toEqual([]);
     expect(subscriptionFn).toHaveBeenCalledTimes(0);

@@ -22,7 +22,7 @@ describe('should runp another producer from producer', () => {
     const source2Producer: Producer<number> = jest.fn().mockImplementation((props: ProducerProps<number>) => {
       return props.runp(source1, null, 1)?.then(t => t.data);
     });
-    const source2 = createSource("source1", source2Producer);
+    const source2 = createSource("source2", source2Producer);
 
     function Test() {
 
@@ -68,12 +68,12 @@ describe('should runp another producer from producer', () => {
   it('should runp producer by source inside provider', async () => {
     // given
     const source1Producer = jest.fn().mockImplementation(props => props.args[0]);
-    const source1 = createSource("source1", source1Producer);
+    const source1 = createSource("source11", source1Producer);
 
     const source2Producer: Producer<number> = jest.fn().mockImplementation((props: ProducerProps<number>) => {
       return props.runp(source1, null, 2)?.then(t => t.data);
     });
-    const source2 = createSource("source1", source2Producer);
+    const source2 = createSource("source12", source2Producer);
 
     function Test() {
 
@@ -126,18 +126,18 @@ describe('should runp another producer from producer', () => {
     }
 
     const source1Producer = jest.fn().mockImplementation(async (props: ProducerProps<TestType>) => {
-      const source2Data = (await props.runp("source2", null, 3))?.data;
+      const source2Data = (await props.runp("secondSrc", null, 3))?.data;
       const doesntExistData = (await props.runp("doesntExist", null, 3))?.data;
       return {source2Data, doesntExistData};
     });
-    const source1 = createSource("source1", source1Producer) as Source<TestType>;
+    const source1 = createSource("firstSrc", source1Producer) as Source<TestType>;
 
     function Test() {
 
 
       return (
         <AsyncStateProvider initialStates={[source1, {
-          key: "source2",
+          key: "secondSrc",
           producer: source2Producer,
           config: {}
         }]}>
@@ -151,11 +151,14 @@ describe('should runp another producer from producer', () => {
     }
 
     // when
+    let prevConsoleError = console.error;
+    console.error = () => {};
     render(
       <React.StrictMode>
         <Test/>
       </React.StrictMode>
-    )
+    );
+    console.error = prevConsoleError;
 
     await act(async () => {
       await flushPromises();

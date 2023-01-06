@@ -44,9 +44,9 @@ describe('should select from another async state', () => {
   });
   it('should select by key', () => {
     // given
-    const counterSource = createSource("counter", null, {initialValue: 15});
-    const loggerSource: Source<string> = createSource("logger", props => {
-      const state = props.select("counter") as State<number>;
+    const counterSource = createSource("counter-2", null, {initialValue: 15});
+    const loggerSource: Source<string> = createSource("logger-2", props => {
+      const state = props.select("counter-2") as State<number>;
       if (!state?.data) {
         return "does not exist.";
       }

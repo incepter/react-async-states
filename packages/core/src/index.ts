@@ -12,6 +12,8 @@ export {
   readSource,
   producerWrapper,
   cloneProducerProps,
+  enableDiscovery,
+  setDefaultPool,
 } from "./AsyncState";
 
 export type {
@@ -45,6 +47,9 @@ export type {
   StateFunctionUpdater,
   AsyncStateKeyOrSource,
   StateBuilderInterface,
+
+  PoolInterface,
+
 } from "./AsyncState";
 
 export {
@@ -75,4 +80,5 @@ export {
   DevtoolsEvent, DevtoolsRequest, DevtoolsJournalEvent
 } from "./devtools/index";
 
+export {version} from "../package.json";
 export {default as devtools} from "./devtools/Devtools"

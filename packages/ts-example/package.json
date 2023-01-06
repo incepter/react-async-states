@@ -14,10 +14,11 @@
 		"antd": "4.24.1",
 		"axios": "1.1.3",
 		"react": "18.2.0",
+		"async-states": "workspace:^1.0.0-pre-1",
+		"react-async-states": "workspace:^1.0.0-pre-1",
+		"react-async-states-utils": "workspace:^1.0.0-pre-1",
 		"react-dom": "18.2.0",
 		"react-router-dom": "6.4.3",
-		"react-async-states": "workspace:*",
-		"react-async-states-utils": "workspace:*",
 		"ts-node": "10.9.1"
 	},
 	"devDependencies": {
@@ -25,8 +26,8 @@
 		"@types/react-dom": "18.0.8",
 		"@typescript-eslint/eslint-plugin": "5.0.0",
 		"@vitejs/plugin-react": "2.2.0",
-		"autoprefixer": "10.4.13",
 		"async-states-devtools": "workspace:*",
+		"autoprefixer": "10.4.13",
 		"eslint": "8.0.1",
 		"eslint-config-prettier": "8.5.0",
 		"eslint-config-standard-with-typescript": "23.0.0",

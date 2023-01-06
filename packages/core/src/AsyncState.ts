@@ -1,3 +1,4 @@
+import {version} from "../package.json";
 import {
   __DEV__,
   isFunction,
@@ -15,13 +16,6 @@ import {
 import devtools from "./devtools/Devtools";
 import {hideStateInstanceInNewObject} from "./hide-object";
 import {nextKey} from "./key-gen";
-import {
-  getOrCreatePool,
-  PoolInterface,
-  poolInUse,
-  Sources,
-  warnAboutAlreadyExistingSourceWithSameKey
-} from "./pool";
 
 export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   //region properties
@@ -126,6 +120,8 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     if (__DEV__) {
       devtools.emitCreation(this);
     }
+
+    poolToUse.instances.set(key, this);
   }
 
   private bindMethods() {
@@ -637,6 +633,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
     this.willUpdate = false;
     invokeInstanceEvents(this, "dispose");
+    this.ownPool.instances.delete(this.key);
     return true;
   }
 
@@ -982,9 +979,10 @@ function constructPropsObject<T, E, R>(
 export function createSource<T, E = any, R = any>(
   key: string,
   producer?: Producer<T, E, R> | undefined | null,
-  config?: ProducerConfig<T, E, R>
+  config?: ProducerConfig<T, E, R>,
+  pool?: string,
 ): Source<T, E, R> {
-  return Sources.for(key, producer, config);
+  return new AsyncState(key, producer, config, pool)._source;
 }
 
 const defaultForkConfig: ForkConfig = Object.freeze({keepState: false});
@@ -1877,5 +1875,125 @@ export type ProducerRunConfig = {
 
 export type PendingTimeout = { id: ReturnType<typeof setTimeout>, startDate: number };
 export type PendingUpdate = { timeoutId: ReturnType<typeof setTimeout>, callback(): void };
+
+//endregion
+
+
+//region Pool Definition
+
+let ownLibraryPools = {} as AsyncStatePools;
+let LIBRARY_POOLS_PROPERTY = "__ASYNC_STATES_POOLS__";
+let globalContext = window || globalThis || null;
+let ownPool: PoolInterface = createPool(getPoolName("default"));
+let didWarnAboutExistingInstanceRecreation = false;
+
+let poolInUse: PoolInterface = ownPool;
+ownLibraryPools[ownPool.name] = ownPool;
+
+type AsyncStatePools = Record<string, PoolInterface>;
+
+export interface PoolInterface {
+  name: string,
+  version: string,
+
+  mergePayload(payload: Record<string, any>): void,
+
+  instances: Map<string, StateInterface<any>>,
+}
+
+function getLibraryPools(): AsyncStatePools {
+  return ownLibraryPools;
+}
+
+
+export function createPool(name: string): PoolInterface {
+  let instances = new Map<string, StateInterface<any>>();
+  return {
+    name,
+    version,
+    instances,
+    mergePayload(payload: Record<string, any>) {
+      instances.forEach(instance => instance.mergePayload(payload))
+    }
+  };
+}
+
+function getPoolName(name: string) {
+  return `ASYNC-STATES-${name}-POOL`;
+}
+
+export function enableDiscovery(name?: string) {
+  if (!globalContext) {
+    return;
+  }
+
+  let libraryPools = getLibraryPools();
+  let poolName = getPoolName(name || "default");
+  let maybePool = libraryPools[poolName];
+
+  if (!maybePool) {
+    if (__DEV__) {
+      console.error(`enableDiscovery called on a non existent pool ${name}`);
+    }
+    return;
+  }
+
+  globalContext[`${LIBRARY_POOLS_PROPERTY}_${poolName}`] = maybePool;
+}
+
+let didSetDefaultPool;
+if (__DEV__) {
+  didSetDefaultPool = false;
+}
+export function setDefaultPool(name: string): Promise<void> {
+  if (!name) {
+    throw new Error("name is required");
+  }
+  return new Promise((resolve, reject) => {
+    if (!globalContext) {
+      reject();
+    }
+    let poolSharedName = `${LIBRARY_POOLS_PROPERTY}_${getPoolName(name)}`;
+    let maybePool = globalContext[poolSharedName] as PoolInterface;
+    if (!maybePool) {
+      reject(`No shared pool with name ${name}`);
+    }
+    poolInUse = maybePool;
+    didSetDefaultPool = true;
+    if (didSetDefaultPool) {
+      throw new Error("setDefaultPool can only be called once for now")
+    }
+    resolve();
+  });
+}
+
+function getOrCreatePool(name?: string): PoolInterface {
+  if (!name) {
+    return poolInUse;
+  }
+
+  let poolName = getPoolName(name);
+  let libraryPools = getLibraryPools();
+  let candidate = libraryPools[poolName];
+
+  if (!candidate) {
+    let newPool = createPool(poolName);
+    libraryPools[newPool.name] = newPool;
+    return newPool;
+  }
+
+  return candidate;
+}
+
+function warnAboutAlreadyExistingSourceWithSameKey(key) {
+  if (!didWarnAboutExistingInstanceRecreation) {
+    console.error(`
+    [WARNING] - A previous instance with key ${key} exists,
+    calling 'createSource' with the same key will result in 
+    patching the producer and the config.
+    `);
+    didWarnAboutExistingInstanceRecreation = true;
+  }
+}
 
 //endregion

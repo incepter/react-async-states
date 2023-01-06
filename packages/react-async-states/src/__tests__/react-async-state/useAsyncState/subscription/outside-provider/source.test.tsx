@@ -9,7 +9,7 @@ describe('should subscribe to a module level source object', () => {
   it('should share state by source between two components', () => {
     // given
     const source = createSource<number>(
-      "counter",
+      "counter-2",
       null,
       {initialValue: 0}
     );
