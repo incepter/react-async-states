@@ -12,7 +12,7 @@ import {version} from "../../package.json";
 let globalContext = window || globalThis || this || null;
 
 let ownPool: PoolInterface = createPool("default");
-let poolInUse: PoolInterface  = ownPool;
+export let poolInUse: PoolInterface  = ownPool;
 
 let didWarnAboutExistingInstanceRecreation = false;
 
@@ -110,11 +110,7 @@ export let Sources: SourcesInterface = Object.freeze(function create() {
     let candidate = poolInUse.instances.get(key);
     if (candidate) {
       if (__DEV__) {
-        if (!didWarnAboutExistingInstanceRecreation) {
-          console.error(`[WARNING] - A previous instance with key ${key} exists,
-           calling 'createSource' with the same key will result in patching
-           the producer and the config.`);
-        }
+        warnAboutAlreadyExistingSourceWithSameKey(key);
       }
 
       let instance = candidate as StateInterface<T, E, R>;
@@ -134,3 +130,11 @@ export let Sources: SourcesInterface = Object.freeze(function create() {
 
   return output;
 })();
+
+export function warnAboutAlreadyExistingSourceWithSameKey(key) {
+  if (!didWarnAboutExistingInstanceRecreation) {
+    console.error(`[WARNING] - A previous instance with key ${key} exists,
+           calling 'createSource' with the same key will result in patching
+           the producer and the config.`);
+  }
+}

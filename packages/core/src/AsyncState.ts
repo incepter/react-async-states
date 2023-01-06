@@ -15,7 +15,13 @@ import {
 import devtools from "./devtools/Devtools";
 import {hideStateInstanceInNewObject} from "./hide-object";
 import {nextKey} from "./key-gen";
-import {Sources} from "./pool";
+import {
+  getOrCreatePool,
+  PoolInterface,
+  poolInUse,
+  Sources,
+  warnAboutAlreadyExistingSourceWithSameKey
+} from "./pool";
 
 export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   //region properties
@@ -52,6 +58,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   isEmitting?: boolean;
 
   readonly producer: ProducerFunction<T, E, R>;
+  private readonly ownPool: PoolInterface;
 
 
   //endregion
@@ -63,8 +70,25 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     poolName?: string,
   ) {
 
+    let poolToUse: PoolInterface = poolInUse;
+    if (poolName) {
+      poolToUse = getOrCreatePool(poolName);
+    }
+
+    let maybeInstance = poolToUse.instances.get(key);
+    if (maybeInstance) {
+      if (__DEV__) {
+        warnAboutAlreadyExistingSourceWithSameKey(key);
+      }
+
+      let instance = maybeInstance as AsyncState<T, E, R>;
+      instance.replaceProducer(producer || undefined);
+      instance.patchConfig(config);
+      return instance;
+    }
 
     this.key = key;
+    this.ownPool = poolToUse;
     this.uniqueId = nextUniqueId();
     this.config = shallowClone(config);
     this.originalProducer = producer ?? undefined;
@@ -628,7 +652,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       key = `${this.key}-fork-${this.forksIndex + 1}`;
     }
 
-    const clone = new AsyncState(key, this.originalProducer, this.config);
+    const clone = new AsyncState(key, this.originalProducer, this.config, this.ownPool.name);
 
     // if something fail, no need to increment
     this.forksIndex += 1;
