@@ -131,22 +131,19 @@ describe('should runp another producer from producer', () => {
       return {source2Data, doesntExistData};
     });
     const source1 = createSource("firstSrc", source1Producer) as Source<TestType>;
+    const source2 = createSource("secondSrc", source2Producer) as Source<TestType>;
 
     function Test() {
 
 
       return (
-        <AsyncStateProvider initialStates={[source1, {
-          key: "secondSrc",
-          producer: source2Producer,
-          config: {}
-        }]}>
+        <>
           <AsyncStateComponent config={{source: source1, lazy: false}}>
             {({state}) => (
               <span data-testid="result">{JSON.stringify(state)}</span>
             )}
           </AsyncStateComponent>
-        </AsyncStateProvider>
+        </>
       );
     }
 

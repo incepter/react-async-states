@@ -20,7 +20,6 @@ describe('should useSource', () => {
         devFlags,
         state,
       } = useSource(source);
-
       return (
         <div>
           <span data-testid="mode">{JSON.stringify(devFlags)}</span>
@@ -37,9 +36,9 @@ describe('should useSource', () => {
     )
 
     // then
-    expect(screen.getByTestId("result").innerHTML).toEqual("8");
     expect(screen.getByTestId("mode").innerHTML)
       .toEqual("[\"CONFIG_SOURCE\",\"SOURCE\"]");
+    expect(screen.getByTestId("result").innerHTML).toEqual("8");
 
     act(() => {
       source.setState(5);

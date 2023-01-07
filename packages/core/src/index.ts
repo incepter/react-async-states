@@ -48,6 +48,7 @@ export type {
   StateFunctionUpdater,
   AsyncStateKeyOrSource,
   StateBuilderInterface,
+  LastSuccessSavedState,
 
   PoolInterface,
 

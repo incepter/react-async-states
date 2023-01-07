@@ -16,6 +16,7 @@ import {
 import devtools from "./devtools/Devtools";
 import {hideStateInstanceInNewObject} from "./hide-object";
 import {nextKey} from "./key-gen";
+import {watch} from "rollup";
 
 export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   //region properties
@@ -121,7 +122,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       devtools.emitCreation(this);
     }
 
-    poolToUse.instances.set(key, this);
+    poolToUse.set(key, this);
   }
 
   private bindMethods() {
@@ -1240,11 +1241,7 @@ export function standaloneProducerRunEffectFunction<T, E, R>(
   ...args: any[]
 ) {
   if (isSource(input)) {
-    let instance = readSource(input as Source<T, E, R>)
-      .getLane(config?.lane);
-
-    return instance.run(standaloneProducerEffectsCreator, ...args);
-
+    return (input as Source<T, E, R>).getLaneSource(config?.lane).run(...args);
   } else if (isFunction(input)) {
     let instance = new AsyncState(
       nextKey(), input as Producer<T, E, R>, {hideFromDevtools: true});
@@ -1252,6 +1249,12 @@ export function standaloneProducerRunEffectFunction<T, E, R>(
       instance.mergePayload(config.payload)
     }
     return instance.run(standaloneProducerEffectsCreator, ...args);
+  } else if (typeof input === "string") {
+    let instance = getOrCreatePool().instances.get(input);
+
+    if (instance) {
+      return instance.getLane(config?.lane).run(standaloneProducerEffectsCreator, ...args);
+    }
   }
   return undefined;
 }
@@ -1275,9 +1278,13 @@ export function standaloneProducerRunpEffectFunction<T, E, R>(
     }
     return runWhileSubscribingToNextResolve(instance, props, args);
 
-  } else {
-    return undefined;
+  } else if (typeof input === "string") {
+    let instance = getOrCreatePool().instances.get(input);
+    if (instance) {
+      return runWhileSubscribingToNextResolve(instance.getLane(config?.lane), props, args);
+    }
   }
+  return undefined;
 }
 
 export function runWhileSubscribingToNextResolve<T, E, R>(
@@ -1310,6 +1317,12 @@ export function standaloneProducerSelectEffectFunction<T, E, R>(
 ) {
   if (isSource(input)) {
     return (input as Source<T, E, R>).getLaneSource(lane).getState()
+  } else if (typeof input === "string") {
+    let pool = getOrCreatePool();
+    let instance = pool.instances.get(input);
+    if (instance) {
+      return instance.getState();
+    }
   }
 }
 
@@ -1885,7 +1898,7 @@ export type PendingUpdate = { timeoutId: ReturnType<typeof setTimeout>, callback
 let ownLibraryPools = {} as AsyncStatePools;
 let LIBRARY_POOLS_PROPERTY = "__ASYNC_STATES_POOLS__";
 let globalContext = window || globalThis || null;
-let ownPool: PoolInterface = createPool(getPoolName("default"));
+let ownPool: PoolInterface = createPool("default");
 let didWarnAboutExistingInstanceRecreation = false;
 
 let poolInUse: PoolInterface = ownPool;
@@ -1893,30 +1906,121 @@ ownLibraryPools[ownPool.name] = ownPool;
 
 type AsyncStatePools = Record<string, PoolInterface>;
 
+export type WatchCallback<T, E = any, R = any> = (
+  value: StateInterface<T, E, R> | null, key: string) => void;
+
 export interface PoolInterface {
   name: string,
+  simpleName: string,
   version: string,
 
   mergePayload(payload: Record<string, any>): void,
 
   instances: Map<string, StateInterface<any>>,
+
+  watch<T, E, R>(key: string, value: WatchCallback<T, E, R>): AbortFn,
+
+  listen(cb: WatchCallback<any>): AbortFn,
+
+  set(key: string, instance: StateInterface<any>),
 }
 
 function getLibraryPools(): AsyncStatePools {
   return ownLibraryPools;
 }
 
-
 export function createPool(name: string): PoolInterface {
+  let meter = 0;
+  let watchers = {};
+  let listeners = {};
   let instances = new Map<string, StateInterface<any>>();
   return {
-    name,
     version,
     instances,
-    mergePayload(payload: Record<string, any>) {
-      instances.forEach(instance => instance.mergePayload(payload))
-    }
+    simpleName: name,
+    name: getPoolName(name),
+
+    set,
+    watch,
+    listen,
+    mergePayload,
   };
+
+  function set(key: string, instance: StateInterface<any>) {
+    if (!key) {
+      return;
+    }
+    instances.set(key, instance);
+    notifyWatchers(key, instance);
+  }
+
+  function mergePayload(payload: Record<string, any>) {
+    instances.forEach(instance => instance.mergePayload(payload))
+  }
+
+  function listen<T, E, R>(notify: WatchCallback<T, E, R>): AbortFn {
+    let didClean = false;
+    let index = ++meter;
+
+    function cb(argv: StateInterface<T, E, R> | null, notifKey: string) {
+      if (!didClean) {
+        notify(argv, notifKey);
+      }
+    }
+
+    function cleanup() {
+      didClean = true;
+      delete listeners[index];
+    }
+
+    listeners[index] = {cb, cleanup};
+    return cleanup;
+  }
+
+
+  function watch<T, E, R>(
+    key: string, notify: WatchCallback<T, E, R>): AbortFn {
+    if (!watchers[key]) {
+      watchers[key] = {};
+    }
+    let didClean = false;
+    let index = ++meter;
+
+    function cb(argv: StateInterface<T, E, R> | null, notifKey: string) {
+      if (!didClean) {
+        notify(argv, notifKey);
+      }
+    }
+
+    function cleanup() {
+      didClean = true;
+      delete watchers[key][index];
+    }
+
+    watchers[key][index] = {cb, cleanup};
+
+
+    return cleanup;
+  }
+
+
+  function notifyWatchers<T, E, R>(
+    key: string, value: StateInterface<T, E, R> | null): void {
+    Promise.resolve().then(function notify() {
+      let callbacks: {
+        cleanup: AbortFn,
+        cb: WatchCallback<any>
+      }[] = Object.values(listeners);
+
+      if (watchers[key]) {
+        callbacks = Object.values(watchers[key]);
+      }
+
+      callbacks.forEach(function notifyWatcher(watcher) {
+        watcher.cb(value, key);
+      });
+    });
+  }
 }
 
 function getPoolName(name: string) {
@@ -1946,6 +2050,7 @@ let didSetDefaultPool;
 if (__DEV__) {
   didSetDefaultPool = false;
 }
+
 export function setDefaultPool(name: string): Promise<void> {
   if (!name) {
     throw new Error("name is required");
@@ -1978,7 +2083,7 @@ export function getOrCreatePool(name?: string): PoolInterface {
   let candidate = libraryPools[poolName];
 
   if (!candidate) {
-    let newPool = createPool(poolName);
+    let newPool = createPool(name);
     libraryPools[newPool.name] = newPool;
     return newPool;
   }

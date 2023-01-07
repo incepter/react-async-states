@@ -2,8 +2,8 @@ import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {mockDateNow} from "../../utils/setup";
 import {useAsyncState} from "../../../../useAsyncState";
-import {AsyncStateProvider} from "../../../../Provider";
 import {createSource} from "async-states";
+import {flushPromises} from "../../utils/test-utils";
 
 mockDateNow();
 
@@ -39,7 +39,7 @@ describe('subscribe to lane and operate on it', () => {
   function LanesIntervalDemo() {
     return (
       <div>
-        <Runner />
+        <Runner/>
         <CounterSub/>
 
         <CounterSub alias="2" counterKey="counter-2"/>
@@ -79,9 +79,7 @@ describe('subscribe to lane and operate on it', () => {
     // when
     render(
       <React.StrictMode>
-        <AsyncStateProvider initialStates={[countersSource]}>
-          <LanesIntervalDemo/>
-        </AsyncStateProvider>
+        <LanesIntervalDemo/>
       </React.StrictMode>
     )
 
@@ -159,6 +157,7 @@ describe('subscribe to lane and operate on it', () => {
 
     await act(async () => {
       await jest.advanceTimersByTime(1000);
+      await flushPromises();
     });
 
     // counter-{counterKey}-{alias}-{data}

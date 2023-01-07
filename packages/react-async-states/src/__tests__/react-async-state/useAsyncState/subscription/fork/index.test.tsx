@@ -4,20 +4,19 @@ import {
   UseAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../useAsyncState";
-import {AsyncStateProvider} from "../../../../../Provider";
 import {createSource, ForkConfig} from "async-states";
 
 describe('should fork an initially hoisted async state', () => {
   it('should fork and update both states ', async () => {
     // given
-    const counterSource = createSource("counter", null, {initialValue: 0});
+    createSource("counter", null, {initialValue: 0});
 
     function Test() {
       return (
-        <AsyncStateProvider initialStates={[counterSource]}>
+        <>
           <Component subKey="counter"/>
           <Component forkConfig={{key: "counter-fork"}} subKey="counter" fork/>
-        </AsyncStateProvider>
+        </>
       );
     }
 
@@ -57,9 +56,9 @@ describe('should fork an initially hoisted async state', () => {
 
     // then
     expect(screen.getByTestId("mode-counter").innerHTML)
-      .toEqual("[\"CONFIG_OBJECT\",\"INSIDE_PROVIDER\"]");
+      .toEqual("[\"CONFIG_OBJECT\"]");
     expect(screen.getByTestId("mode-counter-fork").innerHTML)
-      .toEqual("[\"CONFIG_OBJECT\",\"FORK\",\"INSIDE_PROVIDER\"]");
+      .toEqual("[\"CONFIG_OBJECT\",\"FORK\"]");
 
     expect(screen.getByTestId("result-counter").innerHTML).toEqual("0");
     expect(screen.getByTestId("result-counter-fork").innerHTML).toEqual("0");

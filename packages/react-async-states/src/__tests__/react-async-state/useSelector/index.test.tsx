@@ -2,14 +2,17 @@ import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {AsyncStateProvider} from "../../../Provider";
 import {useSelector} from "../../../useSelector";
-import {useRun} from "../../../useRun";
+import {useRun} from "../../..";
 import {createSource} from "async-states";
 
 describe('useSelector', () => {
   it('should do basic selection', () => {
     // given
 
-    const dataSource = createSource("data", null, {initialValue: "hello!", resetStateOnDispose: true});
+    const dataSource = createSource("data", null, {
+      initialValue: "hello!",
+      resetStateOnDispose: true
+    });
 
     function Component() {
       const data = useSelector("data", d => d!.data);
@@ -18,9 +21,7 @@ describe('useSelector', () => {
 
     function Test() {
       return (
-        <AsyncStateProvider initialStates={[dataSource]}>
-          <Component/>
-        </AsyncStateProvider>
+        <Component/>
       );
     }
 
@@ -47,7 +48,7 @@ describe('useSelector', () => {
     };
     expect(() => render(
       <React.StrictMode>
-        <Component />
+        <Component/>
       </React.StrictMode>
     ))
       .not
@@ -74,7 +75,7 @@ describe('useSelector', () => {
     };
     expect(() => render(
       <React.StrictMode>
-        <Test />
+        <Test/>
       </React.StrictMode>
     ))
       .not
@@ -88,8 +89,14 @@ describe('useSelector', () => {
       return props.args[0];
     }
 
-    const dataSource = createSource("data", producer, {initialValue: "hello!", resetStateOnDispose: true});
-    const dataSource2 = createSource("data2", null, {initialValue: "hello!!", resetStateOnDispose: true});
+    const dataSource = createSource("data", producer, {
+      initialValue: "hello!",
+      resetStateOnDispose: true
+    });
+    const dataSource2 = createSource("data2", null, {
+      initialValue: "hello!!",
+      resetStateOnDispose: true
+    });
 
     function Component() {
       const data = useSelector(
@@ -97,7 +104,6 @@ describe('useSelector', () => {
         (data1, data2) => `${data1?.data}-${data2?.data}`
       );
       const run = useRun();
-
 
       return (
         <div>
@@ -110,16 +116,14 @@ describe('useSelector', () => {
 
     function Test() {
       return (
-        <AsyncStateProvider initialStates={[dataSource, dataSource2]}>
-          <Component/>
-        </AsyncStateProvider>
+        <Component/>
       );
     }
 
     // when
     render(
       <React.StrictMode>
-        <Test />
+        <Test/>
       </React.StrictMode>
     );
 
@@ -154,7 +158,7 @@ describe('useSelector', () => {
     // when
     render(
       <React.StrictMode>
-        <Test />
+        <Test/>
       </React.StrictMode>
     );
 

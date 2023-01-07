@@ -10,6 +10,7 @@ const devBuild = {
   globals: {
     react: 'React',
     'react/jsx-runtime': 'jsxRuntime',
+    'async-states': 'AsyncStates',
   },
   output: [
     {
@@ -71,6 +72,7 @@ const declarationsBuild = {
     include: 'src/**',
   },
   plugins: [
+    json(),
     typescript({
       tsconfigOverride: {
         compilerOptions: {

@@ -14,16 +14,18 @@ import {
 import {
   AbortFn,
   AsyncState,
+  getOrCreatePool,
   isSource,
   nextKey,
   PoolInterface,
   Producer,
+  ProducerConfig,
   readSource,
   Source,
   standaloneProducerEffectsCreator,
   State,
   StateInterface,
-  Status, ProducerConfig
+  Status
 } from "async-states";
 import {
   AUTO_RUN,
@@ -44,79 +46,8 @@ import {
 import {__DEV__, humanizeDevFlags, isFunction} from "./shared";
 
 
+let is = Object.is;
 let hasOwnProperty = Object.prototype.hasOwnProperty;
-export interface StateHook<T, E = any, R = any, S = any> {
-  current: S,
-  flags: number,
-  caller?: string,
-  name: string | undefined;
-  config: MixedConfig<T, E, R, S>,
-  origin: number | undefined;
-  version: number | undefined,
-  base: BaseUseAsyncState<T, E, R, S>,
-  subscribe: (
-    setGuard: React.Dispatch<React.SetStateAction<number>>,
-    onChange: () => void,
-  ) => AbortFn,
-
-  instance: StateInterface<T, E, R> | null,
-
-  update(
-    origin: number,
-    newConfig: MixedConfig<T, E, R, S>,
-    pool: PoolInterface,
-    overrides?: PartialUseAsyncStateConfiguration<T, E, R, S>,
-  ),
-}
-
-export class StateHookImpl<T, E, R, S> implements StateHook<T, E, R, S> {
-  current: S;
-  flags: number;
-  caller?: string;
-  name: string | undefined;
-  config: MixedConfig<T, E, R, S>;
-  origin: number | undefined;
-  version: number | undefined;
-  base: BaseUseAsyncState<T, E, R, S>;
-  instance: StateInterface<T, E, R> | null;
-
-  subscribe: (
-    setGuard: React.Dispatch<React.SetStateAction<number>>,
-    onChange: () => void,
-  ) => AbortFn
-
-  constructor() {
-    this.flags = NO_MODE;
-    // this.pool = ;
-  }
-
-  update(
-    origin: number,
-    newConfig: MixedConfig<T, E, R, S>,
-    pool: PoolInterface,
-    overrides?: PartialUseAsyncStateConfiguration<T, E, R, S>,
-  ) {
-    let nextFlags = resolveFlags(newConfig, pool, overrides);
-    let instance = resolveInstance(pool, nextFlags, newConfig, overrides);
-
-    if (!instance && !(nextFlags & WAIT)) {
-      throw new Error("Undefined instance with no WAIT mode. This is a bug.");
-    }
-
-    if (instance && (nextFlags & CONFIG_OBJECT && (newConfig as BaseConfig<T, E, R>).payload)) {
-      instance.mergePayload((newConfig as BaseConfig<T, E, R>).payload);
-    }
-
-    this.origin = origin;
-    this.flags = nextFlags;
-    this.config = newConfig;
-    this.instance = instance;
-    this.base = makeBaseReturn(this);
-    this.name = calculateSubscriptionKey(this);
-    this.subscribe = createSubscribeAndWatchFunction(this);
-  }
-}
-
 export function resolveFlags<T, E, R, S>(
   mixedConfig: MixedConfig<T, E, R, S>,
   pool: PoolInterface,
@@ -131,7 +62,7 @@ export function resolveFlags<T, E, R, S>(
     }
     case "string": {
       flags |= CONFIG_STRING | getConfigFlags(overrides);
-      if (!pool.instances.has(mixedConfig)) {
+      if (!pool.instances.has(mixedConfig) && overrides?.wait) {
         return flags | WAIT;
       }
       return flags;
@@ -147,7 +78,10 @@ export function resolveFlags<T, E, R, S>(
       } else {
         flags |= CONFIG_OBJECT | getConfigFlags(baseConfig) | getConfigFlags(overrides);
         if (baseConfig.key && !pool.instances.has(baseConfig.key)) {
-          return flags | WAIT;
+          let wait = baseConfig.wait || overrides?.wait;
+          if (wait) {
+            return flags | WAIT;
+          }
         }
         return flags;
       }
@@ -288,7 +222,7 @@ function resolveStandaloneInstance<T, E, R, S>(
   }
 
   let instance: StateInterface<T, E, R> = new AsyncState(
-                                  key, producer, producerConfig, pool.name);
+                                  key, producer, producerConfig, pool.simpleName);
 
   if (flags & LANE) {
     let lane = readLaneFromConfig(config, overrides);
@@ -462,94 +396,7 @@ function createReadInConcurrentMode<T, E, R, S>(
   return stateValue;
 }
 
-function createSubscribeAndWatchFunction<T, E, R, S>(
-): ((...args) => AbortFn) {
-  return function subscribeAndWatch(
-    setGuard: React.Dispatch<React.SetStateAction<number>>,
-    onChange: () => void,
-  ) {
-    let {flags, instance, config} = hook;
-
-    if (flags & WAIT) {
-      let key: string = flags & CONFIG_STRING
-        ? (config as string) : (config as BaseConfig<T, E, R>).key!;
-
-      throw new Error('Not implemented yet!')
-      // return hook.context!.watch(key, (maybeInstance) => {
-      //   if (maybeInstance !== instance) {
-      //     setGuard(old => old + 1);
-      //   }
-      // });
-    }
-
-    let didClean = false;
-    let cleanups: AbortFn[] = [() => didClean = true];
-
-    function watch(mayBeNewAsyncState) {
-      if (didClean) {
-        return;
-      }
-      if (mayBeNewAsyncState !== instance) {
-        setGuard(old => old + 1);
-      }
-    }
-
-    function onStateChange() {
-      let newSelectedState = readStateFromInstance(instance, flags, config);
-
-      if (flags & EQUALITY_CHECK) {
-        let areEqual = (config as PartialUseAsyncStateConfiguration<T, E, R, S>)
-          .areEqual!(newSelectedState, hook.current);
-
-        if (!areEqual) {
-          onChange();
-        }
-      } else {
-        onChange();
-      }
-
-      if (flags & CHANGE_EVENTS) {
-        invokeChangeEvents(instance!, (config as BaseConfig<T, E, R>).events);
-      }
-    }
-
-    // subscription
-
-    cleanups.push(instance!.subscribe({
-      key: hook.name,
-      flags: hook.flags,
-      cb: onStateChange,
-      origin: hook.origin,
-    }));
-    if (instance!.version !== hook.version) {
-      onChange();
-    }
-
-    if (flags & SUBSCRIBE_EVENTS) {
-      const effectsCreator = standaloneProducerEffectsCreator;
-
-      let unsubscribeFns = invokeSubscribeEvents(
-        (config as BaseConfig<T, E, R>).events!.subscribe,
-        instance!.run.bind(instance!, effectsCreator),
-        instance!,
-      );
-
-      if (unsubscribeFns) {
-        cleanups = cleanups.concat(unsubscribeFns);
-      }
-    }
-
-    return function cleanup() {
-      cleanups.forEach(cb => {
-        if (cb) {
-          cb();
-        }
-      });
-    }
-  }
-}
-
-function invokeSubscribeEvents<T, E, R>(
+export function invokeSubscribeEvents<T, E, R>(
   events: UseAsyncStateEventSubscribe<T, E, R> | undefined,
   run: (...args: any[]) => AbortFn,
   instance?: StateInterface<T, E, R>,
@@ -566,7 +413,7 @@ function invokeSubscribeEvents<T, E, R>(
   return handlers.map(handler => handler(eventProps));
 }
 
-function invokeChangeEvents<T, E, R>(
+export function invokeChangeEvents<T, E, R>(
   instance: StateInterface<T, E, R>,
   events: UseAsyncStateEvents<T, E, R> | undefined
 ) {
@@ -595,7 +442,7 @@ function invokeChangeEvents<T, E, R>(
 // come here only in standalone mode
 
 
-function readStateFromInstance<T, E, R, S = State<T, E, R>>(
+export function readStateFromInstance<T, E, R, S = State<T, E, R>>(
   asyncState: StateInterface<T, E, R> | null,
   flags: number,
   config: MixedConfig<T, E, R, S>
@@ -608,4 +455,154 @@ function readStateFromInstance<T, E, R, S = State<T, E, R>>(
     :
     (<K>(obj): K => obj);
   return selector(asyncState.state, asyncState.lastSuccess, asyncState.cache || null);
+}
+
+export type HookOwnState<T, E, R, S> = {
+  guard: number,
+  pool: PoolInterface,
+  config: MixedConfig<T, E, R, S>,
+  return: UseAsyncState<T, E, R, S>,
+  base: BaseUseAsyncState<T, E, R, S>,
+  deps: any[],
+  subKey: string | undefined,
+  flags: number,
+  instance: StateInterface<T, E, R> | null,
+  renderInfo: {
+    current: S,
+    version: number | undefined,
+  }
+}
+export function subscribeEffectImpl<T, E, R, S>(
+  hookState: HookOwnState<T, E, R, S>,
+  updateState: () => void,
+  setGuard: React.Dispatch<React.SetStateAction<number>>,
+  origin: 1 | 2 | 3
+) {
+  let {flags, config, instance, renderInfo, subKey, pool} = hookState;
+  if (flags & WAIT) {
+    let key: string = flags & CONFIG_STRING
+      ? (config as string) : (config as BaseConfig<T, E, R>).key!;
+
+    return pool.watch(key, function () {
+      setGuard(old => old + 1);
+    });
+  }
+
+
+  let didClean = false;
+  let cleanups: AbortFn[] = [() => didClean = true];
+
+  function onStateChange() {
+    let newSelectedState = readStateFromInstance(instance, flags, config);
+
+    if (flags & EQUALITY_CHECK) {
+      let areEqual = (config as PartialUseAsyncStateConfiguration<T, E, R, S>)
+        .areEqual!(newSelectedState, renderInfo.current);
+
+      if (!areEqual) {
+        updateState();
+      }
+    } else {
+      updateState();
+    }
+
+    if (flags & CHANGE_EVENTS) {
+      invokeChangeEvents(instance!, (config as BaseConfig<T, E, R>).events);
+    }
+  }
+
+  // subscription
+
+  cleanups.push(instance!.subscribe({
+    flags,
+    origin,
+    key: subKey,
+    cb: onStateChange,
+  }));
+  if (instance!.version !== renderInfo.version) {
+    updateState();
+  }
+
+  if (flags & SUBSCRIBE_EVENTS) {
+    const effectsCreator = standaloneProducerEffectsCreator;
+
+    let unsubscribeFns = invokeSubscribeEvents(
+      (config as BaseConfig<T, E, R>).events!.subscribe,
+      instance!.run.bind(instance!, effectsCreator),
+      instance!,
+    );
+
+    if (unsubscribeFns) {
+      cleanups = cleanups.concat(unsubscribeFns);
+    }
+  }
+
+  return function cleanup() {
+    cleanups.forEach(cb => {
+      if (cb) {
+        cb();
+      }
+    });
+  }
+}
+
+
+function resolvePool<T, E, R, S>(mixedConfig: MixedConfig<T, E, R, S>) {
+  let pool = typeof mixedConfig === "object" && (mixedConfig as ProducerConfig<T, E, R>).pool;
+  return getOrCreatePool(pool || "default");
+}
+
+export function calculateHook<T, E, R, S>(
+  config: MixedConfig<T, E, R, S>,
+  deps: any[],
+  guard: number,
+  overrides?: PartialUseAsyncStateConfiguration<T, E, R, S>,
+  caller?: string,
+): HookOwnState<T, E, R, S> {
+  let newPool = resolvePool(config);
+  let newFlags = resolveFlags(config, newPool, overrides);
+  let newInstance = resolveInstance(newPool, newFlags, config, overrides);
+
+  if (!newInstance && !(newFlags & WAIT)) {
+    throw new Error("Undefined instance with no WAIT mode. This is a bug.");
+  }
+
+  let baseReturn = makeBaseReturn(newFlags, config, newInstance);
+  let currentReturn = calculateStateValue(newFlags, config, baseReturn, newInstance);
+  let subscriptionKey = calculateSubscriptionKey(newFlags, config, caller, newInstance);
+
+  if (newInstance && newFlags & CONFIG_OBJECT) {
+    let configObject = config as BaseConfig<T, E, R>;
+    if (configObject.payload) {
+      newInstance.mergePayload(configObject.payload);
+    }
+  }
+
+  return {
+    deps,
+    guard,
+    config,
+    pool: newPool,
+    flags: newFlags,
+    base: baseReturn,
+    return: currentReturn,
+    instance: newInstance,
+    subKey: subscriptionKey,
+    renderInfo: {
+      current: currentReturn.state,
+      version: currentReturn.version,
+    }
+  }
+}
+
+export function areHookInputEqual(deps: any[], deps2: any[]) {
+  if (deps.length !== deps2.length) {
+    return false;
+  }
+  for (let i = 0, {length} = deps; i < length; i += 1) {
+    if (!is(deps[i], deps2[i])) {
+      return false;
+    }
+  }
+  return true;
 }

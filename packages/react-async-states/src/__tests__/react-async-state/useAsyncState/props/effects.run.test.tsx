@@ -59,14 +59,14 @@ describe('should run another producer from producer', () => {
 
 
       return (
-        <AsyncStateProvider>
+        <>
           <AsyncStateComponent config={{source: source1}}>
             {() => null}
           </AsyncStateComponent>
           <AsyncStateComponent config={{source: source2, lazy: false}}>
             {() => null}
           </AsyncStateComponent>
-        </AsyncStateProvider>
+        </>
       );
     }
 
@@ -92,20 +92,17 @@ describe('should run another producer from producer', () => {
       return 3;
     });
     const source1 = createSource("source5", source1Producer);
+    const source2 = createSource("source2", source2Producer);
 
     function Test() {
 
 
       return (
-        <AsyncStateProvider initialStates={[source1, {
-          key: "source2",
-          producer: source2Producer,
-          config: {}
-        }]}>
+        <>
           <AsyncStateComponent config={{source: source1, lazy: false}}>
             {() => null}
           </AsyncStateComponent>
-        </AsyncStateProvider>
+        </>
       );
     }
 

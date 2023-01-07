@@ -1,13 +1,15 @@
 import * as React from "react";
 import {Source, State} from "async-states";
-import {StateContextValue, UseAsyncState} from "./types.internal";
+import {UseAsyncState} from "./types.internal";
 import {__DEV__, noop} from "./shared";
 import {useCallerName} from "./helpers/useCallerName";
-import {calculateStateValue, StateHook} from "./StateHook";
 import {
-  ensureStateHookVersionIsLatest, useCurrentHook
-} from "./helpers/hooks-utils";
-import {StateContext} from "./context";
+  areHookInputEqual,
+  calculateHook,
+  calculateStateValue,
+  HookOwnState,
+  subscribeEffectImpl
+} from "./StateHook";
 
 // this is a mini version of useAsyncState
 // this hook uses fewer hooks and has fewer capabilities that useAsyncState
@@ -29,28 +31,41 @@ export function useSourceLane<T, E, R>(
   if (__DEV__) {
     caller = useCallerName(3);
   }
-  let hook: StateHook<T, E, R, State<T, E, R>> = useCurrentHook(caller);
-  let contextValue = React.useContext<StateContextValue>(StateContext);
 
-  React.useMemo(() => hook.update(2, source, contextValue, {lane}),
-    [contextValue, lane]);
+  let [hookState, setHookState] = React
+    .useState<HookOwnState<T, E, R, State<T, E, R>>>(calculateSelfState);
 
-  let [selectedValue, setSelectedValue] = React
-    .useState<Readonly<UseAsyncState<T, E, R, State<T, E, R>>>>(calculateStateValue.bind(null, hook));
-
-  ensureStateHookVersionIsLatest(hook, selectedValue, updateSelectedValue);
-
-  React.useEffect(
-    hook.subscribe.bind(null, noop, updateSelectedValue),
-    [contextValue, hook.flags, hook.instance]
-  );
-
-  return selectedValue;
-
-
-  function updateSelectedValue() {
-    setSelectedValue(calculateStateValue(hook));
-    hook.version = hook.instance?.version;
+  if (!areHookInputEqual(hookState.deps, [source, lane])) {
+    setHookState(calculateSelfState());
   }
 
+  let {flags, instance, base, renderInfo, config} = hookState;
+  if (instance && hookState.return.version !== instance.version) {
+    updateState();
+  }
+
+  React.useEffect(subscribeEffect, [renderInfo, flags, instance]);
+
+  renderInfo.version = instance?.version;
+  renderInfo.current = hookState.return.state;
+
+  return hookState.return;
+
+  function updateState() {
+    setHookState(prev => {
+      let newReturn = calculateStateValue(flags, config, base, instance);
+      if (newReturn.state === prev.return.state) {
+        return prev;
+      }
+      return Object.assign({}, prev, {return: newReturn});
+    });
+  }
+
+  function calculateSelfState(): HookOwnState<T, E, R, State<T, E, R>> {
+    return calculateHook(source, [source, lane], 0, {lane}, caller);
+  }
+
+  function subscribeEffect() {
+    return subscribeEffectImpl(hookState, updateState, noop, 2);
+  }
 }

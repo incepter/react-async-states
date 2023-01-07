@@ -12,31 +12,32 @@ mockDateNow();
 describe('should subscribe to an async state in provider', () => {
   it('should subscribe by string key and listen or wait ', async () => {
     // given
-    const todosSource = createSource("todos", null, {
+    createSource("counter", null, {initialValue: 0});
+    createSource("todos", null, {
       initialValue: [{
         title: "Do homework",
         completed: false
       }]
     });
-    const counterSource = createSource("counter", null, {initialValue: 0});
 
     function Test() {
       return (
-        <AsyncStateProvider initialStates={[counterSource, todosSource]}>
+        <>
           <Component subscribesTo="todos"/>
           <Component subscribesTo="counter"/>
-          <Component subscribesTo="doesntExist"/>
-        </AsyncStateProvider>
+          <Component subscribesTo="doesntExist" wait/>
+        </>
       );
     }
 
     function Component({
       subscribesTo,
-    }: { subscribesTo: string }) {
+      wait
+    }: { subscribesTo: string, wait?: boolean }) {
       const {
         devFlags,
         state,
-      }: UseAsyncState<number> = useAsyncState(subscribesTo);
+      }: UseAsyncState<number> = useAsyncState({key: subscribesTo, wait});
 
       return (
         <div>
@@ -56,13 +57,13 @@ describe('should subscribe to an async state in provider', () => {
 
     // then
     expect(screen.getByTestId("mode-counter").innerHTML)
-      .toEqual("[\"CONFIG_STRING\",\"INSIDE_PROVIDER\"]");
+      .toEqual("[\"CONFIG_OBJECT\"]");
 
     expect(screen.getByTestId("mode-todos").innerHTML)
-      .toEqual("[\"CONFIG_STRING\",\"INSIDE_PROVIDER\"]");
+      .toEqual("[\"CONFIG_OBJECT\"]");
 
     expect(screen.getByTestId("mode-doesntExist").innerHTML)
-      .toEqual("[\"CONFIG_STRING\",\"INSIDE_PROVIDER\",\"WAIT\"]");
+      .toEqual("[\"CONFIG_OBJECT\",\"WAIT\"]");
 
     expect(screen.getByTestId("result-todos").innerHTML)
       .toEqual(JSON.stringify({

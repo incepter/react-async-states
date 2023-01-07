@@ -20,6 +20,7 @@ describe('should add static payload to async state', () => {
         run,
         devFlags,
         state,
+        uniqueId,
       }: UseAsyncState<number> = useAsyncState({
         initialValue: 0,
         payload: {
@@ -51,7 +52,7 @@ describe('should add static payload to async state', () => {
     const incrementBtn = screen.getByTestId("increment");
     // then
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual("[\"CONFIG_OBJECT\",\"STANDALONE\"]");
+      .toEqual("[\"CONFIG_OBJECT\"]");
 
     // +1
     fireEvent.click(incrementBtn);

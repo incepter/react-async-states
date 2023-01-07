@@ -177,6 +177,7 @@ const declarationsBuild = {
   ],
   external: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'async-states'],
   plugins: [
+    json(),
     typescript({
       tsconfigOverride: {
         compilerOptions: {

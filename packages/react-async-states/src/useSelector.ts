@@ -1,21 +1,20 @@
 import * as React from "react";
-import {StateContext} from "./context";
 import {
+  ArraySelector,
   BaseSelectorKey,
+  FunctionSelector,
+  FunctionSelectorItem,
+  InstanceOrNull,
   SelectorKeysArg,
-  StateContextValue,
+  SimpleSelector,
   UseSelectorFunctionKeys,
 } from "./types.internal";
 import {
   AbortFn,
-  ArraySelector,
-  FunctionSelector,
-  FunctionSelectorItem,
-  InstanceOrNull,
+  getOrCreatePool,
   isSource,
-  ManagerInterface,
+  PoolInterface,
   readSource,
-  SimpleSelector,
   Source,
   StateInterface
 } from "async-states";
@@ -42,21 +41,19 @@ export function useSelector<T>(
   if (__DEV__) {
     caller = useCallerName(3);
   }
-  let context = React.useContext(StateContext);
 
-  ensureParamsAreOk(context, keys);
-
+  let pool = getOrCreatePool();
   let [guard, setGuard] = React.useState<number>(0);
   let keysArray = React
-    .useMemo(() => readKeys(keys, context), [guard, keys, context]);
+    .useMemo(() => readKeys(keys, pool), [guard, keys, pool]);
   let instances = React
-    .useMemo(() => resolveInstances(keysArray, context), [keysArray]);
+    .useMemo(() => resolveInstances(keysArray, pool), [keysArray]);
 
-  let [state, setState] = React.useState<{value: T, guard: number}>(computeState);
+  let [state, setState] = React.useState<{ value: T, guard: number }>(computeState);
 
   React.useEffect(
-    () => subscribeAndWatch(context, keysArray, instances, onUpdate, setGuard, caller),
-    [context, keysArray, instances]
+    () => subscribeAndWatch(pool, keysArray, instances, onUpdate, setGuard, caller),
+    [pool, keysArray, instances]
   );
 
   if (state.guard !== guard) {
@@ -76,11 +73,11 @@ export function useSelector<T>(
 
 function readKeys(
   keys: SelectorKeysArg,
-  ctx: StateContextValue | null
+  pool: PoolInterface
 ): (string | Source<any, any, any>)[] {
   if (isFunction(keys)) {
-    const availableKeys = ctx !== null ? ctx.getAllKeys() : [];
-    return readKeys((keys as UseSelectorFunctionKeys)(availableKeys), ctx);
+    const availableKeys = pool.instances.keys();
+    return readKeys((keys as UseSelectorFunctionKeys)(Array.from(availableKeys)), pool);
   }
   if (Array.isArray(keys)) {
     return keys;
@@ -96,18 +93,9 @@ function identity<T>(): T {
   return (arguments.length === 1 ? arguments[0] : arguments) as T;
 }
 
-function ensureParamsAreOk<E>(
-  contextValue: StateContextValue | null,
-  keys: BaseSelectorKey | BaseSelectorKey[] | UseSelectorFunctionKeys,
-) {
-  if (contextValue === null && isFunction(keys)) {
-    throw new Error('useSelector function should be used inside provider');
-  }
-}
-
 function resolveInstances(
   keysArray: (string | Source<any, any, any>)[],
-  context: ManagerInterface | null
+  pool: PoolInterface
 ): Record<string, StateInterface<any, any, any> | undefined> {
   return keysArray.reduce((result, current) => {
     if (isSource(current)) {
@@ -115,7 +103,7 @@ function resolveInstances(
       result[source.key] = readSource(source);
     } else {
       let key = current as string;
-      result[key] = context?.get(key);
+      result[key] = pool.instances.get(key);
     }
     return result;
   }, {} as Record<string, StateInterface<any, any, any> | undefined>);
@@ -162,11 +150,11 @@ function selectValue<T>(
 }
 
 function subscribeAndWatch<T>(
-  context: ManagerInterface | null,
+  pool: PoolInterface,
   keysArray: (string | Source<any, any, any>)[],
   resolvedInstances: Record<string, StateInterface<any, any, any> | undefined>,
-  onUpdate:  () => void,
-  setGuard:  React.Dispatch<React.SetStateAction<number>>,
+  onUpdate: () => void,
+  setGuard: React.Dispatch<React.SetStateAction<number>>,
   caller?: string | undefined,
 ) {
   let unwatch: AbortFn = undefined;
@@ -175,17 +163,15 @@ function subscribeAndWatch<T>(
     subscriptionKey = `${caller}-$4`;// 4: useSelector
   }
 
-  if (context !== null) {
-    unwatch = context.watchAll(function (
-      value: InstanceOrNull<any, any, any>, key: string) {
-      if (resolvedInstances.hasOwnProperty(key) && resolvedInstances[key] !== value) {
-        setGuard(prev => prev + 1);
-      }
-    });
-  }
+  unwatch = pool.listen(function (
+    value: InstanceOrNull<any>, key: string) {
+    if (resolvedInstances.hasOwnProperty(key) && resolvedInstances[key] !== value) {
+      setGuard(prev => prev + 1);
+    }
+  });
 
   let unsubscribe = Object.entries(resolvedInstances)
-    .map(([key, maybeInstance]) => maybeInstance?.subscribe({
+    .map(([, maybeInstance]) => maybeInstance?.subscribe({
       origin: 4,
       cb: onUpdate,
       flags: undefined,
