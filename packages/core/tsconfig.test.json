@@ -3,13 +3,13 @@
   "compilerOptions": {
     "baseUrl": ".",
     "types": ["node", "jest"],
-    "paths": {
-      "tslib": ["node_modules/tslib"]
-    },
+    "moduleResolution": "Node",
+    "module": "ESNext"
   },
   "include": ["src"],
   "exclude": [
     "node_modules",
+    "src/__tests__",
     "src/index-prod.js"
   ]
 }

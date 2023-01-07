@@ -22,7 +22,6 @@ The library can work with the following modes:
 - `Synchronous` and/or `Asynchronous`
 - Data fetching and/or any form of asynchrony
 - Inside and/or outside `React`
-- Inside and/or outside `React context provider`
 - With or without `Cache`
 - `Promises`, `async/await` and even `generators` or nothing at all
 - Allows abstractions on top of it
@@ -31,7 +30,7 @@ The library can work with the following modes:
 #### <ins>Easy to use and Minimal API (`useAsyncState`).</ins>
 The library has one main hook: `useAsyncState` which allows the creation,
 subscription and manipulation of the desired state.
-[Here is a sneak peek](https://incepter.github.io/react-async-states/docs/api/the-whole-api#useasyncstate)
+[Here is a sneak peek](https://incepter.github.io/react-async-states/docs/api/the-whole-api#useasyncstate) 
 at this hook's full API.
 
 #### <ins>Tiny library with no dependencies and works in all environments</ins>
@@ -52,11 +51,11 @@ hook configuration, while also providing a multiple imperative `run` functions
 with different signatures to answer your needs.
 
 #### <ins>Promises, async/await & generators support</ins>
-The `producer`, the core concept of the library can be of different forms (you
+The `producer`, the core concept of the library can be of different forms (you 
 can even omit it and manipulate the state directly, without a producer function):
 
-Either return a promise (thenable) to your state, use async/await syntax or go
-generators. All of these are supported by the library out of the box and
+Either return a promise (thenable) to your state, use async/await syntax or go 
+generators. All of these are supported by the library out of the box and 
 no configuration is needed.
 
 ```typescript
@@ -120,21 +119,15 @@ runc({
 ```
 
 #### <ins>Dynamic creation and sharing of states at runtime</ins>
-Under the `AsyncStateProvider`, you can create and share state instances
-and access them by their `key` via the `hoist` option.
-
-You can even start listening to a state before it gets hoisted to the provider,
-and get notified once it gets added.
-
-#### <ins>Works with or without a provider</ins>
-The library can work without the provider and still share state via the
-`source` special object.
+Any created state is accessible from the whole v8 scope under the key it was
+given to it. So it is important to think about giving unique names to any
+state you create.
 
 #### <ins>Apply effects or runs: debounce, throttle...</ins>
 To avoid creating additional state pieces and third party utilities,
 the library has out-of-the box support for effects that can be applied to runs:
 such as `debounce`, and `throttle` and `delay`.
-This support allows you to create awesome user experience natively with the
+This support allows you to create awesome user experience natively with the 
 minimum CPU and RAM fingerprints, without additional libraries or managed
 variables. It just works in the core of the library. Of course, this requires
 you to be in an environment where `setTimeout` exists.
@@ -174,7 +167,7 @@ const {run} = useAsyncState({
   runEffectDurationMs: 300,
   // skip pending status if it answers less than 200ms
   skipPendingDelayMs: 200,
-
+  
   // cache config:
   cacheConfig: {
     enabled: true, // enable cache
@@ -220,7 +213,6 @@ const {state} = useAsyncState({source: references, lane: 'roles', lazy: false});
 // can be simplified to this:
 const {state} = useSourceLane(references, 'roles');
 
-// re-use a state with its producer called weather present in the provider
 const {state: weatherState} = useAsyncState({key: "weather", fork: true});
 
 ```
@@ -232,7 +224,7 @@ The library has two ways to select data from states:
 current state and the whole cache (you can decide to just work with cache, if you want to!)
 - via `useSelector`: This hook allows you to select data from one or multiple
 pieces of states, it even allows combining `keys` and `source` object to select from them.
-It also can dynamically select states from the provider as they get hoisted.
+It also can dynamically select states as they get created.
 
 #### <ins>And many more</ins>
 

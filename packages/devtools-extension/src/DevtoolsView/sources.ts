@@ -1,11 +1,11 @@
-import {createSource, State, ProducerConfig, Status} from "react-async-states";
+import {createSource, State, ProducerConfig, Status} from "async-states";
 import {
   DevtoolsEvent,
   DevtoolsJournalEvent
-} from "react-async-states/dist/es/core/src/devtools";
+} from "async-states/dist/es/src/devtools";
 import {DevtoolsMessagesBuilder} from "./utils";
 import {shimChromeRuntime} from "./ShimChromeRuntime";
-import type {ProducerProps} from "react-async-states";
+import type {ProducerProps} from "async-states";
 
 export function resetAllSources() {
   instancesList.setState({});

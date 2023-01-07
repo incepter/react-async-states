@@ -153,6 +153,7 @@ const declarationsBuild = {
     },
   ],
   plugins: [
+    json(),
     typescript({
       tsconfigOverride: {
         compilerOptions: {

@@ -14,7 +14,7 @@ describe('should run another producer from producer', () => {
       props.run(source1, null, 2);
       return 3;
     });
-    const source2 = createSource("source1", source2Producer);
+    const source2 = createSource("source22", source2Producer);
 
     function Test() {
 
@@ -47,26 +47,26 @@ describe('should run another producer from producer', () => {
   it('should run producer by source inside provider', () => {
     // given
     const source1Producer = jest.fn().mockImplementation(() => 5);
-    const source1 = createSource("source1", source1Producer);
+    const source1 = createSource("source3", source1Producer);
 
     const source2Producer: Producer<number> = jest.fn().mockImplementation((props: ProducerProps<number>) => {
       props.run(source1, null, 1);
       return 3;
     });
-    const source2 = createSource("source1", source2Producer);
+    const source2 = createSource("source4", source2Producer);
 
     function Test() {
 
 
       return (
-        <AsyncStateProvider>
+        <>
           <AsyncStateComponent config={{source: source1}}>
             {() => null}
           </AsyncStateComponent>
           <AsyncStateComponent config={{source: source2, lazy: false}}>
             {() => null}
           </AsyncStateComponent>
-        </AsyncStateProvider>
+        </>
       );
     }
 
@@ -91,31 +91,31 @@ describe('should run another producer from producer', () => {
       props.run("doesntExist", null, 3);
       return 3;
     });
-    const source1 = createSource("source1", source1Producer);
+    const source1 = createSource("source5", source1Producer);
+    const source2 = createSource("source2", source2Producer);
 
     function Test() {
 
 
       return (
-        <AsyncStateProvider initialStates={[source1, {
-          key: "source2",
-          producer: source2Producer,
-          config: {}
-        }]}>
+        <>
           <AsyncStateComponent config={{source: source1, lazy: false}}>
             {() => null}
           </AsyncStateComponent>
-        </AsyncStateProvider>
+        </>
       );
     }
 
     // when
 
+    let prevConsoleError = console.error;
+    console.error = () => {};
     render(
       <React.StrictMode>
         <Test/>
       </React.StrictMode>
     )
+    console.error = prevConsoleError;
     // then
 
     expect(source1Producer).toHaveBeenCalledTimes(2); // 1 strict mode
@@ -130,7 +130,7 @@ describe('should run another producer from producer', () => {
       props.run(source2Producer, {payload: {hello: "world"}}, 4);
       return 3;
     });
-    const source1 = createSource("source1", source1Producer);
+    const source1 = createSource("source6", source1Producer);
 
     function Test() {
 
@@ -164,7 +164,7 @@ describe('should run another producer from producer', () => {
       props.run(source2Producer, null, 5);
       return 3;
     });
-    const source1 = createSource("source1", source1Producer);
+    const source1 = createSource("source7", source1Producer);
 
     function Test() {
 

@@ -1,7 +1,6 @@
 import {
   AsyncState,
   CachedState,
-  standaloneProducerEffectsCreator,
   Status
 } from "async-states";
 import {flushPromises} from "../utils/test-utils";
@@ -20,8 +19,8 @@ describe('async state cache', () => {
 
     expect(asyncState.state.data).toBe(0);
     expect(load).toHaveBeenCalled();
-    asyncState.getLane("test");
-    expect(asyncState.getLane("test").cache).toBe(asyncState.cache);
+    asyncState.getLane("test-lane");
+    expect(asyncState.getLane("test-lane").cache).toBe(asyncState.cache);
   });
   it('should add to cache and spread on lanes', () => {
     const cache: Record<string, CachedState<number>> = {
@@ -38,7 +37,7 @@ describe('async state cache', () => {
     };
     const producer = jest.fn().mockImplementation(props => props.args?.[0]);
     const load = jest.fn().mockImplementation(() => cache);
-    const asyncState = new AsyncState("test", producer, {
+    const asyncState = new AsyncState("test-2", producer, {
       initialValue: cache => cache[`1`]?.state?.data,
       cacheConfig: {
         load,
@@ -49,17 +48,17 @@ describe('async state cache', () => {
 
     expect(asyncState.state.data).toBe(1);
     expect(load).toHaveBeenCalled();
-    asyncState.getLane("test");
-    expect(asyncState.getLane("test").cache).toBe(asyncState.cache);
+    asyncState.getLane("test2-lane");
+    expect(asyncState.getLane("test2-lane").cache).toBe(asyncState.cache);
 
-    asyncState.getLane("test").run(standaloneProducerEffectsCreator, 2);
-    expect(asyncState.getLane("test").cache).toBe(asyncState.cache);
-    expect(asyncState.getLane("test").cache![`2`]?.state?.data).toBe(2);
+    asyncState.getLane("test2-lane").run(2);
+    expect(asyncState.getLane("test2-lane").cache).toBe(asyncState.cache);
+    expect(asyncState.getLane("test2-lane").cache![`2`]?.state?.data).toBe(2);
 
     producer.mockClear();
-    asyncState.getLane("test").run(standaloneProducerEffectsCreator, 1);
-    expect(asyncState.getLane("test").cache![`1`]?.state?.data).toBe(1);
-    expect(asyncState.getLane("test").state.data).toBe(1);
+    asyncState.getLane("test2-lane").run(1);
+    expect(asyncState.getLane("test2-lane").cache![`1`]?.state?.data).toBe(1);
+    expect(asyncState.getLane("test2-lane").state.data).toBe(1);
     expect(producer).not.toHaveBeenCalled();
   });
   it('should set state when cache loads cache and pass it to lanes', async () => {
@@ -76,7 +75,7 @@ describe('async state cache', () => {
       },
     };
     const load = jest.fn().mockImplementation(async () => Promise.resolve(cache));
-    const asyncState = new AsyncState("test", null, {
+    const asyncState = new AsyncState("test-3", null, {
       cacheConfig: {
         load,
         enabled: true,
@@ -118,7 +117,7 @@ describe('async state cache', () => {
       },
     };
     const load = jest.fn().mockImplementation(() => cache);
-    const asyncState = new AsyncState("test", null, {
+    const asyncState = new AsyncState("test-4", null, {
       cacheConfig: {
         load,
         enabled: true,

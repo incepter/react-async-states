@@ -1,31 +1,31 @@
 import * as React from "react";
+import {getOrCreatePool, readSource} from "async-states";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {
   UseAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../useAsyncState";
-import {AsyncStateProvider} from "../../../../../Provider";
 import {flushPromises} from "../../../utils/test-utils";
 import {mockDateNow, TESTS_TS} from "../../../utils/setup";
 
 
 mockDateNow();
-describe('should hoist an async state to provider', () => {
+describe('should hoist an async state to pool', () => {
   it('should wait for an async state to be hoisted and listen ', async () => {
     // given
     function Test() {
       return (
-        <AsyncStateProvider>
-          <Component subscribesTo="counter"/>
+        <>
+          <Component subscribesTo="counter" wait/>
           <Wrapper>
             <Hoister/>
           </Wrapper>
-        </AsyncStateProvider>
+        </>
       );
     }
 
     function Hoister<T>() {
-      const {devFlags} = useAsyncState.hoist({
+      const {devFlags, source} = useAsyncState({
         key: "counter",
         initialValue: 0,
       });
@@ -46,12 +46,13 @@ describe('should hoist an async state to provider', () => {
     }
 
     function Component({
-      subscribesTo,
-    }: { subscribesTo: string }) {
+      subscribesTo, wait
+    }: { subscribesTo: string, wait?: boolean }) {
       const {
         devFlags,
         state,
-      }: UseAsyncState<number> = useAsyncState(subscribesTo);
+      }: UseAsyncState<number> = useAsyncState({key: subscribesTo, wait});
+
 
       return (
         <div>
@@ -71,7 +72,7 @@ describe('should hoist an async state to provider', () => {
 
     // then
     expect(screen.getByTestId("mode-counter").innerHTML)
-      .toEqual("[\"CONFIG_STRING\",\"INSIDE_PROVIDER\",\"WAIT\"]");
+      .toEqual("[\"CONFIG_OBJECT\",\"WAIT\"]");
 
 
     act(() => {
@@ -79,13 +80,13 @@ describe('should hoist an async state to provider', () => {
     });
 
     expect(screen.getByTestId("hoister-mode").innerHTML)
-      .toEqual("[\"CONFIG_OBJECT\",\"HOIST\",\"INSIDE_PROVIDER\"]");
+      .toEqual("[\"CONFIG_OBJECT\"]");
     await act(async () => {
       await flushPromises();
     });
 
     expect(screen.getByTestId("mode-counter").innerHTML)
-      .toEqual("[\"CONFIG_STRING\",\"INSIDE_PROVIDER\"]");
+      .toEqual("[\"CONFIG_OBJECT\"]");
 
     expect(screen.getByTestId("result-counter").innerHTML)
       .toEqual(JSON.stringify({

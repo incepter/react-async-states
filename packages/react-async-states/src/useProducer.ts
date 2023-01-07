@@ -1,25 +1,16 @@
 import * as React from "react";
 import {Producer, State} from "async-states";
-import {StateContextValue, UseAsyncState} from "./types.internal";
-import {__DEV__, noop} from "./shared";
+import {UseAsyncState} from "./types.internal";
+import {__DEV__, emptyArray, noop} from "./shared";
 import {useCallerName} from "./helpers/useCallerName";
-import {calculateStateValue, StateHook} from "./StateHook";
 import {
-  ensureStateHookVersionIsLatest,
-  useCurrentHook
-} from "./helpers/hooks-utils";
-import {StateContext} from "./context";
+  areHookInputEqual,
+  calculateHook,
+  calculateStateValue,
+  HookOwnState,
+  subscribeEffectImpl
+} from "./StateHook";
 
-// this is a mini version of useAsyncState
-// this hook uses fewer hooks and has fewer capabilities that useAsyncState
-// its usage should be when you want to have control over a producer (may be inline)
-// and you do not intend to have it auto run, dependencies, manage payload
-// etc etc.
-// this is like useSyncExternalStore, but returns an object with several
-// functions that allows controlling the external source. So, may be better ?
-// this hook can use directly useSES on the asyncState instance
-// but this will require additional memoization to add the other properties
-// that UseAsyncState has (abort, mergePayload, invalidateCache, run, replaceState ..)
 export function useProducer<T, E, R>(
   producer: Producer<T, E, R>,
 ): UseAsyncState<T, E, R, State<T, E, R>> {
@@ -27,30 +18,43 @@ export function useProducer<T, E, R>(
   if (__DEV__) {
     caller = useCallerName(3);
   }
-  let hook: StateHook<T, E, R, State<T, E, R>> = useCurrentHook(caller);
-  let contextValue = React.useContext<StateContextValue>(StateContext);
 
-  React.useMemo(() => hook.update(3, producer, contextValue, undefined), [contextValue]);
+  let [hookState, setHookState] = React
+    .useState<HookOwnState<T, E, R, State<T, E, R>>>(calculateSelfState);
 
-  let [selectedValue, setSelectedValue] = React
-    .useState<Readonly<UseAsyncState<T, E, R, State<T, E, R>>>>(calculateStateValue.bind(null, hook));
-
-  ensureStateHookVersionIsLatest(hook, selectedValue, updateSelectedValue);
-
-  if (hook.instance!.originalProducer !== producer) {
-    hook.instance!.replaceProducer(producer);
+  if (!areHookInputEqual(hookState.deps, emptyArray)) {
+    setHookState(calculateSelfState());
   }
 
-  React.useEffect(
-    hook.subscribe.bind(null, noop, updateSelectedValue),
-    [contextValue, hook.flags, hook.instance]
-  );
+  let {flags, instance, base, renderInfo, config} = hookState;
 
-  return selectedValue;
+  if (instance && hookState.return.version !== instance.version) {
+    updateState();
+  }
 
+  if (instance!.originalProducer !== producer) {
+    instance!.replaceProducer(producer);
+  }
 
-  function updateSelectedValue() {
-    setSelectedValue(calculateStateValue(hook));
-    hook.version = hook.instance?.version;
+  React.useEffect(subscribeEffect, [renderInfo, flags, instance]);
+
+  renderInfo.version = instance?.version;
+  renderInfo.current = hookState.return.state;
+
+  return hookState.return;
+
+  function updateState() {
+    setHookState(prev => {
+      let newReturn = calculateStateValue(flags, config, base, instance);
+      return Object.assign({}, prev, {return: newReturn});
+    });
+  }
+
+  function calculateSelfState(): HookOwnState<T, E, R, State<T, E, R>> {
+    return calculateHook(producer, emptyArray, 0, undefined, caller);
+  }
+
+  function subscribeEffect() {
+    return subscribeEffectImpl(hookState, updateState, noop, 2);
   }
 }

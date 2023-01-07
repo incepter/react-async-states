@@ -11,82 +11,100 @@ import {
   ConfigWithSourceWithSelector,
   MixedConfig,
   PartialUseAsyncStateConfiguration,
-  StateContextValue,
   UseAsyncState,
 } from "./types.internal";
-import {StateContext} from "./context";
-import {AUTO_RUN} from "./StateHookFlags";
-import {__DEV__, emptyArray, isFunction} from "./shared";
-import {calculateStateValue, StateHook} from "./StateHook";
-import {useCallerName} from "./helpers/useCallerName";
+import {AUTO_RUN, CONFIG_OBJECT} from "./StateHookFlags";
+import {__DEV__, emptyArray, humanizeDevFlags, isFunction} from "./shared";
 import {
-  ensureStateHookVersionIsLatest,
-  useCurrentHook
-} from "./helpers/hooks-utils";
+  areHookInputEqual,
+  calculateHook,
+  calculateStateValue,
+  HookOwnState,
+  subscribeEffectImpl
+} from "./StateHook";
+import {useCallerName} from "./helpers/useCallerName";
+
+let is = Object.is;
+
 
 export const useAsyncStateBase = function useAsyncStateImpl<T, E = any, R = any, S = State<T, E, R>>(
   mixedConfig: MixedConfig<T, E, R, S>,
   deps: any[] = emptyArray,
   overrides?: PartialUseAsyncStateConfiguration<T, E, R, S>,
 ): UseAsyncState<T, E, R, S> {
-
   let caller;
   if (__DEV__) {
     caller = useCallerName(4);
   }
-  let hook: StateHook<T, E, R, S> = useCurrentHook(caller);
 
   let [guard, setGuard] = React.useState<number>(0);
-  let contextValue = React.useContext<StateContextValue>(StateContext);
+  let [hookState, setHookState] = React.useState<HookOwnState<T, E, R, S>>(calculateSelfState);
 
-  React.useMemo(() => hook.update(1, mixedConfig, contextValue, overrides),
-    deps.concat([contextValue, guard]));
-
-  let {flags, instance} = hook;
-  let [selectedValue, setSelectedValue] = React
-    .useState<Readonly<UseAsyncState<T, E, R, S>>>(() => calculateStateValue(hook));
-
-  ensureStateHookVersionIsLatest(hook, selectedValue, updateSelectedValue);
-
-  React.useEffect(
-    hook.subscribe.bind(null, setGuard, updateSelectedValue),
-    [contextValue, flags, instance]
-  );
-
-  React.useEffect(autoRunAsyncState, deps);
-
-  return selectedValue;
-
-
-  function updateSelectedValue() {
-    setSelectedValue(calculateStateValue(hook));
-    hook.version = instance?.version;
+  if (
+    hookState.guard !== guard ||
+    !areHookInputEqual(hookState.deps, deps)
+  ) {
+    setHookState(calculateSelfState());
   }
 
-  function autoRunAsyncState(): CleanupFn {
-    let {flags, instance} = hook;
-    // auto run only if condition is met, and it is not lazy
-    if (!(flags & AUTO_RUN)) {
-      return;
-    }
-    // if dependencies change, if we run, the cleanup shall abort
-    let config = (hook.config as BaseConfig<T, E, R>);
-    let shouldRun = true; // AUTO_RUN flag is set only if this is true
+  let {flags, instance, base, renderInfo, config} = hookState;
+  if (instance && hookState.return.version !== instance.version) {
+    updateState();
+  }
 
-    if (isFunction(config.condition)) {
-      let conditionFn = config.condition as ((state: State<T, E, R>) => boolean);
-      shouldRun = conditionFn(instance!.getState());
-    }
+  React.useEffect(subscribeEffect, [renderInfo, flags, instance].concat(deps));
+  React.useEffect(autoRunAsyncState.bind(null, hookState), deps);
 
-    if (shouldRun) {
-      if (config.autoRunArgs && Array.isArray(config.autoRunArgs)) {
-        return hook.base.run.apply(null, config.autoRunArgs);
-      }
-      return hook.base.run();
-    }
+  renderInfo.version = instance?.version;
+  renderInfo.current = hookState.return.state;
+
+
+  return hookState.return;
+
+  function updateState() {
+    setHookState(prev => {
+      let newReturn = calculateStateValue(flags, config, base, instance);
+      return Object.assign({}, prev, {return: newReturn});
+    });
+  }
+
+  function calculateSelfState(): HookOwnState<T, E, R, S> {
+    return calculateHook(mixedConfig, deps, guard, overrides, caller);
+  }
+
+  function subscribeEffect() {
+    return subscribeEffectImpl(hookState, updateState, setGuard, 1);
   }
 }
 
+function autoRunAsyncState<T, E, R, S>(hookState: HookOwnState<T, E, R, S>): CleanupFn {
+  let {flags, instance, config, base} = hookState;
+  // auto run only if condition is met, and it is not lazy
+  if (!(flags & AUTO_RUN)) {
+    return;
+  }
+  // if dependencies change, if we run, the cleanup shall abort
+  let shouldRun = true; // AUTO_RUN flag is set only if this is true
+
+  if (flags & CONFIG_OBJECT) {
+    let configObject = (config as BaseConfig<T, E, R>);
+    if (isFunction(configObject.condition)) {
+      let conditionFn = configObject.condition as ((state: State<T, E, R>) => boolean);
+      shouldRun = conditionFn(instance!.getState());
+    }
+  }
+
+  if (shouldRun) {
+    if (flags & CONFIG_OBJECT && (config as BaseConfig<T, E, R>).autoRunArgs) {
+      let {autoRunArgs} = (config as BaseConfig<T, E, R>);
+      if (autoRunArgs && Array.isArray(autoRunArgs)) {
+        return base.run.apply(null, autoRunArgs);
+      }
+    }
+
+    return base.run();
+  }
+}
 
 function useAsyncStateExport<T, E = any, R = any>(
   key: string, deps?: any[]): UseAsyncState<T, E, R>
@@ -172,33 +190,9 @@ function useForkAutoAsyncState<T, E = any, R = any, S = State<T, E, R>>(
   );
 }
 
-function useHoistAsyncState<T, E = any, R = any, S = State<T, E, R>>(
-  subscriptionConfig: MixedConfig<T, E, R, S>,
-  dependencies?: any[]
-): UseAsyncState<T, E, R, S> {
-  return useAsyncStateBase(
-    subscriptionConfig,
-    dependencies,
-    {hoist: true}
-  );
-}
-
-function useHoistAutoAsyncState<T, E = any, R = any, S = State<T, E, R>>(
-  subscriptionConfig: MixedConfig<T, E, R, S>,
-  dependencies?: any[]
-): UseAsyncState<T, E, R, S> {
-  return useAsyncStateBase(
-    subscriptionConfig,
-    dependencies,
-    {hoist: true, lazy: false}
-  );
-}
-
 useAsyncStateExport.auto = useAutoAsyncState;
 useAsyncStateExport.lazy = useLazyAsyncState;
 useAsyncStateExport.fork = useForkAsyncState;
-useAsyncStateExport.hoist = useHoistAsyncState;
 useAsyncStateExport.forkAuto = useForkAutoAsyncState;
-useAsyncStateExport.hoistAuto = useHoistAutoAsyncState;
 
 export const useAsyncState = Object.freeze(useAsyncStateExport);

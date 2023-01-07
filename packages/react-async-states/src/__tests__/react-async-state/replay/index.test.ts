@@ -1,4 +1,4 @@
-import {AsyncState, standaloneProducerEffectsCreator} from "async-states";
+import {AsyncState} from "async-states";
 
 describe('AsyncState.reply', () => {
   it('should reply async state latest run', () => {
@@ -12,7 +12,7 @@ describe('AsyncState.reply', () => {
     asyncState.replay();
     expect(producer).not.toHaveBeenCalled();
 
-    asyncState.run(standaloneProducerEffectsCreator, 1);
+    asyncState.run(1);
     // then
 
     expect(producer.mock.calls[0][0].args).toEqual([1]);

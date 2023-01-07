@@ -27,7 +27,6 @@ The library can work with the following modes:
 - `Synchronous` and/or `Asynchronous`
 - Data fetching and/or any form of asynchrony
 - Inside and/or outside `React`
-- Inside and/or outside `React context provider`
 - With or without `Cache`
 - `Promises`, `async/await` and even `generators` or nothing at all
 - Allows abstractions on top of it
@@ -135,18 +134,9 @@ runc({
 ```
 
 #### <ins>Dynamic creation and sharing of states at runtime</ins>
-Under the `AsyncStateProvider`, you can create and share state instances
-and access them by their `key` via the `hoist` option.
-
-You can even start listening to a state before it gets hoisted to the provider,
-and get notified once it gets added.
-
-You can also subscribe to any state when you have the `source` object
-related to it.
-
-#### <ins>Works with or without a provider</ins>
-The library can work without the provider and still share state via the
-`source` special object.
+Any created state is accessible from the whole v8 scope under the key it was
+given to it. So it is important to think about giving unique names to any
+state you create.
 
 #### <ins>Apply effects on runs: debounce, throttle...</ins>
 To avoid creating additional state pieces and third party utilities,
@@ -238,7 +228,6 @@ const {state} = useAsyncState({source: references, lane: 'roles', lazy: false});
 // can be simplified to this:
 const {state} = useSourceLane(references, 'roles');
 
-// re-use a state with its producer called weather present in the provider
 const {state: weatherState} = useAsyncState({key: "weather", fork: true});
 
 ```
@@ -250,7 +239,7 @@ The library has two ways to select data from states:
   current state and the whole cache (you can decide to just work with cache, if you want to!)
 - via `useSelector`: This hook allows you to select data from one or multiple
   pieces of states, it even allows combining `keys` and `source` object to select from them.
-  It also can dynamically select states from the provider as they get hoisted.
+  It also can dynamically select states as they get created.
 
 #### <ins>And many more</ins>
 
@@ -270,12 +259,12 @@ several other unique features like:
 Managing state using React native APIs or third party libraries ain't an easy 
 task. Let's talk about the parts we miss:
 
+- Share state in all directions of your app.
 - Combining synchronous and asynchronous effects.
 - Automatically reset a state when you no longer use it.
 - Dealing with concurrent asynchronous operations' callbacks.
 - Dynamically share states, subscribe and have full control over them.
 - Select a part of a state and re-render only when you decide that it changed.
-- Share state in all directions of a react app, inside and outside context providers.
 - The need to add additional state values each time to represent loading and error states.
 - Automatically cancel asynchronous operations when the component unmounts, or dependencies change.
 - Cannot automatically declare and share a state from a component and subscribe to it from other parts of the app.

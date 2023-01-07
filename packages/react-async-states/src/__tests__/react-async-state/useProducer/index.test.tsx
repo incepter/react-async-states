@@ -1,6 +1,5 @@
 import * as React from "react";
 import {fireEvent, render, screen} from "@testing-library/react";
-import {AsyncStateProvider} from "../../../Provider";
 import {useProducer} from "../../../useProducer";
 
 describe('should useProducer', () => {
@@ -47,7 +46,7 @@ describe('should useProducer', () => {
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("");
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual("[\"CONFIG_FUNCTION\",\"STANDALONE\"]");
+      .toEqual("[\"CONFIG_FUNCTION\"]");
 
     // +1
     fireEvent.click(incrementBtn);
@@ -59,9 +58,7 @@ describe('should useProducer', () => {
     // given
     function Test() {
       return (
-        <AsyncStateProvider>
-          <Component/>
-        </AsyncStateProvider>
+        <Component/>
       );
     }
 
@@ -100,7 +97,7 @@ describe('should useProducer', () => {
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("");
     expect(screen.getByTestId("mode").innerHTML)
-      .toEqual("[\"CONFIG_FUNCTION\",\"STANDALONE\",\"INSIDE_PROVIDER\"]");
+      .toEqual("[\"CONFIG_FUNCTION\"]");
 
     // +1
     fireEvent.click(incrementBtn);

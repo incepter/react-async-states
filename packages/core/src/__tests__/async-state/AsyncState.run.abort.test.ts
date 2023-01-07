@@ -1,11 +1,9 @@
-import {act} from "@testing-library/react-hooks";
 import {rejectionTimeout, timeout} from "./test-utils";
-import {mockDateNow, TESTS_TS} from "../react-async-state/utils/setup";
+import {mockDateNow, TESTS_TS} from "../utils/setup";
 import {
   AsyncState,
-  standaloneProducerEffectsCreator,
   Status
-} from "async-states";
+} from "../..";
 
 // @ts-ignore
 jest.useFakeTimers("modern");
@@ -15,7 +13,7 @@ describe('AsyncState - run - abort', () => {
 
   it('should abort while pending and check state did not update after supposed resolve', async () => {
     // given
-    let key = "simulated";
+    let key = "simulated-1";
     let producer = timeout(100, [{id: 1, description: "value"}]);
     let myConfig = {initialValue: null};
     let subscription = jest.fn();
@@ -32,11 +30,9 @@ describe('AsyncState - run - abort', () => {
       status: Status.initial,
     });
 
-    const abort = myAsyncState.run(standaloneProducerEffectsCreator);
+    const abort = myAsyncState.run();
 
-    await act(async () => {
-      await jest.advanceTimersByTime(50);
-    });
+    await jest.advanceTimersByTime(50);
 
 
     expect(subscription).toHaveBeenCalledTimes(1);
@@ -85,9 +81,7 @@ describe('AsyncState - run - abort', () => {
       status: Status.aborted,
     });
 
-    await act(async () => {
-      await jest.advanceTimersByTime(50);
-    });
+    await jest.advanceTimersByTime(50);
 
     // async state should be in success state with data
     expect(myAsyncState.state).toEqual({
@@ -107,7 +101,7 @@ describe('AsyncState - run - abort', () => {
 
   it('should abort while pending and check state did not update after supposed rejection', async () => {
     // given
-    let key = "simulated";
+    let key = "simulated-2";
     let producer = rejectionTimeout(100, "reason");
     let myConfig = {initialValue: null};
     let subscription = jest.fn();
@@ -117,11 +111,9 @@ describe('AsyncState - run - abort', () => {
     myAsyncState.subscribe({cb: subscription});
     // then
 
-    const abort = myAsyncState.run(standaloneProducerEffectsCreator);
+    const abort = myAsyncState.run();
 
-    await act(async () => {
-      await jest.advanceTimersByTime(50);
-    });
+    await jest.advanceTimersByTime(50);
 
     subscription.mockClear();
     abort!("reason");
@@ -135,9 +127,7 @@ describe('AsyncState - run - abort', () => {
 
     expect(subscription).not.toHaveBeenCalled();
 
-    await act(async () => {
-      await jest.advanceTimersByTime(50);
-    });
+    await jest.advanceTimersByTime(50);
 
     // async state should be in success state with data
     expect(myAsyncState.state).toEqual({
@@ -157,7 +147,7 @@ describe('AsyncState - run - abort', () => {
   });
   it('should bailout aborted state when it will be running again', async () => {
     // given
-    let key = "simulated";
+    let key = "simulated-3";
     let producer = timeout(100, "value");
     let myConfig = {initialValue: null};
     let subscription = jest.fn();
@@ -168,26 +158,22 @@ describe('AsyncState - run - abort', () => {
     myAsyncState.subscribe({cb: subscription});
     // then
 
-    myAsyncState.run(standaloneProducerEffectsCreator);
+    myAsyncState.run();
 
-    await act(async () => {
-      await jest.advanceTimersByTime(50);
-    });
+    await jest.advanceTimersByTime(50);
 
     expect(myAsyncState.state.status).toBe(Status.pending);
 
     // rerun while pending should interrupt previous
     subscription.mockClear();
-    myAsyncState.run(standaloneProducerEffectsCreator);
+    myAsyncState.run();
 
     expect(subscription.mock.calls[0][0].status).toBe(Status.pending);
 
     expect(subscription).toHaveBeenCalledTimes(1);
 
 
-    await act(async () => {
-      await jest.advanceTimersByTime(100);
-    });
+    await jest.advanceTimersByTime(100);
 
     // async state should be in success state with data
     expect(myAsyncState.state).toEqual({

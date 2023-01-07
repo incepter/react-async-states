@@ -9,9 +9,6 @@ of shared states.
 If used at a module level, it will give you a state that is accessible from
 all over your application.
 
-If you are curious how it works, you can read [it here](/docs/faq/how-the-library-works#how-source-works-).
-
-
 The source object has the following properties:
 
 | Property          | Type                                                              | Description                                                                                   |

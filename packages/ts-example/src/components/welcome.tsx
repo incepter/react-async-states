@@ -42,7 +42,6 @@ let userDetails = createSource("user-details", fetchUser, {
     persist: (cache) => localStorage.setItem("users", JSON.stringify(cache)),
   }
 });
-userDetails.setState(old => old.data + 1);
 userDetails.on("dispose", () => {
   console.log('disposed !!!');
 });

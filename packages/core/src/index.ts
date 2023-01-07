@@ -8,10 +8,13 @@ export {
   ProducerType,
   Status,
   RunEffect,
-  standaloneProducerEffectsCreator,
   readSource,
   producerWrapper,
   cloneProducerProps,
+  enableDiscovery,
+  setDefaultPool,
+  getOrCreatePool,
+  standaloneProducerEffectsCreator,
 } from "./AsyncState";
 
 export type {
@@ -45,34 +48,15 @@ export type {
   StateFunctionUpdater,
   AsyncStateKeyOrSource,
   StateBuilderInterface,
+  LastSuccessSavedState,
+
+  PoolInterface,
+
 } from "./AsyncState";
-
-export {
-  AsyncStateManager
-} from "./AsyncStateManager";
-
-export type {
-  InitialStates,
-  StateDefinition,
-  hoistConfig,
-  SourceOrDefinition,
-
-  ManagerInterface,
-  AsyncStateWatchKey,
-  WatchCallback,
-  InstanceOrNull,
-
-  StateEntry,
-  StateProviderProps,
-
-  ArraySelector,
-  FunctionSelector,
-  FunctionSelectorItem,
-  SimpleSelector
-} from "./AsyncStateManager";
 
 export {
   DevtoolsEvent, DevtoolsRequest, DevtoolsJournalEvent
 } from "./devtools/index";
 
+export {version} from "../package.json";
 export {default as devtools} from "./devtools/Devtools"

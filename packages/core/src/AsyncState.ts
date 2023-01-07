@@ -1,3 +1,4 @@
+import {version} from "../package.json";
 import {
   __DEV__,
   isFunction,
@@ -15,6 +16,7 @@ import {
 import devtools from "./devtools/Devtools";
 import {hideStateInstanceInNewObject} from "./hide-object";
 import {nextKey} from "./key-gen";
+import {watch} from "rollup";
 
 export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   //region properties
@@ -51,6 +53,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   isEmitting?: boolean;
 
   readonly producer: ProducerFunction<T, E, R>;
+  private readonly ownPool: PoolInterface;
 
 
   //endregion
@@ -59,8 +62,28 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     key: string,
     producer: Producer<T, E, R> | undefined | null,
     config?: ProducerConfig<T, E, R>,
+    poolName?: string,
   ) {
+
+    let poolToUse: PoolInterface = poolInUse;
+    if (poolName) {
+      poolToUse = getOrCreatePool(poolName);
+    }
+
+    let maybeInstance = poolToUse.instances.get(key);
+    if (maybeInstance) {
+      if (__DEV__) {
+        warnAboutAlreadyExistingSourceWithSameKey(key);
+      }
+
+      let instance = maybeInstance as AsyncState<T, E, R>;
+      instance.replaceProducer(producer || undefined);
+      instance.patchConfig(config);
+      return instance;
+    }
+
     this.key = key;
+    this.ownPool = poolToUse;
     this.uniqueId = nextUniqueId();
     this.config = shallowClone(config);
     this.originalProducer = producer ?? undefined;
@@ -98,10 +121,15 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     if (__DEV__) {
       devtools.emitCreation(this);
     }
+
+    poolToUse.set(key, this);
   }
 
   private bindMethods() {
     this.on = this.on.bind(this);
+    this.run = this.run.bind(this);
+    this.runp = this.runp.bind(this);
+    this.runc = this.runc.bind(this);
     this.abort = this.abort.bind(this);
     this.getState = this.getState.bind(this);
     this.setState = this.setState.bind(this);
@@ -352,7 +380,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       return undefined;
     }
     return this.runImmediately(
-      latestRunTask.producerEffectsCreator,
       latestRunTask.payload,
       undefined,
       latestRunTask.args
@@ -385,12 +412,11 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     }
   }
 
-  run(createProducerEffects: ProducerEffectsCreator<T, E, R>, ...args: any[]) {
-    return this.runWithCallbacks(createProducerEffects, undefined, args);
+  run(...args: any[]) {
+    return this.runWithCallbacks(undefined, args);
   }
 
   runWithCallbacks(
-    createProducerEffects: ProducerEffectsCreator<T, E, R>,
     callbacks: ProducerCallbacks<T, E, R> | undefined,
     args: any[]
   ) {
@@ -402,16 +428,15 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       effectDurationMs === 0
     ) {
       return this.runImmediately(
-        createProducerEffects,
         shallowClone(this.payload),
         callbacks,
         args
       );
     }
-    return this.runWithEffect(createProducerEffects, callbacks, args);
+    return this.runWithEffect(callbacks, args);
   }
 
-  runp(createProducerEffects: ProducerEffectsCreator<T, E, R>, ...args: any[]) {
+  runp(...args: any[]) {
     const that = this;
     return new Promise<State<T, E, R>>(function runpPromise(resolve) {
       const callbacks: ProducerCallbacks<T, E, R> = {
@@ -419,19 +444,17 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
         onSuccess: resolve,
         onAborted: resolve,
       };
-      that.runWithCallbacks(createProducerEffects, callbacks, args);
+      that.runWithCallbacks(callbacks, args);
     });
   }
 
   runc(
-    createProducerEffects: ProducerEffectsCreator<T, E, R>,
     props?: RUNCProps<T, E, R>
   ) {
-    return this.runWithCallbacks(createProducerEffects, props, props?.args ?? []);
+    return this.runWithCallbacks(props, props?.args ?? []);
   }
 
   private runWithEffect(
-    createProducerEffects: ProducerEffectsCreator<T, E, R>,
     internalCallbacks: ProducerCallbacks<T, E, R> | undefined,
     args: any[]
   ): AbortFn {
@@ -446,7 +469,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       const timeoutId = setTimeout(function realRun() {
         that.pendingTimeout = null;
         runAbortCallback = that.runImmediately(
-          createProducerEffects,
           shallowClone(that.payload),
           internalCallbacks,
           args
@@ -501,7 +523,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       }
     }
     return this.runImmediately(
-      createProducerEffects,
       shallowClone(this.payload),
       internalCallbacks,
       args
@@ -509,7 +530,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   }
 
   private runImmediately(
-    producerEffectsCreator: ProducerEffectsCreator<T, E, R>,
     payload: Record<string, any> | null,
     internalCallbacks: ProducerCallbacks<T, E, R> | undefined,
     execArgs: any[]
@@ -564,10 +584,10 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     };
 
 
-    this.latestRun = {payload, args: execArgs, producerEffectsCreator};
+    this.latestRun = {payload, args: execArgs};
 
     const props = constructPropsObject(
-      this, producerEffectsCreator, internalCallbacks, runIndicators, payload, execArgs);
+      this, internalCallbacks, runIndicators, payload, execArgs);
 
     const abort = props.abort;
 
@@ -624,7 +644,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       key = `${this.key}-fork-${this.forksIndex + 1}`;
     }
 
-    const clone = new AsyncState(key, this.originalProducer, this.config);
+    const clone = new AsyncState(key, this.originalProducer, this.config, this.ownPool.name);
 
     // if something fail, no need to increment
     this.forksIndex += 1;
@@ -859,7 +879,6 @@ export function cloneProducerProps<T, E, R>(props: ProducerProps<T, E, R>): Prod
 
 function constructPropsObject<T, E, R>(
   instance: StateInterface<T, E, R>,
-  producerEffectsCreator: ProducerEffectsCreator<T, E, R>,
   internalCallbacks: ProducerCallbacks<T, E, R> | undefined,
   runIndicators: RunIndicators,
   payload: Record<string, any> | null,
@@ -889,7 +908,7 @@ function constructPropsObject<T, E, R>(
       return instance.state;
     }
   };
-  Object.assign(props, producerEffectsCreator(props));
+  Object.assign(props, standaloneProducerEffectsCreator(props));
 
   return props;
 
@@ -954,13 +973,10 @@ function constructPropsObject<T, E, R>(
 export function createSource<T, E = any, R = any>(
   key: string,
   producer?: Producer<T, E, R> | undefined | null,
-  config?: ProducerConfig<T, E, R>
+  config?: ProducerConfig<T, E, R>,
 ): Source<T, E, R> {
-  return new AsyncState(
-    key,
-    producer,
-    config
-  )._source;
+  let pool = config && config.pool;
+  return new AsyncState(key, producer, config, pool)._source;
 }
 
 const defaultForkConfig: ForkConfig = Object.freeze({keepState: false});
@@ -1121,6 +1137,9 @@ function makeSource<T, E, R>(instance: StateInterface<T, E, R>): Readonly<Source
     uniqueId: instance.uniqueId,
 
     on: instance.on,
+    run: instance.run,
+    runp: instance.runp,
+    runc: instance.runc,
     abort: instance.abort,
     replay: instance.replay,
     hasLane: instance.hasLane,
@@ -1136,9 +1155,6 @@ function makeSource<T, E, R>(instance: StateInterface<T, E, R>): Readonly<Source
     replaceCache: instance.replaceCache,
     invalidateCache: instance.invalidateCache,
     replaceProducer: instance.replaceProducer,
-    run: instance.run.bind(instance, standaloneProducerEffectsCreator),
-    runp: instance.runp.bind(instance, standaloneProducerEffectsCreator),
-    runc: instance.runc.bind(instance, standaloneProducerEffectsCreator),
 
     getAllLanes() {
       if (!instance.lanes) {
@@ -1219,18 +1235,20 @@ export function standaloneProducerRunEffectFunction<T, E, R>(
   ...args: any[]
 ) {
   if (isSource(input)) {
-    let instance = readSource(input as Source<T, E, R>)
-      .getLane(config?.lane);
-
-    return instance.run(standaloneProducerEffectsCreator, ...args);
-
+    return (input as Source<T, E, R>).getLaneSource(config?.lane).run(...args);
   } else if (isFunction(input)) {
     let instance = new AsyncState(
       nextKey(), input as Producer<T, E, R>, {hideFromDevtools: true});
     if (config?.payload) {
       instance.mergePayload(config.payload)
     }
-    return instance.run(standaloneProducerEffectsCreator, ...args);
+    return instance.run(...args);
+  } else if (typeof input === "string") {
+    let instance = getOrCreatePool().instances.get(input);
+
+    if (instance) {
+      return instance.getLane(config?.lane).run(...args);
+    }
   }
   return undefined;
 }
@@ -1254,9 +1272,13 @@ export function standaloneProducerRunpEffectFunction<T, E, R>(
     }
     return runWhileSubscribingToNextResolve(instance, props, args);
 
-  } else {
-    return undefined;
+  } else if (typeof input === "string") {
+    let instance = getOrCreatePool().instances.get(input);
+    if (instance) {
+      return runWhileSubscribingToNextResolve(instance.getLane(config?.lane), props, args);
+    }
   }
+  return undefined;
 }
 
 export function runWhileSubscribingToNextResolve<T, E, R>(
@@ -1268,7 +1290,7 @@ export function runWhileSubscribingToNextResolve<T, E, R>(
     let unsubscribe = instance.subscribe({cb: subscription});
     props.onAbort(unsubscribe);
 
-    let abort = instance.run(standaloneProducerEffectsCreator, ...args);
+    let abort = instance.run(...args);
     props.onAbort(abort);
 
     function subscription(newState: State<T, E, R>) {
@@ -1289,6 +1311,12 @@ export function standaloneProducerSelectEffectFunction<T, E, R>(
 ) {
   if (isSource(input)) {
     return (input as Source<T, E, R>).getLaneSource(lane).getState()
+  } else if (typeof input === "string") {
+    let pool = getOrCreatePool();
+    let instance = pool.instances.get(input);
+    if (instance) {
+      return instance.getState();
+    }
   }
 }
 
@@ -1580,23 +1608,19 @@ export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R>
   fork(forkConfig?: ForkConfig): BaseSource<T, E, R>,
 
   runWithCallbacks(
-    createProducerEffects: ProducerEffectsCreator<T, E, R>,
     callbacks: ProducerCallbacks<T, E, R> | undefined,
     args: any[]
   ),
 
   run(
-    createProducerEffects: ProducerEffectsCreator<T, E, R>,
     ...args: any[]
   ): AbortFn,
 
   runp(
-    createProducerEffects: ProducerEffectsCreator<T, E, R>,
     ...args: any[]
   ): Promise<State<T, E, R>>,
 
   runc(
-    createProducerEffects: ProducerEffectsCreator<T, E, R>,
     props?: RUNCProps<T, E, R>
   ): AbortFn,
 
@@ -1742,6 +1766,8 @@ export type ProducerConfig<T, E = any, R = any> = {
   skipPendingDelayMs?: number,
   resetStateOnDispose?: boolean,
 
+  pool?: string,
+
   // dev only
   hideFromDevtools?: boolean,
 }
@@ -1772,7 +1798,6 @@ export interface Source<T, E = any, R = any> extends BaseSource<T, E, R> {
 export type RunTask<T, E, R> = {
   args: any[],
   payload: Record<string, any> | null,
-  producerEffectsCreator: ProducerEffectsCreator<T, E, R>,
 }
 
 export type StateSubscription<T, E, R> = {
@@ -1839,8 +1864,6 @@ export interface ProducerEffects {
   ) => State<T, E, R> | undefined,
 }
 
-export type ProducerEffectsCreator<T, E, R> = (props: ProducerProps<T, E, R>) => ProducerEffects;
-
 export type ProducerRunInput<T, E = any, R = any> =
   AsyncStateKeyOrSource<T, E, R>
   | Producer<T, E, R>;
@@ -1853,5 +1876,217 @@ export type ProducerRunConfig = {
 
 export type PendingTimeout = { id: ReturnType<typeof setTimeout>, startDate: number };
 export type PendingUpdate = { timeoutId: ReturnType<typeof setTimeout>, callback(): void };
+
+//endregion
+
+
+//region Pool Definition
+
+let ownLibraryPools = {} as AsyncStatePools;
+let LIBRARY_POOLS_PROPERTY = "__ASYNC_STATES_POOLS__";
+let globalContext = window || globalThis || null;
+let ownPool: PoolInterface = createPool("default");
+let didWarnAboutExistingInstanceRecreation = false;
+
+let poolInUse: PoolInterface = ownPool;
+ownLibraryPools[ownPool.name] = ownPool;
+
+type AsyncStatePools = Record<string, PoolInterface>;
+
+export type WatchCallback<T, E = any, R = any> = (
+  value: StateInterface<T, E, R> | null, key: string) => void;
+
+export interface PoolInterface {
+  name: string,
+  simpleName: string,
+  version: string,
+
+  mergePayload(payload: Record<string, any>): void,
+
+  instances: Map<string, StateInterface<any>>,
+
+  watch<T, E, R>(key: string, value: WatchCallback<T, E, R>): AbortFn,
+
+  listen(cb: WatchCallback<any>): AbortFn,
+
+  set(key: string, instance: StateInterface<any>),
+}
+
+function getLibraryPools(): AsyncStatePools {
+  return ownLibraryPools;
+}
+
+export function createPool(name: string): PoolInterface {
+  let meter = 0;
+  let watchers = {};
+  let listeners = {};
+  let instances = new Map<string, StateInterface<any>>();
+  return {
+    version,
+    instances,
+    simpleName: name,
+    name: getPoolName(name),
+
+    set,
+    watch,
+    listen,
+    mergePayload,
+  };
+
+  function set(key: string, instance: StateInterface<any>) {
+    if (!key) {
+      return;
+    }
+    instances.set(key, instance);
+    notifyWatchers(key, instance);
+  }
+
+  function mergePayload(payload: Record<string, any>) {
+    instances.forEach(instance => instance.mergePayload(payload))
+  }
+
+  function listen<T, E, R>(notify: WatchCallback<T, E, R>): AbortFn {
+    let didClean = false;
+    let index = ++meter;
+
+    function cb(argv: StateInterface<T, E, R> | null, notifKey: string) {
+      if (!didClean) {
+        notify(argv, notifKey);
+      }
+    }
+
+    function cleanup() {
+      didClean = true;
+      delete listeners[index];
+    }
+
+    listeners[index] = {cb, cleanup};
+    return cleanup;
+  }
+
+
+  function watch<T, E, R>(
+    key: string, notify: WatchCallback<T, E, R>): AbortFn {
+    if (!watchers[key]) {
+      watchers[key] = {};
+    }
+    let didClean = false;
+    let index = ++meter;
+
+    function cb(argv: StateInterface<T, E, R> | null, notifKey: string) {
+      if (!didClean) {
+        notify(argv, notifKey);
+      }
+    }
+
+    function cleanup() {
+      didClean = true;
+      delete watchers[key][index];
+    }
+
+    watchers[key][index] = {cb, cleanup};
+
+
+    return cleanup;
+  }
+
+
+  function notifyWatchers<T, E, R>(
+    key: string, value: StateInterface<T, E, R> | null): void {
+    Promise.resolve().then(function notify() {
+      let callbacks: {
+        cleanup: AbortFn,
+        cb: WatchCallback<any>
+      }[] = Object.values(listeners);
+
+      if (watchers[key]) {
+        callbacks = Object.values(watchers[key]);
+      }
+
+      callbacks.forEach(function notifyWatcher(watcher) {
+        watcher.cb(value, key);
+      });
+    });
+  }
+}
+
+function getPoolName(name: string) {
+  return `ASYNC-STATES-${name}-POOL`;
+}
+
+export function enableDiscovery(name?: string) {
+  if (!globalContext) {
+    return;
+  }
+
+  let libraryPools = getLibraryPools();
+  let poolName = getPoolName(name || "default");
+  let maybePool = libraryPools[poolName];
+
+  if (!maybePool) {
+    if (__DEV__) {
+      console.error(`enableDiscovery called on a non existent pool ${name}`);
+    }
+    return;
+  }
+
+  globalContext[`${LIBRARY_POOLS_PROPERTY}_${poolName}`] = maybePool;
+}
+
+let didSetDefaultPool;
+if (__DEV__) {
+  didSetDefaultPool = false;
+}
+
+export function setDefaultPool(name: string): Promise<void> {
+  if (!name) {
+    throw new Error("name is required");
+  }
+  return new Promise((resolve, reject) => {
+    if (!globalContext) {
+      reject();
+    }
+    let poolSharedName = `${LIBRARY_POOLS_PROPERTY}_${getPoolName(name)}`;
+    let maybePool = globalContext[poolSharedName] as PoolInterface;
+    if (!maybePool) {
+      reject(`No shared pool with name ${name}`);
+    }
+    poolInUse = maybePool;
+    didSetDefaultPool = true;
+    if (didSetDefaultPool) {
+      throw new Error("setDefaultPool can only be called once for now")
+    }
+    resolve();
+  });
+}
+
+export function getOrCreatePool(name?: string): PoolInterface {
+  if (!name) {
+    return poolInUse;
+  }
+
+  let poolName = getPoolName(name);
+  let libraryPools = getLibraryPools();
+  let candidate = libraryPools[poolName];
+
+  if (!candidate) {
+    let newPool = createPool(name);
+    libraryPools[newPool.name] = newPool;
+    return newPool;
+  }
+
+  return candidate;
+}
+
+function warnAboutAlreadyExistingSourceWithSameKey(key) {
+  if (!didWarnAboutExistingInstanceRecreation) {
+    console.error(`
+    [WARNING] - A previous instance with key ${key} exists,
+    calling 'createSource' with the same key will result in 
+    patching the producer and the config.
+    `);
+    didWarnAboutExistingInstanceRecreation = true;
+  }
+}
 
 //endregion
