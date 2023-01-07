@@ -109,10 +109,5 @@ In general, here how you will be using the library:
   and give it its unique name. This function shall
   receive a powerful single argument object called the `props` (or `argv`).
   This function may take any of the supported forms.
-- Second (optional), you define a provider that will host your states and payload.
 - Later, from any point in your app, you can use `useAsyncState(key)`
   or `useSelector(key)` to get the state based on your needs.
-
-After mounting your app, it will more likely appear like this:
-
-![img](/img/provider-app.png)

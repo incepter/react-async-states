@@ -42,8 +42,6 @@ Let's see in details the supported configuration:
 | `skipPendingDelayMs`  | `number > 0`                                      | `undefined`                            | The duration under which a state update with a pending status may be skipped. The component in this case won't render with a pending status if it gets updated to something else under that delay. |
 | `initialValue`        | `any`                                             | `null`                                 | The initial state value,  the initializer receives the cache as unique parameter                                                                                                                   |
 | `events`              | `UseAsyncStateEvents`                             | `undefined`                            | Defines events that will be invoked with this subscription.                                                                                                                                        |
-| `hoist`               | `boolean`                                         | `false`                                | Defines whether to hoist this state to the provider or not                                                                                                                                         |
-| `hoistConfig`         | `HoistConfig`                                     | `{override: false}`                    | Defines the configuration associated with `hoist = true`                                                                                                                                           |
 
 The returned object from `useAsyncState` contains the following properties:
 
@@ -72,8 +70,8 @@ The returned object from `useAsyncState` contains the following properties:
 | `subscribe`                                                 | subscribes with a callback to state changes                             |
 | `getConfig`                                                 | gets the current used config                                            |
 | `patchConfig`                                               | patches the config related to the producer                              |
-| `flags`                                                     | the subscription mode: listen, source, hoist, ...                       |
-| `devFlags`                                                  | the subscription mode: listen, source, hoist, ...                       |
+| `flags`                                                     | the subscription mode: listen, source, ...                              |
+| `devFlags`                                                  | the subscription mode: listen, source, ...                              |
 | `toArray`                                                   | when invoked returns the same iterable that corresponds to this hook    |
 
 :::note 
@@ -97,7 +95,7 @@ const {state: {data, status}} = useAsyncState({key: "current-user", producer: cu
 const {state: {data: transactions, status}} = useAsyncState("transactions");
 
 // injects the users list state
-const {state: {data, status}} = useAsyncState({key: "users-list", producer: usersListPromise, lazy: false, payload: {storeId}, hoist: true});
+const {state: {data, status}} = useAsyncState({key: "users-list", producer: usersListPromise, lazy: false, payload: {storeId}});
 
 // forks the list of transactions for another store (for preview for example)
 // this will create another async state issued from users-list -with a new key (forked)- without impacting its state
@@ -108,7 +106,7 @@ const {state: {data, status}} = useAsyncState({key: "users-list", payload: {anot
 // for example, once the user chooses a profile, just redirect to the new url => matchParams will change => refetch as non lazy
 const matchParams = useParams();
 const {state} = useAsuncState({
-  ...userProfilePromiseConfig, // (key, producer), or take only the key if hoisted and no problem impacting the state
+  ...userProfilePromiseConfig,
   lazy: false,
   payload: {matchParams}
 }, [matchParams]);
@@ -130,55 +128,6 @@ function removeTodo(id) {
   run({type: REMOVE_TODO, payload: id});
 }
 
-// a standalone async state (even inside provider, not hoisted nor forked => standalone)
-useAsyncState({
-  key: "not_in_provider",
-  payload: {
-    delay: 2000,
-    onSuccess() {
-      showNotification();
-    }
-  },
-  producer(props) {
-    timeout(props.payload.delay)
-    .then(function callSuccess() {
-      if (!props.isAborted()) {
-        // notice that we are taking onSuccess from payload, not from component's closure
-        // that's the way to go, this creates a separation of concerns
-        // and your producer may be extracted outisde this file, and will be easier to test
-        // but in general, please avoid code like this, and make it like an effect reacting to a value
-        // (the state data for example)
-        props.payload.onSuccess();
-      }
-    })
-  }
-});
-
-// hoists a controlled form to provider
-useAsyncState({
-  key: "some-form",
-  producer(props) {
-    const [name, value] = props.args;
-    if (!name) {
-      return props.lastSuccess.data;
-    }
-    return {...props.lastSuccess.data, [name]: value};
-  },
-  hoist: true,
-  initialValue: {}
-});
-// later
-<Input name="username" />
-<Input name="password" />
-<Input name="phoneNumber" />
-// where
-function Input({name, ...rest}) {
-  const {state, run} = useAsyncState({
-    key: "login-form",
-    selector: state => state.data[name],
-  }, [name]);
-  return //...
-}
 
 ```
 
@@ -238,21 +187,15 @@ useAsyncState(function* myProducer() {
 ## `Configuration` object
 ### `key`
 The key received by `useAsyncState` works as the following:
-- If inside a provider
-  - If the `key` matches something in the provider
-    - If neither `hoist` nor `fork` is truthy,
-      then we are `listening` to a state
-    - If `hoist = true`, attempts to override it with a new
-      created state from given `producer` and `hositToProviderConfiguration`.
-    - If `fork = true`, forks from the matched state.
-  - If there is no such a `key` in the provider
-    - If `hoist = true`, hoists the created state with the given
-      `producer` and other related properties.
-- If outside the provider, a new state is created.
+- If the `key` matches something
+  - Take it and patch the producer and config if given
+  - If `wait = true`, wait for a state with that key to be present
+  - If `fork = true`, forks from the matched state.
+- If there is no such a `key`, create it with given producer and config, if any
 
 So as a recap, the key is needed:
 - When defining a state
-- When trying to subscribe to a state (while adding hoist, listen or fork)
+- When trying to subscribe to a state
 
 :::note
 The previous assumptions are related to `key` only. If a `Source` object is
@@ -264,12 +207,10 @@ The following snippets will give you a good idea of how to `useAsyncState`:
 ```typescript
 import {useAsyncState} from "react-async-states";
 
-// ASSUMING YOU ARE INSIDE PROVIDER
-
 // creates a state with `my-key` as key and undefined as producer
 useAsyncState("my-key");
 
-// creates a state with `my-key` as key and undefined as myProducer
+// will patch the state named my-key with myProducer
 useAsyncState({
   key: "my-key",
   producer: myProducer,
@@ -278,42 +219,11 @@ useAsyncState({
 ```
 
 ```typescript
-import {useAsyncState} from "react-async-states";
-
-// ASSUMING YOU ARE OUTSIDE PROVIDER
-
 // listens or waits to the state with `my-key` as key
-// if not found, it will return empty data and wait for it given key to be hoisted
-useAsyncState("my-key");
-
-// listens or waits to the state with `my-key` as key, plus
-// the `producer` property is ignored
 useAsyncState({
   key: "my-key",
   producer: myProducer,
-});
-
-// listens or waits to the state with `my-key` as key, plus
-// if not found, it will create it with the given producer and hoists it
-// to provider
-useAsyncState({
-  key: "my-key",
-  producer: myProducer,
-  hoist: true,
-});
-
-// defines a new state with the given producer and hoists it to provider
-// if an async state exists with the same key, it tries to dispose it
-//    if the dispose passes, the old state is overrided 
-//  or else, the a new instance is created and given `my-key` and added to
-// provider, and then its watchers are notified (components waiting).
-useAsyncState({
-  key: "my-key",
-  producer: myProducer,
-  hoist: true,
-  hoistConfig: {
-    override: true,
-  }
+  wait: true,
 });
 
 // the key property is completely ignored
@@ -370,11 +280,11 @@ const mySource = createSource("my-key", myProducer, myConfig);
 useAsyncState(mySource);
 
 // subscribes to the given state
-// all other creation/listen properties are ignored, like key, producer, hoist
+// all other creation/listen properties are ignored, like key, producer
 useAsyncState({source: mySource});
 
 // forks the given state
-// all other creation/listen properties are ignored, like key, producer, hoist
+// all other creation/listen properties are ignored, like key, producer
 useAsyncState({source: mySource, fork: true});
 ```
 
@@ -493,17 +403,6 @@ useAsyncState({
   }
 })
 ```
-
-### `hoist`
-This property is relevant only if inside a provider,
-If set to true, it will `hoist` the state with the given `hoistConfig`.
-
-### `hoistConfig`
-A configuration object containing the following:
-
-| Property   | Type      | Default Value | Description                                              |
-|------------|-----------|---------------|----------------------------------------------------------|
-| `override` | `boolean` | `undefined`   | Whether to override the existing state with the same key |
 
 
 ### `selector`
@@ -646,8 +545,6 @@ createSource(key, producer, {resetStateOnDispose: true});
 ```
 
 ### `cacheConfig`
-This property is only relevant when `creating` a new state (along with hoist...).
-
 It determines the cache configurations:
 
 | Property      | Type                                                              | Description                                                                      |
@@ -1021,7 +918,7 @@ const {invalidateCache} =  useAsyncState({
 
 ### `mergePayload`
 The payload that the producer returns is the payload issued from all subscribers,
-and the one from provider, and the one that this function adds:
+and the one that this function adds:
 
 ```typescript
 import {useAsyncState} from "react-async-states/src";
@@ -1082,8 +979,6 @@ The following are all hooks with the same signature as `useAsyncState`, but each
 - `useAsyncState.auto`: adds `lazy: false` to configuration
 - `useAsyncState.lazy`: adds `lazy: true` to configuration
 - `useAsyncState.fork`: adds `fork: true` to configuration
-- `useAsyncState.hoist`: adds `hoist: true` to configuration
-- `useAsyncState.hoistAuto`: adds `lazy: false, hoist: true` to configuration
 - `useAsyncState.forkAudo`: adds `lazy: false, fork: true` to configuration
 
 The following snippets results from the previous hooks:
@@ -1095,8 +990,6 @@ const {state: {status, data}, run, abort} = useAsyncState.auto(DOMAIN_USER_PRODU
 const {state: user1} = useAsyncState.auto({source: user1Source, selector: s => s.data});
 // automatically fetches user 2 and selects its name
 const {state: user2} = useAsyncState.auto({source: user2Source, selector: name});
-// automatically fetches user 3 and hoists it to provider and selects its name
-const {state: user3} = useAsyncState.hoistAuto({source: userPayloadSource, payload: {userId: 3}, selector: name})
 // forks userPayloadSource and runs it automatically with a new payload and selects the name from result
 const {state: user4} = useAsyncState.forkAuto({source: userPayloadSource, payload: {userId: 4}, selector: name})
 ```

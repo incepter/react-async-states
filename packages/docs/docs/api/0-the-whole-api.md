@@ -56,15 +56,11 @@ const {
   runEffectDurationMs, // the duration of the run effect in Ms
   resetStateOnDispose, // whether to reset state to initial status when no subscribers are left
   initialValue, // the initial value when creating an instance
-  fork, // whether to fork in provider from the given instnace
+  fork, // whether to fork in given instnace
   forkConfig: {
     key, // the key to give to the new instance
     keepState, // copy the state from the initial instance
     keepCache, // copy the cache from the initial instance
-  },
-  hoist, // whether to hoist the instance to the nearest provider
-  hoistConfig: {
-    override, // whether to override any existing instance
   },
   lazy, // whether to automatically run the producer if the condition is truthy
   autoRunArgs, // the args to give to the producer when auto running
@@ -118,7 +114,7 @@ function myProducer<T>({
   lastSuccess, // the last success that was registered before this call, useful for reducers & infinite data
   run, // runs a source or an instance or a producer and returns the abort function
   runp, // runs a source or an instance or a producer and returns a promise to resolve
-  select, // selects from source or provider the current state of any state instance
+  select, // selects from source or by key the current state of any state instance
 }) {
   return T | Promise<T> | Generator<any, T, any>;
 }

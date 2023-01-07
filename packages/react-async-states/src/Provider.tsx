@@ -19,6 +19,11 @@ export function AsyncStateProvider(
             If you were using it, please use Pools instead which won't require
             any React component from your at all.
             
+            For all states that were given to the provider, simply use source
+            or define them using a unique key and access them anywhere.
+            
+            If you were using multiple providers, use Pools instead.
+            
             Pools documentation: #todo
             `);
       didWarnAboutProviderDeprecated = true;

@@ -32,7 +32,7 @@ where:
 
 | Property      | Description                                                                                                                                |
 |---------------|--------------------------------------------------------------------------------------------------------------------------------------------|
-| `payload`     | The merged payload from provider and all subscribers. This allows the producer to gather data from multiple places.                        |
+| `payload`     | The merged payload from all subscribers. This allows the producer to gather data from multiple places.                                     |
 | `lastSuccess` | The last success state                                                                                                                     |
 | `args`        | The arguments that the `run` function was given when ran                                                                                   |
 | `isAborted`   | A function returns a boolean indicating whether the current run has been cancelled (by dependency change, unmount or user action)          |
@@ -46,8 +46,7 @@ where:
 
 We believe that these properties will solve all sort of possible use cases.
 In fact, your function will run while having access to payload from the render,
-from either the provider and subscriptions, and can be merged imperatively anytime
-using `mergePayload` also execution args.
+and can be merged imperatively anytime using `mergePayload`.
 
 Your function will be notified with the cancellation by registering an `onAbort`
 callback, you can exploit this to abort an `AbortController` which will lead
@@ -201,14 +200,12 @@ Here is a small example of the usage of cache config:
 The producer receives a single argument (called either `props` or `argv`).
 
 ### `payload`
-The payload is gathered from the following:
-- from `AsyncStateProvider` if inside it
-- from all subscribers
-  - Either from `useAsyncState` configuration object
-  - Or from `useAsyncState().mergePayload({...})`
+The payload is gathered from the following from all subscribers:
+- Either from `useAsyncState` configuration object
+- Or from `useAsyncState().mergePayload({...})`
+- Or `source.mergePayload`
 
-So it gives the producer the power of grabbing something from the provider,
-or from a static context or even from the render phase or event handlers.
+So it gives the producer the power of grabbing something from the anywhere.
 
 ### `lastSuccess`
 This represents the last success `State` registered by the library.
@@ -247,7 +244,7 @@ for a more control in your app.
 This function runs the given producer/async state. It can run:
 - A `Source` object
 - A plain `Producer`
-- If inside provider, any state by `string` key.
+- A `string` representing a state key.
 
 This function returns the `AbortFn` of the execution, so it can be chained and
 registered via `props.onAbort(props.run(...))` for cascading cancellations.
@@ -259,8 +256,7 @@ run: <T>(input: ProducerPropsRunInput<T>, config: ProducerPropsRunConfig | null,
 ```
 
 Where:
-- `ProducerPropsRunInput` may be a string (if inside provider), a source object,
- or a producer.
+- `ProducerPropsRunInput` may be a string, a source object, or a producer.
 - `ProducerPropsRunConfig` a configuration object:
 
 | Prop      | Type                    | Default value | Usage                                                                 |
@@ -364,15 +360,5 @@ Signature:
 select: <T>(input: AsyncStateKeyOrSource<T>) => State<T> | undefined
 ```
 
-Simply decodes your source object, or retrieves your async state from the provider
-(if inside any) and gives you its actual state, a pure read mode, no subscription.
-
-:::note
-The props runners scope is cascaded:
-
-- If you run a producer from inside an async state provider,
-`props.run|runp|select` will also be able to select from the provider,
-- and all cascading calls will be granted the same power.
-- If you run from outside the context provider, your producers will only be able
-to run a source object or a bare producer function.
-:::
+Simply decodes your source object, or retrieves your async state by key
+and gives you its actual state, a pure read mode, no subscription.
