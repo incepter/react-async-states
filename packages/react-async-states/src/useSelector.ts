@@ -178,7 +178,6 @@ function subscribeAndWatch<T>(
 
   unwatch = pool.listen(function (
     value: InstanceOrNull<any>, key: string) {
-    console.log('ççççççççççççççççççççççççççççççççççççççç')
     if (resolvedInstances.hasOwnProperty(key) && resolvedInstances[key] !== value) {
       setGuard(prev => prev + 1);
     }
