@@ -8,13 +8,13 @@ export {
   ProducerType,
   Status,
   RunEffect,
-  standaloneProducerEffectsCreator,
   readSource,
   producerWrapper,
   cloneProducerProps,
   enableDiscovery,
   setDefaultPool,
   getOrCreatePool,
+  standaloneProducerEffectsCreator,
 } from "./AsyncState";
 
 export type {

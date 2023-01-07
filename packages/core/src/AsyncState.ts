@@ -127,6 +127,9 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
   private bindMethods() {
     this.on = this.on.bind(this);
+    this.run = this.run.bind(this);
+    this.runp = this.runp.bind(this);
+    this.runc = this.runc.bind(this);
     this.abort = this.abort.bind(this);
     this.getState = this.getState.bind(this);
     this.setState = this.setState.bind(this);
@@ -377,7 +380,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       return undefined;
     }
     return this.runImmediately(
-      latestRunTask.producerEffectsCreator,
       latestRunTask.payload,
       undefined,
       latestRunTask.args
@@ -410,12 +412,11 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     }
   }
 
-  run(createProducerEffects: ProducerEffectsCreator<T, E, R>, ...args: any[]) {
-    return this.runWithCallbacks(createProducerEffects, undefined, args);
+  run(...args: any[]) {
+    return this.runWithCallbacks(undefined, args);
   }
 
   runWithCallbacks(
-    createProducerEffects: ProducerEffectsCreator<T, E, R>,
     callbacks: ProducerCallbacks<T, E, R> | undefined,
     args: any[]
   ) {
@@ -427,16 +428,15 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       effectDurationMs === 0
     ) {
       return this.runImmediately(
-        createProducerEffects,
         shallowClone(this.payload),
         callbacks,
         args
       );
     }
-    return this.runWithEffect(createProducerEffects, callbacks, args);
+    return this.runWithEffect(callbacks, args);
   }
 
-  runp(createProducerEffects: ProducerEffectsCreator<T, E, R>, ...args: any[]) {
+  runp(...args: any[]) {
     const that = this;
     return new Promise<State<T, E, R>>(function runpPromise(resolve) {
       const callbacks: ProducerCallbacks<T, E, R> = {
@@ -444,19 +444,17 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
         onSuccess: resolve,
         onAborted: resolve,
       };
-      that.runWithCallbacks(createProducerEffects, callbacks, args);
+      that.runWithCallbacks(callbacks, args);
     });
   }
 
   runc(
-    createProducerEffects: ProducerEffectsCreator<T, E, R>,
     props?: RUNCProps<T, E, R>
   ) {
-    return this.runWithCallbacks(createProducerEffects, props, props?.args ?? []);
+    return this.runWithCallbacks(props, props?.args ?? []);
   }
 
   private runWithEffect(
-    createProducerEffects: ProducerEffectsCreator<T, E, R>,
     internalCallbacks: ProducerCallbacks<T, E, R> | undefined,
     args: any[]
   ): AbortFn {
@@ -471,7 +469,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       const timeoutId = setTimeout(function realRun() {
         that.pendingTimeout = null;
         runAbortCallback = that.runImmediately(
-          createProducerEffects,
           shallowClone(that.payload),
           internalCallbacks,
           args
@@ -526,7 +523,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       }
     }
     return this.runImmediately(
-      createProducerEffects,
       shallowClone(this.payload),
       internalCallbacks,
       args
@@ -534,7 +530,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   }
 
   private runImmediately(
-    producerEffectsCreator: ProducerEffectsCreator<T, E, R>,
     payload: Record<string, any> | null,
     internalCallbacks: ProducerCallbacks<T, E, R> | undefined,
     execArgs: any[]
@@ -589,10 +584,10 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     };
 
 
-    this.latestRun = {payload, args: execArgs, producerEffectsCreator};
+    this.latestRun = {payload, args: execArgs};
 
     const props = constructPropsObject(
-      this, producerEffectsCreator, internalCallbacks, runIndicators, payload, execArgs);
+      this, internalCallbacks, runIndicators, payload, execArgs);
 
     const abort = props.abort;
 
@@ -884,7 +879,6 @@ export function cloneProducerProps<T, E, R>(props: ProducerProps<T, E, R>): Prod
 
 function constructPropsObject<T, E, R>(
   instance: StateInterface<T, E, R>,
-  producerEffectsCreator: ProducerEffectsCreator<T, E, R>,
   internalCallbacks: ProducerCallbacks<T, E, R> | undefined,
   runIndicators: RunIndicators,
   payload: Record<string, any> | null,
@@ -914,7 +908,7 @@ function constructPropsObject<T, E, R>(
       return instance.state;
     }
   };
-  Object.assign(props, producerEffectsCreator(props));
+  Object.assign(props, standaloneProducerEffectsCreator(props));
 
   return props;
 
@@ -1143,6 +1137,9 @@ function makeSource<T, E, R>(instance: StateInterface<T, E, R>): Readonly<Source
     uniqueId: instance.uniqueId,
 
     on: instance.on,
+    run: instance.run,
+    runp: instance.runp,
+    runc: instance.runc,
     abort: instance.abort,
     replay: instance.replay,
     hasLane: instance.hasLane,
@@ -1158,9 +1155,6 @@ function makeSource<T, E, R>(instance: StateInterface<T, E, R>): Readonly<Source
     replaceCache: instance.replaceCache,
     invalidateCache: instance.invalidateCache,
     replaceProducer: instance.replaceProducer,
-    run: instance.run.bind(instance, standaloneProducerEffectsCreator),
-    runp: instance.runp.bind(instance, standaloneProducerEffectsCreator),
-    runc: instance.runc.bind(instance, standaloneProducerEffectsCreator),
 
     getAllLanes() {
       if (!instance.lanes) {
@@ -1248,12 +1242,12 @@ export function standaloneProducerRunEffectFunction<T, E, R>(
     if (config?.payload) {
       instance.mergePayload(config.payload)
     }
-    return instance.run(standaloneProducerEffectsCreator, ...args);
+    return instance.run(...args);
   } else if (typeof input === "string") {
     let instance = getOrCreatePool().instances.get(input);
 
     if (instance) {
-      return instance.getLane(config?.lane).run(standaloneProducerEffectsCreator, ...args);
+      return instance.getLane(config?.lane).run(...args);
     }
   }
   return undefined;
@@ -1296,7 +1290,7 @@ export function runWhileSubscribingToNextResolve<T, E, R>(
     let unsubscribe = instance.subscribe({cb: subscription});
     props.onAbort(unsubscribe);
 
-    let abort = instance.run(standaloneProducerEffectsCreator, ...args);
+    let abort = instance.run(...args);
     props.onAbort(abort);
 
     function subscription(newState: State<T, E, R>) {
@@ -1614,23 +1608,19 @@ export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R>
   fork(forkConfig?: ForkConfig): BaseSource<T, E, R>,
 
   runWithCallbacks(
-    createProducerEffects: ProducerEffectsCreator<T, E, R>,
     callbacks: ProducerCallbacks<T, E, R> | undefined,
     args: any[]
   ),
 
   run(
-    createProducerEffects: ProducerEffectsCreator<T, E, R>,
     ...args: any[]
   ): AbortFn,
 
   runp(
-    createProducerEffects: ProducerEffectsCreator<T, E, R>,
     ...args: any[]
   ): Promise<State<T, E, R>>,
 
   runc(
-    createProducerEffects: ProducerEffectsCreator<T, E, R>,
     props?: RUNCProps<T, E, R>
   ): AbortFn,
 
@@ -1808,7 +1798,6 @@ export interface Source<T, E = any, R = any> extends BaseSource<T, E, R> {
 export type RunTask<T, E, R> = {
   args: any[],
   payload: Record<string, any> | null,
-  producerEffectsCreator: ProducerEffectsCreator<T, E, R>,
 }
 
 export type StateSubscription<T, E, R> = {
@@ -1874,8 +1863,6 @@ export interface ProducerEffects {
     lane?: string
   ) => State<T, E, R> | undefined,
 }
-
-export type ProducerEffectsCreator<T, E, R> = (props: ProducerProps<T, E, R>) => ProducerEffects;
 
 export type ProducerRunInput<T, E = any, R = any> =
   AsyncStateKeyOrSource<T, E, R>

@@ -1,7 +1,6 @@
 import {
   AsyncState,
   CachedState,
-  standaloneProducerEffectsCreator,
   Status
 } from "async-states";
 import {flushPromises} from "../utils/test-utils";
@@ -52,12 +51,12 @@ describe('async state cache', () => {
     asyncState.getLane("test2-lane");
     expect(asyncState.getLane("test2-lane").cache).toBe(asyncState.cache);
 
-    asyncState.getLane("test2-lane").run(standaloneProducerEffectsCreator, 2);
+    asyncState.getLane("test2-lane").run(2);
     expect(asyncState.getLane("test2-lane").cache).toBe(asyncState.cache);
     expect(asyncState.getLane("test2-lane").cache![`2`]?.state?.data).toBe(2);
 
     producer.mockClear();
-    asyncState.getLane("test2-lane").run(standaloneProducerEffectsCreator, 1);
+    asyncState.getLane("test2-lane").run(1);
     expect(asyncState.getLane("test2-lane").cache![`1`]?.state?.data).toBe(1);
     expect(asyncState.getLane("test2-lane").state.data).toBe(1);
     expect(producer).not.toHaveBeenCalled();

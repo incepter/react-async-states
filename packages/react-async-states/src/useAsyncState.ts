@@ -64,9 +64,6 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = any, R = any,
   function updateState() {
     setHookState(prev => {
       let newReturn = calculateStateValue(flags, config, base, instance);
-      if (newReturn.state === prev.return.state) {
-        return prev;
-      }
       return Object.assign({}, prev, {return: newReturn});
     });
   }

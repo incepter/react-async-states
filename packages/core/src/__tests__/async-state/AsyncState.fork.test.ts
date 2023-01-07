@@ -1,4 +1,4 @@
-import {AsyncState, standaloneProducerEffectsCreator, Status} from "../..";
+import {AsyncState, Status} from "../..";
 import {timeout} from "./test-utils";
 import {mockDateNow, TESTS_TS} from "../utils/setup";
 
@@ -44,7 +44,7 @@ describe('AsyncState - fork', () => {
 
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
-    myAsyncState.run(standaloneProducerEffectsCreator);
+    myAsyncState.run();
 
     await jest.advanceTimersByTime(100);
 

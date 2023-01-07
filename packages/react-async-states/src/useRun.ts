@@ -27,9 +27,7 @@ function runImpl<T, E, R>(
     let pool = getOrCreatePool();
     let instance = pool.instances.get(keyOrSource) as StateInterface<T, E, R>;
     if (instance) {
-      return instance.run
-        .bind(instance, standaloneProducerEffectsCreator)
-        .apply(null, args);
+      return instance.run.apply(null, args);
     }
   }
   return undefined;

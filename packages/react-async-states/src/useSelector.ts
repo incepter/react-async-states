@@ -163,14 +163,28 @@ function subscribeAndWatch<T>(
     subscriptionKey = `${caller}-$4`;// 4: useSelector
   }
 
+  let resolvedEntries = Object.entries(resolvedInstances);
+  let reResolvedInstances = Object.entries(resolveInstances(keysArray, pool));
+  if (resolvedEntries.length !== reResolvedInstances.length) {
+    setGuard(old => old + 1);
+    return;
+  }
+  for (let i = 0, {length} = resolvedEntries; i < length; i+= 1) {
+    if (resolvedEntries[i][1] !== reResolvedInstances[i][1]) {
+      setGuard(old => old + 1);
+      return;
+    }
+  }
+
   unwatch = pool.listen(function (
     value: InstanceOrNull<any>, key: string) {
+    console.log('ççççççççççççççççççççççççççççççççççççççç')
     if (resolvedInstances.hasOwnProperty(key) && resolvedInstances[key] !== value) {
       setGuard(prev => prev + 1);
     }
   });
 
-  let unsubscribe = Object.entries(resolvedInstances)
+  let unsubscribe = resolvedEntries
     .map(([, maybeInstance]) => maybeInstance?.subscribe({
       origin: 4,
       cb: onUpdate,

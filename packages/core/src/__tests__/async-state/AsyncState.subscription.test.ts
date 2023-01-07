@@ -1,6 +1,5 @@
 import {
   AsyncState,
-  standaloneProducerEffectsCreator,
   Status
 } from "../..";
 import {timeout} from "./test-utils";
@@ -27,7 +26,7 @@ describe('AsyncState - subscriptions', () => {
     let unsubscribe = myAsyncState.subscribe({cb: subscriptionFn});
     expect(typeof unsubscribe).toBe("function");
 
-    myAsyncState.run(standaloneProducerEffectsCreator);
+    myAsyncState.run();
     await jest.advanceTimersByTime(50);
 
     expect(subscriptionFn.mock.calls).toEqual(
@@ -88,7 +87,7 @@ describe('AsyncState - subscriptions', () => {
 
     // then
 
-    myAsyncState.run(standaloneProducerEffectsCreator);
+    myAsyncState.run();
     await jest.advanceTimersByTime(49);
     unsubscribe!(); // unsubscribe one milli before resolve; we should only receive the pending notification
     await jest.advanceTimersByTime(5);
@@ -129,7 +128,7 @@ describe('AsyncState - subscriptions', () => {
 
     // then
 
-    myAsyncState.run(standaloneProducerEffectsCreator);
+    myAsyncState.run();
     await jest.advanceTimersByTime(50);
 
     expect(subscriptionFn.mock.calls).toEqual([]);

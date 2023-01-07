@@ -2,7 +2,6 @@ import {rejectionTimeout, timeout} from "./test-utils";
 import {mockDateNow, TESTS_TS} from "../utils/setup";
 import {
   AsyncState,
-  standaloneProducerEffectsCreator,
   Status
 } from "../..";
 
@@ -31,7 +30,7 @@ describe('AsyncState - run - abort', () => {
       status: Status.initial,
     });
 
-    const abort = myAsyncState.run(standaloneProducerEffectsCreator);
+    const abort = myAsyncState.run();
 
     await jest.advanceTimersByTime(50);
 
@@ -112,7 +111,7 @@ describe('AsyncState - run - abort', () => {
     myAsyncState.subscribe({cb: subscription});
     // then
 
-    const abort = myAsyncState.run(standaloneProducerEffectsCreator);
+    const abort = myAsyncState.run();
 
     await jest.advanceTimersByTime(50);
 
@@ -159,7 +158,7 @@ describe('AsyncState - run - abort', () => {
     myAsyncState.subscribe({cb: subscription});
     // then
 
-    myAsyncState.run(standaloneProducerEffectsCreator);
+    myAsyncState.run();
 
     await jest.advanceTimersByTime(50);
 
@@ -167,7 +166,7 @@ describe('AsyncState - run - abort', () => {
 
     // rerun while pending should interrupt previous
     subscription.mockClear();
-    myAsyncState.run(standaloneProducerEffectsCreator);
+    myAsyncState.run();
 
     expect(subscription.mock.calls[0][0].status).toBe(Status.pending);
 

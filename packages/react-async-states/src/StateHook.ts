@@ -22,7 +22,6 @@ import {
   ProducerConfig,
   readSource,
   Source,
-  standaloneProducerEffectsCreator,
   State,
   StateInterface,
   Status
@@ -310,16 +309,14 @@ export function makeBaseReturn<T, E, R, S>(
     return output;
   }
 
-  const effectsCreator = standaloneProducerEffectsCreator;
-
   let output = Object.assign({},
     instance._source,
     {
       flags,
       source: instance._source,
-      run: instance.run.bind(instance, effectsCreator),
-      runp: instance.runp.bind(instance, effectsCreator),
-      runc: instance.runc.bind(instance, effectsCreator)
+      run: instance.run,
+      runp: instance.runp,
+      runc: instance.runc
     }
   ) as BaseUseAsyncState<T, E, R, S>;
 
@@ -524,11 +521,10 @@ export function subscribeEffectImpl<T, E, R, S>(
   }
 
   if (flags & SUBSCRIBE_EVENTS) {
-    const effectsCreator = standaloneProducerEffectsCreator;
 
     let unsubscribeFns = invokeSubscribeEvents(
       (config as BaseConfig<T, E, R>).events!.subscribe,
-      instance!.run.bind(instance!, effectsCreator),
+      instance!.run,
       instance!,
     );
 
