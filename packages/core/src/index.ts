@@ -14,6 +14,7 @@ export {
   cloneProducerProps,
   enableDiscovery,
   setDefaultPool,
+  getOrCreatePool,
 } from "./AsyncState";
 
 export type {
@@ -51,30 +52,6 @@ export type {
   PoolInterface,
 
 } from "./AsyncState";
-
-export {
-  AsyncStateManager
-} from "./AsyncStateManager";
-
-export type {
-  InitialStates,
-  StateDefinition,
-  hoistConfig,
-  SourceOrDefinition,
-
-  ManagerInterface,
-  AsyncStateWatchKey,
-  WatchCallback,
-  InstanceOrNull,
-
-  StateEntry,
-  StateProviderProps,
-
-  ArraySelector,
-  FunctionSelector,
-  FunctionSelectorItem,
-  SimpleSelector
-} from "./AsyncStateManager";
 
 export {
   DevtoolsEvent, DevtoolsRequest, DevtoolsJournalEvent

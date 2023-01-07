@@ -3,9 +3,7 @@ import {
   CacheConfig,
   CachedState,
   ForkConfig,
-  hoistConfig,
   InitialState,
-  ManagerInterface,
   Producer,
   ProducerConfig,
   RunEffect,
@@ -22,7 +20,6 @@ export interface AsyncStateInitializer<T, E = any, R = any> {
   config?: ProducerConfig<T, E, R>
 }
 
-export type StateContextValue = ManagerInterface;
 
 // use async state
 
@@ -78,13 +75,12 @@ export interface BaseConfig<T, E, R> extends ProducerConfig<T, E, R> {
   payload?: Record<string, any>,
   events?: UseAsyncStateEvents<T, E, R>,
 
+  wait?: boolean,
   lazy?: boolean,
   condition?: boolean | ((state: State<T, E, R>) => boolean),
 
   fork?: boolean,
-  forkConfig?: ForkConfig,
-  hoist?: boolean,
-  hoistConfig?: hoistConfig,
+  forkConfig?: ForkConfig
 }
 
 export interface ConfigWithKeyWithSelector<T, E, R, S> extends ConfigWithKeyWithoutSelector<T, E, R> {
@@ -150,9 +146,6 @@ export type UseAsyncStateConfiguration<T, E = any, R = any, S = State<T, E, R>> 
   fork?: boolean,
   forkConfig?: ForkConfig,
 
-  hoist?: boolean,
-  hoistConfig?: hoistConfig,
-
   lazy?: boolean,
   autoRunArgs?: any[],
   condition?: boolean | ((state: State<T, E, R>) => boolean),
@@ -160,6 +153,9 @@ export type UseAsyncStateConfiguration<T, E = any, R = any, S = State<T, E, R>> 
   subscriptionKey?: string,
   selector: useSelector<T, E, R, S>,
   events?: UseAsyncStateEvents<T, E, R>,
+
+  pool?: string,
+  wait?: boolean,
 
   // dev only
   hideFromDevtools?: boolean,
@@ -201,9 +197,6 @@ export type useSelector<T, E, R, S> =
   ) => S;
 
 export type PartialUseAsyncStateConfiguration<T, E, R, S> = Partial<UseAsyncStateConfiguration<T, E, R, S>>
-
-export type UseAsyncStateContextType = StateContextValue | null;
-
 
 export type CleanupFn = AbortFn
   | (() => void)

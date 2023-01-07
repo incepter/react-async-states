@@ -633,7 +633,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
     this.willUpdate = false;
     invokeInstanceEvents(this, "dispose");
-    this.ownPool.instances.delete(this.key);
     return true;
   }
 
@@ -980,8 +979,8 @@ export function createSource<T, E = any, R = any>(
   key: string,
   producer?: Producer<T, E, R> | undefined | null,
   config?: ProducerConfig<T, E, R>,
-  pool?: string,
 ): Source<T, E, R> {
+  let pool = config && config.pool;
   return new AsyncState(key, producer, config, pool)._source;
 }
 
@@ -1764,6 +1763,8 @@ export type ProducerConfig<T, E = any, R = any> = {
   skipPendingDelayMs?: number,
   resetStateOnDispose?: boolean,
 
+  pool?: string,
+
   // dev only
   hideFromDevtools?: boolean,
 }
@@ -1967,7 +1968,7 @@ export function setDefaultPool(name: string): Promise<void> {
   });
 }
 
-function getOrCreatePool(name?: string): PoolInterface {
+export function getOrCreatePool(name?: string): PoolInterface {
   if (!name) {
     return poolInUse;
   }

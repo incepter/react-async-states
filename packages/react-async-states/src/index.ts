@@ -17,7 +17,7 @@ export {
   StateBuilder as unstable_StateBuilder,
   standaloneProducerEffectsCreator as unstable_defaultEffectsCreator,
   producerWrapper as unstable_producerWrapper,
-  createSource, Status, RunEffect, ProducerType, AsyncStateManager,
+  createSource, Status, RunEffect, ProducerType,
   enableDiscovery
 } from "async-states";
 
@@ -36,25 +36,6 @@ export type {
   ProducerRunConfig,
   ProducerSavedProps,
   AsyncStateKeyOrSource,
-
-
-  InitialStates,
-  StateDefinition,
-  hoistConfig,
-  SourceOrDefinition,
-
-  ManagerInterface,
-  AsyncStateWatchKey,
-  WatchCallback,
-  InstanceOrNull,
-
-  StateEntry,
-  StateProviderProps,
-
-  ArraySelector,
-  FunctionSelector,
-  FunctionSelectorItem,
-  SimpleSelector,
 
   AbortFn,
   BaseSource,
