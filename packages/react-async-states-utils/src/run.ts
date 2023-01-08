@@ -1,13 +1,18 @@
 import {
   AsyncStateKeyOrSource,
   getOrCreatePool,
-  isSource,
   Source,
-  standaloneProducerEffectsCreator,
-  StateInterface
+  StateInterface, isSource
 } from "async-states";
 
-function runLane<T, E, R>(
+export function run<T, E, R>(
+  keyOrSource: AsyncStateKeyOrSource<T, E, R>,
+  ...args: any[]
+) {
+  return runImpl(keyOrSource, undefined, ...args);
+}
+
+export function runLane<T, E, R>(
   keyOrSource: AsyncStateKeyOrSource<T, E, R>,
   lane: string | undefined,
   ...args: any[]
@@ -31,16 +36,4 @@ function runImpl<T, E, R>(
     }
   }
   return undefined;
-}
-
-export let useRun = function () {
-  return function run<T, E, R>(
-    keyOrSource: AsyncStateKeyOrSource<T, E, R>,
-    ...args: any[]
-  ) {
-    return runLane(keyOrSource, undefined, ...args);
-  }
-}
-export let useRunLane = function () {
-  return runLane;
 }

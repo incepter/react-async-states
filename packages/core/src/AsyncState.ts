@@ -105,6 +105,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
 
     this.bindMethods();
+
     let instance = this;
     this.producer = producerWrapper.bind(null, {
       setProducerType: (type: ProducerType) => instance.producerType = type,
@@ -146,12 +147,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     this.replaceCache = this.replaceCache.bind(this);
     this.invalidateCache = this.invalidateCache.bind(this);
     this.replaceProducer = this.replaceProducer.bind(this);
-
-    this._source = makeSource(this);
-
-    if (__DEV__) {
-      devtools.emitCreation(this);
-    }
   }
 
   getVersion(): number {
@@ -310,6 +305,8 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
     if (!this.subsIndex) {
       this.subsIndex = 0;
+    }
+    if (this.locks === undefined) {
       this.locks = 0;
     }
     if (!this.subscriptions) {

@@ -45,8 +45,6 @@ import {
 import {__DEV__, humanizeDevFlags, isFunction} from "./shared";
 
 
-let is = Object.is;
-let hasOwnProperty = Object.prototype.hasOwnProperty;
 export function resolveFlags<T, E, R, S>(
   mixedConfig: MixedConfig<T, E, R, S>,
   pool: PoolInterface,
@@ -210,7 +208,7 @@ function resolveStandaloneInstance<T, E, R, S>(
       instance = instance.getLane(lane);
     }
 
-    if (hasOwnProperty.call(config, "producer")) {
+    if (Object.prototype.hasOwnProperty.call(config, "producer")) {
       instance.replaceProducer(producer);
     }
     if (producerConfig) {
@@ -365,15 +363,6 @@ export function calculateStateValue<T, E, R, S>(
   }
   newState.state = newValue;
   newState.lastSuccess = instance?.lastSuccess;
-
-  newState[Symbol.iterator] = function* () {
-    yield newState.state;
-    yield newState.setState;
-    yield newState;
-  }
-  newState.toArray = function () {
-    return [newState.state, newState.setState, newState];
-  }
 
   return Object.freeze(newState);
 }
@@ -596,7 +585,7 @@ export function areHookInputEqual(deps: any[], deps2: any[]) {
     return false;
   }
   for (let i = 0, {length} = deps; i < length; i += 1) {
-    if (!is(deps[i], deps2[i])) {
+    if (!Object.is(deps[i], deps2[i])) {
       return false;
     }
   }

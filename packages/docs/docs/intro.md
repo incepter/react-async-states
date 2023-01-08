@@ -213,7 +213,7 @@ The library has two ways for forks
   and removed by `source.removeLane`.
 
 ```typescript
-import {useAsyncState, useSourceLane} from "react-async-states";
+import {useAsyncState, useSource} from "react-async-states";
 
 const references = createSource("refs", referencesProducer, {
   /* awesome config */
@@ -226,7 +226,7 @@ const {state} = useAsyncState({
 });
 const {state} = useAsyncState({source: references, lane: 'roles', lazy: false});
 // can be simplified to this:
-const {state} = useSourceLane(references, 'roles');
+const {state} = useSource(references, 'roles');
 
 const {state: weatherState} = useAsyncState({key: "weather", fork: true});
 

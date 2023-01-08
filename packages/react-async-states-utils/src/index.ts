@@ -17,5 +17,6 @@ export type {
 } from "./StateBoundary";
 
 export {runc} from "./runc";
+export {run, runLane} from "./run";
 export {addBooleanStatus} from "./selectors";
 export type {StateWithBooleanStatus} from "./selectors";

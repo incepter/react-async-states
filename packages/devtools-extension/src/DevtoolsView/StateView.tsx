@@ -6,11 +6,11 @@ import {
 } from "./sources";
 import Json from "./Json";
 import {useSource, Status} from "react-async-states";
-import {DevtoolsJournalEvent} from "react-async-states/dist/es/core/src/devtools";
+import {DevtoolsJournalEvent} from "async-states/dist/es/src/devtools";
 import {addFormattedDate, DevtoolsMessagesBuilder} from "./utils";
 
 export default function StateView() {
-  let [{data: currentId}] = useSource(currentView);
+  let {state: {data: currentId}} = useSource(currentView);
   if (!currentId) {
     return (
       <div className="state-view-unselected">
@@ -25,7 +25,7 @@ const emptyObject = {}
 
 function StateDetails({id}) {
   let [displayedTabs, setDisplayedTabs] = React.useState<Record<string, boolean>>(emptyObject);
-  let [state] = useSource(instanceDetails, id);
+  let {state} = useSource(instanceDetails, id);
 
   if (!id || !state.data) {
     return (

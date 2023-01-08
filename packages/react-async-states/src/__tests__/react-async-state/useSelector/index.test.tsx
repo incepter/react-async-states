@@ -2,7 +2,6 @@ import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {AsyncStateProvider} from "../../../Provider";
 import {useSelector} from "../../../useSelector";
-import {useRun} from "../../..";
 import {createSource} from "async-states";
 
 describe('useSelector', () => {
@@ -103,11 +102,10 @@ describe('useSelector', () => {
         ["data", "data2"],
         (data1, data2) => `${data1?.data}-${data2?.data}`
       );
-      const run = useRun();
 
       return (
         <div>
-          <button data-testid="run" onClick={() => run("data", "update")}>run
+          <button data-testid="run" onClick={() => dataSource.run("update")}>run
           </button>
           <span data-testid="result">{data}</span>
         </div>
