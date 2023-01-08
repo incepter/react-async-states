@@ -1,8 +1,6 @@
 import {ProducerSavedProps, State, StateInterface} from "..";
 import {DevtoolsEvent, DevtoolsJournalEvent, DevtoolsRequest} from "./index";
-import {
-  StateSubscription
-} from "../AsyncState";
+import {StateSubscription} from "../types";
 
 let journalEventsId = 0;
 const source = "async-states-agent";
