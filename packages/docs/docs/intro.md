@@ -279,13 +279,13 @@ and a lot of other messy stuff.
 The library is available as a package on NPM for use with a module bundler or in a Node application:
 
 ```bash title="NPM"
-npm install react-async-states
+npm install async-states react-async-states
 ```
 
 ```bash title="YARN"
-yarn add react-async-states
+yarn add async-states react-async-states
 ```
 
 ```bash title="PNPM"
-pnpm add react-async-states
+pnpm add async-states react-async-states
 ```

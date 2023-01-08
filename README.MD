@@ -247,17 +247,17 @@ The library is available as a package on NPM for use with a module bundler or in
 
 ```bash
 # NPM
-npm install react-async-states
+npm install async-states react-async-states
 ```
 
 ```bash
 # YARN
-yarn add react-async-states
+yarn add async-states react-async-states
 ```
 
 ```bash
 # PNPM
-pnpm add react-async-states
+pnpm add async-states react-async-states
 ```
 
 To get started using the library, please make sure to read [the docs](https://incepter.github.io/react-async-states/docs/intro).
