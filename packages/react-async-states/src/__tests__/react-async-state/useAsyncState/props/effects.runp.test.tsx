@@ -16,7 +16,7 @@ describe('should runp another producer from producer', () => {
   it('should runp producer by source', async () => {
     // given
     const source1Producer = jest.fn().mockImplementation(props => props.args[0]);
-    const source1 = createSource("source1", source1Producer);
+    const source1 = createSource("source", source1Producer);
 
     const source2Producer: Producer<number> = jest.fn().mockImplementation((props: ProducerProps<number>) => {
       return props.runp(source1, null, 1)?.then(t => t.data);
@@ -132,7 +132,7 @@ describe('should runp another producer from producer', () => {
     const source1Producer = jest.fn().mockImplementation(async (props: ProducerProps<number>) => {
       return (await props.runp(source2Producer, {payload: {hello: "world"}}, 4))?.data;
     });
-    const source1 = createSource("source1", source1Producer);
+    const source1 = createSource("source11", source1Producer);
 
     function Test() {
       return (

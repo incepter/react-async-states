@@ -1,6 +1,10 @@
-
 export {
-  AsyncState, createSource, readSource, standaloneProducerEffectsCreator as defaultEffectsCreator
+  AsyncState,
+  createSource,
+  getSource,
+  Sources,
+  readSource,
+  standaloneProducerEffectsCreator as defaultEffectsCreator
 } from "./AsyncState";
 
 export {
@@ -12,7 +16,6 @@ export {isSource, nextKey, StateBuilder} from "./utils";
 export {default as devtools} from "./devtools/Devtools"
 
 export {ProducerType, RunEffect, Status} from "./enums";
-
 
 export {getOrCreatePool, setDefaultPool, enableDiscovery} from "./pool";
 

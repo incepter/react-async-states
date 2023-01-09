@@ -68,7 +68,7 @@ describe('resolveFlags', () => {
         .toEqual(CONFIG_SOURCE | SOURCE | AUTO_RUN);
     });
     it('should correctly infer configuration from source: -- object with source --', () => {
-      let source = createSource("tmp");
+      let source = createSource("tmp2");
 
       expect(resolveFlags({source}, pool))
         .toEqual(CONFIG_OBJECT | SOURCE);
@@ -170,7 +170,7 @@ describe('resolveFlags', () => {
         .toEqual(CONFIG_OBJECT | AUTO_RUN);
     });
     it('should correctly infer configuration from source: -- source --', () => {
-      let source = createSource("tmp");
+      let source = createSource("tmp3");
 
       expect(resolveFlags(source, pool))
         .toEqual(CONFIG_SOURCE | SOURCE);
@@ -188,7 +188,7 @@ describe('resolveFlags', () => {
         .toEqual(CONFIG_SOURCE | SOURCE | AUTO_RUN);
     });
     it('should correctly infer configuration from source: -- object with source --', () => {
-      let source = createSource("tmp");
+      let source = createSource("tmp4");
 
       expect(resolveFlags({source}, pool))
         .toEqual(CONFIG_OBJECT | SOURCE);

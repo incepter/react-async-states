@@ -87,18 +87,18 @@ describe('useSelector', () => {
       return props.args[0];
     }
 
-    const dataSource = createSource("data", producer, {
+    const dataSource = createSource("data1", producer, {
       initialValue: "hello!",
       resetStateOnDispose: true
     });
-    const dataSource2 = createSource("data2", null, {
+    const dataSource2 = createSource("data12", null, {
       initialValue: "hello!!",
       resetStateOnDispose: true
     });
 
     function Component() {
       const data = useSelector(
-        ["data", "data2"],
+        ["data1", "data12"],
         (data1, data2) => `${data1?.data}-${data2?.data}`
       );
 
@@ -133,13 +133,13 @@ describe('useSelector', () => {
   });
   it('should select by function', () => {
     // given
-    const dataSource = createSource("data", null, {initialValue: "hello!"});
-    const dataSource2 = createSource("data2", null, {initialValue: "hello!!"});
+    const dataSource = createSource("data11", null, {initialValue: "hello!"});
+    const dataSource2 = createSource("data112", null, {initialValue: "hello!!"});
 
     function Component() {
       const data = useSelector(
-        allKeys => allKeys.filter(t => t === "data"),
-        ({data: state}) => state!.data,
+        allKeys => allKeys.filter(t => t === "data11"),
+        ({data11: state}) => state!.data,
       );
       return <span data-testid="result">{data}</span>
     }

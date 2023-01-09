@@ -16,7 +16,7 @@ import {hideStateInstanceInNewObject} from "./hide-object";
 import {
   AbortFn,
   AsyncStateSubscribeProps,
-  CachedState,
+  CachedState, CreateSourceObject, CreateSourceType,
   ForkConfig,
   InitialState,
   InstanceCacheChangeEvent,
@@ -42,7 +42,7 @@ import {
   RUNCProps,
   RunIndicators,
   RunTask,
-  Source,
+  Source, SourcesType,
   State,
   StateChangeEventHandler,
   StateFunctionUpdater,
@@ -861,13 +861,30 @@ function constructPropsObject<T, E, R>(
 }
 
 export function createSource<T, E = any, R = any>(
-  key: string,
-  producer?: Producer<T, E, R> | undefined | null,
-  config?: ProducerConfig<T, E, R>,
+  props: string | CreateSourceObject<T, E, R>,
+  maybeProducer?: Producer<T, E, R> | undefined | null,
+  maybeConfig?: ProducerConfig<T, E, R>,
 ): Source<T, E, R> {
-  let pool = config && config.pool;
-  return new AsyncState(key, producer, config, pool)._source;
+  if (typeof props === "object") {
+    let config = props.config;
+    let pool = config && config.pool;
+    return new AsyncState(props.key, props.producer, config, pool)._source;
+  }
+  let pool = maybeConfig && maybeConfig.pool;
+  return new AsyncState(props, maybeProducer, maybeConfig, pool)._source;
+};
+
+export function getSource(key: string, poolName?: string) {
+  let pool = getOrCreatePool(poolName);
+  return pool.instances.get(key)?._source;
 }
+
+export let Sources: SourcesType = (function () {
+  let output: Omit<Omit<SourcesType, "of">, "for"> = createSource;
+  (output as SourcesType).of = getSource;
+  (output as SourcesType).for = createSource;
+  return output as SourcesType;
+})();
 
 const defaultForkConfig: ForkConfig = Object.freeze({keepState: false});
 let uniqueId: number = 0;

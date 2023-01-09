@@ -296,6 +296,32 @@ export type StateUpdater<T, E = any, R = any> = (
   status?: Status
 ) => void;
 
+export type CreateSourceObject<T, E, R> = {
+  key: string,
+  config?: ProducerConfig<T, E, R>,
+  producer?: Producer<T, E, R> | null,
+}
+
+export type CreateSourceType = {
+  <T, E = any, R = any>(props: CreateSourceObject<T, E, R>)
+  <T, E = any, R = any>(
+    key: string,
+    producer?: Producer<T, E, R> | undefined | null,
+    config?: ProducerConfig<T, E, R>,
+  )
+  <T, E = any, R = any>(
+    props: string | CreateSourceObject<T, E, R>,
+    maybeProducer?: Producer<T, E, R> | undefined | null,
+    maybeConfig?: ProducerConfig<T, E, R>,
+  ),
+}
+
+export type SourcesType = {
+  <T, E = any, R = any>(): Source<T, E, R>,
+  for: CreateSourceType,
+  of<T, E = any, R = any>(key: string, pool?: string),
+}
+
 export interface Source<T, E = any, R = any> extends BaseSource<T, E, R> {
   run(...args: any[]): AbortFn,
 
