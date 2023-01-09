@@ -130,6 +130,8 @@ export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R>
   producerType?: ProducerType,
   producer: ProducerFunction<T, E, R>,
   originalProducer: Producer<T, E, R> | undefined | null,
+  pool: PoolInterface;
+
 
   isEmitting?: boolean;
   willUpdate?: boolean;

@@ -214,6 +214,7 @@ function createDevtools(): DevtoolsInterface {
         config: asyncState.config,
         journal: asyncState.journal,
         uniqueId: asyncState.uniqueId,
+        pool: asyncState.pool.simpleName,
         lastSuccess: asyncState.lastSuccess,
         producerType: asyncState.producerType,
         subscriptions: (asyncState.subscriptions ? Object.values(asyncState.subscriptions) : []).map(mapSubscriptionToDevtools),
@@ -553,14 +554,14 @@ function mapSubscriptionToDevtools(sub: StateSubscription<any, any, any>) {
 }
 
 function getSubscriptionOrigin(origin?: number) {
-  switch (origin) {
-    case 1:
+  switch (`${origin}`) {
+    case "1":
       return "useAsyncState";
-    case 2:
+    case "2":
       return "useSource";
-    case 3:
+    case "3":
       return "useProducer";
-    case 4:
+    case "4":
       return "useSelector";
     case undefined:
       return "undefined";

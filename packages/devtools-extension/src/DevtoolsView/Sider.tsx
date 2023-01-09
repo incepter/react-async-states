@@ -158,5 +158,5 @@ function selectSubscriptionsCount(state: State<InstanceDetails | null>) {
   if (!state || !state.data) {
     return Number.NaN;
   }
-  return state.data.subscriptions!.length;
+  return state.data.subscriptions?.length || 0;
 }

@@ -7,6 +7,7 @@ import {
 import Json from "./Json";
 import {useSource, Status} from "react-async-states";
 import {DevtoolsJournalEvent} from "async-states/dist/es/src/devtools";
+import {humanizeDevFlags} from "react-async-states/dist/es/shared";
 import {addFormattedDate, DevtoolsMessagesBuilder} from "./utils";
 
 export default function StateView() {
@@ -64,7 +65,7 @@ function StateDetails({id}) {
         {displayedTabs.config && (
           <div className="state-view-section">
             <Json name={`${key} - config`} level={4} src={{
-              subscriptions: instance.subscriptions,
+              subscriptions: mapSubscriptions(instance.subscriptions),
               config: instance.config,
               cache: instance.cache,
             }}/>
@@ -79,6 +80,16 @@ function StateDetails({id}) {
 
     </div>
   );
+}
+
+function mapSubscriptions(subscriptions) {
+  if (!subscriptions) {
+    return subscriptions;
+  }
+  return subscriptions.map?.(t => ({
+    ...t,
+    devFlags: humanizeDevFlags(t.flags || 0),
+  }));
 }
 
 const initialSelectedEvents = [

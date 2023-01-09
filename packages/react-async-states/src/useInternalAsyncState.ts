@@ -13,7 +13,7 @@ import {
   areHookInputEqual,
   calculateHook,
   calculateStateValue,
-  HookOwnState,
+  HookOwnState, resolveFlags, resolveInstance,
   subscribeEffectImpl
 } from "./StateHook";
 import {useCallerName} from "./helpers/useCallerName";
@@ -25,6 +25,7 @@ export const useInternalAsyncState = function useAsyncStateImpl<T, E = any, R = 
   deps: any[] = emptyArray,
   overrides?: PartialUseAsyncStateConfiguration<T, E, R, S>,
 ): UseAsyncState<T, E, R, S> {
+
   let caller;
   if (__DEV__) {
     caller = useCallerName(callerNameLevel);

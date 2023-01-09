@@ -93,7 +93,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   isEmitting?: boolean;
 
   readonly producer: ProducerFunction<T, E, R>;
-  private readonly ownPool: PoolInterface;
+  readonly pool: PoolInterface;
 
 
   //endregion
@@ -123,7 +123,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     }
 
     this.key = key;
-    this.ownPool = poolToUse;
+    this.pool = poolToUse;
     this.uniqueId = nextUniqueId();
     this.config = shallowClone(config);
     this.originalProducer = producer ?? undefined;
@@ -675,7 +675,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       key = `${this.key}-fork-${this.forksIndex + 1}`;
     }
 
-    const clone = new AsyncState(key, this.originalProducer, this.config, this.ownPool.simpleName);
+    const clone = new AsyncState(key, this.originalProducer, this.config, this.pool.simpleName);
 
     // if something fail, no need to increment
     this.forksIndex += 1;

@@ -22,7 +22,6 @@ export let devtoolsInfo = createSource<Info>("info", devtoolsInfoProducer, {
 });
 
 function devtoolsInfoProducer(props) {
-  console.log('RUNNING !!!!!')
   let {data: port} = gatewaySource.getState();
   if (!port) {
     throw new Error("Couldn't know port, this is a bug");
@@ -37,7 +36,6 @@ function devtoolsInfoProducer(props) {
   }, 3000);
   props.onAbort(() => clearTimeout(id));
 
-  console.log('devtools info producer return :::');
   return Promise.resolve({connected: false});
 }
 
