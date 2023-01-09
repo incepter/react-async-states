@@ -1,31 +1,20 @@
 
 export {
-  AsyncState, createSource, readSource, standaloneProducerEffectsCreator
+  AsyncState, createSource, readSource, standaloneProducerEffectsCreator as defaultEffectsCreator
 } from "./AsyncState";
 
 export {
   DevtoolsEvent, DevtoolsRequest, DevtoolsJournalEvent
 } from "./devtools/index";
 
-export {isSource} from "./utils";
 export {version} from "../package.json";
+export {isSource, nextKey, StateBuilder} from "./utils";
 export {default as devtools} from "./devtools/Devtools"
 
 export {ProducerType, RunEffect, Status} from "./enums";
 
 
 export {getOrCreatePool, setDefaultPool, enableDiscovery} from "./pool";
-
-export {
-  isFunction,
-  isGenerator,
-  isPromise,
-  shallowClone,
-  __DEV__,
-  StateBuilder,
-  cloneProducerProps,
-  nextKey,
-} from "./utils";
 
 export {producerWrapper} from "./wrapper";
 

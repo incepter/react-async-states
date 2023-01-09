@@ -2,7 +2,6 @@ import * as React from "react";
 import {render} from "@testing-library/react";
 import AsyncStateComponent from "../../utils/AsyncStateComponent";
 import {createSource, Producer, ProducerProps} from "async-states";
-import {AsyncStateProvider} from "../../../../Provider";
 
 describe('should run another producer from producer', () => {
   it('should run producer by source', () => {
@@ -169,11 +168,11 @@ describe('should run another producer from producer', () => {
     function Test() {
 
       return (
-        <AsyncStateProvider>
+        <>
           <AsyncStateComponent config={{source: source1, lazy: false}}>
             {() => null}
           </AsyncStateComponent>
-        </AsyncStateProvider>
+        </>
       );
     }
 

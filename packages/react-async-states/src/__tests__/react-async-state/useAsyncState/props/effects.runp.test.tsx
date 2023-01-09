@@ -6,7 +6,6 @@ import {
   ProducerProps, Source
 } from "async-states";
 import AsyncStateComponent from "../../utils/AsyncStateComponent";
-import {AsyncStateProvider} from "../../../../Provider";
 import {UseAsyncState} from "../../../../types.internal";
 import {flushPromises} from "../../utils/test-utils";
 import {mockDateNow, TESTS_TS} from "../../utils/setup";
@@ -64,57 +63,6 @@ describe('should runp another producer from producer', () => {
     expect(screen.getByTestId("status").innerHTML)
       .toEqual(Status.success);
     expect(source1Producer.mock.calls[0][0].args[0]).toBe(1);
-  });
-  it('should runp producer by source inside provider', async () => {
-    // given
-    const source1Producer = jest.fn().mockImplementation(props => props.args[0]);
-    const source1 = createSource("source11", source1Producer);
-
-    const source2Producer: Producer<number> = jest.fn().mockImplementation((props: ProducerProps<number>) => {
-      return props.runp(source1, null, 2)?.then(t => t.data);
-    });
-    const source2 = createSource("source12", source2Producer);
-
-    function Test() {
-
-      return (
-        <AsyncStateProvider>
-          <AsyncStateComponent config={{source: source1}}>
-            {() => null}
-          </AsyncStateComponent>
-          <AsyncStateComponent config={{source: source2, lazy: false}}>
-            {({state}: UseAsyncState<number>) => (
-              <div>
-                <span data-testid="status">{state.status}</span>
-                <span data-testid="result">{state.data ?? ""}</span>
-              </div>
-            )}
-          </AsyncStateComponent>
-        </AsyncStateProvider>
-      );
-    }
-
-    // when
-    render(
-      <React.StrictMode>
-        <Test/>
-      </React.StrictMode>
-    )
-
-    // then
-    expect(source1Producer).toHaveBeenCalledTimes(2); // 1 strict mode
-    expect(source2Producer).toHaveBeenCalledTimes(2); // 1 strict mode
-    expect(screen.getByTestId("status").innerHTML)
-      .toEqual(Status.pending);
-
-    await act(async () => {
-      await flushPromises();
-    });
-
-    expect(screen.getByTestId("result").innerHTML).toEqual("2");
-    expect(screen.getByTestId("status").innerHTML)
-      .toEqual(Status.success);
-    expect(source1Producer.mock.calls[0][0].args[0]).toBe(2);
   });
   it('should runp producer by key', async () => {
     // given
@@ -226,13 +174,13 @@ describe('should runp another producer from producer', () => {
     function Test() {
 
       return (
-        <AsyncStateProvider>
+        <>
           <AsyncStateComponent config={{source: source1, lazy: false}}>
             {({state}: UseAsyncState<number>) => (
               <span data-testid="result">{state.data}</span>
             )}
           </AsyncStateComponent>
-        </AsyncStateProvider>
+        </>
       );
     }
 

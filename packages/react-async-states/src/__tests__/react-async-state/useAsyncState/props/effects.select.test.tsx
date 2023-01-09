@@ -2,7 +2,6 @@ import * as React from "react";
 import {render, screen} from "@testing-library/react";
 import {useAsyncState} from "../../../../useAsyncState";
 import {UseAsyncState} from "../../../../types.internal";
-import {AsyncStateProvider} from "../../../../Provider";
 import {createSource, Source, State} from "async-states";
 
 describe('should select from another async state', () => {
@@ -68,9 +67,9 @@ describe('should select from another async state', () => {
 
     function Test() {
       return (
-        <AsyncStateProvider initialStates={[counterSource, loggerSource]}>
+        <>
           <Component/>
-        </AsyncStateProvider>
+        </>
       )
     }
 

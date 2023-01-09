@@ -15,7 +15,7 @@ import {
 } from "react-async-states";
 import {
   producerWrapper,
-  standaloneProducerEffectsCreator as defaultEffectsCreator,
+  defaultEffectsCreator,
   StateBuilder
 } from "async-states";
 import {isFunction, noop} from "./utils";

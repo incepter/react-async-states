@@ -1,6 +1,5 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
-import {AsyncStateProvider} from "../../../Provider";
 import {useSelector} from "../../../useSelector";
 import {createSource} from "async-states";
 
@@ -58,9 +57,9 @@ describe('useSelector', () => {
     // given
     function Test() {
       return (
-        <AsyncStateProvider>
+        <>
           <Component/>
-        </AsyncStateProvider>
+        </>
       );
     }
 
@@ -147,9 +146,9 @@ describe('useSelector', () => {
 
     function Test() {
       return (
-        <AsyncStateProvider initialStates={[dataSource, dataSource2]}>
+        <>
           <Component/>
-        </AsyncStateProvider>
+        </>
       );
     }
 
