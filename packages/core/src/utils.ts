@@ -2,11 +2,11 @@ import {
   AbortedState,
   CacheConfig,
   CachedState,
-  ErrorState,
+  ErrorState, HydrationData,
   InitialState,
   PendingState,
   ProducerProps,
-  ProducerSavedProps,
+  ProducerSavedProps, State,
   StateBuilderInterface,
   SuccessState
 } from "./types";
@@ -17,13 +17,15 @@ export const asyncStatesKey = Object.freeze(Object.create(null));
 
 export function hash<T, E, R>(
   args?: any[],
-  payload?: {[id: string]: any} | null,
-  config?: CacheConfig<T, E, R>): string {
+  payload?: { [id: string]: any } | null,
+  config?: CacheConfig<T, E, R>
+): string {
   const hashFn = config?.hash || defaultHash;
   return hashFn(args, payload);
 }
 
-export function defaultHash(args?: any[], payload?: {[id: string]: any} | null): string {
+export function defaultHash(
+  args?: any[], payload?: { [id: string]: any } | null): string {
   return JSON.stringify({args, payload});
 }
 
@@ -124,3 +126,23 @@ export const nextKey: () => string = (function autoKey() {
     return `${defaultAnonymousPrefix}${key}`;
   }
 }());
+
+export let maybeWindow = typeof window !== "undefined" ? window : undefined;
+export let isServer = typeof maybeWindow === "undefined" ||
+  typeof maybeWindow.document === "undefined" ||
+  typeof maybeWindow.document.createElement === "undefined";
+
+export function attemptHydratedState<T, E, R>(poolName: string, key: string): HydrationData<T, E, R> | null {
+  // @ts-ignore
+  if (!maybeWindow || !maybeWindow.__ASYNC_STATES_HYDRATION_DATA__) {
+    return null;
+  }
+
+  // @ts-ignore
+  let maybeState = maybeWindow.__ASYNC_STATES_HYDRATION_DATA__[`${poolName}__INSTANCE__${key}`];
+
+  if (!maybeState) {
+    return null;
+  }
+  return maybeState as HydrationData<T, E, R>;
+}

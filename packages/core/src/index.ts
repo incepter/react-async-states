@@ -17,7 +17,7 @@ export {default as devtools} from "./devtools/Devtools"
 
 export {ProducerType, RunEffect, Status} from "./enums";
 
-export {getOrCreatePool, setDefaultPool, enableDiscovery} from "./pool";
+export {ownLibraryPools, getOrCreatePool, setDefaultPool, enableDiscovery} from "./pool";
 
 export {producerWrapper} from "./wrapper";
 
@@ -38,6 +38,7 @@ export type {
   ProducerConfig,
   ProducerFunction,
   Producer,
+  HydrationData,
   ProducerSavedProps,
   ProducerCallbacks,
   RunIndicators,

@@ -1,6 +1,6 @@
 import {
   __DEV__,
-  asyncStatesKey,
+  asyncStatesKey, attemptHydratedState,
   cloneProducerProps,
   didNotExpire,
   hash,
@@ -86,7 +86,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   suspender?: Promise<T>;
   pendingUpdate?: PendingUpdate | null;
   private pendingTimeout?: PendingTimeout | null;
-  private latestRun?: RunTask<T, E, R> | null;
+  latestRun?: RunTask<T, E, R> | null;
   willUpdate?: boolean;
   currentAbort?: AbortFn;
   private locks?: number;
@@ -135,13 +135,28 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
     loadCache(this);
 
-    let initializer = this.config.initialValue;
-    let initialStateValue = isFunction(initializer) ?
-      (initializer as Function).call(null, this.cache)
-      :
-      initializer;
-    this.state = StateBuilder.initial(initialStateValue);
-    this.lastSuccess = this.state;
+    let maybeHydratedState = attemptHydratedState<T, E, R>(this.pool.name, this.key);
+
+    if (maybeHydratedState) {
+      this.state = maybeHydratedState.state;
+      this.payload = maybeHydratedState.payload;
+      this.latestRun = maybeHydratedState.latestRun;
+
+      if (this.state.status === Status.success) {
+        this.lastSuccess = this.state;
+      } else {
+        let initializer = this.config.initialValue;
+        let initialStateValue = isFunction(initializer) ?
+          (initializer as Function).call(null, this.cache) : initializer;
+        this.lastSuccess = StateBuilder.initial(initialStateValue);
+      }
+    } else {
+      let initializer = this.config.initialValue;
+      let initialStateValue = isFunction(initializer) ?
+        (initializer as Function).call(null, this.cache) : initializer;
+      this.state = StateBuilder.initial(initialStateValue);
+      this.lastSuccess = this.state;
+    }
 
 
     this.bindMethods();

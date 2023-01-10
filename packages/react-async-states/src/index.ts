@@ -12,6 +12,8 @@ export {
   createSource, Status, RunEffect, ProducerType, enableDiscovery
 } from "async-states";
 
+export {default as Hydration} from "./Hydration";
+
 export type {
   State,
   Source,

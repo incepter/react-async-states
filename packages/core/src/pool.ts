@@ -6,11 +6,11 @@ import {
   WatchCallback
 } from "./types";
 import {version} from "../package.json";
-import {__DEV__} from "./utils";
+import {__DEV__, maybeWindow} from "./utils";
 
 export let ownLibraryPools = {} as AsyncStatePools;
 let LIBRARY_POOLS_PROPERTY = "__ASYNC_STATES_POOLS__";
-let globalContext = window || globalThis || null;
+let globalContext = maybeWindow || globalThis || null;
 export let ownPool: PoolInterface = createPool("default");
 let didWarnAboutExistingInstanceRecreation = false;
 

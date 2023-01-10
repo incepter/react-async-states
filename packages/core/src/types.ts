@@ -108,6 +108,12 @@ export type InstanceEvents<T, E, R> = {
   ['cache-change']?: InstanceCacheChangeEventHandlerType<T, E, R>,
 }
 
+export type HydrationData<T, E, R> = {
+  state: State<T, E, R>,
+  payload: Record<string, any>,
+  latestRun?: RunTask<T, E, R> | null,
+}
+
 export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R> {
   // identity
   version: number,
@@ -135,6 +141,8 @@ export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R>
 
   isEmitting?: boolean;
   willUpdate?: boolean;
+
+  latestRun?: RunTask<T, E, R> | null;
   currentAbort?: AbortFn;
 
   // lanes and forks
@@ -303,17 +311,17 @@ export type CreateSourceObject<T, E, R> = {
 }
 
 export type CreateSourceType = {
-  <T, E = any, R = any>(props: CreateSourceObject<T, E, R>)
+  <T, E = any, R = any>(props: CreateSourceObject<T, E, R>): Source<T, E, R>,
   <T, E = any, R = any>(
     key: string,
     producer?: Producer<T, E, R> | undefined | null,
     config?: ProducerConfig<T, E, R>,
-  )
+  ): Source<T, E, R>,
   <T, E = any, R = any>(
     props: string | CreateSourceObject<T, E, R>,
     maybeProducer?: Producer<T, E, R> | undefined | null,
     maybeConfig?: ProducerConfig<T, E, R>,
-  ),
+  ): Source<T, E, R>,
 }
 
 export type SourcesType = {
