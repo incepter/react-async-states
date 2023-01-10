@@ -198,7 +198,7 @@ cache, they can be enumerated from their parent via `source.getAllLanes`,
 and removed by `source.removeLane`.
 
 ```typescript
-import {useAsyncState, useSourceLane} from "react-async-states";
+import {useAsyncState, useSource} from "react-async-states";
 
 const references = createSource("refs", referencesProducer, {
   /* awesome config */
@@ -211,7 +211,7 @@ const {state} = useAsyncState({
 });
 const {state} = useAsyncState({source: references, lane: 'roles', lazy: false});
 // can be simplified to this:
-const {state} = useSourceLane(references, 'roles');
+const {state} = useSource(references, 'roles');
 
 const {state: weatherState} = useAsyncState({key: "weather", fork: true});
 
@@ -247,17 +247,17 @@ The library is available as a package on NPM for use with a module bundler or in
 
 ```bash
 # NPM
-npm install react-async-states
+npm install async-states react-async-states
 ```
 
 ```bash
 # YARN
-yarn add react-async-states
+yarn add async-states react-async-states
 ```
 
 ```bash
 # PNPM
-pnpm add react-async-states
+pnpm add async-states react-async-states
 ```
 
 To get started using the library, please make sure to read [the docs](https://incepter.github.io/react-async-states/docs/intro).

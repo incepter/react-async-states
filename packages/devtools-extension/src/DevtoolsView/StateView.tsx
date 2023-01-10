@@ -6,11 +6,12 @@ import {
 } from "./sources";
 import Json from "./Json";
 import {useSource, Status} from "react-async-states";
-import {DevtoolsJournalEvent} from "react-async-states/dist/es/core/src/devtools";
+import {DevtoolsJournalEvent} from "async-states/dist/es/src/devtools";
+import {humanizeDevFlags} from "react-async-states/dist/es/shared";
 import {addFormattedDate, DevtoolsMessagesBuilder} from "./utils";
 
 export default function StateView() {
-  let [{data: currentId}] = useSource(currentView);
+  let {state: {data: currentId}} = useSource(currentView);
   if (!currentId) {
     return (
       <div className="state-view-unselected">
@@ -25,7 +26,7 @@ const emptyObject = {}
 
 function StateDetails({id}) {
   let [displayedTabs, setDisplayedTabs] = React.useState<Record<string, boolean>>(emptyObject);
-  let [state] = useSource(instanceDetails, id);
+  let {state} = useSource(instanceDetails, id);
 
   if (!id || !state.data) {
     return (
@@ -64,7 +65,7 @@ function StateDetails({id}) {
         {displayedTabs.config && (
           <div className="state-view-section">
             <Json name={`${key} - config`} level={4} src={{
-              subscriptions: instance.subscriptions,
+              subscriptions: mapSubscriptions(instance.subscriptions),
               config: instance.config,
               cache: instance.cache,
             }}/>
@@ -79,6 +80,16 @@ function StateDetails({id}) {
 
     </div>
   );
+}
+
+function mapSubscriptions(subscriptions) {
+  if (!subscriptions) {
+    return subscriptions;
+  }
+  return subscriptions.map?.(t => ({
+    ...t,
+    devFlags: humanizeDevFlags(t.flags || 0),
+  }));
 }
 
 const initialSelectedEvents = [

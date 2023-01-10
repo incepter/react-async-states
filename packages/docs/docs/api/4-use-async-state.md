@@ -72,7 +72,6 @@ The returned object from `useAsyncState` contains the following properties:
 | `patchConfig`                                               | patches the config related to the producer                              |
 | `flags`                                                     | the subscription mode: listen, source, ...                              |
 | `devFlags`                                                  | the subscription mode: listen, source, ...                              |
-| `toArray`                                                   | when invoked returns the same iterable that corresponds to this hook    |
 
 :::note 
 Calling the `run`, `runp`, and `runc` functions when the status is `pending`

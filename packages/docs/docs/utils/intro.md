@@ -13,13 +13,13 @@ The utils library is available as a package on NPM for use with a module
 bundler or in a Node application:
 
 ```bash title="NPM"
-npm install react-async-states-utils
+npm install async-states react-async-states react-async-states-utils
 ```
 
 ```bash title="YARN"
-yarn add react-async-states-utils
+yarn add async-states react-async-states react-async-states-utils
 ```
 
 ```bash title="PNPM"
-pnpm add react-async-states-utils
+pnpm add async-states react-async-states react-async-states-utils
 ```

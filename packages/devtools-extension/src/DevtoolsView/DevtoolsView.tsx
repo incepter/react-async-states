@@ -18,7 +18,8 @@ export default function DevtoolsView({
     payload: {dev: useDevMode ?? true}
   }, [useDevMode]);
 
-  let {state: {status, data}} = useAsyncState.auto(devtoolsInfo);
+  let {state, devFlags} = useAsyncState.auto(devtoolsInfo);
+  let {status, data} = state;
 
   if (status === Status.pending || (status === Status.success && !data.connected)) {
     return <span>Trying to connect...</span>;

@@ -16,11 +16,12 @@ export default defineConfig({
       fileName: 'index.development'
     },
     rollupOptions: {
-      external: ['react', 'react/jsx-runtime', 'react-dom', 'react-async-states'],
+      external: ['react', 'react/jsx-runtime', 'react-dom', 'react-async-states', 'async-states'],
       output: {
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM',
+          'async-states': 'AsyncStates',
           'react/jsx-runtime': 'jsxRuntime',
           'react-async-states': 'ReactAsyncStates',
         }

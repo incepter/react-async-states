@@ -1,8 +1,7 @@
 import {ProducerSavedProps, State, StateInterface} from "..";
 import {DevtoolsEvent, DevtoolsJournalEvent, DevtoolsRequest} from "./index";
-import {
-  StateSubscription
-} from "../AsyncState";
+import {StateSubscription} from "../types";
+import {isServer, maybeWindow} from "../utils";
 
 let journalEventsId = 0;
 const source = "async-states-agent";
@@ -72,17 +71,20 @@ function createDevtools(): DevtoolsInterface {
   let retainedInstances: Record<number, StateInterface<any, any, any>> = {};
 
   function listener(message) {
+    if (isServer) {
+      return;
+    }
     if (!message.data || message.data.source !== "async-states-devtools-panel") {
       return;
     }
     if (message.data) {
       if (message.data.type === DevtoolsRequest.init) {
         connect();
-        window && window.addEventListener("message", devtoolsInstancesCommandsListener);
+        maybeWindow && maybeWindow.addEventListener("message", devtoolsInstancesCommandsListener);
       }
       if (message.data.type === DevtoolsRequest.disconnect) {
         disconnect();
-        window && window.removeEventListener("message", devtoolsInstancesCommandsListener);
+        maybeWindow && maybeWindow.removeEventListener("message", devtoolsInstancesCommandsListener);
       }
       if (message.data.type === DevtoolsRequest.getKeys) {
         emitKeys();
@@ -90,7 +92,9 @@ function createDevtools(): DevtoolsInterface {
     }
   }
 
-  window && window.addEventListener("message", listener);
+  if (!isServer) {
+    maybeWindow && maybeWindow.addEventListener("message", listener);
+  }
 
   return {
     emit,
@@ -134,7 +138,7 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function emitKeys() {
-    if (!connected) {
+    if (!connected || isServer) {
       return;
     }
     emit({
@@ -167,20 +171,20 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function emit(message) {
-    if (!connected || !message || !window) {
+    if (!connected || !message || isServer) {
       return;
     }
     // only payload may cause issue
     try {
-      window.postMessage(JSON.parse(JSON.stringify(message)), "*");
+      maybeWindow!.postMessage(JSON.parse(JSON.stringify(message)), "*");
     } catch (e) {
       try {
-        window.postMessage({
+        maybeWindow!.postMessage({
           ...message,
           payload: JSON.parse(serializePayload(message.payload))
         }, "*");
       } catch (g) {
-        window.postMessage({
+        maybeWindow!.postMessage({
           source,
           payload: {
             description: "An error occurred while transmitting message to the devtools",
@@ -199,7 +203,7 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function emitStateInterface(asyncState: StateInterface<any, any, any>) {
-    if (!asyncState || asyncState.config.hideFromDevtools) {
+    if (isServer || !asyncState || asyncState.config.hideFromDevtools) {
       return;
     }
     retainStateInstance(asyncState);
@@ -216,6 +220,7 @@ function createDevtools(): DevtoolsInterface {
         config: asyncState.config,
         journal: asyncState.journal,
         uniqueId: asyncState.uniqueId,
+        pool: asyncState.pool.simpleName,
         lastSuccess: asyncState.lastSuccess,
         producerType: asyncState.producerType,
         subscriptions: (asyncState.subscriptions ? Object.values(asyncState.subscriptions) : []).map(mapSubscriptionToDevtools),
@@ -233,7 +238,7 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function emitJournalEvent(asyncState: StateInterface<any, any, any>, evt) {
-    if (asyncState.config.hideFromDevtools) {
+    if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
     if (!asyncState.journal) {
@@ -251,7 +256,7 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function emitPartialSync(uniqueId, evt) {
-    if (!connected) {
+    if (isServer || !connected) {
       return;
     }
     emit({
@@ -263,7 +268,7 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function emitCreation(asyncState: StateInterface<any, any, any>) {
-    if (asyncState.config.hideFromDevtools) {
+    if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
     keys[`${asyncState.uniqueId}`] = asyncState.key;
@@ -279,7 +284,7 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function emitRunSync(asyncState: StateInterface<any, any, any>, props) {
-    if (asyncState.config.hideFromDevtools) {
+    if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
     retainStateInstance(asyncState);
@@ -305,7 +310,7 @@ function createDevtools(): DevtoolsInterface {
 
   function emitRunConsumedFromCache(
     asyncState: StateInterface<any, any, any>, payload, execArgs) {
-    if (asyncState.config.hideFromDevtools) {
+    if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
     retainStateInstance(asyncState);
@@ -333,7 +338,7 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function emitReplaceState(asyncState: StateInterface<any, any, any>, props) {
-    if (asyncState.config.hideFromDevtools) {
+    if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
     retainStateInstance(asyncState);
@@ -357,7 +362,7 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function emitRunGenerator(asyncState: StateInterface<any, any, any>, props) {
-    if (asyncState.config.hideFromDevtools) {
+    if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
     retainStateInstance(asyncState);
@@ -381,7 +386,7 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function emitRunPromise(asyncState: StateInterface<any, any, any>, props) {
-    if (asyncState.config.hideFromDevtools) {
+    if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
     retainStateInstance(asyncState);
@@ -405,7 +410,7 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function emitDispose(asyncState: StateInterface<any, any, any>) {
-    if (asyncState.config.hideFromDevtools) {
+    if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
     emitJournalEvent(asyncState, {
@@ -419,7 +424,7 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function emitSubscription(asyncState: StateInterface<any, any, any>, subKey) {
-    if (asyncState.config.hideFromDevtools) {
+    if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
     retainStateInstance(asyncState);
@@ -450,7 +455,7 @@ function createDevtools(): DevtoolsInterface {
 
   function emitUnsubscription(
     asyncState: StateInterface<any, any, any>, subKey) {
-    if (asyncState.config.hideFromDevtools) {
+    if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
     retainStateInstance(asyncState);
@@ -471,7 +476,7 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function emitUpdate(asyncState: StateInterface<any, any, any>) {
-    if (asyncState.config.hideFromDevtools) {
+    if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
     retainStateInstance(asyncState);
@@ -496,7 +501,7 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function startUpdate(asyncState: StateInterface<any, any, any>) {
-    if (asyncState.config.hideFromDevtools) {
+    if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
     retainStateInstance(asyncState);
@@ -509,6 +514,7 @@ function createDevtools(): DevtoolsInterface {
 
   function devtoolsInstancesCommandsListener(message) {
     if (
+      isServer ||
       !message.data ||
       message.data.source !== "async-states-devtools-panel"
     ) {
@@ -531,7 +537,7 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function retainStateInstance(asyncState: StateInterface<any, any, any>) {
-    if (asyncState.config.hideFromDevtools) {
+    if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
 
@@ -555,14 +561,14 @@ function mapSubscriptionToDevtools(sub: StateSubscription<any, any, any>) {
 }
 
 function getSubscriptionOrigin(origin?: number) {
-  switch (origin) {
-    case 1:
+  switch (`${origin}`) {
+    case "1":
       return "useAsyncState";
-    case 2:
+    case "2":
       return "useSource";
-    case 3:
+    case "3":
       return "useProducer";
-    case 4:
+    case "4":
       return "useSelector";
     case undefined:
       return "undefined";

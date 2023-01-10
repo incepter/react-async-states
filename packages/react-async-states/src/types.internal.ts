@@ -40,15 +40,13 @@ type IterableUseAsyncState<T, E, R, S = State<T, E, R>> = [
   UseAsyncState<T, E, R, S>
 ]
 
-export interface UseAsyncState<T, E = any, R = any, S = State<T, E, R>> extends BaseUseAsyncState<T, E, R, S>, Iterable<any> {
+export interface UseAsyncState<T, E = any, R = any, S = State<T, E, R>> extends BaseUseAsyncState<T, E, R, S> {
   state: S,
 
   read(suspend?: boolean, throwError?: boolean): S,
 
   version?: number,
   lastSuccess?: SuccessState<T> | InitialState<T>,
-
-  toArray(): IterableUseAsyncState<T, E, R, S>
 }
 
 // interface NewUseAsyncState<T, S, R, S = State<T, S, R>> extends Source<T, S, R> {

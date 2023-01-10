@@ -1,11 +1,10 @@
-import {createSource, State, ProducerConfig, Status} from "async-states";
+import {createSource, State, ProducerConfig, Status,ProducerProps} from "async-states";
 import {
   DevtoolsEvent,
   DevtoolsJournalEvent
 } from "async-states/dist/es/src/devtools";
 import {DevtoolsMessagesBuilder} from "./utils";
 import {shimChromeRuntime} from "./ShimChromeRuntime";
-import type {ProducerProps} from "async-states";
 
 export function resetAllSources() {
   instancesList.setState({});

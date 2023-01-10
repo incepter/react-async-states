@@ -213,7 +213,7 @@ The library has two ways for forks
   and removed by `source.removeLane`.
 
 ```typescript
-import {useAsyncState, useSourceLane} from "react-async-states";
+import {useAsyncState, useSource} from "react-async-states";
 
 const references = createSource("refs", referencesProducer, {
   /* awesome config */
@@ -226,7 +226,7 @@ const {state} = useAsyncState({
 });
 const {state} = useAsyncState({source: references, lane: 'roles', lazy: false});
 // can be simplified to this:
-const {state} = useSourceLane(references, 'roles');
+const {state} = useSource(references, 'roles');
 
 const {state: weatherState} = useAsyncState({key: "weather", fork: true});
 
@@ -279,13 +279,13 @@ and a lot of other messy stuff.
 The library is available as a package on NPM for use with a module bundler or in a Node application:
 
 ```bash title="NPM"
-npm install react-async-states
+npm install async-states react-async-states
 ```
 
 ```bash title="YARN"
-yarn add react-async-states
+yarn add async-states react-async-states
 ```
 
 ```bash title="PNPM"
-pnpm add react-async-states
+pnpm add async-states react-async-states
 ```

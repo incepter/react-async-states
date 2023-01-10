@@ -7,10 +7,10 @@ import {
   instancesList, shapeSource
 } from "./sources";
 import {Status, useSource, useAsyncState, State} from "react-async-states";
-import {humanizeDevFlags} from "react-async-states/dist/es/react-async-states/src/shared/index";
+import {humanizeDevFlags} from "react-async-states/dist/es/shared";
 
 export default function Sider() {
-  let [state] = useAsyncState(instancesList);
+  let {state} = useAsyncState(instancesList);
   // console.log('this is sider', useAsyncState(shapeSource).state.data);
 
   if (state.status !== Status.success) {
@@ -70,7 +70,7 @@ function sortLastUpdatedDesc([, aDetails], [, bDetails]) {
 
 const InstanceGroupDetails = React.memo<{ instances: Record<string, InstancePlaceholder>, display: string }>(
   function InstanceGroupDetails(props) {
-    const [{data}] = useSource(currentView);
+    const {state: {data}} = useSource(currentView);
     let entries = Object.entries(props.instances).sort(sortLastUpdatedDesc);
     return (
       <section>
@@ -122,7 +122,7 @@ function getColorFromStatus(status: Status | undefined) {
 const InstanceDetailsView = React.memo(function InstanceDetailsView(props: { current: boolean, instance: InstancePlaceholder }) {
   let uniqueId = props.instance.uniqueId;
 
-  let [state] = useAsyncState.auto({
+  let {state} = useAsyncState.auto({
     source: instanceDetails.getLaneSource(`${uniqueId}`),
     payload: {uniqueId: uniqueId},
   }, [uniqueId]);
@@ -158,5 +158,5 @@ function selectSubscriptionsCount(state: State<InstanceDetails | null>) {
   if (!state || !state.data) {
     return Number.NaN;
   }
-  return state.data.subscriptions!.length;
+  return state.data.subscriptions?.length || 0;
 }

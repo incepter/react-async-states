@@ -1,5 +1,5 @@
 import {asyncStatesKey} from "./utils";
-import {StateInterface} from "./index";
+import {StateInterface} from "./types";
 
 function Secret() {
   let key = null;

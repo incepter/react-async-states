@@ -1,3 +1,11 @@
 {
-  "private": true
+  "private": true,
+  "scripts": {
+    "build:core": "cd ./packages/core && pnpm build && cd ../..",
+    "build:react": "cd ./packages/react-async-states && pnpm build && cd ../..",
+    "build:utils": "cd ./packages/react-async-states-utils && pnpm build && cd ../..",
+    "build:devtools": "cd ./packages/devtools-extension && pnpm build && cd ../..",
+    "build:all": "pnpm build:core && pnpm build:react && pnpm build:utils && pnpm build:devtools",
+    "test": "cd ./packages/core && pnpm test && cd ../..&& cd ./packages/react-async-states && pnpm test"
+  }
 }

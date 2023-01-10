@@ -1,7 +1,7 @@
 {
   "sideEffects": false,
   "types": "dist/index",
-  "version": "0.0.1-alpha-13",
+  "version": "1.0.0-pre-6",
   "main": "dist/index.umd.js",
   "name": "async-states-devtools",
   "module": "dist/index.development.mjs",
@@ -13,7 +13,7 @@
     "dev": "vite",
     "preview": "vite preview",
     "build:ext": "tsc && vite build --config vite.config.ts",
-    "build:lib": "tsc && vite build --config vite.config.lib.dev.ts && vite build --config vite.config.lib.prod.ts"
+    "build": "tsc && vite build --config vite.config.lib.dev.ts && vite build --config vite.config.lib.prod.ts"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -22,12 +22,12 @@
     "react-resizable": "^3.0.4"
   },
   "peerDependencies": {
-    "async-states": "^1.0.0-pre-2",
-    "react-async-states": "^1.0.0-pre-2"
+    "async-states": "^1.0.0-pre-6",
+    "react-async-states": "^1.0.0-pre-6"
   },
   "devDependencies": {
-    "async-states": "workspace:^1.0.0-pre-2",
-    "react-async-states": "workspace:^1.0.0-pre-2",
+    "async-states": "workspace:^1.0.0-pre-6",
+    "react-async-states": "workspace:^1.0.0-pre-6",
     "@rollup/plugin-replace": "^5.0.1",
     "@types/node": "^18.11.9",
     "@types/react": "^18.0.24",

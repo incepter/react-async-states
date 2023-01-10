@@ -4,7 +4,6 @@ import {
   UseAsyncState
 } from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../useAsyncState";
-import {AsyncStateProvider} from "../../../../../Provider";
 import {mockDateNow, TESTS_TS} from "../../../utils/setup";
 import {createSource} from "async-states";
 

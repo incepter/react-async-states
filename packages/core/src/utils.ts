@@ -1,23 +1,32 @@
-import {CacheConfig, CachedState} from "./index";
+import {
+  AbortedState,
+  CacheConfig,
+  CachedState,
+  ErrorState, HydrationData,
+  InitialState,
+  PendingState,
+  ProducerProps,
+  ProducerSavedProps, State,
+  StateBuilderInterface,
+  SuccessState
+} from "./types";
+import {Status} from "./enums";
 
 
 export const asyncStatesKey = Object.freeze(Object.create(null));
 
 export function hash<T, E, R>(
   args?: any[],
-  payload?: {[id: string]: any} | null,
-  config?: CacheConfig<T, E, R>): string {
+  payload?: { [id: string]: any } | null,
+  config?: CacheConfig<T, E, R>
+): string {
   const hashFn = config?.hash || defaultHash;
   return hashFn(args, payload);
 }
 
-export function defaultHash(args?: any[], payload?: {[id: string]: any} | null): string {
+export function defaultHash(
+  args?: any[], payload?: { [id: string]: any } | null): string {
   return JSON.stringify({args, payload});
-}
-
-//region useAsyncState value construction
-export function noop(): void {
-  // that's a noop fn
 }
 
 export function didNotExpire<T, E, R>(cachedState: CachedState<T, E, R>) {
@@ -32,3 +41,108 @@ export function isSource(possiblySource: any) {
   return possiblySource && possiblySource[sourceIsSourceSymbol] === true;
 }
 
+export const __DEV__ = process.env.NODE_ENV !== "production";
+
+// avoid spreading penalty!
+export function shallowClone(
+  source1,
+  source2?
+) {
+  return Object.assign({}, source1, source2);
+}
+
+export function isPromise(candidate) {
+  return !!candidate && isFunction(candidate.then);
+}
+
+export function isGenerator(candidate) {
+  return !!candidate && isFunction(candidate.next) && isFunction(candidate.throw);
+}
+
+export function isFunction(fn) {
+  return typeof fn === "function";
+}
+
+export const StateBuilder = Object.freeze({
+  initial<T>(initialValue): InitialState<T> {
+    return Object.freeze({
+      status: Status.initial,
+      data: initialValue,
+      props: null,
+      timestamp: Date.now()
+    });
+  },
+  error<T, E = any>(data, props): ErrorState<T, E> {
+    return Object.freeze({
+      status: Status.error,
+      data,
+      props,
+      timestamp: Date.now()
+    });
+  },
+  success<T>(data, props): SuccessState<T> {
+    return Object.freeze({
+      status: Status.success,
+      data,
+      props,
+      timestamp: Date.now()
+    });
+  },
+  pending<T>(props): PendingState<T> {
+    return Object.freeze({
+      status: Status.pending,
+      data: null,
+      props,
+      timestamp: Date.now()
+    });
+  },
+  aborted<T, E = any, R = any>(reason, props): AbortedState<T, E, R> {
+    return Object.freeze({
+      status: Status.aborted,
+      data: reason,
+      props,
+      timestamp: Date.now()
+    });
+  }
+}) as StateBuilderInterface;
+
+export function cloneProducerProps<T, E, R>(props: ProducerProps<T, E, R>): ProducerSavedProps<T> {
+  const output: ProducerSavedProps<T> = {
+    lastSuccess: shallowClone(props.lastSuccess),
+    payload: props.payload,
+    args: props.args,
+  };
+
+  delete output.lastSuccess!.props;
+
+  return output;
+}
+
+const defaultAnonymousPrefix = "async-state-";
+export const nextKey: () => string = (function autoKey() {
+  let key = 0;
+  return function incrementAndGet() {
+    key += 1;
+    return `${defaultAnonymousPrefix}${key}`;
+  }
+}());
+
+export let maybeWindow = typeof window !== "undefined" ? window : undefined;
+export let isServer = typeof maybeWindow === "undefined" ||
+  typeof maybeWindow.document === "undefined" ||
+  typeof maybeWindow.document.createElement === "undefined";
+
+export function attemptHydratedState<T, E, R>(poolName: string, key: string): HydrationData<T, E, R> | null {
+  // @ts-ignore
+  if (!maybeWindow || !maybeWindow.__ASYNC_STATES_HYDRATION_DATA__) {
+    return null;
+  }
+
+  // @ts-ignore
+  let maybeState = maybeWindow.__ASYNC_STATES_HYDRATION_DATA__[`${poolName}__INSTANCE__${key}`];
+
+  if (!maybeState) {
+    return null;
+  }
+  return maybeState as HydrationData<T, E, R>;
+}

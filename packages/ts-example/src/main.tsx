@@ -11,13 +11,6 @@ autoConfigureDevtools({open: false});
 import EntryPoint from "./entryPoint";
 import "./styles/index.css";
 
-
-let c = createSource("cc", undefined, undefined, "haha");
-let cc = createSource("cc", undefined, undefined, "haha");
-let ccc = createSource("cc", undefined, undefined, "haha");
-
-console.log('==>', c.uniqueId,ccc.uniqueId, cc.uniqueId);
-
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <EntryPoint/>
