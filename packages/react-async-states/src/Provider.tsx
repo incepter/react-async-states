@@ -1,6 +1,6 @@
 import * as React from "react";
 import {__DEV__} from "./shared";
-import {getOrCreatePool} from "async-states";
+import {useExecutionContext} from "./Hydration";
 
 let didWarnAboutProviderDeprecated = false;
 /**
@@ -33,9 +33,10 @@ export function AsyncStateProvider(
   // this should synchronously change the payload held by hoisted items
   // why not until effect? because all children may benefit from this in their
   // effects
+  let context = useExecutionContext();
   React.useMemo<void>(() => {
-    getOrCreatePool().mergePayload(payload);
-  }, [payload]);
+    context.getOrCreatePool().mergePayload(payload);
+  }, [context, payload]);
 
   return children;
 }

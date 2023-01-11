@@ -14,7 +14,6 @@ import {
 import {
   AbortFn,
   AsyncState,
-  getOrCreatePool,
   isSource,
   nextKey,
   PoolInterface,
@@ -24,7 +23,8 @@ import {
   Source,
   State,
   StateInterface,
-  Status
+  Status,
+  LibraryPoolsContext
 } from "async-states";
 import {
   AUTO_RUN,
@@ -219,7 +219,7 @@ function resolveStandaloneInstance<T, E, R, S>(
   }
 
   let instance: StateInterface<T, E, R> = new AsyncState(
-                                  key, producer, producerConfig, pool.simpleName);
+    key, producer, Object.assign({}, producerConfig, {context: pool.context.context}), pool.simpleName);
 
   if (flags & LANE) {
     let lane = readLaneFromConfig(config, overrides);
@@ -444,6 +444,7 @@ export function readStateFromInstance<T, E, R, S = State<T, E, R>>(
 }
 
 export type HookOwnState<T, E, R, S> = {
+  context: LibraryPoolsContext,
   guard: number,
   pool: PoolInterface,
   config: MixedConfig<T, E, R, S>,
@@ -458,6 +459,7 @@ export type HookOwnState<T, E, R, S> = {
     version: number | undefined,
   }
 }
+
 export function subscribeEffectImpl<T, E, R, S>(
   hookState: HookOwnState<T, E, R, S>,
   updateState: () => void,
@@ -532,19 +534,23 @@ export function subscribeEffectImpl<T, E, R, S>(
 }
 
 
-function resolvePool<T, E, R, S>(mixedConfig: MixedConfig<T, E, R, S>) {
+function resolvePool<T, E, R, S>(
+  context: LibraryPoolsContext,
+  mixedConfig: MixedConfig<T, E, R, S>
+) {
   let pool = typeof mixedConfig === "object" && (mixedConfig as ProducerConfig<T, E, R>).pool;
-  return getOrCreatePool(pool || "default");
+  return context.getOrCreatePool(pool || "default");
 }
 
 export function calculateHook<T, E, R, S>(
+  executionContext: LibraryPoolsContext,
   config: MixedConfig<T, E, R, S>,
   deps: any[],
   guard: number,
   overrides?: PartialUseAsyncStateConfiguration<T, E, R, S>,
   caller?: string,
 ): HookOwnState<T, E, R, S> {
-  let newPool = resolvePool(config);
+  let newPool = resolvePool(executionContext, config);
   let newFlags = resolveFlags(config, newPool, overrides);
   let newInstance = resolveInstance(newPool, newFlags, config, overrides);
 
@@ -573,6 +579,7 @@ export function calculateHook<T, E, R, S>(
     return: currentReturn,
     instance: newInstance,
     subKey: subscriptionKey,
+    context: executionContext,
     renderInfo: {
       current: currentReturn.state,
       version: currentReturn.version,

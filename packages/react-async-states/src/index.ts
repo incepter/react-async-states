@@ -9,10 +9,13 @@ export {useAsyncState} from "./useAsyncState";
 export {AsyncStateProvider} from "./Provider";
 
 export {
-  createSource, Status, RunEffect, ProducerType, enableDiscovery
+  createSource, Status, RunEffect, ProducerType,
+  requestContext, createContext, getContext, terminateContext
 } from "async-states";
 
-export {default as Hydration} from "./Hydration";
+export {
+  default as Hydration,
+} from "./Hydration";
 
 export type {
   State,
@@ -63,3 +66,4 @@ export type {
   UseAsyncStateChangeEvent,
   UseAsyncStateChangeEventHandler,
 } from "./types.internal";
+

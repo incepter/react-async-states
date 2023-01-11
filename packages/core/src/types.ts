@@ -138,6 +138,7 @@ export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R>
   originalProducer: Producer<T, E, R> | undefined | null,
   pool: PoolInterface;
 
+  request?: Request,
 
   isEmitting?: boolean;
   willUpdate?: boolean;
@@ -292,6 +293,7 @@ export type ProducerConfig<T, E = any, R = any> = {
   runEffect?: RunEffect,
   skipPendingDelayMs?: number,
   resetStateOnDispose?: boolean,
+  context?: any,
 
   pool?: string,
 
@@ -417,6 +419,7 @@ export type ProducerRunConfig = {
   lane?: string,
   fork?: boolean,
   payload?: Record<string, any> | null,
+  pool?: string,
 };
 export type PendingTimeout = { id: ReturnType<typeof setTimeout>, startDate: number };
 export type PendingUpdate = { timeoutId: ReturnType<typeof setTimeout>, callback(): void };
@@ -438,4 +441,15 @@ export interface PoolInterface {
   listen(cb: WatchCallback<any>): AbortFn,
 
   set(key: string, instance: StateInterface<any>),
+
+  context: LibraryPoolsContext,
+}
+
+export type LibraryPoolsContext = {
+  context: any,
+  pools: AsyncStatePools,
+  poolInUse: PoolInterface,
+  enableDiscovery(name?: string): void,
+  setDefaultPool(name: string): Promise<void>,
+  getOrCreatePool(name?: string): PoolInterface,
 }

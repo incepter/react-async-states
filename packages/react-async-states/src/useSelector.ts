@@ -11,7 +11,6 @@ import {
 } from "./types.internal";
 import {
   AbortFn,
-  getOrCreatePool,
   isSource,
   PoolInterface,
   readSource,
@@ -20,6 +19,7 @@ import {
 } from "async-states";
 import {useCallerName} from "./helpers/useCallerName";
 import {__DEV__, isFunction} from "./shared";
+import {useExecutionContext} from "./Hydration";
 
 export function useSelector<T>(
   keys: BaseSelectorKey,
@@ -42,7 +42,9 @@ export function useSelector<T>(
     caller = useCallerName(3);
   }
 
-  let pool = getOrCreatePool();
+  let executionContext = useExecutionContext();
+  let pool = executionContext.getOrCreatePool();
+
   let [guard, setGuard] = React.useState<number>(0);
   let keysArray = React
     .useMemo(() => readKeys(keys, pool), [guard, keys, pool]);
