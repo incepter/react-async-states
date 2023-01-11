@@ -4,7 +4,7 @@ export {
   getSource,
   Sources,
   readSource,
-  standaloneProducerEffectsCreator as defaultEffectsCreator
+  effectsCreator as defaultEffectsCreator
 } from "./AsyncState";
 
 export {
@@ -17,7 +17,7 @@ export {default as devtools} from "./devtools/Devtools"
 
 export {ProducerType, RunEffect, Status} from "./enums";
 
-export {ownLibraryPools, getOrCreatePool, setDefaultPool, enableDiscovery} from "./pool";
+export {requestContext, createContext, getContext, terminateContext} from "./pool";
 
 export {producerWrapper} from "./wrapper";
 
@@ -55,4 +55,6 @@ export type {
   StateInterface,
   BaseSource,
   ProducerWrapperInput,
+
+  LibraryPoolsContext,
 } from "./types";

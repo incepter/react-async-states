@@ -13,10 +13,11 @@ import {
   areHookInputEqual,
   calculateHook,
   calculateStateValue,
-  HookOwnState, resolveFlags, resolveInstance,
+  HookOwnState,
   subscribeEffectImpl
 } from "./StateHook";
 import {useCallerName} from "./helpers/useCallerName";
+import {useExecutionContext} from "./Hydration";
 
 export const useInternalAsyncState = function useAsyncStateImpl<T, E = any, R = any, S = State<T, E, R>>(
   origin: 1 | 2 | 3,
@@ -31,11 +32,14 @@ export const useInternalAsyncState = function useAsyncStateImpl<T, E = any, R = 
     caller = useCallerName(callerNameLevel);
   }
 
+  let executionContext = useExecutionContext();
+
   let [guard, setGuard] = React.useState<number>(0);
   let [hookState, setHookState] = React.useState<HookOwnState<T, E, R, S>>(calculateSelfState);
 
   if (
     hookState.guard !== guard ||
+    hookState.context !== executionContext ||
     !areHookInputEqual(hookState.deps, deps)
   ) {
     setHookState(calculateSelfState());
@@ -63,7 +67,7 @@ export const useInternalAsyncState = function useAsyncStateImpl<T, E = any, R = 
   }
 
   function calculateSelfState(): HookOwnState<T, E, R, S> {
-    return calculateHook(mixedConfig, deps, guard, overrides, caller);
+    return calculateHook(executionContext, mixedConfig, deps, guard, overrides, caller);
   }
 
   function subscribeEffect() {

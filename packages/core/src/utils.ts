@@ -129,10 +129,14 @@ export const nextKey: () => string = (function autoKey() {
 
 export let maybeWindow = typeof window !== "undefined" ? window : undefined;
 export let isServer = typeof maybeWindow === "undefined" ||
-  typeof maybeWindow.document === "undefined" ||
-  typeof maybeWindow.document.createElement === "undefined";
+  !maybeWindow.document ||
+  !maybeWindow.document.createElement;
 
 export function attemptHydratedState<T, E, R>(poolName: string, key: string): HydrationData<T, E, R> | null {
+  // do not attempt hydration outside server
+  if (isServer) {
+    return null;
+  }
   // @ts-ignore
   if (!maybeWindow || !maybeWindow.__ASYNC_STATES_HYDRATION_DATA__) {
     return null;

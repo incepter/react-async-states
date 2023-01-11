@@ -9,12 +9,11 @@ import {
   SOURCE,
   WAIT
 } from "../../StateHookFlags";
-import {getOrCreatePool, createSource} from "async-states";
+import {createSource, requestContext} from "async-states";
 import {resolveFlags} from "../../StateHook";
-import {humanizeDevFlags} from "../../shared";
 
 describe('resolveFlags', () => {
-  let pool = getOrCreatePool();
+  let pool = requestContext(null).getOrCreatePool();
   describe('get flags from config outside provider', () => {
     it('should correctly infer configuration from key: -- string --', () => {
       expect(resolveFlags("key", pool))
