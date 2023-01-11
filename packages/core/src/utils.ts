@@ -2,15 +2,22 @@ import {
   AbortedState,
   CacheConfig,
   CachedState,
-  ErrorState, HydrationData,
+  ErrorState,
+  HydrationData,
   InitialState,
   PendingState,
   ProducerProps,
-  ProducerSavedProps, State,
+  ProducerSavedProps,
   StateBuilderInterface,
   SuccessState
 } from "./types";
 import {Status} from "./enums";
+
+declare global {
+  interface Window {
+    __ASYNC_STATES_HYDRATION_DATA__?: any;
+  }
+}
 
 
 export const asyncStatesKey = Object.freeze(Object.create(null));
@@ -137,16 +144,22 @@ export function attemptHydratedState<T, E, R>(poolName: string, key: string): Hy
   if (isServer) {
     return null;
   }
-  // @ts-ignore
   if (!maybeWindow || !maybeWindow.__ASYNC_STATES_HYDRATION_DATA__) {
     return null;
   }
 
-  // @ts-ignore
-  let maybeState = maybeWindow.__ASYNC_STATES_HYDRATION_DATA__[`${poolName}__INSTANCE__${key}`];
+  let savedHydrationData = maybeWindow.__ASYNC_STATES_HYDRATION_DATA__;
+  let name = `${poolName}__INSTANCE__${key}`;
+  let maybeState = savedHydrationData[name];
 
   if (!maybeState) {
     return null;
   }
+
+  delete savedHydrationData[name];
+  if (Object.keys(savedHydrationData).length === 0) {
+    delete maybeWindow.__ASYNC_STATES_HYDRATION_DATA__;
+  }
+
   return maybeState as HydrationData<T, E, R>;
 }

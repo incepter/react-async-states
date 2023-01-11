@@ -1,9 +1,9 @@
 import {
   AsyncStateKeyOrSource,
   Source,
+  requestContext,
   StateInterface, isSource
 } from "async-states";
-import {requestContext} from "async-states/src";
 
 export function run<T, E, R>(
   keyOrSource: AsyncStateKeyOrSource<T, E, R>,

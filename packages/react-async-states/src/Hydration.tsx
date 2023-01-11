@@ -1,37 +1,15 @@
 import * as React from "react";
-import {createContext, requestContext,HydrationData} from "async-states";
+import {State, createContext, requestContext,HydrationData} from "async-states";
 
 
 let maybeWindow = typeof window !== "undefined" ? window : undefined;
 let isServer = !maybeWindow || !maybeWindow.document || !maybeWindow.document.createComment;
-
-export function useExecutionContext() {
-  let hydrationContext = React.useContext(HydrationContext);
-  if (!hydrationContext && isServer) {
-    throw new Error("HydrationContext not found in the server.");
-  }
-  if (!hydrationContext) {
-    return requestContext(null);
-  }
-
-  return requestContext(hydrationContext);
-}
-export let HydrationContext = React.createContext<any | null>(null);
-
-export type HydrationProps = {
-  context: any,
-  exclude?: string | ((key: string) => boolean),
-  children?: any,
-}
 
 export default function Hydration({
   context,
   exclude,
   children
 }: HydrationProps) {
-  if (!isServer) {
-    return children;
-  }
   return (
     <HydrationProvider context={context}>
       {children}
@@ -50,8 +28,6 @@ function HydrationProvider({context, children}) {
   );
 }
 
-
-
 function HydrationExecutor({context, exclude}) {
   if (!isServer) {
     return null;
@@ -65,8 +41,24 @@ function HydrationExecutor({context, exclude}) {
   return <script dangerouslySetInnerHTML={{__html: hydrationData}}></script>;
 }
 
+export function useExecutionContext() {
+  let hydrationContext = React.useContext(HydrationContext);
+  if (!hydrationContext && isServer) {
+    throw new Error("HydrationContext not found in the server.");
+  }
+  if (!hydrationContext) {
+    return requestContext(null);
+  }
 
+  return requestContext(hydrationContext);
+}
+export let HydrationContext = React.createContext<any | null>(null);
 
+export type HydrationProps = {
+  context: any,
+  exclude?: string | ((key: string, state: State<any>) => boolean),
+  children?: any,
+}
 
 function buildHydrationData(
   context: any,
@@ -90,7 +82,7 @@ function buildHydrationData(
 
 function flattenPools(
   context: any,
-  exclude?: string | ((key: string) => boolean),
+  exclude?: string | ((key: string, state: State<any>) => boolean),
 ): Record<string, HydrationData<any, any, any>> {
 
   return Object.values(requestContext(context).pools)
@@ -99,7 +91,7 @@ function flattenPools(
       pool.instances.forEach(instance => {
 
         if (exclude) {
-          if (typeof exclude === "function" && exclude(instance.key)) {
+          if (typeof exclude === "function" && exclude(instance.key, instance.getState())) {
             return;
           } else if (typeof exclude === "string" && !(new RegExp(exclude).test(instance.key))) {
             return;
