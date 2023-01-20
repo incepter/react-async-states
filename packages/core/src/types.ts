@@ -103,9 +103,9 @@ export type AsyncStateSubscribeProps<T, E, R> = {
   cb(s: State<T, E, R>): void,
 }
 export type InstanceEvents<T, E, R> = {
-  change?: InstanceChangeEventHandlerType<T, E, R>,
-  dispose?: InstanceDisposeEventHandlerType<T, E, R>,
-  ['cache-change']?: InstanceCacheChangeEventHandlerType<T, E, R>,
+  change?: Record<number, InstanceChangeEventHandlerType<T, E, R>>,
+  dispose?: Record<number, InstanceDisposeEventHandlerType<T, E, R>>,
+  ['cache-change']?: Record<number, InstanceCacheChangeEventHandlerType<T, E, R>>,
 }
 
 export type HydrationData<T, E, R> = {
@@ -155,7 +155,7 @@ export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R>
   cache?: Record<string, CachedState<T, E, R>> | null,
 
   events?: InstanceEvents<T, E, R>;
-
+  eventsIndex?: number,
   // dev properties
   journal?: any[], // for devtools, dev only
 

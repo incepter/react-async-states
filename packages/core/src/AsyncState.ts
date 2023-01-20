@@ -73,7 +73,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   state: State<T, E, R>;
   lastSuccess: SuccessState<T> | InitialState<T>;
   events?: InstanceEvents<T, E, R>;
-
+  eventsIndex?: number;
 
   originalProducer: Producer<T, E, R> | undefined;
   producerType: ProducerType;
@@ -110,7 +110,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   ) {
 
     let executionContext = requestContext(config?.context);
-    let {poolInUse, getOrCreatePool} = executionContext!;
+    let {poolInUse, getOrCreatePool} = executionContext;
 
     let poolToUse: PoolInterface = poolInUse;
     if (poolName) {
@@ -243,15 +243,21 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     if (!this.events) {
       this.events = {} as InstanceEvents<T, E, R>;
     }
+    if (!this.events[eventType]) {
+      this.events[eventType] = {};
+    }
 
-    // @ts-ignore
-    this.events[eventType] = eventHandler;
+    let events = this.events[eventType]!;
+
+    if (!this.eventsIndex) {
+      this.eventsIndex = 0;
+    }
+    let index = ++this.eventsIndex;
+
+    events[index] = eventHandler;
 
     return function () {
-      let prevEvent = that.events![eventType];
-      if (prevEvent && prevEvent === eventHandler) {
-        delete that.events![eventType];
-      }
+      delete events[index];
     }
 
   }
@@ -392,7 +398,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     }
 
     this.subscriptions[subscriptionKey] = {props, cleanup};
-    this.locks! += 1;
+    this.locks += 1;
 
     if (__DEV__) devtools.emitSubscription(this, subscriptionKey);
     return cleanup;
@@ -749,44 +755,41 @@ function invokeSingleChangeEvent<T, E, R>(
 
 function invokeInstanceEvents<T, E, R>(
   instance: StateInterface<T, E, R>, type: InstanceEventType) {
-  if (!instance.events || !instance.events[type]) {
+  let events = instance.events;
+  if (!events || !events[type]) {
     return;
   }
   switch (type) {
     case "change": {
-      let changeEvents = instance.events[type];
-      if (changeEvents) {
-        let newState = instance.getState();
-        if (Array.isArray(changeEvents)) {
-          changeEvents.forEach(evt => {
-            invokeSingleChangeEvent(newState, evt);
+      Object.values(events[type]!).forEach(registeredEvents => {
+        if (Array.isArray(registeredEvents)) {
+          registeredEvents.forEach(evt => {
+            invokeSingleChangeEvent(instance.getState(), evt);
           });
         } else {
-          invokeSingleChangeEvent(newState, changeEvents);
+          invokeSingleChangeEvent(instance.getState(), registeredEvents);
         }
-      }
+      });
       return;
     }
     case "dispose": {
-      let disposeEvents = instance.events[type];
-      if (disposeEvents) {
-        if (Array.isArray(disposeEvents)) {
-          disposeEvents.forEach(evt => evt());
+      Object.values(events[type]!).forEach(registeredEvents => {
+        if (Array.isArray(registeredEvents)) {
+          registeredEvents.forEach(evt => evt());
         } else {
-          disposeEvents();
+          registeredEvents();
         }
-      }
+      });
       return;
     }
     case "cache-change": {
-      let cacheChangeEvents = instance.events[type];
-      if (cacheChangeEvents) {
-        if (Array.isArray(cacheChangeEvents)) {
-          cacheChangeEvents.forEach(evt => evt(instance.cache));
+      Object.values(events[type]!).forEach(registeredEvents => {
+        if (Array.isArray(registeredEvents)) {
+          registeredEvents.forEach(evt => evt(instance.cache));
         } else {
-          cacheChangeEvents(instance.cache);
+          registeredEvents(instance.cache);
         }
-      }
+      });
       return;
     }
   }
