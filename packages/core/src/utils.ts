@@ -139,7 +139,8 @@ export let isServer = typeof maybeWindow === "undefined" ||
   !maybeWindow.document ||
   !maybeWindow.document.createElement;
 
-export function attemptHydratedState<T, E, R>(poolName: string, key: string): HydrationData<T, E, R> | null {
+export function attemptHydratedState<T, E, R>(
+  poolName: string, key: string): HydrationData<T, E, R> | null {
   // do not attempt hydration outside server
   if (isServer) {
     return null;
@@ -163,3 +164,5 @@ export function attemptHydratedState<T, E, R>(poolName: string, key: string): Hy
 
   return maybeState as HydrationData<T, E, R>;
 }
+
+export let isArray = Array.isArray;

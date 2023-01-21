@@ -1,4 +1,3 @@
-import * as React from "react";
 import {
   BaseConfig,
   BaseUseAsyncState,
@@ -10,7 +9,7 @@ import {
   UseAsyncStateEventFn,
   UseAsyncStateEvents,
   UseAsyncStateEventSubscribe
-} from "./types.internal";
+} from "../types.internal";
 import {
   AbortFn,
   AsyncState,
@@ -42,7 +41,7 @@ import {
   SUBSCRIBE_EVENTS,
   WAIT
 } from "./StateHookFlags";
-import {__DEV__, humanizeDevFlags, isFunction} from "./shared";
+import {__DEV__, humanizeDevFlags, isArray, isFunction} from "../shared";
 
 
 export function resolveFlags<T, E, R, S>(
@@ -394,7 +393,7 @@ export function invokeSubscribeEvents<T, E, R>(
   let eventProps: SubscribeEventProps<T, E, R> = instance._source;
 
   let handlers: ((props: SubscribeEventProps<T, E, R>) => CleanupFn)[]
-    = Array.isArray(events) ? events : [events];
+    = isArray(events) ? events : [events];
 
   return handlers.map(handler => handler(eventProps));
 }
@@ -409,7 +408,7 @@ export function invokeChangeEvents<T, E, R>(
 
   let nextState = instance.state;
   const changeHandlers: UseAsyncStateEventFn<T, E, R>[]
-    = Array.isArray(events.change) ? events.change : [events.change];
+    = isArray(events.change) ? events.change : [events.change];
 
   const eventProps = {state: nextState, source: instance._source};
 
@@ -443,7 +442,7 @@ export function readStateFromInstance<T, E, R, S = State<T, E, R>>(
   return selector(asyncState.state, asyncState.lastSuccess, asyncState.cache || null);
 }
 
-export type HookOwnState<T, E, R, S> = {
+export interface HookOwnState<T, E, R, S> {
   context: LibraryPoolsContext,
   guard: number,
   pool: PoolInterface,
@@ -457,15 +456,19 @@ export type HookOwnState<T, E, R, S> = {
   renderInfo: {
     current: S,
     version: number | undefined,
-  }
+  },
+
+  subscribeEffect(
+    updateState: () => void,
+    setGuard: ((updater: ((prev: number) => number)) => void),
+  ): CleanupFn,
 }
 
-export function subscribeEffectImpl<T, E, R, S>(
+export function subscribeEffect<T, E, R, S>(
   hookState: HookOwnState<T, E, R, S>,
   updateState: () => void,
-  setGuard: React.Dispatch<React.SetStateAction<number>>,
-  origin: 1 | 2 | 3
-) {
+  setGuard: ((updater: ((prev: number) => number)) => void),
+): CleanupFn {
   let {flags, config, instance, renderInfo, subKey, pool} = hookState;
   if (flags & WAIT) {
     let key: string = flags & CONFIG_STRING
@@ -500,10 +503,8 @@ export function subscribeEffectImpl<T, E, R, S>(
   }
 
   // subscription
-
   cleanups.push(instance!.subscribe({
     flags,
-    origin,
     key: subKey,
     cb: onStateChange,
   }));
@@ -542,7 +543,7 @@ function resolvePool<T, E, R, S>(
   return context.getOrCreatePool(pool || "default");
 }
 
-export function calculateHook<T, E, R, S>(
+export function createHook<T, E, R, S>(
   executionContext: LibraryPoolsContext,
   config: MixedConfig<T, E, R, S>,
   deps: any[],
@@ -569,7 +570,9 @@ export function calculateHook<T, E, R, S>(
     }
   }
 
-  return {
+  // ts complains about subscribeEffect not present, it is assigned later
+  // @ts-ignore
+  let hook: HookOwnState<T, E, R, S> = {
     deps,
     guard,
     config,
@@ -583,18 +586,51 @@ export function calculateHook<T, E, R, S>(
     renderInfo: {
       current: currentReturn.state,
       version: currentReturn.version,
-    }
-  }
+    },
+  };
+  hook.subscribeEffect = subscribeEffect.bind(null, hook);
+
+  return hook;
 }
 
-export function areHookInputEqual(deps: any[], deps2: any[]) {
+export function didDepsChange(deps: any[], deps2: any[]) {
   if (deps.length !== deps2.length) {
-    return false;
+    return true;
   }
   for (let i = 0, {length} = deps; i < length; i += 1) {
     if (!Object.is(deps[i], deps2[i])) {
-      return false;
+      return true;
     }
   }
-  return true;
+  return false;
+}
+
+
+export function autoRunAsyncState<T, E, R, S>(hookState: HookOwnState<T, E, R, S>): CleanupFn {
+  let {flags, instance, config, base} = hookState;
+  // auto run only if condition is met, and it is not lazy
+  if (!(flags & AUTO_RUN)) {
+    return;
+  }
+  // if dependencies change, if we run, the cleanup shall abort
+  let shouldRun = true; // AUTO_RUN flag is set only if this is true
+
+  if (flags & CONFIG_OBJECT) {
+    let configObject = (config as BaseConfig<T, E, R>);
+    if (isFunction(configObject.condition)) {
+      let conditionFn = configObject.condition as ((state: State<T, E, R>) => boolean);
+      shouldRun = conditionFn(instance!.getState());
+    }
+  }
+
+  if (shouldRun) {
+    if (flags & CONFIG_OBJECT && (config as BaseConfig<T, E, R>).autoRunArgs) {
+      let {autoRunArgs} = (config as BaseConfig<T, E, R>);
+      if (autoRunArgs && isArray(autoRunArgs)) {
+        return base.run.apply(null, autoRunArgs);
+      }
+    }
+
+    return base.run();
+  }
 }

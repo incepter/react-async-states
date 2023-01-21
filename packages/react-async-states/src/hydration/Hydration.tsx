@@ -1,9 +1,12 @@
 import * as React from "react";
-import {State, createContext, requestContext,HydrationData} from "async-states";
+import {
+  State,
+  createContext,
+  requestContext,
+  HydrationData,
+} from "async-states";
+import {HydrationContext, isServer} from "./context";
 
-
-let maybeWindow = typeof window !== "undefined" ? window : undefined;
-let isServer = !maybeWindow || !maybeWindow.document || !maybeWindow.document.createComment;
 
 export default function Hydration({
   context,
@@ -13,7 +16,7 @@ export default function Hydration({
   return (
     <HydrationProvider context={context}>
       {children}
-      <HydrationExecutor context={context} exclude={exclude} />
+      <HydrationExecutor context={context} exclude={exclude}/>
     </HydrationProvider>
   );
 }
@@ -40,19 +43,6 @@ function HydrationExecutor({context, exclude}) {
 
   return <script dangerouslySetInnerHTML={{__html: hydrationData}}></script>;
 }
-
-export function useExecutionContext() {
-  let hydrationContext = React.useContext(HydrationContext);
-  if (!hydrationContext && isServer) {
-    throw new Error("HydrationContext not found in the server.");
-  }
-  if (!hydrationContext) {
-    return requestContext(null);
-  }
-
-  return requestContext(hydrationContext);
-}
-export let HydrationContext = React.createContext<any | null>(null);
 
 export type HydrationProps = {
   context: any,
@@ -90,12 +80,15 @@ function flattenPools(
       let poolName = pool.name;
       pool.instances.forEach(instance => {
 
-        if (exclude) {
-          if (typeof exclude === "function" && exclude(instance.key, instance.getState())) {
-            return;
-          } else if (typeof exclude === "string" && !(new RegExp(exclude).test(instance.key))) {
-            return;
-          }
+        if (
+          exclude &&
+          (
+            typeof exclude === "function" && exclude(instance.key, instance.getState())
+            ||
+            typeof exclude === "string" && !(new RegExp(exclude).test(instance.key))
+          )
+        ) {
+          return;
         }
 
         result[`${poolName}__INSTANCE__${instance.key}`] = {

@@ -15,7 +15,7 @@ export {
 
 export {
   default as Hydration,
-} from "./Hydration";
+} from "./hydration/Hydration";
 
 export type {
   State,

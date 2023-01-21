@@ -5,6 +5,7 @@ import {
   cloneProducerProps,
   didNotExpire,
   hash,
+  isArray,
   isFunction,
   isPromise,
   isSource,
@@ -762,7 +763,7 @@ function invokeInstanceEvents<T, E, R>(
   switch (type) {
     case "change": {
       Object.values(events[type]!).forEach(registeredEvents => {
-        if (Array.isArray(registeredEvents)) {
+        if (isArray(registeredEvents)) {
           registeredEvents.forEach(evt => {
             invokeSingleChangeEvent(instance.getState(), evt);
           });
@@ -774,7 +775,7 @@ function invokeInstanceEvents<T, E, R>(
     }
     case "dispose": {
       Object.values(events[type]!).forEach(registeredEvents => {
-        if (Array.isArray(registeredEvents)) {
+        if (isArray(registeredEvents)) {
           registeredEvents.forEach(evt => evt());
         } else {
           registeredEvents();
@@ -784,7 +785,7 @@ function invokeInstanceEvents<T, E, R>(
     }
     case "cache-change": {
       Object.values(events[type]!).forEach(registeredEvents => {
-        if (Array.isArray(registeredEvents)) {
+        if (isArray(registeredEvents)) {
           registeredEvents.forEach(evt => evt(instance.cache));
         } else {
           registeredEvents(instance.cache);
@@ -1165,7 +1166,10 @@ function runpEffectFunction<T, E, R>(
   } else if (isFunction(input)) {
 
     let instance = new AsyncState(nextKey(),
-      input as Producer<T, E, R>, {hideFromDevtools: true, context: context.context});
+      input as Producer<T, E, R>, {
+        hideFromDevtools: true,
+        context: context.context
+      });
     if (config?.payload) {
       instance.mergePayload(config.payload);
     }

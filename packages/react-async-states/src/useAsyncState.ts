@@ -10,15 +10,20 @@ import {
   PartialUseAsyncStateConfiguration,
   UseAsyncState,
 } from "./types.internal";
-import {emptyArray} from "./shared";
+import {__DEV__, emptyArray} from "./shared";
 import {useInternalAsyncState} from "./useInternalAsyncState";
+import {useCallerName} from "./helpers/useCallerName";
 
 export const useAsyncStateBase = function useAsyncStateImpl<T, E = any, R = any, S = State<T, E, R>>(
   mixedConfig: MixedConfig<T, E, R, S>,
   deps: any[] = emptyArray,
   overrides?: PartialUseAsyncStateConfiguration<T, E, R, S>,
 ): UseAsyncState<T, E, R, S> {
-  return useInternalAsyncState(1, 5, mixedConfig, deps, overrides);
+  let caller;
+  if (__DEV__) {
+    caller = useCallerName(5);
+  }
+  return useInternalAsyncState(caller, mixedConfig, deps, overrides);
 }
 
 function useAsyncStateExport<T, E = any, R = any>(

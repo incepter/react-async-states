@@ -1,4 +1,4 @@
-import * as Flags from "../StateHookFlags";
+import * as Flags from "../state-hook/StateHookFlags";
 
 export const __DEV__ = process.env.NODE_ENV !== "production";
 
@@ -21,10 +21,6 @@ export function humanizeDevFlags(flags: number) {
   return out;
 }
 
-//region useAsyncState value construction
-export function noop(): undefined {
-  // that's a noop fn
-  return undefined;
-}
-
 export const emptyArray = [];
+
+export let isArray = Array.isArray;

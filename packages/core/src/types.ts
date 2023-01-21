@@ -99,7 +99,6 @@ export type InstanceEventType = InstanceChangeEvent |
 export type AsyncStateSubscribeProps<T, E, R> = {
   key?: string,
   flags?: number,
-  origin?: number,
   cb(s: State<T, E, R>): void,
 }
 export type InstanceEvents<T, E, R> = {
