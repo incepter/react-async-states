@@ -5,9 +5,7 @@ import {
   instanceDetails,
 } from "./sources";
 import Json from "./Json";
-import {useSource, Status} from "react-async-states";
-import {DevtoolsJournalEvent} from "async-states/dist/es/src/devtools";
-import {humanizeDevFlags} from "react-async-states/dist/es/shared";
+import {useSource, Status, mapFlags, DevtoolsJournalEvent} from "react-async-states";
 import {addFormattedDate, DevtoolsMessagesBuilder} from "./utils";
 
 export default function StateView() {
@@ -88,7 +86,7 @@ function mapSubscriptions(subscriptions) {
   }
   return subscriptions.map?.(t => ({
     ...t,
-    devFlags: humanizeDevFlags(t.flags || 0),
+    devFlags: mapFlags(t.flags || 0),
   }));
 }
 

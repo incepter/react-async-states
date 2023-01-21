@@ -9,22 +9,22 @@ import {
   UseAsyncStateEventFn,
   UseAsyncStateEvents,
   UseAsyncStateEventSubscribe
-} from "../types.internal";
+} from "./types.internal";
 import {
   AbortFn,
-  AsyncState,
-  isSource,
-  nextKey,
   PoolInterface,
   Producer,
   ProducerConfig,
-  readSource,
   Source,
   State,
   StateInterface,
-  Status,
   LibraryPoolsContext
-} from "async-states";
+} from "../types";
+import {
+  readSource,
+  AsyncState,
+} from "../AsyncState";
+
 import {
   AUTO_RUN,
   CHANGE_EVENTS,
@@ -41,7 +41,15 @@ import {
   SUBSCRIBE_EVENTS,
   WAIT
 } from "./StateHookFlags";
-import {__DEV__, humanizeDevFlags, isArray, isFunction} from "../shared";
+import {
+  __DEV__,
+  mapFlags,
+  isArray,
+  isFunction,
+  isSource,
+  nextKey
+} from "../utils";
+import {Status} from "../enums";
 
 
 export function resolveFlags<T, E, R, S>(
@@ -125,7 +133,7 @@ function getFlagsFromConfigProperties(
   }
 }
 
-export function getConfigFlags<T, E, R, S>(
+function getConfigFlags<T, E, R, S>(
   config?: PartialUseAsyncStateConfiguration<T, E, R, S>
 ): number {
   if (!config) {
@@ -137,7 +145,7 @@ export function getConfigFlags<T, E, R, S>(
 }
 
 
-export function resolveInstance<T, E, R, S>(
+function resolveInstance<T, E, R, S>(
   pool: PoolInterface,
   flags: number,
   config: MixedConfig<T, E, R, S>,
@@ -292,7 +300,7 @@ function readLaneFromConfig<T, E, R, S>(
 }
 
 
-export function makeBaseReturn<T, E, R, S>(
+function makeBaseReturn<T, E, R, S>(
   flags: number,
   config: MixedConfig<T, E, R, S>,
   instance: StateInterface<T, E, R> | null,
@@ -301,7 +309,7 @@ export function makeBaseReturn<T, E, R, S>(
     let key = flags & CONFIG_STRING ? config : (config as BaseConfig<T, E, R>).key;
     let output = Object.assign({key, flags}) as BaseUseAsyncState<T, E, R, S>;
     if (__DEV__) {
-      output.devFlags = humanizeDevFlags(flags);
+      output.devFlags = mapFlags(flags);
     }
     return output;
   }
@@ -318,13 +326,13 @@ export function makeBaseReturn<T, E, R, S>(
   ) as BaseUseAsyncState<T, E, R, S>;
 
   if (__DEV__) {
-    output.devFlags = humanizeDevFlags(flags);
+    output.devFlags = mapFlags(flags);
   }
   return output;
 }
 
 
-export function calculateSubscriptionKey<T, E, R, S>(
+function calculateSubscriptionKey<T, E, R, S>(
   flags: number,
   config: MixedConfig<T, E, R, S>,
   callerName: string | undefined,
@@ -381,7 +389,7 @@ function createReadInConcurrentMode<T, E, R, S>(
   return stateValue;
 }
 
-export function invokeSubscribeEvents<T, E, R>(
+function invokeSubscribeEvents<T, E, R>(
   events: UseAsyncStateEventSubscribe<T, E, R> | undefined,
   run: (...args: any[]) => AbortFn,
   instance?: StateInterface<T, E, R>,
@@ -398,7 +406,7 @@ export function invokeSubscribeEvents<T, E, R>(
   return handlers.map(handler => handler(eventProps));
 }
 
-export function invokeChangeEvents<T, E, R>(
+function invokeChangeEvents<T, E, R>(
   instance: StateInterface<T, E, R>,
   events: UseAsyncStateEvents<T, E, R> | undefined
 ) {
@@ -592,19 +600,6 @@ export function createHook<T, E, R, S>(
 
   return hook;
 }
-
-export function didDepsChange(deps: any[], deps2: any[]) {
-  if (deps.length !== deps2.length) {
-    return true;
-  }
-  for (let i = 0, {length} = deps; i < length; i += 1) {
-    if (!Object.is(deps[i], deps2[i])) {
-      return true;
-    }
-  }
-  return false;
-}
-
 
 export function autoRunAsyncState<T, E, R, S>(hookState: HookOwnState<T, E, R, S>): CleanupFn {
   let {flags, instance, config, base} = hookState;

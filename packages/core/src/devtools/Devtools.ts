@@ -553,7 +553,7 @@ function mapSubscriptionToDevtools(sub: StateSubscription<any, any, any>) {
   return {
     key: sub.props.key,
     flags: sub.props.flags,
-    // devFlags: humanizeDevFlags(sub.props.flags || 0),
+    // devFlags: mapFlags(sub.props.flags || 0),
   }
 }
 

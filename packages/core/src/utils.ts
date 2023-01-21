@@ -1,3 +1,5 @@
+import * as Flags from "./state-hook/StateHookFlags";
+
 import {
   AbortedState,
   CacheConfig,
@@ -166,3 +168,19 @@ export function attemptHydratedState<T, E, R>(
 }
 
 export let isArray = Array.isArray;
+
+
+export function mapFlags(flags: number) {
+  if (flags === null || flags === undefined) {
+    return [];
+  }
+  let out: string[] = [];
+  Object
+    .entries(Flags)
+    .forEach(([name, value]) => {
+      if (value & flags) {
+        out.push(name);
+      }
+    });
+  return out;
+}

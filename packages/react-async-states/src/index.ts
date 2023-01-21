@@ -10,7 +10,9 @@ export {AsyncStateProvider} from "./Provider";
 
 export {
   createSource, Status, RunEffect, ProducerType,
-  requestContext, createContext, getContext, terminateContext
+  requestContext, createContext, getContext, terminateContext,
+  mapFlags,
+  DevtoolsEvent, DevtoolsRequest, DevtoolsJournalEvent,
 } from "async-states";
 
 export {
@@ -55,7 +57,6 @@ export type {
   MixedConfig,
   UseAsyncState,
   UseAsyncStateType,
-  AsyncStateInitializer,
   UseAsyncStateConfiguration,
 
   SelectorKeysArg,

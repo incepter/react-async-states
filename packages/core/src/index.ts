@@ -12,7 +12,7 @@ export {
 } from "./devtools/index";
 
 export {version} from "../package.json";
-export {isSource, nextKey, StateBuilder} from "./utils";
+export {isSource, nextKey, StateBuilder, mapFlags} from "./utils";
 export {default as devtools} from "./devtools/Devtools"
 
 export {ProducerType, RunEffect, Status} from "./enums";
@@ -58,3 +58,39 @@ export type {
 
   LibraryPoolsContext,
 } from "./types";
+
+export type {
+  EqualityFn,
+  MixedConfig,
+  UseAsyncState,
+  UseAsyncStateType,
+  CleanupFn,
+  BaseConfig,
+  BaseUseAsyncState,
+  ConfigWithKeyWithoutSelector,
+  ConfigWithKeyWithSelector,
+  ConfigWithProducerWithoutSelector,
+  ConfigWithSourceWithoutSelector,
+  ConfigWithProducerWithSelector,
+  ConfigWithSourceWithSelector,
+  SubscribeEventProps,
+  UseAsyncStateEvents,
+  UseAsyncStateEventFn,
+  UseAsyncStateEventProps,
+  UseAsyncStateChangeEvent,
+  UseAsyncStateChangeEventHandler,
+  UseAsyncStateConfiguration,
+  useSelector,
+  UseAsyncStateEventSubscribe,
+  PartialUseAsyncStateConfiguration,
+} from "./state-hook/types.internal";
+
+export type {
+  HookOwnState,
+} from "./state-hook/StateHook";
+
+export {
+  calculateStateValue,
+  createHook,
+  autoRunAsyncState,
+} from "./state-hook/StateHook";

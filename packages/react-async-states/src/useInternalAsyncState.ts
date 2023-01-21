@@ -1,18 +1,17 @@
 import * as React from "react";
-import {State} from "async-states";
+import {
+  calculateStateValue,
+  createHook,
+  HookOwnState,
+  State,
+  autoRunAsyncState
+} from "async-states";
 import {
   MixedConfig,
   PartialUseAsyncStateConfiguration,
   UseAsyncState,
 } from "./types.internal";
 import {emptyArray} from "./shared";
-import {
-  autoRunAsyncState,
-  calculateStateValue,
-  createHook,
-  didDepsChange,
-  HookOwnState
-} from "./state-hook/StateHook";
 import {useExecutionContext} from "./hydration/context";
 
 export const useInternalAsyncState = function useAsyncStateImpl<T, E = any, R = any, S = State<T, E, R>>(
@@ -36,7 +35,7 @@ export const useInternalAsyncState = function useAsyncStateImpl<T, E = any, R = 
     () => hook.subscribeEffect(updateReturnState, setGuard),
     [renderInfo, flags, instance].concat(deps)
   );
-  React.useEffect(autoRunAsyncState.bind(null, hook), deps);
+  React.useEffect(() => autoRunAsyncState(hook), deps);
 
   renderInfo.version = instance?.version;
   renderInfo.current = hook.return.state;
@@ -54,7 +53,20 @@ export const useInternalAsyncState = function useAsyncStateImpl<T, E = any, R = 
       return Object.assign({}, prev, {return: newReturn});
     });
   }
+
   function createOwnHook(): HookOwnState<T, E, R, S> {
     return createHook(execContext, mixedConfig, deps, guard, overrides, callerName);
   }
+}
+
+export function didDepsChange(deps: any[], deps2: any[]) {
+  if (deps.length !== deps2.length) {
+    return true;
+  }
+  for (let i = 0, {length} = deps; i < length; i += 1) {
+    if (!Object.is(deps[i], deps2[i])) {
+      return true;
+    }
+  }
+  return false;
 }
