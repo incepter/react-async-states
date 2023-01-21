@@ -19,9 +19,7 @@ export interface BaseUseAsyncState<T, E, R, S = State<T, E, R>> extends Source<T
 }
 export interface UseAsyncState<T, E = any, R = any, S = State<T, E, R>> extends BaseUseAsyncState<T, E, R, S> {
   state: S,
-
   read(suspend?: boolean, throwError?: boolean): S,
-
   version?: number,
   lastSuccess?: SuccessState<T> | InitialState<T>,
 }

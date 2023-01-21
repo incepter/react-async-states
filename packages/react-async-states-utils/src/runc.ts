@@ -15,7 +15,7 @@ import {
 } from "react-async-states";
 import {
   producerWrapper,
-  defaultEffectsCreator,
+  effectsCreator,
   StateBuilder
 } from "async-states";
 import {isFunction, noop} from "./utils";
@@ -34,16 +34,12 @@ type RuncConfig<T, E = any, R = any> = {
 }
 
 export function runc<T, E = any, R = any>(config: RuncConfig<T, E, R>): AbortFn {
-
-  // @ts-ignore
-  let initialState: InitialState<T> = StateBuilder.initial(config.initialValue);
+  let initialState = StateBuilder.initial(config.initialValue as T);
   let state: State<T, E, R> = initialState;
-  let suspender;
 
   let clonedPayload = Object.assign({}, config.payload);
   let input: ProducerWrapperInput<T, E, R> = {
     instance: undefined,
-
     setState(
       updater: StateFunctionUpdater<T, E, R> | T,
       status: Status = Status.success,
@@ -60,10 +56,9 @@ export function runc<T, E = any, R = any>(config: RuncConfig<T, E, R>): AbortFn 
       // @ts-ignore
       state = StateBuilder[status](effectiveValue, savedProps);
     },
-    setProducerType: noop,
+    setSuspender: noop,
     getState: () => state,
     getProducer: () => config.producer,
-    setSuspender: (p: Promise<T>) => suspender = p,
     replaceState: (newState) => state = newState,
   }
 
@@ -130,7 +125,7 @@ function constructPropsObject<T, E, R>(
       throw new Error("Top level runc producer props shouldn't use getState().");
     }
   };
-  Object.assign(props, defaultEffectsCreator(props));
+  Object.assign(props, effectsCreator(props));
 
   return props;
 

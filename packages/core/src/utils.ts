@@ -171,8 +171,11 @@ export let isArray = Array.isArray;
 
 
 export function mapFlags(flags: number) {
+  if (!__DEV__) {
+    return emptyArray;
+  }
   if (flags === null || flags === undefined) {
-    return [];
+    return emptyArray;
   }
   let out: string[] = [];
   Object
@@ -184,3 +187,5 @@ export function mapFlags(flags: number) {
     });
   return out;
 }
+
+export let emptyArray = [];

@@ -4,6 +4,7 @@ import {
   attemptHydratedState,
   cloneProducerProps,
   didNotExpire,
+  emptyArray,
   hash,
   isArray,
   isFunction,
@@ -56,7 +57,7 @@ import {
   StateSubscription,
   SuccessState
 } from "./types";
-import {ProducerType, RunEffect, Status} from "./enums";
+import {RunEffect, Status} from "./enums";
 import {
   requestContext,
   warnAboutAlreadyExistingSourceWithSameKey
@@ -77,7 +78,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   eventsIndex?: number;
 
   originalProducer: Producer<T, E, R> | undefined;
-  producerType: ProducerType;
 
   //
   payload?: Record<string, any>;
@@ -135,7 +135,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     this.uniqueId = nextUniqueId();
     this.config = shallowClone(config);
     this.originalProducer = producer ?? undefined;
-    this.producerType = producer ? ProducerType.indeterminate : ProducerType.notProvided;
 
     if (__DEV__) {
       this.journal = [];
@@ -171,7 +170,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
     let instance = this;
     this.producer = producerWrapper.bind(null, {
-      setProducerType: (type: ProducerType) => instance.producerType = type,
       setState: instance.setState,
       getState: instance.getState,
       instance: instance,
@@ -240,7 +238,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     eventType: InstanceEventType,
     eventHandler: InstanceEventHandlerType<T, E, R>
   ): (() => void) {
-    let that = this;
     if (!this.events) {
       this.events = {} as InstanceEvents<T, E, R>;
     }
@@ -260,7 +257,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     return function () {
       delete events[index];
     }
-
   }
 
   patchConfig(partialConfig?: Partial<ProducerConfig<T, E, R>>) {
@@ -441,16 +437,12 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     if (!latestRunTask) {
       return undefined;
     }
-    return this.runImmediately(
-      latestRunTask.payload,
-      undefined,
-      latestRunTask.args
-    );
+    let {args, payload} = latestRunTask;
+    return this.runImmediately(payload, {args});
   }
 
   replaceProducer(newProducer: Producer<T, E, R> | undefined) {
     this.originalProducer = newProducer;
-    this.producerType = newProducer ? ProducerType.indeterminate : ProducerType.notProvided;
   }
 
   invalidateCache(cacheKey?: string) {
@@ -475,78 +467,49 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   }
 
   run(...args: any[]) {
-    return this.runWithCallbacks(undefined, args);
-  }
-
-  runWithCallbacks(
-    callbacks: ProducerCallbacks<T, E, R> | undefined,
-    args: any[]
-  ) {
-    const effectDurationMs = Number(this.config.runEffectDurationMs) || 0;
-
-    if (
-      !isFunction(setTimeout) ||
-      !this.config.runEffect ||
-      effectDurationMs === 0
-    ) {
-      return this.runImmediately(
-        shallowClone(this.payload),
-        callbacks,
-        args
-      );
-    }
-    return this.runWithEffect(callbacks, args);
+    return this.runc({args});
   }
 
   runp(...args: any[]) {
-    const that = this;
+    let instance = this;
     return new Promise<State<T, E, R>>(function runpPromise(resolve) {
-      const callbacks: ProducerCallbacks<T, E, R> = {
+      instance.runc({
+        args,
         onError: resolve,
         onSuccess: resolve,
-        onAborted: resolve,
-      };
-      that.runWithCallbacks(callbacks, args);
+        onAborted: resolve
+      });
     });
   }
 
-  runc(
-    props?: RUNCProps<T, E, R>
-  ) {
-    return this.runWithCallbacks(props, props?.args ?? []);
+  runc(props?: RUNCProps<T, E, R>) {
+    let effectDurationMs = Number(this.config.runEffectDurationMs) || 0;
+    let runNow = !isFunction(setTimeout) || !this.config.runEffect || effectDurationMs === 0;
+
+    if (runNow) {
+      return this.runImmediately(shallowClone(this.payload), props);
+    }
+    return this.runWithEffect(props);
   }
 
-  private runWithEffect(
-    internalCallbacks: ProducerCallbacks<T, E, R> | undefined,
-    args: any[]
-  ): AbortFn {
-
-    const effectDurationMs = Number(this.config.runEffectDurationMs) || 0;
-
-    const that = this;
+  private runWithEffect(props?: RUNCProps<T, E, R>): AbortFn {
+    let that = this;
+    let effectDurationMs = Number(this.config.runEffectDurationMs) || 0;
 
     function scheduleDelayedRun(startDate) {
-      let runAbortCallback: AbortFn | null = null;
-
-      const timeoutId = setTimeout(function realRun() {
+      let abortCallback: AbortFn | null = null;
+      let timeoutId = setTimeout(function realRun() {
         that.pendingTimeout = null;
-        runAbortCallback = that.runImmediately(
-          shallowClone(that.payload),
-          internalCallbacks,
-          args
-        );
+        abortCallback = that.runImmediately(shallowClone(that.payload), props);
       }, effectDurationMs);
 
-      that.pendingTimeout = {
-        startDate,
-        id: timeoutId,
-      };
+      that.pendingTimeout = {startDate, id: timeoutId,};
 
       return function abortCleanup(reason) {
         clearTimeout(timeoutId);
         that.pendingTimeout = null;
-        if (isFunction(runAbortCallback)) {
-          runAbortCallback!(reason);
+        if (isFunction(abortCallback)) {
+          abortCallback!(reason);
         }
       }
     }
@@ -584,19 +547,15 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
         }
       }
     }
-    return this.runImmediately(
-      shallowClone(this.payload),
-      internalCallbacks,
-      args
-    );
+    return this.runImmediately(shallowClone(this.payload), props);
   }
 
   private runImmediately(
     payload: Record<string, any> | null,
-    internalCallbacks: ProducerCallbacks<T, E, R> | undefined,
-    execArgs: any[]
+    runProps?: RUNCProps<T, E, R>,
   ): AbortFn {
     this.willUpdate = true;
+    let execArgs = runProps?.args || emptyArray;
 
     if (this.state.status === Status.pending || this.pendingUpdate) {
       if (this.pendingUpdate) {
@@ -632,7 +591,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
           ) {
             topLevelParent.config.cacheConfig!.persist!(topLevelParent.cache);
           }
-
           spreadCacheChangeOnLanes(topLevelParent);
         }
       }
@@ -646,15 +604,20 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
     this.latestRun = {payload, args: execArgs};
 
+    let callbacks: ProducerCallbacks<T, E, R> | undefined = undefined;
+    if (runProps) {
+      callbacks = {
+        onError: runProps.onError,
+        onSuccess: runProps.onSuccess,
+        onAborted: runProps.onAborted,
+      };
+    }
 
-    const props = constructPropsObject(
-      this, internalCallbacks, runIndicators, payload, execArgs);
+    const props = constructPropsObject(this, callbacks, runIndicators, payload, execArgs);
 
     const abort = props.abort;
-
     this.currentAbort = abort;
-
-    this.producer(props, runIndicators, internalCallbacks);
+    this.producer(props, runIndicators, callbacks);
 
     this.willUpdate = false;
 
@@ -798,7 +761,7 @@ function invokeInstanceEvents<T, E, R>(
 
 function constructPropsObject<T, E, R>(
   instance: StateInterface<T, E, R>,
-  internalCallbacks: ProducerCallbacks<T, E, R> | undefined,
+  callbacks: ProducerCallbacks<T, E, R> | undefined,
   runIndicators: RunIndicators,
   payload: Record<string, any> | null,
   args: any[]
@@ -873,7 +836,7 @@ function constructPropsObject<T, E, R>(
       if (!instance.willUpdate) {
         let abortedState = StateBuilder.aborted<T, E, R>(reason, cloneProducerProps(props));
         instance.replaceState(abortedState);
-        internalCallbacks?.onAborted?.(abortedState);
+        callbacks?.onAborted?.(abortedState);
       }
     }
 
@@ -900,7 +863,7 @@ export function createSource<T, E = any, R = any>(
   }
   let pool = maybeConfig && maybeConfig.pool;
   return new AsyncState(props, maybeProducer, maybeConfig, pool)._source;
-};
+}
 
 export function getSource(key: string, poolName?: string, context?: any) {
   let executionContext = requestContext(context);
@@ -915,7 +878,6 @@ export let Sources: SourcesType = (function () {
   return output as SourcesType;
 })();
 
-const defaultForkConfig: ForkConfig = Object.freeze({keepState: false});
 let uniqueId: number = 0;
 
 function nextUniqueId() {
@@ -1114,7 +1076,6 @@ function makeSource<T, E, R>(instance: StateInterface<T, E, R>): Readonly<Source
   return Object.freeze(source);
 }
 
-
 function isCacheEnabled(instance: StateInterface<any>): boolean {
   return !!instance.config.cacheConfig?.enabled;
 }
@@ -1122,9 +1083,7 @@ function isCacheEnabled(instance: StateInterface<any>): boolean {
 //endregion
 
 //region producerEffects creators helpers
-
 function createRunFunction(context: LibraryPoolsContext) {
-
   return function runEffectFunction<T, E, R>(
     input: ProducerRunInput<T, E, R>,
     config: ProducerRunConfig | null,
@@ -1208,7 +1167,6 @@ function runWhileSubscribingToNextResolve<T, E, R>(
   });
 }
 
-
 function createSelectFunction(context: LibraryPoolsContext) {
   return function selectEffectFunction<T, E, R>(
     input: ProducerRunInput<T, E, R>,
@@ -1226,9 +1184,10 @@ function createSelectFunction(context: LibraryPoolsContext) {
   }
 }
 
-
 export function effectsCreator<T, E, R>(
-  props: ProducerProps<T, E, R>, context?: any): ProducerEffects {
+  props: ProducerProps<T, E, R>,
+  context?: any
+): ProducerEffects {
   let executionContext = requestContext(context);
   return {
     run: createRunFunction(executionContext),

@@ -51,7 +51,6 @@ import {
 } from "../utils";
 import {Status} from "../enums";
 
-
 export function resolveFlags<T, E, R, S>(
   mixedConfig: MixedConfig<T, E, R, S>,
   pool: PoolInterface,
@@ -307,22 +306,14 @@ function makeBaseReturn<T, E, R, S>(
 ) {
   if (!instance) {
     let key = flags & CONFIG_STRING ? config : (config as BaseConfig<T, E, R>).key;
-    let output = Object.assign({key, flags}) as BaseUseAsyncState<T, E, R, S>;
+    let output = {key, flags} as BaseUseAsyncState<T, E, R, S>;
     if (__DEV__) {
       output.devFlags = mapFlags(flags);
     }
     return output;
   }
 
-  let output = Object.assign({},
-    instance._source,
-    {
-      flags,
-      source: instance._source,
-      run: instance.run,
-      runp: instance.runp,
-      runc: instance.runc
-    }
+  let output = Object.assign({}, instance._source, {flags, source: instance._source}
   ) as BaseUseAsyncState<T, E, R, S>;
 
   if (__DEV__) {

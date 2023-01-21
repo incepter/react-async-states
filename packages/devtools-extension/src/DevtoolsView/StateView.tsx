@@ -5,7 +5,8 @@ import {
   instanceDetails,
 } from "./sources";
 import Json from "./Json";
-import {useSource, Status, mapFlags, DevtoolsJournalEvent} from "react-async-states";
+import {useSource, Status, mapFlags} from "react-async-states";
+import {DevtoolsJournalEvent} from "async-states/dist/es/src/devtools/index";
 import {addFormattedDate, DevtoolsMessagesBuilder} from "./utils";
 
 export default function StateView() {

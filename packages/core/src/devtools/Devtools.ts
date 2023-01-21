@@ -222,7 +222,6 @@ function createDevtools(): DevtoolsInterface {
         uniqueId: asyncState.uniqueId,
         pool: asyncState.pool.simpleName,
         lastSuccess: asyncState.lastSuccess,
-        producerType: asyncState.producerType,
         subscriptions: (asyncState.subscriptions ? Object.values(asyncState.subscriptions) : []).map(mapSubscriptionToDevtools),
         lanes: asyncState.lanes ? Object.keys(asyncState.lanes).map(key => ({
           uniqueId: asyncState.lanes![key].uniqueId,

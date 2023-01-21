@@ -9,10 +9,9 @@ export {useAsyncState} from "./useAsyncState";
 export {AsyncStateProvider} from "./Provider";
 
 export {
-  createSource, Status, RunEffect, ProducerType,
+  createSource, Status, RunEffect,
   requestContext, createContext, getContext, terminateContext,
   mapFlags,
-  DevtoolsEvent, DevtoolsRequest, DevtoolsJournalEvent,
 } from "async-states";
 
 export {

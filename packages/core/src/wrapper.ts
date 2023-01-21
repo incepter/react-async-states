@@ -13,7 +13,7 @@ import {
   isPromise,
   StateBuilder
 } from "./utils";
-import {ProducerType, Status} from "./enums";
+import {Status} from "./enums";
 import devtools from "./devtools/Devtools";
 
 export function producerWrapper<T, E = any, R = any>(
@@ -25,7 +25,6 @@ export function producerWrapper<T, E = any, R = any>(
   const currentProducer = input.getProducer();
   if (!isFunction(currentProducer)) {
     indicators.fulfilled = true;
-    input.setProducerType(ProducerType.notProvided);
     input.setState(props.args[0], props.args[1]);
 
     if (callbacks) {
@@ -72,7 +71,6 @@ export function producerWrapper<T, E = any, R = any>(
   }
 
   if (isGenerator(executionValue)) {
-    input.setProducerType(ProducerType.generator);
     if (__DEV__ && input.instance) devtools.emitRunGenerator(input.instance, savedProps);
     // generatorResult is either {done, value} or a promise
     let generatorResult;
@@ -97,7 +95,6 @@ export function producerWrapper<T, E = any, R = any>(
       input.replaceState(StateBuilder.pending(savedProps));
     }
   } else if (isPromise(executionValue)) {
-    input.setProducerType(ProducerType.promise);
     if (__DEV__ && input.instance) devtools.emitRunPromise(input.instance, savedProps);
     runningPromise = executionValue;
     input.setSuspender(runningPromise);
@@ -105,7 +102,6 @@ export function producerWrapper<T, E = any, R = any>(
   } else { // final value
     if (__DEV__ && input.instance) devtools.emitRunSync(input.instance, savedProps);
     indicators.fulfilled = true;
-    input.setProducerType(ProducerType.sync);
     let successState = StateBuilder.success(executionValue, savedProps);
     input.replaceState(successState);
     callbacks?.onSuccess?.(successState);

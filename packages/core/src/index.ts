@@ -4,7 +4,7 @@ export {
   getSource,
   Sources,
   readSource,
-  effectsCreator as defaultEffectsCreator
+  effectsCreator
 } from "./AsyncState";
 
 export {
@@ -15,7 +15,7 @@ export {version} from "../package.json";
 export {isSource, nextKey, StateBuilder, mapFlags} from "./utils";
 export {default as devtools} from "./devtools/Devtools"
 
-export {ProducerType, RunEffect, Status} from "./enums";
+export {RunEffect, Status} from "./enums";
 
 export {requestContext, createContext, getContext, terminateContext} from "./pool";
 
