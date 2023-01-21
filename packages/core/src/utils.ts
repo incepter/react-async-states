@@ -1,3 +1,5 @@
+import * as Flags from "./state-hook/StateHookFlags";
+
 import {
   AbortedState,
   CacheConfig,
@@ -139,7 +141,8 @@ export let isServer = typeof maybeWindow === "undefined" ||
   !maybeWindow.document ||
   !maybeWindow.document.createElement;
 
-export function attemptHydratedState<T, E, R>(poolName: string, key: string): HydrationData<T, E, R> | null {
+export function attemptHydratedState<T, E, R>(
+  poolName: string, key: string): HydrationData<T, E, R> | null {
   // do not attempt hydration outside server
   if (isServer) {
     return null;
@@ -163,3 +166,26 @@ export function attemptHydratedState<T, E, R>(poolName: string, key: string): Hy
 
   return maybeState as HydrationData<T, E, R>;
 }
+
+export let isArray = Array.isArray;
+
+
+export function mapFlags(flags: number) {
+  if (!__DEV__) {
+    return emptyArray;
+  }
+  if (flags === null || flags === undefined) {
+    return emptyArray;
+  }
+  let out: string[] = [];
+  Object
+    .entries(Flags)
+    .forEach(([name, value]) => {
+      if (value & flags) {
+        out.push(name);
+      }
+    });
+  return out;
+}
+
+export let emptyArray = [];

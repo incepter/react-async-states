@@ -8,9 +8,10 @@ import {
   LANE,
   SOURCE,
   WAIT
-} from "../../StateHookFlags";
-import {createSource, requestContext} from "async-states";
-import {resolveFlags} from "../../StateHook";
+} from "../../state-hook/StateHookFlags";
+import {requestContext} from "../../pool";
+import {resolveFlags} from "../../state-hook/StateHook";
+import {createSource} from "../../AsyncState";
 
 describe('resolveFlags', () => {
   let pool = requestContext(null).getOrCreatePool();

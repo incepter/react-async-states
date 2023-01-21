@@ -1,105 +1,72 @@
 import * as React from "react";
-import {State} from "async-states";
 import {
-  BaseConfig,
-  CleanupFn,
+  calculateStateValue,
+  createHook,
+  HookOwnState,
+  State,
+  autoRunAsyncState
+} from "async-states";
+import {
   MixedConfig,
   PartialUseAsyncStateConfiguration,
   UseAsyncState,
 } from "./types.internal";
-import {AUTO_RUN, CONFIG_OBJECT} from "./StateHookFlags";
-import {__DEV__, emptyArray, isFunction} from "./shared";
-import {
-  areHookInputEqual,
-  calculateHook,
-  calculateStateValue,
-  HookOwnState,
-  subscribeEffectImpl
-} from "./StateHook";
-import {useCallerName} from "./helpers/useCallerName";
-import {useExecutionContext} from "./Hydration";
+import {emptyArray} from "./shared";
+import {useExecutionContext} from "./hydration/context";
 
 export const useInternalAsyncState = function useAsyncStateImpl<T, E = any, R = any, S = State<T, E, R>>(
-  origin: 1 | 2 | 3,
-  callerNameLevel: number,
+  callerName: string | undefined,
   mixedConfig: MixedConfig<T, E, R, S>,
   deps: any[] = emptyArray,
   overrides?: PartialUseAsyncStateConfiguration<T, E, R, S>,
 ): UseAsyncState<T, E, R, S> {
-
-  let caller;
-  if (__DEV__) {
-    caller = useCallerName(callerNameLevel);
-  }
-
-  let executionContext = useExecutionContext();
-
+  // the current library's execution context
+  let execContext = useExecutionContext();
+  // used when waiting for a state to exist, this will trigger a recalculation
   let [guard, setGuard] = React.useState<number>(0);
-  let [hookState, setHookState] = React.useState<HookOwnState<T, E, R, S>>(calculateSelfState);
-
-  if (
-    hookState.guard !== guard ||
-    hookState.context !== executionContext ||
-    !areHookInputEqual(hookState.deps, deps)
-  ) {
-    setHookState(calculateSelfState());
-  }
-
-  let {flags, instance, base, renderInfo, config} = hookState;
-  if (instance && hookState.return.version !== instance.version) {
-    updateState();
-  }
-
-  React.useEffect(subscribeEffect, [renderInfo, flags, instance].concat(deps));
-  React.useEffect(autoRunAsyncState.bind(null, hookState), deps);
+  // this contains everything else, from the dependencies to configuration
+  // to internal variables used by the library
+  let [hook, setHook] = React.useState<HookOwnState<T, E, R, S>>(createOwnHook);
+  // the reference towards this "hook" object changes every state update
+  // to ensure a certain isolation and that react would actually react to it
+  // so no logic should depend on the "hook" object itself, but to what it holds
+  let {flags, context, instance, base, renderInfo, config} = hook;
+  React.useEffect(
+    () => hook.subscribeEffect(updateReturnState, setGuard),
+    [renderInfo, flags, instance].concat(deps)
+  );
+  React.useEffect(() => autoRunAsyncState(hook), deps);
 
   renderInfo.version = instance?.version;
-  renderInfo.current = hookState.return.state;
+  renderInfo.current = hook.return.state;
+  if (hook.guard !== guard || context !== execContext || didDepsChange(hook.deps, deps)) {
+    setHook(createOwnHook());
+  }
+  if (instance && hook.return.version !== instance.version) {
+    updateReturnState();
+  }
+  return hook.return;
 
-
-  return hookState.return;
-
-  function updateState() {
-    setHookState(prev => {
+  function updateReturnState() {
+    setHook(prev => {
       let newReturn = calculateStateValue(flags, config, base, instance);
       return Object.assign({}, prev, {return: newReturn});
     });
   }
 
-  function calculateSelfState(): HookOwnState<T, E, R, S> {
-    return calculateHook(executionContext, mixedConfig, deps, guard, overrides, caller);
-  }
-
-  function subscribeEffect() {
-    return subscribeEffectImpl(hookState, updateState, setGuard, origin);
+  function createOwnHook(): HookOwnState<T, E, R, S> {
+    return createHook(execContext, mixedConfig, deps, guard, overrides, callerName);
   }
 }
 
-function autoRunAsyncState<T, E, R, S>(hookState: HookOwnState<T, E, R, S>): CleanupFn {
-  let {flags, instance, config, base} = hookState;
-  // auto run only if condition is met, and it is not lazy
-  if (!(flags & AUTO_RUN)) {
-    return;
+export function didDepsChange(deps: any[], deps2: any[]) {
+  if (deps.length !== deps2.length) {
+    return true;
   }
-  // if dependencies change, if we run, the cleanup shall abort
-  let shouldRun = true; // AUTO_RUN flag is set only if this is true
-
-  if (flags & CONFIG_OBJECT) {
-    let configObject = (config as BaseConfig<T, E, R>);
-    if (isFunction(configObject.condition)) {
-      let conditionFn = configObject.condition as ((state: State<T, E, R>) => boolean);
-      shouldRun = conditionFn(instance!.getState());
+  for (let i = 0, {length} = deps; i < length; i += 1) {
+    if (!Object.is(deps[i], deps2[i])) {
+      return true;
     }
   }
-
-  if (shouldRun) {
-    if (flags & CONFIG_OBJECT && (config as BaseConfig<T, E, R>).autoRunArgs) {
-      let {autoRunArgs} = (config as BaseConfig<T, E, R>);
-      if (autoRunArgs && Array.isArray(autoRunArgs)) {
-        return base.run.apply(null, autoRunArgs);
-      }
-    }
-
-    return base.run();
-  }
+  return false;
 }

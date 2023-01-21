@@ -9,13 +9,14 @@ export {useAsyncState} from "./useAsyncState";
 export {AsyncStateProvider} from "./Provider";
 
 export {
-  createSource, Status, RunEffect, ProducerType,
-  requestContext, createContext, getContext, terminateContext
+  createSource, Status, RunEffect,
+  requestContext, createContext, getContext, terminateContext,
+  mapFlags,
 } from "async-states";
 
 export {
   default as Hydration,
-} from "./Hydration";
+} from "./hydration/Hydration";
 
 export type {
   State,
@@ -55,7 +56,6 @@ export type {
   MixedConfig,
   UseAsyncState,
   UseAsyncStateType,
-  AsyncStateInitializer,
   UseAsyncStateConfiguration,
 
   SelectorKeysArg,

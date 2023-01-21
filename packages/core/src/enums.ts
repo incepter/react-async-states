@@ -16,11 +16,3 @@ export enum RunEffect {
   takeFirst = "takeFirst",
   takeLeading = "takeLeading",
 }
-
-export enum ProducerType {
-  indeterminate = 0,
-  sync = 1,
-  promise = 2,
-  generator = 3,
-  notProvided = 4,
-}

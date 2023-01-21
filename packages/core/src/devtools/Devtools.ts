@@ -222,7 +222,6 @@ function createDevtools(): DevtoolsInterface {
         uniqueId: asyncState.uniqueId,
         pool: asyncState.pool.simpleName,
         lastSuccess: asyncState.lastSuccess,
-        producerType: asyncState.producerType,
         subscriptions: (asyncState.subscriptions ? Object.values(asyncState.subscriptions) : []).map(mapSubscriptionToDevtools),
         lanes: asyncState.lanes ? Object.keys(asyncState.lanes).map(key => ({
           uniqueId: asyncState.lanes![key].uniqueId,
@@ -433,9 +432,7 @@ function createDevtools(): DevtoolsInterface {
       type: DevtoolsJournalEvent.subscription,
       payload: {
         key: subscription.props.key,
-        origin: subscription.props.origin,
         flags: subscription.props.flags,
-        // devFlags: humanizeDevFlags(subscription.props.flags || 0),
       }
     };
     emitJournalEvent(asyncState, evt);
@@ -555,8 +552,7 @@ function mapSubscriptionToDevtools(sub: StateSubscription<any, any, any>) {
   return {
     key: sub.props.key,
     flags: sub.props.flags,
-    origin: getSubscriptionOrigin(sub.props.origin),
-    // devFlags: humanizeDevFlags(sub.props.flags || 0),
+    // devFlags: mapFlags(sub.props.flags || 0),
   }
 }
 

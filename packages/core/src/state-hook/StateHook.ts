@@ -1,4 +1,3 @@
-import * as React from "react";
 import {
   BaseConfig,
   BaseUseAsyncState,
@@ -13,19 +12,19 @@ import {
 } from "./types.internal";
 import {
   AbortFn,
-  AsyncState,
-  isSource,
-  nextKey,
   PoolInterface,
   Producer,
   ProducerConfig,
-  readSource,
   Source,
   State,
   StateInterface,
-  Status,
   LibraryPoolsContext
-} from "async-states";
+} from "../types";
+import {
+  readSource,
+  AsyncState,
+} from "../AsyncState";
+
 import {
   AUTO_RUN,
   CHANGE_EVENTS,
@@ -42,8 +41,15 @@ import {
   SUBSCRIBE_EVENTS,
   WAIT
 } from "./StateHookFlags";
-import {__DEV__, humanizeDevFlags, isFunction} from "./shared";
-
+import {
+  __DEV__,
+  mapFlags,
+  isArray,
+  isFunction,
+  isSource,
+  nextKey
+} from "../utils";
+import {Status} from "../enums";
 
 export function resolveFlags<T, E, R, S>(
   mixedConfig: MixedConfig<T, E, R, S>,
@@ -126,7 +132,7 @@ function getFlagsFromConfigProperties(
   }
 }
 
-export function getConfigFlags<T, E, R, S>(
+function getConfigFlags<T, E, R, S>(
   config?: PartialUseAsyncStateConfiguration<T, E, R, S>
 ): number {
   if (!config) {
@@ -138,7 +144,7 @@ export function getConfigFlags<T, E, R, S>(
 }
 
 
-export function resolveInstance<T, E, R, S>(
+function resolveInstance<T, E, R, S>(
   pool: PoolInterface,
   flags: number,
   config: MixedConfig<T, E, R, S>,
@@ -293,39 +299,31 @@ function readLaneFromConfig<T, E, R, S>(
 }
 
 
-export function makeBaseReturn<T, E, R, S>(
+function makeBaseReturn<T, E, R, S>(
   flags: number,
   config: MixedConfig<T, E, R, S>,
   instance: StateInterface<T, E, R> | null,
 ) {
   if (!instance) {
     let key = flags & CONFIG_STRING ? config : (config as BaseConfig<T, E, R>).key;
-    let output = Object.assign({key, flags}) as BaseUseAsyncState<T, E, R, S>;
+    let output = {key, flags} as BaseUseAsyncState<T, E, R, S>;
     if (__DEV__) {
-      output.devFlags = humanizeDevFlags(flags);
+      output.devFlags = mapFlags(flags);
     }
     return output;
   }
 
-  let output = Object.assign({},
-    instance._source,
-    {
-      flags,
-      source: instance._source,
-      run: instance.run,
-      runp: instance.runp,
-      runc: instance.runc
-    }
+  let output = Object.assign({}, instance._source, {flags, source: instance._source}
   ) as BaseUseAsyncState<T, E, R, S>;
 
   if (__DEV__) {
-    output.devFlags = humanizeDevFlags(flags);
+    output.devFlags = mapFlags(flags);
   }
   return output;
 }
 
 
-export function calculateSubscriptionKey<T, E, R, S>(
+function calculateSubscriptionKey<T, E, R, S>(
   flags: number,
   config: MixedConfig<T, E, R, S>,
   callerName: string | undefined,
@@ -382,7 +380,7 @@ function createReadInConcurrentMode<T, E, R, S>(
   return stateValue;
 }
 
-export function invokeSubscribeEvents<T, E, R>(
+function invokeSubscribeEvents<T, E, R>(
   events: UseAsyncStateEventSubscribe<T, E, R> | undefined,
   run: (...args: any[]) => AbortFn,
   instance?: StateInterface<T, E, R>,
@@ -394,12 +392,12 @@ export function invokeSubscribeEvents<T, E, R>(
   let eventProps: SubscribeEventProps<T, E, R> = instance._source;
 
   let handlers: ((props: SubscribeEventProps<T, E, R>) => CleanupFn)[]
-    = Array.isArray(events) ? events : [events];
+    = isArray(events) ? events : [events];
 
   return handlers.map(handler => handler(eventProps));
 }
 
-export function invokeChangeEvents<T, E, R>(
+function invokeChangeEvents<T, E, R>(
   instance: StateInterface<T, E, R>,
   events: UseAsyncStateEvents<T, E, R> | undefined
 ) {
@@ -409,7 +407,7 @@ export function invokeChangeEvents<T, E, R>(
 
   let nextState = instance.state;
   const changeHandlers: UseAsyncStateEventFn<T, E, R>[]
-    = Array.isArray(events.change) ? events.change : [events.change];
+    = isArray(events.change) ? events.change : [events.change];
 
   const eventProps = {state: nextState, source: instance._source};
 
@@ -443,7 +441,7 @@ export function readStateFromInstance<T, E, R, S = State<T, E, R>>(
   return selector(asyncState.state, asyncState.lastSuccess, asyncState.cache || null);
 }
 
-export type HookOwnState<T, E, R, S> = {
+export interface HookOwnState<T, E, R, S> {
   context: LibraryPoolsContext,
   guard: number,
   pool: PoolInterface,
@@ -457,15 +455,19 @@ export type HookOwnState<T, E, R, S> = {
   renderInfo: {
     current: S,
     version: number | undefined,
-  }
+  },
+
+  subscribeEffect(
+    updateState: () => void,
+    setGuard: ((updater: ((prev: number) => number)) => void),
+  ): CleanupFn,
 }
 
-export function subscribeEffectImpl<T, E, R, S>(
+export function subscribeEffect<T, E, R, S>(
   hookState: HookOwnState<T, E, R, S>,
   updateState: () => void,
-  setGuard: React.Dispatch<React.SetStateAction<number>>,
-  origin: 1 | 2 | 3
-) {
+  setGuard: ((updater: ((prev: number) => number)) => void),
+): CleanupFn {
   let {flags, config, instance, renderInfo, subKey, pool} = hookState;
   if (flags & WAIT) {
     let key: string = flags & CONFIG_STRING
@@ -500,10 +502,8 @@ export function subscribeEffectImpl<T, E, R, S>(
   }
 
   // subscription
-
   cleanups.push(instance!.subscribe({
     flags,
-    origin,
     key: subKey,
     cb: onStateChange,
   }));
@@ -542,7 +542,7 @@ function resolvePool<T, E, R, S>(
   return context.getOrCreatePool(pool || "default");
 }
 
-export function calculateHook<T, E, R, S>(
+export function createHook<T, E, R, S>(
   executionContext: LibraryPoolsContext,
   config: MixedConfig<T, E, R, S>,
   deps: any[],
@@ -569,7 +569,9 @@ export function calculateHook<T, E, R, S>(
     }
   }
 
-  return {
+  // ts complains about subscribeEffect not present, it is assigned later
+  // @ts-ignore
+  let hook: HookOwnState<T, E, R, S> = {
     deps,
     guard,
     config,
@@ -583,18 +585,38 @@ export function calculateHook<T, E, R, S>(
     renderInfo: {
       current: currentReturn.state,
       version: currentReturn.version,
-    }
-  }
+    },
+  };
+  hook.subscribeEffect = subscribeEffect.bind(null, hook);
+
+  return hook;
 }
 
-export function areHookInputEqual(deps: any[], deps2: any[]) {
-  if (deps.length !== deps2.length) {
-    return false;
+export function autoRunAsyncState<T, E, R, S>(hookState: HookOwnState<T, E, R, S>): CleanupFn {
+  let {flags, instance, config, base} = hookState;
+  // auto run only if condition is met, and it is not lazy
+  if (!(flags & AUTO_RUN)) {
+    return;
   }
-  for (let i = 0, {length} = deps; i < length; i += 1) {
-    if (!Object.is(deps[i], deps2[i])) {
-      return false;
+  // if dependencies change, if we run, the cleanup shall abort
+  let shouldRun = true; // AUTO_RUN flag is set only if this is true
+
+  if (flags & CONFIG_OBJECT) {
+    let configObject = (config as BaseConfig<T, E, R>);
+    if (isFunction(configObject.condition)) {
+      let conditionFn = configObject.condition as ((state: State<T, E, R>) => boolean);
+      shouldRun = conditionFn(instance!.getState());
     }
   }
-  return true;
+
+  if (shouldRun) {
+    if (flags & CONFIG_OBJECT && (config as BaseConfig<T, E, R>).autoRunArgs) {
+      let {autoRunArgs} = (config as BaseConfig<T, E, R>);
+      if (autoRunArgs && isArray(autoRunArgs)) {
+        return base.run.apply(null, autoRunArgs);
+      }
+    }
+
+    return base.run();
+  }
 }

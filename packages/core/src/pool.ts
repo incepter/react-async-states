@@ -204,7 +204,7 @@ export function createContext(ctx: any): LibraryPoolsContext {
 
   let poolsContext: LibraryPoolsContext = {
     poolInUse,
-    context: ctx,
+    context: ctx, // assigned here
     setDefaultPool,
     getOrCreatePool,
     enableDiscovery,
@@ -258,7 +258,8 @@ export function requestContext(context: any): LibraryPoolsContext {
       library APIs.
       
       When using <Hydration request={request} />, hooks inside will automatically
-      use it as a context to perform isolation.
+      use it as a context to perform isolation. So it is important to be at the
+      top level of your App.
       `);
     }
     throw new Error("You should always provide an execution context in the server");
