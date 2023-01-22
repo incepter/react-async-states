@@ -55,7 +55,8 @@ import {
   StateFunctionUpdater,
   StateInterface,
   StateSubscription,
-  SuccessState
+  SuccessState,
+  UpdateQueue
 } from "./types";
 import {RunEffect, Status} from "./enums";
 import {
@@ -76,6 +77,8 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   lastSuccess: SuccessState<T> | InitialState<T>;
   events?: InstanceEvents<T, E, R>;
   eventsIndex?: number;
+  queue?: UpdateQueue<T, E, R>;
+  flushing?: boolean;
 
   originalProducer: Producer<T, E, R> | undefined;
 
@@ -306,12 +309,29 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     return newLane;
   }
 
+
   replaceState(
     newState: State<T, E, R>,
     notify: boolean = true
   ): void {
+    let {config} = this;
+    let isPending = newState.status === Status.pending;
 
-    if (newState.status === Status.pending && this.config.skipPendingStatus) {
+    if (isPending && config.skipPendingStatus) {
+      return;
+    }
+
+    if (this.queue) {
+      enqueueUpdate(this, newState);
+      return;
+    }
+
+    if (
+      config.keepPendingForMs &&
+      this.state.status === Status.pending &&
+      !this.flushing
+    ) {
+      enqueueUpdate(this, newState);
       return;
     }
 
@@ -323,15 +343,14 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       this.pendingUpdate = null;
     }
 
-    if (newState.status === Status.pending) {
-      if (
-        isFunction(setTimeout)
-        && this.config.skipPendingDelayMs
-        && this.config.skipPendingDelayMs > 0
-      ) {
-        scheduleDelayedPendingUpdate(this, newState, notify);
-        return;
-      }
+    if (
+      isPending &&
+      this.config.skipPendingDelayMs &&
+      isFunction(setTimeout) &&
+      this.config.skipPendingDelayMs > 0
+    ) {
+      scheduleDelayedPendingUpdate(this, newState, notify);
+      return;
     }
 
     if (__DEV__) devtools.startUpdate(this);
@@ -347,11 +366,11 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       }
     }
 
-    if (this.state.status !== Status.pending) {
+    if (!isPending) {
       this.suspender = undefined;
     }
 
-    if (notify) {
+    if (notify && !this.flushing) {
       notifySubscribers(this as StateInterface<any>);
     }
   }
@@ -408,6 +427,10 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     if (!StateBuilder[status]) {
       throw new Error(`Unknown status ('${status}')`);
     }
+    if (this.queue) {
+      enqueueSetState(this, newValue, status);
+      return;
+    }
     this.willUpdate = true;
     if (this.state?.status === Status.pending || (
       isFunction(this.currentAbort) && !this.isEmitting
@@ -428,7 +451,8 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     });
     if (__DEV__) devtools.emitReplaceState(this, savedProps);
     // @ts-ignore
-    this.replaceState(StateBuilder[status](effectiveValue, savedProps));
+    let newState = StateBuilder[status](effectiveValue, savedProps) as State<T, E, R>;
+    this.replaceState(newState);
     this.willUpdate = false;
   }
 
@@ -1194,6 +1218,109 @@ export function effectsCreator<T, E, R>(
     select: createSelectFunction(executionContext),
     runp: runpEffectFunction.bind(null, executionContext, props),
   };
+}
+
+//endregion
+
+//region UPDATE QUEUE
+function getQueueTail<T, E, R>(instance: StateInterface<T, E, R>): UpdateQueue<T, E, R> | null {
+  if (!instance.queue) {
+    return null;
+  }
+  let current = instance.queue;
+  while (current.next !== null) {
+    current = current.next;
+  }
+  return current;
+}
+
+export function enqueueUpdate<T, E, R>(
+  instance: StateInterface<T, E, R>,
+  newState: State<T, E, R>,
+) {
+  let update: UpdateQueue<T, E, R> = {
+    data: newState,
+    kind: 0,
+    next: null,
+  };
+  if (!instance.queue) {
+    instance.queue = update;
+  } else {
+    let tail = getQueueTail(instance);
+    if (!tail) {
+      return;
+    }
+    tail.next = update;
+  }
+
+  ensureQueueIsScheduled(instance);
+}
+
+export function enqueueSetState<T, E, R>(
+  instance: StateInterface<T, E, R>,
+  newValue: T | StateFunctionUpdater<T, E, R>,
+  status = Status.success,
+) {
+  let update: UpdateQueue<T, E, R> = {
+    kind: 1,
+    data: {data: newValue, status},
+    next: null,
+  };
+  if (!instance.queue) {
+    instance.queue = update;
+  } else {
+    let tail = getQueueTail(instance);
+    if (!tail) {
+      return;
+    }
+    tail.next = update;
+  }
+
+  ensureQueueIsScheduled(instance);
+}
+
+export function ensureQueueIsScheduled<T, E, R>(
+  instance: StateInterface<T, E, R>
+) {
+  if (!instance.queue) {
+    return;
+  }
+  let queue: UpdateQueue<T, E, R> = instance.queue;
+  if (queue.id) {
+    return;
+  }
+  let delay = instance.config.keepPendingForMs;
+  queue.id = setTimeout(() => flushUpdateQueue(instance), delay);
+}
+
+function flushUpdateQueue<T, E, R>(
+  instance: StateInterface<T, E, R>,
+) {
+
+  console.log('FLUSHING QUEUE', instance.queue);
+  if (!instance.queue) {
+    return;
+  }
+
+  let current: UpdateQueue<T, E, R> | null = instance.queue;
+
+  delete instance.queue;
+
+  instance.flushing = true;
+  while (current !== null) {
+    console.log('flushing item', current);
+    if (current.kind === 0) {
+      instance.replaceState(current.data);
+    }
+    if (current.kind === 1) {
+      let {data: {data, status}} = current;
+      instance.setState(data, status);
+    }
+
+    current = current.next;
+  }
+  delete instance.flushing;
+  notifySubscribers(instance);
 }
 
 //endregion

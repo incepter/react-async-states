@@ -34,6 +34,7 @@ let userDetails = createSource("user-details", fetchUser, {
   // runEffectDurationMs: 200,
   resetStateOnDispose: true,
   runEffect: RunEffect.debounce,
+  keepPendingForMs: 200,
   cacheConfig: {
     enabled: true,
     hash: (args) => args![0],
