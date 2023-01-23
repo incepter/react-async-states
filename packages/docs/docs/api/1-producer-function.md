@@ -133,6 +133,7 @@ The supported configuration is:
 | `runEffectDurationMs` | `number > 0`, `undefined`                                    | The debounce/throttle duration                                                                                                                                                                        |
 | `resetStateOnDispose` | `boolean`                                                    | Whether to reset the state to its initial state when all subscribers unsubscribe or to keep it. Default to `false`.                                                                                   |
 | `skipPendingDelayMs`  | `number > 0` or `undefined`                                  | The duration under which a state update with a pending status may be skipped. The component in this case won't render with a pending status if it gets updated to something else under that duration. |
+| `keepPendingForMs`    | `number > 0` or `undefined`                                  | Once you step in a pending status, it will stay in pending state for this duration. This is supported to push the user experience to newer challenges                                                 |
 | `skipPendingStatus`   | `boolean`                                                    | Entirely disable the pending status of this state. this state won't step into a pending status                                                                                                        |
 | `cacheConfig`         | `CacheConfig<T, E, R>`                                       | The cache config                                                                                                                                                                                      |
 | `hideFromDevtools`    | `boolean`                                                    | Hide this state from the devtools                                                                                                                                                                     |
@@ -148,6 +149,7 @@ export type ProducerConfig<T, E = any, R = any> = {
   runEffectDurationMs?: number,
   runEffect?: RunEffect,
   skipPendingDelayMs?: number,
+  keepPendingForMs?: number,
   resetStateOnDispose?: boolean,
 
   // dev only

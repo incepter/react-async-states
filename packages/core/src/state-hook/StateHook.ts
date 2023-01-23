@@ -47,7 +47,7 @@ import {
   isArray,
   isFunction,
   isSource,
-  nextKey
+  nextKey, freeze, error, pending
 } from "../utils";
 import {Status} from "../enums";
 
@@ -346,7 +346,7 @@ function calculateSubscriptionKey<T, E, R, S>(
 }
 
 
-export function calculateStateValue<T, E, R, S>(
+export function hookReturn<T, E, R, S>(
   flags: number,
   config: MixedConfig<T, E, R, S>,
   base: BaseUseAsyncState<T, E, R, S>,
@@ -362,7 +362,7 @@ export function calculateStateValue<T, E, R, S>(
   newState.state = newValue;
   newState.lastSuccess = instance?.lastSuccess;
 
-  return Object.freeze(newState);
+  return freeze(newState);
 }
 
 function createReadInConcurrentMode<T, E, R, S>(
@@ -371,10 +371,10 @@ function createReadInConcurrentMode<T, E, R, S>(
   suspend: boolean = true,
   throwError: boolean = true,
 ) {
-  if (suspend && Status.pending === instance.state.status && instance.suspender) {
+  if (suspend && pending === instance.state.status && instance.suspender) {
     throw instance.suspender;
   }
-  if (throwError && Status.error === instance.state.status) {
+  if (throwError && error === instance.state.status) {
     throw instance.state.data;
   }
   return stateValue;
@@ -559,7 +559,7 @@ export function createHook<T, E, R, S>(
   }
 
   let baseReturn = makeBaseReturn(newFlags, config, newInstance);
-  let currentReturn = calculateStateValue(newFlags, config, baseReturn, newInstance);
+  let currentReturn = hookReturn(newFlags, config, baseReturn, newInstance);
   let subscriptionKey = calculateSubscriptionKey(newFlags, config, caller, newInstance);
 
   if (newInstance && newFlags & CONFIG_OBJECT) {
@@ -592,7 +592,7 @@ export function createHook<T, E, R, S>(
   return hook;
 }
 
-export function autoRunAsyncState<T, E, R, S>(hookState: HookOwnState<T, E, R, S>): CleanupFn {
+export function autoRun<T, E, R, S>(hookState: HookOwnState<T, E, R, S>): CleanupFn {
   let {flags, instance, config, base} = hookState;
   // auto run only if condition is met, and it is not lazy
   if (!(flags & AUTO_RUN)) {

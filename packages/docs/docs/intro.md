@@ -157,6 +157,7 @@ const {run} = useAsyncState({
   runEffectDurationMs: 300,
   // skip pending status if it answers less than 200ms
   skipPendingDelayMs: 200,
+  keepPendingForMs: 500, // stay in pending state for at least 500ms
 });
 
 
@@ -182,6 +183,8 @@ const {run} = useAsyncState({
   runEffectDurationMs: 300,
   // skip pending status if it answers less than 200ms
   skipPendingDelayMs: 200,
+  // keep in the pending state for 200s once you step into it
+  keepPendingForMs: 200,
   
   // cache config:
   cacheConfig: {

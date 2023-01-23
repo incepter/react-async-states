@@ -9,10 +9,6 @@ export enum Status {
 export enum RunEffect {
   delay = "delay",
   debounce = "debounce",
-  takeLast = "takeLast",
-  takeLatest = "takeLatest",
 
   throttle = "throttle",
-  takeFirst = "takeFirst",
-  takeLeading = "takeLeading",
 }

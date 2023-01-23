@@ -42,6 +42,7 @@ const {
   payload, // the payload to merge in the instance
   producer, // the producer to be defined in the state instance
   skipPendingDelayMs, // skips the pending status under that delay in Ms
+  keepPendingForMs, // stays in the pending state for this duration (to avoid the UI flashing)
   skipPendingStatus, // never sets the status to pending, it will always notify only about resolve/abort
   cacheConfig: {
     enabled, // whether to enable cache or not
@@ -111,6 +112,7 @@ const source = createSource(
     runEffectDurationMs, // the duration of the run effect in Ms
     resetStateOnDispose, // whether to reset state to initial status when no subscribers are left
     skipPendingDelayMs, // skips the pending status under that delay in Ms
+    keepPendingForMs, // stays in the pending state for this duration (to avoid the UI flashing)
     skippendingStatus, // skips totally any pending status
     hideFromDevtools, // hides this state from the devtools
     cacheConfig: {
