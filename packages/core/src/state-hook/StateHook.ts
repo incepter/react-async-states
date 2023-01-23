@@ -346,7 +346,7 @@ function calculateSubscriptionKey<T, E, R, S>(
 }
 
 
-export function calculateStateValue<T, E, R, S>(
+export function hookReturn<T, E, R, S>(
   flags: number,
   config: MixedConfig<T, E, R, S>,
   base: BaseUseAsyncState<T, E, R, S>,
@@ -559,7 +559,7 @@ export function createHook<T, E, R, S>(
   }
 
   let baseReturn = makeBaseReturn(newFlags, config, newInstance);
-  let currentReturn = calculateStateValue(newFlags, config, baseReturn, newInstance);
+  let currentReturn = hookReturn(newFlags, config, baseReturn, newInstance);
   let subscriptionKey = calculateSubscriptionKey(newFlags, config, caller, newInstance);
 
   if (newInstance && newFlags & CONFIG_OBJECT) {
@@ -592,7 +592,7 @@ export function createHook<T, E, R, S>(
   return hook;
 }
 
-export function autoRunAsyncState<T, E, R, S>(hookState: HookOwnState<T, E, R, S>): CleanupFn {
+export function autoRun<T, E, R, S>(hookState: HookOwnState<T, E, R, S>): CleanupFn {
   let {flags, instance, config, base} = hookState;
   // auto run only if condition is met, and it is not lazy
   if (!(flags & AUTO_RUN)) {

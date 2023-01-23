@@ -7,10 +7,6 @@ export {
   effectsCreator
 } from "./AsyncState";
 
-export {
-  DevtoolsEvent, DevtoolsRequest, DevtoolsJournalEvent
-} from "./devtools/index";
-
 export {version} from "../package.json";
 export {isSource, nextKey, StateBuilder, mapFlags} from "./utils";
 export {default as devtools} from "./devtools/Devtools"
@@ -90,7 +86,7 @@ export type {
 } from "./state-hook/StateHook";
 
 export {
-  calculateStateValue,
+  hookReturn,
   createHook,
-  autoRunAsyncState,
+  autoRun,
 } from "./state-hook/StateHook";

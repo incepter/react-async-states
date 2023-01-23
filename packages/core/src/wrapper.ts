@@ -29,19 +29,14 @@ export function producerWrapper<T, E = any, R = any>(
 
     if (callbacks) {
       let currentState = input.getState();
-      switch (currentState.status) {
-        case Status.success: {
-          callbacks.onSuccess?.(currentState);
-          break;
-        }
-        case Status.aborted: {
-          callbacks.onAborted?.(currentState);
-          break;
-        }
-        case Status.error: {
-          callbacks.onError?.(currentState);
-          break;
-        }
+      if (callbacks.onSuccess && currentState.status === Status.success) {
+        callbacks.onSuccess(currentState);
+      }
+      if (callbacks.onAborted && currentState.status === Status.aborted) {
+        callbacks.onAborted(currentState);
+      }
+      if (callbacks.onError && currentState.status === Status.error) {
+        callbacks.onError(currentState);
       }
     }
     return;
@@ -66,7 +61,9 @@ export function producerWrapper<T, E = any, R = any>(
     indicators.fulfilled = true;
     let errorState = StateBuilder.error<T, E>(e, savedProps);
     input.replaceState(errorState);
-    callbacks?.onError?.(errorState);
+    if (callbacks && callbacks.onError) {
+      callbacks.onError(errorState);
+    }
     return;
   }
 
@@ -80,14 +77,18 @@ export function producerWrapper<T, E = any, R = any>(
       indicators.fulfilled = true;
       let errorState = StateBuilder.error<T, E>(e, savedProps);
       input.replaceState(errorState);
-      callbacks?.onError?.(errorState);
+      if (callbacks && callbacks.onError) {
+        callbacks.onError(errorState);
+      }
       return;
     }
     if (generatorResult.done) {
       indicators.fulfilled = true;
       let successState = StateBuilder.success(generatorResult.value, savedProps);
       input.replaceState(successState);
-      callbacks?.onSuccess?.(successState);
+      if (callbacks && callbacks.onSuccess) {
+        callbacks.onSuccess(successState);
+      }
       return;
     } else {
       runningPromise = generatorResult;
@@ -104,7 +105,9 @@ export function producerWrapper<T, E = any, R = any>(
     indicators.fulfilled = true;
     let successState = StateBuilder.success(executionValue, savedProps);
     input.replaceState(successState);
-    callbacks?.onSuccess?.(successState);
+    if (callbacks && callbacks.onSuccess) {
+      callbacks.onSuccess(successState);
+    }
     return;
   }
 
@@ -115,7 +118,9 @@ export function producerWrapper<T, E = any, R = any>(
         indicators.fulfilled = true;
         let successState = StateBuilder.success(stateData, savedProps);
         input.replaceState(successState);
-        callbacks?.onSuccess?.(successState);
+        if (callbacks && callbacks.onSuccess) {
+          callbacks.onSuccess(successState);
+        }
       }
     })
     .catch(stateError => {
@@ -124,7 +129,9 @@ export function producerWrapper<T, E = any, R = any>(
         indicators.fulfilled = true;
         let errorState = StateBuilder.error<T, E>(stateError, savedProps);
         input.replaceState(errorState);
-        callbacks?.onError?.(errorState);
+        if (callbacks && callbacks.onError) {
+          callbacks.onError(errorState);
+        }
       }
     });
 }

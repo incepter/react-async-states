@@ -1,10 +1,10 @@
 import * as React from "react";
 import {
-  calculateStateValue,
+  hookReturn,
   createHook,
   HookOwnState,
   State,
-  autoRunAsyncState
+  autoRun
 } from "async-states";
 import {
   MixedConfig,
@@ -35,7 +35,7 @@ export const useInternalAsyncState = function useAsyncStateImpl<T, E = any, R = 
     () => hook.subscribeEffect(updateReturnState, setGuard),
     [renderInfo, flags, instance].concat(deps)
   );
-  React.useEffect(() => autoRunAsyncState(hook), deps);
+  React.useEffect(() => autoRun(hook), deps);
 
   renderInfo.version = instance?.version;
   renderInfo.current = hook.return.state;
@@ -49,7 +49,7 @@ export const useInternalAsyncState = function useAsyncStateImpl<T, E = any, R = 
 
   function updateReturnState() {
     setHook(prev => {
-      let newReturn = calculateStateValue(flags, config, base, instance);
+      let newReturn = hookReturn(flags, config, base, instance);
       return Object.assign({}, prev, {return: newReturn});
     });
   }
