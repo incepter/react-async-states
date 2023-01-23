@@ -655,15 +655,16 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   }
 
   dispose() {
-    if (this.locks === undefined) {
-      return true;
-    }
     if (this.locks && this.locks > 0) {
       return false;
     }
 
     this.willUpdate = true;
     this.abort();
+    if (this.queue) {
+      clearTimeout(this.queue.id);
+      delete this.queue;
+    }
 
     this.locks = 0;
     let initialState = this.config.initialValue;
@@ -961,21 +962,21 @@ function scheduleDelayedPendingUpdate<T, E, R>(
     }
   }
 
-  const timeoutId = setTimeout(callback, instance.config.skipPendingDelayMs);
+  let timeoutId = setTimeout(callback, instance.config.skipPendingDelayMs);
   instance.pendingUpdate = {callback, timeoutId};
 }
 
 function saveCacheAfterSuccessfulUpdate<T, E, R>(instance: StateInterface<T, E, R>) {
-  const topLevelParent: StateInterface<T, E, R> = getTopLevelParent(instance);
-  const {config: {cacheConfig}} = topLevelParent;
-  const {state} = instance;
-  const {props} = state;
+  let topLevelParent: StateInterface<T, E, R> = getTopLevelParent(instance);
+  let {config: {cacheConfig}} = topLevelParent;
+  let {state} = instance;
+  let {props} = state;
 
   if (!topLevelParent.cache) {
     topLevelParent.cache = {};
   }
 
-  const runHash = hash(props?.args, props?.payload, cacheConfig);
+  let runHash = hash(props?.args, props?.payload, cacheConfig);
   if (topLevelParent.cache[runHash]?.state !== state) {
 
     topLevelParent.cache[runHash] = {
@@ -1004,12 +1005,12 @@ function loadCache<T, E, R>(instance: StateInterface<T, E, R>) {
 
   // inherit cache from the parent if exists!
   if (instance.parent) {
-    const topLevelParent: StateInterface<T, E, R> = getTopLevelParent(instance);
+    let topLevelParent: StateInterface<T, E, R> = getTopLevelParent(instance);
     instance.cache = topLevelParent.cache;
     return;
   }
 
-  const loadedCache = instance.config.cacheConfig!.load!();
+  let loadedCache = instance.config.cacheConfig!.load!();
 
   if (!loadedCache) {
     return;
@@ -1052,9 +1053,9 @@ function spreadCacheChangeOnLanes<T, E, R>(topLevelParent: StateInterface<T, E, 
 }
 
 function makeSource<T, E, R>(instance: StateInterface<T, E, R>): Readonly<Source<T, E, R>> {
-  const hiddenInstance = hideStateInstanceInNewObject(instance);
+  let hiddenInstance = hideStateInstanceInNewObject(instance);
 
-  const source: Source<T, E, R> = Object.assign(hiddenInstance, {
+  let source: Source<T, E, R> = Object.assign(hiddenInstance, {
     key: instance.key,
     uniqueId: instance.uniqueId,
 
@@ -1289,15 +1290,21 @@ export function ensureQueueIsScheduled<T, E, R>(
   if (queue.id) {
     return;
   }
-  let delay = instance.config.keepPendingForMs;
-  queue.id = setTimeout(() => flushUpdateQueue(instance), delay);
+  let delay = instance.config.keepPendingForMs || 0;
+  let elapsedTime = Date.now() - instance.state.timestamp;
+  let remainingTime = delay - elapsedTime;
+
+  if (remainingTime > 0) {
+    queue.id = setTimeout(() => flushUpdateQueue(instance), remainingTime);
+  } else {
+    flushUpdateQueue(instance);
+  }
 }
 
 function flushUpdateQueue<T, E, R>(
   instance: StateInterface<T, E, R>,
 ) {
 
-  console.log('FLUSHING QUEUE', instance.queue);
   if (!instance.queue) {
     return;
   }
@@ -1308,16 +1315,21 @@ function flushUpdateQueue<T, E, R>(
 
   instance.flushing = true;
   while (current !== null) {
-    console.log('flushing item', current);
-    if (current.kind === 0) {
-      instance.replaceState(current.data);
-    }
-    if (current.kind === 1) {
-      let {data: {data, status}} = current;
-      instance.setState(data, status);
-    }
+    let {data: {status}} = current;
+    let canBailoutPendingStatus = status === Status.pending && current.next !== null;
 
-    current = current.next;
+    if (canBailoutPendingStatus) {
+      current = current.next;
+    } else {
+      if (current.kind === 0) {
+        instance.replaceState(current.data);
+      }
+      if (current.kind === 1) {
+        let {data: {data, status}} = current;
+        instance.setState(data, status);
+      }
+      current = current.next;
+    }
   }
   delete instance.flushing;
   notifySubscribers(instance);
