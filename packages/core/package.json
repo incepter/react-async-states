@@ -6,7 +6,7 @@
   "name": "async-states",
   "version": "1.0.0-pre-10",
   "main": "dist/umd/index",
-  "types": "dist/es/src/index",
+  "types": "dist/es/index",
   "module": "dist/es/src/index",
   "description": "Core of async-states",
   "devDependencies": {
