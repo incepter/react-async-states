@@ -113,7 +113,7 @@ describe('AsyncState - keepPending', () => {
   });
   it('should work correctly with skipPendingStatus -- step into pending', async () => {
     // given
-    let key = "keep-4";
+    let key = "keep-5";
     let producer = timeout<number>(300, 0);
     let config: ProducerConfig<number> = {
       keepPendingForMs: 600,
@@ -136,7 +136,7 @@ describe('AsyncState - keepPending', () => {
   });
   it('should abort execute abort on sequenced runs', async () => {
     // given
-    let key = "keep-5";
+    let key = "keep-6";
     let abortedSpy = jest.fn();
     let producer: Producer<number> = (props) => {
       props.onAbort(abortedSpy)

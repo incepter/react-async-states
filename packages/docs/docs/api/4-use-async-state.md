@@ -486,10 +486,8 @@ Defines the effect to apply on the producer while running.
 This property is only relevant when creating a new state.
 
 There are two types of run effects:
-- `debouce`: or `delay`, `takeLast` or `takeLatest` and means take the last
-  registered run in the configured duration.
-- `throttle`: or `takeFirst` or `takeLeading` and means take the first ever run
-  in the duration.
+- `debouce`: or `delay` and means take the last registered run in the configured duration.
+- `throttle`: and means take the first ever run in the duration.
 
 ### `runEffectDurationMs`
 `runEffectDurationMs` : the duration of the effect.

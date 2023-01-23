@@ -6,12 +6,12 @@ import {
   RunIndicators
 } from "./types";
 import {
-  __DEV__,
-  cloneProducerProps,
+  __DEV__, aborted,
+  cloneProducerProps, error,
   isFunction,
   isGenerator,
   isPromise,
-  StateBuilder
+  StateBuilder, success
 } from "./utils";
 import {Status} from "./enums";
 import devtools from "./devtools/Devtools";
@@ -29,13 +29,13 @@ export function producerWrapper<T, E = any, R = any>(
 
     if (callbacks) {
       let currentState = input.getState();
-      if (callbacks.onSuccess && currentState.status === Status.success) {
+      if (callbacks.onSuccess && currentState.status === success) {
         callbacks.onSuccess(currentState);
       }
-      if (callbacks.onAborted && currentState.status === Status.aborted) {
+      if (callbacks.onAborted && currentState.status === aborted) {
         callbacks.onAborted(currentState);
       }
-      if (callbacks.onError && currentState.status === Status.error) {
+      if (callbacks.onError && currentState.status === error) {
         callbacks.onError(currentState);
       }
     }

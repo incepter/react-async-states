@@ -1,10 +1,15 @@
 import {
   __DEV__,
+  pending,
+  aborted,
+  error,
+  initial,
   asyncStatesKey,
   attemptHydratedState,
   cloneProducerProps,
   didNotExpire,
   emptyArray,
+  freeze,
   hash,
   isArray,
   isFunction,
@@ -12,8 +17,8 @@ import {
   isSource,
   nextKey,
   shallowClone,
-  sourceIsSourceSymbol,
-  StateBuilder,
+  sourceSymbol,
+  StateBuilder, success,
 } from "./utils";
 import devtools from "./devtools/Devtools";
 import {hideStateInstanceInNewObject} from "./hide-object";
@@ -152,7 +157,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       this.payload = maybeHydratedState.payload;
       this.latestRun = maybeHydratedState.latestRun;
 
-      if (this.state.status === Status.success) {
+      if (this.state.status === success) {
         this.lastSuccess = this.state;
       } else {
         let initializer = this.config.initialValue;
@@ -315,7 +320,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     notify: boolean = true
   ): void {
     let {config} = this;
-    let isPending = newState.status === Status.pending;
+    let isPending = newState.status === pending;
 
     if (isPending && config.skipPendingStatus) {
       return;
@@ -328,7 +333,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
     if (
       config.keepPendingForMs &&
-      this.state.status === Status.pending &&
+      this.state.status === pending &&
       !this.flushing
     ) {
       enqueueUpdate(this, newState);
@@ -359,7 +364,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     invokeInstanceEvents(this, "change");
     if (__DEV__) devtools.emitUpdate(this);
 
-    if (this.state.status === Status.success) {
+    if (this.state.status === success) {
       this.lastSuccess = this.state;
       if (isCacheEnabled(this)) {
         saveCacheAfterSuccessfulUpdate(this);
@@ -422,7 +427,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
   setState(
     newValue: T | StateFunctionUpdater<T, E, R>,
-    status = Status.success,
+    status = success,
   ): void {
     if (!StateBuilder[status]) {
       throw new Error(`Unknown status ('${status}')`);
@@ -432,7 +437,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       return;
     }
     this.willUpdate = true;
-    if (this.state?.status === Status.pending || (
+    if (this.state?.status === pending || (
       isFunction(this.currentAbort) && !this.isEmitting
     )) {
       this.abort();
@@ -543,9 +548,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
       switch (this.config.runEffect) {
         case RunEffect.delay:
-        case RunEffect.debounce:
-        case RunEffect.takeLast:
-        case RunEffect.takeLatest: {
+        case RunEffect.debounce: {
           if (this.pendingTimeout) {
             const deadline = this.pendingTimeout.startDate + effectDurationMs;
             if (now < deadline) {
@@ -554,9 +557,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
           }
           return scheduleDelayedRun(now);
         }
-        case RunEffect.throttle:
-        case RunEffect.takeFirst:
-        case RunEffect.takeLeading: {
+        case RunEffect.throttle: {
           if (this.pendingTimeout) {
             const deadline = this.pendingTimeout.startDate + effectDurationMs;
             if (now <= deadline) {
@@ -581,7 +582,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     this.willUpdate = true;
     let execArgs = runProps?.args || emptyArray;
 
-    if (this.state.status === Status.pending || this.pendingUpdate) {
+    if (this.state.status === pending || this.pendingUpdate) {
       if (this.pendingUpdate) {
         clearTimeout(this.pendingUpdate.timeoutId);
         // this.pendingUpdate.callback(); skip the callback!
@@ -824,7 +825,7 @@ function constructPropsObject<T, E, R>(
     updater: T | StateFunctionUpdater<T, E, R>,
     status?: Status
   ): void {
-    if (runIndicators.cleared && instance.state.status === Status.aborted) {
+    if (runIndicators.cleared && instance.state.status === aborted) {
       if (__DEV__) {
         console.error("You are emitting while your producer is passing to aborted state." +
           "This has no effect and not supported by the library. The next " +
@@ -955,7 +956,7 @@ function scheduleDelayedPendingUpdate<T, E, R>(
     if (__DEV__) devtools.startUpdate(instance);
     let clonedState = shallowClone(newState);
     clonedState.timestamp = Date.now();
-    instance.state = Object.freeze(clonedState); // <-- status is pending!
+    instance.state = freeze(clonedState); // <-- status is pending!
     instance.pendingUpdate = null;
     instance.version += 1;
     invokeInstanceEvents(instance, "change");
@@ -1095,14 +1096,14 @@ function makeSource<T, E, R>(instance: StateInterface<T, E, R>): Readonly<Source
     },
   });
 
-  Object.defineProperty(source, sourceIsSourceSymbol, {
+  Object.defineProperty(source, sourceSymbol, {
     value: true,
     writable: false,
     enumerable: false,
     configurable: false,
   });
 
-  return Object.freeze(source);
+  return freeze(source);
 }
 
 function isCacheEnabled(instance: StateInterface<any>): boolean {
@@ -1185,8 +1186,8 @@ function runWhileSubscribingToNextResolve<T, E, R>(
     props.onAbort(abort);
 
     function subscription(newState: State<T, E, R>) {
-      if (newState.status === Status.success
-        || newState.status === Status.error) {
+      if (newState.status === success
+        || newState.status === error) {
         if (isFunction(unsubscribe)) {
           unsubscribe!();
         }
@@ -1264,7 +1265,7 @@ export function enqueueUpdate<T, E, R>(
 export function enqueueSetState<T, E, R>(
   instance: StateInterface<T, E, R>,
   newValue: T | StateFunctionUpdater<T, E, R>,
-  status = Status.success,
+  status = success,
 ) {
   let update: UpdateQueue<T, E, R> = {
     kind: 1,
@@ -1320,7 +1321,7 @@ function flushUpdateQueue<T, E, R>(
   instance.flushing = true;
   while (current !== null) {
     let {data: {status}} = current;
-    let canBailoutPendingStatus = status === Status.pending && current.next !== null;
+    let canBailoutPendingStatus = status === pending && current.next !== null;
 
     if (canBailoutPendingStatus) {
       current = current.next;

@@ -10,6 +10,7 @@ import {
   PendingState,
   ProducerProps,
   ProducerSavedProps,
+  State,
   StateBuilderInterface,
   SuccessState
 } from "./types";
@@ -21,8 +22,17 @@ declare global {
   }
 }
 
-
-export const asyncStatesKey = Object.freeze(Object.create(null));
+export let __DEV__ = process.env.NODE_ENV !== "production";
+export let sourceSymbol: symbol = Symbol();
+export let maybeWindow = typeof window !== "undefined" ? window : undefined;
+export let isServer = typeof maybeWindow === "undefined" ||
+  !maybeWindow.document ||
+  !maybeWindow.document.createElement;
+export let now = () => Date.now();
+export let freeze = Object.freeze;
+export let isArray = Array.isArray;
+export let emptyArray = [];
+export let asyncStatesKey = freeze(Object.create(null));
 
 export function hash<T, E, R>(
   args?: any[],
@@ -41,18 +51,13 @@ export function defaultHash(
 export function didNotExpire<T, E, R>(cachedState: CachedState<T, E, R>) {
   const {addedAt, deadline} = cachedState;
 
-  return addedAt + deadline >= Date.now();
+  return addedAt + deadline >= now();
 }
-
-export const sourceIsSourceSymbol: symbol = Symbol();
 
 export function isSource(possiblySource: any) {
-  return possiblySource && possiblySource[sourceIsSourceSymbol] === true;
+  return possiblySource && possiblySource[sourceSymbol] === true;
 }
 
-export const __DEV__ = process.env.NODE_ENV !== "production";
-
-// avoid spreading penalty!
 export function shallowClone(
   source1,
   source2?
@@ -72,46 +77,37 @@ export function isFunction(fn) {
   return typeof fn === "function";
 }
 
-export const StateBuilder = Object.freeze({
+export let {initial, success, pending, error, aborted} = Status;
+
+function state<T>(status: Status.initial, data: T | undefined, props: ProducerSavedProps<T> | null, timestamp: number): InitialState<T>
+function state<T>(status: Status.pending, data: null, props: ProducerSavedProps<T> | null, timestamp: number): PendingState<T>
+function state<T>(status: Status.success, data: T, props: ProducerSavedProps<T> | null, timestamp: number): SuccessState<T>
+function state<T, E, R>(status: Status.aborted, data: R, props: ProducerSavedProps<T> | null, timestamp: number): AbortedState<T, E, R>
+function state<T, E>(status: Status.error, data: E, props: ProducerSavedProps<T> | null, timestamp: number): ErrorState<T, E>
+function state<T, E, R>(status, data, props: ProducerSavedProps<T> | null, timestamp: number): State<T, E, R> {
+  // @ts-ignore
+  return {
+    status,
+    data,
+    props,
+    timestamp,
+  };
+}
+export const StateBuilder = freeze({
   initial<T>(initialValue): InitialState<T> {
-    return Object.freeze({
-      status: Status.initial,
-      data: initialValue,
-      props: null,
-      timestamp: Date.now()
-    });
+    return freeze(state<T>(initial, initialValue, null, now()));
   },
   error<T, E = any>(data, props): ErrorState<T, E> {
-    return Object.freeze({
-      status: Status.error,
-      data,
-      props,
-      timestamp: Date.now()
-    });
+    return freeze(state<T, E>(error, data, props, now()));
   },
   success<T>(data, props): SuccessState<T> {
-    return Object.freeze({
-      status: Status.success,
-      data,
-      props,
-      timestamp: Date.now()
-    });
+    return freeze(state<T>(success, data, props, now()));
   },
   pending<T>(props): PendingState<T> {
-    return Object.freeze({
-      status: Status.pending,
-      data: null,
-      props,
-      timestamp: Date.now()
-    });
+    return freeze(state<T>(pending, null, props, now()));
   },
   aborted<T, E = any, R = any>(reason, props): AbortedState<T, E, R> {
-    return Object.freeze({
-      status: Status.aborted,
-      data: reason,
-      props,
-      timestamp: Date.now()
-    });
+    return freeze(state<T, E, R>(Status.aborted, reason, props, now()));
   }
 }) as StateBuilderInterface;
 
@@ -136,10 +132,6 @@ export const nextKey: () => string = (function autoKey() {
   }
 }());
 
-export let maybeWindow = typeof window !== "undefined" ? window : undefined;
-export let isServer = typeof maybeWindow === "undefined" ||
-  !maybeWindow.document ||
-  !maybeWindow.document.createElement;
 
 export function attemptHydratedState<T, E, R>(
   poolName: string, key: string): HydrationData<T, E, R> | null {
@@ -167,9 +159,6 @@ export function attemptHydratedState<T, E, R>(
   return maybeState as HydrationData<T, E, R>;
 }
 
-export let isArray = Array.isArray;
-
-
 export function mapFlags(flags: number) {
   if (!__DEV__) {
     return emptyArray;
@@ -187,5 +176,3 @@ export function mapFlags(flags: number) {
     });
   return out;
 }
-
-export let emptyArray = [];

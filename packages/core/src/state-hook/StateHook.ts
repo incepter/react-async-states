@@ -47,7 +47,7 @@ import {
   isArray,
   isFunction,
   isSource,
-  nextKey
+  nextKey, freeze, error, pending
 } from "../utils";
 import {Status} from "../enums";
 
@@ -362,7 +362,7 @@ export function hookReturn<T, E, R, S>(
   newState.state = newValue;
   newState.lastSuccess = instance?.lastSuccess;
 
-  return Object.freeze(newState);
+  return freeze(newState);
 }
 
 function createReadInConcurrentMode<T, E, R, S>(
@@ -371,10 +371,10 @@ function createReadInConcurrentMode<T, E, R, S>(
   suspend: boolean = true,
   throwError: boolean = true,
 ) {
-  if (suspend && Status.pending === instance.state.status && instance.suspender) {
+  if (suspend && pending === instance.state.status && instance.suspender) {
     throw instance.suspender;
   }
-  if (throwError && Status.error === instance.state.status) {
+  if (throwError && error === instance.state.status) {
     throw instance.state.data;
   }
   return stateValue;
