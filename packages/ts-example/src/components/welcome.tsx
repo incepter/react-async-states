@@ -47,6 +47,27 @@ userDetails.on("dispose", () => {
   console.log('disposed !!!');
 });
 
+userDetails.on("change", {
+  status: Status.pending,
+  handler() {
+    let color = randomColor();
+    console.log('____________________PENDING STATUS', color)
+    let element = document.querySelector(".ant-layout .ant-layout-has-sider") as HTMLDivElement | undefined;
+    if (element && element.style) {
+      element.style.backgroundColor = color;
+    }
+  }
+});
+function randomColor() {
+  return `rgb(${random()}, ${random()}, ${random()})`;
+}
+function random() {
+  return randomIntFromInterval(1, 255)
+}
+function randomIntFromInterval(min, max) { // min and max included
+  return Math.floor(Math.random() * (max - min + 1) + min)
+}
+
 userDetails.on("change", [
   state => console.log('EVENT', 'CHANGE', state),
   {

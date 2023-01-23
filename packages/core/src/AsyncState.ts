@@ -953,8 +953,12 @@ function scheduleDelayedPendingUpdate<T, E, R>(
   function callback() {
     // callback always sets the state with a pending status
     if (__DEV__) devtools.startUpdate(instance);
-    instance.state = newState; // <-- status is pending!
+    let clonedState = shallowClone(newState);
+    clonedState.timestamp = Date.now();
+    instance.state = Object.freeze(clonedState); // <-- status is pending!
     instance.pendingUpdate = null;
+    instance.version += 1;
+    invokeInstanceEvents(instance, "change");
     if (__DEV__) devtools.emitUpdate(instance);
 
     if (notify) {

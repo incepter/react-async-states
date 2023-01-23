@@ -1,4 +1,4 @@
-import {AsyncState, ProducerConfig, Status} from "../..";
+import {AsyncState, Producer, ProducerConfig, Status} from "../..";
 import {timeout} from "./test-utils";
 import {expect} from "@jest/globals";
 
@@ -94,7 +94,10 @@ describe('AsyncState - keepPending', () => {
     // given
     let key = "keep-4";
     let producer = timeout<number>(100, 0);
-    let config: ProducerConfig<number> = {keepPendingForMs: 200, initialValue: 1};
+    let config: ProducerConfig<number> = {
+      keepPendingForMs: 200,
+      initialValue: 1
+    };
 
     // when
     let instance = new AsyncState(key, producer, config);
@@ -107,5 +110,52 @@ describe('AsyncState - keepPending', () => {
     await jest.advanceTimersByTime(150);
     expect(instance.state.data).toBe(1);
     expect(instance.state.status).toBe(Status.initial);
+  });
+  it('should work correctly with skipPendingStatus -- step into pending', async () => {
+    // given
+    let key = "keep-4";
+    let producer = timeout<number>(300, 0);
+    let config: ProducerConfig<number> = {
+      keepPendingForMs: 600,
+      initialValue: 1,
+      skipPendingDelayMs: 250
+    };
+
+    // when
+    let instance = new AsyncState(key, producer, config);
+
+    // then
+    instance.run();
+    await jest.advanceTimersByTime(250); // producer resolves after 300
+    expect(instance.state.status).toBe(Status.pending);
+    await jest.advanceTimersByTime(200);
+    expect(instance.state.status).toBe(Status.pending);
+
+    await jest.advanceTimersByTime(400);
+    expect(instance.state.status).toBe(Status.success);
+  });
+  it('should abort execute abort on sequenced runs', async () => {
+    // given
+    let key = "keep-5";
+    let abortedSpy = jest.fn();
+    let producer: Producer<number> = (props) => {
+      props.onAbort(abortedSpy)
+      return timeout<number>(300, 0)();
+    };
+    let config: ProducerConfig<number> = {
+      initialValue: 1,
+    };
+
+    // when
+    let instance = new AsyncState(key, producer, config);
+
+    // then
+    instance.runc({onAborted: abortedSpy});
+
+    await jest.advanceTimersByTime(250); // producer resolves after 300
+    expect(instance.state.status).toBe(Status.pending);
+    instance.run();
+    expect(instance.state.status).toBe(Status.pending);
+    expect(abortedSpy).toHaveBeenCalledTimes(1);
   });
 });
