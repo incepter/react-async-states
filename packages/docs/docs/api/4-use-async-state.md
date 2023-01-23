@@ -40,6 +40,7 @@ Let's see in details the supported configuration:
 | `runEffectDurationMs` | `number > 0`                                      | `undefined`                            | The duration of the effect in milliseconds                                                                                                                                                         |
 | `resetStateOnDispose` | `boolean`                                         | `true`                                 | Whether to reset the state to its initial state when all subscribers unsubscribe or to keep it. Default to `false`.                                                                                |
 | `skipPendingDelayMs`  | `number > 0`                                      | `undefined`                            | The duration under which a state update with a pending status may be skipped. The component in this case won't render with a pending status if it gets updated to something else under that delay. |
+| `keepPendingForMs`    | `number > 0` or `undefined`                       | `undefined`                            | Once you step in a pending status, it will stay in pending state for this duration. This is supported to push the user experience to newer challenges                                              |
 | `initialValue`        | `any`                                             | `null`                                 | The initial state value,  the initializer receives the cache as unique parameter                                                                                                                   |
 | `events`              | `UseAsyncStateEvents`                             | `undefined`                            | Defines events that will be invoked with this subscription.                                                                                                                                        |
 
@@ -485,10 +486,8 @@ Defines the effect to apply on the producer while running.
 This property is only relevant when creating a new state.
 
 There are two types of run effects:
-- `debouce`: or `delay`, `takeLast` or `takeLatest` and means take the last
-  registered run in the configured duration.
-- `throttle`: or `takeFirst` or `takeLeading` and means take the first ever run
-  in the duration.
+- `debouce`: or `delay` and means take the last registered run in the configured duration.
+- `throttle`: and means take the first ever run in the duration.
 
 ### `runEffectDurationMs`
 `runEffectDurationMs` : the duration of the effect.
@@ -519,6 +518,21 @@ Here is a working example of debouncing the `getClientProducer` while typing:
 // the state won't go to pending if the fetch goes under 300ms!
 const { run, state } = useAsyncState({
   skipPendingDelayMs: 300,
+  producer: getClientProducer,
+});
+
+```
+
+### `keepPendingForMs`
+`keepPendingForMs` : The duration to keep the pending state in to avoid the UI
+flashing if the resolve occurs right after passing the pending by few millis.
+
+```typescript
+// the pending state will totally be skipped it resolves less than 200ms
+// the state will stay in pending state in at least 500ms
+const { run, state } = useAsyncState({
+  keepPendingForMs: 500,
+  skipPendingDelayMs: 200,
   producer: getClientProducer,
 });
 

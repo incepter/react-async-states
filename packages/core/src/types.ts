@@ -123,6 +123,8 @@ export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R>
   state: State<T, E, R>,
   lastSuccess: SuccessState<T> | InitialState<T>,
 
+  queue?: UpdateQueue<T, E, R>,
+  flushing?: boolean,
   replaceState(newState: State<T, E, R>, notify?: boolean): void,
 
   // subscriptions
@@ -283,6 +285,7 @@ export type ProducerConfig<T, E = any, R = any> = {
   cacheConfig?: CacheConfig<T, E, R>,
   runEffectDurationMs?: number,
   runEffect?: RunEffect,
+  keepPendingForMs?: number,
   skipPendingDelayMs?: number,
   resetStateOnDispose?: boolean,
   context?: any,
@@ -445,3 +448,25 @@ export type LibraryPoolsContext = {
   setDefaultPool(name: string): Promise<void>,
   getOrCreatePool(name?: string): PoolInterface,
 }
+
+
+export type SetStateUpdateQueue<T, E, R> = {
+  id?: ReturnType<typeof setTimeout>
+  kind: 0,
+  data: State<T, E, R>,
+  next: UpdateQueue<T, E, R> | null
+}
+
+export type ReplaceStateUpdateQueue<T, E, R> = {
+  id?: ReturnType<typeof setTimeout>
+  kind: 1,
+  data: {
+    status?: Status,
+    data: T | StateFunctionUpdater<T, E, R>,
+  },
+  next: UpdateQueue<T, E, R> | null
+}
+
+export type UpdateQueue<T, E, R> =
+  ReplaceStateUpdateQueue<T, E, R>
+  | SetStateUpdateQueue<T, E, R>
