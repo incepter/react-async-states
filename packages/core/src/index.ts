@@ -8,7 +8,6 @@ export {
 } from "./AsyncState";
 
 export {version} from "../package.json";
-export {isSource, nextKey, StateBuilder, mapFlags} from "./utils";
 export {default as devtools} from "./devtools/Devtools"
 
 export {RunEffect, Status} from "./enums";
@@ -90,3 +89,6 @@ export {
   createHook,
   autoRun,
 } from "./state-hook/StateHook";
+export {isSource} from "./helpers/isSource";
+export {StateBuilder} from "./helpers/StateBuilder";
+export {mapFlags} from "./helpers/mapFlags";

@@ -1,24 +1,13 @@
 import {
   __DEV__,
-  pending,
-  aborted,
-  error,
-  initial,
   asyncStatesKey,
-  attemptHydratedState,
   cloneProducerProps,
   didNotExpire,
   emptyArray,
-  freeze,
   hash,
-  isArray,
   isFunction,
-  isPromise,
-  isSource,
+  isPromise, isServer, maybeWindow,
   nextKey,
-  shallowClone,
-  sourceSymbol,
-  StateBuilder, success,
 } from "./utils";
 import devtools from "./devtools/Devtools";
 import {hideStateInstanceInNewObject} from "./hide-object";
@@ -27,7 +16,7 @@ import {
   AsyncStateSubscribeProps,
   CachedState,
   CreateSourceObject,
-  ForkConfig,
+  ForkConfig, HydrationData,
   InitialState,
   InstanceCacheChangeEvent,
   InstanceCacheChangeEventHandlerType,
@@ -63,12 +52,15 @@ import {
   SuccessState,
   UpdateQueue
 } from "./types";
-import {RunEffect, Status} from "./enums";
+import {aborted, error, pending, RunEffect, Status, success} from "./enums";
 import {
   requestContext,
   warnAboutAlreadyExistingSourceWithSameKey
 } from "./pool";
 import {producerWrapper} from "./wrapper";
+import {isSource, sourceSymbol} from "./helpers/isSource";
+import {StateBuilder} from "./helpers/StateBuilder";
+import {freeze, isArray} from "./helpers/corejs";
 
 export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   //region properties
@@ -732,6 +724,38 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
 //region AsyncState methods helpers
 
+export function shallowClone(
+  source1,
+  source2?
+) {
+  return Object.assign({}, source1, source2);
+}
+
+export function attemptHydratedState<T, E, R>(
+  poolName: string, key: string): HydrationData<T, E, R> | null {
+  // do not attempt hydration outside server
+  if (isServer) {
+    return null;
+  }
+  if (!maybeWindow || !maybeWindow.__ASYNC_STATES_HYDRATION_DATA__) {
+    return null;
+  }
+
+  let savedHydrationData = maybeWindow.__ASYNC_STATES_HYDRATION_DATA__;
+  let name = `${poolName}__INSTANCE__${key}`;
+  let maybeState = savedHydrationData[name];
+
+  if (!maybeState) {
+    return null;
+  }
+
+  delete savedHydrationData[name];
+  if (Object.keys(savedHydrationData).length === 0) {
+    delete maybeWindow.__ASYNC_STATES_HYDRATION_DATA__;
+  }
+
+  return maybeState as HydrationData<T, E, R>;
+}
 function invokeSingleChangeEvent<T, E, R>(
   state: State<T, E, R>,
   event: StateChangeEventHandler<T, E, R>

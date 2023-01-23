@@ -251,7 +251,7 @@ export interface ProducerProps<T, E = any, R = any> extends ProducerEffects {
 
   args: any[],
   payload: any,
-  lastSuccess: State<T, E, R>,
+  lastSuccess: SuccessState<T> | InitialState<T>,
   isAborted: () => boolean,
 
   getState: () => State<T, E, R>,

@@ -43,13 +43,13 @@ import {
 } from "./StateHookFlags";
 import {
   __DEV__,
-  mapFlags,
-  isArray,
   isFunction,
-  isSource,
-  nextKey, freeze, error, pending
+  nextKey,
 } from "../utils";
-import {Status} from "../enums";
+import {error, Status, pending} from "../enums";
+import {isSource} from "../helpers/isSource";
+import {freeze, isArray} from "../helpers/corejs";
+import {mapFlags} from "../helpers/mapFlags";
 
 export function resolveFlags<T, E, R, S>(
   mixedConfig: MixedConfig<T, E, R, S>,

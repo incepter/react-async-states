@@ -9,6 +9,7 @@ export enum Status {
 export enum RunEffect {
   delay = "delay",
   debounce = "debounce",
-
   throttle = "throttle",
 }
+
+export let {initial, success, pending, error, aborted} = Status;
