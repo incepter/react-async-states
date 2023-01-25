@@ -7,7 +7,12 @@ import {
 } from "async-states";
 import {HydrationContext, isServer} from "./context";
 
-
+declare global {
+  interface Window {
+    __ASYNC_STATES_HYDRATION_DATA__?: Record<string, HydrationData<any, any, any>>;
+  }
+}
+export let maybeWindow = typeof window !== "undefined" ? window : undefined;
 export default function Hydration({
   context,
   exclude,
@@ -31,7 +36,55 @@ function HydrationProvider({context, children}) {
   );
 }
 
+function parseInstanceHydratedData(identifier: string): {poolName?: string, key?: string} {
+  let key: string | undefined = undefined;
+  let poolName: string | undefined = undefined;
+
+  if (identifier) {
+    let matches = identifier.match(/(^.*?)__INSTANCE__(.*$)/);
+    if (matches) {
+      key = matches[2];
+      poolName = matches[1];
+    }
+  }
+
+  return {key, poolName};
+}
+
 function HydrationExecutor({context, exclude}) {
+
+  React.useEffect(() => {
+    let execContext = requestContext(context);
+    if (!maybeWindow || !maybeWindow.__ASYNC_STATES_HYDRATION_DATA__) {
+      return;
+    }
+    let savedHydrationData = maybeWindow.__ASYNC_STATES_HYDRATION_DATA__;
+    if (typeof savedHydrationData !== "object") {
+      return;
+    }
+
+    Object.entries(savedHydrationData)
+      .forEach(([identifier, savedData]) => {
+        let {poolName, key} = parseInstanceHydratedData(identifier);
+        if (key && poolName && execContext.pools[poolName]) {
+          let instance = execContext.pools[poolName].instances.get(key);
+          if (instance) {
+            instance.state = savedData.state;
+            instance.payload = savedData.payload;
+            instance.latestRun = savedData.latestRun;
+            instance.replaceState(instance.state); // notifies subscribers
+
+            delete savedHydrationData[identifier];
+          }
+        }
+      });
+
+    if (Object.keys(savedHydrationData).length === 0) {
+      delete maybeWindow.__ASYNC_STATES_HYDRATION_DATA__;
+    }
+
+  }, [context]);
+
   if (!isServer) {
     return null;
   }
