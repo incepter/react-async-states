@@ -2,11 +2,13 @@ import {
   __DEV__,
   asyncStatesKey,
   cloneProducerProps,
+  defaultHash,
   didNotExpire,
   emptyArray,
-  hash,
   isFunction,
-  isPromise, isServer, maybeWindow,
+  isPromise,
+  isServer,
+  maybeWindow,
   nextKey,
 } from "./utils";
 import devtools from "./devtools/Devtools";
@@ -16,7 +18,8 @@ import {
   AsyncStateSubscribeProps,
   CachedState,
   CreateSourceObject,
-  ForkConfig, HydrationData,
+  ForkConfig,
+  HydrationData,
   InitialState,
   InstanceCacheChangeEvent,
   InstanceCacheChangeEventHandlerType,
@@ -569,13 +572,14 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     payload: Record<string, any> | null,
     runProps?: RUNCProps<T, E, R>,
   ): AbortFn {
-    this.willUpdate = true;
+    let instance = this;
+
+    instance.willUpdate = true;
     let execArgs = runProps?.args || emptyArray;
 
-    if (this.state.status === pending || this.pendingUpdate) {
+    if (instance.state.status === pending || instance.pendingUpdate) {
       if (this.pendingUpdate) {
         clearTimeout(this.pendingUpdate.timeoutId);
-        // this.pendingUpdate.callback(); skip the callback!
         this.pendingUpdate = null;
       }
       this.abort();
@@ -585,10 +589,14 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     }
 
     if (isCacheEnabled(this)) {
-      const topLevelParent: StateInterface<T, E, R> = getTopLevelParent(this);
-      const runHash = hash(execArgs, this.payload, this.config.cacheConfig);
+      let topLevelParent: StateInterface<T, E, R> = getTopLevelParent(this);
 
-      const cachedState = topLevelParent.cache?.[runHash];
+      let {cacheConfig} = this.config;
+
+      let hashFunction = cacheConfig && cacheConfig.hash || defaultHash;
+
+      let runHash = hashFunction(execArgs, payload);
+      let cachedState = topLevelParent.cache?.[runHash];
 
       if (cachedState) {
         if (didNotExpire(cachedState)) {
@@ -993,22 +1001,56 @@ function scheduleDelayedPendingUpdate<T, E, R>(
   instance.pendingUpdate = {callback, timeoutId};
 }
 
+function getStateDeadline<T, E, R>(
+  state: SuccessState<T>,
+  getDeadline?: (currentState: State<T, E, R>) => number
+) {
+  let {data} = state;
+  let deadline = Infinity;
+  if (!getDeadline && data && hasHeadersSet((data as any).headers)) {
+    let maybeMaxAge = readCacheControlMaxAgeHeader((data as any).headers);
+    if (maybeMaxAge && maybeMaxAge > 0) {
+      deadline = maybeMaxAge;
+    }
+  }
+  if (isFunction(getDeadline)) {
+    deadline = getDeadline!(state);
+  }
+  return deadline;
+}
+
+// https://stackoverflow.com/a/60154883/7104283
+function readCacheControlMaxAgeHeader(headers: Headers): number | undefined {
+  let cacheControl = headers.get('cache-control');
+  if (cacheControl) {
+    let matches = cacheControl.match(/max-age=(\d+)/);
+    return matches ? parseInt(matches[1], 10) : undefined;
+  }
+}
+
+// from remix
+export function hasHeadersSet(headers: any): headers is Headers {
+  return (headers && isFunction(headers.get));
+}
+
 function saveCacheAfterSuccessfulUpdate<T, E, R>(instance: StateInterface<T, E, R>) {
   let topLevelParent: StateInterface<T, E, R> = getTopLevelParent(instance);
   let {config: {cacheConfig}} = topLevelParent;
-  let {state} = instance;
+  let state = instance.state as SuccessState<T>;
   let {props} = state;
 
   if (!topLevelParent.cache) {
     topLevelParent.cache = {};
   }
 
-  let runHash = hash(props?.args, props?.payload, cacheConfig);
-  if (topLevelParent.cache[runHash]?.state !== state) {
+  let hashFunction = cacheConfig && cacheConfig.hash || defaultHash;
+  let runHash = hashFunction(props?.args, props?.payload);
 
+  if (topLevelParent.cache[runHash]?.state !== state) {
+    let deadline = getStateDeadline(state, cacheConfig?.getDeadline)
     topLevelParent.cache[runHash] = {
+      deadline,
       state: state,
-      deadline: cacheConfig?.getDeadline?.(state) || Infinity,
       addedAt: Date.now(),
     };
 

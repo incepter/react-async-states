@@ -358,7 +358,7 @@ export type OnCacheLoadProps<T, E = any, R = any> = {
 export type CacheConfig<T, E = any, R = any> = {
   enabled: boolean,
   getDeadline?(currentState: State<T, E, R>): number,
-  hash?(args: any[] | undefined, payload: Record<string, any> | null): string,
+  hash?(args: any[] | undefined, payload: Record<string, any> | null | undefined): string,
 
   persist?(cache: Record<string, CachedState<T, E, R>>): void,
   load?(): Record<string, CachedState<T, E, R>> | Promise<Record<string, CachedState<T, E, R>>>,

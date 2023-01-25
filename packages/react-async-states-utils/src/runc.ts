@@ -13,11 +13,7 @@ import {
   Status,
   SuccessState,
 } from "react-async-states";
-import {
-  producerWrapper,
-  effectsCreator,
-  StateBuilder
-} from "async-states";
+import {effectsCreator, producerWrapper, StateBuilder} from "async-states";
 import {isFunction, noop} from "./utils";
 
 type RuncConfig<T, E = any, R = any> = {
@@ -159,13 +155,8 @@ function shallowClone<T extends Object>(obj: T): T {
 }
 
 export function cloneProducerProps<T, E, R>(props: ProducerProps<T, E, R>): ProducerSavedProps<T> {
-  const output = {
-    lastSuccess: shallowClone(props.lastSuccess),
+  return {
     payload: props.payload,
     args: props.args,
   } as ProducerSavedProps<T>;
-
-  delete output.lastSuccess!.props;
-
-  return output;
 }

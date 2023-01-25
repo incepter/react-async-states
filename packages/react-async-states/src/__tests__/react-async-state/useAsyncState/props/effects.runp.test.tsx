@@ -118,9 +118,8 @@ describe('should runp another producer from producer', () => {
         "status": "success",
         "data": {"source2Data": 3},
         "props": {
-          "lastSuccess": {"status": "initial", "timestamp": TESTS_TS,},
-          "payload": {},
-          "args": []
+          "args": [],
+          "payload": {}
         },
         "timestamp": TESTS_TS,
       }));

@@ -20,17 +20,10 @@ export let isServer = typeof maybeWindow === "undefined" ||
 export let emptyArray = [];
 export let asyncStatesKey = freeze(Object.create(null));
 
-export function hash<T, E, R>(
-  args?: any[],
-  payload?: { [id: string]: any } | null,
-  config?: CacheConfig<T, E, R>
-): string {
-  const hashFn = config?.hash || defaultHash;
-  return hashFn(args, payload);
-}
-
 export function defaultHash(
-  args?: any[], payload?: { [id: string]: any } | null): string {
+  args: any[] | undefined,
+  payload: Record<string, any> | null | undefined
+): string {
   return JSON.stringify({args, payload});
 }
 
