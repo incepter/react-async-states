@@ -6,15 +6,15 @@ import {
   RunIndicators
 } from "./types";
 import {
-  __DEV__, aborted,
-  cloneProducerProps, error,
+  __DEV__,
+  cloneProducerProps,
   isFunction,
   isGenerator,
-  isPromise,
-  StateBuilder, success
+  isPromise
 } from "./utils";
-import {Status} from "./enums";
 import devtools from "./devtools/Devtools";
+import {StateBuilder} from "./helpers/StateBuilder";
+import {aborted, error, success,} from "./enums";
 
 export function producerWrapper<T, E = any, R = any>(
   input: ProducerWrapperInput<T, E, R>,

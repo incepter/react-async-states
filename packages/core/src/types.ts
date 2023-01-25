@@ -251,7 +251,7 @@ export interface ProducerProps<T, E = any, R = any> extends ProducerEffects {
 
   args: any[],
   payload: any,
-  lastSuccess: State<T, E, R>,
+  lastSuccess: SuccessState<T> | InitialState<T>,
   isAborted: () => boolean,
 
   getState: () => State<T, E, R>,
@@ -270,7 +270,6 @@ export type ProducerCallbacks<T, E, R> = {
 export type ProducerSavedProps<T> = {
   args?: any[],
   payload?: Record<string, any> | null,
-  lastSuccess?: LastSuccessSavedState<T>,
 }
 export type Producer<T, E = any, R = any> =
   ((props: ProducerProps<T, E, R>) => (T | Promise<T> | Generator<any, T, any>));
@@ -359,7 +358,7 @@ export type OnCacheLoadProps<T, E = any, R = any> = {
 export type CacheConfig<T, E = any, R = any> = {
   enabled: boolean,
   getDeadline?(currentState: State<T, E, R>): number,
-  hash?(args: any[] | undefined, payload: Record<string, any> | null): string,
+  hash?(args: any[] | undefined, payload: Record<string, any> | null | undefined): string,
 
   persist?(cache: Record<string, CachedState<T, E, R>>): void,
   load?(): Record<string, CachedState<T, E, R>> | Promise<Record<string, CachedState<T, E, R>>>,

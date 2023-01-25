@@ -7,15 +7,16 @@ export {
   effectsCreator
 } from "./AsyncState";
 
-export {version} from "../package.json";
-export {isSource, nextKey, StateBuilder, mapFlags} from "./utils";
-export {default as devtools} from "./devtools/Devtools"
+export {
+  requestContext, createContext, getContext, terminateContext
+} from "./pool";
 
 export {RunEffect, Status} from "./enums";
-
-export {requestContext, createContext, getContext, terminateContext} from "./pool";
-
 export {producerWrapper} from "./wrapper";
+export {isSource} from "./helpers/isSource";
+export {mapFlags} from "./helpers/mapFlags";
+export {StateBuilder} from "./helpers/StateBuilder";
+export {hookReturn, createHook, autoRun} from "./state-hook/StateHook";
 
 export type {
   PoolInterface,
@@ -85,8 +86,3 @@ export type {
   HookOwnState,
 } from "./state-hook/StateHook";
 
-export {
-  hookReturn,
-  createHook,
-  autoRun,
-} from "./state-hook/StateHook";

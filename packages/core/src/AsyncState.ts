@@ -1,24 +1,15 @@
 import {
   __DEV__,
-  pending,
-  aborted,
-  error,
-  initial,
   asyncStatesKey,
-  attemptHydratedState,
   cloneProducerProps,
+  defaultHash,
   didNotExpire,
   emptyArray,
-  freeze,
-  hash,
-  isArray,
   isFunction,
   isPromise,
-  isSource,
+  isServer,
+  maybeWindow,
   nextKey,
-  shallowClone,
-  sourceSymbol,
-  StateBuilder, success,
 } from "./utils";
 import devtools from "./devtools/Devtools";
 import {hideStateInstanceInNewObject} from "./hide-object";
@@ -28,6 +19,7 @@ import {
   CachedState,
   CreateSourceObject,
   ForkConfig,
+  HydrationData,
   InitialState,
   InstanceCacheChangeEvent,
   InstanceCacheChangeEventHandlerType,
@@ -63,12 +55,15 @@ import {
   SuccessState,
   UpdateQueue
 } from "./types";
-import {RunEffect, Status} from "./enums";
+import {aborted, error, pending, RunEffect, Status, success} from "./enums";
 import {
   requestContext,
   warnAboutAlreadyExistingSourceWithSameKey
 } from "./pool";
 import {producerWrapper} from "./wrapper";
+import {isSource, sourceSymbol} from "./helpers/isSource";
+import {StateBuilder} from "./helpers/StateBuilder";
+import {freeze, isArray} from "./helpers/corejs";
 
 export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   //region properties
@@ -448,10 +443,8 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     if (isFunction(newValue)) {
       effectiveValue = (newValue as StateFunctionUpdater<T, E, R>)(this.state);
     }
-    // @ts-ignore
-    const savedProps = cloneProducerProps({
+    const savedProps = cloneProducerProps<T, E, R>({
       args: [effectiveValue],
-      lastSuccess: this.lastSuccess,
       payload: shallowClone(this.payload),
     });
     if (__DEV__) devtools.emitReplaceState(this, savedProps);
@@ -579,13 +572,14 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     payload: Record<string, any> | null,
     runProps?: RUNCProps<T, E, R>,
   ): AbortFn {
-    this.willUpdate = true;
+    let instance = this;
+
+    instance.willUpdate = true;
     let execArgs = runProps?.args || emptyArray;
 
-    if (this.state.status === pending || this.pendingUpdate) {
+    if (instance.state.status === pending || instance.pendingUpdate) {
       if (this.pendingUpdate) {
         clearTimeout(this.pendingUpdate.timeoutId);
-        // this.pendingUpdate.callback(); skip the callback!
         this.pendingUpdate = null;
       }
       this.abort();
@@ -595,10 +589,14 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     }
 
     if (isCacheEnabled(this)) {
-      const topLevelParent: StateInterface<T, E, R> = getTopLevelParent(this);
-      const runHash = hash(execArgs, this.payload, this.config.cacheConfig);
+      let topLevelParent: StateInterface<T, E, R> = getTopLevelParent(this);
 
-      const cachedState = topLevelParent.cache?.[runHash];
+      let {cacheConfig} = this.config;
+
+      let hashFunction = cacheConfig && cacheConfig.hash || defaultHash;
+
+      let runHash = hashFunction(execArgs, payload);
+      let cachedState = topLevelParent.cache?.[runHash];
 
       if (cachedState) {
         if (didNotExpire(cachedState)) {
@@ -732,6 +730,38 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
 //region AsyncState methods helpers
 
+export function shallowClone(
+  source1,
+  source2?
+) {
+  return Object.assign({}, source1, source2);
+}
+
+export function attemptHydratedState<T, E, R>(
+  poolName: string, key: string): HydrationData<T, E, R> | null {
+  // do not attempt hydration outside server
+  if (isServer) {
+    return null;
+  }
+  if (!maybeWindow || !maybeWindow.__ASYNC_STATES_HYDRATION_DATA__) {
+    return null;
+  }
+
+  let savedHydrationData = maybeWindow.__ASYNC_STATES_HYDRATION_DATA__;
+  let name = `${poolName}__INSTANCE__${key}`;
+  let maybeState = savedHydrationData[name];
+
+  if (!maybeState) {
+    return null;
+  }
+
+  delete savedHydrationData[name];
+  if (Object.keys(savedHydrationData).length === 0) {
+    delete maybeWindow.__ASYNC_STATES_HYDRATION_DATA__;
+  }
+
+  return maybeState as HydrationData<T, E, R>;
+}
 function invokeSingleChangeEvent<T, E, R>(
   state: State<T, E, R>,
   event: StateChangeEventHandler<T, E, R>
@@ -971,22 +1001,56 @@ function scheduleDelayedPendingUpdate<T, E, R>(
   instance.pendingUpdate = {callback, timeoutId};
 }
 
+function getStateDeadline<T, E, R>(
+  state: SuccessState<T>,
+  getDeadline?: (currentState: State<T, E, R>) => number
+) {
+  let {data} = state;
+  let deadline = Infinity;
+  if (!getDeadline && data && hasHeadersSet((data as any).headers)) {
+    let maybeMaxAge = readCacheControlMaxAgeHeader((data as any).headers);
+    if (maybeMaxAge && maybeMaxAge > 0) {
+      deadline = maybeMaxAge;
+    }
+  }
+  if (isFunction(getDeadline)) {
+    deadline = getDeadline!(state);
+  }
+  return deadline;
+}
+
+// https://stackoverflow.com/a/60154883/7104283
+function readCacheControlMaxAgeHeader(headers: Headers): number | undefined {
+  let cacheControl = headers.get('cache-control');
+  if (cacheControl) {
+    let matches = cacheControl.match(/max-age=(\d+)/);
+    return matches ? parseInt(matches[1], 10) : undefined;
+  }
+}
+
+// from remix
+export function hasHeadersSet(headers: any): headers is Headers {
+  return (headers && isFunction(headers.get));
+}
+
 function saveCacheAfterSuccessfulUpdate<T, E, R>(instance: StateInterface<T, E, R>) {
   let topLevelParent: StateInterface<T, E, R> = getTopLevelParent(instance);
   let {config: {cacheConfig}} = topLevelParent;
-  let {state} = instance;
+  let state = instance.state as SuccessState<T>;
   let {props} = state;
 
   if (!topLevelParent.cache) {
     topLevelParent.cache = {};
   }
 
-  let runHash = hash(props?.args, props?.payload, cacheConfig);
-  if (topLevelParent.cache[runHash]?.state !== state) {
+  let hashFunction = cacheConfig && cacheConfig.hash || defaultHash;
+  let runHash = hashFunction(props?.args, props?.payload);
 
+  if (topLevelParent.cache[runHash]?.state !== state) {
+    let deadline = getStateDeadline(state, cacheConfig?.getDeadline)
     topLevelParent.cache[runHash] = {
+      deadline,
       state: state,
-      deadline: cacheConfig?.getDeadline?.(state) || Infinity,
       addedAt: Date.now(),
     };
 

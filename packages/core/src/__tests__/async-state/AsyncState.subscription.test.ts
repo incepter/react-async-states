@@ -35,10 +35,6 @@ describe('AsyncState - subscriptions', () => {
           props: {
             args: [],
             payload: {},
-            lastSuccess: {
-              timestamp: TESTS_TS,
-              data: null, status: Status.initial
-            },
           },
           data: null,
           timestamp: TESTS_TS,
@@ -48,10 +44,6 @@ describe('AsyncState - subscriptions', () => {
           props: {
             args: [],
             payload: {},
-            lastSuccess: {
-              timestamp: TESTS_TS,
-              data: null, status: Status.initial
-            },
           },
           data: "Some Value",
           timestamp: TESTS_TS,
@@ -64,10 +56,6 @@ describe('AsyncState - subscriptions', () => {
       props: {
         args: [],
         payload: {},
-        lastSuccess: {
-          timestamp: TESTS_TS,
-          data: null, status: Status.initial
-        },
       },
       status: Status.success,
       data: "Some Value",
@@ -98,10 +86,6 @@ describe('AsyncState - subscriptions', () => {
           props: {
             args: [],
             payload: {},
-            lastSuccess: {
-              timestamp: TESTS_TS,
-              data: null, status: Status.initial
-            },
           }, data: null, status: Status.pending, timestamp: TESTS_TS,
         }],
       ]
@@ -137,10 +121,6 @@ describe('AsyncState - subscriptions', () => {
       props: {
         args: [],
         payload: {},
-        lastSuccess: {
-          timestamp: TESTS_TS,
-          data: null, status: Status.initial
-        },
       },
       status: Status.success,
       data: "Some Value",
