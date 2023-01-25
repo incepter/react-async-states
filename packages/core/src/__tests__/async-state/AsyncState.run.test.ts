@@ -35,11 +35,6 @@ describe('AsyncState - run', () => {
       props: {
         args: [],
         payload: {},
-        lastSuccess: {
-          data: null,
-          timestamp: TESTS_TS,
-          status: Status.initial,
-        },
       },
       data: null,
       timestamp: TESTS_TS,
@@ -52,11 +47,6 @@ describe('AsyncState - run', () => {
       props: {
         args: [],
         payload: {},
-        lastSuccess: {
-          data: null,
-          timestamp: TESTS_TS,
-          status: Status.initial,
-        },
       },
       data: null,
       timestamp: TESTS_TS,
@@ -69,11 +59,6 @@ describe('AsyncState - run', () => {
       props: {
         args: [],
         payload: {},
-        lastSuccess: {
-          data: null,
-          timestamp: TESTS_TS,
-          status: Status.initial,
-        },
       },
       timestamp: TESTS_TS,
       status: Status.success,
@@ -98,11 +83,6 @@ describe('AsyncState - run', () => {
       props: {
         args: [],
         payload: {},
-        lastSuccess: {
-          data: null,
-          timestamp: TESTS_TS,
-          status: Status.initial,
-        },
       },
       timestamp: TESTS_TS,
       status: Status.error,

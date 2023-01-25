@@ -270,7 +270,6 @@ export type ProducerCallbacks<T, E, R> = {
 export type ProducerSavedProps<T> = {
   args?: any[],
   payload?: Record<string, any> | null,
-  lastSuccess?: LastSuccessSavedState<T>,
 }
 export type Producer<T, E = any, R = any> =
   ((props: ProducerProps<T, E, R>) => (T | Promise<T> | Generator<any, T, any>));

@@ -440,10 +440,8 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     if (isFunction(newValue)) {
       effectiveValue = (newValue as StateFunctionUpdater<T, E, R>)(this.state);
     }
-    // @ts-ignore
-    const savedProps = cloneProducerProps({
+    const savedProps = cloneProducerProps<T, E, R>({
       args: [effectiveValue],
-      lastSuccess: this.lastSuccess,
       payload: shallowClone(this.payload),
     });
     if (__DEV__) devtools.emitReplaceState(this, savedProps);

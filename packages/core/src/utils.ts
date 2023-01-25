@@ -4,7 +4,7 @@ import {
   ProducerProps,
   ProducerSavedProps
 } from "./types";
-import {assign, freeze, now} from "./helpers/corejs";
+import {freeze, now} from "./helpers/corejs";
 
 declare global {
   interface Window {
@@ -52,17 +52,11 @@ export function isFunction(fn) {
   return typeof fn === "function";
 }
 
-export function cloneProducerProps<T, E, R>(props: ProducerProps<T, E, R>): ProducerSavedProps<T> {
-  const output: ProducerSavedProps<T> = {
-    // @ts-ignore
-    lastSuccess: assign({}, props.lastSuccess),
-    payload: props.payload,
+export function cloneProducerProps<T, E, R>(props: Partial<ProducerProps<T, E, R>>): ProducerSavedProps<T> {
+  return {
     args: props.args,
+    payload: props.payload,
   };
-
-  delete output.lastSuccess!.props;
-
-  return output;
 }
 
 const defaultAnonymousPrefix = "async-state-";

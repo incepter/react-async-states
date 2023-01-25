@@ -45,19 +45,19 @@ function state<T, E, R>(
 }
 
 export const StateBuilder = freeze({
-  initial<T>(initialValue): InitialState<T> {
+  initial<T>(initialValue: T | undefined, props?: ProducerSavedProps<T> | null): InitialState<T> {
     return freeze(state<T>(initial, initialValue, null, now()));
   },
-  error<T, E = any>(data, props): ErrorState<T, E> {
+  error<T, E = any>(data: E, props: ProducerSavedProps<T> | null): ErrorState<T, E> {
     return freeze(state<T, E>(error, data, props, now()));
   },
-  success<T>(data, props): SuccessState<T> {
+  success<T>(data: T, props: ProducerSavedProps<T> | null): SuccessState<T> {
     return freeze(state<T>(success, data, props, now()));
   },
-  pending<T>(props): PendingState<T> {
+  pending<T>(props: ProducerSavedProps<T> | null): PendingState<T> {
     return freeze(state<T>(pending, null, props, now()));
   },
-  aborted<T, E = any, R = any>(reason, props): AbortedState<T, E, R> {
+  aborted<T, E = any, R = any>(reason: R, props: ProducerSavedProps<T> | null): AbortedState<T, E, R> {
     return freeze(state<T, E, R>(Status.aborted, reason, props, now()));
   }
 }) as StateBuilderInterface;

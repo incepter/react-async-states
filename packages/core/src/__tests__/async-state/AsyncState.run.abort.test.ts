@@ -39,11 +39,7 @@ describe('AsyncState - run - abort', () => {
     expect(subscription).toHaveBeenCalledWith({
       props: {
         args: [],
-        payload: {},
-        lastSuccess: {
-          timestamp: TESTS_TS,
-          data: null, status: Status.initial,
-        },
+        payload: {}
       },
       data: null,
       timestamp: TESTS_TS,
@@ -57,10 +53,6 @@ describe('AsyncState - run - abort', () => {
     expect(subscription).toHaveBeenCalledWith({
       props: {
         args: [],
-        lastSuccess: {
-          data: null, status: Status.initial, timestamp: TESTS_TS,
-
-        },
         payload: {}
       },
       data: "reason", timestamp: TESTS_TS,
@@ -70,10 +62,6 @@ describe('AsyncState - run - abort', () => {
     expect(myAsyncState.state).toEqual({
       props: {
         args: [],
-        lastSuccess: {
-          timestamp: TESTS_TS,
-          data: null, status: Status.initial
-        },
         payload: {}
       },
       timestamp: TESTS_TS,
@@ -87,10 +75,6 @@ describe('AsyncState - run - abort', () => {
     expect(myAsyncState.state).toEqual({
       props: {
         args: [],
-        lastSuccess: {
-          timestamp: TESTS_TS,
-          data: null, status: Status.initial
-        },
         payload: {}
       },
       timestamp: TESTS_TS,
@@ -134,11 +118,6 @@ describe('AsyncState - run - abort', () => {
       props: {
         args: [],
         payload: {},
-        lastSuccess: {
-          data: null,
-          timestamp: TESTS_TS,
-          status: Status.initial,
-        },
       },
       timestamp: TESTS_TS,
       status: Status.aborted,
@@ -179,10 +158,6 @@ describe('AsyncState - run - abort', () => {
     expect(myAsyncState.state).toEqual({
       props: {
         args: [],
-        lastSuccess: {
-          timestamp: TESTS_TS,
-          data: null, status: Status.initial
-        },
         payload: {}
       },
       timestamp: TESTS_TS,
