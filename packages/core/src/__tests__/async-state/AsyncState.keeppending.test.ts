@@ -158,4 +158,29 @@ describe('AsyncState - keepPending', () => {
     expect(instance.state.status).toBe(Status.pending);
     expect(abortedSpy).toHaveBeenCalledTimes(1);
   });
+  it('should work normally with run callbacks', async () => {
+    // given
+    let key = "keep-7";
+    let onSuccess = jest.fn();
+    let producer = timeout<number>(50, 0);
+    let config: ProducerConfig<number> = {
+      keepPendingForMs: 100,
+      initialValue: 1,
+    };
+
+    // when
+    let instance = new AsyncState(key, producer, config);
+
+    // then
+    instance.runc({
+      onSuccess,
+    });
+    await jest.advanceTimersByTime(60);
+
+    expect(instance.state.status).toBe(Status.pending);
+    expect(onSuccess).not.toHaveBeenCalled();
+    await jest.advanceTimersByTime(40);
+    expect(instance.state.status).toBe(Status.success);
+    expect(onSuccess).toHaveBeenCalled();
+  });
 });

@@ -3,7 +3,8 @@ import {
   ProducerCallbacks,
   ProducerProps,
   ProducerWrapperInput,
-  RunIndicators
+  RunIndicators,
+  State
 } from "./types";
 import {
   __DEV__,
@@ -22,31 +23,24 @@ export function producerWrapper<T, E = any, R = any>(
   indicators: RunIndicators,
   callbacks?: ProducerCallbacks<T, E, R>,
 ): AbortFn {
-  const currentProducer = input.getProducer();
+  let {
+    instance,
+    setState,
+    getProducer,
+    setSuspender,
+    replaceState
+  } = input;
+  let currentProducer = getProducer();
+
   if (!isFunction(currentProducer)) {
     indicators.fulfilled = true;
-    input.setState(props.args[0], props.args[1]);
-
-    if (callbacks) {
-      let currentState = input.getState();
-      if (callbacks.onSuccess && currentState.status === success) {
-        callbacks.onSuccess(currentState);
-      }
-      if (callbacks.onAborted && currentState.status === aborted) {
-        callbacks.onAborted(currentState);
-      }
-      if (callbacks.onError && currentState.status === error) {
-        callbacks.onError(currentState);
-      }
-    }
+    setState(props.args[0], props.args[1], callbacks);
     return;
   }
-  // the running promise is used to pass the status to pending and as suspender in react18+
-  let runningPromise;
-  // the execution value is the return of the initial producer function
+
+  let pendingPromise;
   let executionValue;
-  // it is important to clone to capture properties and save only serializable stuff
-  const savedProps = cloneProducerProps(props);
+  let savedProps = cloneProducerProps(props);
 
   try {
     executionValue = currentProducer!(props);
@@ -57,107 +51,88 @@ export function producerWrapper<T, E = any, R = any>(
     if (indicators.aborted) {
       return;
     }
-    if (__DEV__ && input.instance) devtools.emitRunSync(input.instance, savedProps);
-    indicators.fulfilled = true;
+    if (__DEV__ && instance) devtools.emitRunSync(instance, savedProps);
     let errorState = StateBuilder.error<T, E>(e, savedProps);
-    input.replaceState(errorState);
-    if (callbacks && callbacks.onError) {
-      callbacks.onError(errorState);
-    }
+
+    indicators.fulfilled = true;
+    replaceState(errorState, true, callbacks);
     return;
   }
 
-  if (isGenerator(executionValue)) {
-    if (__DEV__ && input.instance) devtools.emitRunGenerator(input.instance, savedProps);
+  if (isGenerator<T>(executionValue)) {
+    if (__DEV__ && instance) devtools.emitRunGenerator(instance, savedProps);
     // generatorResult is either {done, value} or a promise
     let generatorResult;
     try {
-      generatorResult = wrapStartedGenerator(executionValue, props, indicators);
+      generatorResult = stepGenerator(executionValue, props, indicators);
     } catch (e) {
-      indicators.fulfilled = true;
       let errorState = StateBuilder.error<T, E>(e, savedProps);
-      input.replaceState(errorState);
-      if (callbacks && callbacks.onError) {
-        callbacks.onError(errorState);
-      }
+
+      indicators.fulfilled = true;
+      replaceState(errorState, true, callbacks);
       return;
     }
     if (generatorResult.done) {
       indicators.fulfilled = true;
       let successState = StateBuilder.success(generatorResult.value, savedProps);
-      input.replaceState(successState);
-      if (callbacks && callbacks.onSuccess) {
-        callbacks.onSuccess(successState);
-      }
+      replaceState(successState, true, callbacks);
       return;
     } else {
-      runningPromise = generatorResult;
-      input.setSuspender(runningPromise);
-      input.replaceState(StateBuilder.pending(savedProps));
+      pendingPromise = generatorResult;
+      setSuspender(pendingPromise);
+      replaceState(StateBuilder.pending(savedProps), true, callbacks);
     }
   } else if (isPromise(executionValue)) {
-    if (__DEV__ && input.instance) devtools.emitRunPromise(input.instance, savedProps);
-    runningPromise = executionValue;
-    input.setSuspender(runningPromise);
-    input.replaceState(StateBuilder.pending(savedProps));
+    if (__DEV__ && instance) devtools.emitRunPromise(instance, savedProps);
+    pendingPromise = executionValue;
+    setSuspender(pendingPromise);
+    replaceState(StateBuilder.pending(savedProps), true, callbacks);
   } else { // final value
-    if (__DEV__ && input.instance) devtools.emitRunSync(input.instance, savedProps);
+    if (__DEV__ && instance) devtools.emitRunSync(instance, savedProps);
     indicators.fulfilled = true;
     let successState = StateBuilder.success(executionValue, savedProps);
-    input.replaceState(successState);
-    if (callbacks && callbacks.onSuccess) {
-      callbacks.onSuccess(successState);
-    }
+    replaceState(successState, true, callbacks);
     return;
   }
 
-  runningPromise
+  pendingPromise
     .then(stateData => {
       let aborted = indicators.aborted;
       if (!aborted) {
         indicators.fulfilled = true;
         let successState = StateBuilder.success(stateData, savedProps);
-        input.replaceState(successState);
-        if (callbacks && callbacks.onSuccess) {
-          callbacks.onSuccess(successState);
-        }
+        replaceState(successState, true, callbacks);
       }
     })
     .catch(stateError => {
       let aborted = indicators.aborted;
       if (!aborted) {
-        indicators.fulfilled = true;
         let errorState = StateBuilder.error<T, E>(stateError, savedProps);
-        input.replaceState(errorState);
-        if (callbacks && callbacks.onError) {
-          callbacks.onError(errorState);
-        }
+
+        indicators.fulfilled = true;
+        replaceState(errorState, true, callbacks);
       }
     });
 }
 
-function wrapStartedGenerator(
-  generatorInstance,
+function stepGenerator<T>(
+  generatorInstance: Generator<any, T, any>,
   props,
   indicators
-) {
-  let lastGeneratorValue = generatorInstance.next();
+): {done: true, value: T} | Promise<T> {
+  let generator = generatorInstance.next();
 
-  while (!lastGeneratorValue.done && !isPromise(lastGeneratorValue.value)) {
-    lastGeneratorValue = generatorInstance.next(lastGeneratorValue.value);
+  while (!generator.done && !isPromise(generator.value)) {
+    generator = generatorInstance.next(generator.value);
   }
 
-  if (lastGeneratorValue.done) {
-    return {done: true, value: lastGeneratorValue.value};
+  if (generator.done) {
+    return {done: true, value: generator.value};
   } else {
-    // encountered a promise
-    return new Promise((
-      resolve,
-      reject
-    ) => {
-      const abortGenerator = stepAsyncAndContinueStartedGenerator(
+    return new Promise(function stepIntoGenerator(resolve, reject) {
+      const abortGenerator = stepInAsyncGenerator(
         generatorInstance,
-        lastGeneratorValue,
+        generator,
         resolve,
         reject
       );
@@ -173,22 +148,22 @@ function wrapStartedGenerator(
   }
 }
 
-function stepAsyncAndContinueStartedGenerator(
+function stepInAsyncGenerator(
   generatorInstance,
-  lastGeneratorValue,
+  generator,
   onDone,
   onReject
 ) {
   let aborted = false;
 
   // we enter here only if startupValue is pending promise of the generator instance!
-  lastGeneratorValue.value.then(step, onGeneratorCatch);
+  generator.value.then(step, onGeneratorCatch);
 
   function onGeneratorResolve(resolveValue) {
     if (aborted) {
       return;
     }
-    if (!lastGeneratorValue.done) {
+    if (!generator.done) {
       step();
     } else {
       onDone(resolveValue);
@@ -199,16 +174,16 @@ function stepAsyncAndContinueStartedGenerator(
     if (aborted) {
       return;
     }
-    if (lastGeneratorValue.done) {
+    if (generator.done) {
       onDone(e);
     } else {
       try {
-        lastGeneratorValue = generatorInstance.throw(e);
+        generator = generatorInstance.throw(e);
       } catch (newException) {
         onReject(newException);
       }
-      if (lastGeneratorValue.done) {
-        onDone(lastGeneratorValue.value);
+      if (generator.done) {
+        onDone(generator.value);
       } else {
         step();
       }
@@ -220,12 +195,12 @@ function stepAsyncAndContinueStartedGenerator(
       return;
     }
     try {
-      lastGeneratorValue = generatorInstance.next(lastGeneratorValue.value);
+      generator = generatorInstance.next(generator.value);
     } catch (e) {
       onGeneratorCatch(e);
     }
     Promise
-      .resolve(lastGeneratorValue.value)
+      .resolve(generator.value)
       .then(onGeneratorResolve, onGeneratorCatch)
   }
 

@@ -14,10 +14,11 @@ import {
 import devtools from "./devtools/Devtools";
 import {hideStateInstanceInNewObject} from "./hide-object";
 import {
+  AbortedState,
   AbortFn,
   AsyncStateSubscribeProps,
   CachedState,
-  CreateSourceObject,
+  CreateSourceObject, ErrorState,
   ForkConfig,
   HydrationData,
   InitialState,
@@ -30,7 +31,7 @@ import {
   InstanceEventHandlerType,
   InstanceEvents,
   InstanceEventType,
-  LibraryPoolsContext,
+  LibraryPoolsContext, PendingState,
   PendingTimeout,
   PendingUpdate,
   PoolInterface,
@@ -174,7 +175,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     let instance = this;
     this.producer = producerWrapper.bind(null, {
       setState: instance.setState,
-      getState: instance.getState,
       instance: instance,
       setSuspender: (suspender: Promise<T>) => instance.suspender = suspender,
       replaceState: instance.replaceState.bind(instance),
@@ -312,7 +312,8 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
   replaceState(
     newState: State<T, E, R>,
-    notify: boolean = true
+    notify: boolean = true,
+    callbacks?: ProducerCallbacks<T, E, R>
   ): void {
     let {config} = this;
     let isPending = newState.status === pending;
@@ -322,7 +323,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     }
 
     if (this.queue) {
-      enqueueUpdate(this, newState);
+      enqueueUpdate(this, newState, callbacks);
       return;
     }
 
@@ -331,7 +332,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       this.state.status === pending &&
       !this.flushing
     ) {
-      enqueueUpdate(this, newState);
+      enqueueUpdate(this, newState, callbacks);
       return;
     }
 
@@ -356,6 +357,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     if (__DEV__) devtools.startUpdate(this);
     this.state = newState;
     this.version += 1;
+    invokeProducerCallbacks(newState, callbacks);
     invokeInstanceEvents(this, "change");
     if (__DEV__) devtools.emitUpdate(this);
 
@@ -420,15 +422,12 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     return cleanup;
   }
 
-  setState(
-    newValue: T | StateFunctionUpdater<T, E, R>,
-    status = success,
-  ): void {
+  setState(newValue: T | StateFunctionUpdater<T, E, R>, status: Status = success, callbacks?: ProducerCallbacks<T, E, R>): void {
     if (!StateBuilder[status]) {
       throw new Error(`Unknown status ('${status}')`);
     }
     if (this.queue) {
-      enqueueSetState(this, newValue, status);
+      enqueueSetState(this, newValue, status, callbacks);
       return;
     }
     this.willUpdate = true;
@@ -450,7 +449,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     if (__DEV__) devtools.emitReplaceState(this, savedProps);
     // @ts-ignore
     let newState = StateBuilder[status](effectiveValue, savedProps) as State<T, E, R>;
-    this.replaceState(newState);
+    this.replaceState(newState, true, callbacks);
     this.willUpdate = false;
   }
 
@@ -601,7 +600,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       if (cachedState) {
         if (didNotExpire(cachedState)) {
           if (cachedState.state !== this.state) {
-            this.replaceState(cachedState.state);
+            this.replaceState(cachedState.state, true, runProps);
           }
           if (__DEV__) devtools.emitRunConsumedFromCache(this, payload, execArgs);
           return;
@@ -729,6 +728,25 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 }
 
 //region AsyncState methods helpers
+
+function invokeProducerCallbacks<T, E, R>(
+  state: State<T, E, R>,
+  callbacks: ProducerCallbacks<T, E, R> | undefined
+) {
+  if (!callbacks) {
+    return;
+  }
+  let {onError, onAborted, onSuccess}  = callbacks;
+  if (onSuccess && state.status === success) {
+    onSuccess(state);
+  }
+  if (onAborted && state.status === aborted) {
+    onAborted(state);
+  }
+  if (onError && state.status === error) {
+    onError(state);
+  }
+}
 
 export function shallowClone(
   source1,
@@ -871,7 +889,7 @@ function constructPropsObject<T, E, R>(
       return;
     }
     instance.isEmitting = true;
-    instance.setState(updater, status);
+    instance.setState(updater, status, callbacks);
     instance.isEmitting = false;
   }
 
@@ -891,8 +909,7 @@ function constructPropsObject<T, E, R>(
       // these state updates are only with aborted status
       if (!instance.willUpdate) {
         let abortedState = StateBuilder.aborted<T, E, R>(reason, cloneProducerProps(props));
-        instance.replaceState(abortedState);
-        callbacks?.onAborted?.(abortedState);
+        instance.replaceState(abortedState, true, callbacks);
       }
     }
 
@@ -1307,8 +1324,10 @@ function getQueueTail<T, E, R>(instance: StateInterface<T, E, R>): UpdateQueue<T
 export function enqueueUpdate<T, E, R>(
   instance: StateInterface<T, E, R>,
   newState: State<T, E, R>,
+  callbacks?: ProducerCallbacks<T, E, R>
 ) {
   let update: UpdateQueue<T, E, R> = {
+    callbacks,
     data: newState,
     kind: 0,
     next: null,
@@ -1330,8 +1349,10 @@ export function enqueueSetState<T, E, R>(
   instance: StateInterface<T, E, R>,
   newValue: T | StateFunctionUpdater<T, E, R>,
   status = success,
+  callbacks?: ProducerCallbacks<T, E, R>,
 ) {
   let update: UpdateQueue<T, E, R> = {
+    callbacks,
     kind: 1,
     data: {data: newValue, status},
     next: null,
@@ -1384,18 +1405,18 @@ function flushUpdateQueue<T, E, R>(
 
   instance.flushing = true;
   while (current !== null) {
-    let {data: {status}} = current;
+    let {data: {status}, callbacks} = current;
     let canBailoutPendingStatus = status === pending && current.next !== null;
 
     if (canBailoutPendingStatus) {
       current = current.next;
     } else {
       if (current.kind === 0) {
-        instance.replaceState(current.data);
+        instance.replaceState(current.data, undefined, callbacks);
       }
       if (current.kind === 1) {
         let {data: {data, status}} = current;
-        instance.setState(data, status);
+        instance.setState(data, status, callbacks);
       }
       current = current.next;
     }
