@@ -133,7 +133,7 @@ export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R>
   // producer
   suspender?: Promise<T>,
   producer: ProducerFunction<T, E, R>,
-  originalProducer: Producer<T, E, R> | undefined | null,
+  _producer: Producer<T, E, R> | undefined | null,
   pool: PoolInterface;
 
   request?: Request,

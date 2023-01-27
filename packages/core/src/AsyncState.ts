@@ -81,7 +81,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   queue?: UpdateQueue<T, E, R>;
   flushing?: boolean;
 
-  originalProducer: Producer<T, E, R> | undefined;
+  _producer: Producer<T, E, R> | undefined;
 
   //
   payload?: Record<string, any>;
@@ -138,7 +138,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     this.pool = poolToUse;
     this.uniqueId = nextUniqueId();
     this.config = shallowClone(config);
-    this.originalProducer = producer ?? undefined;
+    this._producer = producer ?? undefined;
 
     if (__DEV__) {
       this.journal = [];
@@ -178,7 +178,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       instance: instance,
       setSuspender: (suspender: Promise<T>) => instance.suspender = suspender,
       replaceState: instance.replaceState.bind(instance),
-      getProducer: () => instance.originalProducer,
+      getProducer: () => instance._producer,
     });
 
     this._source = makeSource(this);
@@ -463,7 +463,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   }
 
   replaceProducer(newProducer: Producer<T, E, R> | undefined) {
-    this.originalProducer = newProducer;
+    this._producer = newProducer;
   }
 
   invalidateCache(cacheKey?: string) {
@@ -691,7 +691,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       key = `${this.key}-fork-${this.forksIndex + 1}`;
     }
 
-    const clone = new AsyncState(key, this.originalProducer, this.config, this.pool.simpleName);
+    const clone = new AsyncState(key, this._producer, this.config, this.pool.simpleName);
 
     // if something fail, no need to increment
     this.forksIndex += 1;
