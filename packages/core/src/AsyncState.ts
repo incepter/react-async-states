@@ -357,7 +357,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     if (__DEV__) devtools.startUpdate(this);
     this.state = newState;
     this.version += 1;
-    invokeProducerCallbacks(newState, callbacks);
+    invokeChangeCallbacks(newState, callbacks);
     invokeInstanceEvents(this, "change");
     if (__DEV__) devtools.emitUpdate(this);
 
@@ -729,7 +729,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
 //region AsyncState methods helpers
 
-function invokeProducerCallbacks<T, E, R>(
+function invokeChangeCallbacks<T, E, R>(
   state: State<T, E, R>,
   callbacks: ProducerCallbacks<T, E, R> | undefined
 ) {
