@@ -11,11 +11,15 @@ import {
   SuccessState
 } from "../types";
 import {RunEffect, Status} from "../enums";
+import {HookChangeEvents} from "./StateHook";
 
 export interface BaseUseAsyncState<T, E, R, S = State<T, E, R>> extends Source<T, E, R> {
   flags?: number,
   source?: Source<T, E, R>,
   devFlags?: string[],
+  onChange(
+    events: ((prevEvents?: HookChangeEvents<T, E, R>) => void)| HookChangeEvents<T, E, R>
+  ): void,
 }
 export interface UseAsyncState<T, E = any, R = any, S = State<T, E, R>> extends BaseUseAsyncState<T, E, R, S> {
   state: S,

@@ -5,7 +5,7 @@ import {
   MixedConfig,
   PartialUseAsyncStateConfiguration,
   SubscribeEventProps,
-  UseAsyncState,
+  UseAsyncState, UseAsyncStateChangeEvent,
   UseAsyncStateEventFn,
   UseAsyncStateEvents,
   UseAsyncStateEventSubscribe
@@ -399,15 +399,11 @@ function invokeSubscribeEvents<T, E, R>(
 
 function invokeChangeEvents<T, E, R>(
   instance: StateInterface<T, E, R>,
-  events: UseAsyncStateEvents<T, E, R> | undefined
+  events: UseAsyncStateEventFn<T, E, R> | UseAsyncStateEventFn<T, E, R>[]
 ) {
-  if (!events?.change) {
-    return;
-  }
-
   let nextState = instance.state;
   const changeHandlers: UseAsyncStateEventFn<T, E, R>[]
-    = isArray(events.change) ? events.change : [events.change];
+    = isArray(events) ? events : [events];
 
   const eventProps = {state: nextState, source: instance._source};
 
@@ -441,6 +437,8 @@ export function readStateFromInstance<T, E, R, S = State<T, E, R>>(
   return selector(asyncState.state, asyncState.lastSuccess, asyncState.cache || null);
 }
 
+export type HookChangeEvents<T, E, R> = UseAsyncStateEventFn<T, E, R> | UseAsyncStateEventFn<T, E, R>[];
+
 export interface HookOwnState<T, E, R, S> {
   context: LibraryPoolsContext,
   guard: number,
@@ -456,6 +454,10 @@ export interface HookOwnState<T, E, R, S> {
     current: S,
     version: number | undefined,
   },
+  getEvents(): HookChangeEvents<T, E, R> | undefined,
+  onChange(
+    events: ((prevEvents?: HookChangeEvents<T, E, R>) => void)| HookChangeEvents<T, E, R>
+  ): void
 
   subscribeEffect(
     updateState: () => void,
@@ -496,8 +498,15 @@ export function subscribeEffect<T, E, R, S>(
       updateState();
     }
 
+    let maybeEvents = hookState.getEvents();
     if (flags & CHANGE_EVENTS) {
-      invokeChangeEvents(instance!, (config as BaseConfig<T, E, R>).events);
+      let changeEvents = (config as BaseConfig<T, E, R>).events?.change;
+      if (changeEvents) {
+        invokeChangeEvents(instance!, changeEvents);
+      }
+    }
+    if (maybeEvents) {
+      invokeChangeEvents(instance!, maybeEvents);
     }
   }
 
@@ -569,6 +578,7 @@ export function createHook<T, E, R, S>(
     }
   }
 
+  let changeEvents: HookChangeEvents<T, E, R> | undefined = undefined;
   // ts complains about subscribeEffect not present, it is assigned later
   // @ts-ignore
   let hook: HookOwnState<T, E, R, S> = {
@@ -586,7 +596,21 @@ export function createHook<T, E, R, S>(
       current: currentReturn.state,
       version: currentReturn.version,
     },
+    getEvents() {
+      return changeEvents;
+    },
+    onChange(events: (((prevEvents?: HookChangeEvents<T, E, R>) => HookChangeEvents<T, E, R>) | HookChangeEvents<T, E, R>)) {
+      if (isFunction(events)) {
+        let maybeEvents = (events as (prevEvents?: HookChangeEvents<T, E, R>) => HookChangeEvents<T, E, R>)(changeEvents);
+        if (maybeEvents) {
+          changeEvents = maybeEvents;
+        }
+      } else if (events) {
+        changeEvents = (events as HookChangeEvents<T, E, R>);
+      }
+    },
   };
+  baseReturn.onChange = hook.onChange;
   hook.subscribeEffect = subscribeEffect.bind(null, hook);
 
   return hook;

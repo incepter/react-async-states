@@ -44,6 +44,7 @@ export function runc<T, E = any, R = any>(config: RuncConfig<T, E, R>): AbortFn 
       if (isFunction(updater)) {
         effectiveValue = (updater as StateFunctionUpdater<T, E, R>)(this.state);
       }
+      // @ts-ignore
       const savedProps = cloneProducerProps({
         args: [effectiveValue],
         payload: clonedPayload,
