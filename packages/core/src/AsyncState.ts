@@ -114,40 +114,49 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     poolName?: string,
   ) {
 
-    let executionContext = requestContext(config?.context);
-    let {poolInUse, getOrCreatePool} = executionContext;
+    let ctx = config && config.context;
+    let {poolInUse: poolToUse, getOrCreatePool} = requestContext(ctx);
 
-    let poolToUse: PoolInterface = poolInUse;
     if (poolName) {
       poolToUse = getOrCreatePool(poolName);
     }
 
-    let maybeInstance = poolToUse.instances.get(key);
+    let maybeInstance = poolToUse.instances
+      .get(key) as AsyncState<T, E, R> | undefined;
+
     if (maybeInstance) {
       if (__DEV__) {
         warnAboutAlreadyExistingSourceWithSameKey(key);
       }
-
-      let instance = maybeInstance as AsyncState<T, E, R>;
-      instance.replaceProducer(producer || undefined);
-      instance.patchConfig(config);
-      return instance;
+      maybeInstance.replaceProducer(producer || undefined);
+      maybeInstance.patchConfig(config);
+      return maybeInstance;
     }
+
+    this.bindMethods();
+    if (__DEV__) {
+      this.journal = [];
+    }
+    poolToUse.set(key, this);
 
     this.key = key;
     this.pool = poolToUse;
     this.uniqueId = nextUniqueId();
+    this._source = makeSource(this);
     this.config = shallowClone(config);
     this._producer = producer ?? undefined;
 
-    if (__DEV__) {
-      this.journal = [];
-    }
-
     loadCache(this);
+    let instance = this;
+    this.producer = producerWrapper.bind(null, {
+      instance: this,
+      setState: this.setState,
+      getProducer: () => instance._producer,
+      replaceState: this.replaceState.bind(this),
+      setSuspender: (suspender: Promise<T>) => instance.suspender = suspender,
+    });
 
     let maybeHydratedState = attemptHydratedState<T, E, R>(this.pool.name, this.key);
-
     if (maybeHydratedState) {
       this.state = maybeHydratedState.state;
       this.payload = maybeHydratedState.payload;
@@ -169,25 +178,9 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       this.lastSuccess = this.state;
     }
 
-
-    this.bindMethods();
-
-    let instance = this;
-    this.producer = producerWrapper.bind(null, {
-      setState: instance.setState,
-      instance: instance,
-      setSuspender: (suspender: Promise<T>) => instance.suspender = suspender,
-      replaceState: instance.replaceState.bind(instance),
-      getProducer: () => instance._producer,
-    });
-
-    this._source = makeSource(this);
-
     if (__DEV__) {
       devtools.emitCreation(this);
     }
-
-    poolToUse.set(key, this);
   }
 
   private bindMethods() {
@@ -756,7 +749,9 @@ export function shallowClone(
 }
 
 export function attemptHydratedState<T, E, R>(
-  poolName: string, key: string): HydrationData<T, E, R> | null {
+  poolName: string,
+  key: string
+): HydrationData<T, E, R> | null {
   // do not attempt hydration outside server
   if (isServer) {
     return null;
