@@ -19,6 +19,7 @@ export {StateBuilder} from "./helpers/StateBuilder";
 export {hookReturn, createHook, autoRun} from "./state-hook/StateHook";
 
 export type {
+  RetryConfig,
   PoolInterface,
   ProducerRunConfig,
   ProducerRunInput,
