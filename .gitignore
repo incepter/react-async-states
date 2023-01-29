@@ -17,4 +17,4 @@ __tests__/async-state
 
 .scannerwork
 memlab
-useQuery*
+useQuery

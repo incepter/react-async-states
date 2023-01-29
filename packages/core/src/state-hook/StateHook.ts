@@ -111,11 +111,13 @@ function getFlagsFromConfigProperties(
 
     case "events": {
       let flags = NO_MODE;
-      if (config.events!.change) {
-        flags |= CHANGE_EVENTS;
-      }
-      if (config.events!.subscribe) {
-        flags |= SUBSCRIBE_EVENTS;
+      if (config.events) {
+        if (config.events.change) {
+          flags |= CHANGE_EVENTS;
+        }
+        if (config.events.subscribe) {
+          flags |= SUBSCRIBE_EVENTS;
+        }
       }
       return flags;
     }

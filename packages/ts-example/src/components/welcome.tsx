@@ -25,6 +25,13 @@ function fetchUser(props: ProducerProps<AxiosResponse<User>, Error>) {
   return API.get(`/users/${props.args[0]}`, {signal: controller.signal});
 }
 
+function fetchUser25(props: ProducerProps<AxiosResponse<User>, Error>) {
+  let controller = new AbortController();
+  props.onAbort(() => controller.abort());
+
+  return API.get(`/users/25`, {signal: controller.signal});
+}
+
 let userDetails = createSource("user-details", fetchUser, {
   // skipPendingDelayMs: 50,
   runEffectDurationMs: 200,
@@ -58,9 +65,11 @@ let userDetails = createSource("user-details", fetchUser, {
 function randomColor() {
   return `rgb(${random()}, ${random()}, ${random()})`;
 }
+
 function random() {
   return randomIntFromInterval(1, 255)
 }
+
 function randomIntFromInterval(min, max) { // min and max included
   return Math.floor(Math.random() * (max - min + 1) + min)
 }
@@ -87,6 +96,17 @@ function randomIntFromInterval(min, max) { // min and max included
 
 
 export default function Welcome() {
+
+  // @ts-ignore
+  // let result = useQuery({
+  //   queryFn: fetchUser25,
+  //   retry: 2,
+  //   retryDelay: 3000,
+  // });
+  //
+  // console.log('USE-QUERY', result);
+
+
   let {source, state, run, onChange} = useAsyncState(userDetails);
 
   let searchedUserId: string | null = state.status === Status.initial ? null : state.props.args![0];
