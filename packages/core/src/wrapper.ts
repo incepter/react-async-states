@@ -3,8 +3,7 @@ import {
   ProducerCallbacks,
   ProducerProps,
   ProducerWrapperInput,
-  RunIndicators,
-  State
+  RunIndicators
 } from "./types";
 import {
   __DEV__,
@@ -15,7 +14,6 @@ import {
 } from "./utils";
 import devtools from "./devtools/Devtools";
 import {StateBuilder} from "./helpers/StateBuilder";
-import {aborted, error, success,} from "./enums";
 
 export function producerWrapper<T, E = any, R = any>(
   input: ProducerWrapperInput<T, E, R>,
@@ -52,10 +50,7 @@ export function producerWrapper<T, E = any, R = any>(
       return;
     }
     if (__DEV__ && instance) devtools.emitRunSync(instance, savedProps);
-    let errorState = StateBuilder.error<T, E>(e, savedProps);
-
-    indicators.fulfilled = true;
-    replaceState(errorState, true, callbacks);
+    onFail(e);
     return;
   }
 
@@ -66,16 +61,11 @@ export function producerWrapper<T, E = any, R = any>(
     try {
       generatorResult = stepGenerator(executionValue, props, indicators);
     } catch (e) {
-      let errorState = StateBuilder.error<T, E>(e, savedProps);
-
-      indicators.fulfilled = true;
-      replaceState(errorState, true, callbacks);
+      onFail(e);
       return;
     }
     if (generatorResult.done) {
-      indicators.fulfilled = true;
-      let successState = StateBuilder.success(generatorResult.value, savedProps);
-      replaceState(successState, true, callbacks);
+      onSuccess(generatorResult.value);
       return;
     } else {
       pendingPromise = generatorResult;
@@ -89,30 +79,27 @@ export function producerWrapper<T, E = any, R = any>(
     replaceState(StateBuilder.pending(savedProps), true, callbacks);
   } else { // final value
     if (__DEV__ && instance) devtools.emitRunSync(instance, savedProps);
-    indicators.fulfilled = true;
-    let successState = StateBuilder.success(executionValue, savedProps);
-    replaceState(successState, true, callbacks);
+    onSuccess(executionValue);
     return;
   }
 
-  pendingPromise
-    .then(stateData => {
-      let aborted = indicators.aborted;
-      if (!aborted) {
-        indicators.fulfilled = true;
-        let successState = StateBuilder.success(stateData, savedProps);
-        replaceState(successState, true, callbacks);
-      }
-    })
-    .catch(stateError => {
-      let aborted = indicators.aborted;
-      if (!aborted) {
-        let errorState = StateBuilder.error<T, E>(stateError, savedProps);
+  pendingPromise.then(onSuccess, onFail);
 
-        indicators.fulfilled = true;
-        replaceState(errorState, true, callbacks);
-      }
-    });
+  function onSuccess(data: T) {
+    if (!indicators.aborted) {
+      indicators.fulfilled = true;
+      let successState = StateBuilder.success(data, savedProps);
+      replaceState(successState, true, callbacks);
+    }
+  }
+
+  function onFail(error: E) {
+    if (!indicators.aborted) {
+      indicators.fulfilled = true;
+      let errorState = StateBuilder.error<T, E>(error, savedProps);
+      replaceState(errorState, true, callbacks);
+    }
+  }
 }
 
 function stepGenerator<T>(
