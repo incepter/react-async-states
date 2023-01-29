@@ -58,7 +58,7 @@ export function runc<T, E = any, R = any>(config: RuncConfig<T, E, R>): AbortFn 
   }
 
   let realProducer = producerWrapper.bind(null, input);
-  let runIndicators = {cleared: false, aborted: false, fulfilled: false};
+  let runIndicators = {cleared: false, aborted: false, fulfilled: false, attempt: 1};
 
   let producerProps: ProducerProps<T, E, R> = constructPropsObject(
     initialState,

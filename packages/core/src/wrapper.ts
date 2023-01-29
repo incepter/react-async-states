@@ -3,6 +3,7 @@ import {
   ProducerCallbacks,
   ProducerProps,
   ProducerWrapperInput,
+  RetryConfig,
   RunIndicators
 } from "./types";
 import {
@@ -95,6 +96,31 @@ export function producerWrapper<T, E = any, R = any>(
 
   function onFail(error: E) {
     if (!indicators.aborted) {
+      let retryConfig = input.instance?.config.retryConfig;
+      if (retryConfig && retryConfig.enabled) {
+        if (shouldRetry(indicators.attempt, retryConfig, error)) {
+          let backoff = getRetryBackoff(indicators.attempt, retryConfig, error);
+          let id, abort;
+          indicators.attempt += 1;
+
+          if (isFunction(setTimeout)) {
+            id = setTimeout(() => {
+              abort = producerWrapper(input, props, indicators, callbacks);
+            }, backoff);
+          } else {
+            abort = producerWrapper(input, props, indicators, callbacks);
+          }
+
+          props.onAbort(() => {
+            clearTimeout(id);
+            if (isFunction(abort)) {
+              abort!();
+            }
+          });
+          return;
+        }
+      }
+
       indicators.fulfilled = true;
       let errorState = StateBuilder.error<T, E>(error, savedProps);
       replaceState(errorState, true, callbacks);
@@ -102,11 +128,38 @@ export function producerWrapper<T, E = any, R = any>(
   }
 }
 
+function shouldRetry<T, E, R>(
+  attempt: number,
+  retryConfig: RetryConfig<T, E, R>,
+  error: E
+): boolean {
+  let {retry, maxAttempts} = retryConfig;
+  let canRetry = !!maxAttempts && attempt <= maxAttempts;
+  let shouldRetry: boolean = retry === undefined ? true : !!retry;
+  if (isFunction(retry)) {
+    shouldRetry = (retry as (attemptIndex:number, error: E) => boolean)(attempt, error);
+  }
+
+  return canRetry && shouldRetry;
+}
+
+function getRetryBackoff<T, E, R>(
+  attempt: number,
+  retryConfig: RetryConfig<T, E, R>,
+  error: E
+): number {
+  let {backoff} = retryConfig;
+  if (isFunction(backoff)) {
+    return (backoff as (attemptIndex:number, error: E) => number)(attempt, error);
+  }
+  return (backoff as number) || 0;
+}
+
 function stepGenerator<T>(
   generatorInstance: Generator<any, T, any>,
   props,
   indicators
-): {done: true, value: T} | Promise<T> {
+): { done: true, value: T } | Promise<T> {
   let generator = generatorInstance.next();
 
   while (!generator.done && !isPromise(generator.value)) {

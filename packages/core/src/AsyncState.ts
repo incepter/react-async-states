@@ -612,6 +612,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     }
 
     const runIndicators = {
+      attempt: 1,
       cleared: false, // abort was called and abort callbacks were removed
       aborted: false, // aborted before fulfillment
       fulfilled: false, // resolved to something, either success or error

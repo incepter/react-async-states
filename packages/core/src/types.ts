@@ -257,6 +257,7 @@ export interface ProducerProps<T, E = any, R = any> extends ProducerEffects {
 }
 
 export type RunIndicators = {
+  attempt: number,
   cleared: boolean,
   aborted: boolean,
   fulfilled: boolean,
@@ -292,7 +293,16 @@ export type ProducerConfig<T, E = any, R = any> = {
 
   // dev only
   hideFromDevtools?: boolean,
+  retryConfig?: RetryConfig<T, E, R>,
 }
+
+export type RetryConfig<T, E, R> = {
+  enabled: boolean,
+  maxAttempts?: number,
+  backoff?: number | ((attemptIndex:number, error: E) => number),
+  retry?: boolean | ((attemptIndex:number, error: E) => boolean)
+}
+
 export type StateFunctionUpdater<T, E = any, R = any> = (updater: State<T, E, R>) => T;
 export type StateUpdater<T, E = any, R = any> = (updater: StateFunctionUpdater<T, E, R> | T, status?: Status, callbacks?: ProducerCallbacks<T, E, R>) => void;
 
