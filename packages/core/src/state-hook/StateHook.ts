@@ -455,9 +455,6 @@ export interface HookOwnState<T, E, R, S> {
     version: number | undefined,
   },
   getEvents(): HookChangeEvents<T, E, R> | undefined,
-  onChange(
-    events: ((prevEvents?: HookChangeEvents<T, E, R>) => void)| HookChangeEvents<T, E, R>
-  ): void
 
   subscribeEffect(
     updateState: () => void,
@@ -568,6 +565,8 @@ export function createHook<T, E, R, S>(
   }
 
   let baseReturn = makeBaseReturn(newFlags, config, newInstance);
+  baseReturn.onChange = onChange;
+
   let currentReturn = hookReturn(newFlags, config, baseReturn, newInstance);
   let subscriptionKey = calculateSubscriptionKey(newFlags, config, caller, newInstance);
 
@@ -599,21 +598,23 @@ export function createHook<T, E, R, S>(
     getEvents() {
       return changeEvents;
     },
-    onChange(events: (((prevEvents?: HookChangeEvents<T, E, R>) => HookChangeEvents<T, E, R>) | HookChangeEvents<T, E, R>)) {
-      if (isFunction(events)) {
-        let maybeEvents = (events as (prevEvents?: HookChangeEvents<T, E, R>) => HookChangeEvents<T, E, R>)(changeEvents);
-        if (maybeEvents) {
-          changeEvents = maybeEvents;
-        }
-      } else if (events) {
-        changeEvents = (events as HookChangeEvents<T, E, R>);
-      }
-    },
   };
-  baseReturn.onChange = hook.onChange;
   hook.subscribeEffect = subscribeEffect.bind(null, hook);
 
   return hook;
+
+  function onChange(
+    events: (((prevEvents?: HookChangeEvents<T, E, R>) => HookChangeEvents<T, E, R>) | HookChangeEvents<T, E, R>)
+  ) {
+    if (isFunction(events)) {
+      let maybeEvents = (events as (prevEvents?: HookChangeEvents<T, E, R>) => HookChangeEvents<T, E, R>)(changeEvents);
+      if (maybeEvents) {
+        changeEvents = maybeEvents;
+      }
+    } else if (events) {
+      changeEvents = (events as HookChangeEvents<T, E, R>);
+    }
+  };
 }
 
 export function autoRun<T, E, R, S>(hookState: HookOwnState<T, E, R, S>): CleanupFn {

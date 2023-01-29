@@ -87,13 +87,19 @@ function randomIntFromInterval(min, max) { // min and max included
 
 
 export default function Welcome() {
-  let {source, state, run} = useAsyncState(userDetails);
+  let {source, state, run, onChange} = useAsyncState(userDetails);
 
   let searchedUserId: string | null = state.status === Status.initial ? null : state.props.args![0];
 
   let summary = state.status === Status.pending ? `Fetching user ${searchedUserId}` :
     state.status === Status.success ? `User ${state.data.data.username} details` :
       state.status === Status.error ? `User ${searchedUserId} fetch error` : 'Search results'
+
+
+  onChange([{
+    status: Status.success,
+    handler: (s) => console.log('__________________', s),
+  }]);
 
   return (
     <div>
