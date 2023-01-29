@@ -14,10 +14,11 @@ import {
 import devtools from "./devtools/Devtools";
 import {hideStateInstanceInNewObject} from "./hide-object";
 import {
+  AbortedState,
   AbortFn,
   AsyncStateSubscribeProps,
   CachedState,
-  CreateSourceObject,
+  CreateSourceObject, ErrorState,
   ForkConfig,
   HydrationData,
   InitialState,
@@ -30,7 +31,7 @@ import {
   InstanceEventHandlerType,
   InstanceEvents,
   InstanceEventType,
-  LibraryPoolsContext,
+  LibraryPoolsContext, PendingState,
   PendingTimeout,
   PendingUpdate,
   PoolInterface,
@@ -80,7 +81,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   queue?: UpdateQueue<T, E, R>;
   flushing?: boolean;
 
-  originalProducer: Producer<T, E, R> | undefined;
+  _producer: Producer<T, E, R> | undefined;
 
   //
   payload?: Record<string, any>;
@@ -113,40 +114,49 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     poolName?: string,
   ) {
 
-    let executionContext = requestContext(config?.context);
-    let {poolInUse, getOrCreatePool} = executionContext;
+    let ctx = config && config.context;
+    let {poolInUse: poolToUse, getOrCreatePool} = requestContext(ctx);
 
-    let poolToUse: PoolInterface = poolInUse;
     if (poolName) {
       poolToUse = getOrCreatePool(poolName);
     }
 
-    let maybeInstance = poolToUse.instances.get(key);
+    let maybeInstance = poolToUse.instances
+      .get(key) as AsyncState<T, E, R> | undefined;
+
     if (maybeInstance) {
       if (__DEV__) {
         warnAboutAlreadyExistingSourceWithSameKey(key);
       }
-
-      let instance = maybeInstance as AsyncState<T, E, R>;
-      instance.replaceProducer(producer || undefined);
-      instance.patchConfig(config);
-      return instance;
+      maybeInstance.replaceProducer(producer || undefined);
+      maybeInstance.patchConfig(config);
+      return maybeInstance;
     }
+
+    this.bindMethods();
+    if (__DEV__) {
+      this.journal = [];
+    }
+    poolToUse.set(key, this);
 
     this.key = key;
     this.pool = poolToUse;
     this.uniqueId = nextUniqueId();
+    this._source = makeSource(this);
     this.config = shallowClone(config);
-    this.originalProducer = producer ?? undefined;
-
-    if (__DEV__) {
-      this.journal = [];
-    }
+    this._producer = producer ?? undefined;
 
     loadCache(this);
+    let instance = this;
+    this.producer = producerWrapper.bind(null, {
+      instance: this,
+      setState: this.setState,
+      getProducer: () => instance._producer,
+      replaceState: this.replaceState.bind(this),
+      setSuspender: (suspender: Promise<T>) => instance.suspender = suspender,
+    });
 
     let maybeHydratedState = attemptHydratedState<T, E, R>(this.pool.name, this.key);
-
     if (maybeHydratedState) {
       this.state = maybeHydratedState.state;
       this.payload = maybeHydratedState.payload;
@@ -168,26 +178,9 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       this.lastSuccess = this.state;
     }
 
-
-    this.bindMethods();
-
-    let instance = this;
-    this.producer = producerWrapper.bind(null, {
-      setState: instance.setState,
-      getState: instance.getState,
-      instance: instance,
-      setSuspender: (suspender: Promise<T>) => instance.suspender = suspender,
-      replaceState: instance.replaceState.bind(instance),
-      getProducer: () => instance.originalProducer,
-    });
-
-    this._source = makeSource(this);
-
     if (__DEV__) {
       devtools.emitCreation(this);
     }
-
-    poolToUse.set(key, this);
   }
 
   private bindMethods() {
@@ -312,7 +305,8 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
   replaceState(
     newState: State<T, E, R>,
-    notify: boolean = true
+    notify: boolean = true,
+    callbacks?: ProducerCallbacks<T, E, R>
   ): void {
     let {config} = this;
     let isPending = newState.status === pending;
@@ -322,7 +316,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     }
 
     if (this.queue) {
-      enqueueUpdate(this, newState);
+      enqueueUpdate(this, newState, callbacks);
       return;
     }
 
@@ -331,7 +325,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       this.state.status === pending &&
       !this.flushing
     ) {
-      enqueueUpdate(this, newState);
+      enqueueUpdate(this, newState, callbacks);
       return;
     }
 
@@ -356,6 +350,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     if (__DEV__) devtools.startUpdate(this);
     this.state = newState;
     this.version += 1;
+    invokeChangeCallbacks(newState, callbacks);
     invokeInstanceEvents(this, "change");
     if (__DEV__) devtools.emitUpdate(this);
 
@@ -420,15 +415,12 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     return cleanup;
   }
 
-  setState(
-    newValue: T | StateFunctionUpdater<T, E, R>,
-    status = success,
-  ): void {
+  setState(newValue: T | StateFunctionUpdater<T, E, R>, status: Status = success, callbacks?: ProducerCallbacks<T, E, R>): void {
     if (!StateBuilder[status]) {
       throw new Error(`Unknown status ('${status}')`);
     }
     if (this.queue) {
-      enqueueSetState(this, newValue, status);
+      enqueueSetState(this, newValue, status, callbacks);
       return;
     }
     this.willUpdate = true;
@@ -450,7 +442,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     if (__DEV__) devtools.emitReplaceState(this, savedProps);
     // @ts-ignore
     let newState = StateBuilder[status](effectiveValue, savedProps) as State<T, E, R>;
-    this.replaceState(newState);
+    this.replaceState(newState, true, callbacks);
     this.willUpdate = false;
   }
 
@@ -464,7 +456,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   }
 
   replaceProducer(newProducer: Producer<T, E, R> | undefined) {
-    this.originalProducer = newProducer;
+    this._producer = newProducer;
   }
 
   invalidateCache(cacheKey?: string) {
@@ -601,7 +593,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       if (cachedState) {
         if (didNotExpire(cachedState)) {
           if (cachedState.state !== this.state) {
-            this.replaceState(cachedState.state);
+            this.replaceState(cachedState.state, true, runProps);
           }
           if (__DEV__) devtools.emitRunConsumedFromCache(this, payload, execArgs);
           return;
@@ -692,7 +684,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       key = `${this.key}-fork-${this.forksIndex + 1}`;
     }
 
-    const clone = new AsyncState(key, this.originalProducer, this.config, this.pool.simpleName);
+    const clone = new AsyncState(key, this._producer, this.config, this.pool.simpleName);
 
     // if something fail, no need to increment
     this.forksIndex += 1;
@@ -730,6 +722,25 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
 //region AsyncState methods helpers
 
+function invokeChangeCallbacks<T, E, R>(
+  state: State<T, E, R>,
+  callbacks: ProducerCallbacks<T, E, R> | undefined
+) {
+  if (!callbacks) {
+    return;
+  }
+  let {onError, onAborted, onSuccess}  = callbacks;
+  if (onSuccess && state.status === success) {
+    onSuccess(state);
+  }
+  if (onAborted && state.status === aborted) {
+    onAborted(state);
+  }
+  if (onError && state.status === error) {
+    onError(state);
+  }
+}
+
 export function shallowClone(
   source1,
   source2?
@@ -738,7 +749,9 @@ export function shallowClone(
 }
 
 export function attemptHydratedState<T, E, R>(
-  poolName: string, key: string): HydrationData<T, E, R> | null {
+  poolName: string,
+  key: string
+): HydrationData<T, E, R> | null {
   // do not attempt hydration outside server
   if (isServer) {
     return null;
@@ -871,7 +884,7 @@ function constructPropsObject<T, E, R>(
       return;
     }
     instance.isEmitting = true;
-    instance.setState(updater, status);
+    instance.setState(updater, status, callbacks);
     instance.isEmitting = false;
   }
 
@@ -891,8 +904,7 @@ function constructPropsObject<T, E, R>(
       // these state updates are only with aborted status
       if (!instance.willUpdate) {
         let abortedState = StateBuilder.aborted<T, E, R>(reason, cloneProducerProps(props));
-        instance.replaceState(abortedState);
-        callbacks?.onAborted?.(abortedState);
+        instance.replaceState(abortedState, true, callbacks);
       }
     }
 
@@ -1307,8 +1319,10 @@ function getQueueTail<T, E, R>(instance: StateInterface<T, E, R>): UpdateQueue<T
 export function enqueueUpdate<T, E, R>(
   instance: StateInterface<T, E, R>,
   newState: State<T, E, R>,
+  callbacks?: ProducerCallbacks<T, E, R>
 ) {
   let update: UpdateQueue<T, E, R> = {
+    callbacks,
     data: newState,
     kind: 0,
     next: null,
@@ -1330,8 +1344,10 @@ export function enqueueSetState<T, E, R>(
   instance: StateInterface<T, E, R>,
   newValue: T | StateFunctionUpdater<T, E, R>,
   status = success,
+  callbacks?: ProducerCallbacks<T, E, R>,
 ) {
   let update: UpdateQueue<T, E, R> = {
+    callbacks,
     kind: 1,
     data: {data: newValue, status},
     next: null,
@@ -1384,18 +1400,18 @@ function flushUpdateQueue<T, E, R>(
 
   instance.flushing = true;
   while (current !== null) {
-    let {data: {status}} = current;
+    let {data: {status}, callbacks} = current;
     let canBailoutPendingStatus = status === pending && current.next !== null;
 
     if (canBailoutPendingStatus) {
       current = current.next;
     } else {
       if (current.kind === 0) {
-        instance.replaceState(current.data);
+        instance.replaceState(current.data, undefined, callbacks);
       }
       if (current.kind === 1) {
         let {data: {data, status}} = current;
-        instance.setState(data, status);
+        instance.setState(data, status, callbacks);
       }
       current = current.next;
     }

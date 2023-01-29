@@ -29,7 +29,7 @@ describe('AsyncState - fork', () => {
     expect(forkedAsyncState.forksIndex).toBe(undefined);
     expect(forkedAsyncState.config).toEqual(myAsyncState.config);
     expect(forkedAsyncState.lastSuccess).toEqual(myAsyncState.lastSuccess);
-    expect(forkedAsyncState.originalProducer).toBe(myAsyncState.originalProducer);
+    expect(forkedAsyncState._producer).toBe(myAsyncState._producer);
 
 
     expect(forkedAsyncState.key).not.toBe(myAsyncState.key);

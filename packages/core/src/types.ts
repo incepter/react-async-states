@@ -2,10 +2,9 @@ import {RunEffect, Status} from "./enums";
 
 export type ProducerWrapperInput<T, E, R> = {
   setState: StateUpdater<T, E, R>,
-  getState(): State<T, E, R>,
   instance?: StateInterface<T, E, R>,
   setSuspender(p: Promise<T>): void,
-  replaceState(newState: State<T, E, R>, notify?: boolean),
+  replaceState(newState: State<T, E, R>, notify?: boolean, callbacks?: ProducerCallbacks<T, E, R>),
   getProducer(): Producer<T, E, R> | undefined | null,
 }
 
@@ -24,7 +23,7 @@ export interface BaseSource<T, E = any, R = any> {
   getState(): State<T, E, R>,
 
   // todo: overload this!!!!
-  setState(updater: StateFunctionUpdater<T, E, R> | T, status?: Status,): void;
+  setState(updater: StateFunctionUpdater<T, E, R> | T, status?: Status, callbacks?: ProducerCallbacks<T, E, R>): void;
 
   // subscriptions
   subscribe(cb: (s: State<T, E, R>) => void): AbortFn
@@ -125,7 +124,7 @@ export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R>
 
   queue?: UpdateQueue<T, E, R>,
   flushing?: boolean,
-  replaceState(newState: State<T, E, R>, notify?: boolean): void,
+  replaceState(newState: State<T, E, R>, notify?: boolean, callbacks?: ProducerCallbacks<T, E, R>): void,
 
   // subscriptions
   subsIndex?: number;
@@ -134,7 +133,7 @@ export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R>
   // producer
   suspender?: Promise<T>,
   producer: ProducerFunction<T, E, R>,
-  originalProducer: Producer<T, E, R> | undefined | null,
+  _producer: Producer<T, E, R> | undefined | null,
   pool: PoolInterface;
 
   request?: Request,
@@ -295,10 +294,7 @@ export type ProducerConfig<T, E = any, R = any> = {
   hideFromDevtools?: boolean,
 }
 export type StateFunctionUpdater<T, E = any, R = any> = (updater: State<T, E, R>) => T;
-export type StateUpdater<T, E = any, R = any> = (
-  updater: T | StateFunctionUpdater<T, E, R>,
-  status?: Status
-) => void;
+export type StateUpdater<T, E = any, R = any> = (updater: StateFunctionUpdater<T, E, R> | T, status?: Status, callbacks?: ProducerCallbacks<T, E, R>) => void;
 
 export type CreateSourceObject<T, E, R> = {
   key: string,
@@ -453,7 +449,8 @@ export type SetStateUpdateQueue<T, E, R> = {
   id?: ReturnType<typeof setTimeout>
   kind: 0,
   data: State<T, E, R>,
-  next: UpdateQueue<T, E, R> | null
+  next: UpdateQueue<T, E, R> | null,
+  callbacks?: ProducerCallbacks<T, E, R>
 }
 
 export type ReplaceStateUpdateQueue<T, E, R> = {
@@ -463,7 +460,8 @@ export type ReplaceStateUpdateQueue<T, E, R> = {
     status?: Status,
     data: T | StateFunctionUpdater<T, E, R>,
   },
-  next: UpdateQueue<T, E, R> | null
+  next: UpdateQueue<T, E, R> | null,
+  callbacks?: ProducerCallbacks<T, E, R>,
 }
 
 export type UpdateQueue<T, E, R> =

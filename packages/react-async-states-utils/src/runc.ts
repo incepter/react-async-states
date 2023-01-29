@@ -53,7 +53,6 @@ export function runc<T, E = any, R = any>(config: RuncConfig<T, E, R>): AbortFn 
       state = StateBuilder[status](effectiveValue, savedProps);
     },
     setSuspender: noop,
-    getState: () => state,
     getProducer: () => config.producer,
     replaceState: (newState) => state = newState,
   }
@@ -117,9 +116,6 @@ function constructPropsObject<T, E, R>(
     isAborted() {
       return runIndicators.aborted;
     },
-    getState() {
-      throw new Error("Top level runc producer props shouldn't use getState().");
-    }
   };
   Object.assign(props, effectsCreator(props));
 
@@ -148,10 +144,6 @@ function constructPropsObject<T, E, R>(
       }
     });
   }
-}
-
-function shallowClone<T extends Object>(obj: T): T {
-  return Object.assign({}, obj);
 }
 
 export function cloneProducerProps<T, E, R>(props: ProducerProps<T, E, R>): ProducerSavedProps<T> {
