@@ -100,22 +100,19 @@ export function producerWrapper<T, E = any, R = any>(
       if (retryConfig && retryConfig.enabled) {
         if (shouldRetry(indicators.attempt, retryConfig, error)) {
           let backoff = getRetryBackoff(indicators.attempt, retryConfig, error);
-          let id, abort;
+          let id;
           indicators.attempt += 1;
 
           if (isFunction(setTimeout)) {
             id = setTimeout(() => {
-              abort = producerWrapper(input, props, indicators, callbacks);
+              producerWrapper(input, props, indicators, callbacks);
             }, backoff);
           } else {
-            abort = producerWrapper(input, props, indicators, callbacks);
+            producerWrapper(input, props, indicators, callbacks);
           }
 
           props.onAbort(() => {
             clearTimeout(id);
-            if (isFunction(abort)) {
-              abort!();
-            }
           });
           return;
         }
