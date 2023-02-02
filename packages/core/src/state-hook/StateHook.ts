@@ -124,7 +124,7 @@ function getFlagsFromConfigProperties(
 
     case "lazy":
     case "condition": {
-      if (config.lazy === false && config.condition !== false) {
+      if (config.lazy === false) {
         return AUTO_RUN;
       }
       return NO_MODE;
@@ -626,13 +626,15 @@ export function autoRun<T, E, R, S>(hookState: HookOwnState<T, E, R, S>): Cleanu
     return;
   }
   // if dependencies change, if we run, the cleanup shall abort
-  let shouldRun = true; // AUTO_RUN flag is set only if this is true
+  let shouldRun = true;
 
   if (flags & CONFIG_OBJECT) {
     let configObject = (config as BaseConfig<T, E, R>);
     if (isFunction(configObject.condition)) {
       let conditionFn = configObject.condition as ((state: State<T, E, R>) => boolean);
       shouldRun = conditionFn(instance!.getState());
+    } else if (configObject.condition === false) {
+      shouldRun = false;
     }
   }
 

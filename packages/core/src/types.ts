@@ -329,7 +329,7 @@ export type CreateSourceType = {
 export type SourcesType = {
   <T, E = any, R = any>(): Source<T, E, R>,
   for: CreateSourceType,
-  of<T, E = any, R = any>(key: string, pool?: string),
+  of<T, E = any, R = any>(key: string, pool?: string, context?: any),
 }
 
 export interface Source<T, E = any, R = any> extends BaseSource<T, E, R> {
