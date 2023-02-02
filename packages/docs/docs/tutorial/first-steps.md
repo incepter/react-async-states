@@ -28,7 +28,7 @@ You can think of its signature like
 
 ```typescript
 function useAsyncState(config, dependencies = []) {
-  ...
+  // ...
 }
 ```
 
@@ -40,8 +40,6 @@ The following snippet should get you started to the library:
 
 import Tabs from '@theme/Tabs'; import TabItem from '@theme/TabItem';
 
-<Tabs>
-<TabItem value="ts" label="Typescript">
 
 ```tsx
 import axios from "axios";
@@ -88,18 +86,6 @@ export default function App() {
   );
 }
 ```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```javascript
-
-```
-
-</TabItem>
-
-
-</Tabs>
 
 Here is a codesandbox demo with the previous code snippet:
 
@@ -177,9 +163,6 @@ This time, we will be:
 Here is a full working example:
 
 
-<Tabs>
-<TabItem value="ts" label="Typescript">
-
 ```tsx
 async function fetchUser(props: ProducerProps<User>): Promise<User> {
   const controller = new AbortController();
@@ -228,18 +211,6 @@ export default function App() {
 }
 
 ```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```javascript
-
-```
-
-</TabItem>
-
-
-</Tabs>
 
 Try it here, notice the cancellation of previous requests, also, you can remove
 the abort callback and/or the signal to make concurrency chaos, and make sure to
@@ -410,7 +381,7 @@ export default function App() {
 Now, rather than writing the user id and reacting to a state variable, let's
 grab the `userId` from the url and navigate when the typed value changes.
 
-```typescript
+```tsx
 // highlit-next-line
 const {userId} = useParams();
 const {state}: UseAsyncState<User> = useAsyncState(
@@ -468,7 +439,7 @@ To skip the pending state, the `skipPendingDelayMs` is used.
 It means that when state turns to pending, and then changes under that delay,
 the pending update shall be skipped.
 
-```typescript
+```tsx
 // highlit-next-line
 const {userId} = useParams();
 const {state}: UseAsyncState<User> = useAsyncState(
