@@ -631,8 +631,10 @@ export function autoRun<T, E, R, S>(hookState: HookOwnState<T, E, R, S>): Cleanu
   if (flags & CONFIG_OBJECT) {
     let configObject = (config as BaseConfig<T, E, R>);
     if (isFunction(configObject.condition)) {
-      let conditionFn = configObject.condition as ((state: State<T, E, R>) => boolean);
-      shouldRun = conditionFn(instance!.getState());
+      let conditionFn = configObject.condition as
+        ((state: State<T, E, R>, args?: any[], payload?: Record<string, any> | null) => boolean);
+
+      shouldRun = conditionFn(instance!.getState(), configObject.autoRunArgs, instance!.getPayload());
     } else if (configObject.condition === false) {
       shouldRun = false;
     }

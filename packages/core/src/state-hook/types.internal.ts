@@ -45,7 +45,7 @@ export interface BaseConfig<T, E, R> extends ProducerConfig<T, E, R> {
 
   wait?: boolean,
   lazy?: boolean,
-  condition?: boolean | ((state: State<T, E, R>) => boolean),
+  condition?: boolean | ((state: State<T, E, R>, args?: any[], payload?: Record<string, any> | null) => boolean),
 
   fork?: boolean,
   forkConfig?: ForkConfig
