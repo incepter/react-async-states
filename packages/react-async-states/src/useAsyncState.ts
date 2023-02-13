@@ -21,7 +21,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = any, R = any,
 ): UseAsyncState<T, E, R, S> {
   let caller;
   if (__DEV__) {
-    caller = useCallerName(5);
+    caller = useCallerName(4);
   }
   return useInternalAsyncState(caller, mixedConfig, deps, overrides);
 }
