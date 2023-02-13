@@ -70,21 +70,21 @@ export function runc<T, E = any, R = any>(config: RuncConfig<T, E, R>): AbortFn 
 
   function onAborted(a: AbortedState<T, E, R>) {
     state = a;
-    config.onAborted?.(a);
-    config.onFulfillment?.(a);
+    config.onAborted?.(state);
+    config.onFulfillment?.(state);
   }
 
   realProducer(producerProps, runIndicators, {
     onAborted,
     onSuccess(s: SuccessState<T>) {
       state = s;
-      config.onSuccess?.(s);
-      config.onFulfillment?.(s);
+      config.onSuccess?.(state);
+      config.onFulfillment?.(state);
     },
     onError(e: ErrorState<T, E>) {
       state = e;
-      config.onError?.(e);
-      config.onFulfillment?.(e);
+      config.onError?.(state);
+      config.onFulfillment?.(state);
     },
   });
 

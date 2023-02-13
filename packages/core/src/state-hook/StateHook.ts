@@ -95,43 +95,23 @@ export function resolveFlags<T, E, R, S>(
   }
 }
 
-function getFlagsFromConfigProperties(
-  config: PartialUseAsyncStateConfiguration<any, any, any, any>,
-  key: string,
-) {
-  switch (key) {
-    case "fork":
-      return config.fork ? FORK : NO_MODE;
-    case "lane":
-      return config.lane ? LANE : NO_MODE;
-    case "selector":
-      return isFunction(config.selector) ? SELECTOR : NO_MODE;
-    case "areEqual":
-      return isFunction(config.areEqual) ? EQUALITY_CHECK : NO_MODE;
-
-    case "events": {
-      let flags = NO_MODE;
-      if (config.events) {
-        if (config.events.change) {
-          flags |= CHANGE_EVENTS;
-        }
-        if (config.events.subscribe) {
-          flags |= SUBSCRIBE_EVENTS;
-        }
+let ConfigurationSpecialFlags = {
+  "fork": FORK,
+  "lane": LANE,
+  "selector": SELECTOR,
+  "areEqual": EQUALITY_CHECK,
+  "events": (events) => {
+    if (events) {
+      if (events.change) {
+        return CHANGE_EVENTS;
       }
-      return flags;
-    }
-
-    case "lazy":
-    case "condition": {
-      if (config.lazy === false) {
-        return AUTO_RUN;
+      if (events.subscribe) {
+        return SUBSCRIBE_EVENTS;
       }
-      return NO_MODE;
     }
-    default:
-      return NO_MODE;
-  }
+    return NO_MODE;
+  },
+  "lazy": (lazy) => lazy === false ? AUTO_RUN : NO_MODE,
 }
 
 function getConfigFlags<T, E, R, S>(
@@ -140,9 +120,17 @@ function getConfigFlags<T, E, R, S>(
   if (!config) {
     return NO_MODE;
   }
-  return Object.keys(config)
-    .reduce((flags, key) =>
-      (flags | getFlagsFromConfigProperties(config, key)), NO_MODE);
+  let flags = NO_MODE;
+  for (let key of Object.keys(config)) {
+    let flagsReader = ConfigurationSpecialFlags[key];
+
+    if (isFunction(flagsReader)) {
+      flags |= flagsReader(config[key]);
+    } else if (typeof flagsReader === "number") {
+      flags |= flagsReader;
+    }
+  }
+  return flags;
 }
 
 

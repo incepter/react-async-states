@@ -41,7 +41,7 @@ export function isGenerator<T = unknown>(candidate): candidate is Generator<any,
   return !!candidate && isFunction(candidate.next) && isFunction(candidate.throw);
 }
 
-export function isFunction(fn) {
+export function isFunction(fn): fn is Function {
   return typeof fn === "function";
 }
 
