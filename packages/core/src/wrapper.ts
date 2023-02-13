@@ -22,18 +22,12 @@ export function producerWrapper<T, E = any, R = any>(
   indicators: RunIndicators,
   callbacks?: ProducerCallbacks<T, E, R>,
 ): AbortFn {
-  let {
-    instance,
-    setState,
-    getProducer,
-    setSuspender,
-    replaceState
-  } = input;
-  let currentProducer = getProducer();
+  let {instance,} = input;
+  let currentProducer = input.getProducer();
 
   if (!isFunction(currentProducer)) {
     indicators.fulfilled = true;
-    setState(props.args[0], props.args[1], callbacks);
+    input.setState(props.args[0], props.args[1], callbacks);
     return;
   }
 
@@ -42,11 +36,14 @@ export function producerWrapper<T, E = any, R = any>(
   let savedProps = cloneProducerProps(props);
 
   try {
-    executionValue = currentProducer!(props);
+    executionValue = currentProducer(props);
+    // when producer runs, it can decide to bailout everything
+    // by calling props.abort(reason?) as early as possible
     if (indicators.aborted) {
       return;
     }
   } catch (e) {
+    // same, you can props.abort(); throw "Ignored error";
     if (indicators.aborted) {
       return;
     }
@@ -57,9 +54,9 @@ export function producerWrapper<T, E = any, R = any>(
 
   if (isGenerator<T>(executionValue)) {
     if (__DEV__ && instance) devtools.emitRunGenerator(instance, savedProps);
-    // generatorResult is either {done, value} or a promise
     let generatorResult;
     try {
+      // generatorResult is either {done: boolean, value: T} or a Promise<T>
       generatorResult = stepGenerator(executionValue, props, indicators);
     } catch (e) {
       onFail(e);
@@ -70,14 +67,14 @@ export function producerWrapper<T, E = any, R = any>(
       return;
     } else {
       pendingPromise = generatorResult;
-      setSuspender(pendingPromise);
-      replaceState(StateBuilder.pending(savedProps), true, callbacks);
+      input.setSuspender(pendingPromise);
+      input.replaceState(StateBuilder.pending(savedProps), true, callbacks);
     }
   } else if (isPromise(executionValue)) {
     if (__DEV__ && instance) devtools.emitRunPromise(instance, savedProps);
     pendingPromise = executionValue;
-    setSuspender(pendingPromise);
-    replaceState(StateBuilder.pending(savedProps), true, callbacks);
+    input.setSuspender(pendingPromise);
+    input.replaceState(StateBuilder.pending(savedProps), true, callbacks);
   } else { // final value
     if (__DEV__ && instance) devtools.emitRunSync(instance, savedProps);
     onSuccess(executionValue);
@@ -90,37 +87,36 @@ export function producerWrapper<T, E = any, R = any>(
     if (!indicators.aborted) {
       indicators.fulfilled = true;
       let successState = StateBuilder.success(data, savedProps);
-      replaceState(successState, true, callbacks);
+      input.replaceState(successState, true, callbacks);
     }
   }
 
   function onFail(error: E) {
     if (!indicators.aborted) {
-      let retryConfig = input.instance?.config.retryConfig;
+      let retryConfig = instance?.config.retryConfig;
       if (retryConfig && retryConfig.enabled) {
         if (shouldRetry(indicators.attempt, retryConfig, error)) {
           let backoff = getRetryBackoff(indicators.attempt, retryConfig, error);
-          let id;
           indicators.attempt += 1;
 
           if (isFunction(setTimeout)) {
-            id = setTimeout(() => {
+            let id = setTimeout(() => {
               producerWrapper(input, props, indicators, callbacks);
             }, backoff);
+
+            props.onAbort(() => {
+              clearTimeout(id);
+            });
           } else {
             producerWrapper(input, props, indicators, callbacks);
           }
-
-          props.onAbort(() => {
-            clearTimeout(id);
-          });
           return;
         }
       }
 
       indicators.fulfilled = true;
       let errorState = StateBuilder.error<T, E>(error, savedProps);
-      replaceState(errorState, true, callbacks);
+      input.replaceState(errorState, true, callbacks);
     }
   }
 }

@@ -95,7 +95,7 @@ export function resolveFlags<T, E, R, S>(
   }
 }
 
-let ConfigurationSpecialFlags = {
+let ConfigurationSpecialFlags = freeze({
   "fork": FORK,
   "lane": LANE,
   "selector": SELECTOR,
@@ -112,7 +112,7 @@ let ConfigurationSpecialFlags = {
     return NO_MODE;
   },
   "lazy": (lazy) => lazy === false ? AUTO_RUN : NO_MODE,
-}
+});
 
 function getConfigFlags<T, E, R, S>(
   config?: PartialUseAsyncStateConfiguration<T, E, R, S>
@@ -126,7 +126,7 @@ function getConfigFlags<T, E, R, S>(
 
     if (isFunction(flagsReader)) {
       flags |= flagsReader(config[key]);
-    } else if (typeof flagsReader === "number") {
+    } else if (typeof flagsReader === "number" && config[key]) {
       flags |= flagsReader;
     }
   }
