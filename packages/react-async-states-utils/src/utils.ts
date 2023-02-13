@@ -1,5 +1,5 @@
 
-export function isFunction(fn) {
+export function isFunction(fn): fn is Function {
   return typeof fn === "function";
 }
 export function noop(): void {

@@ -303,7 +303,10 @@ function makeBaseReturn<T, E, R, S>(
     return output;
   }
 
-  let output = Object.assign({}, instance._source, {flags, source: instance._source}
+  let output = Object.assign({}, instance._source, {
+      flags,
+      source: instance._source
+    }
   ) as BaseUseAsyncState<T, E, R, S>;
 
   if (__DEV__) {
@@ -427,7 +430,9 @@ export function readStateFromInstance<T, E, R, S = State<T, E, R>>(
   return selector(asyncState.state, asyncState.lastSuccess, asyncState.cache || null);
 }
 
-export type HookChangeEvents<T, E, R> = UseAsyncStateEventFn<T, E, R> | UseAsyncStateEventFn<T, E, R>[];
+export type HookChangeEvents<T, E, R> =
+  UseAsyncStateEventFn<T, E, R>
+  | UseAsyncStateEventFn<T, E, R>[];
 
 export interface HookOwnState<T, E, R, S> {
   context: LibraryPoolsContext,
@@ -444,7 +449,11 @@ export interface HookOwnState<T, E, R, S> {
     current: S,
     version: number | undefined,
   },
-  getEvents(): HookChangeEvents<T, E, R> | undefined,
+
+  getEvents(): {
+    change: HookChangeEvents<T, E, R> | undefined,
+    sub: UseAsyncStateEventSubscribe<T, E, R> | undefined
+  },
 
   subscribeEffect(
     updateState: () => void,
@@ -467,7 +476,6 @@ export function subscribeEffect<T, E, R, S>(
     });
   }
 
-
   let didClean = false;
   let cleanups: AbortFn[] = [() => didClean = true];
 
@@ -486,14 +494,15 @@ export function subscribeEffect<T, E, R, S>(
     }
 
     let maybeEvents = hookState.getEvents();
+    let maybeChangeEvents = maybeEvents.change;
     if (flags & CHANGE_EVENTS) {
       let changeEvents = (config as BaseConfig<T, E, R>).events?.change;
       if (changeEvents) {
         invokeChangeEvents(instance!, changeEvents);
       }
     }
-    if (maybeEvents) {
-      invokeChangeEvents(instance!, maybeEvents);
+    if (maybeChangeEvents) {
+      invokeChangeEvents(instance!, maybeChangeEvents);
     }
   }
 
@@ -510,11 +519,17 @@ export function subscribeEffect<T, E, R, S>(
   if (flags & SUBSCRIBE_EVENTS) {
 
     let unsubscribeFns = invokeSubscribeEvents(
-      (config as BaseConfig<T, E, R>).events!.subscribe,
-      instance!.run,
-      instance!,
-    );
+      (config as BaseConfig<T, E, R>).events!.subscribe, instance!.run, instance!);
 
+    if (unsubscribeFns) {
+      cleanups = cleanups.concat(unsubscribeFns);
+    }
+  }
+
+  let maybeSubscriptionEvents = hookState.getEvents().sub;
+  if (maybeSubscriptionEvents) {
+    let unsubscribeFns = invokeSubscribeEvents(
+      maybeSubscriptionEvents, instance!.run, instance!);
     if (unsubscribeFns) {
       cleanups = cleanups.concat(unsubscribeFns);
     }
@@ -556,6 +571,7 @@ export function createHook<T, E, R, S>(
 
   let baseReturn = makeBaseReturn(newFlags, config, newInstance);
   baseReturn.onChange = onChange;
+  baseReturn.onSubscribe = onSubscribe;
 
   let currentReturn = hookReturn(newFlags, config, baseReturn, newInstance);
   let subscriptionKey = calculateSubscriptionKey(newFlags, config, caller, newInstance);
@@ -568,6 +584,7 @@ export function createHook<T, E, R, S>(
   }
 
   let changeEvents: HookChangeEvents<T, E, R> | undefined = undefined;
+  let subscribeEvents: UseAsyncStateEventSubscribe<T, E, R> | undefined = undefined;
   // ts complains about subscribeEffect not present, it is assigned later
   // @ts-ignore
   let hook: HookOwnState<T, E, R, S> = {
@@ -586,7 +603,10 @@ export function createHook<T, E, R, S>(
       version: currentReturn.version,
     },
     getEvents() {
-      return changeEvents;
+      return {
+        change: changeEvents,
+        sub: subscribeEvents
+      };
     },
   };
   hook.subscribeEffect = subscribeEffect.bind(null, hook);
@@ -597,14 +617,29 @@ export function createHook<T, E, R, S>(
     events: (((prevEvents?: HookChangeEvents<T, E, R>) => HookChangeEvents<T, E, R>) | HookChangeEvents<T, E, R>)
   ) {
     if (isFunction(events)) {
-      let maybeEvents = (events as (prevEvents?: HookChangeEvents<T, E, R>) => HookChangeEvents<T, E, R>)(changeEvents);
+      let maybeEvents = (events as
+        (prevEvents?: HookChangeEvents<T, E, R>) => HookChangeEvents<T, E, R>)(changeEvents);
       if (maybeEvents) {
         changeEvents = maybeEvents;
       }
     } else if (events) {
       changeEvents = (events as HookChangeEvents<T, E, R>);
     }
-  };
+  }
+
+  function onSubscribe(
+    events: ((prevEvents?: UseAsyncStateEventSubscribe<T, E, R>) => void) | UseAsyncStateEventSubscribe<T, E, R>
+  ) {
+    if (isFunction(events)) {
+      let maybeEvents = (events as
+        (prevEvents?: UseAsyncStateEventSubscribe<T, E, R>) => UseAsyncStateEventSubscribe<T, E, R>)(subscribeEvents);
+      if (maybeEvents) {
+        subscribeEvents = maybeEvents;
+      }
+    } else if (events) {
+      subscribeEvents = (events as UseAsyncStateEventSubscribe<T, E, R>);
+    }
+  }
 }
 
 export function autoRun<T, E, R, S>(hookState: HookOwnState<T, E, R, S>): CleanupFn {
@@ -620,7 +655,10 @@ export function autoRun<T, E, R, S>(hookState: HookOwnState<T, E, R, S>): Cleanu
     let configObject = (config as BaseConfig<T, E, R>);
     if (isFunction(configObject.condition)) {
       let conditionFn = configObject.condition as
-        ((state: State<T, E, R>, args?: any[], payload?: Record<string, any> | null) => boolean);
+        ((
+          state: State<T, E, R>, args?: any[],
+          payload?: Record<string, any> | null
+        ) => boolean);
 
       shouldRun = conditionFn(instance!.getState(), configObject.autoRunArgs, instance!.getPayload());
     } else if (configObject.condition === false) {

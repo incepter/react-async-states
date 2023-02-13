@@ -280,7 +280,7 @@ export type ProducerFunction<T, E = any, R = any> = (
 ) => AbortFn;
 export type ProducerConfig<T, E = any, R = any> = {
   skipPendingStatus?: boolean,
-  initialValue?: T | ((cache: Record<string, CachedState<T, E, R>>) => T),
+  initialValue?: T | ((cache?: Record<string, CachedState<T, E, R>>) => T),
   cacheConfig?: CacheConfig<T, E, R>,
   runEffectDurationMs?: number,
   runEffect?: RunEffect,

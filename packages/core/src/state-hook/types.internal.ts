@@ -20,6 +20,9 @@ export interface BaseUseAsyncState<T, E, R, S = State<T, E, R>> extends Source<T
   onChange(
     events: ((prevEvents?: HookChangeEvents<T, E, R>) => void)| HookChangeEvents<T, E, R>
   ): void,
+  onSubscribe(
+    events: ((prevEvents?: UseAsyncStateEventSubscribe<T, E, R>) => void)| UseAsyncStateEventSubscribe<T, E, R>
+  ): void,
 }
 export interface UseAsyncState<T, E = any, R = any, S = State<T, E, R>> extends BaseUseAsyncState<T, E, R, S> {
   state: S,

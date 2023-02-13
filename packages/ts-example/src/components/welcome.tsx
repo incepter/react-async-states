@@ -107,7 +107,7 @@ export default function Welcome() {
   // console.log('USE-QUERY', result);
 
 
-  let {source, state, run, onChange} = useAsyncState(userDetails);
+  let {source, state, run, onChange, onSubscribe} = useAsyncState(userDetails);
 
   let searchedUserId: string | null = state.status === Status.initial ? null : state.props.args![0];
 
@@ -119,6 +119,26 @@ export default function Welcome() {
   onChange([{
     status: Status.success,
     handler: (s) => console.log('__________________', s),
+  }]);
+
+  // should not depend on render, or else, to pass in "events" in useAsyncState with the deps array usage
+  onSubscribe([() => {
+    let blurTime: number | null = null
+    function onBlur() {
+      blurTime = Date.now()
+      window.addEventListener("focus", onFocus)
+    }
+    function onFocus() {
+      if (Date.now() - blurTime! >= 1000) {
+        source!.replay()
+      }
+      blurTime = null
+      window.removeEventListener("focus", onFocus)
+    }
+    window.addEventListener("blur", onBlur)
+    return () => {
+      window.removeEventListener("blur", onBlur)
+    }
   }]);
 
   return (

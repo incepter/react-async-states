@@ -130,7 +130,7 @@ function shouldRetry<T, E, R>(
   let canRetry = !!maxAttempts && attempt <= maxAttempts;
   let shouldRetry: boolean = retry === undefined ? true : !!retry;
   if (isFunction(retry)) {
-    shouldRetry = (retry as (attemptIndex:number, error: E) => boolean)(attempt, error);
+    shouldRetry = retry(attempt, error);
   }
 
   return canRetry && shouldRetry;

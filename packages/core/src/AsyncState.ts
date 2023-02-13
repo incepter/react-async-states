@@ -14,11 +14,10 @@ import {
 import devtools from "./devtools/Devtools";
 import {hideStateInstanceInNewObject} from "./hide-object";
 import {
-  AbortedState,
   AbortFn,
   AsyncStateSubscribeProps,
   CachedState,
-  CreateSourceObject, ErrorState,
+  CreateSourceObject,
   ForkConfig,
   HydrationData,
   InitialState,
@@ -166,16 +165,17 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
         this.lastSuccess = this.state;
       } else {
         let initializer = this.config.initialValue;
-        let initialStateValue = isFunction(initializer) ?
-          (initializer as Function).call(null, this.cache) : initializer;
-        this.lastSuccess = StateBuilder.initial(initialStateValue);
+        let initialData = isFunction(initializer) ? initializer(this.cache) : initializer;
+        this.lastSuccess = StateBuilder.initial(initialData);
       }
     } else {
       let initializer = this.config.initialValue;
-      let initialStateValue = isFunction(initializer) ?
-        (initializer as Function).call(null, this.cache) : initializer;
-      this.state = StateBuilder.initial(initialStateValue);
-      this.lastSuccess = this.state;
+      let initialData = isFunction(initializer) ? initializer(this.cache) : initializer;
+
+      let initialState = StateBuilder.initial(initialData);
+
+      this.state = initialState;
+      this.lastSuccess = initialState;
     }
 
     if (__DEV__) {
@@ -373,7 +373,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   subscribe(cb: (s: State<T, E, R>) => void): AbortFn
   subscribe(subProps: AsyncStateSubscribeProps<T, E, R>): AbortFn
   subscribe(argv: ((s: State<T, E, R>) => void) | AsyncStateSubscribeProps<T, E, R>): AbortFn {
-    let props = (isFunction(argv) ? {cb: argv} : argv) as AsyncStateSubscribeProps<T, E, R>;
+    let props = isFunction(argv) ? {cb: argv} : argv;
     if (!isFunction(props.cb)) {
       return;
     }
@@ -433,7 +433,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
     let effectiveValue = newValue;
     if (isFunction(newValue)) {
-      effectiveValue = (newValue as StateFunctionUpdater<T, E, R>)(this.state);
+      effectiveValue = newValue(this.state);
     }
     const savedProps = cloneProducerProps<T, E, R>({
       args: [effectiveValue],
@@ -473,7 +473,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
         topLevelParent.cache &&
         isFunction(topLevelParent.config.cacheConfig?.persist)
       ) {
-        topLevelParent.config.cacheConfig!.persist!(topLevelParent.cache);
+        topLevelParent.config.cacheConfig!.persist(topLevelParent.cache);
       }
 
       spreadCacheChangeOnLanes(topLevelParent);
@@ -523,7 +523,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
         clearTimeout(timeoutId);
         that.pendingTimeout = null;
         if (isFunction(abortCallback)) {
-          abortCallback!(reason);
+          abortCallback(reason);
         }
       }
     }
@@ -604,7 +604,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
             topLevelParent.cache &&
             isFunction(topLevelParent.config.cacheConfig?.persist)
           ) {
-            topLevelParent.config.cacheConfig!.persist!(topLevelParent.cache);
+            topLevelParent.config.cacheConfig!.persist(topLevelParent.cache);
           }
           spreadCacheChangeOnLanes(topLevelParent);
         }
@@ -642,7 +642,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
   abort(reason: any = undefined) {
     if (isFunction(this.currentAbort)) {
-      this.currentAbort!(reason);
+      this.currentAbort(reason);
     }
   }
 
@@ -661,8 +661,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     this.locks = 0;
     let initialState = this.config.initialValue;
     if (isFunction(initialState)) {
-      let initializer = initialState as ((cache?: Record<string, CachedState<T, E, R>>) => T);
-      initialState = initializer(this.cache);
+      initialState = initialState(this.cache);
     }
     const newState: State<T, E, R> = StateBuilder.initial<T>(initialState as T);
     this.replaceState(newState);
@@ -781,7 +780,7 @@ function invokeSingleChangeEvent<T, E, R>(
   event: StateChangeEventHandler<T, E, R>
 ) {
   if (isFunction(event)) {
-    (event as ((newState: State<T, E, R>) => void))(state);
+    event(state);
   } else if (typeof event === "object" && event.status === state.status) {
     event.handler(state);
   }
@@ -913,7 +912,7 @@ function constructPropsObject<T, E, R>(
     onAbortCallbacks.forEach(function clean(func) {
 
       if (isFunction(func)) {
-        func!(reason);
+        func(reason);
       }
     });
     instance.currentAbort = undefined;
@@ -982,7 +981,7 @@ function resolveCache<T, E, R>(
   const cacheConfig = instance.config.cacheConfig;
 
   if (isFunction(cacheConfig!.onCacheLoad)) {
-    cacheConfig!.onCacheLoad!({
+    cacheConfig!.onCacheLoad({
       cache: instance.cache,
       setState: instance.setState
     });
@@ -1027,7 +1026,7 @@ function getStateDeadline<T, E, R>(
     }
   }
   if (isFunction(getDeadline)) {
-    deadline = getDeadline!(state);
+    deadline = getDeadline(state);
   }
   return deadline;
 }
@@ -1070,7 +1069,7 @@ function saveCacheAfterSuccessfulUpdate<T, E, R>(instance: StateInterface<T, E, 
     if (
       topLevelParent.config.cacheConfig &&
       isFunction(topLevelParent.config.cacheConfig.persist)) {
-      topLevelParent.config.cacheConfig.persist!(topLevelParent.cache);
+      topLevelParent.config.cacheConfig.persist(topLevelParent.cache);
     }
 
     spreadCacheChangeOnLanes(topLevelParent);
@@ -1092,7 +1091,7 @@ function loadCache<T, E, R>(instance: StateInterface<T, E, R>) {
     return;
   }
 
-  let loadedCache = instance.config.cacheConfig!.load!();
+  let loadedCache = instance.config.cacheConfig!.load();
 
   if (!loadedCache) {
     return;
@@ -1200,7 +1199,7 @@ function createRunFunction(context: LibraryPoolsContext) {
       return (input as Source<T, E, R>).getLaneSource(config?.lane).run(...args);
     } else if (isFunction(input)) {
       let instance = new AsyncState(
-        nextKey(), input as Producer<T, E, R>, {
+        nextKey(), input, {
           hideFromDevtools: true,
           context: context.context
         });
@@ -1232,7 +1231,7 @@ function runpEffectFunction<T, E, R>(
   } else if (isFunction(input)) {
 
     let instance = new AsyncState(nextKey(),
-      input as Producer<T, E, R>, {
+      input, {
         hideFromDevtools: true,
         context: context.context
       });
@@ -1266,7 +1265,7 @@ function runWhileSubscribingToNextResolve<T, E, R>(
       if (newState.status === success
         || newState.status === error) {
         if (isFunction(unsubscribe)) {
-          unsubscribe!();
+          unsubscribe();
         }
         resolve(newState);
       }
