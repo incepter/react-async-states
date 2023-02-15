@@ -9,7 +9,7 @@ import {
 import {cloneProducerProps, isFunction, isGenerator, isPromise} from "./utils";
 import {error as errorStatus, success} from "./enums";
 
-export function runner<T, E, R>(
+export function run<T, E, R>(
   producer: Producer<T, E, R>,
   props: ProducerProps<T, E, R>,
   indicators: RunIndicators,
@@ -81,7 +81,7 @@ export function runner<T, E, R>(
       indicators.index += 1;
 
       let id = setTimeout(() => {
-        runner(producer, props, indicators, onSettled, retryConfig, callbacks);
+        run(producer, props, indicators, onSettled, retryConfig, callbacks);
       }, backoff);
 
       props.onAbort(() => {

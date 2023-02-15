@@ -38,7 +38,6 @@ import {
   Producer,
   ProducerCallbacks,
   ProducerConfig,
-  ProducerEffects,
   ProducerProps,
   ProducerRunConfig,
   ProducerRunInput,
@@ -61,7 +60,7 @@ import {
   requestContext,
   warnAboutAlreadyExistingSourceWithSameKey
 } from "./pool";
-import {runner} from "./wrapper";
+import {run} from "./wrapper";
 import {isSource, sourceSymbol} from "./helpers/isSource";
 import {StateBuilder} from "./helpers/StateBuilder";
 import {freeze, isArray, now} from "./helpers/corejs";
@@ -593,14 +592,13 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     let indicators = {index: 1, done: false, cleared: false, aborted: false};
     let props = constructPropsObject(this, runProps, indicators, payload, args);
 
-    // this is actually the real producer run
-    let result = runner(producer, props, indicators, onSettled, retryConfig, runProps);
+    this.currentAbort = props.abort;
+    let result = run(producer, props, indicators, onSettled, retryConfig, runProps);
 
     if (result) { // Promise<T>
       if (__DEV__) devtools.emitRunPromise(this, cloneProducerProps(props));
 
       this.promise = result;
-      this.currentAbort = props.abort;
       let pendingState = StateBuilder.pending(cloneProducerProps(props));
       this.replaceState(pendingState, true, runProps);
 
@@ -620,7 +618,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     ) {
       if (savedProps === null) {
         // this means there were no producer at all, and this is an imperative update
-        // @ts-ignore need to overload setState to accept E and R too with their status
+        // @ts-ignore need to overload setState to accept E and R too with their statuses
         instance.setState(data, status, callbacks);
         return;
       }
@@ -633,6 +631,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   }
 
   abort(reason: any = undefined) {
+
     if (isFunction(this.currentAbort)) {
       this.currentAbort(reason);
     }
@@ -715,13 +714,15 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 //region AsyncState methods helpers
 
 function attemptCache<T, E, R>(
-  instance: StateInterface<T, E, R>, payload, runProps?: RUNCProps<T, E, R>
+  instance: StateInterface<T, E, R>,
+  payload,
+  runProps?: RUNCProps<T, E, R>
 ): boolean {
-  if (isCacheEnabled(this)) {
+  if (isCacheEnabled(instance)) {
     let args = runProps && runProps.args || emptyArray;
-    let topLevelParent: StateInterface<T, E, R> = getTopLevelParent(this);
+    let topLevelParent: StateInterface<T, E, R> = getTopLevelParent(instance);
 
-    let {cacheConfig} = this.config;
+    let {cacheConfig} = instance.config;
     let hashFunction = cacheConfig && cacheConfig.hash || defaultHash;
 
     let runHash = hashFunction(args, payload);
@@ -729,10 +730,10 @@ function attemptCache<T, E, R>(
 
     if (cachedState) {
       if (didNotExpire(cachedState)) {
-        if (cachedState.state !== this.state) {
-          this.replaceState(cachedState.state, true, runProps);
+        if (cachedState.state !== instance.state) {
+          instance.replaceState(cachedState.state, true, runProps);
         }
-        if (__DEV__) devtools.emitRunConsumedFromCache(this, payload, args);
+        if (__DEV__) devtools.emitRunConsumedFromCache(instance, payload, args);
         return true;
       } else {
         delete topLevelParent.cache![runHash];
@@ -776,6 +777,8 @@ export function shallowClone(
   return Object.assign({}, source1, source2);
 }
 
+let HYDRATION_DATA_KEY = "__ASYNC_STATES_HYDRATION_DATA__";
+
 export function attemptHydratedState<T, E, R>(
   poolName: string,
   key: string
@@ -784,11 +787,11 @@ export function attemptHydratedState<T, E, R>(
   if (isServer) {
     return null;
   }
-  if (!maybeWindow || !maybeWindow.__ASYNC_STATES_HYDRATION_DATA__) {
+  if (!maybeWindow || !maybeWindow[HYDRATION_DATA_KEY]) {
     return null;
   }
 
-  let savedHydrationData = maybeWindow.__ASYNC_STATES_HYDRATION_DATA__;
+  let savedHydrationData = maybeWindow[HYDRATION_DATA_KEY];
   let name = `${poolName}__INSTANCE__${key}`;
   let maybeState = savedHydrationData[name];
 
@@ -798,7 +801,7 @@ export function attemptHydratedState<T, E, R>(
 
   delete savedHydrationData[name];
   if (Object.keys(savedHydrationData).length === 0) {
-    delete maybeWindow.__ASYNC_STATES_HYDRATION_DATA__;
+    delete maybeWindow[HYDRATION_DATA_KEY];
   }
 
   return maybeState as HydrationData<T, E, R>;
@@ -860,42 +863,39 @@ function invokeInstanceEvents<T, E, R>(
 function constructPropsObject<T, E, R>(
   instance: StateInterface<T, E, R>,
   callbacks: ProducerCallbacks<T, E, R> | undefined,
-  runIndicators: RunIndicators,
+  indicators: RunIndicators,
   payload: Record<string, any> | null,
   args: any[]
 ): ProducerProps<T, E, R> {
-  let context: LibraryPoolsContext = instance.pool.context;
-
+  let context = instance.pool.context;
   let onAbortCallbacks: AbortFn[] = [];
-  // @ts-ignore
-  let props: ProducerProps<T> = {
+  let props: ProducerProps<T, E, R> = {
     emit,
     args,
     abort,
     payload,
     lastSuccess: instance.lastSuccess,
-    onAbort(cb: AbortFn) {
-      if (isFunction(cb)) {
-        onAbortCallbacks.push(cb);
+    onAbort(callback: AbortFn) {
+      if (isFunction(callback)) {
+        onAbortCallbacks.push(callback);
       }
     },
     isAborted() {
-      return runIndicators.aborted;
+      return indicators.aborted;
     },
-    getState() {
-      return instance.state;
-    }
+    getState: instance.getState,
+    run: runFunction.bind(null, context),
+    runp: runpFunction.bind(null, context),
+    select: selectFunction.bind(null, context),
   };
-  Object.assign(props, effectsCreator(props, context.context));
 
   return props;
-
 
   function emit(
     updater: T | StateFunctionUpdater<T, E, R>,
     status?: Status
   ): void {
-    if (runIndicators.cleared && instance.state.status === aborted) {
+    if (indicators.cleared && instance.state.status === aborted) {
       if (__DEV__) {
         console.error("You are emitting while your producer is passing to aborted state." +
           "This has no effect and not supported by the library. The next " +
@@ -903,7 +903,7 @@ function constructPropsObject<T, E, R>(
       }
       return;
     }
-    if (!runIndicators.done) {
+    if (!indicators.done) {
       if (__DEV__) {
         console.error("Called props.emit before the producer resolves. This is" +
           " not supported in the library and will have no effect");
@@ -915,13 +915,13 @@ function constructPropsObject<T, E, R>(
     instance.isEmitting = false;
   }
 
-  function abort(reason: any): AbortFn | undefined {
-    if (runIndicators.aborted || runIndicators.cleared) {
+  function abort(reason?: any): AbortFn | undefined {
+    if (indicators.aborted || indicators.cleared) {
       return;
     }
 
-    if (!runIndicators.done) {
-      runIndicators.aborted = true;
+    if (!indicators.done) {
+      indicators.aborted = true;
       // in case we will be running right next, there is no need to step in the
       // aborted state since we'll be immediately (sync) later in pending again, so
       // we bail out this aborted state update.
@@ -935,7 +935,7 @@ function constructPropsObject<T, E, R>(
       }
     }
 
-    runIndicators.cleared = true;
+    indicators.cleared = true; // before calling user land onAbort that may emit
     onAbortCallbacks.forEach(function clean(func) {
       if (isFunction(func)) {
         func(reason);
@@ -1212,45 +1212,43 @@ function isCacheEnabled(instance: StateInterface<any>): boolean {
 //endregion
 
 //region producerEffects creators helpers
-function createRunFunction(context: LibraryPoolsContext) {
-  return function runEffectFunction<T, E, R>(
-    input: ProducerRunInput<T, E, R>,
-    config: ProducerRunConfig | null,
-    ...args: any[]
-  ) {
-    if (isSource(input)) {
-      return (input as Source<T, E, R>).getLaneSource(config?.lane).run(...args);
-    } else if (isFunction(input)) {
-      let instance = new AsyncState(
-        nextKey(), input, {
-          hideFromDevtools: true,
-          context: context.context
-        });
-      if (config?.payload) {
-        instance.mergePayload(config.payload)
-      }
-      return instance.run(...args);
-    } else if (typeof input === "string") {
-      let instance = context.getOrCreatePool(config?.pool).instances.get(input);
-
-      if (instance) {
-        return instance.getLane(config?.lane).run(...args);
-      }
+export function runFunction<T, E, R>(
+  context: LibraryPoolsContext,
+  input: ProducerRunInput<T, E, R>,
+  config: ProducerRunConfig | null,
+  ...args: any[]
+) {
+  if (isSource(input)) {
+    return (input as Source<T, E, R>).getLaneSource(config?.lane).run(...args);
+  } else if (isFunction(input)) {
+    let instance = new AsyncState(
+      nextKey(), input, {
+        hideFromDevtools: true,
+        context: context.context
+      });
+    if (config?.payload) {
+      instance.mergePayload(config.payload)
     }
-    return undefined;
+    return instance.run(...args);
+  } else if (typeof input === "string") {
+    let instance = context.getOrCreatePool(config?.pool).instances.get(input);
+
+    if (instance) {
+      return instance.getLane(config?.lane).run(...args);
+    }
   }
+  return undefined;
 }
 
-function runpEffectFunction<T, E, R>(
+export function runpFunction<T, E, R>(
   context: LibraryPoolsContext,
-  props: ProducerProps<T, E, R>,
   input: ProducerRunInput<T, E, R>,
   config: ProducerRunConfig | null,
   ...args: any[]
 ) {
   if (isSource(input)) {
     let instance = readSource(input as Source<T, E, R>).getLane(config?.lane);
-    return runWhileSubscribingToNextResolve(instance, props, args);
+    return instance.runp.apply(null, args);
   } else if (isFunction(input)) {
 
     let instance = new AsyncState(nextKey(),
@@ -1261,68 +1259,31 @@ function runpEffectFunction<T, E, R>(
     if (config?.payload) {
       instance.mergePayload(config.payload);
     }
-    return runWhileSubscribingToNextResolve(instance, props, args);
+    return instance.runp.apply(null, args);
 
   } else if (typeof input === "string") {
     let instance = context.getOrCreatePool().instances.get(input);
     if (instance) {
-      return runWhileSubscribingToNextResolve(instance.getLane(config?.lane), props, args);
+      return instance.getLane(config?.lane).runp.apply(null, args);
     }
   }
   return undefined;
 }
 
-function runWhileSubscribingToNextResolve<T, E, R>(
-  instance: StateInterface<T, E, R>,
-  props: ProducerProps<T, E, R>,
-  args
-): Promise<State<T, E, R>> {
-  return new Promise(resolve => {
-    let unsubscribe = instance.subscribe({cb: subscription});
-    props.onAbort(unsubscribe);
-
-    let abort = instance.run(...args);
-    props.onAbort(abort);
-
-    function subscription(newState: State<T, E, R>) {
-      if (newState.status === success
-        || newState.status === error) {
-        if (isFunction(unsubscribe)) {
-          unsubscribe();
-        }
-        resolve(newState);
-      }
-    }
-  });
-}
-
-function createSelectFunction(context: LibraryPoolsContext) {
-  return function selectEffectFunction<T, E, R>(
-    input: ProducerRunInput<T, E, R>,
-    lane?: string,
-  ) {
-    if (isSource(input)) {
-      return (input as Source<T, E, R>).getLaneSource(lane).getState()
-    } else if (typeof input === "string") {
-      let pool = context.getOrCreatePool();
-      let instance = pool.instances.get(input);
-      if (instance) {
-        return instance.getState();
-      }
+export function selectFunction<T, E, R>(
+  context: LibraryPoolsContext,
+  input: ProducerRunInput<T, E, R>,
+  lane?: string,
+) {
+  if (isSource(input)) {
+    return (input as Source<T, E, R>).getLaneSource(lane).getState()
+  } else if (typeof input === "string") {
+    let pool = context.getOrCreatePool();
+    let instance = pool.instances.get(input);
+    if (instance) {
+      return instance.getState();
     }
   }
-}
-
-export function effectsCreator<T, E, R>(
-  props: ProducerProps<T, E, R>,
-  context?: any
-): ProducerEffects {
-  let executionContext = requestContext(context);
-  return {
-    run: createRunFunction(executionContext),
-    select: createSelectFunction(executionContext),
-    runp: runpEffectFunction.bind(null, executionContext, props),
-  };
 }
 
 //endregion

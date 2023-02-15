@@ -1,4 +1,4 @@
-import {initial, pending, success, aborted, error, Status} from "../enums";
+import {initial, pending, success, error, Status} from "../enums";
 import {
   AbortedState,
   ErrorState,

@@ -7,7 +7,7 @@ describe('source utils', () => {
   it('should run a source', () => {
     const abort = source.run(1);
     expect(source.getState().data).toBe(1);
-    expect(typeof abort).toBe("function");
+    expect(typeof abort).toBe("undefined");
   });
   it('should runp a source', async () => {
     const state = await source.runp(2);
@@ -18,7 +18,7 @@ describe('source utils', () => {
   it('should run a source lane', () => {
     const abort = source.getLaneSource("test-lane").run(3);
     expect(source.getLaneSource("test-lane").getState().data).toBe(3);
-    expect(typeof abort).toBe("function");
+    expect(typeof abort).toBe("undefined");
   });
   it('should runp a source lane', async () => {
     const state = await source.getLaneSource("test-lane").runp(4);

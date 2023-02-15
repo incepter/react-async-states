@@ -6,19 +6,29 @@ import {
   Producer,
   ProducerProps,
   ProducerSavedProps,
-  ProducerWrapperInput,
   RunIndicators,
   State,
-  StateFunctionUpdater,
-  Status,
   SuccessState,
 } from "react-async-states";
-import {effectsCreator, producerWrapper, StateBuilder} from "async-states";
-import {isFunction, noop} from "./utils";
+import {
+  RetryConfig,
+  runner,
+  StateBuilder,
+  LibraryPoolsContext,
+  ProducerCallbacks,
+  requestContext,
+  runFunction,
+  runpFunction,
+  selectFunction,
+  Status
+} from "async-states";
+import {isFunction} from "./utils";
 
 type RuncConfig<T, E = any, R = any> = {
+  context?: any,
   initialValue?: T,
-  producer: Producer<T, E, R> | null | undefined,
+  producer: Producer<T, E, R>,
+  retryConfig?: RetryConfig<T, E, R>,
 
   onError?(e: ErrorState<T, E>),
   onSuccess?(s: SuccessState<T>),
@@ -30,42 +40,21 @@ type RuncConfig<T, E = any, R = any> = {
 }
 
 export function runc<T, E = any, R = any>(config: RuncConfig<T, E, R>): AbortFn {
+  let context = requestContext(config.context);
+  let {producer, retryConfig, payload, args} = config;
   let initialState = StateBuilder.initial(config.initialValue as T);
+
   let state: State<T, E, R> = initialState;
-
-  let clonedPayload = Object.assign({}, config.payload);
-  let input: ProducerWrapperInput<T, E, R> = {
-    instance: undefined,
-    setState(
-      updater: StateFunctionUpdater<T, E, R> | T,
-      status: Status = Status.success,
-    ): void {
-      let effectiveValue = updater;
-      if (isFunction(updater)) {
-        effectiveValue = (updater as StateFunctionUpdater<T, E, R>)(this.state);
-      }
-      // @ts-ignore
-      const savedProps = cloneProducerProps({
-        args: [effectiveValue],
-        payload: clonedPayload,
-      });
-      // @ts-ignore
-      state = StateBuilder[status](effectiveValue, savedProps);
-    },
-    setSuspender: noop,
-    getProducer: () => config.producer,
-    replaceState: (newState) => state = newState,
-  }
-
-  let realProducer = producerWrapper.bind(null, input);
-  let runIndicators = {cleared: false, aborted: false, fulfilled: false, attempt: 1};
+  let clonedPayload = Object.assign({}, payload);
+  let runIndicators = {cleared: false, aborted: false, done: false, index: 1};
 
   let producerProps: ProducerProps<T, E, R> = constructPropsObject(
+    context,
     initialState,
     onAborted,
     runIndicators,
     clonedPayload,
-    config.args || [],
+    args || [],
   );
 
   function onAborted(a: AbortedState<T, E, R>) {
@@ -74,24 +63,48 @@ export function runc<T, E = any, R = any>(config: RuncConfig<T, E, R>): AbortFn 
     config.onFulfillment?.(state);
   }
 
-  realProducer(producerProps, runIndicators, {
-    onAborted,
-    onSuccess(s: SuccessState<T>) {
-      state = s;
-      config.onSuccess?.(state);
-      config.onFulfillment?.(state);
+  runner(
+    producer,
+    producerProps,
+    runIndicators,
+    function onSettled(
+      data: T | E,
+      status: Status.success | Status.error,
+      savedProps: ProducerSavedProps<T>,
+      callbacks?: ProducerCallbacks<T, E, R>
+    ) {
+      if (savedProps === null) {
+        // this means there were no producer at all, and this is an imperative update
+        // @ts-ignore need to overload setState to accept E and R too with their statuses
+        instance.setState(data, status, callbacks);
+        return;
+      }
+      state = Object.freeze(
+        {status, data, props: savedProps, timestamp: Date.now()} as
+          (SuccessState<T> | ErrorState<T, E>)
+      )
     },
-    onError(e: ErrorState<T, E>) {
-      state = e;
-      config.onError?.(state);
-      config.onFulfillment?.(state);
-    },
-  });
+    retryConfig,
+    {
+      onAborted,
+      onSuccess(s: SuccessState<T>) {
+        state = s;
+        config.onSuccess?.(state);
+        config.onFulfillment?.(state);
+      },
+      onError(e: ErrorState<T, E>) {
+        state = e;
+        config.onError?.(state);
+        config.onFulfillment?.(state);
+      },
+    }
+  )
 
   return producerProps.abort;
 }
 
 function constructPropsObject<T, E, R>(
+  context: LibraryPoolsContext,
   initialState: InitialState<T>,
   onAborted: (abortedState: AbortedState<T, E, R>) => void,
   runIndicators: RunIndicators,
@@ -116,8 +129,11 @@ function constructPropsObject<T, E, R>(
     isAborted() {
       return runIndicators.aborted;
     },
+
+    run: runFunction.bind(null, context),
+    runp: runpFunction.bind(null, context),
+    select: selectFunction.bind(null, context),
   };
-  Object.assign(props, effectsCreator(props));
 
   return props;
 
@@ -130,7 +146,7 @@ function constructPropsObject<T, E, R>(
       return;
     }
 
-    if (!runIndicators.fulfilled) {
+    if (!runIndicators.done) {
       runIndicators.aborted = true;
       let abortedState = StateBuilder.aborted<T, E, R>(reason, cloneProducerProps(props));
       onAborted(abortedState);
@@ -140,7 +156,7 @@ function constructPropsObject<T, E, R>(
     onAbortCallbacks.forEach(function clean(func) {
 
       if (isFunction(func)) {
-        func!(reason);
+        func(reason);
       }
     });
   }
