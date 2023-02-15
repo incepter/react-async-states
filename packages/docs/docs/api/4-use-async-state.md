@@ -587,10 +587,6 @@ The supported events are:
 #### `subscribe`
 This event handler is called once a subscription to a state occurs.
 
-```typescript
-
-```
-
 This should be mainly used to attach event listeners that may `run` the producer
 or do another side effect.
 

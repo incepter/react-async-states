@@ -36,7 +36,7 @@ describe('should subscribe to an async state in provider', () => {
       const {
         devFlags,
         state,
-      }: UseAsyncState<number> = useAsyncState({key: subscribesTo, wait});
+      } = useAsyncState<number>({key: subscribesTo, wait});
 
       return (
         <div>

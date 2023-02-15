@@ -16,27 +16,21 @@ const config = {
   organizationName: 'incepter', // Usually your GitHub org/user name.
   projectName: 'react-async-states', // Usually your repo name.
 
-  plugins: [
-    [
-      '@docusaurus/plugin-google-analytics',
-      {
-        anonymizeIP: true,
-        trackingID: 'G-WT8TFH0HBF',
-      },
-    ],
-  ],
   presets: [
     [
       '@docusaurus/preset-classic',
       /** @type {import('@docusaurus/preset-classic').Options} */
       {
-
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
           editUrl: 'https://github.com/incepter/react-async-states/edit/main/packages/docs',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
+        },
+        gtag: {
+          trackingID: 'G-WT8TFH0HBF',
+          anonymizeIP: true,
         },
       },
     ],

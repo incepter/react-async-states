@@ -4,7 +4,9 @@ export {
   getSource,
   Sources,
   readSource,
-  effectsCreator
+  runFunction,
+  runpFunction,
+  selectFunction,
 } from "./AsyncState";
 
 export {
@@ -12,7 +14,6 @@ export {
 } from "./pool";
 
 export {RunEffect, Status} from "./enums";
-export {producerWrapper} from "./wrapper";
 export {isSource} from "./helpers/isSource";
 export {mapFlags} from "./helpers/mapFlags";
 export {StateBuilder} from "./helpers/StateBuilder";
@@ -87,3 +88,4 @@ export type {
   HookOwnState,
 } from "./state-hook/StateHook";
 
+export {run as runner} from "./wrapper"

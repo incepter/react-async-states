@@ -10,7 +10,7 @@ export function useProducer<T, E, R>(
 
   let caller;
   if (__DEV__) {
-    caller = useCallerName(4);
+    caller = useCallerName(3);
   }
   let result = useInternalAsyncState(caller, producer, []);
   result.source!.replaceProducer(producer);

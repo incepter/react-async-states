@@ -131,8 +131,7 @@ export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R>
   subscriptions?: Record<number, StateSubscription<T, E, R>> | null,
 
   // producer
-  suspender?: Promise<T>,
-  producer: ProducerFunction<T, E, R>,
+  promise?: Promise<T>,
   _producer: Producer<T, E, R> | undefined | null,
   pool: PoolInterface;
 
@@ -257,10 +256,10 @@ export interface ProducerProps<T, E = any, R = any> extends ProducerEffects {
 }
 
 export type RunIndicators = {
-  attempt: number,
+  index: number,
+  done: boolean,
   cleared: boolean,
   aborted: boolean,
-  fulfilled: boolean,
 }
 export type ProducerCallbacks<T, E, R> = {
   onError?(errorState: ErrorState<T, E>),
@@ -280,7 +279,7 @@ export type ProducerFunction<T, E = any, R = any> = (
 ) => AbortFn;
 export type ProducerConfig<T, E = any, R = any> = {
   skipPendingStatus?: boolean,
-  initialValue?: T | ((cache: Record<string, CachedState<T, E, R>>) => T),
+  initialValue?: T | ((cache?: Record<string, CachedState<T, E, R>>) => T),
   cacheConfig?: CacheConfig<T, E, R>,
   runEffectDurationMs?: number,
   runEffect?: RunEffect,
@@ -329,7 +328,7 @@ export type CreateSourceType = {
 export type SourcesType = {
   <T, E = any, R = any>(): Source<T, E, R>,
   for: CreateSourceType,
-  of<T, E = any, R = any>(key: string, pool?: string),
+  of<T, E = any, R = any>(key: string, pool?: string, context?: any),
 }
 
 export interface Source<T, E = any, R = any> extends BaseSource<T, E, R> {
@@ -381,7 +380,7 @@ export interface StateBuilderInterface {
   initial: <T> (initialValue: T) => InitialState<T>,
   pending: <T>(props: ProducerSavedProps<T>) => PendingState<T>,
   success: <T>(data: T, props: ProducerSavedProps<T> | null) => SuccessState<T>,
-  error: <T, E>(data: any, props: ProducerSavedProps<T>) => ErrorState<T, E>,
+  error: <T, E>(data: E, props: ProducerSavedProps<T>) => ErrorState<T, E>,
   aborted: <T, E, R>(
     reason: any, props: ProducerSavedProps<T>) => AbortedState<T, E, R>,
 }
@@ -477,3 +476,14 @@ export type ReplaceStateUpdateQueue<T, E, R> = {
 export type UpdateQueue<T, E, R> =
   ReplaceStateUpdateQueue<T, E, R>
   | SetStateUpdateQueue<T, E, R>
+
+export type OnSettled<T, E, R> = {
+  (
+    data: T, status: Status.success, savedProps: ProducerSavedProps<T>,
+    callbacks?: ProducerCallbacks<T, E, R>
+  ): void,
+  (
+    data: E, status: Status.error, savedProps: ProducerSavedProps<T>,
+    callbacks?: ProducerCallbacks<T, E, R>
+  ): void,
+}

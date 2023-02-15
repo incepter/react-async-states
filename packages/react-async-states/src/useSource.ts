@@ -10,7 +10,7 @@ export function useSource<T, E, R>(
 ): UseAsyncState<T, E, R, State<T, E, R>> {
   let caller;
   if (__DEV__) {
-    caller = useCallerName(4);
+    caller = useCallerName(3);
   }
   return useInternalAsyncState(caller, source, [source, lane], {lane});
 }
