@@ -381,7 +381,7 @@ export interface StateBuilderInterface {
   initial: <T> (initialValue: T) => InitialState<T>,
   pending: <T>(props: ProducerSavedProps<T>) => PendingState<T>,
   success: <T>(data: T, props: ProducerSavedProps<T> | null) => SuccessState<T>,
-  error: <T, E>(data: any, props: ProducerSavedProps<T>) => ErrorState<T, E>,
+  error: <T, E>(data: E, props: ProducerSavedProps<T>) => ErrorState<T, E>,
   aborted: <T, E, R>(
     reason: any, props: ProducerSavedProps<T>) => AbortedState<T, E, R>,
 }

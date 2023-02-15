@@ -1,42 +1,52 @@
 import {
-  AbortFn,
+  AbortFn, ErrorState, Producer,
   ProducerCallbacks,
-  ProducerProps,
+  ProducerProps, ProducerSavedProps,
   ProducerWrapperInput,
   RetryConfig,
-  RunIndicators
+  RunIndicators, SuccessState
 } from "./types";
 import {
-  __DEV__,
   cloneProducerProps,
   isFunction,
   isGenerator,
   isPromise
 } from "./utils";
-import devtools from "./devtools/Devtools";
 import {StateBuilder} from "./helpers/StateBuilder";
+import {Status, success, error as errorStatus} from "./enums";
+import {freeze, now} from "./helpers/corejs";
 
-export function producerWrapper<T, E = any, R = any>(
-  input: ProducerWrapperInput<T, E, R>,
+type OnSettled<T, E, R> = {
+  (
+    data: T, status: Status.success, savedProps: ProducerSavedProps<T> | null,
+    callbacks?: ProducerCallbacks<T, E, R>
+  ): void,
+  (
+    data: E, status: Status.error, savedProps: ProducerSavedProps<T> | null,
+    callbacks?: ProducerCallbacks<T, E, R>
+  ): void,
+}
+
+function producerRunner<T, E, R>(
+  producer: Producer<T, E, R> | null | undefined,
   props: ProducerProps<T, E, R>,
   indicators: RunIndicators,
+  onSettled: OnSettled<T, E, R>,
+  retryConfig?: RetryConfig<T, E, R>,
   callbacks?: ProducerCallbacks<T, E, R>,
-): AbortFn {
-  let {instance,} = input;
-  let currentProducer = input.getProducer();
+): Promise<T> | undefined {
 
-  if (!isFunction(currentProducer)) {
+  if (!isFunction(producer)) {
     indicators.fulfilled = true;
-    input.setState(props.args[0], props.args[1], callbacks);
+    onSettled(props.args[0], props.args[1], null, callbacks);
     return;
   }
 
-  let pendingPromise;
+  let pendingPromise: Promise<T>;
   let executionValue;
-  let savedProps = cloneProducerProps(props);
 
   try {
-    executionValue = currentProducer(props);
+    executionValue = producer(props);
     // when producer runs, it can decide to bailout everything
     // by calling props.abort(reason?) as early as possible
     if (indicators.aborted) {
@@ -47,13 +57,11 @@ export function producerWrapper<T, E = any, R = any>(
     if (indicators.aborted) {
       return;
     }
-    if (__DEV__ && instance) devtools.emitRunSync(instance, savedProps);
     onFail(e);
     return;
   }
 
   if (isGenerator<T>(executionValue)) {
-    if (__DEV__ && instance) devtools.emitRunGenerator(instance, savedProps);
     let generatorResult;
     try {
       // generatorResult is either {done: boolean, value: T} or a Promise<T>
@@ -67,57 +75,95 @@ export function producerWrapper<T, E = any, R = any>(
       return;
     } else {
       pendingPromise = generatorResult;
-      input.setSuspender(pendingPromise);
-      input.replaceState(StateBuilder.pending(savedProps), true, callbacks);
     }
   } else if (isPromise(executionValue)) {
-    if (__DEV__ && instance) devtools.emitRunPromise(instance, savedProps);
     pendingPromise = executionValue;
-    input.setSuspender(pendingPromise);
-    input.replaceState(StateBuilder.pending(savedProps), true, callbacks);
   } else { // final value
-    if (__DEV__ && instance) devtools.emitRunSync(instance, savedProps);
     onSuccess(executionValue);
     return;
   }
 
-  pendingPromise.then(onSuccess, onFail);
+  // @ts-ignore
+  return pendingPromise.then(onSuccess, onFail);
 
-  function onSuccess(data: T) {
+  function onSuccess(data: T): T {
     if (!indicators.aborted) {
       indicators.fulfilled = true;
-      let successState = StateBuilder.success(data, savedProps);
-      input.replaceState(successState, true, callbacks);
+      onSettled(data, success, cloneProducerProps(props), callbacks);
     }
+    return data;
   }
 
   function onFail(error: E) {
-    if (!indicators.aborted) {
-      let retryConfig = instance?.config.retryConfig;
-      if (retryConfig && retryConfig.enabled) {
-        if (shouldRetry(indicators.attempt, retryConfig, error)) {
-          let backoff = getRetryBackoff(indicators.attempt, retryConfig, error);
-          indicators.attempt += 1;
-
-          if (isFunction(setTimeout)) {
-            let id = setTimeout(() => {
-              producerWrapper(input, props, indicators, callbacks);
-            }, backoff);
-
-            props.onAbort(() => {
-              clearTimeout(id);
-            });
-          } else {
-            producerWrapper(input, props, indicators, callbacks);
-          }
-          return;
-        }
-      }
-
-      indicators.fulfilled = true;
-      let errorState = StateBuilder.error<T, E>(error, savedProps);
-      input.replaceState(errorState, true, callbacks);
+    if (indicators.aborted) {
+      return;
     }
+    if (
+      retryConfig && retryConfig.enabled &&
+      shouldRetry(indicators.attempt, retryConfig, error)
+    ) {
+      let backoff = getRetryBackoff(indicators.attempt, retryConfig, error);
+      indicators.attempt += 1;
+
+      let id = setTimeout(() => {
+        producerRunner(producer, props, indicators, onSettled, retryConfig, callbacks);
+      }, backoff);
+
+      props.onAbort(() => {
+        clearTimeout(id);
+      });
+      return;
+    }
+
+    indicators.fulfilled = true;
+    onSettled(error, errorStatus, cloneProducerProps(props), callbacks);
+  }
+}
+
+
+export function producerWrapper<T, E = any, R = any>(
+  input: ProducerWrapperInput<T, E, R>,
+  props: ProducerProps<T, E, R>,
+  indicators: RunIndicators,
+  callbacks?: ProducerCallbacks<T, E, R>,
+) {
+  let {instance, getProducer, setState, replaceState, setSuspender} = input;
+
+  function onSettled(
+    data: T | E,
+    status: Status.success | Status.error,
+    savedProps: ProducerSavedProps<T> | null,
+    callbacks?: ProducerCallbacks<T, E, R>
+  ) {
+    if (savedProps === null) {
+      // this means there were no producer at all, and this is an imperative update
+      // @ts-ignore
+      setState(data, status, callbacks);
+      return;
+    }
+
+    let state = freeze(
+      {status, data, props: savedProps, timestamp: now()} as
+        (SuccessState<T> | ErrorState<T, E>)
+    );
+
+    replaceState(state, true, callbacks);
+  }
+
+  let result = producerRunner(
+    getProducer(),
+    props,
+    indicators,
+    onSettled,
+    instance?.config.retryConfig,
+    callbacks,
+  );
+
+  // not undefined means the request was asynchronous!
+  if (result !== undefined) {
+    setSuspender(result)
+    let pendingState = StateBuilder.pending(cloneProducerProps(props))
+    replaceState(pendingState, true, callbacks)
   }
 }
 
@@ -143,7 +189,8 @@ function getRetryBackoff<T, E, R>(
 ): number {
   let {backoff} = retryConfig;
   if (isFunction(backoff)) {
-    return (backoff as (attemptIndex:number, error: E) => number)(attempt, error);
+    return (backoff as (
+      attemptIndex: number, error: E) => number)(attempt, error);
   }
   return (backoff as number) || 0;
 }
