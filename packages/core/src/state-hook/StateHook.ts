@@ -5,25 +5,21 @@ import {
   MixedConfig,
   PartialUseAsyncStateConfiguration,
   SubscribeEventProps,
-  UseAsyncState, UseAsyncStateChangeEvent,
+  UseAsyncState,
   UseAsyncStateEventFn,
-  UseAsyncStateEvents,
   UseAsyncStateEventSubscribe
 } from "./types.internal";
 import {
   AbortFn,
+  LibraryPoolsContext,
   PoolInterface,
   Producer,
   ProducerConfig,
   Source,
   State,
-  StateInterface,
-  LibraryPoolsContext
+  StateInterface
 } from "../types";
-import {
-  readSource,
-  AsyncState,
-} from "../AsyncState";
+import {AsyncState, readSource,} from "../AsyncState";
 
 import {
   AUTO_RUN,
@@ -41,12 +37,8 @@ import {
   SUBSCRIBE_EVENTS,
   WAIT
 } from "./StateHookFlags";
-import {
-  __DEV__,
-  isFunction,
-  nextKey,
-} from "../utils";
-import {error, Status, pending} from "../enums";
+import {__DEV__, isFunction, nextKey,} from "../utils";
+import {error, pending} from "../enums";
 import {isSource} from "../helpers/isSource";
 import {freeze, isArray} from "../helpers/corejs";
 import {mapFlags} from "../helpers/mapFlags";
@@ -215,7 +207,10 @@ function resolveStandaloneInstance<T, E, R, S>(
   }
 
   let instance: StateInterface<T, E, R> = new AsyncState(
-    key, producer, Object.assign({}, producerConfig, {context: pool.context.context}), pool.simpleName);
+    key, producer, Object.assign({}, producerConfig, {
+      context: pool.context.context,
+      pool: pool.simpleName
+    }));
 
   if (flags & LANE) {
     let lane = readLaneFromConfig(config, overrides);
@@ -364,8 +359,8 @@ function createReadInConcurrentMode<T, E, R, S>(
   suspend: boolean = true,
   throwError: boolean = true,
 ) {
-  if (suspend && pending === instance.state.status && instance.suspender) {
-    throw instance.suspender;
+  if (suspend && pending === instance.state.status && instance.promise) {
+    throw instance.promise;
   }
   if (throwError && error === instance.state.status) {
     throw instance.state.data;

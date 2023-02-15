@@ -33,7 +33,6 @@ describe('AsyncState - fork', () => {
 
 
     expect(forkedAsyncState.key).not.toBe(myAsyncState.key);
-    expect(forkedAsyncState.producer).not.toBe(myAsyncState.producer);
     expect(forkedAsyncState.state).not.toBe(myAsyncState.state);// not same reference even if retrieved
   });
   it('should fork and keep state after run', async () => {

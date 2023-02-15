@@ -1,47 +1,22 @@
 import {
-  AbortFn, ErrorState, Producer,
+  OnSettled,
+  Producer,
   ProducerCallbacks,
-  ProducerProps, ProducerSavedProps,
-  ProducerWrapperInput,
+  ProducerProps,
   RetryConfig,
-  RunIndicators, SuccessState
+  RunIndicators
 } from "./types";
-import {
-  cloneProducerProps,
-  isFunction,
-  isGenerator,
-  isPromise
-} from "./utils";
-import {StateBuilder} from "./helpers/StateBuilder";
-import {Status, success, error as errorStatus} from "./enums";
-import {freeze, now} from "./helpers/corejs";
+import {cloneProducerProps, isFunction, isGenerator, isPromise} from "./utils";
+import {error as errorStatus, success} from "./enums";
 
-type OnSettled<T, E, R> = {
-  (
-    data: T, status: Status.success, savedProps: ProducerSavedProps<T> | null,
-    callbacks?: ProducerCallbacks<T, E, R>
-  ): void,
-  (
-    data: E, status: Status.error, savedProps: ProducerSavedProps<T> | null,
-    callbacks?: ProducerCallbacks<T, E, R>
-  ): void,
-}
-
-function producerRunner<T, E, R>(
-  producer: Producer<T, E, R> | null | undefined,
+export function runner<T, E, R>(
+  producer: Producer<T, E, R>,
   props: ProducerProps<T, E, R>,
   indicators: RunIndicators,
   onSettled: OnSettled<T, E, R>,
   retryConfig?: RetryConfig<T, E, R>,
   callbacks?: ProducerCallbacks<T, E, R>,
 ): Promise<T> | undefined {
-
-  if (!isFunction(producer)) {
-    indicators.fulfilled = true;
-    onSettled(props.args[0], props.args[1], null, callbacks);
-    return;
-  }
-
   let pendingPromise: Promise<T>;
   let executionValue;
 
@@ -88,7 +63,7 @@ function producerRunner<T, E, R>(
 
   function onSuccess(data: T): T {
     if (!indicators.aborted) {
-      indicators.fulfilled = true;
+      indicators.done = true;
       onSettled(data, success, cloneProducerProps(props), callbacks);
     }
     return data;
@@ -100,13 +75,13 @@ function producerRunner<T, E, R>(
     }
     if (
       retryConfig && retryConfig.enabled &&
-      shouldRetry(indicators.attempt, retryConfig, error)
+      shouldRetry(indicators.index, retryConfig, error)
     ) {
-      let backoff = getRetryBackoff(indicators.attempt, retryConfig, error);
-      indicators.attempt += 1;
+      let backoff = getRetryBackoff(indicators.index, retryConfig, error);
+      indicators.index += 1;
 
       let id = setTimeout(() => {
-        producerRunner(producer, props, indicators, onSettled, retryConfig, callbacks);
+        runner(producer, props, indicators, onSettled, retryConfig, callbacks);
       }, backoff);
 
       props.onAbort(() => {
@@ -115,55 +90,8 @@ function producerRunner<T, E, R>(
       return;
     }
 
-    indicators.fulfilled = true;
+    indicators.done = true;
     onSettled(error, errorStatus, cloneProducerProps(props), callbacks);
-  }
-}
-
-
-export function producerWrapper<T, E = any, R = any>(
-  input: ProducerWrapperInput<T, E, R>,
-  props: ProducerProps<T, E, R>,
-  indicators: RunIndicators,
-  callbacks?: ProducerCallbacks<T, E, R>,
-) {
-  let {instance, getProducer, setState, replaceState, setSuspender} = input;
-
-  function onSettled(
-    data: T | E,
-    status: Status.success | Status.error,
-    savedProps: ProducerSavedProps<T> | null,
-    callbacks?: ProducerCallbacks<T, E, R>
-  ) {
-    if (savedProps === null) {
-      // this means there were no producer at all, and this is an imperative update
-      // @ts-ignore
-      setState(data, status, callbacks);
-      return;
-    }
-
-    let state = freeze(
-      {status, data, props: savedProps, timestamp: now()} as
-        (SuccessState<T> | ErrorState<T, E>)
-    );
-
-    replaceState(state, true, callbacks);
-  }
-
-  let result = producerRunner(
-    getProducer(),
-    props,
-    indicators,
-    onSettled,
-    instance?.config.retryConfig,
-    callbacks,
-  );
-
-  // not undefined means the request was asynchronous!
-  if (result !== undefined) {
-    setSuspender(result)
-    let pendingState = StateBuilder.pending(cloneProducerProps(props))
-    replaceState(pendingState, true, callbacks)
   }
 }
 
@@ -218,7 +146,7 @@ function stepGenerator<T>(
       );
 
       function abortFn() {
-        if (!indicators.fulfilled && !indicators.aborted) {
+        if (!indicators.done && !indicators.aborted) {
           abortGenerator();
         }
       }

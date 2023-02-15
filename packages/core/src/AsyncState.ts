@@ -18,6 +18,7 @@ import {
   AsyncStateSubscribeProps,
   CachedState,
   CreateSourceObject,
+  ErrorState,
   ForkConfig,
   HydrationData,
   InitialState,
@@ -30,7 +31,7 @@ import {
   InstanceEventHandlerType,
   InstanceEvents,
   InstanceEventType,
-  LibraryPoolsContext, PendingState,
+  LibraryPoolsContext,
   PendingTimeout,
   PendingUpdate,
   PoolInterface,
@@ -38,10 +39,10 @@ import {
   ProducerCallbacks,
   ProducerConfig,
   ProducerEffects,
-  ProducerFunction,
   ProducerProps,
   ProducerRunConfig,
   ProducerRunInput,
+  ProducerSavedProps,
   RUNCProps,
   RunIndicators,
   RunTask,
@@ -60,62 +61,60 @@ import {
   requestContext,
   warnAboutAlreadyExistingSourceWithSameKey
 } from "./pool";
-import {producerWrapper} from "./wrapper";
+import {runner} from "./wrapper";
 import {isSource, sourceSymbol} from "./helpers/isSource";
 import {StateBuilder} from "./helpers/StateBuilder";
-import {freeze, isArray} from "./helpers/corejs";
+import {freeze, isArray, now} from "./helpers/corejs";
 
 export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
-  //region properties
+  journal?: any[];
+
+  _source: Source<T, E, R>;
+  _producer: Producer<T, E, R> | undefined;
+
   key: string;
   uniqueId: number;
   version: number = 0;
-  _source: Source<T, E, R>;
-  config: ProducerConfig<T, E, R>;
-
-  state: State<T, E, R>;
-  lastSuccess: SuccessState<T> | InitialState<T>;
-  events?: InstanceEvents<T, E, R>;
-  eventsIndex?: number;
-  queue?: UpdateQueue<T, E, R>;
-  flushing?: boolean;
-
-  _producer: Producer<T, E, R> | undefined;
-
-  //
+  private locks?: number;
   payload?: Record<string, any>;
-  journal?: any[];
+  config: ProducerConfig<T, E, R>;
   cache?: Record<string, CachedState<T, E, R>>;
+
+  promise?: Promise<T>;
+  currentAbort?: AbortFn;
+  state: State<T, E, R>;
+  queue?: UpdateQueue<T, E, R>;
+  pendingUpdate?: PendingUpdate | null;
+  private pendingTimeout?: PendingTimeout | null;
+  lastSuccess: SuccessState<T> | InitialState<T>;
+
+  flushing?: boolean;
+  eventsIndex?: number;
+  events?: InstanceEvents<T, E, R>;
+
   forksIndex?: number;
   parent?: StateInterface<T, E, R> | null;
   lanes?: Record<string, StateInterface<T, E, R>> | null;
+
   subsIndex?: number;
   subscriptions?: Record<number, StateSubscription<T, E, R>> | null;
-  suspender?: Promise<T>;
-  pendingUpdate?: PendingUpdate | null;
-  private pendingTimeout?: PendingTimeout | null;
-  latestRun?: RunTask<T, E, R> | null;
+
   willUpdate?: boolean;
-  currentAbort?: AbortFn;
-  private locks?: number;
   isEmitting?: boolean;
+  latestRun?: RunTask<T, E, R> | null;
 
-  readonly producer: ProducerFunction<T, E, R>;
   readonly pool: PoolInterface;
-
-
-  //endregion
 
   constructor(
     key: string,
     producer: Producer<T, E, R> | undefined | null,
     config?: ProducerConfig<T, E, R>,
-    poolName?: string,
   ) {
 
     let ctx = config && config.context;
     let {poolInUse: poolToUse, getOrCreatePool} = requestContext(ctx);
 
+    let poolName = config && config.pool;
     if (poolName) {
       poolToUse = getOrCreatePool(poolName);
     }
@@ -146,14 +145,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     this._producer = producer ?? undefined;
 
     loadCache(this);
-    let instance = this;
-    this.producer = producerWrapper.bind(null, {
-      instance: this,
-      setState: this.setState,
-      getProducer: () => instance._producer,
-      replaceState: this.replaceState.bind(this),
-      setSuspender: (suspender: Promise<T>) => instance.suspender = suspender,
-    });
 
     let maybeHydratedState = attemptHydratedState<T, E, R>(this.pool.name, this.key);
     if (maybeHydratedState) {
@@ -362,7 +353,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     }
 
     if (!isPending) {
-      this.suspender = undefined;
+      this.promise = undefined;
     }
 
     if (notify && !this.flushing) {
@@ -415,7 +406,10 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     return cleanup;
   }
 
-  setState(newValue: T | StateFunctionUpdater<T, E, R>, status: Status = success, callbacks?: ProducerCallbacks<T, E, R>): void {
+  setState(
+    newValue: T | StateFunctionUpdater<T, E, R>, status: Status = success,
+    callbacks?: ProducerCallbacks<T, E, R>
+  ): void {
     if (!StateBuilder[status]) {
       throw new Error(`Unknown status ('${status}')`);
     }
@@ -564,11 +558,11 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     payload: Record<string, any> | null,
     runProps?: RUNCProps<T, E, R>,
   ): AbortFn {
+
     let instance = this;
+    let args = runProps?.args || emptyArray;
 
-    instance.willUpdate = true;
-    let execArgs = runProps?.args || emptyArray;
-
+    this.willUpdate = true;
     if (instance.state.status === pending || instance.pendingUpdate) {
       if (this.pendingUpdate) {
         clearTimeout(this.pendingUpdate.timeoutId);
@@ -577,67 +571,65 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       this.abort();
       this.currentAbort = undefined;
     } else if (isFunction(this.currentAbort)) {
-      this.abort();
+      this.currentAbort();
     }
 
-    if (isCacheEnabled(this)) {
-      let topLevelParent: StateInterface<T, E, R> = getTopLevelParent(this);
-
-      let {cacheConfig} = this.config;
-
-      let hashFunction = cacheConfig && cacheConfig.hash || defaultHash;
-
-      let runHash = hashFunction(execArgs, payload);
-      let cachedState = topLevelParent.cache?.[runHash];
-
-      if (cachedState) {
-        if (didNotExpire(cachedState)) {
-          if (cachedState.state !== this.state) {
-            this.replaceState(cachedState.state, true, runProps);
-          }
-          if (__DEV__) devtools.emitRunConsumedFromCache(this, payload, execArgs);
-          return;
-        } else {
-          delete topLevelParent.cache![runHash];
-
-          if (
-            topLevelParent.cache &&
-            isFunction(topLevelParent.config.cacheConfig?.persist)
-          ) {
-            topLevelParent.config.cacheConfig!.persist(topLevelParent.cache);
-          }
-          spreadCacheChangeOnLanes(topLevelParent);
-        }
-      }
+    let didConsumeFromCache = attemptCache(this, payload, runProps);
+    if (didConsumeFromCache) {
+      this.willUpdate = false;
+      return;
     }
 
-    const runIndicators = {
-      attempt: 1,
-      cleared: false, // abort was called and abort callbacks were removed
-      aborted: false, // aborted before fulfillment
-      fulfilled: false, // resolved to something, either success or error
-    };
+    this.latestRun = {payload, args};
+    let producer = instance._producer;
 
-    this.latestRun = {payload, args: execArgs};
-
-    let callbacks: ProducerCallbacks<T, E, R> | undefined = undefined;
-    if (runProps) {
-      callbacks = {
-        onError: runProps.onError,
-        onSuccess: runProps.onSuccess,
-        onAborted: runProps.onAborted,
-      };
+    if (!isFunction(producer)) {
+      instance.setState(args[0], args[1], runProps);
+      this.willUpdate = false;
+      return;
     }
 
-    const props = constructPropsObject(this, callbacks, runIndicators, payload, execArgs);
+    let {retryConfig} = instance.config;
+    let indicators = {index: 1, done: false, cleared: false, aborted: false};
+    let props = constructPropsObject(this, runProps, indicators, payload, args);
 
-    const abort = props.abort;
-    this.currentAbort = abort;
-    this.producer(props, runIndicators, callbacks);
+    // this is actually the real producer run
+    let result = runner(producer, props, indicators, onSettled, retryConfig, runProps);
+
+    if (result) { // Promise<T>
+      if (__DEV__) devtools.emitRunPromise(this, cloneProducerProps(props));
+
+      this.promise = result;
+      this.currentAbort = props.abort;
+      let pendingState = StateBuilder.pending(cloneProducerProps(props));
+      this.replaceState(pendingState, true, runProps);
+
+      this.willUpdate = false;
+      return props.abort;
+    } else if (__DEV__) {
+      devtools.emitRunSync(this, cloneProducerProps(props));
+    }
 
     this.willUpdate = false;
 
-    return abort;
+    function onSettled(
+      data: T | E,
+      status: Status.success | Status.error,
+      savedProps: ProducerSavedProps<T>,
+      callbacks?: ProducerCallbacks<T, E, R>
+    ) {
+      if (savedProps === null) {
+        // this means there were no producer at all, and this is an imperative update
+        // @ts-ignore need to overload setState to accept E and R too with their status
+        instance.setState(data, status, callbacks);
+        return;
+      }
+      let state = freeze(
+        {status, data, props: savedProps, timestamp: now()} as
+          (SuccessState<T> | ErrorState<T, E>)
+      );
+      instance.replaceState(state, true, callbacks);
+    }
   }
 
   abort(reason: any = undefined) {
@@ -684,7 +676,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       key = `${this.key}-fork-${this.forksIndex + 1}`;
     }
 
-    const clone = new AsyncState(key, this._producer, this.config, this.pool.simpleName);
+    let clone = new AsyncState(key, this._producer, this.config);
 
     // if something fail, no need to increment
     this.forksIndex += 1;
@@ -722,6 +714,42 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
 //region AsyncState methods helpers
 
+function attemptCache<T, E, R>(
+  instance: StateInterface<T, E, R>, payload, runProps?: RUNCProps<T, E, R>
+): boolean {
+  if (isCacheEnabled(this)) {
+    let args = runProps && runProps.args || emptyArray;
+    let topLevelParent: StateInterface<T, E, R> = getTopLevelParent(this);
+
+    let {cacheConfig} = this.config;
+    let hashFunction = cacheConfig && cacheConfig.hash || defaultHash;
+
+    let runHash = hashFunction(args, payload);
+    let cachedState = topLevelParent.cache?.[runHash];
+
+    if (cachedState) {
+      if (didNotExpire(cachedState)) {
+        if (cachedState.state !== this.state) {
+          this.replaceState(cachedState.state, true, runProps);
+        }
+        if (__DEV__) devtools.emitRunConsumedFromCache(this, payload, args);
+        return true;
+      } else {
+        delete topLevelParent.cache![runHash];
+
+        if (
+          topLevelParent.cache &&
+          isFunction(topLevelParent.config.cacheConfig?.persist)
+        ) {
+          topLevelParent.config.cacheConfig!.persist(topLevelParent.cache);
+        }
+        spreadCacheChangeOnLanes(topLevelParent);
+      }
+    }
+  }
+  return false;
+}
+
 function invokeChangeCallbacks<T, E, R>(
   state: State<T, E, R>,
   callbacks: ProducerCallbacks<T, E, R> | undefined
@@ -729,7 +757,7 @@ function invokeChangeCallbacks<T, E, R>(
   if (!callbacks) {
     return;
   }
-  let {onError, onAborted, onSuccess}  = callbacks;
+  let {onError, onAborted, onSuccess} = callbacks;
   if (onSuccess && state.status === success) {
     onSuccess(state);
   }
@@ -775,6 +803,7 @@ export function attemptHydratedState<T, E, R>(
 
   return maybeState as HydrationData<T, E, R>;
 }
+
 function invokeSingleChangeEvent<T, E, R>(
   state: State<T, E, R>,
   event: StateChangeEventHandler<T, E, R>
@@ -844,8 +873,6 @@ function constructPropsObject<T, E, R>(
     args,
     abort,
     payload,
-    // todo: lastSuccess is error prone, since emit stays alive and may read a wrong result from here
-    // but has low priority since getState returns the very current state
     lastSuccess: instance.lastSuccess,
     onAbort(cb: AbortFn) {
       if (isFunction(cb)) {
@@ -876,7 +903,7 @@ function constructPropsObject<T, E, R>(
       }
       return;
     }
-    if (!runIndicators.fulfilled) {
+    if (!runIndicators.done) {
       if (__DEV__) {
         console.error("Called props.emit before the producer resolves. This is" +
           " not supported in the library and will have no effect");
@@ -893,7 +920,7 @@ function constructPropsObject<T, E, R>(
       return;
     }
 
-    if (!runIndicators.fulfilled) {
+    if (!runIndicators.done) {
       runIndicators.aborted = true;
       // in case we will be running right next, there is no need to step in the
       // aborted state since we'll be immediately (sync) later in pending again, so
@@ -910,7 +937,6 @@ function constructPropsObject<T, E, R>(
 
     runIndicators.cleared = true;
     onAbortCallbacks.forEach(function clean(func) {
-
       if (isFunction(func)) {
         func(reason);
       }
@@ -925,12 +951,9 @@ export function createSource<T, E = any, R = any>(
   maybeConfig?: ProducerConfig<T, E, R>,
 ): Source<T, E, R> {
   if (typeof props === "object") {
-    let config = props.config;
-    let pool = config && config.pool;
-    return new AsyncState(props.key, props.producer, config, pool)._source;
+    return new AsyncState(props.key, props.producer, props.config)._source;
   }
-  let pool = maybeConfig && maybeConfig.pool;
-  return new AsyncState(props, maybeProducer, maybeConfig, pool)._source;
+  return new AsyncState(props, maybeProducer, maybeConfig)._source;
 }
 
 export function getSource(key: string, poolName?: string, context?: any) {

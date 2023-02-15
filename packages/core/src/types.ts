@@ -131,8 +131,7 @@ export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R>
   subscriptions?: Record<number, StateSubscription<T, E, R>> | null,
 
   // producer
-  suspender?: Promise<T>,
-  producer: ProducerFunction<T, E, R>,
+  promise?: Promise<T>,
   _producer: Producer<T, E, R> | undefined | null,
   pool: PoolInterface;
 
@@ -257,10 +256,10 @@ export interface ProducerProps<T, E = any, R = any> extends ProducerEffects {
 }
 
 export type RunIndicators = {
-  attempt: number,
+  index: number,
+  done: boolean,
   cleared: boolean,
   aborted: boolean,
-  fulfilled: boolean,
 }
 export type ProducerCallbacks<T, E, R> = {
   onError?(errorState: ErrorState<T, E>),
@@ -477,3 +476,14 @@ export type ReplaceStateUpdateQueue<T, E, R> = {
 export type UpdateQueue<T, E, R> =
   ReplaceStateUpdateQueue<T, E, R>
   | SetStateUpdateQueue<T, E, R>
+
+export type OnSettled<T, E, R> = {
+  (
+    data: T, status: Status.success, savedProps: ProducerSavedProps<T>,
+    callbacks?: ProducerCallbacks<T, E, R>
+  ): void,
+  (
+    data: E, status: Status.error, savedProps: ProducerSavedProps<T>,
+    callbacks?: ProducerCallbacks<T, E, R>
+  ): void,
+}

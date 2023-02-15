@@ -12,7 +12,6 @@ export {
 } from "./pool";
 
 export {RunEffect, Status} from "./enums";
-export {producerWrapper} from "./wrapper";
 export {isSource} from "./helpers/isSource";
 export {mapFlags} from "./helpers/mapFlags";
 export {StateBuilder} from "./helpers/StateBuilder";
