@@ -482,3 +482,14 @@ export type OnSettled<T, E, R> = {
     callbacks?: ProducerCallbacks<T, E, R>
   ): void,
 }
+export type CreatePropsConfig<T, E, R> = {
+  context: LibraryPoolsContext,
+  args: any[],
+  payload?: Record<string, any>,
+  indicators: RunIndicators,
+  lastSuccess: LastSuccessSavedState<T>,
+  getState: () => State<T, E, R>,
+  onEmit: (updater: T | StateFunctionUpdater<T, E, R>, status?: Status) => void,
+  onAborted: (reason?: R) => void,
+  onCleared: () => void
+}
