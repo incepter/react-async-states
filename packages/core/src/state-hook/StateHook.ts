@@ -346,9 +346,9 @@ export function hookReturn<T, E, R, S>(
   if (instance) {
     newState.read = createReadInConcurrentMode.bind(null, instance, newValue);
     newState.version = instance?.version;
+    newState.lastSuccess = instance.lastSuccess;
   }
   newState.state = newValue;
-  newState.lastSuccess = instance?.lastSuccess;
 
   return freeze(newState);
 }

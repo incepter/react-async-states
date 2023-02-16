@@ -3,12 +3,11 @@ import {
   CacheConfig,
   CachedState,
   ForkConfig,
-  InitialState,
+  LastSuccessSavedState,
   Producer,
   ProducerConfig,
   Source,
-  State,
-  SuccessState
+  State
 } from "../types";
 import {RunEffect, Status} from "../enums";
 import {HookChangeEvents} from "./StateHook";
@@ -17,18 +16,23 @@ export interface BaseUseAsyncState<T, E, R, S = State<T, E, R>> extends Source<T
   flags?: number,
   source?: Source<T, E, R>,
   devFlags?: string[],
+
   onChange(
-    events: ((prevEvents?: HookChangeEvents<T, E, R>) => void)| HookChangeEvents<T, E, R>
+    events: ((prevEvents?: HookChangeEvents<T, E, R>) => void) | HookChangeEvents<T, E, R>
   ): void,
+
   onSubscribe(
-    events: ((prevEvents?: UseAsyncStateEventSubscribe<T, E, R>) => void)| UseAsyncStateEventSubscribe<T, E, R>
+    events: ((prevEvents?: UseAsyncStateEventSubscribe<T, E, R>) => void) | UseAsyncStateEventSubscribe<T, E, R>
   ): void,
 }
+
 export interface UseAsyncState<T, E = any, R = any, S = State<T, E, R>> extends BaseUseAsyncState<T, E, R, S> {
   state: S,
+
   read(suspend?: boolean, throwError?: boolean): S,
+
   version?: number,
-  lastSuccess?: SuccessState<T> | InitialState<T>,
+  lastSuccess?: LastSuccessSavedState<T>,
 }
 
 export type EqualityFn<T> = (
@@ -48,7 +52,10 @@ export interface BaseConfig<T, E, R> extends ProducerConfig<T, E, R> {
 
   wait?: boolean,
   lazy?: boolean,
-  condition?: boolean | ((state: State<T, E, R>, args?: any[], payload?: Record<string, any> | null) => boolean),
+  condition?: boolean | ((
+    state: State<T, E, R>, args?: any[],
+    payload?: Record<string, any> | null
+  ) => boolean),
 
   fork?: boolean,
   forkConfig?: ForkConfig
@@ -163,7 +170,7 @@ export type SubscribeEventProps<T, E = any, R = any> = Source<T, E, R>
 
 export type useSelector<T, E, R, S> =
   (
-    currentState: State<T, E, R>, lastSuccess: State<T, E, R>,
+    currentState: State<T, E, R>, lastSuccess: LastSuccessSavedState<T>,
     cache: { [id: string]: CachedState<T, E, R> } | null
   ) => S;
 

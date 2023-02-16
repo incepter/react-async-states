@@ -21,7 +21,6 @@ import {
   ErrorState,
   ForkConfig,
   HydrationData,
-  InitialState,
   InstanceCacheChangeEvent,
   InstanceCacheChangeEventHandlerType,
   InstanceChangeEvent,
@@ -31,6 +30,7 @@ import {
   InstanceEventHandlerType,
   InstanceEvents,
   InstanceEventType,
+  LastSuccessSavedState,
   LibraryPoolsContext,
   PendingTimeout,
   PendingUpdate,
@@ -84,8 +84,8 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   state: State<T, E, R>;
   queue?: UpdateQueue<T, E, R>;
   pendingUpdate?: PendingUpdate | null;
+  lastSuccess: LastSuccessSavedState<T>;
   private pendingTimeout?: PendingTimeout | null;
-  lastSuccess: SuccessState<T> | InitialState<T>;
 
   flushing?: boolean;
   eventsIndex?: number;
@@ -156,7 +156,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       } else {
         let initializer = this.config.initialValue;
         let initialData = isFunction(initializer) ? initializer(this.cache) : initializer;
-        this.lastSuccess = StateBuilder.initial(initialData);
+        this.lastSuccess = StateBuilder.initial(initialData) as LastSuccessSavedState<T>;
       }
     } else {
       let initializer = this.config.initialValue;
@@ -165,7 +165,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       let initialState = StateBuilder.initial(initialData);
 
       this.state = initialState;
-      this.lastSuccess = initialState;
+      this.lastSuccess = initialState as LastSuccessSavedState<T>;
     }
 
     if (__DEV__) {
@@ -554,7 +554,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   }
 
   private runImmediately(
-    payload: Record<string, any> | null,
+    payload: Record<string, any>,
     runProps?: RUNCProps<T, E, R>,
   ): AbortFn {
 
@@ -590,7 +590,30 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
     let {retryConfig} = instance.config;
     let indicators = {index: 1, done: false, cleared: false, aborted: false};
-    let props = constructPropsObject(this, runProps, indicators, payload, args);
+
+
+    let props = createProps({
+      args,
+      payload,
+      indicators,
+      getState: instance.getState,
+      context: instance.pool.context,
+      lastSuccess: instance.lastSuccess,
+      onCleared() {
+        instance.currentAbort = undefined;
+      },
+      onAborted(reason?: R) {
+        if (!instance.willUpdate) {
+          let abortedState = StateBuilder.aborted<T, E, R>(reason, cloneProducerProps(props));
+          instance.replaceState(abortedState, true, runProps);
+        }
+      },
+      onEmit(updater, status) {
+        instance.isEmitting = true;
+        instance.setState(updater, status, runProps);
+        instance.isEmitting = false;
+      },
+    });
 
     this.currentAbort = props.abort;
     let result = run(producer, props, indicators, onSettled, retryConfig, runProps);
@@ -860,21 +883,38 @@ function invokeInstanceEvents<T, E, R>(
   }
 }
 
-function constructPropsObject<T, E, R>(
-  instance: StateInterface<T, E, R>,
-  callbacks: ProducerCallbacks<T, E, R> | undefined,
+type CreatePropsConfig<T, E, R> = {
+  context: LibraryPoolsContext,
+  args: any[],
+  payload?: Record<string, any>,
   indicators: RunIndicators,
-  payload: Record<string, any> | null,
-  args: any[]
+  lastSuccess: LastSuccessSavedState<T>,
+  getState: () => State<T, E, R>,
+  onEmit: (updater: T | StateFunctionUpdater<T, E, R>, status?: Status) => void,
+  onAborted: (reason?: R) => void,
+  onCleared: () => void
+}
+
+export function createProps<T, E, R>({
+    context,
+    args,
+    payload,
+    indicators,
+    lastSuccess,
+    getState,
+    onEmit,
+    onAborted,
+    onCleared,
+  }: CreatePropsConfig<T, E, R>
 ): ProducerProps<T, E, R> {
-  let context = instance.pool.context;
   let onAbortCallbacks: AbortFn[] = [];
-  let props: ProducerProps<T, E, R> = {
+  return {
     emit,
     args,
     abort,
     payload,
-    lastSuccess: instance.lastSuccess,
+    getState,
+    lastSuccess,
     onAbort(callback: AbortFn) {
       if (isFunction(callback)) {
         onAbortCallbacks.push(callback);
@@ -883,19 +923,15 @@ function constructPropsObject<T, E, R>(
     isAborted() {
       return indicators.aborted;
     },
-    getState: instance.getState,
     run: runFunction.bind(null, context),
     runp: runpFunction.bind(null, context),
     select: selectFunction.bind(null, context),
   };
 
-  return props;
-
   function emit(
-    updater: T | StateFunctionUpdater<T, E, R>,
-    status?: Status
-  ): void {
-    if (indicators.cleared && instance.state.status === aborted) {
+    updater: T | StateFunctionUpdater<T, E, R>, status?: Status): void {
+    let state = getState();
+    if (indicators.cleared && state.status === aborted) {
       if (__DEV__) {
         console.error("You are emitting while your producer is passing to aborted state." +
           "This has no effect and not supported by the library. The next " +
@@ -910,9 +946,7 @@ function constructPropsObject<T, E, R>(
       }
       return;
     }
-    instance.isEmitting = true;
-    instance.setState(updater, status, callbacks);
-    instance.isEmitting = false;
+    onEmit(updater, status);
   }
 
   function abort(reason?: any): AbortFn | undefined {
@@ -929,10 +963,7 @@ function constructPropsObject<T, E, R>(
       // from aborts that will be called synchronously
       // by the library replace the state again
       // these state updates are only with aborted status
-      if (!instance.willUpdate) {
-        let abortedState = StateBuilder.aborted<T, E, R>(reason, cloneProducerProps(props));
-        instance.replaceState(abortedState, true, callbacks);
-      }
+      onAborted(reason);
     }
 
     indicators.cleared = true; // before calling user land onAbort that may emit
@@ -941,8 +972,10 @@ function constructPropsObject<T, E, R>(
         func(reason);
       }
     });
-    instance.currentAbort = undefined;
+    onCleared();
+    // instance.currentAbort = undefined;
   }
+
 }
 
 export function createSource<T, E = any, R = any>(
