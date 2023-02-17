@@ -8,11 +8,18 @@ import {
 } from "./types";
 import {version} from "../package.json";
 import {__DEV__, isServer, maybeWindow} from "./utils";
-
+import {freeze} from "./helpers/corejs";
 
 let defaultPoolName = "default";
-let globalContext = maybeWindow || globalThis || null;
 let didWarnAboutExistingInstanceRecreation = false;
+let globalContext = maybeWindow || globalThis || null;
+
+let DEFAULT_POOL_CONTEXT = createContext(null);
+let poolsContexts = new WeakMap<any, LibraryPoolsContext>;
+let libraryVersion = freeze({
+  version,
+  copyright: 'Incepter'
+})
 
 function createPool(name: string, context: LibraryPoolsContext): PoolInterface {
   let meter = 0;
@@ -21,9 +28,9 @@ function createPool(name: string, context: LibraryPoolsContext): PoolInterface {
   let instances = new Map<string, StateInterface<any>>();
   return {
     context,
-    version,
     instances,
     simpleName: name,
+    version: libraryVersion,
     name: getPoolName(name),
 
     set,
@@ -219,9 +226,6 @@ export function createContext(ctx: any): LibraryPoolsContext {
 
   return poolsContext;
 }
-
-let poolsContexts = new WeakMap<any, LibraryPoolsContext>;
-let DEFAULT_POOL_CONTEXT = createContext(null);
 
 export function getContext(ctx: any): LibraryPoolsContext | undefined {
   if (ctx === null) {

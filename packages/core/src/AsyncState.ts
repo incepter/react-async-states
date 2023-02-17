@@ -16,7 +16,8 @@ import {hideStateInstanceInNewObject} from "./hide-object";
 import {
   AbortFn,
   AsyncStateSubscribeProps,
-  CachedState, CreatePropsConfig,
+  CachedState,
+  CreatePropsConfig,
   CreateSourceObject,
   ErrorState,
   ForkConfig,
@@ -43,7 +44,6 @@ import {
   ProducerRunInput,
   ProducerSavedProps,
   RUNCProps,
-  RunIndicators,
   RunTask,
   Source,
   SourcesType,

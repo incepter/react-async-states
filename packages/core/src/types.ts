@@ -424,7 +424,7 @@ export type WatchCallback<T, E = any, R = any> = (
 export interface PoolInterface {
   name: string,
   simpleName: string,
-  version: string,
+  version: { version: string, copyright: string },
 
   mergePayload(payload: Record<string, any>): void,
 
