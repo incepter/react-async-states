@@ -18,6 +18,7 @@ const {
   uniqueId, // the uniqueId of the state instance
   getState, // gets the current state
   setState, // sets state and notifies all subscribers
+  on, // allows registering events at `source` (state instance) level
   run, // runs the producer and returns the abort function
   runp, // runs the producer and returns a promise to the run's resolve
   runc, // runs the producer with onSuccess, onError and onAborted callbacks
@@ -35,6 +36,8 @@ const {
   patchConfig, // patches the config related to the producer
   flags, // the subscription mode: listen, source, hoist, ...
   devFlags, // the subscription mode: listen, source, hoist, ...
+  onChange, // Register `events.change` relative to the current subscription that will called when state changes 
+  onSubscribe, // Register `events.subscribe` relative to the current subscription
 } = useAsyncState({
   key, // the subscription key or the definition key
   lane, // the lane instance to use
@@ -68,6 +71,7 @@ const {
   areEqual, // compares the previous and next selected value when state changes
   subscriptionKey, // the subscription key that will appear in devtools for this usage
   selector, // the selector
+  wait, // When providing a string key, you can wait for it if it doesn't exist via this property
   events: { // registers events
     change: { // called whenever state changes, may be a function, an object, or an array of either
       status, // the status at which this event should be invoked
@@ -84,13 +88,14 @@ const {
 
 ```typescript
 function myProducer<T>({
-  payload, // the payload held by the state instance
   args, // the array of args given to the run function
+  payload, // the payload held by the state instance
+  abort, // will abort its own run
   onAbort, // registers abort/cleanup callbacks
+
   isAborted, // returns whether this run was aborted
   getState, // gives the current state at any point of time (may be used before emit)
   emit, // replaces state, works after resolve to support streaming/incremental resolve
-  abort, // will abort its own run, if resolved
   lastSuccess, // the last success that was registered before this call, useful for reducers & infinite data
   run, // runs a source or an instance or a producer and returns the abort function
   runp, // runs a source or an instance or a producer and returns a promise to resolve
@@ -126,7 +131,7 @@ const source = createSource(
   }
 );
 
-const {
+let {
   key, // the key of the related state instance
   uniqueId, // the uniqueId of the state instance
   getState, // gets the current state
@@ -135,6 +140,7 @@ const {
   runp, // runs the producer and returns a promise to the run's resolve
   runc, // runs the producer with onSuccess, onError and onAborted callbacks
   replay, // replays the latest run if exists, or else does nothing
+  on, // allows registering events at `source` (state instance) level
   abort, // aborts the current run or clears the abort callbacks if any
   replaceProducer, // replaces the producer linked to the state
   hasLane, // returns true if the given lane key exists
