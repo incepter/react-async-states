@@ -14,13 +14,13 @@ let defaultPoolName = "default";
 let didWarnAboutExistingInstanceRecreation = false;
 let globalContext = maybeWindow || globalThis || null;
 
-let DEFAULT_POOL_CONTEXT = createContext(null);
-let poolsContexts = new WeakMap<any, LibraryPoolsContext>;
 let libraryVersion = freeze({
   version,
   copyright: 'Incepter'
 })
 
+let DEFAULT_POOL_CONTEXT = createContext(null);
+let poolsContexts = new WeakMap<any, LibraryPoolsContext>;
 function createPool(name: string, context: LibraryPoolsContext): PoolInterface {
   let meter = 0;
   let watchers = {};
@@ -149,6 +149,24 @@ export function createContext(ctx: any): LibraryPoolsContext {
   let ownPool: PoolInterface = createPool(defaultPoolName, null); // will be assigned in a few
   let poolInUse: PoolInterface = ownPool;
   ownLibraryPools[ownPool.name] = ownPool;
+
+  let poolsContext: LibraryPoolsContext = {
+    poolInUse,
+    context: ctx, // assigned here
+    setDefaultPool,
+    getOrCreatePool,
+    enableDiscovery,
+    pools: ownLibraryPools,
+  };
+
+  ownPool.context = poolsContext; // here!
+
+  if (ctx !== null && typeof ctx === "object") {
+    poolsContexts.set(ctx, poolsContext);
+  }
+
+  return poolsContext;
+
   function getOrCreatePool(name?: string): PoolInterface {
     if (!name) {
       return poolInUse;
@@ -209,22 +227,6 @@ export function createContext(ctx: any): LibraryPoolsContext {
     });
   }
 
-  let poolsContext: LibraryPoolsContext = {
-    poolInUse,
-    context: ctx, // assigned here
-    setDefaultPool,
-    getOrCreatePool,
-    enableDiscovery,
-    pools: ownLibraryPools,
-  };
-
-  ownPool.context = poolsContext; // here!
-
-  if (ctx !== null && typeof ctx === "object") {
-    poolsContexts.set(ctx, poolsContext);
-  }
-
-  return poolsContext;
 }
 
 export function getContext(ctx: any): LibraryPoolsContext | undefined {
