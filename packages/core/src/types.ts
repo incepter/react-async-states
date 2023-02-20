@@ -120,7 +120,7 @@ export interface StateInterface<T, E = any, R = any> extends BaseSource<T, E, R>
 
   // state
   state: State<T, E, R>,
-  lastSuccess: SuccessState<T> | InitialState<T>,
+  lastSuccess: LastSuccessSavedState<T>,
 
   queue?: UpdateQueue<T, E, R>,
   flushing?: boolean,
@@ -190,12 +190,7 @@ export interface RUNCProps<T, E, R> extends ProducerCallbacks<T, E, R> {
   args?: any[],
 }
 
-export type LastSuccessSavedState<T> = {
-  data: T,
-  timestamp: number,
-  props?: ProducerSavedProps<T> | null,
-  status: Status.success | Status.initial,
-}
+export type LastSuccessSavedState<T> = InitialState<T> | SuccessState<T>;
 
 export interface BaseState<T> {
   data: T,
@@ -249,7 +244,7 @@ export interface ProducerProps<T, E = any, R = any> extends ProducerEffects {
 
   args: any[],
   payload: any,
-  lastSuccess: SuccessState<T> | InitialState<T>,
+  lastSuccess: LastSuccessSavedState<T>,
   isAborted: () => boolean,
 
   getState: () => State<T, E, R>,
@@ -349,7 +344,7 @@ export interface Source<T, E = any, R = any> extends BaseSource<T, E, R> {
 
 export type RunTask<T, E, R> = {
   args: any[],
-  payload: Record<string, any> | null,
+  payload: Record<string, any>,
 }
 export type StateSubscription<T, E, R> = {
   cleanup: () => void,
@@ -429,7 +424,7 @@ export type WatchCallback<T, E = any, R = any> = (
 export interface PoolInterface {
   name: string,
   simpleName: string,
-  version: string,
+  version: { version: string, copyright: string },
 
   mergePayload(payload: Record<string, any>): void,
 
@@ -486,4 +481,15 @@ export type OnSettled<T, E, R> = {
     data: E, status: Status.error, savedProps: ProducerSavedProps<T>,
     callbacks?: ProducerCallbacks<T, E, R>
   ): void,
+}
+export type CreatePropsConfig<T, E, R> = {
+  context: LibraryPoolsContext,
+  args: any[],
+  payload?: Record<string, any>,
+  indicators: RunIndicators,
+  lastSuccess: LastSuccessSavedState<T>,
+  getState: () => State<T, E, R>,
+  onEmit: (updater: T | StateFunctionUpdater<T, E, R>, status?: Status) => void,
+  onAborted: (reason?: R) => void,
+  onCleared: () => void
 }

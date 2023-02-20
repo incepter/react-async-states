@@ -17,11 +17,11 @@ import {
   AbortFn,
   AsyncStateSubscribeProps,
   CachedState,
+  CreatePropsConfig,
   CreateSourceObject,
   ErrorState,
   ForkConfig,
   HydrationData,
-  InitialState,
   InstanceCacheChangeEvent,
   InstanceCacheChangeEventHandlerType,
   InstanceChangeEvent,
@@ -31,6 +31,7 @@ import {
   InstanceEventHandlerType,
   InstanceEvents,
   InstanceEventType,
+  LastSuccessSavedState,
   LibraryPoolsContext,
   PendingTimeout,
   PendingUpdate,
@@ -43,7 +44,6 @@ import {
   ProducerRunInput,
   ProducerSavedProps,
   RUNCProps,
-  RunIndicators,
   RunTask,
   Source,
   SourcesType,
@@ -84,8 +84,8 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   state: State<T, E, R>;
   queue?: UpdateQueue<T, E, R>;
   pendingUpdate?: PendingUpdate | null;
+  lastSuccess: LastSuccessSavedState<T>;
   private pendingTimeout?: PendingTimeout | null;
-  lastSuccess: SuccessState<T> | InitialState<T>;
 
   flushing?: boolean;
   eventsIndex?: number;
@@ -156,7 +156,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       } else {
         let initializer = this.config.initialValue;
         let initialData = isFunction(initializer) ? initializer(this.cache) : initializer;
-        this.lastSuccess = StateBuilder.initial(initialData);
+        this.lastSuccess = StateBuilder.initial(initialData) as LastSuccessSavedState<T>;
       }
     } else {
       let initializer = this.config.initialValue;
@@ -165,7 +165,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
       let initialState = StateBuilder.initial(initialData);
 
       this.state = initialState;
-      this.lastSuccess = initialState;
+      this.lastSuccess = initialState as LastSuccessSavedState<T>;
     }
 
     if (__DEV__) {
@@ -291,7 +291,6 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
     this.lanes[laneKey] = newLane;
     return newLane;
   }
-
 
   replaceState(
     newState: State<T, E, R>,
@@ -554,7 +553,7 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
   }
 
   private runImmediately(
-    payload: Record<string, any> | null,
+    payload: Record<string, any>,
     runProps?: RUNCProps<T, E, R>,
   ): AbortFn {
 
@@ -590,7 +589,30 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 
     let {retryConfig} = instance.config;
     let indicators = {index: 1, done: false, cleared: false, aborted: false};
-    let props = constructPropsObject(this, runProps, indicators, payload, args);
+
+
+    let props = createProps({
+      args,
+      payload,
+      indicators,
+      getState: instance.getState,
+      context: instance.pool.context,
+      lastSuccess: instance.lastSuccess,
+      onCleared() {
+        instance.currentAbort = undefined;
+      },
+      onAborted(reason?: R) {
+        if (!instance.willUpdate) {
+          let abortedState = StateBuilder.aborted<T, E, R>(reason, cloneProducerProps(props));
+          instance.replaceState(abortedState, true, runProps);
+        }
+      },
+      onEmit(updater, status) {
+        instance.isEmitting = true;
+        instance.setState(updater, status, runProps);
+        instance.isEmitting = false;
+      },
+    });
 
     this.currentAbort = props.abort;
     let result = run(producer, props, indicators, onSettled, retryConfig, runProps);
@@ -712,74 +734,112 @@ export class AsyncState<T, E, R> implements StateInterface<T, E, R> {
 }
 
 //region AsyncState methods helpers
+let uniqueId: number = 0;
+let HYDRATION_DATA_KEY = "__ASYNC_STATES_HYDRATION_DATA__";
 
-function attemptCache<T, E, R>(
-  instance: StateInterface<T, E, R>,
-  payload,
-  runProps?: RUNCProps<T, E, R>
-): boolean {
-  if (isCacheEnabled(instance)) {
-    let args = runProps && runProps.args || emptyArray;
-    let topLevelParent: StateInterface<T, E, R> = getTopLevelParent(instance);
+export let Sources: SourcesType = (function () {
+  let output: Omit<Omit<SourcesType, "of">, "for"> = createSource;
+  (output as SourcesType).of = getSource;
+  (output as SourcesType).for = createSource;
+  return output as SourcesType;
+})();
 
-    let {cacheConfig} = instance.config;
-    let hashFunction = cacheConfig && cacheConfig.hash || defaultHash;
-
-    let runHash = hashFunction(args, payload);
-    let cachedState = topLevelParent.cache?.[runHash];
-
-    if (cachedState) {
-      if (didNotExpire(cachedState)) {
-        if (cachedState.state !== instance.state) {
-          instance.replaceState(cachedState.state, true, runProps);
-        }
-        if (__DEV__) devtools.emitRunConsumedFromCache(instance, payload, args);
-        return true;
-      } else {
-        delete topLevelParent.cache![runHash];
-
-        if (
-          topLevelParent.cache &&
-          isFunction(topLevelParent.config.cacheConfig?.persist)
-        ) {
-          topLevelParent.config.cacheConfig!.persist(topLevelParent.cache);
-        }
-        spreadCacheChangeOnLanes(topLevelParent);
-      }
-    }
-  }
-  return false;
+function nextUniqueId() {
+  return ++uniqueId;
 }
 
-function invokeChangeCallbacks<T, E, R>(
-  state: State<T, E, R>,
-  callbacks: ProducerCallbacks<T, E, R> | undefined
-) {
-  if (!callbacks) {
-    return;
-  }
-  let {onError, onAborted, onSuccess} = callbacks;
-  if (onSuccess && state.status === success) {
-    onSuccess(state);
-  }
-  if (onAborted && state.status === aborted) {
-    onAborted(state);
-  }
-  if (onError && state.status === error) {
-    onError(state);
-  }
-}
-
-export function shallowClone(
-  source1,
-  source2?
-) {
+function shallowClone(source1, source2?) {
   return Object.assign({}, source1, source2);
 }
 
-let HYDRATION_DATA_KEY = "__ASYNC_STATES_HYDRATION_DATA__";
+function makeSource<T, E, R>(instance: StateInterface<T, E, R>): Readonly<Source<T, E, R>> {
+  let hiddenInstance = hideStateInstanceInNewObject(instance);
 
-export function attemptHydratedState<T, E, R>(
+  let source: Source<T, E, R> = Object.assign(hiddenInstance, {
+    key: instance.key,
+    uniqueId: instance.uniqueId,
+
+    on: instance.on,
+    run: instance.run,
+    runp: instance.runp,
+    runc: instance.runc,
+    abort: instance.abort,
+    replay: instance.replay,
+    hasLane: instance.hasLane,
+    getState: instance.getState,
+    setState: instance.setState,
+    getConfig: instance.getConfig,
+    subscribe: instance.subscribe,
+    getPayload: instance.getPayload,
+    removeLane: instance.removeLane,
+    getVersion: instance.getVersion,
+    patchConfig: instance.patchConfig,
+    mergePayload: instance.mergePayload,
+    replaceCache: instance.replaceCache,
+    invalidateCache: instance.invalidateCache,
+    replaceProducer: instance.replaceProducer,
+
+    getAllLanes() {
+      if (!instance.lanes) {
+        return [];
+      }
+      return Object.values(instance.lanes).map(lane => lane._source);
+    },
+
+    getLaneSource(lane?: string) {
+      return instance.getLane(lane)._source;
+    },
+  });
+
+  Object.defineProperty(source, sourceSymbol, {
+    value: true,
+    writable: false,
+    enumerable: false,
+    configurable: false,
+  });
+
+  return freeze(source);
+}
+
+export function createSource<T, E = any, R = any>(
+  props: string | CreateSourceObject<T, E, R>,
+  maybeProducer?: Producer<T, E, R> | undefined | null,
+  maybeConfig?: ProducerConfig<T, E, R>,
+): Source<T, E, R> {
+  if (typeof props === "object") {
+    return new AsyncState(props.key, props.producer, props.config)._source;
+  }
+  return new AsyncState(props, maybeProducer, maybeConfig)._source;
+}
+
+export function getSource(key: string, poolName?: string, context?: any) {
+  let executionContext = requestContext(context);
+  let pool = executionContext.getOrCreatePool(poolName);
+  return pool.instances.get(key)?._source;
+}
+
+export function readSource<T, E, R>(possiblySource: Source<T, E, R>): StateInterface<T, E, R> {
+  try {
+    const candidate = possiblySource.constructor(asyncStatesKey);
+    if (!(candidate instanceof AsyncState)) {
+      throw new Error("");// error is thrown to trigger the catch block
+    }
+    return candidate; // async state instance
+  } catch (e) {
+    throw new Error("Incompatible Source object.");
+  }
+}
+
+function notifySubscribers(instance: StateInterface<any>) {
+  if (!instance.subscriptions) {
+    return;
+  }
+  Object.values(instance.subscriptions).forEach(subscription => {
+    subscription.props.cb(instance.state);
+  });
+}
+
+function attemptHydratedState<T, E, R>(
   poolName: string,
   key: string
 ): HydrationData<T, E, R> | null {
@@ -805,17 +865,6 @@ export function attemptHydratedState<T, E, R>(
   }
 
   return maybeState as HydrationData<T, E, R>;
-}
-
-function invokeSingleChangeEvent<T, E, R>(
-  state: State<T, E, R>,
-  event: StateChangeEventHandler<T, E, R>
-) {
-  if (isFunction(event)) {
-    event(state);
-  } else if (typeof event === "object" && event.status === state.status) {
-    event.handler(state);
-  }
 }
 
 function invokeInstanceEvents<T, E, R>(
@@ -860,21 +909,56 @@ function invokeInstanceEvents<T, E, R>(
   }
 }
 
-function constructPropsObject<T, E, R>(
-  instance: StateInterface<T, E, R>,
-  callbacks: ProducerCallbacks<T, E, R> | undefined,
-  indicators: RunIndicators,
-  payload: Record<string, any> | null,
-  args: any[]
-): ProducerProps<T, E, R> {
-  let context = instance.pool.context;
+function invokeChangeCallbacks<T, E, R>(
+  state: State<T, E, R>,
+  callbacks: ProducerCallbacks<T, E, R> | undefined
+) {
+  if (!callbacks) {
+    return;
+  }
+  let {onError, onAborted, onSuccess} = callbacks;
+  if (onSuccess && state.status === success) {
+    onSuccess(state);
+  }
+  if (onAborted && state.status === aborted) {
+    onAborted(state);
+  }
+  if (onError && state.status === error) {
+    onError(state);
+  }
+}
+
+function invokeSingleChangeEvent<T, E, R>(
+  state: State<T, E, R>,
+  event: StateChangeEventHandler<T, E, R>
+) {
+  if (isFunction(event)) {
+    event(state);
+  } else if (typeof event === "object" && event.status === state.status) {
+    event.handler(state);
+  }
+}
+
+export function createProps<T, E, R>(config: CreatePropsConfig<T, E, R>): ProducerProps<T, E, R> {
+  let {
+    context,
+    args,
+    payload,
+    indicators,
+    lastSuccess,
+    getState,
+    onEmit,
+    onAborted,
+    onCleared,
+  } = config;
   let onAbortCallbacks: AbortFn[] = [];
-  let props: ProducerProps<T, E, R> = {
+  return {
     emit,
     args,
     abort,
     payload,
-    lastSuccess: instance.lastSuccess,
+    getState,
+    lastSuccess,
     onAbort(callback: AbortFn) {
       if (isFunction(callback)) {
         onAbortCallbacks.push(callback);
@@ -883,19 +967,15 @@ function constructPropsObject<T, E, R>(
     isAborted() {
       return indicators.aborted;
     },
-    getState: instance.getState,
     run: runFunction.bind(null, context),
     runp: runpFunction.bind(null, context),
     select: selectFunction.bind(null, context),
   };
 
-  return props;
-
   function emit(
-    updater: T | StateFunctionUpdater<T, E, R>,
-    status?: Status
-  ): void {
-    if (indicators.cleared && instance.state.status === aborted) {
+    updater: T | StateFunctionUpdater<T, E, R>, status?: Status): void {
+    let state = getState();
+    if (indicators.cleared && state.status === aborted) {
       if (__DEV__) {
         console.error("You are emitting while your producer is passing to aborted state." +
           "This has no effect and not supported by the library. The next " +
@@ -910,9 +990,7 @@ function constructPropsObject<T, E, R>(
       }
       return;
     }
-    instance.isEmitting = true;
-    instance.setState(updater, status, callbacks);
-    instance.isEmitting = false;
+    onEmit(updater, status);
   }
 
   function abort(reason?: any): AbortFn | undefined {
@@ -929,10 +1007,7 @@ function constructPropsObject<T, E, R>(
       // from aborts that will be called synchronously
       // by the library replace the state again
       // these state updates are only with aborted status
-      if (!instance.willUpdate) {
-        let abortedState = StateBuilder.aborted<T, E, R>(reason, cloneProducerProps(props));
-        instance.replaceState(abortedState, true, callbacks);
-      }
+      onAborted(reason);
     }
 
     indicators.cleared = true; // before calling user land onAbort that may emit
@@ -941,99 +1016,62 @@ function constructPropsObject<T, E, R>(
         func(reason);
       }
     });
-    instance.currentAbort = undefined;
+    onCleared();
+    // instance.currentAbort = undefined;
   }
+
 }
 
-export function createSource<T, E = any, R = any>(
-  props: string | CreateSourceObject<T, E, R>,
-  maybeProducer?: Producer<T, E, R> | undefined | null,
-  maybeConfig?: ProducerConfig<T, E, R>,
-): Source<T, E, R> {
-  if (typeof props === "object") {
-    return new AsyncState(props.key, props.producer, props.config)._source;
+function getTopLevelParent<T, E, R>(base: StateInterface<T, E, R>): StateInterface<T, E, R> {
+  let current = base;
+  while (current.parent) {
+    current = current.parent;
   }
-  return new AsyncState(props, maybeProducer, maybeConfig)._source;
+  return current;
 }
 
-export function getSource(key: string, poolName?: string, context?: any) {
-  let executionContext = requestContext(context);
-  let pool = executionContext.getOrCreatePool(poolName);
-  return pool.instances.get(key)?._source;
-}
-
-export let Sources: SourcesType = (function () {
-  let output: Omit<Omit<SourcesType, "of">, "for"> = createSource;
-  (output as SourcesType).of = getSource;
-  (output as SourcesType).for = createSource;
-  return output as SourcesType;
-})();
-
-let uniqueId: number = 0;
-
-function nextUniqueId() {
-  return ++uniqueId;
-}
-
-export function readSource<T, E, R>(possiblySource: Source<T, E, R>): StateInterface<T, E, R> {
-  try {
-    const candidate = possiblySource.constructor(asyncStatesKey);
-    if (!(candidate instanceof AsyncState)) {
-      throw new Error("");// error is thrown to trigger the catch block
-    }
-    return candidate; // async state instance
-  } catch (e) {
-    throw new Error("Incompatible Source object.");
+function spreadCacheChangeOnLanes<T, E, R>(topLevelParent: StateInterface<T, E, R>) {
+  invokeInstanceEvents(topLevelParent, "cache-change");
+  if (!topLevelParent.lanes) {
+    return;
   }
-}
-
-function waitForAsyncCache<T, E, R>(
-  instance: StateInterface<T, E, R>,
-  promise: Promise<Record<string, CachedState<T, E, R>>>
-) {
-  promise.then(asyncCache => {
-    resolveCache(instance, asyncCache);
-  })
-}
-
-function resolveCache<T, E, R>(
-  instance: StateInterface<T, E, R>,
-  resolvedCache: Record<string, CachedState<T, E, R>>
-) {
-  instance.cache = resolvedCache;
-  const cacheConfig = instance.config.cacheConfig;
-
-  if (isFunction(cacheConfig!.onCacheLoad)) {
-    cacheConfig!.onCacheLoad({
-      cache: instance.cache,
-      setState: instance.setState
+  Object.values(topLevelParent.lanes)
+    .forEach(lane => {
+      lane.cache = topLevelParent.cache;
+      spreadCacheChangeOnLanes(lane);
     });
-  }
 }
 
-function scheduleDelayedPendingUpdate<T, E, R>(
-  instance: AsyncState<T, E, R>,
-  newState: State<T, E, R>,
-  notify: boolean
-) {
-  function callback() {
-    // callback always sets the state with a pending status
-    if (__DEV__) devtools.startUpdate(instance);
-    let clonedState = shallowClone(newState);
-    clonedState.timestamp = Date.now();
-    instance.state = freeze(clonedState); // <-- status is pending!
-    instance.pendingUpdate = null;
-    instance.version += 1;
-    invokeInstanceEvents(instance, "change");
-    if (__DEV__) devtools.emitUpdate(instance);
+function isCacheEnabled(instance: StateInterface<any>): boolean {
+  return !!instance.config.cacheConfig?.enabled;
+}
 
-    if (notify) {
-      notifySubscribers(instance as StateInterface<T, E, R>);
-    }
+function loadCache<T, E, R>(instance: StateInterface<T, E, R>) {
+  if (
+    !isCacheEnabled(instance) ||
+    !isFunction(instance.config.cacheConfig?.load)
+  ) {
+    return;
   }
 
-  let timeoutId = setTimeout(callback, instance.config.skipPendingDelayMs);
-  instance.pendingUpdate = {callback, timeoutId};
+  // inherit cache from the parent if exists!
+  if (instance.parent) {
+    let topLevelParent: StateInterface<T, E, R> = getTopLevelParent(instance);
+    instance.cache = topLevelParent.cache;
+    return;
+  }
+
+  let loadedCache = instance.config.cacheConfig!.load();
+
+  if (!loadedCache) {
+    return;
+  }
+
+  if (isPromise(loadedCache)) {
+    waitForAsyncCache(instance, loadedCache as Promise<Record<string, CachedState<T, E, R>>>);
+  } else {
+    resolveCache(instance, loadedCache as Record<string, CachedState<T, E, R>>);
+  }
 }
 
 function getStateDeadline<T, E, R>(
@@ -1099,127 +1137,104 @@ function saveCacheAfterSuccessfulUpdate<T, E, R>(instance: StateInterface<T, E, 
   }
 }
 
-function loadCache<T, E, R>(instance: StateInterface<T, E, R>) {
-  if (
-    !isCacheEnabled(instance) ||
-    !isFunction(instance.config.cacheConfig?.load)
-  ) {
-    return;
-  }
-
-  // inherit cache from the parent if exists!
-  if (instance.parent) {
+function attemptCache<T, E, R>(
+  instance: StateInterface<T, E, R>,
+  payload,
+  runProps?: RUNCProps<T, E, R>
+): boolean {
+  if (isCacheEnabled(instance)) {
+    let args = runProps && runProps.args || emptyArray;
     let topLevelParent: StateInterface<T, E, R> = getTopLevelParent(instance);
-    instance.cache = topLevelParent.cache;
-    return;
-  }
 
-  let loadedCache = instance.config.cacheConfig!.load();
+    let {cacheConfig} = instance.config;
+    let hashFunction = cacheConfig && cacheConfig.hash || defaultHash;
 
-  if (!loadedCache) {
-    return;
-  }
+    let runHash = hashFunction(args, payload);
+    let cachedState = topLevelParent.cache?.[runHash];
 
-  if (isPromise(loadedCache)) {
-    waitForAsyncCache(instance, loadedCache as Promise<Record<string, CachedState<T, E, R>>>);
-  } else {
-    resolveCache(instance, loadedCache as Record<string, CachedState<T, E, R>>);
-  }
-}
+    if (cachedState) {
+      if (didNotExpire(cachedState)) {
+        if (cachedState.state !== instance.state) {
+          instance.replaceState(cachedState.state, true, runProps);
+        }
+        if (__DEV__) devtools.emitRunConsumedFromCache(instance, payload, args);
+        return true;
+      } else {
+        delete topLevelParent.cache![runHash];
 
-function notifySubscribers(instance: StateInterface<any>) {
-  if (!instance.subscriptions) {
-    return;
-  }
-  Object.values(instance.subscriptions).forEach(subscription => {
-    subscription.props.cb(instance.state);
-  });
-}
-
-function getTopLevelParent<T, E, R>(base: StateInterface<T, E, R>): StateInterface<T, E, R> {
-  let current = base;
-  while (current.parent) {
-    current = current.parent;
-  }
-  return current;
-}
-
-function spreadCacheChangeOnLanes<T, E, R>(topLevelParent: StateInterface<T, E, R>) {
-  invokeInstanceEvents(topLevelParent, "cache-change");
-  if (!topLevelParent.lanes) {
-    return;
-  }
-  Object.values(topLevelParent.lanes)
-    .forEach(lane => {
-      lane.cache = topLevelParent.cache;
-      spreadCacheChangeOnLanes(lane);
-    });
-}
-
-function makeSource<T, E, R>(instance: StateInterface<T, E, R>): Readonly<Source<T, E, R>> {
-  let hiddenInstance = hideStateInstanceInNewObject(instance);
-
-  let source: Source<T, E, R> = Object.assign(hiddenInstance, {
-    key: instance.key,
-    uniqueId: instance.uniqueId,
-
-    on: instance.on,
-    run: instance.run,
-    runp: instance.runp,
-    runc: instance.runc,
-    abort: instance.abort,
-    replay: instance.replay,
-    hasLane: instance.hasLane,
-    getState: instance.getState,
-    setState: instance.setState,
-    getConfig: instance.getConfig,
-    subscribe: instance.subscribe,
-    getPayload: instance.getPayload,
-    removeLane: instance.removeLane,
-    getVersion: instance.getVersion,
-    patchConfig: instance.patchConfig,
-    mergePayload: instance.mergePayload,
-    replaceCache: instance.replaceCache,
-    invalidateCache: instance.invalidateCache,
-    replaceProducer: instance.replaceProducer,
-
-    getAllLanes() {
-      if (!instance.lanes) {
-        return [];
+        if (
+          topLevelParent.cache &&
+          isFunction(topLevelParent.config.cacheConfig?.persist)
+        ) {
+          topLevelParent.config.cacheConfig!.persist(topLevelParent.cache);
+        }
+        spreadCacheChangeOnLanes(topLevelParent);
       }
-      return Object.values(instance.lanes).map(lane => lane._source);
-    },
-
-    getLaneSource(lane?: string) {
-      return instance.getLane(lane)._source;
-    },
-  });
-
-  Object.defineProperty(source, sourceSymbol, {
-    value: true,
-    writable: false,
-    enumerable: false,
-    configurable: false,
-  });
-
-  return freeze(source);
+    }
+  }
+  return false;
 }
 
-function isCacheEnabled(instance: StateInterface<any>): boolean {
-  return !!instance.config.cacheConfig?.enabled;
+function waitForAsyncCache<T, E, R>(
+  instance: StateInterface<T, E, R>,
+  promise: Promise<Record<string, CachedState<T, E, R>>>
+) {
+  promise.then(asyncCache => {
+    resolveCache(instance, asyncCache);
+  })
+}
+
+function resolveCache<T, E, R>(
+  instance: StateInterface<T, E, R>,
+  resolvedCache: Record<string, CachedState<T, E, R>>
+) {
+  instance.cache = resolvedCache;
+  const cacheConfig = instance.config.cacheConfig;
+
+  if (isFunction(cacheConfig!.onCacheLoad)) {
+    cacheConfig!.onCacheLoad({
+      cache: instance.cache,
+      setState: instance.setState
+    });
+  }
+}
+
+function scheduleDelayedPendingUpdate<T, E, R>(
+  instance: AsyncState<T, E, R>,
+  newState: State<T, E, R>,
+  notify: boolean
+) {
+  function callback() {
+    // callback always sets the state with a pending status
+    if (__DEV__) devtools.startUpdate(instance);
+    let clonedState = shallowClone(newState);
+    clonedState.timestamp = Date.now();
+    instance.state = freeze(clonedState); // <-- status is pending!
+    instance.pendingUpdate = null;
+    instance.version += 1;
+    invokeInstanceEvents(instance, "change");
+    if (__DEV__) devtools.emitUpdate(instance);
+
+    if (notify) {
+      notifySubscribers(instance as StateInterface<T, E, R>);
+    }
+  }
+
+  let timeoutId = setTimeout(callback, instance.config.skipPendingDelayMs);
+  instance.pendingUpdate = {callback, timeoutId};
 }
 
 //endregion
 
-//region producerEffects creators helpers
-export function runFunction<T, E, R>(
+//region producerEffects
+function runFunction<T, E, R>(
   context: LibraryPoolsContext,
   input: ProducerRunInput<T, E, R>,
   config: ProducerRunConfig | null,
   ...args: any[]
 ) {
   if (isSource(input)) {
-    return (input as Source<T, E, R>).getLaneSource(config?.lane).run(...args);
+    return input.getLaneSource(config?.lane).run.apply(null, args);
   } else if (isFunction(input)) {
     let instance = new AsyncState(
       nextKey(), input, {
@@ -1229,26 +1244,25 @@ export function runFunction<T, E, R>(
     if (config?.payload) {
       instance.mergePayload(config.payload)
     }
-    return instance.run(...args);
-  } else if (typeof input === "string") {
+    return instance.run.apply(null, args);
+  } else {
     let instance = context.getOrCreatePool(config?.pool).instances.get(input);
 
     if (instance) {
-      return instance.getLane(config?.lane).run(...args);
+      return instance.getLane(config?.lane).run.apply(null, args);
     }
   }
   return undefined;
 }
 
-export function runpFunction<T, E, R>(
+function runpFunction<T, E, R>(
   context: LibraryPoolsContext,
   input: ProducerRunInput<T, E, R>,
   config: ProducerRunConfig | null,
   ...args: any[]
 ) {
   if (isSource(input)) {
-    let instance = readSource(input as Source<T, E, R>).getLane(config?.lane);
-    return instance.runp.apply(null, args);
+    return input.getLaneSource(config?.lane).runp.apply(null, args);
   } else if (isFunction(input)) {
 
     let instance = new AsyncState(nextKey(),
@@ -1261,7 +1275,7 @@ export function runpFunction<T, E, R>(
     }
     return instance.runp.apply(null, args);
 
-  } else if (typeof input === "string") {
+  } else {
     let instance = context.getOrCreatePool().instances.get(input);
     if (instance) {
       return instance.getLane(config?.lane).runp.apply(null, args);
@@ -1270,7 +1284,7 @@ export function runpFunction<T, E, R>(
   return undefined;
 }
 
-export function selectFunction<T, E, R>(
+function selectFunction<T, E, R>(
   context: LibraryPoolsContext,
   input: ProducerRunInput<T, E, R>,
   lane?: string,
@@ -1300,7 +1314,7 @@ function getQueueTail<T, E, R>(instance: StateInterface<T, E, R>): UpdateQueue<T
   return current;
 }
 
-export function enqueueUpdate<T, E, R>(
+function enqueueUpdate<T, E, R>(
   instance: StateInterface<T, E, R>,
   newState: State<T, E, R>,
   callbacks?: ProducerCallbacks<T, E, R>
@@ -1324,7 +1338,7 @@ export function enqueueUpdate<T, E, R>(
   ensureQueueIsScheduled(instance);
 }
 
-export function enqueueSetState<T, E, R>(
+function enqueueSetState<T, E, R>(
   instance: StateInterface<T, E, R>,
   newValue: T | StateFunctionUpdater<T, E, R>,
   status = success,
@@ -1349,7 +1363,7 @@ export function enqueueSetState<T, E, R>(
   ensureQueueIsScheduled(instance);
 }
 
-export function ensureQueueIsScheduled<T, E, R>(
+function ensureQueueIsScheduled<T, E, R>(
   instance: StateInterface<T, E, R>
 ) {
   if (!instance.queue) {

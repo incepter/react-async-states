@@ -8,12 +8,19 @@ import {
 } from "./types";
 import {version} from "../package.json";
 import {__DEV__, isServer, maybeWindow} from "./utils";
-
+import {freeze} from "./helpers/corejs";
 
 let defaultPoolName = "default";
-let globalContext = maybeWindow || globalThis || null;
 let didWarnAboutExistingInstanceRecreation = false;
+let globalContext = maybeWindow || globalThis || null;
 
+let libraryVersion = freeze({
+  version,
+  copyright: 'Incepter'
+})
+
+let DEFAULT_POOL_CONTEXT = createContext(null);
+let poolsContexts = new WeakMap<any, LibraryPoolsContext>;
 function createPool(name: string, context: LibraryPoolsContext): PoolInterface {
   let meter = 0;
   let watchers = {};
@@ -21,9 +28,9 @@ function createPool(name: string, context: LibraryPoolsContext): PoolInterface {
   let instances = new Map<string, StateInterface<any>>();
   return {
     context,
-    version,
     instances,
     simpleName: name,
+    version: libraryVersion,
     name: getPoolName(name),
 
     set,
@@ -142,6 +149,24 @@ export function createContext(ctx: any): LibraryPoolsContext {
   let ownPool: PoolInterface = createPool(defaultPoolName, null); // will be assigned in a few
   let poolInUse: PoolInterface = ownPool;
   ownLibraryPools[ownPool.name] = ownPool;
+
+  let poolsContext: LibraryPoolsContext = {
+    poolInUse,
+    context: ctx, // assigned here
+    setDefaultPool,
+    getOrCreatePool,
+    enableDiscovery,
+    pools: ownLibraryPools,
+  };
+
+  ownPool.context = poolsContext; // here!
+
+  if (ctx !== null && typeof ctx === "object") {
+    poolsContexts.set(ctx, poolsContext);
+  }
+
+  return poolsContext;
+
   function getOrCreatePool(name?: string): PoolInterface {
     if (!name) {
       return poolInUse;
@@ -202,26 +227,7 @@ export function createContext(ctx: any): LibraryPoolsContext {
     });
   }
 
-  let poolsContext: LibraryPoolsContext = {
-    poolInUse,
-    context: ctx, // assigned here
-    setDefaultPool,
-    getOrCreatePool,
-    enableDiscovery,
-    pools: ownLibraryPools,
-  };
-
-  ownPool.context = poolsContext; // here!
-
-  if (ctx !== null && typeof ctx === "object") {
-    poolsContexts.set(ctx, poolsContext);
-  }
-
-  return poolsContext;
 }
-
-let poolsContexts = new WeakMap<any, LibraryPoolsContext>;
-let DEFAULT_POOL_CONTEXT = createContext(null);
 
 export function getContext(ctx: any): LibraryPoolsContext | undefined {
   if (ctx === null) {
