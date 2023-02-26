@@ -34,12 +34,14 @@ import {
  */
 type User = {}
 type Post = {}
-type Todo = {}
+type Todo = {
+  title: string
+}
 
 let rt = () => {}
 type RT = typeof rt
 
-let myApp = {
+let myAppJeton = {
   users: {
     search: {fn: rt},
   },
@@ -51,6 +53,14 @@ let myApp = {
     add: {fn: rt},
     search: {fn: rt},
     remove: {fn: rt},
+  },
+  mahdoul: {
+    ping: {
+      fn: rt,
+    },
+    saveHisAss: {
+      fn: rt,
+    }
   }
 }
 
@@ -78,10 +88,20 @@ type MyAppType = {
     remove: {
       fn: (id: string) => boolean
     }
+  },
+  mahdoul: {
+    ping: {
+      fn: (greeting: string) => boolean,
+    },
+    saveHisAss: {
+      fn: (input: Money) => boolean,
+    }
   }
 }
 
-type Application<App extends RawExtend> = {
+interface Money extends User {}
+
+type ApplicationShape<App extends RawExtend> = {
   [slice in keyof App]: {
     [api in keyof App[slice]]: {
       fn: (Pick<App[slice][api], "fn">["fn"] extends ((...args: infer X) => infer Y) ? ((...args: X) => Y) : never) | RT
@@ -89,51 +109,43 @@ type Application<App extends RawExtend> = {
   }
 }
 
+type Application<A extends RawExtend> = {
+  app: ApplicationToken<A>,
+  define: ApplicationDefine<A>
+}
 
-export function createApplication<A extends RawExtend>(
-  shape: Application<A>
-): {app: ApplicationToken<A>, define: ApplicationDefine<A>} {
+function createApplication<A extends RawExtend>(shape: ApplicationShape<A>): Application<A> {
   let app = {} as ApplicationToken<A>;
 
   for (let slice of Object.keys(shape)) {
     let sliceShape = shape[slice]
     type SliceType = typeof sliceShape
-    type KeysOfSlice = keyof SliceType
 
-    type ResultType = {
-      [k in keyof SliceType]: Pick<SliceType[k], "fn">["fn"] extends ((...args: infer A extends any[]) => infer B) ? Token<B, A> : never
-    }
+    let theoreticalSlice = app[slice]
+    type ResultType = typeof theoreticalSlice
 
     let result = {} as ResultType
-
     for (let api of Object.keys(sliceShape)) {
-      let {fn} = sliceShape[api]
-      type Data = ReturnType<typeof fn>
-      type Args = Parameters<typeof fn>
-
-      let token: Token<Data, Args> = createToken<Data, Args>(slice, api);
-      console.log('dd' , token)
-      // @ts-ignore
-      result[api as KeysOfSlice] = token
+      result[api as keyof SliceType] = createToken(slice, api) as ApplicationToken<A>[string][string]
     }
-
-    // @ts-ignore
     app[slice as keyof ApplicationToken<A>] = result;
   }
 
+  // @ts-ignore
   return {app, define: null};
 }
+
 
 type RawExtend = { [slice: string]: { [api: string]: { fn: ((...args: any[]) => any) } } }
 
 type ApplicationToken<App extends RawExtend> = {
   [slice in keyof App]: {
-    [api in keyof App[slice]]: Pick<App[slice][api], "fn">["fn"] extends ((...args: infer A) => infer B) ? Token<B, A> : never
+    [api in keyof App[slice]]: App[slice][api]["fn"] extends ((...args: infer A) => infer B) ? Token<Exclude<B, ReturnType<RT>>, Exclude<A, Parameters<RT>>> : never
   }
 }
 type ApplicationDefine<App extends RawExtend> = {
   [slice in keyof App]: {
-    [api in keyof App[slice]]: Pick<App[slice][api], "fn">["fn"] extends ((...args: infer A) => infer B) ? ((producer: Producer<B>) => void) : never
+    [api in keyof App[slice]]: App[slice][api]["fn"] extends ((...args: infer A) => infer B) ? ((producer: Producer<B>) => void) : never
   }
 }
 
@@ -180,18 +192,15 @@ export function use<T, E, R, A extends any[]>(
   return useInternalAsyncState("use", {...options, source: token}, deps)
 }
 
-let {app, define} = createApplication<MyAppType>(myApp)
+let {app, define} = createApplication<MyAppType>(myAppJeton)
 
 app.users.search("username=toto&page=1&size=5&sort=")
 app.posts.remove("14")
-app.todos.add({})
-
 define.posts.search(fetchUser)
 
 let {state} = use(app.users.search("query"), fetchUser)
 
 
-console.log('App', app)
 
 function fetchPost(): Promise<Post> {
   return Promise.resolve().then(() => ({}))
