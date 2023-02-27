@@ -1,13 +1,3 @@
-import {useInternalAsyncState} from "../useInternalAsyncState";
-import {
-  createSource,
-  PartialUseAsyncStateConfiguration,
-  Producer,
-  Source,
-  State
-} from "async-states";
-
-
 /**
  * createApplication({
  *   users: {
@@ -32,180 +22,167 @@ import {
  * }
  *
  */
-type User = {}
-type Post = {}
-type Todo = {
-  title: string
-}
+type TX = {}
+let JT: TX = {} as const
 
-let rt = () => {}
-type RT = typeof rt
+import {
+  createSource,
+  MixedConfig,
+  Producer, ProducerConfig,
+  Source,
+  State,
+  UseAsyncState
+} from "async-states/src";
 
-let myAppJeton = {
-  users: {
-    search: {fn: rt},
-  },
-  todos: {
-    add: {fn: rt},
-    remove: {fn: rt},
-  },
-  posts: {
-    add: {fn: rt},
-    search: {fn: rt},
-    remove: {fn: rt},
-  },
-  mahdoul: {
-    ping: {
-      fn: rt,
-    },
-    saveHisAss: {
-      fn: rt,
+type DefaultFn<D, E, R, A extends unknown[]> = Producer<D, E, R>
+type ExtendedFn<D, E, R, A extends unknown[]> = DefaultFn<D, E, R, A> | TX
+
+type AppShape = {
+  [resource: string]: {
+    [api: string]: {
+      fn: ExtendedFn<unknown, unknown, unknown, unknown[]>
     }
   }
 }
 
-type MyAppType = {
-  users: {
-    search: {
-      fn: (query: string) => User
-    }
-  },
-  todos: {
-    add: {
-      fn: (todo: Todo) => Todo
-    }
-    remove: {
-      fn: () => null
-    }
-  }
-  posts: {
-    add: {
-      fn: (todo: Post) => Post
-    },
-    search: {
-      fn: (query: string) => Post
-    },
-    remove: {
-      fn: (id: string) => boolean
-    }
-  },
-  mahdoul: {
-    ping: {
-      fn: (greeting: string) => boolean,
-    },
-    saveHisAss: {
-      fn: (input: Money) => boolean,
-    }
-  }
+type TypedApiEntry<T, E, R, A extends unknown[]> = {
+  fn: ExtendedFn<T, E, R, A>,
 }
 
-interface Money extends User {}
+type ApiEntry<A extends AppShape[string][string]> = TypedApiEntry<unknown, unknown, unknown, unknown[]>
 
-type ApplicationShape<App extends RawExtend> = {
-  [slice in keyof App]: {
-    [api in keyof App[slice]]: {
-      fn: (Pick<App[slice][api], "fn">["fn"] extends ((...args: infer X) => infer Y) ? ((...args: X) => Y) : never) | RT
-    }
-  }
+type ResourceEntry<R extends AppShape[string]> = {
+  [api in keyof R]: ApiEntry<R[api]>
+}
+type ApplicationEntry<T extends AppShape> = {
+  [resource in keyof T]: ResourceEntry<T[resource]>
 }
 
-type Application<A extends RawExtend> = {
-  app: ApplicationToken<A>,
-  define: ApplicationDefine<A>
-}
-
-function createApplication<A extends RawExtend>(shape: ApplicationShape<A>): Application<A> {
-  let app = {} as ApplicationToken<A>;
-
-  for (let slice of Object.keys(shape)) {
-    let sliceShape = shape[slice]
-    type SliceType = typeof sliceShape
-
-    let theoreticalSlice = app[slice]
-    type ResultType = typeof theoreticalSlice
-
-    let result = {} as ResultType
-    for (let api of Object.keys(sliceShape)) {
-      result[api as keyof SliceType] = createToken(slice, api) as ApplicationToken<A>[string][string]
-    }
-    app[slice as keyof ApplicationToken<A>] = result;
-  }
-
-  // @ts-ignore
-  return {app, define: null};
+type Token<T, E, R, K extends unknown[]> = {
+  (): Source<T, E, R>,
+  define(fn: Producer<T, E, R>, config?: ProducerConfig<T, E, R>): Source<T, E, R>
+  // use(config?: MixedConfig<T, E, R, State<T, E, R>>, deps?: any[]): UseAsyncState<T, E, R, State<T, E, R>>,
 }
 
 
-type RawExtend = { [slice: string]: { [api: string]: { fn: ((...args: any[]) => any) } } }
-
-type ApplicationToken<App extends RawExtend> = {
-  [slice in keyof App]: {
-    [api in keyof App[slice]]: App[slice][api]["fn"] extends ((...args: infer A) => infer B) ? Token<Exclude<B, ReturnType<RT>>, Exclude<A, Parameters<RT>>> : never
-  }
-}
-type ApplicationDefine<App extends RawExtend> = {
-  [slice in keyof App]: {
-    [api in keyof App[slice]]: App[slice][api]["fn"] extends ((...args: infer A) => infer B) ? ((producer: Producer<B>) => void) : never
-  }
+type Resource<T extends AppShape[string]> = {
+  [api in keyof T]: T[api]["fn"] extends ExtendedFn<infer D, infer E, infer R, infer K extends unknown[]> ? Token<D, E, R, K> : never
 }
 
-type Token<Data, Args extends any[]> = {
-  key: string,
-  parent: string,
-  (...t: Args): ExtendedToken<Data, Args>
+type Application<T extends AppShape> = {
+  [resource in keyof T]: Resource<T[resource]>
+}
+
+export function createApplication<
+  Shape extends AppShape,
+>(
+  shape: ApplicationEntry<Shape>,
+): Application<Shape> {
+  let resources = Object.keys(shape)
+
+  return resources.reduce((
+    result: Application<Shape>,
+    resourceName: keyof ApplicationEntry<Shape>
+  ) => {
+    let resource = shape[resourceName]
+    let apis = Object.keys(resource)
+
+    result[resourceName] = apis.reduce((
+      apiResult, apiName: keyof typeof resource) => {
+      let api = resource[apiName]
+      let fn = api.fn;
+
+      type FF = typeof fn;
+      type Fn = Exclude<FF, TX> extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? Producer<T, E, R> : never
+
+      type DataOf = Fn extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? T : never
+      type ErrorOf = Fn extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? E : never
+      type ReasonOf = Fn extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? R : never
+      type ArgsOf = Fn extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? A : never
+
+      apiResult[apiName] = createToken<Shape>(resourceName, apiName, api as Fn) as Token<DataOf, ErrorOf, ReasonOf, ArgsOf>;
+
+      return apiResult
+    }, {} as Resource<typeof resource>)
+
+    return result
+  }, {} as Application<Shape>)
 }
 
 
-function createToken<X, Y extends any[]>(
-  topLevelName: string,
-  name: string,
-): Token<X, Y> {
-  let key = `__${topLevelName}_${name}`
-  let source: Source<X> | null = null
+function createToken<
+  Shape extends AppShape,
+  // T,
+  // E,
+  // R,
+  // A extends unknown[]
+>(
+  resourceName: keyof Shape,
+  apiName: keyof Shape[keyof Shape],
+  api: ApplicationEntry<Shape>[keyof ApplicationEntry<Shape>][keyof ApplicationEntry<Shape>[keyof ApplicationEntry<Shape>]],
+): (typeof api["fn"]) extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? Token<T, E, R, A> : never   {
 
-  function token(...args: Y) {
+  let fn = api.fn;
+  type NeededSource = (Exclude<typeof api["fn"], TX>) extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? Source<T, E, R> : never
+  type NeededProducer = (Exclude<typeof api["fn"], TX>) extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? Producer<T, E, R> : never
+  type NeededProducerConfig = (Exclude<typeof api["fn"], TX>) extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? ProducerConfig<T, E, R> : never
+
+
+  let source: NeededSource | null = null
+  let name = `app__${String(resourceName)}_${String(apiName)}__`
+
+  function token(): NeededSource {
     if (!source) {
-      source = createSource(key)
+      let path = `app.${String(resourceName)}.${String(apiName)}`
+      throw new Error(`Must call ${path}.define before calling ${path}() or ${path}.use()`)
     }
+    return source;
+  }
+
+  function define(fn: NeededProducer, config?: NeededProducerConfig): NeededSource {
+    source = createSource(name, fn) as NeededSource;
     return source
   }
-  token.key = name;
-  token.parent = topLevelName;
 
+  // function use() {}
+
+  // token.use = use;
+  token.define = define;
   return token;
 }
-type ExtendedToken<T, A extends any[]> = Source<T, any, any>
 
-export function use<T, E, R, A extends any[]>(
-  token: ExtendedToken<T, A>,
-  producer: Producer<T, E, R>,
-  options?: PartialUseAsyncStateConfiguration<T, E, R, State<T, E, R>>,
-  deps: any[] = []
-) {
-  if (producer) {
-    token.replaceProducer(producer)
+
+type Page<T = unknown> = {}
+type User = {}
+
+type MyType = {
+  users: {
+    search: {
+      fn: (query: string) => Promise<Page<User>>
+    },
+  },
+  posts: {
+    delete: {
+      fn: (id: string) => boolean
+    }
   }
-  if (options) {
-    token.patchConfig(options)
+}
+let MyApp = {
+  users: {
+    search: {
+      fn: JT
+    }
+  },
+  posts: {
+    delete: {
+      fn: JT,
+    }
   }
-
-  return useInternalAsyncState("use", {...options, source: token}, deps)
 }
 
-let {app, define} = createApplication<MyAppType>(myAppJeton)
 
-app.users.search("username=toto&page=1&size=5&sort=")
-app.posts.remove("14")
-define.posts.search(fetchUser)
-
-let {state} = use(app.users.search("query"), fetchUser)
+let app = createApplication<MyType>(MyApp)
+let t = app.users.search()
+let st = app.posts.delete.define()
 
 
-
-function fetchPost(): Promise<Post> {
-  return Promise.resolve().then(() => ({}))
-}
-
-function fetchUser(): Promise<User> {
-  return Promise.resolve().then(() => ({}))
-}
