@@ -8,7 +8,7 @@ describe('should run async state with generator', () => {
   it('should run sync generator', async () => {
     // given
     function Component() {
-      const {state}: UseAsyncState<number> = useAsyncState.auto(function* producer() {
+      const {state}: UseAsyncState<number, any, any> = useAsyncState.auto(function* producer() {
         yield 1;
         yield 2;
         return yield 3;

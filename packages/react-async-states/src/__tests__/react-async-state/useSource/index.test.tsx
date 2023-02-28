@@ -12,7 +12,7 @@ describe('should useSource', () => {
       );
     }
 
-    const source = createSource("test-source", null, {initialValue: 8});
+    const source = createSource<number, any, any>("test-source", null, {initialValue: 8});
 
     function Component() {
       const {

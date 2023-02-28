@@ -26,7 +26,7 @@ export interface BaseUseAsyncState<T, E, R, A extends unknown[], S = State<T, E,
   ): void,
 }
 
-export interface UseAsyncState<T, E, R, A extends unknown[], S = State<T, E, R, A>> extends BaseUseAsyncState<T, E, R, A, S> {
+export interface UseAsyncState<T, E = unknown, R = unknown, A extends unknown[] = unknown[], S = State<T, E, R, A>> extends BaseUseAsyncState<T, E, R, A, S> {
   state: S,
 
   read(suspend?: boolean, throwError?: boolean): S,

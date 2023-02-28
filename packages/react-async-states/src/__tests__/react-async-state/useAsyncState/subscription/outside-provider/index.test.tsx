@@ -1,10 +1,7 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
-import {
-  UseAsyncState,
-} from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../useAsyncState";
-import {Status} from "async-states";
+import {ProducerProps, Status} from "async-states";
 
 describe('should do basic subscription to an async state', () => {
   it('should subscribe and get initial value -- sync ' +
@@ -16,7 +13,7 @@ describe('should do basic subscription to an async state', () => {
         state,
         setState
       } = useAsyncState({
-        producer(props) {
+        producer(props: ProducerProps<number, any, any, [number]>) {
           return props.args[0];
         },
         initialValue: 0,
@@ -93,8 +90,8 @@ describe('should do basic subscription to an async state', () => {
       const {
         state: {status, data},
         run
-      }: UseAsyncState<number> = useAsyncState({
-        producer(props): Promise<number> {
+      } = useAsyncState({
+        producer(props: ProducerProps<number, any, any, [number]>): Promise<number> {
           return new Promise<number>((resolve => {
             let id = setTimeout(() => resolve(props.args[0]), 100);
             props.onAbort(() => clearTimeout(id));
@@ -132,7 +129,6 @@ describe('should do basic subscription to an async state', () => {
     )
 
     const incrementBtn = screen.getByTestId("increment");
-    const decrementBtn = screen.getByTestId("decrement");
     // then
     expect(screen.getByTestId("result").innerHTML).toEqual("0");
     expect(screen.getByTestId("pending").innerHTML).toEqual("");

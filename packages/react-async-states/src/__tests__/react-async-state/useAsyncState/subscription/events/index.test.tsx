@@ -1,10 +1,7 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
-import {
-  UseAsyncState
-} from "../../../../../types.internal";
 import {useAsyncState} from "../../../../../useAsyncState";
-import {Status, createSource} from "async-states";
+import {createSource, Status} from "async-states";
 
 describe('useAsyncState - events', () => {
   it('add several change events with different forms', async () => {
@@ -13,10 +10,10 @@ describe('useAsyncState - events', () => {
     const mockedFn = jest.fn();
     const mockedFn2 = jest.fn();
     const mockedFn3 = jest.fn();
-    const counterSource = createSource("counter", null, {initialValue: 0});
+    const counterSource = createSource<number, any, any, any[]>("counter", null, {initialValue: 0});
 
     function Component( { subKey } : { subKey: string }) {
-      const {key, run, state}: UseAsyncState<number> = useAsyncState({
+      const {key, run, state} = useAsyncState({
         source: counterSource,
         events: {
           change: [

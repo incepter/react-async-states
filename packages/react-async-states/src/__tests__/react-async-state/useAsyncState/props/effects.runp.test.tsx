@@ -18,7 +18,7 @@ describe('should runp another producer from producer', () => {
     const source1Producer = jest.fn().mockImplementation(props => props.args[0]);
     const source1 = createSource("source", source1Producer);
 
-    const source2Producer: Producer<number> = jest.fn().mockImplementation((props: ProducerProps<number>) => {
+    const source2Producer: Producer<number, any, any, any[]> = jest.fn().mockImplementation((props: ProducerProps<number, any, any, any[]>) => {
       return props.runp(source1, null, 1)?.then(t => t.data);
     });
     const source2 = createSource("source2", source2Producer);
@@ -31,7 +31,7 @@ describe('should runp another producer from producer', () => {
             {() => null}
           </AsyncStateComponent>
           <AsyncStateComponent config={{source: source2, lazy: false}}>
-            {({state}: UseAsyncState<number>) => (
+            {({state}) => (
               <div>
                 <span data-testid="status">{state.status}</span>
                 <span data-testid="result">{state.data ?? ""}</span>
@@ -73,13 +73,13 @@ describe('should runp another producer from producer', () => {
       doesntExistData: any,
     }
 
-    const source1Producer = jest.fn().mockImplementation(async (props: ProducerProps<TestType>) => {
+    const source1Producer = jest.fn().mockImplementation(async (props: ProducerProps<TestType, any, any, any[]>) => {
       const source2Data = (await props.runp("secondSrc", null, 3))?.data;
       const doesntExistData = (await props.runp("doesntExist", null, 3))?.data;
       return {source2Data, doesntExistData};
     });
-    const source1 = createSource("firstSrc", source1Producer) as Source<TestType>;
-    const source2 = createSource("secondSrc", source2Producer) as Source<TestType>;
+    const source1 = createSource("firstSrc", source1Producer) as Source<TestType, any, any, any[]>;
+    const source2 = createSource("secondSrc", source2Producer) as Source<TestType, any, any, any[]>;
 
     function Test() {
 
@@ -128,7 +128,7 @@ describe('should runp another producer from producer', () => {
     // given
     const source2Producer = jest.fn().mockImplementation(() => 5);
 
-    const source1Producer = jest.fn().mockImplementation(async (props: ProducerProps<number>) => {
+    const source1Producer = jest.fn().mockImplementation(async (props: ProducerProps<number, any, any, any[]>) => {
       return (await props.runp(source2Producer, {payload: {hello: "world"}}, 4))?.data;
     });
     const source1 = createSource("source11", source1Producer);
@@ -136,7 +136,7 @@ describe('should runp another producer from producer', () => {
     function Test() {
       return (
         <AsyncStateComponent config={{source: source1, lazy: false}}>
-          {({state}: UseAsyncState<number>) => (
+          {({state}) => (
             <span data-testid="result">{state.data}</span>
           )}
         </AsyncStateComponent>
@@ -165,17 +165,17 @@ describe('should runp another producer from producer', () => {
     // given
     const source2Producer = jest.fn().mockImplementation(() => 7);
 
-    const source1Producer = jest.fn().mockImplementation(async (props: ProducerProps<number>) => {
+    const source1Producer = jest.fn().mockImplementation(async (props: ProducerProps<number, any, any, any[]>) => {
       return (await props.runp(source2Producer, null, 66))?.data;
     });
-    const source1 = createSource("source1", source1Producer);
+    const source1 = createSource("source1", source1Producer) as Source<number, any, any, any[]>;
 
     function Test() {
 
       return (
         <>
           <AsyncStateComponent config={{source: source1, lazy: false}}>
-            {({state}: UseAsyncState<number>) => (
+            {({state}) => (
               <span data-testid="result">{state.data}</span>
             )}
           </AsyncStateComponent>

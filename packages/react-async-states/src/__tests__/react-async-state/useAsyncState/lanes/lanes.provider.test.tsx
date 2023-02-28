@@ -4,6 +4,7 @@ import {mockDateNow} from "../../utils/setup";
 import {useAsyncState} from "../../../../useAsyncState";
 import {createSource} from "async-states";
 import {flushPromises} from "../../utils/test-utils";
+import {ProducerProps} from "async-states";
 
 mockDateNow();
 
@@ -14,7 +15,7 @@ describe('subscribe to lane and operate on it', () => {
     intervalIds = [];
   });
 
-  function countersProducer(props) {
+  function countersProducer(props: ProducerProps<number, any, any, any[]>) {
     let intervalId = setInterval(() => props.emit(old => old.data + 1), 1000);
     intervalIds.push(intervalId);
     props.onAbort(() => clearInterval(intervalId));
@@ -67,7 +68,7 @@ describe('subscribe to lane and operate on it', () => {
         <span
           data-testid={`counter-sub-${counterKey}-${alias}-data`}
         >
-        counter-{counterKey}-{alias}-{data}
+        counter-{counterKey}-{alias}-{data as string}
       </span>
       </div>
     );
@@ -94,7 +95,6 @@ describe('subscribe to lane and operate on it', () => {
 
     const runnerRun = screen.getByTestId("runner-run");
     const runDefaultCounter = screen.getByTestId("counter-sub-default-default-run");
-    const runCounter2Extra = screen.getByTestId("counter-sub-counter-2-extra-default-run");
 
     // then
     act(() => {

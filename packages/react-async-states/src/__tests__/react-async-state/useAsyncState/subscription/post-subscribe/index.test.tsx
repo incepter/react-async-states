@@ -20,7 +20,7 @@ describe('should post subscribe', () => {
         props.onAbort(() => clearTimeout(id));
       });
     });
-    const counterSource = createSource("counter", producer, {initialValue: 0, resetStateOnDispose: true});
+    const counterSource = createSource<number, any, any, any[]>("counter", producer, {initialValue: 0, resetStateOnDispose: true});
     const onUnsubscribe = jest.fn();
 
     const mocked = jest.fn();
@@ -60,7 +60,7 @@ describe('should post subscribe', () => {
       return (
         <Wrapper>
           <AsyncStateComponent config={config}>
-            {({state, run}: UseAsyncState<number>) => (
+            {({state, run}) => (
               <>
                 <button data-testid="run"
                         onClick={() => run("test")}>{state.data}</button>

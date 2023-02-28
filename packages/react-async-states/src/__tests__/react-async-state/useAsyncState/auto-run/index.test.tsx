@@ -14,7 +14,7 @@ describe('should auto run async state', () => {
     function Component() {
       const {
         state,
-      }: UseAsyncState<number> = useAsyncState.auto({
+      }: UseAsyncState<number, any, any> = useAsyncState.auto({
         producer,
         autoRunArgs: [5],
         initialValue: 99,
@@ -50,7 +50,7 @@ describe('should auto run async state', () => {
     function Component() {
       const {
         state,
-      }: UseAsyncState<number> = useAsyncState.auto({
+      }: UseAsyncState<number, any, any> = useAsyncState.auto({
         payload: {
           content: "Hello",
         },
