@@ -25,7 +25,7 @@ function createPool(name: string, context: LibraryPoolsContext): PoolInterface {
   let meter = 0;
   let watchers = {};
   let listeners = {};
-  let instances = new Map<string, StateInterface<any>>();
+  let instances = new Map<string, StateInterface<unknown, unknown, unknown, unknown[]>>();
   return {
     context,
     instances,
@@ -39,7 +39,7 @@ function createPool(name: string, context: LibraryPoolsContext): PoolInterface {
     mergePayload,
   };
 
-  function set(key: string, instance: StateInterface<any>) {
+  function set(key: string, instance: StateInterface<unknown, unknown, unknown, unknown[]>) {
     if (!key) {
       return;
     }
@@ -51,11 +51,11 @@ function createPool(name: string, context: LibraryPoolsContext): PoolInterface {
     instances.forEach(instance => instance.mergePayload(payload))
   }
 
-  function listen<T, E, R>(notify: WatchCallback<T, E, R>): AbortFn {
+  function listen<T, E, R, A extends unknown[]>(notify: WatchCallback<T, E, R, A>): AbortFn {
     let didClean = false;
     let index = ++meter;
 
-    function cb(argv: StateInterface<T, E, R> | null, notifKey: string) {
+    function cb(argv: StateInterface<T, E, R, A> | null, notifKey: string) {
       if (!didClean) {
         notify(argv, notifKey);
       }
@@ -71,15 +71,15 @@ function createPool(name: string, context: LibraryPoolsContext): PoolInterface {
   }
 
 
-  function watch<T, E, R>(
-    key: string, notify: WatchCallback<T, E, R>): AbortFn {
+  function watch<T, E, R, A extends unknown[]>(
+    key: string, notify: WatchCallback<T, E, R, A>): AbortFn<R> {
     if (!watchers[key]) {
       watchers[key] = {};
     }
     let didClean = false;
     let index = ++meter;
 
-    function cb(argv: StateInterface<T, E, R> | null, notifKey: string) {
+    function cb(argv: StateInterface<T, E, R, A> | null, notifKey: string) {
       if (!didClean) {
         notify(argv, notifKey);
       }
@@ -97,12 +97,12 @@ function createPool(name: string, context: LibraryPoolsContext): PoolInterface {
   }
 
 
-  function notifyWatchers<T, E, R>(
-    key: string, value: StateInterface<T, E, R> | null): void {
+  function notifyWatchers<T, E, R, A extends unknown[]>(
+    key: string, value: StateInterface<T, E, R, A> | null): void {
     Promise.resolve().then(function notify() {
       let callbacks: {
         cleanup: AbortFn,
-        cb: WatchCallback<any>
+        cb: WatchCallback<T, E, R, A>
       }[] = Object.values(listeners);
 
       if (watchers[key]) {

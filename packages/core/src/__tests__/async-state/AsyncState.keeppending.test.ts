@@ -9,7 +9,7 @@ describe('AsyncState - keepPending', () => {
     // given
     let key = "keep-1";
     let producer = timeout(100);
-    let myConfig: ProducerConfig<undefined> = {keepPendingForMs: 200};
+    let myConfig: ProducerConfig<unknown, unknown, unknown, unknown[]> = {keepPendingForMs: 200};
 
     // when
     let instance = new AsyncState(key, producer, myConfig);
@@ -27,7 +27,7 @@ describe('AsyncState - keepPending', () => {
     // given
     let key = "keep-2";
     let producer = timeout<number>(100, 0);
-    let config: ProducerConfig<undefined> = {keepPendingForMs: 200};
+    let config: ProducerConfig<unknown, unknown, unknown, unknown[]> = {keepPendingForMs: 200};
 
     // when
     let instance = new AsyncState(key, producer, config);
@@ -65,7 +65,7 @@ describe('AsyncState - keepPending', () => {
     // given
     let key = "keep-3";
     let producer = timeout<number>(100, 0);
-    let config: ProducerConfig<undefined> = {keepPendingForMs: 200};
+    let config: ProducerConfig<unknown, unknown, unknown, unknown[]> = {keepPendingForMs: 200};
 
     // when
     let spy = jest.fn();
@@ -94,7 +94,7 @@ describe('AsyncState - keepPending', () => {
     // given
     let key = "keep-4";
     let producer = timeout<number>(100, 0);
-    let config: ProducerConfig<number> = {
+    let config: ProducerConfig<unknown, unknown, unknown, unknown[]> = {
       keepPendingForMs: 200,
       initialValue: 1
     };
@@ -115,7 +115,7 @@ describe('AsyncState - keepPending', () => {
     // given
     let key = "keep-5";
     let producer = timeout<number>(300, 0);
-    let config: ProducerConfig<number> = {
+    let config: ProducerConfig<unknown, unknown, unknown, unknown[]> = {
       keepPendingForMs: 600,
       initialValue: 1,
       skipPendingDelayMs: 250
@@ -138,11 +138,11 @@ describe('AsyncState - keepPending', () => {
     // given
     let key = "keep-6";
     let abortedSpy = jest.fn();
-    let producer: Producer<number> = (props) => {
+    let producer: Producer<unknown, unknown, unknown, unknown[]> = (props) => {
       props.onAbort(abortedSpy)
       return timeout<number>(300, 0)();
     };
-    let config: ProducerConfig<number> = {
+    let config: ProducerConfig<unknown, unknown, unknown, unknown[]> = {
       initialValue: 1,
     };
 
@@ -163,7 +163,7 @@ describe('AsyncState - keepPending', () => {
     let key = "keep-7";
     let onSuccess = jest.fn();
     let producer = timeout<number>(50, 0);
-    let config: ProducerConfig<number> = {
+    let config: ProducerConfig<number, unknown, unknown, unknown[]> = {
       keepPendingForMs: 100,
       initialValue: 1,
     };
