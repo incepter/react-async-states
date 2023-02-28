@@ -67,5 +67,7 @@ let myApp = {
 
 export let app = createApplication<MyApplicationShape>(myApp)
 
+app.users.findById.inject
+
 // let st = app.posts.delete.define()
 
