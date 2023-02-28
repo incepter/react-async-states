@@ -27,8 +27,7 @@ let JT: TX = {} as const
 
 import {
   createSource,
-  MixedConfig,
-  Producer, ProducerConfig,
+  Producer, ProducerConfig, ProducerProps,
   Source,
   State,
   UseAsyncState
@@ -73,6 +72,11 @@ type Application<T extends AppShape> = {
   [resource in keyof T]: Resource<T[resource]>
 }
 
+type DataOf<A extends AppShape[string][string], T extends ApiEntry<A>> = Exclude<T["fn"], TX> extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? T : never
+type ErrorOf<A extends AppShape[string][string], T extends ApiEntry<A>> = Exclude<T["fn"], TX> extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? E : never
+type ReasonOf<A extends AppShape[string][string], T extends ApiEntry<A>> = Exclude<T["fn"], TX> extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? R : never
+type ArgsOf<A extends AppShape[string][string], T extends ApiEntry<A>> = Exclude<T["fn"], TX> extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? A : never
+
 export function createApplication<
   Shape extends AppShape,
 >(
@@ -90,17 +94,19 @@ export function createApplication<
     result[resourceName] = apis.reduce((
       apiResult, apiName: keyof typeof resource) => {
       let api = resource[apiName]
-      let fn = api.fn;
+      type ApiType = typeof api
 
-      type FF = typeof fn;
-      type Fn = Exclude<FF, TX> extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? Producer<T, E, R> : never
+      type T = DataOf<ApiType, ApiType>
+      type E = ErrorOf<ApiType, ApiType>
+      type R = ReasonOf<ApiType, ApiType>
+      type A = ArgsOf<ApiType, ApiType>
 
-      type DataOf = Fn extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? T : never
-      type ErrorOf = Fn extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? E : never
-      type ReasonOf = Fn extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? R : never
-      type ArgsOf = Fn extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? A : never
-
-      apiResult[apiName] = createToken<Shape>(resourceName, apiName, api as Fn) as Token<DataOf, ErrorOf, ReasonOf, ArgsOf>;
+      type TokenType = Token<T, E, R, A>
+      apiResult[apiName] = createToken<
+        Shape,
+        ApiType,
+        ApiType
+      >(resourceName, apiName, api)
 
       return apiResult
     }, {} as Resource<typeof resource>)
@@ -112,26 +118,23 @@ export function createApplication<
 
 function createToken<
   Shape extends AppShape,
-  // T,
-  // E,
-  // R,
-  // A extends unknown[]
+  K extends AppShape[string][string],
+  D extends ApiEntry<K>
 >(
   resourceName: keyof Shape,
   apiName: keyof Shape[keyof Shape],
-  api: ApplicationEntry<Shape>[keyof ApplicationEntry<Shape>][keyof ApplicationEntry<Shape>[keyof ApplicationEntry<Shape>]],
-): (typeof api["fn"]) extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? Token<T, E, R, A> : never   {
+  api: D
+): D["fn"] extends ExtendedFn<infer D, infer E, infer R, infer K extends unknown[]> ? Token<D, E, R, K> : never {
+  type T = DataOf<typeof api, typeof api>
+  type E = ErrorOf<typeof api, typeof api>
+  type R = ReasonOf<typeof api, typeof api>
+  type A = ArgsOf<typeof api, typeof api>
+  type TokenType = D["fn"] extends ExtendedFn<infer D, infer E, infer R, infer K extends unknown[]> ? Token<D, E, R, K> : never
 
-  let fn = api.fn;
-  type NeededSource = (Exclude<typeof api["fn"], TX>) extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? Source<T, E, R> : never
-  type NeededProducer = (Exclude<typeof api["fn"], TX>) extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? Producer<T, E, R> : never
-  type NeededProducerConfig = (Exclude<typeof api["fn"], TX>) extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? ProducerConfig<T, E, R> : never
-
-
-  let source: NeededSource | null = null
+  let source: Source<T, E, R> | null = null
   let name = `app__${String(resourceName)}_${String(apiName)}__`
 
-  function token(): NeededSource {
+  function token(): Source<T, E, R> {
     if (!source) {
       let path = `app.${String(resourceName)}.${String(apiName)}`
       throw new Error(`Must call ${path}.define before calling ${path}() or ${path}.use()`)
@@ -139,34 +142,42 @@ function createToken<
     return source;
   }
 
-  function define(fn: NeededProducer, config?: NeededProducerConfig): NeededSource {
-    source = createSource(name, fn) as NeededSource;
+  function define(fn: Producer<T, E, R>, config?: ProducerConfig<T, E, R>): Source<T, E, R> {
+    source = createSource(name, fn);
     return source
   }
 
-  // function use() {}
-
-  // token.use = use;
   token.define = define;
-  return token;
+  return token as TokenType;
 }
 
-
+/**
+ *
+ *
+ *
+ * DEMO
+ *
+ *
+ *
+ *
+ *
+ */
 type Page<T = unknown> = {}
 type User = {}
 
 type MyType = {
   users: {
     search: {
-      fn: (query: string) => Promise<Page<User>>
+      fn: DefaultFn<Promise<User>, Error, "reason", [string]>
     },
   },
   posts: {
     delete: {
-      fn: (id: string) => boolean
+      fn: DefaultFn<Promise<number>, Error, "reason", [string]>
     }
-  }
+  },
 }
+
 let MyApp = {
   users: {
     search: {
@@ -180,9 +191,9 @@ let MyApp = {
   }
 }
 
-
 let app = createApplication<MyType>(MyApp)
-let t = app.users.search()
-let st = app.posts.delete.define()
+let t = app.users.search
+
+// let st = app.posts.delete.define()
 
 
