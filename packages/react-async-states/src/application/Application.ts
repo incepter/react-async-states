@@ -16,7 +16,7 @@ let freeze = Object.freeze
 type TX = {}
 export let JT: TX = {} as const
 
-export type DefaultFn<D, E, R, A extends unknown[]> = Producer<D, E, R>
+export type DefaultFn<D, E, R, A extends unknown[]> = Producer<D, E, R, A>
 export type ExtendedFn<D, E, R, A extends unknown[]> =
   DefaultFn<D, E, R, A>
   | TX
@@ -102,10 +102,10 @@ function createToken<
   type A = ArgsOf<D, D>
   type TokenType = Token<T, E, R, A>
 
-  let source: Source<T, E, R> | null = null
+  let source: Source<T, E, R, A> | null = null
   let name = `app__${String(resourceName)}_${String(apiName)}__`
 
-  function token(): Source<T, E, R> {
+  function token(): Source<T, E, R, A> {
     if (!source) {
       let path = `app.${String(resourceName)}.${String(apiName)}`
       throw new Error(`Must call ${path}.inject before calling ${path}() or ${path}.use()`)
@@ -117,10 +117,10 @@ function createToken<
   token.inject = inject;
   return token;
 
-  function use<S = State<T, E, R>>(
+  function use<S = State<T, E, R, A>>(
     config?: UseConfig<T, E, R, A, S>,
     deps?: any[]
-  ): UseAsyncState<T, E, R, S> {
+  ): UseAsyncState<T, E, R, A, S> {
 
     let caller;
     if (__DEV__) {
@@ -131,7 +131,7 @@ function createToken<
   }
 
   function inject(
-    fn: Producer<T, E, R>, config?: ProducerConfig<T, E, R>): TokenType {
+    fn: Producer<T, E, R, A>, config?: ProducerConfig<T, E, R, A>): TokenType {
     if (!source) {
       source = createSource(name, fn, config);
     }
@@ -142,12 +142,12 @@ function createToken<
 }
 
 
-export type UseConfig<T, E, R, A extends unknown[], S = State<T, E, R>> = Omit<PartialUseAsyncStateConfiguration<T, E, R, S>, "key" | "producer" | "source" | "pool" | "context">
+export type UseConfig<T, E, R, A extends unknown[], S = State<T, E, R, A>> = Omit<PartialUseAsyncStateConfiguration<T, E, R, A, S>, "key" | "producer" | "source" | "pool" | "context">
 
-export type Token<T, E, R, K extends unknown[]> = {
-  (): Source<T, E, R>,
+export type Token<T, E, R, A extends unknown[]> = {
+  (): Source<T, E, R, A>,
   inject(
-    fn: Producer<T, E, R>, config?: ProducerConfig<T, E, R>): Token<T, E, R, K>
-  use<S = State<T, E, R>>(
-    config?: UseConfig<T, E, R, K, S>, deps?: any[]): UseAsyncState<T, E, R, S>,
+    fn: Producer<T, E, R, A>, config?: ProducerConfig<T, E, R, A>): Token<T, E, R, A>
+  use<S = State<T, E, R, A>>(
+    config?: UseConfig<T, E, R, A, S>, deps?: any[]): UseAsyncState<T, E, R, A, S>,
 }

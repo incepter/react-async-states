@@ -6,8 +6,6 @@ export {useProducer} from "./useProducer";
 
 export {useAsyncState} from "./useAsyncState";
 
-export {AsyncStateProvider} from "./Provider";
-
 export {
   createSource, Status, RunEffect,
   requestContext, createContext, getContext, terminateContext,
