@@ -128,7 +128,7 @@ function createToken<
   type T = DataOf<typeof api, typeof api>
   type E = ErrorOf<typeof api, typeof api>
   type R = ReasonOf<typeof api, typeof api>
-  type A = ArgsOf<typeof api, typeof api>
+
   type TokenType = D["fn"] extends ExtendedFn<infer D, infer E, infer R, infer K extends unknown[]> ? Token<D, E, R, K> : never
 
   let source: Source<T, E, R> | null = null
@@ -168,12 +168,12 @@ type User = {}
 type MyType = {
   users: {
     search: {
-      fn: DefaultFn<Promise<User>, Error, "reason", [string]>
+      fn: DefaultFn<User, Error, "reason", [string]>
     },
   },
   posts: {
     delete: {
-      fn: DefaultFn<Promise<number>, Error, "reason", [string]>
+      fn: DefaultFn<number, Error, "reason", [string]>
     }
   },
 }
@@ -192,7 +192,10 @@ let MyApp = {
 }
 
 let app = createApplication<MyType>(MyApp)
-let t = app.users.search
+let t = app.users.search()
+
+
+
 
 // let st = app.posts.delete.define()
 
