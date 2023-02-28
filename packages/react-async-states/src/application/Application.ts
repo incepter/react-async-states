@@ -1,40 +1,23 @@
-/**
- * createApplication({
- *   users: {
- *     search(query)
- *   }
- *   todos: {
- *     add() {}
- *     submit() {}
- *   }
- *   weather: {}
- * }) {
- *
- * }
- *
- *
- *
- *
- * createApplication(shape)
- *
- * shape<App>: {
- *   [prop in keyof App]: App[prop]
- * }
- *
- */
-type TX = {}
-let JT: TX = {} as const
-
+import {useInternalAsyncState} from "../useInternalAsyncState";
 import {
   createSource,
-  Producer, ProducerConfig, ProducerProps,
+  PartialUseAsyncStateConfiguration,
+  Producer,
+  ProducerConfig,
   Source,
   State,
   UseAsyncState
-} from "async-states/src";
+} from "async-states";
+import {__DEV__} from "../shared";
+import {useCallerName} from "../helpers/useCallerName";
 
-type DefaultFn<D, E, R, A extends unknown[]> = Producer<D, E, R>
-type ExtendedFn<D, E, R, A extends unknown[]> = DefaultFn<D, E, R, A> | TX
+type TX = {}
+export let JT: TX = {} as const
+
+export type DefaultFn<D, E, R, A extends unknown[]> = Producer<D, E, R>
+export type ExtendedFn<D, E, R, A extends unknown[]> =
+  DefaultFn<D, E, R, A>
+  | TX
 
 type AppShape = {
   [resource: string]: {
@@ -57,25 +40,23 @@ type ApplicationEntry<T extends AppShape> = {
   [resource in keyof T]: ResourceEntry<T[resource]>
 }
 
-type Token<T, E, R, K extends unknown[]> = {
-  (): Source<T, E, R>,
-  define(fn: Producer<T, E, R>, config?: ProducerConfig<T, E, R>): Source<T, E, R>
-  // use(config?: MixedConfig<T, E, R, State<T, E, R>>, deps?: any[]): UseAsyncState<T, E, R, State<T, E, R>>,
-}
-
-
 type Resource<T extends AppShape[string]> = {
-  [api in keyof T]: T[api]["fn"] extends ExtendedFn<infer D, infer E, infer R, infer K extends unknown[]> ? Token<D, E, R, K> : never
+  [api in keyof T]: Token<
+    DataOf<T[api], T[api]>,
+    ErrorOf<T[api], T[api]>,
+    ReasonOf<T[api], T[api]>,
+    ArgsOf<T[api], T[api]>
+  >
 }
 
-type Application<T extends AppShape> = {
+export type Application<T extends AppShape> = {
   [resource in keyof T]: Resource<T[resource]>
 }
 
-type DataOf<A extends AppShape[string][string], T extends ApiEntry<A>> = Exclude<T["fn"], TX> extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? T : never
-type ErrorOf<A extends AppShape[string][string], T extends ApiEntry<A>> = Exclude<T["fn"], TX> extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? E : never
-type ReasonOf<A extends AppShape[string][string], T extends ApiEntry<A>> = Exclude<T["fn"], TX> extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? R : never
-type ArgsOf<A extends AppShape[string][string], T extends ApiEntry<A>> = Exclude<T["fn"], TX> extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? A : never
+type DataOf<A extends AppShape[string][string], T extends ApiEntry<A>> = T["fn"] extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? T : never
+type ErrorOf<A extends AppShape[string][string], T extends ApiEntry<A>> = T["fn"] extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? E : never
+type ReasonOf<A extends AppShape[string][string], T extends ApiEntry<A>> = T["fn"] extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? R : never
+type ArgsOf<A extends AppShape[string][string], T extends ApiEntry<A>> = T["fn"] extends DefaultFn<infer T, infer E, infer R, infer A extends unknown[]> ? A : never
 
 export function createApplication<
   Shape extends AppShape,
@@ -94,19 +75,7 @@ export function createApplication<
     result[resourceName] = apis.reduce((
       apiResult, apiName: keyof typeof resource) => {
       let api = resource[apiName]
-      type ApiType = typeof api
-
-      type T = DataOf<ApiType, ApiType>
-      type E = ErrorOf<ApiType, ApiType>
-      type R = ReasonOf<ApiType, ApiType>
-      type A = ArgsOf<ApiType, ApiType>
-
-      type TokenType = Token<T, E, R, A>
-      apiResult[apiName] = createToken<
-        Shape,
-        ApiType,
-        ApiType
-      >(resourceName, apiName, api)
+      apiResult[apiName] = createToken(resourceName, apiName, api)
 
       return apiResult
     }, {} as Resource<typeof resource>)
@@ -124,12 +93,12 @@ function createToken<
   resourceName: keyof Shape,
   apiName: keyof Shape[keyof Shape],
   api: D
-): D["fn"] extends ExtendedFn<infer D, infer E, infer R, infer K extends unknown[]> ? Token<D, E, R, K> : never {
-  type T = DataOf<typeof api, typeof api>
-  type E = ErrorOf<typeof api, typeof api>
-  type R = ReasonOf<typeof api, typeof api>
-
-  type TokenType = D["fn"] extends ExtendedFn<infer D, infer E, infer R, infer K extends unknown[]> ? Token<D, E, R, K> : never
+): Token<DataOf<D, D>, ErrorOf<D, D>, ReasonOf<D, D>, ArgsOf<D, D>> {
+  type T = DataOf<D, D>
+  type E = ErrorOf<D, D>
+  type R = ReasonOf<D, D>
+  type A = ArgsOf<D, D>
+  type TokenType = Token<T, E, R, A>
 
   let source: Source<T, E, R> | null = null
   let name = `app__${String(resourceName)}_${String(apiName)}__`
@@ -142,61 +111,37 @@ function createToken<
     return source;
   }
 
-  function define(fn: Producer<T, E, R>, config?: ProducerConfig<T, E, R>): Source<T, E, R> {
-    source = createSource(name, fn);
-    return source
-  }
-
+  token.use = use;
   token.define = define;
-  return token as TokenType;
-}
+  return token;
 
-/**
- *
- *
- *
- * DEMO
- *
- *
- *
- *
- *
- */
-type Page<T = unknown> = {}
-type User = {}
+  function use<S = State<T, E, R>>(
+    config?: UseConfig<T, E, R, A, S>,
+    deps?: any[]
+  ): UseAsyncState<T, E, R, S> {
 
-type MyType = {
-  users: {
-    search: {
-      fn: DefaultFn<User, Error, "reason", [string]>
-    },
-  },
-  posts: {
-    delete: {
-      fn: DefaultFn<number, Error, "reason", [string]>
+    let caller;
+    if (__DEV__) {
+      caller = useCallerName(3);
     }
-  },
-}
+    let source = token()
+    return useInternalAsyncState(caller, {...config, source}, deps);
+  }
 
-let MyApp = {
-  users: {
-    search: {
-      fn: JT
-    }
-  },
-  posts: {
-    delete: {
-      fn: JT,
-    }
+  function define(
+    fn: Producer<T, E, R>, config?: ProducerConfig<T, E, R>): TokenType {
+    source = createSource(name, fn, config);
+    return token
   }
 }
 
-let app = createApplication<MyType>(MyApp)
-let t = app.users.search()
 
+export type UseConfig<T, E, R, A extends unknown[], S = State<T, E, R>> = Omit<PartialUseAsyncStateConfiguration<T, E, R, S>, "key" | "producer" | "source">
 
-
-
-// let st = app.posts.delete.define()
-
-
+export type Token<T, E, R, K extends unknown[]> = {
+  (): Source<T, E, R>,
+  define(
+    fn: Producer<T, E, R>, config?: ProducerConfig<T, E, R>): Token<T, E, R, K>
+  use<S = State<T, E, R>>(
+    config?: UseConfig<T, E, R, K, S>, deps?: any[]): UseAsyncState<T, E, R, S>,
+}

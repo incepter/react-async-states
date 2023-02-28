@@ -18,6 +18,12 @@ export {
   default as Hydration,
 } from "./hydration/Hydration";
 
+export {JT, createApplication} from "./application/Application"
+export type {
+  ExtendedFn, Application, DefaultFn, Token, UseConfig
+} from "./application/Application"
+
+
 export type {
   State,
   Source,
