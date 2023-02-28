@@ -11,6 +11,8 @@ import {
 import {__DEV__} from "../shared";
 import {useCallerName} from "../helpers/useCallerName";
 
+let freeze = Object.freeze
+
 type TX = {}
 export let JT: TX = {} as const
 
@@ -31,16 +33,16 @@ type TypedApiEntry<T, E, R, A extends unknown[]> = {
   fn: ExtendedFn<T, E, R, A>,
 }
 
-type ApiEntry<A extends AppShape[string][string]> = TypedApiEntry<unknown, unknown, unknown, unknown[]>
+export type ApiEntry<A extends AppShape[string][string]> = TypedApiEntry<unknown, unknown, unknown, unknown[]>
 
-type ResourceEntry<R extends AppShape[string]> = {
+export type ResourceEntry<R extends AppShape[string]> = {
   [api in keyof R]: ApiEntry<R[api]>
 }
-type ApplicationEntry<T extends AppShape> = {
+export type ApplicationEntry<T extends AppShape> = {
   [resource in keyof T]: ResourceEntry<T[resource]>
 }
 
-type Resource<T extends AppShape[string]> = {
+export type Resource<T extends AppShape[string]> = {
   [api in keyof T]: Token<
     DataOf<T[api], T[api]>,
     ErrorOf<T[api], T[api]>,
@@ -65,23 +67,23 @@ export function createApplication<
 ): Application<Shape> {
   let resources = Object.keys(shape)
 
-  return resources.reduce((
+  return freeze(resources.reduce((
     result: Application<Shape>,
     resourceName: keyof ApplicationEntry<Shape>
   ) => {
     let resource = shape[resourceName]
     let apis = Object.keys(resource)
 
-    result[resourceName] = apis.reduce((
+    result[resourceName] = freeze(apis.reduce((
       apiResult, apiName: keyof typeof resource) => {
       let api = resource[apiName]
-      apiResult[apiName] = createToken(resourceName, apiName, api)
+      apiResult[apiName] = freeze(createToken(resourceName, apiName, api))
 
       return apiResult
-    }, {} as Resource<typeof resource>)
+    }, {} as Resource<typeof resource>))
 
     return result
-  }, {} as Application<Shape>)
+  }, {} as Application<Shape>))
 }
 
 
@@ -106,13 +108,13 @@ function createToken<
   function token(): Source<T, E, R> {
     if (!source) {
       let path = `app.${String(resourceName)}.${String(apiName)}`
-      throw new Error(`Must call ${path}.define before calling ${path}() or ${path}.use()`)
+      throw new Error(`Must call ${path}.inject before calling ${path}() or ${path}.use()`)
     }
     return source;
   }
 
   token.use = use;
-  token.define = define;
+  token.inject = inject;
   return token;
 
   function use<S = State<T, E, R>>(
@@ -128,19 +130,23 @@ function createToken<
     return useInternalAsyncState(caller, {...config, source}, deps);
   }
 
-  function define(
+  function inject(
     fn: Producer<T, E, R>, config?: ProducerConfig<T, E, R>): TokenType {
-    source = createSource(name, fn, config);
+    if (!source) {
+      source = createSource(name, fn, config);
+    }
+    source.replaceProducer(fn)
+    source.patchConfig(config)
     return token
   }
 }
 
 
-export type UseConfig<T, E, R, A extends unknown[], S = State<T, E, R>> = Omit<PartialUseAsyncStateConfiguration<T, E, R, S>, "key" | "producer" | "source">
+export type UseConfig<T, E, R, A extends unknown[], S = State<T, E, R>> = Omit<PartialUseAsyncStateConfiguration<T, E, R, S>, "key" | "producer" | "source" | "pool" | "context">
 
 export type Token<T, E, R, K extends unknown[]> = {
   (): Source<T, E, R>,
-  define(
+  inject(
     fn: Producer<T, E, R>, config?: ProducerConfig<T, E, R>): Token<T, E, R, K>
   use<S = State<T, E, R>>(
     config?: UseConfig<T, E, R, K, S>, deps?: any[]): UseAsyncState<T, E, R, S>,

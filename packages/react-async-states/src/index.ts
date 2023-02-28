@@ -20,7 +20,15 @@ export {
 
 export {JT, createApplication} from "./application/Application"
 export type {
-  ExtendedFn, Application, DefaultFn, Token, UseConfig
+  ExtendedFn,
+  Application,
+  DefaultFn,
+  Token,
+  UseConfig,
+  ApplicationEntry,
+  ResourceEntry,
+  ApiEntry,
+  Resource
 } from "./application/Application"
 
 
