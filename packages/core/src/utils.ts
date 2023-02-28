@@ -19,9 +19,9 @@ export let isServer = typeof maybeWindow === "undefined" ||
 export let emptyArray = [];
 export let asyncStatesKey = freeze(Object.create(null));
 
-export function defaultHash(
-  args: any[] | undefined,
-  payload: Record<string, any> | null | undefined
+export function defaultHash<A extends unknown[]>(
+  args: A | undefined,
+  payload: Record<string, unknown> | null | undefined
 ): string {
   return JSON.stringify({args, payload});
 }

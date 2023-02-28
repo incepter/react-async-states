@@ -654,7 +654,7 @@ export class AsyncState<T, E, R, A extends unknown[]> implements StateInterface<
     }
   }
 
-  abort(reason: any = undefined) {
+  abort(reason: R | undefined = undefined) {
 
     if (isFunction(this.currentAbort)) {
       this.currentAbort(reason);
@@ -814,7 +814,7 @@ export function createSource<T, E = unknown, R = unknown, A extends unknown[] = 
   return new AsyncState(props, maybeProducer, maybeConfig)._source;
 }
 
-export function getSource(key: string, poolName?: string, context?: any) {
+export function getSource(key: string, poolName?: string, context?: unknown) {
   let executionContext = requestContext(context);
   let pool = executionContext.getOrCreatePool(poolName);
   return pool.instances.get(key)?._source;
@@ -995,7 +995,7 @@ export function createProps<T, E, R, A extends unknown[]>(config: CreatePropsCon
     onEmit(updater, status);
   }
 
-  function abort(reason?: any): AbortFn | undefined {
+  function abort(reason?: R): AbortFn<R> | undefined {
     if (indicators.aborted || indicators.cleared) {
       return;
     }
@@ -1145,7 +1145,7 @@ function attemptCache<T, E, R, A extends unknown[]>(
   runProps?: RUNCProps<T, E, R, A>
 ): boolean {
   if (isCacheEnabled(instance)) {
-    let args = runProps && runProps.args || emptyArray;
+    let args = (runProps && runProps.args || emptyArray) as A;
     let topLevelParent: StateInterface<T, E, R, A> = getTopLevelParent(instance);
 
     let {cacheConfig} = instance.config;

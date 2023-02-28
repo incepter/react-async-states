@@ -130,7 +130,7 @@ export function warnAboutAlreadyExistingSourceWithSameKey(key) {
   }
 }
 
-export function createContext(ctx: any): LibraryPoolsContext {
+export function createContext(ctx: unknown): LibraryPoolsContext {
   if (ctx !== null) {
     let maybeContext = poolsContexts.get(ctx);
 
@@ -229,14 +229,14 @@ export function createContext(ctx: any): LibraryPoolsContext {
 
 }
 
-export function getContext(ctx: any): LibraryPoolsContext | undefined {
+export function getContext(ctx: unknown): LibraryPoolsContext | undefined {
   if (ctx === null) {
     return DEFAULT_POOL_CONTEXT;
   }
   return poolsContexts.get(ctx);
 }
 
-export function terminateContext(ctx: any): boolean {
+export function terminateContext(ctx: unknown): boolean {
   if (!ctx) {
     return false;
   }
@@ -244,7 +244,7 @@ export function terminateContext(ctx: any): boolean {
   return poolsContexts.delete(ctx);
 }
 
-export function requestContext(context: any): LibraryPoolsContext {
+export function requestContext(context: unknown): LibraryPoolsContext {
   if (!context && !isServer) {
     return DEFAULT_POOL_CONTEXT;
   }
