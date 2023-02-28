@@ -1,11 +1,7 @@
 import React from "react";
-import {
-  currentView,
-  gatewaySource,
-  instanceDetails,
-} from "./sources";
+import {currentView, gatewaySource, instanceDetails,} from "./sources";
 import Json from "./Json";
-import {useSource, Status, mapFlags} from "react-async-states";
+import {mapFlags, Status, useSource} from "react-async-states";
 import {DevtoolsJournalEvent} from "async-states/dist/es/src/devtools/index";
 import {addFormattedDate, DevtoolsMessagesBuilder} from "./utils";
 
@@ -410,7 +406,7 @@ function ChangeState({uniqueId, displayKey}) {
                           status,
                           data,
                           isJson,
-                          gatewaySource.getPayload().dev
+                          ((gatewaySource.getPayload().dev) as boolean | undefined)
                         )
                       );
                       setOpen(false);

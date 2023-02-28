@@ -14,9 +14,9 @@ function isFunction(fn) {
 }
 
 
-export type StateBoundaryProps<T, E, R, S> = {
+export type StateBoundaryProps<T, E, R, A extends unknown[], S> = {
   children: React.ReactNode,
-  config: MixedConfig<T, E, R, S>,
+  config: MixedConfig<T, E, R, A, S>,
 
   dependencies?: any[],
   strategy?: RenderStrategy,
@@ -27,20 +27,20 @@ export type StateBoundaryProps<T, E, R, S> = {
 export type StateBoundaryRenderProp = Record<Status, React.ReactNode>
 
 
-export type BoundaryContextValue<T, E = any, R = any, S = State<T, E, R>> =
-  BoundaryContext<T, E, R, S>
+export type BoundaryContextValue<T, E = unknown, R = unknown, A extends unknown[] = unknown[], S = State<T, E, R, A>> =
+  BoundaryContext<T, E, R, A, S>
   | null;
 
 export type BoundarySourceContextType = {
-  source: Source<any>,
+  source: Source<unknown, unknown, unknown, unknown[]>,
   parent: BoundarySourceContextType | null
 }
 
-export type BoundaryContext<T, E = any, R = any, S = State<T, E, R>> = UseAsyncState<T, E, R, S>;
+export type BoundaryContext<T, E = unknown, R = unknown, A extends unknown[] = unknown[], S = State<T, E, R, A>> = UseAsyncState<T, E, R, A, S>;
 
 const StateBoundaryContext = React.createContext<BoundaryContextValue<any>>(null);
 
-export function StateBoundary<T, E, R, S>(props: StateBoundaryProps<T, E, R, S>) {
+export function StateBoundary<T, E, R, A extends unknown[], S>(props: StateBoundaryProps<T, E, R, A, S>) {
   return React.createElement(
     StateBoundaryImpl,
     Object.assign({key: props.strategy}, props),
@@ -57,10 +57,10 @@ export enum RenderStrategy {
 
 let BoundarySourceContext = React.createContext<BoundarySourceContextType | null>(null);
 
-function BoundarySource<T, E, R>({
+function BoundarySource<T, E, R, A extends unknown[]>({
   source,
   children
-}: { source: Source<T, E, R>, children: any }) {
+}: { source: Source<T, E, R, A>, children: any }) {
   let parentSource = React.useContext(BoundarySourceContext);
   let contextValue = React.useMemo(() => ({
     source,
@@ -74,7 +74,7 @@ function BoundarySource<T, E, R>({
   )
 }
 
-function StateBoundaryImpl<T, E, R, S>(props: StateBoundaryProps<T, E, R, S>) {
+function StateBoundaryImpl<T, E, R, A extends unknown[], S>(props: StateBoundaryProps<T, E, R, A, S>) {
   if (props.strategy === RenderStrategy.FetchThenRender) {
     return React.createElement(FetchThenRenderBoundary, props);
   }
@@ -84,9 +84,9 @@ function StateBoundaryImpl<T, E, R, S>(props: StateBoundaryProps<T, E, R, S>) {
   return React.createElement(RenderThenFetchBoundary, props);
 }
 
-function inferBoundaryChildren<T, E, R, S = State<T, E, R>>(
-  result: UseAsyncState<T, E, R, S>,
-  props: StateBoundaryProps<T, E, R, S>
+function inferBoundaryChildren<T, E, R, A extends unknown[], S = State<T, E, R, A>>(
+  result: UseAsyncState<T, E, R, A, S>,
+  props: StateBoundaryProps<T, E, R, A, S>
 ) {
   if (!props.render || !result.source) {
     return props.children;
@@ -101,12 +101,12 @@ function renderChildren(children, props) {
   return isFunction(children) ? React.createElement(children, props) : children;
 }
 
-export function RenderThenFetchBoundary<T, E, R, S>(props: StateBoundaryProps<T, E, R, S>) {
+export function RenderThenFetchBoundary<T, E, R, A extends unknown[], S>(props: StateBoundaryProps<T, E, R, A, S>) {
   let result = useAsyncState(props.config, props.dependencies);
 
   const children = inferBoundaryChildren(result, props);
 
-  let Context = (StateBoundaryContext as React.Context<BoundaryContextValue<T, E, R, S>>);
+  let Context = (StateBoundaryContext as React.Context<BoundaryContextValue<T, E, R, A, S>>);
   return (
     <BoundarySource source={result.source!}>
       <Context.Provider value={result}>
@@ -116,13 +116,13 @@ export function RenderThenFetchBoundary<T, E, R, S>(props: StateBoundaryProps<T,
   );
 }
 
-export function FetchAsYouRenderBoundary<T, E, R, S>(props: StateBoundaryProps<T, E, R, S>) {
+export function FetchAsYouRenderBoundary<T, E, R, A extends unknown[], S>(props: StateBoundaryProps<T, E, R, A, S>) {
   let result = useAsyncState(props.config, props.dependencies);
 
   result.read(); // throws
   const children = inferBoundaryChildren(result, props);
 
-  let Context = (StateBoundaryContext as React.Context<BoundaryContextValue<T, E, R, S>>);
+  let Context = (StateBoundaryContext as React.Context<BoundaryContextValue<T, E, R, A, S>>);
   return (
     <BoundarySource source={result.source!}>
       <Context.Provider value={result}>
@@ -132,33 +132,33 @@ export function FetchAsYouRenderBoundary<T, E, R, S>(props: StateBoundaryProps<T
   );
 }
 
-function FetchThenRenderInitialBoundary<T, E, R, S>({
+function FetchThenRenderInitialBoundary<T, E, R, A extends unknown[], S>({
   dependencies = emptyArray, result, config
-}: { dependencies?: any[], result: UseAsyncState<T, E, R, S>, config: MixedConfig<T, E, R, S> }) {
+}: { dependencies?: any[], result: UseAsyncState<T, E, R, A, S>, config: MixedConfig<T, E, R, A, S> }) {
 
   result.source?.patchConfig({
     skipPendingStatus: true,
   });
 
   React.useEffect(() => {
-    if ((config as UseAsyncStateConfiguration<T, E, R, S>).condition !== false) {
-      const autoRunArgs = (config as UseAsyncStateConfiguration<T, E, R, S>).autoRunArgs;
+    if ((config as UseAsyncStateConfiguration<T, E, R, A, S>).condition !== false) {
+      const autoRunArgs = (config as UseAsyncStateConfiguration<T, E, R, A, S>).autoRunArgs;
 
       if (Array.isArray(autoRunArgs)) {
         return result.run.apply(null, autoRunArgs);
       }
 
-      return result.run();
+      return result.run.apply(null);
     }
   }, dependencies);
 
   return null;
 }
 
-export function FetchThenRenderBoundary<T, E = any, R = any, S = State<T>>(props: StateBoundaryProps<T, E, R, S>) {
+export function FetchThenRenderBoundary<T, E = unknown, R = unknown, A extends unknown[] = unknown[], S = State<T, E, R, A>>(props: StateBoundaryProps<T, E, R, A, S>) {
   let result = useAsyncState(props.config, props.dependencies);
 
-  let Context = (StateBoundaryContext as React.Context<BoundaryContextValue<T, E, R, S>>);
+  let Context = (StateBoundaryContext as React.Context<BoundaryContextValue<T, E, R, A, S>>);
   switch (result.source?.getState().status) {
     case Status.pending:
     case Status.aborted:
@@ -184,8 +184,8 @@ export function FetchThenRenderBoundary<T, E = any, R = any, S = State<T>>(props
   return null;
 }
 
-export function useCurrentState<T, E, R, S = State<T, E, R>>(): UseAsyncState<T, E, R, S> {
-  const ctxValue = React.useContext(StateBoundaryContext) as BoundaryContextValue<T, E, R, S>;
+export function useCurrentState<T, E, R, A extends unknown[], S = State<T, E, R, A>>(): UseAsyncState<T, E, R, A, S> {
+  const ctxValue = React.useContext(StateBoundaryContext) as BoundaryContextValue<T, E, R, A, S>;
 
   if (ctxValue === null) {
     throw new Error('useCurrentState used outside StateBoundary');

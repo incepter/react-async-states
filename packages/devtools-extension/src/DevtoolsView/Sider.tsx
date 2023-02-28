@@ -153,7 +153,7 @@ const InstanceDetailsView = React.memo(function InstanceDetailsView(props: { cur
   );
 });
 
-function selectSubscriptionsCount(state: State<InstanceDetails | null>) {
+function selectSubscriptionsCount(state: State<InstanceDetails | null, any, any, any[]>) {
   if (!state || !state.data) {
     return Number.NaN;
   }
