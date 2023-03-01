@@ -1,10 +1,13 @@
 import {
   createApplication,
   DefaultFn,
-  JT,
-  ProducerProps
+  api,
+  ProducerProps,
 } from "react-async-states";
 import {AxiosResponse} from "axios";
+import {ApplicationEntry, ExtendedFn} from "react-async-states";
+import {Producer, ProducerConfig} from "async-states";
+// import {InferAppShape} from "react-async-states";
 
 
 type Page<T = unknown> = {
@@ -46,28 +49,44 @@ type MyApplicationShape = {
     }
   },
 }
-
 // This could be done automatically via some plugin, it takes the same shape
 // above and replaces fn by JT, that's all.
 // This object can be unreferenced immediately; myApp = null;
 let myApp = {
   users: {
-    search: { fn: JT },
-    findById: { fn: JT },
-    add: { fn: JT },
-    posts: { fn: JT }
+    search: api<Page<User>, Error, "reason", [QueryParams]>(),
+    findById: api<Page<User>, Error, "reason", [string]>(),
+    add: api<boolean, Error, "reason", [User]>(),
+    posts: api<Page<Post>, Error, "reason", [string]>()
   },
   posts: {
-    search: { fn: JT },
-    findById: { fn: JT },
-    delete: { fn: JT }
+    search: api<Page<User>, Error, "reason", [QueryParams]>(),
+    findById: api<Page<User>, Error, "reason", [string]>(),
+    delete: api<number, Error, "reason", [string]>()
   },
 }
 
 
-export let app = createApplication<MyApplicationShape>(myApp)
+type AppShape = {
+  [resource: string]: {
+    [api: string]: {
+      fn: ExtendedFn<unknown, unknown, unknown, unknown[]>,
+      eager?: boolean,
+      producer?: Producer<unknown, unknown, unknown, unknown[]>,
+      config?: ProducerConfig<unknown, unknown, unknown, unknown[]>,
+    }
+  }
+}
 
-app.users.findById.inject
+
+export type InferAppShape<T> = T extends (infer Shape extends ApplicationEntry<infer K extends AppShape>) ? K : never
+type AppType = typeof myApp;
+
+type TTT = AppType extends ApplicationEntry<infer L extends AppShape> ? L : never
+
+
+type Created = InferAppShape<AppType>;
+let app = createApplication(myApp)
 
 // let st = app.posts.delete.define()
 

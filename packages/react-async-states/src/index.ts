@@ -16,8 +16,9 @@ export {
   default as Hydration,
 } from "./hydration/Hydration";
 
-export {JT, createApplication} from "./application/Application"
+export {createApplication, api} from "./application/Application"
 export type {
+  Api,
   ExtendedFn,
   Application,
   DefaultFn,
@@ -25,7 +26,7 @@ export type {
   UseConfig,
   ApplicationEntry,
   ResourceEntry,
-  ApiEntry,
+  InferAppShape,
   Resource
 } from "./application/Application"
 
