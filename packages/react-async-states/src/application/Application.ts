@@ -147,7 +147,11 @@ export type UseConfig<T, E, R, A extends unknown[], S = State<T, E, R, A>> = Omi
 export type Token<T, E, R, A extends unknown[]> = {
   (): Source<T, E, R, A>,
   inject(
-    fn: Producer<T, E, R, A>, config?: ProducerConfig<T, E, R, A>): Token<T, E, R, A>
+    fn: Producer<T, E, R, A>,
+    config?: ProducerConfig<T, E, R, A>
+  ): Token<T, E, R, A>
   use<S = State<T, E, R, A>>(
-    config?: UseConfig<T, E, R, A, S>, deps?: any[]): UseAsyncState<T, E, R, A, S>,
+    config?: UseConfig<T, E, R, A, S>,
+    deps?: any[]
+  ): UseAsyncState<T, E, R, A, S>,
 }

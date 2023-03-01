@@ -83,7 +83,7 @@ function randomIntFromInterval(min, max) { // min and max included
 //   console.log('EVENT', 'CACHE CHANGE', cache);
 // });
 
-function fetchUser(props: ProducerProps<AxiosResponse<User>, Error>) {
+function fetchUser(props: ProducerProps<AxiosResponse<User>, Error, any, [string]>) {
   if (!props.args[0]) {
     props.abort!();
     throw new Error('User id is required!')
