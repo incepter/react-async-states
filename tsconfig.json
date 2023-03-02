@@ -26,7 +26,7 @@
       "dom.iterable",
       "esnext"
     ],
-    "strict": false,
+    "strict": true,
     "noEmit": false
   }
 }

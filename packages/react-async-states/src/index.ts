@@ -25,9 +25,6 @@ export type {
   Token,
   UseConfig,
   ApplicationEntry,
-  ResourceEntry,
-  InferAppShape,
-  Resource
 } from "./application/Application"
 
 

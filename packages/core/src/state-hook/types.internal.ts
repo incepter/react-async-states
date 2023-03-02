@@ -130,7 +130,7 @@ export type UseAsyncStateConfiguration<T, E, R, A extends unknown[], S = State<T
   condition?: boolean | ((state: State<T, E, R, A>) => boolean),
   areEqual: EqualityFn<S>,
   subscriptionKey?: string,
-  selector: useSelector<T, E, R, A, S>,
+  selector?: useSelector<T, E, R, A, S>,
   events?: UseAsyncStateEvents<T, E, R, A>,
 
   pool?: string,

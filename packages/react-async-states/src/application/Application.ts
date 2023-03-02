@@ -1,12 +1,12 @@
 import {useInternalAsyncState} from "../useInternalAsyncState";
 import {
   createSource,
-  PartialUseAsyncStateConfiguration,
   Producer,
   ProducerConfig,
   Source,
   State,
-  UseAsyncState
+  UseAsyncState,
+  MixedConfig
 } from "async-states";
 import {__DEV__} from "../shared";
 import {useCallerName} from "../helpers/useCallerName";
@@ -23,64 +23,61 @@ export type ExtendedFn<D, E, R, A extends unknown[]> =
 
 type AppShape = {
   [resource: string]: {
-    [api: string]: {
-      fn: ExtendedFn<unknown, unknown, unknown, unknown[]>,
-      eager?: boolean,
-      producer?: Producer<unknown, unknown, unknown, unknown[]>,
-      config?: ProducerConfig<unknown, unknown, unknown, unknown[]>,
-    }
+    [api: string]: Api<any, any, any, any>
   }
 }
 
-interface BaseApi<T, E, R, A extends unknown[]> {
+export interface Api<T, E, R, A extends unknown[]> {
   fn: ExtendedFn<T, E, R, A>,
-}
-
-export interface Api<T, E, R, A extends unknown[]> extends BaseApi<T, E, R, A> {
   eager?: boolean,
   producer?: Producer<T, E, R, A>,
   config?: ProducerConfig<T, E, R, A>
 }
 
 
-export type ResourceEntry<R extends AppShape[string]> = {
-  [api in keyof R]: Api<
-    R[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? T : never,
-    R[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? E : never,
-    R[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? R : never,
-    R[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? A : never
-  >
-}
 export type ApplicationEntry<T extends AppShape> = {
-  [resource in keyof T]: ResourceEntry<T[resource]>
+  [resource in keyof T]: {
+    [api in keyof T[resource]]: Api<
+      T[resource][api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? T : never,
+      T[resource][api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? E : never,
+      T[resource][api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? R : never,
+      T[resource][api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? A : never
+    >
+  }
 }
 
-export type Resource<T extends AppShape[string]> = {
-  [api in keyof T]: Token<
-    T[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? T : never,
-    T[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? E : never,
-    T[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? R : never,
-    T[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? A : never
-  >
-}
+// export type Resource<T extends AppShape[string]> = {
+//   [api in keyof T]: Token<
+//     T[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? T : never,
+//     T[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? E : never,
+//     T[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? R : never,
+//     T[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? A : never
+//   >
+// }
+
 // type HAHA = Resource<{
 //   search: {
 //     fn: ExtendedFn<number, Error, "hhh", [number]>
 //   }
 // }>
-//
-
 
 export type Application<T extends AppShape> = {
-  [resource in keyof T]: Resource<T[resource]>
+  [resource in keyof T]: {
+    [api in keyof T[resource]]: Token<
+      T[resource][api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? T : never,
+      T[resource][api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? E : never,
+      T[resource][api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? R : never,
+      T[resource][api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? A : never
+    >
+  }
 }
 
+
 export function createApplication<Shape extends AppShape>(
-  shape: ApplicationEntry<Shape>
+  shape: ApplicationEntry<Shape>,
 ): Application<Shape> {
 
   let resources = Object.keys(shape)
-
   return freeze(resources.reduce((
     result: Application<Shape>,
     resourceName: keyof ApplicationEntry<Shape>
@@ -88,13 +85,21 @@ export function createApplication<Shape extends AppShape>(
     let resource = shape[resourceName]
     let apis = Object.keys(resource)
 
+    type ResourceType<T extends typeof resource> = {
+      [api in keyof T]: Token<
+        T[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? T : never,
+        T[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? E : never,
+        T[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? R : never,
+        T[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? A : never
+      >
+    }
+
     result[resourceName] = freeze(apis.reduce((
       apiResult, apiName: keyof typeof resource) => {
       let api = resource[apiName]
       apiResult[apiName] = freeze(createToken(resourceName, apiName, api))
-
       return apiResult
-    }, {} as Resource<typeof resource>))
+    }, {} as ResourceType<typeof resource>))
 
     return result
   }, {} as Application<Shape>))
@@ -103,7 +108,7 @@ export function createApplication<Shape extends AppShape>(
 
 function createToken<
   Shape extends AppShape,
-  K extends AppShape[string][string]
+  K extends Shape[keyof Shape][keyof Shape[keyof Shape]]
 >(
   resourceName: keyof Shape,
   apiName: keyof ApplicationEntry<Shape>[keyof ApplicationEntry<Shape>],
@@ -160,11 +165,11 @@ function createToken<
   }
 
   function inject(
-    fn: Producer<T, E, R, A>, config?: ProducerConfig<T, E, R, A>): TokenType {
+    fn: Producer<T, E, R, A> | null, config?: ProducerConfig<T, E, R, A>): TokenType {
     if (!source) {
       source = createSource(name, fn, config);
     }
-    source.replaceProducer(fn)
+    source.replaceProducer(fn || undefined)
     source.patchConfig(config)
     return token
   }
@@ -182,7 +187,8 @@ export function api<T, E, R, A extends unknown[]>(
   return Object.assign({}, props, buildDefaultJT<T, E, R, A>())
 }
 
-export type UseConfig<T, E, R, A extends unknown[], S = State<T, E, R, A>> = Omit<PartialUseAsyncStateConfiguration<T, E, R, A, S>, "key" | "producer" | "source" | "pool" | "context">
+export type UseConfig<T, E, R, A extends unknown[], S = State<T, E, R, A>> =
+  Omit<Exclude<MixedConfig<T, E, R, A, S>, "string" | Source<T, E, R, A> | "function">, "key" | "producer" | "source" | "pool" | "context">
 
 export type Token<T, E, R, A extends unknown[]> = {
   (): Source<T, E, R, A>,
@@ -220,7 +226,5 @@ export type Token<T, E, R, A extends unknown[]> = {
 //     delete: api<number, Error, "reason", [string]>()
 //   },
 // }
-
-export type InferAppShape<T extends AppShape> = T extends (infer Shape extends ApplicationEntry<infer K extends AppShape>) ? Shape : never
-
-// let app = createApplication<InferAppShape<typeof myApp>>(myApp)
+//
+// let app = createApplication<typeof myApp>(myApp)

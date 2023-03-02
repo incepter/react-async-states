@@ -111,7 +111,8 @@ let userDetailsConfig = {
 
 export default function Welcome() {
 
-  let {source, state, run} = app.users.findById.inject(fetchUser, userDetailsConfig).use({});
+  let result = app.users.findById.inject(fetchUser, userDetailsConfig).use();
+  let {source, state, run} = result;
 
   let searchedUserId: string | null = state.status === Status.initial ? null : state.props.args![0];
 
