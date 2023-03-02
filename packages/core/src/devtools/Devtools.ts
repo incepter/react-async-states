@@ -20,21 +20,21 @@ interface DevtoolsInterface {
   formatData(data: any, isJson: boolean),
 
   // instance specific
-  emitUpdate(instance: StateInterface<unknown, unknown, unknown, unknown[]>),
+  emitUpdate(instance: StateInterface<any, any, any, any>),
 
-  startUpdate(instance: StateInterface<unknown, unknown, unknown, unknown[]>),
+  startUpdate(instance: StateInterface<any, any, any, any>),
 
-  emitDispose(instance: StateInterface<unknown, unknown, unknown, unknown[]>),
+  emitDispose(instance: StateInterface<any, any, any, any>),
 
-  emitCreation(instance: StateInterface<unknown, unknown, unknown, unknown[]>): void,
+  emitCreation(instance: StateInterface<any, any, any, any>): void,
 
-  emitStateInterface(instance: StateInterface<unknown, unknown, unknown, unknown[]>): void,
+  emitStateInterface(instance: StateInterface<any, any, any, any>): void,
 
   emitSubscription(
-    instance: StateInterface<unknown, unknown, unknown, unknown[]>, subscriptionKey: string),
+    instance: StateInterface<any, any, any, any>, subscriptionKey: string),
 
   emitUnsubscription(
-    instance: StateInterface<unknown, unknown, unknown, unknown[]>, subscriptionKey: string),
+    instance: StateInterface<any, any, any, any>, subscriptionKey: string),
 
   emitRunSync<T, E, R, A extends unknown[]>(
     instance: StateInterface<T, E, R, A>, props: ProducerSavedProps<T, A>): void,
@@ -51,7 +51,7 @@ interface DevtoolsInterface {
   emitRunConsumedFromCache<T, E, R, A extends unknown[]>(
     instance: StateInterface<T, E, R, A>,
     payload: Record<string, any> | undefined | null,
-    args: any[]
+    args: A
   ): void,
 }
 
@@ -62,13 +62,13 @@ function createDevtools(): DevtoolsInterface {
 
   type CurrentUpdate = {
     uniqueId: number,
-    oldState: State<unknown, unknown, unknown, unknown[]>,
+    oldState: State<any, any, any, any>,
   }
 
   let keys = {};
   let connected = false;
   let currentUpdate: CurrentUpdate | null = null;
-  let retainedInstances: Record<number, StateInterface<unknown, unknown, unknown, unknown[]>> = {};
+  let retainedInstances: Record<number, StateInterface<any, any, any, any>> = {};
 
   function listener(message) {
     if (isServer) {
@@ -183,7 +183,7 @@ function createDevtools(): DevtoolsInterface {
           ...message,
           payload: JSON.parse(serializePayload(message.payload))
         }, "*");
-      } catch (g) {
+      } catch (g: any) {
         maybeWindow!.postMessage({
           source,
           payload: {
@@ -202,7 +202,7 @@ function createDevtools(): DevtoolsInterface {
     }
   }
 
-  function emitStateInterface(asyncState: StateInterface<unknown, unknown, unknown, unknown[]>) {
+  function emitStateInterface(asyncState: StateInterface<any, any, any, any>) {
     if (isServer || !asyncState || asyncState.config.hideFromDevtools) {
       return;
     }
@@ -236,7 +236,7 @@ function createDevtools(): DevtoolsInterface {
     });
   }
 
-  function emitJournalEvent(asyncState: StateInterface<unknown, unknown, unknown, unknown[]>, evt) {
+  function emitJournalEvent(asyncState: StateInterface<any, any, any, any>, evt) {
     if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
@@ -266,7 +266,7 @@ function createDevtools(): DevtoolsInterface {
     });
   }
 
-  function emitCreation(asyncState: StateInterface<unknown, unknown, unknown, unknown[]>) {
+  function emitCreation(asyncState: StateInterface<any, any, any, any>) {
     if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
@@ -282,7 +282,7 @@ function createDevtools(): DevtoolsInterface {
     emitStateInterface(asyncState);
   }
 
-  function emitRunSync(asyncState: StateInterface<unknown, unknown, unknown, unknown[]>, props) {
+  function emitRunSync(asyncState: StateInterface<any, any, any, any>, props) {
     if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
@@ -308,7 +308,7 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function emitRunConsumedFromCache(
-    asyncState: StateInterface<unknown, unknown, unknown, unknown[]>, payload, execArgs) {
+    asyncState: StateInterface<any, any, any, any>, payload, execArgs) {
     if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
@@ -336,7 +336,7 @@ function createDevtools(): DevtoolsInterface {
     });
   }
 
-  function emitReplaceState(asyncState: StateInterface<unknown, unknown, unknown, unknown[]>, props) {
+  function emitReplaceState(asyncState: StateInterface<any, any, any, any>, props) {
     if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
@@ -360,7 +360,7 @@ function createDevtools(): DevtoolsInterface {
     });
   }
 
-  function emitRunGenerator(asyncState: StateInterface<unknown, unknown, unknown, unknown[]>, props) {
+  function emitRunGenerator(asyncState: StateInterface<any, any, any, any>, props) {
     if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
@@ -384,7 +384,7 @@ function createDevtools(): DevtoolsInterface {
     });
   }
 
-  function emitRunPromise(asyncState: StateInterface<unknown, unknown, unknown, unknown[]>, props) {
+  function emitRunPromise(asyncState: StateInterface<any, any, any, any>, props) {
     if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
@@ -408,7 +408,7 @@ function createDevtools(): DevtoolsInterface {
     });
   }
 
-  function emitDispose(asyncState: StateInterface<unknown, unknown, unknown, unknown[]>) {
+  function emitDispose(asyncState: StateInterface<any, any, any, any>) {
     if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
@@ -422,7 +422,7 @@ function createDevtools(): DevtoolsInterface {
     delete retainedInstances[asyncState.uniqueId];
   }
 
-  function emitSubscription(asyncState: StateInterface<unknown, unknown, unknown, unknown[]>, subKey) {
+  function emitSubscription(asyncState: StateInterface<any, any, any, any>, subKey) {
     if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
@@ -451,7 +451,7 @@ function createDevtools(): DevtoolsInterface {
   }
 
   function emitUnsubscription(
-    asyncState: StateInterface<unknown, unknown, unknown, unknown[]>, subKey) {
+    asyncState: StateInterface<any, any, any, any>, subKey) {
     if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
@@ -472,7 +472,7 @@ function createDevtools(): DevtoolsInterface {
     });
   }
 
-  function emitUpdate(asyncState: StateInterface<unknown, unknown, unknown, unknown[]>) {
+  function emitUpdate(asyncState: StateInterface<any, any, any, any>) {
     if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
@@ -497,7 +497,7 @@ function createDevtools(): DevtoolsInterface {
     });
   }
 
-  function startUpdate(asyncState: StateInterface<unknown, unknown, unknown, unknown[]>) {
+  function startUpdate(asyncState: StateInterface<any, any, any, any>) {
     if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
@@ -533,7 +533,7 @@ function createDevtools(): DevtoolsInterface {
     }
   }
 
-  function retainStateInstance(asyncState: StateInterface<unknown, unknown, unknown, unknown[]>) {
+  function retainStateInstance(asyncState: StateInterface<any, any, any, any>) {
     if (isServer || asyncState.config.hideFromDevtools) {
       return;
     }
@@ -548,7 +548,7 @@ function createDevtools(): DevtoolsInterface {
   }
 }
 
-function mapSubscriptionToDevtools(sub: StateSubscription<unknown, unknown, unknown, unknown[]>) {
+function mapSubscriptionToDevtools(sub: StateSubscription<any, any, any, any>) {
   return {
     key: sub.props.key,
     flags: sub.props.flags,

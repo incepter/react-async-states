@@ -42,10 +42,10 @@ function devtoolsInfoProducer(props) {
 export type InstanceDetails = {
   key?: string,
   journal?: any[],
-  state?: State<any, any, any, any[]>,
-  lastSuccess?: State<any, any, any, any[]>,
-  previousState?: State<any, any, any, any[]>,
-  config?: ProducerConfig<any, any, any, any[]>,
+  state?: State<any, any, any, any>,
+  lastSuccess?: State<any, any, any, any>,
+  previousState?: State<any, any, any, any>,
+  config?: ProducerConfig<any, any, any, any>,
   subscriptions?: any[],
   cache: any,
 }

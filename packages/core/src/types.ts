@@ -26,14 +26,14 @@ export interface BaseSource<T, E, R, A extends unknown[]> {
   setState(updater: StateFunctionUpdater<T, E, R, A> | T, status?: Status, callbacks?: ProducerCallbacks<T, E, R, A>): void;
 
   // subscriptions
-  subscribe(cb: (s: State<T, E, R, A>) => void): AbortFn
+  subscribe(cb: (s: State<T, E, R, A>) => void): AbortFn<R>
 
-  subscribe(subProps: AsyncStateSubscribeProps<T, E, R, A>): AbortFn
+  subscribe(subProps: AsyncStateSubscribeProps<T, E, R, A>): AbortFn<R>
 
-  subscribe(argv: ((s: State<T, E, R, A>) => void) | AsyncStateSubscribeProps<T, E, R, A>): AbortFn
+  subscribe(argv: ((s: State<T, E, R, A>) => void) | AsyncStateSubscribeProps<T, E, R, A>): AbortFn<R>
 
   // producer
-  replay(): AbortFn,
+  replay(): AbortFn<R>,
 
   abort(reason?: R): void,
 
@@ -141,7 +141,7 @@ export interface StateInterface<T, E, R, A extends unknown[]> extends BaseSource
   willUpdate?: boolean;
 
   latestRun?: RunTask<T, E, R, A> | null;
-  currentAbort?: AbortFn;
+  currentAbort?: AbortFn<R>;
 
   // lanes and forks
   forksIndex?: number,
@@ -174,7 +174,7 @@ export interface StateInterface<T, E, R, A extends unknown[]> extends BaseSource
 
   run(
     ...args: A
-  ): AbortFn,
+  ): AbortFn<R>,
 
   runp(
     ...args: A
@@ -182,7 +182,7 @@ export interface StateInterface<T, E, R, A extends unknown[]> extends BaseSource
 
   runc(
     props?: RUNCProps<T, E, R, A>
-  ): AbortFn,
+  ): AbortFn<R>,
 
 }
 
@@ -238,7 +238,7 @@ export type AbortFn<R = unknown> = ((reason?: R) => void) | undefined;
 export type OnAbortFn<R = unknown> = (cb?: ((reason?: R) => void)) => void;
 
 export interface ProducerProps<T, E, R, A extends unknown[]> extends ProducerEffects {
-  abort: AbortFn,
+  abort: AbortFn<R>,
   onAbort: OnAbortFn,
   emit: StateUpdater<T, E, R, A>,
 
@@ -271,7 +271,7 @@ export type ProducerFunction<T, E, R, A extends unknown[]> = (
   props: ProducerProps<T, E, R, A>,
   runIndicators: RunIndicators,
   callbacks?: ProducerCallbacks<T, E, R, A>,
-) => AbortFn;
+) => AbortFn<R>;
 export type ProducerConfig<T, E, R, A extends unknown[]> = {
   skipPendingStatus?: boolean,
   initialValue?: T | ((cache?: Record<string, CachedState<T, E, R, A>>) => T),
@@ -389,11 +389,26 @@ export type AsyncStateKeyOrSource<T, E, R, A extends unknown[]> =
   string
   | Source<T, E, R, A>;
 
+
+export type EffectsRunType<T, E, R, A extends unknown[]> = (
+  input: ProducerRunInput<T, E, R, A>, config: ProducerRunConfig | null,
+  ...args: A
+) => AbortFn<R>
+
+export type EffectsRunpType <T, E, R, A extends unknown[]> = (
+  input: ProducerRunInput<T, E, R, A>, config: ProducerRunConfig | null,
+  ...args: A
+) => Promise<State<T, E, R, A>> | undefined
+export type EffectsSelectType <T, E, R, A extends unknown[]> = (
+  input: AsyncStateKeyOrSource<T, E, R, A>,
+  lane?: string
+) => State<T, E, R, A> | undefined
 export interface ProducerEffects {
+
   run: <T, E, R, A extends unknown[]>(
     input: ProducerRunInput<T, E, R, A>, config: ProducerRunConfig | null,
     ...args: A
-  ) => AbortFn,
+  ) => AbortFn<R>,
 
   runp: <T, E, R, A extends unknown[]>(
     input: ProducerRunInput<T, E, R, A>, config: ProducerRunConfig | null,
@@ -428,13 +443,13 @@ export interface PoolInterface {
 
   mergePayload(payload: Record<string, unknown>): void,
 
-  instances: Map<string, StateInterface<unknown, unknown, unknown, unknown[]>>,
+  instances: Map<string, StateInterface<any, any, any, any>>,
 
-  watch<T, E, R, A extends unknown[]>(key: string, value: WatchCallback<T, E, R, A>): AbortFn,
+  watch<T, E, R, A extends unknown[]>(key: string, value: WatchCallback<T, E, R, A>): AbortFn<R>,
 
-  listen<T, E, R, A extends unknown[]>(cb: WatchCallback<T, E, R, A>): AbortFn,
+  listen<T, E, R, A extends unknown[]>(cb: WatchCallback<T, E, R, A>): AbortFn<R>,
 
-  set<T, E, R, A extends unknown[]>(key: string, instance: StateInterface<T, E, R, A>),
+  set<T, E, R, A extends unknown[]>(key: string, instance: StateInterface<T, E, R, A>): void,
 
   context: LibraryPoolsContext,
 }

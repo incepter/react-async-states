@@ -32,7 +32,7 @@ export function run<T, E, R, A extends unknown[]>(
     if (indicators.aborted) {
       return;
     }
-    onFail(e);
+    onFail(e as E);
     return;
   }
 
@@ -42,7 +42,7 @@ export function run<T, E, R, A extends unknown[]>(
       // generatorResult is either {done: boolean, value: T} or a Promise<T>
       generatorResult = stepGenerator(executionValue, props, indicators);
     } catch (e) {
-      onFail(e);
+      onFail(e as E);
       return;
     }
     if (generatorResult.done) {

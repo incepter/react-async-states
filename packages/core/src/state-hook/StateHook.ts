@@ -147,7 +147,7 @@ function resolveInstance<T, E, R, A extends unknown[], S>(
 function resolveSourceInstance<T, E, R, A extends unknown[], S>(
   flags: number,
   config: MixedConfig<T, E, R, A, S>,
-  overrides?: PartialUseAsyncStateConfiguration<T, E, R, A, unknown>
+  overrides?: PartialUseAsyncStateConfiguration<T, E, R, A, S>
 ) {
   if (flags & CONFIG_SOURCE) {
     let instance = readSource(config as Source<T, E, R, A>);
@@ -183,11 +183,11 @@ function resolveStandaloneInstance<T, E, R, A extends unknown[], S>(
   let producer = readProducerFromConfig(flags, config);
   let producerConfig = readProducerConfigFromConfig(flags, config);
 
-  let prevInstance = pool.instances.get(key);
+  let prevInstance = pool.instances.get(key) as StateInterface<T, E, R, A>;
 
   if (prevInstance) {
 
-    let instance = prevInstance as StateInterface<T, E, R, A>;
+    let instance = prevInstance;
     if (flags & FORK) {
       instance = instance.fork((config as BaseConfig<T, E, R, A>).forkConfig);
     }
@@ -340,13 +340,12 @@ export function hookReturn<T, E, R, A extends unknown[], S>(
   base: BaseUseAsyncState<T, E, R, A, S>,
   instance: StateInterface<T, E, R, A> | null,
 ): Readonly<UseAsyncState<T, E, R, A, S>> {
-
   const newState = Object.assign({}, base) as UseAsyncState<T, E, R, A, S>;
   const newValue = readStateFromInstance(instance, flags, config);
   if (instance) {
-    newState.read = createReadInConcurrentMode.bind(null, instance, newValue);
     newState.version = instance?.version;
     newState.lastSuccess = instance.lastSuccess;
+    newState.read = createReadInConcurrentMode(instance, newValue);
   }
   newState.state = newValue;
 
@@ -356,21 +355,25 @@ export function hookReturn<T, E, R, A extends unknown[], S>(
 function createReadInConcurrentMode<T, E, R, A extends unknown[], S>(
   instance: StateInterface<T, E, R, A>,
   stateValue: S,
-  suspend: boolean = true,
-  throwError: boolean = true,
+
 ) {
-  if (suspend && pending === instance.state.status && instance.promise) {
-    throw instance.promise;
+  return function(
+    suspend: boolean = true,
+    throwError: boolean = true,
+  ) {
+    if (suspend && pending === instance.state.status && instance.promise) {
+      throw instance.promise;
+    }
+    if (throwError && error === instance.state.status) {
+      throw instance.state.data;
+    }
+    return stateValue;
   }
-  if (throwError && error === instance.state.status) {
-    throw instance.state.data;
-  }
-  return stateValue;
 }
 
 function invokeSubscribeEvents<T, E, R, A extends unknown[]>(
   events: UseAsyncStateEventSubscribe<T, E, R, A> | undefined,
-  run: (...args: A) => AbortFn,
+  run: (...args: A) => AbortFn<R>,
   instance?: StateInterface<T, E, R, A>,
 ): CleanupFn[] | null {
   if (!events || !instance) {
@@ -472,7 +475,7 @@ export function subscribeEffect<T, E, R, A extends unknown[], S>(
   }
 
   let didClean = false;
-  let cleanups: AbortFn[] = [() => didClean = true];
+  let cleanups: AbortFn<R>[] = [() => didClean = true];
 
   function onStateChange() {
     let newSelectedState = readStateFromInstance(instance, flags, config);
@@ -604,6 +607,7 @@ export function createHook<T, E, R, A extends unknown[], S>(
       };
     },
   };
+  // @ts-ignore WTF TS strict!!!
   hook.subscribeEffect = subscribeEffect.bind(null, hook);
 
   return hook;

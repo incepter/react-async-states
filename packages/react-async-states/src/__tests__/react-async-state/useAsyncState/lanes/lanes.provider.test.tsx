@@ -15,11 +15,11 @@ describe('subscribe to lane and operate on it', () => {
     intervalIds = [];
   });
 
-  function countersProducer(props: ProducerProps<number, any, any, any[]>) {
+  function countersProducer(props: ProducerProps<number, any, any, any>) {
     let intervalId = setInterval(() => props.emit(old => old.data + 1), 1000);
     intervalIds.push(intervalId);
     props.onAbort(() => clearInterval(intervalId));
-    return props.lastSuccess.data;
+    return props.lastSuccess.data!;
   }
 
   const countersSource = createSource(

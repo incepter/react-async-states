@@ -6,7 +6,6 @@ import {
   ProducerProps, Source
 } from "async-states";
 import AsyncStateComponent from "../../utils/AsyncStateComponent";
-import {UseAsyncState} from "../../../../types.internal";
 import {flushPromises} from "../../utils/test-utils";
 import {mockDateNow, TESTS_TS} from "../../utils/setup";
 

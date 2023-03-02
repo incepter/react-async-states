@@ -1,5 +1,5 @@
-import {api, createApplication,} from "react-async-states";
 import {AxiosResponse} from "axios";
+import {api, createApplication,} from "react-async-states";
 
 let myApp = {
   users: {
@@ -16,6 +16,20 @@ let myApp = {
 }
 
 export let app = createApplication<typeof myApp>(myApp)
+//
+// app.users.add.inject(addUserProducer)
+// function AppUser() {
+//   let {state, runc: submit} = app.users.add.use()
+//
+//   function onEvent(values) {
+//     submit({args: values, onSuccess, onError})
+//   }
+//
+//   return <UI onEvent={onEvent}/>
+// }
+//
+// app.users.search().invalidateCache("query")
+// app.users.findById().run("typedStringUserId")
 
 type Page<T = unknown> = {
   content: T[]

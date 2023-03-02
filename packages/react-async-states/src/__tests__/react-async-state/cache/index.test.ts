@@ -23,7 +23,7 @@ describe('async state cache', () => {
     expect(asyncState.getLane("test-lane").cache).toBe(asyncState.cache);
   });
   it('should add to cache and spread on lanes', () => {
-    const cache: Record<string, CachedState<number>> = {
+    const cache: Record<string, CachedState<number, any, any, any>> = {
       [`1`]: {
         state: {
           data: 1,
@@ -38,7 +38,7 @@ describe('async state cache', () => {
     const producer = jest.fn().mockImplementation(props => props.args?.[0]);
     const load = jest.fn().mockImplementation(() => cache);
     const asyncState = new AsyncState("test-2", producer, {
-      initialValue: cache => cache[`1`]?.state?.data,
+      initialValue: cache => cache![`1`]?.state?.data,
       cacheConfig: {
         load,
         enabled: true,
@@ -62,7 +62,7 @@ describe('async state cache', () => {
     expect(producer).not.toHaveBeenCalled();
   });
   it('should set state when cache loads cache and pass it to lanes', async () => {
-    const cache: Record<string, CachedState<number>> = {
+    const cache: Record<string, CachedState<number, any, any, any>> = {
       [`1`]: {
         state: {
           data: 1,
@@ -94,7 +94,7 @@ describe('async state cache', () => {
     expect(load).toHaveBeenCalled();
   });
   it('should invalidate cache', async () => {
-    const cache: Record<string, CachedState<number>> = {
+    const cache: Record<string, CachedState<number, any, any, any>> = {
       [`1`]: {
         state: {
           data: 1,

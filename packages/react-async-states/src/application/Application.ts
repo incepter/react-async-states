@@ -21,12 +21,6 @@ export type ExtendedFn<D, E, R, A extends unknown[]> =
   DefaultFn<D, E, R, A>
   | typeof JT
 
-type AppShape = {
-  [resource: string]: {
-    [api: string]: Api<any, any, any, any>
-  }
-}
-
 export interface Api<T, E, R, A extends unknown[]> {
   fn: ExtendedFn<T, E, R, A>,
   eager?: boolean,
@@ -34,6 +28,11 @@ export interface Api<T, E, R, A extends unknown[]> {
   config?: ProducerConfig<T, E, R, A>
 }
 
+type AppShape = {
+  [resource: string]: {
+    [api: string]: Api<any, any, any, any>
+  }
+}
 
 export type ApplicationEntry<T extends AppShape> = {
   [resource in keyof T]: {
@@ -46,21 +45,6 @@ export type ApplicationEntry<T extends AppShape> = {
   }
 }
 
-// export type Resource<T extends AppShape[string]> = {
-//   [api in keyof T]: Token<
-//     T[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? T : never,
-//     T[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? E : never,
-//     T[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? R : never,
-//     T[api]["fn"] extends ExtendedFn<infer T, infer E, infer R, infer A extends unknown[]> ? A : never
-//   >
-// }
-
-// type HAHA = Resource<{
-//   search: {
-//     fn: ExtendedFn<number, Error, "hhh", [number]>
-//   }
-// }>
-
 export type Application<T extends AppShape> = {
   [resource in keyof T]: {
     [api in keyof T[resource]]: Token<
@@ -71,7 +55,6 @@ export type Application<T extends AppShape> = {
     >
   }
 }
-
 
 export function createApplication<Shape extends AppShape>(
   shape: ApplicationEntry<Shape>,
@@ -104,7 +87,6 @@ export function createApplication<Shape extends AppShape>(
     return result
   }, {} as Application<Shape>))
 }
-
 
 function createToken<
   Shape extends AppShape,

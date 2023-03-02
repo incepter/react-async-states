@@ -77,7 +77,7 @@ describe('should subscribe to a module level source object', () => {
   });
   it('should fork a source async state', () => {
     // given
-    const source = createSource<number, any, any, any[]>(
+    const source = createSource<number, any, any, any>(
       "counter",
       null,
       {initialValue: 0}

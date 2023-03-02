@@ -14,7 +14,7 @@ import {
 import devtools from "./devtools/Devtools";
 import {hideStateInstanceInNewObject} from "./hide-object";
 import {
-  AbortFn,
+  AbortFn, AsyncStateKeyOrSource,
   AsyncStateSubscribeProps,
   CachedState,
   CreatePropsConfig,
@@ -80,7 +80,7 @@ export class AsyncState<T, E, R, A extends unknown[]> implements StateInterface<
   cache?: Record<string, CachedState<T, E, R, A>>;
 
   promise?: Promise<T>;
-  currentAbort?: AbortFn;
+  currentAbort?: AbortFn<R>;
   state: State<T, E, R, A>;
   queue?: UpdateQueue<T, E, R, A>;
   pendingUpdate?: PendingUpdate | null;
@@ -359,9 +359,9 @@ export class AsyncState<T, E, R, A extends unknown[]> implements StateInterface<
     }
   }
 
-  subscribe(cb: (s: State<T, E, R, A>) => void): AbortFn
-  subscribe(subProps: AsyncStateSubscribeProps<T, E, R, A>): AbortFn
-  subscribe(argv: ((s: State<T, E, R, A>) => void) | AsyncStateSubscribeProps<T, E, R, A>): AbortFn {
+  subscribe(cb: (s: State<T, E, R, A>) => void): AbortFn<R>
+  subscribe(subProps: AsyncStateSubscribeProps<T, E, R, A>): AbortFn<R>
+  subscribe(argv: ((s: State<T, E, R, A>) => void) | AsyncStateSubscribeProps<T, E, R, A>): AbortFn<R> {
     let props = isFunction(argv) ? {cb: argv} : argv;
     if (!isFunction(props.cb)) {
       return;
@@ -438,7 +438,7 @@ export class AsyncState<T, E, R, A extends unknown[]> implements StateInterface<
     this.willUpdate = false;
   }
 
-  replay(): AbortFn {
+  replay(): AbortFn<R> {
     let latestRunTask = this.latestRun;
     if (!latestRunTask) {
       return undefined;
@@ -498,12 +498,12 @@ export class AsyncState<T, E, R, A extends unknown[]> implements StateInterface<
     return this.runWithEffect(props);
   }
 
-  private runWithEffect(props?: RUNCProps<T, E, R, A>): AbortFn {
+  private runWithEffect(props?: RUNCProps<T, E, R, A>): AbortFn<R> {
     let that = this;
     let effectDurationMs = Number(this.config.runEffectDurationMs) || 0;
 
     function scheduleDelayedRun(startDate) {
-      let abortCallback: AbortFn | null = null;
+      let abortCallback: AbortFn<R> | null = null;
       let timeoutId = setTimeout(function realRun() {
         that.pendingTimeout = null;
         abortCallback = that.runImmediately(shallowClone(that.payload), props);
@@ -555,7 +555,7 @@ export class AsyncState<T, E, R, A extends unknown[]> implements StateInterface<
   private runImmediately(
     payload: Record<string, any>,
     runProps?: RUNCProps<T, E, R, A>,
-  ): AbortFn {
+  ): AbortFn<R> {
 
     let instance = this;
     let args = (runProps?.args || emptyArray) as A;
@@ -953,7 +953,7 @@ export function createProps<T, E, R, A extends unknown[]>(config: CreatePropsCon
     onAborted,
     onCleared,
   } = config;
-  let onAbortCallbacks: AbortFn[] = [];
+  let onAbortCallbacks: AbortFn<R>[] = [];
   return {
     emit,
     args,
@@ -961,7 +961,7 @@ export function createProps<T, E, R, A extends unknown[]>(config: CreatePropsCon
     payload,
     getState,
     lastSuccess,
-    onAbort(callback: AbortFn) {
+    onAbort(callback: AbortFn<R>) {
       if (isFunction(callback)) {
         onAbortCallbacks.push(callback);
       }
@@ -969,9 +969,18 @@ export function createProps<T, E, R, A extends unknown[]>(config: CreatePropsCon
     isAborted() {
       return indicators.aborted;
     },
-    run: runFunction.bind(null, context),
-    runp: runpFunction.bind(null, context),
-    select: selectFunction.bind(null, context),
+    run: runFunction.bind(null, context) as <T, E, R, A extends unknown[]>(
+      input: ProducerRunInput<T, E, R, A>, config: ProducerRunConfig | null,
+      ...args: A
+    ) => AbortFn<R>,
+    runp: runpFunction.bind(null, context) as <T, E, R, A extends unknown[]>(
+      input: ProducerRunInput<T, E, R, A>, config: ProducerRunConfig | null,
+      ...args: A
+    ) => Promise<State<T, E, R, A>> | undefined,
+    select: selectFunction.bind(null, context) as <T, E, R, A extends unknown[]>(
+      input: AsyncStateKeyOrSource<T, E, R, A>,
+      lane?: string
+    ) => State<T, E, R, A> | undefined
   };
 
   function emit(
@@ -1248,7 +1257,7 @@ function runFunction<T, E, R, A extends unknown[]>(
     }
     return instance.run.apply(null, args);
   } else {
-    let instance = context.getOrCreatePool(config?.pool).instances.get(input);
+    let instance = context.getOrCreatePool(config?.pool).instances.get(input as string);
 
     if (instance) {
       return instance.getLane(config?.lane).run.apply(null, args);
@@ -1278,7 +1287,8 @@ function runpFunction<T, E, R, A extends unknown[]>(
     return instance.runp.apply(null, args);
 
   } else {
-    let instance = context.getOrCreatePool().instances.get(input);
+    // input here is a string
+    let instance = context.getOrCreatePool().instances.get(input as string);
     if (instance) {
       return instance.getLane(config?.lane).runp.apply(null, args);
     }

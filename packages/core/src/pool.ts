@@ -25,7 +25,7 @@ function createPool(name: string, context: LibraryPoolsContext): PoolInterface {
   let meter = 0;
   let watchers = {};
   let listeners = {};
-  let instances = new Map<string, StateInterface<unknown, unknown, unknown, unknown[]>>();
+  let instances = new Map<string, StateInterface<any, any, any, any>>();
   return {
     context,
     instances,
@@ -39,7 +39,7 @@ function createPool(name: string, context: LibraryPoolsContext): PoolInterface {
     mergePayload,
   };
 
-  function set(key: string, instance: StateInterface<unknown, unknown, unknown, unknown[]>) {
+  function set<T, E, R, A extends unknown[]>(key: string, instance: StateInterface<T, E, R, A>): void {
     if (!key) {
       return;
     }
@@ -72,7 +72,7 @@ function createPool(name: string, context: LibraryPoolsContext): PoolInterface {
 
 
   function watch<T, E, R, A extends unknown[]>(
-    key: string, notify: WatchCallback<T, E, R, A>): AbortFn<R> {
+    key: string, notify: WatchCallback<T, E, R, A>): AbortFn {
     if (!watchers[key]) {
       watchers[key] = {};
     }
