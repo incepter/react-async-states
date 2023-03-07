@@ -59,7 +59,7 @@ type User = {
   name: string;
 };
 
-async function fetchUsers(props: ProducerProps<User[]>): Promise<User[]> {
+async function fetchUsers(props: ProducerProps<User[], Error, undefined, never>): Promise<User[]> {
   const controller = new AbortController();
   props.onAbort(() => controller.abort());
 
@@ -68,7 +68,7 @@ async function fetchUsers(props: ProducerProps<User[]>): Promise<User[]> {
 }
 
 export default function App() {
-  const {state, run}: UseAsyncState<User[]> = useAsyncState(fetchUsers);
+  const {state, run} = useAsyncState(fetchUsers);
   const {status, data} = state;
 
   return (
@@ -113,13 +113,13 @@ Let's take a close look at how we used the `useAsyncState` hook in the previous
 example:
 
 ```typescript
-const {state, run}: UseAsyncState<User[]> = useAsyncState(fetchUsers);
+const {state, run} = useAsyncState(fetchUsers);
 ```
 
 This is equivalent to its base version:
 
 ```typescript
-const {state, run}: UseAsyncState<User[]> = useAsyncState({
+const {state, run} = useAsyncState({
   // highlight-next-line
   producer: fetchUsers,
 });
@@ -178,7 +178,7 @@ async function fetchUser(props: ProducerProps<User>): Promise<User> {
 
 export default function App() {
   const [userId, setUserId] = React.useState("");
-  const {state}: UseAsyncState<User> = useAsyncState(
+  const {state} = useAsyncState(
     {
       lazy: false,
       condition: !!userId,
@@ -244,7 +244,7 @@ That's all we need to do it:
 // ...
 export default function App() {
   const [userId, setUserId] = React.useState("");
-  const {state}: UseAsyncState<User> = useAsyncState(
+  const {state} = useAsyncState(
     {
       lazy: false,
       condition: !!userId,
@@ -302,7 +302,7 @@ async function fetchUser(props: ProducerProps<User>): Promise<User> {
 }
 
 export default function App() {
-  const { run, state }: UseAsyncState<User> = useAsyncState({
+  const { run, state } = useAsyncState({
     lazy: true,
     producer: fetchUser,
     runEffect: "debounce",
@@ -369,7 +369,7 @@ const searchUserConfig = {
 };
 
 export default function App() {
-  const {run, state}: UseAsyncState<User> = useAsyncState(searchUserConfig);
+  const {run, state} = useAsyncState(searchUserConfig);
   const {status, data, props} = state;
   // the rest
 }
@@ -384,7 +384,7 @@ grab the `userId` from the url and navigate when the typed value changes.
 ```tsx
 // highlit-next-line
 const {userId} = useParams();
-const {state}: UseAsyncState<User> = useAsyncState(
+const {state} = useAsyncState(
   {
     lazy: false,
     condition: !!userId,
@@ -442,7 +442,7 @@ the pending update shall be skipped.
 ```tsx
 // highlit-next-line
 const {userId} = useParams();
-const {state}: UseAsyncState<User> = useAsyncState(
+const {state} = useAsyncState(
   {
     lazy: false,
     condition: !!userId,

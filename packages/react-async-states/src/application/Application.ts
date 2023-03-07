@@ -1,14 +1,20 @@
 import {useInternalAsyncState} from "../useInternalAsyncState";
 import {
   createSource,
+} from "async-states";
+import {__DEV__} from "../shared";
+import type {
   Producer,
   ProducerConfig,
   Source,
   State,
   UseAsyncState,
-  MixedConfig
-} from "async-states";
-import {__DEV__} from "../shared";
+  MixedConfig,
+  CacheConfig,
+  CachedState, EqualityFn,
+  ForkConfig,
+  RunEffect, UseAsyncStateEvents, useSelector
+} from "async-states"
 import {useCallerName} from "../helpers/useCallerName";
 
 let freeze = Object.freeze
@@ -143,11 +149,21 @@ function createToken<
       caller = useCallerName(3);
     }
     let source = token()
-    return useInternalAsyncState(caller, {...config, source}, deps);
+
+    if (config) {
+      return useInternalAsyncState(
+        caller,
+        {...config, source} as MixedConfig<T, E, R, A, S>,
+        deps
+      );
+    }
+    return useInternalAsyncState(caller, source, deps);
   }
 
   function inject(
-    fn: Producer<T, E, R, A> | null, config?: ProducerConfig<T, E, R, A>): TokenType {
+    fn: Producer<T, E, R, A> | null,
+    config?: ProducerConfig<T, E, R, A>
+  ): TokenType {
     if (!source) {
       source = createSource(name, fn, config);
     }
@@ -169,8 +185,29 @@ export function api<T, E, R, A extends unknown[]>(
   return Object.assign({}, props, buildDefaultJT<T, E, R, A>())
 }
 
-export type UseConfig<T, E, R, A extends unknown[], S = State<T, E, R, A>> =
-  Omit<Exclude<MixedConfig<T, E, R, A, S>, "string" | Source<T, E, R, A> | "function">, "key" | "producer" | "source" | "pool" | "context">
+export type UseConfig<T, E, R, A extends unknown[], S = State<T, E, R, A>> = {
+  lane?: string,
+  producer?: Producer<T, E, R, A>,
+  payload?: Record<string, unknown>,
+
+  fork?: boolean,
+  forkConfig?: ForkConfig,
+
+  lazy?: boolean,
+  autoRunArgs?: A,
+  areEqual?: EqualityFn<S>,
+  subscriptionKey?: string,
+  selector?: useSelector<T, E, R, A, S>,
+  events?: UseAsyncStateEvents<T, E, R, A>,
+
+  condition?: boolean | ((
+    state: State<T, E, R, A>,
+    args?: A,
+    payload?: Record<string, unknown> | null
+  ) => boolean),
+
+  wait?: boolean,
+}
 
 export type Token<T, E, R, A extends unknown[]> = {
   (): Source<T, E, R, A>,
