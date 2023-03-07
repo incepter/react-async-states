@@ -7,13 +7,13 @@ describe('useSelector', () => {
   it('should do basic selection', () => {
     // given
 
-    const dataSource = createSource("data", null, {
+    const dataSource = createSource<string, any, any>("data", null, {
       initialValue: "hello!",
       resetStateOnDispose: true
     });
 
     function Component() {
-      const data = useSelector("data", d => d!.data);
+      const data = useSelector("data", d => d!.data as string);
       return <span data-testid="result">{data}</span>
     }
 
@@ -37,7 +37,7 @@ describe('useSelector', () => {
     // given
 
     function Component() {
-      const data = useSelector("data", d => d!.data);
+      const data = useSelector("data", d => d!.data as string);
       return <span data-testid="result">{data}</span>
     }
 

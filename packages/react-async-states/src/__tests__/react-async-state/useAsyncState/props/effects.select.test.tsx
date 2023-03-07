@@ -1,14 +1,13 @@
 import * as React from "react";
 import {render, screen} from "@testing-library/react";
 import {useAsyncState} from "../../../../useAsyncState";
-import {UseAsyncState} from "../../../../types.internal";
 import {createSource, Source, State} from "async-states";
 
 describe('should select from another async state', () => {
   it('should select by source', () => {
     // given
     const counterSource = createSource("counter", null, {initialValue: 30});
-    const loggerSource: Source<string> = createSource("logger", props => {
+    const loggerSource: Source<string, any, any, any[]> = createSource("logger", props => {
       const state = props.select(counterSource);
       if (!state?.data) {
         return "does not exist.";
@@ -21,7 +20,7 @@ describe('should select from another async state', () => {
     }, {});
 
     function Test() {
-      const {state}: UseAsyncState<string> = useAsyncState.auto(loggerSource);
+      const {state} = useAsyncState.auto(loggerSource);
 
       return (
         <>
@@ -44,8 +43,8 @@ describe('should select from another async state', () => {
   it('should select by key', () => {
     // given
     const counterSource = createSource("counter-2", null, {initialValue: 15});
-    const loggerSource: Source<string> = createSource("logger-2", props => {
-      const state = props.select("counter-2") as State<number>;
+    const loggerSource = createSource<string, any, any, any[]>("logger-2", props => {
+      const state = props.select("counter-2") as State<number, any, any, any[]>;
       if (!state?.data) {
         return "does not exist.";
       }
@@ -57,7 +56,7 @@ describe('should select from another async state', () => {
     }, {});
 
     function Component() {
-      const {state}: UseAsyncState<string> = useAsyncState({
+      const {state} = useAsyncState({
         source: loggerSource,
         lazy: false
       });

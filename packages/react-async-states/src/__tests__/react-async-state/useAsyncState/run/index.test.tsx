@@ -12,12 +12,12 @@ import {
 describe('should run producer', () => {
   it('should delegate to replace state when no producer', async () => {
     // given
-    const counterSource = createSource("counter", null, {initialValue: 0});
+    const counterSource = createSource<number, any, any>("counter", null, {initialValue: 0});
 
     function Test() {
       return (
           <AsyncStateComponent config={counterSource}>
-            {({run, state}: UseAsyncState<number>) => (
+            {({run, state}) => (
               <div>
                 <button data-testid="run" onClick={() => run(old => old.data + 1)}>run</button>
                 <span data-testid="result">{state.data}</span>
@@ -45,7 +45,7 @@ describe('should run producer', () => {
 
   it('should run with payload after calling mergePayload', async () => {
     // given
-    const counterSource = createSource("counter-2", props => props.payload.userId);
+    const counterSource = createSource<number, any, any>("counter-2", props => props.payload.userId as number);
 
 
     function Component({ run }) {
@@ -62,7 +62,7 @@ describe('should run producer', () => {
     function Test() {
       return (
         <AsyncStateComponent config={{source: counterSource, payload: {userId: "abc"}, lazy: false}}>
-          {({run, state, mergePayload}: UseAsyncState<number>) => (
+          {({run, state, mergePayload}) => (
 
             <div>
               <Component run={value => {
@@ -106,7 +106,7 @@ describe('should run producer', () => {
     // given
     jest.useFakeTimers();
     let globalMeter = 0;
-    const throttledSource = createSource("throttled", props => {
+    const throttledSource = createSource<number, any, any, [number]>("throttled", props => {
       return new Promise(resolve => {
         let id = setTimeout(() => resolve(props.args[0]), 100);
         props.onAbort(() => clearTimeout(id));
@@ -116,7 +116,7 @@ describe('should run producer', () => {
     function Test() {
       return (
         <AsyncStateComponent config={throttledSource}>
-          {({run, state}: UseAsyncState<number>) => (
+          {({run, state}) => (
             <div>
               <button data-testid="run" onClick={() => run(++globalMeter)}>run</button>
               <span data-testid="status">{state.status}</span>
@@ -159,7 +159,7 @@ describe('should run producer', () => {
     // given
     jest.useFakeTimers();
     let globalMeter = 0;
-    const debouncedSource = createSource("debounced", props => {
+    const debouncedSource = createSource<number, any, any, number[]>("debounced", props => {
       return new Promise(resolve => {
         let id = setTimeout(() => resolve(props.args[0]), 100);
         props.onAbort(() => clearTimeout(id));
@@ -169,7 +169,7 @@ describe('should run producer', () => {
     function Test() {
       return (
         <AsyncStateComponent config={debouncedSource}>
-          {({run, state}: UseAsyncState<number>) => (
+          {({run, state}) => (
             <div>
               <button data-testid="run" onClick={() => run(++globalMeter)}>run</button>
               <span data-testid="status">{state.status}</span>

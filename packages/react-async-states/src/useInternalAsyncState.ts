@@ -3,7 +3,6 @@ import {
   hookReturn,
   createHook,
   HookOwnState,
-  State,
   autoRun
 } from "async-states";
 import {
@@ -13,20 +12,21 @@ import {
 } from "./types.internal";
 import {emptyArray} from "./shared";
 import {useExecutionContext} from "./hydration/context";
+import {State} from "async-states";
 
-export const useInternalAsyncState = function useAsyncStateImpl<T, E = any, R = any, S = State<T, E, R>>(
+export const useInternalAsyncState = function useAsyncStateImpl<T, E, R, A extends unknown[], S = State<T, E, R, A>>(
   callerName: string | undefined,
-  mixedConfig: MixedConfig<T, E, R, S>,
+  mixedConfig: MixedConfig<T, E, R, A, S>,
   deps: any[] = emptyArray,
-  overrides?: PartialUseAsyncStateConfiguration<T, E, R, S>,
-): UseAsyncState<T, E, R, S> {
+  overrides?: PartialUseAsyncStateConfiguration<T, E, R, A, S>,
+): UseAsyncState<T, E, R, A, S> {
   // the current library's execution context
   let execContext = useExecutionContext();
   // used when waiting for a state to exist, this will trigger a recalculation
   let [guard, setGuard] = React.useState<number>(0);
   // this contains everything else, from the dependencies to configuration
   // to internal variables used by the library
-  let [hook, setHook] = React.useState<HookOwnState<T, E, R, S>>(createOwnHook);
+  let [hook, setHook] = React.useState<HookOwnState<T, E, R, A, S>>(createOwnHook);
   // the reference towards this "hook" object changes every state update
   // to ensure a certain isolation and that react would actually react to it
   // so no logic should depend on the "hook" object itself, but to what it holds
@@ -54,7 +54,7 @@ export const useInternalAsyncState = function useAsyncStateImpl<T, E = any, R = 
     });
   }
 
-  function createOwnHook(): HookOwnState<T, E, R, S> {
+  function createOwnHook(): HookOwnState<T, E, R, A, S> {
     return createHook(execContext, mixedConfig, deps, guard, overrides, callerName);
   }
 }

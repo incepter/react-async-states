@@ -21,7 +21,7 @@ describe('should add static payload to async state', () => {
         devFlags,
         state,
         uniqueId,
-      }: UseAsyncState<number> = useAsyncState({
+      } = useAsyncState<number, any, any, any>({
         initialValue: 0,
         payload: {
           salt: 5,

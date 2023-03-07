@@ -4,9 +4,9 @@ import {useInternalAsyncState} from "./useInternalAsyncState";
 import {useCallerName} from "./helpers/useCallerName";
 import {__DEV__} from "./shared";
 
-export function useProducer<T, E, R>(
-  producer: Producer<T, E, R>,
-): UseAsyncState<T, E, R, State<T, E, R>> {
+export function useProducer<T, E, R, A extends unknown[]>(
+  producer: Producer<T, E, R, A>,
+): UseAsyncState<T, E, R, A, State<T, E, R, A>> {
 
   let caller;
   if (__DEV__) {

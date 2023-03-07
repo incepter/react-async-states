@@ -4,10 +4,10 @@ import {useInternalAsyncState} from "./useInternalAsyncState";
 import {__DEV__} from "./shared";
 import {useCallerName} from "./helpers/useCallerName";
 
-export function useSource<T, E, R>(
-  source: Source<T, E, R>,
+export function useSource<T, E, R, A extends unknown[]>(
+  source: Source<T, E, R, A>,
   lane?: string,
-): UseAsyncState<T, E, R, State<T, E, R>> {
+): UseAsyncState<T, E, R, A, State<T, E, R, A>> {
   let caller;
   if (__DEV__) {
     caller = useCallerName(3);

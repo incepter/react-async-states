@@ -6,8 +6,6 @@ export {useProducer} from "./useProducer";
 
 export {useAsyncState} from "./useAsyncState";
 
-export {AsyncStateProvider} from "./Provider";
-
 export {
   createSource, Status, RunEffect,
   requestContext, createContext, getContext, terminateContext,
@@ -17,6 +15,18 @@ export {
 export {
   default as Hydration,
 } from "./hydration/Hydration";
+
+export {createApplication, api} from "./application/Application"
+export type {
+  Api,
+  ExtendedFn,
+  Application,
+  DefaultFn,
+  Token,
+  UseConfig,
+  ApplicationEntry,
+} from "./application/Application"
+
 
 export type {
   State,

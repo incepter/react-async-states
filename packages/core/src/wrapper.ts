@@ -9,13 +9,13 @@ import {
 import {cloneProducerProps, isFunction, isGenerator, isPromise} from "./utils";
 import {error as errorStatus, success} from "./enums";
 
-export function run<T, E, R>(
-  producer: Producer<T, E, R>,
-  props: ProducerProps<T, E, R>,
+export function run<T, E, R, A extends unknown[]>(
+  producer: Producer<T, E, R, A>,
+  props: ProducerProps<T, E, R, A>,
   indicators: RunIndicators,
-  onSettled: OnSettled<T, E, R>,
-  retryConfig?: RetryConfig<T, E, R>,
-  callbacks?: ProducerCallbacks<T, E, R>,
+  onSettled: OnSettled<T, E, R, A>,
+  retryConfig?: RetryConfig<T, E, R, A>,
+  callbacks?: ProducerCallbacks<T, E, R, A>,
 ): Promise<T> | undefined {
   let pendingPromise: Promise<T>;
   let executionValue;
@@ -32,7 +32,7 @@ export function run<T, E, R>(
     if (indicators.aborted) {
       return;
     }
-    onFail(e);
+    onFail(e as E);
     return;
   }
 
@@ -42,7 +42,7 @@ export function run<T, E, R>(
       // generatorResult is either {done: boolean, value: T} or a Promise<T>
       generatorResult = stepGenerator(executionValue, props, indicators);
     } catch (e) {
-      onFail(e);
+      onFail(e as E);
       return;
     }
     if (generatorResult.done) {
@@ -95,9 +95,9 @@ export function run<T, E, R>(
   }
 }
 
-function shouldRetry<T, E, R>(
+function shouldRetry<T, E, R, A extends unknown[]>(
   attempt: number,
-  retryConfig: RetryConfig<T, E, R>,
+  retryConfig: RetryConfig<T, E, R, A>,
   error: E
 ): boolean {
   let {retry, maxAttempts} = retryConfig;
@@ -110,9 +110,9 @@ function shouldRetry<T, E, R>(
   return canRetry && shouldRetry;
 }
 
-function getRetryBackoff<T, E, R>(
+function getRetryBackoff<T, E, R, A extends unknown[]>(
   attempt: number,
-  retryConfig: RetryConfig<T, E, R>,
+  retryConfig: RetryConfig<T, E, R, A>,
   error: E
 ): number {
   let {backoff} = retryConfig;

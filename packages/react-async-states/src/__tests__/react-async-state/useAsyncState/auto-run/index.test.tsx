@@ -1,6 +1,5 @@
 import * as React from "react";
 import {act, render, screen} from "@testing-library/react";
-import {UseAsyncState} from "../../../../types.internal";
 import {useAsyncState} from "../../../../useAsyncState";
 import {Status} from "async-states";
 
@@ -14,7 +13,7 @@ describe('should auto run async state', () => {
     function Component() {
       const {
         state,
-      }: UseAsyncState<number> = useAsyncState.auto({
+      } = useAsyncState.auto<number, any, any>({
         producer,
         autoRunArgs: [5],
         initialValue: 99,
@@ -50,7 +49,7 @@ describe('should auto run async state', () => {
     function Component() {
       const {
         state,
-      }: UseAsyncState<number> = useAsyncState.auto({
+      } = useAsyncState.auto<number, any, any>({
         payload: {
           content: "Hello",
         },

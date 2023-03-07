@@ -30,7 +30,7 @@ describe('should fork an initially hoisted async state', () => {
         run,
         devFlags,
         state,
-      }: UseAsyncState<number> = useAsyncState({
+      }: UseAsyncState<number, any, any, any[]> = useAsyncState({
         fork,
         forkConfig,
         key: subKey,

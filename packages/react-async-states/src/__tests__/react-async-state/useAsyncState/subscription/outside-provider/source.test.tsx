@@ -1,6 +1,5 @@
 import * as React from "react";
-import {fireEvent, render, screen, act} from "@testing-library/react";
-import {UseAsyncState} from "../../../../../types.internal";
+import {act, fireEvent, render, screen} from "@testing-library/react";
 import {useAsyncState} from "../../../../../useAsyncState";
 import AsyncStateComponent from "../../../utils/AsyncStateComponent";
 import {createSource} from "async-states";
@@ -8,14 +7,14 @@ import {createSource} from "async-states";
 describe('should subscribe to a module level source object', () => {
   it('should share state by source between two components', () => {
     // given
-    const source = createSource<number>(
+    const source = createSource<number, any, any, any[]>(
       "counter-2",
       null,
       {initialValue: 0}
     );
 
     function Controls() {
-      const {run}: UseAsyncState<number> = useAsyncState(source);
+      const {run} = useAsyncState(source);
 
       return (
         <div>
@@ -34,12 +33,12 @@ describe('should subscribe to a module level source object', () => {
         <>
           <Controls/>
           <AsyncStateComponent config={source}>
-            {({state}: UseAsyncState<number>) => (
+            {({state}) => (
               <span data-testid="count-a">{state.data}</span>
             )}
           </AsyncStateComponent>
           <AsyncStateComponent config={source}>
-            {({state}: UseAsyncState<number>) => (
+            {({state}) => (
               <span data-testid="count-b">{state.data}</span>
             )}
           </AsyncStateComponent>
@@ -78,7 +77,7 @@ describe('should subscribe to a module level source object', () => {
   });
   it('should fork a source async state', () => {
     // given
-    const source = createSource<number>(
+    const source = createSource<number, any, any, any>(
       "counter",
       null,
       {initialValue: 0}
@@ -88,7 +87,7 @@ describe('should subscribe to a module level source object', () => {
       return (
         <>
           <AsyncStateComponent config={source}>
-            {({state, run}: UseAsyncState<number>) => (
+            {({state, run}) => (
               <>
                 <button
                   data-testid="increment-a"
@@ -101,7 +100,7 @@ describe('should subscribe to a module level source object', () => {
             )}
           </AsyncStateComponent>
           <AsyncStateComponent config={{source, fork: true}}>
-            {({state, run}: UseAsyncState<number>) => (
+            {({state, run}) => (
               <>
                 <button
                   data-testid="increment-b"

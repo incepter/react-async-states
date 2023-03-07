@@ -16,7 +16,7 @@ export function resetAllSources() {
 type Info = {
   connected: boolean,
 }
-export let devtoolsInfo = createSource<Info>("info", devtoolsInfoProducer, {
+export let devtoolsInfo = createSource<Info, any, any>("info", devtoolsInfoProducer, {
   hideFromDevtools: true,
   initialValue: {connected: false}
 });
@@ -28,8 +28,8 @@ function devtoolsInfoProducer(props) {
   }
 
   let {dev} = gatewaySource.getPayload();
-  port.postMessage(DevtoolsMessagesBuilder.init(dev));
-  port.postMessage(DevtoolsMessagesBuilder.getKeys(dev));
+  port.postMessage(DevtoolsMessagesBuilder.init(!!dev));
+  port.postMessage(DevtoolsMessagesBuilder.getKeys(!!dev));
 
   let id = setTimeout(() => {
     props.emit("Timeout", Status.error);
@@ -42,14 +42,14 @@ function devtoolsInfoProducer(props) {
 export type InstanceDetails = {
   key?: string,
   journal?: any[],
-  state?: State<any>,
-  lastSuccess?: State<any>,
-  previousState?: State<any>,
-  config?: ProducerConfig<any>,
+  state?: State<any, any, any, any>,
+  lastSuccess?: State<any, any, any, any>,
+  previousState?: State<any, any, any, any>,
+  config?: ProducerConfig<any, any, any, any>,
   subscriptions?: any[],
   cache: any,
 }
-export let instanceDetails = createSource<InstanceDetails | null>("instance-details", instanceDetailsProducer, {
+export let instanceDetails = createSource<InstanceDetails | null, any, any>("instance-details", instanceDetailsProducer, {
   initialValue: null,
   hideFromDevtools: true
 });
@@ -59,18 +59,18 @@ export let currentView = createSource<string | null>("current-view", null, {
   hideFromDevtools: true
 });
 
-function instanceDetailsProducer(props: ProducerProps<InstanceDetails | null>) {
+function instanceDetailsProducer(props: ProducerProps<InstanceDetails | null, any, any, any[]>) {
   let {data: port} = gatewaySource.getState();
   if (!port) {
     throw new Error("Couldn't know port, this is a bug");
   }
 
   let {dev} = gatewaySource.getPayload();
-  port.postMessage(DevtoolsMessagesBuilder.init(dev));
-  port.postMessage(DevtoolsMessagesBuilder.getKeys(dev));
+  port.postMessage(DevtoolsMessagesBuilder.init(!!dev));
+  port.postMessage(DevtoolsMessagesBuilder.getKeys(!!dev));
 
   const {uniqueId} = props.payload;
-  port.postMessage?.(DevtoolsMessagesBuilder.getAsyncState(uniqueId, dev));
+  port.postMessage?.(DevtoolsMessagesBuilder.getAsyncState(uniqueId, !!dev));
 
   return null;
 }
@@ -78,7 +78,7 @@ function instanceDetailsProducer(props: ProducerProps<InstanceDetails | null>) {
 
 export type InstancePlaceholder = { uniqueId: number, key: string, status?: Status, lastUpdate?: number };
 export type InstancesList = Record<string, InstancePlaceholder>
-export let instancesList = createSource<InstancesList>("instances", null, {
+export let instancesList = createSource<InstancesList, any, any>("instances", null, {
   initialValue: {},
   hideFromDevtools: true
 });
@@ -203,7 +203,7 @@ function applyPartialUpdate(message) {
   let currentSource = instanceDetails.getLaneSource(`${uniqueId}`);
   switch (eventType) {
     case DevtoolsJournalEvent.run: {
-      let currentDetails = currentSource.getState().data || {} as InstanceDetails;
+      let currentDetails = (currentSource.getState().data || {}) as InstanceDetails;
       currentDetails.journal = ((currentDetails.journal || []).push(message.payload), currentDetails.journal);
       currentSource.setState(currentDetails);
       return;
@@ -219,7 +219,7 @@ function applyPartialUpdate(message) {
       prevPlaceholder.lastUpdate = message.payload.eventPayload.newState.timestamp;
       instancesList.setState(prevListState);
 
-      let currentDetails = currentSource.getState().data || {} as InstanceDetails;
+      let currentDetails = (currentSource.getState().data || {}) as InstanceDetails;
       currentDetails.state = message.payload.eventPayload.newState;
       currentDetails.previousState = message.payload.eventPayload.oldState;
       currentDetails.lastSuccess = message.payload.eventPayload.lastSuccess;
@@ -230,7 +230,7 @@ function applyPartialUpdate(message) {
       return;
     }
     case DevtoolsJournalEvent.subscription: {
-      let currentDetails = currentSource.getState().data || {} as InstanceDetails;
+      let currentDetails = (currentSource.getState().data || {}) as InstanceDetails;
       currentDetails.subscriptions = ((currentDetails.subscriptions || []).push(message.payload.eventPayload), currentDetails.subscriptions);
       currentDetails.journal = ((currentDetails.journal || [])?.push(message.payload), currentDetails.journal);
 
@@ -238,7 +238,7 @@ function applyPartialUpdate(message) {
       return;
     }
     case DevtoolsJournalEvent.unsubscription: {
-      let currentDetails = currentSource.getState().data || {} as InstanceDetails;
+      let currentDetails = (currentSource.getState().data || {}) as InstanceDetails;
       currentDetails.subscriptions = ((currentDetails.subscriptions || []).filter(t => t.key !== message.payload.eventPayload));
       currentDetails.journal = ((currentDetails.journal || []).push(message.payload), currentDetails.journal);
 

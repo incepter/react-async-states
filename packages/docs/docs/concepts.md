@@ -17,13 +17,38 @@ The library's state value is composed of four properties:
 | `props`     | `ProducerProps`                         | The argument object that the producer was ran with (the `props`) |
 | `timestamp` | `number`                                | the time (`Date.now()`) where the state was constructed          |
 
-The type of the data goes with the status, this means:
+Using typescript, the state has 4 generic types for now:
 
+````typescript
+type State<TData, TError, TReason, TArgs> = {}
+````
+Where:
+- `TData`: Refers to the type of the data when `success`
+- `TError`: Refers to the type of the Error when `error`
+- `TReason`: Refers to the type of the Abort reason when `aborted`
+- `TArgs`: Refers to the type of the `args` that we will use to run our producer.
+
+:::note
+- The `data` property has a `null` value when `pending`
+- The type of the state goes along with the status:
+
+The following example declares a producer that will perform the login of our user,
+while:
+- In case of success, the type is `User`
+- In case of pending, data is `null`
+- In case of error, the type is `Error`
+- In case of aborted, the type is `"Timeout"`
+- In case of initial, the type is `User | undefined`
 ```typescript
 type User = { username: string, password: string };
-function producer(props: ProducerProps<User, Error, "Timeout">): Promise<User> {
-  if (!props.args[0]) throw new Error("username or password is incorrect");
-  return Promise.resolve({username: 'admin', password: 'admin'});
+
+function loginProducer(
+  props: ProducerProps<User, Error, "Timeout", [string, string]>
+): Promise<User> {
+  if (!props.args[0]) throw new Error("username is required");
+  // let id = setTimeout(() => props.abort("Timeout"), 15000)
+  // props.onAbort(() => clearTimeout(id))
+  return login({username: props.args[0], password: props.args[0]})
 }
 
 let {state, runc} = useAsyncState(producer);
@@ -55,15 +80,16 @@ runc({
   },
 });
 ```
+:::
 
 ## The producer
 The producer function is a javascript function, and it is responsible for
 returning the state's `data`.
 
 ```typescript
-// T: data type, E: error type, R: abort reason type
-export type Producer<T, E, R> =
-        ((props: ProducerProps<T, E, R>) => (T | Promise<T> | Generator<any, T, any>));
+// T: data type, E: error type, R: abort reason type, A type of props.args
+export type Producer<T, E, R, A extends unknown[]> =
+        ((props: ProducerProps<T, E, R, A>) => (T | Promise<T> | Generator<any, T, any>));
 ```
 
 It may be:

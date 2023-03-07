@@ -9,7 +9,7 @@ import {HydrationContext, isServer} from "./context";
 
 declare global {
   interface Window {
-    __ASYNC_STATES_HYDRATION_DATA__?: Record<string, HydrationData<any, any, any>>;
+    __ASYNC_STATES_HYDRATION_DATA__?: Record<string, HydrationData<unknown, unknown, unknown, unknown[]>>;
   }
 }
 export let maybeWindow = typeof window !== "undefined" ? window : undefined;
@@ -99,7 +99,7 @@ function HydrationExecutor({context, exclude}) {
 
 export type HydrationProps = {
   context: any,
-  exclude?: string | ((key: string, state: State<any>) => boolean),
+  exclude?: string | ((key: string, state: State<unknown, unknown, unknown, unknown[]>) => boolean),
   children?: any,
 }
 
@@ -108,7 +108,7 @@ function buildHydrationData(
   exclude?: string | ((key: string) => boolean),
 ): string | null {
 
-  let states: Record<string, HydrationData<any, any, any>> = flattenPools(
+  let states: Record<string, HydrationData<unknown, unknown, unknown, unknown[]>> = flattenPools(
     context,
     exclude
   );
@@ -125,8 +125,8 @@ function buildHydrationData(
 
 function flattenPools(
   context: any,
-  exclude?: string | ((key: string, state: State<any>) => boolean),
-): Record<string, HydrationData<any, any, any>> {
+  exclude?: string | ((key: string, state: State<unknown, unknown, unknown, unknown[]>) => boolean),
+): Record<string, HydrationData<unknown, unknown, unknown, unknown[]>> {
 
   return Object.values(requestContext(context).pools)
     .reduce((result, pool) => {
@@ -152,5 +152,5 @@ function flattenPools(
       });
 
       return result;
-    }, {} as Record<string, HydrationData<any, any, any>>);
+    }, {} as Record<string, HydrationData<unknown, unknown, unknown, unknown[]>>);
 }

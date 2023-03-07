@@ -1,5 +1,4 @@
 import {
-  CacheConfig,
   CachedState,
   ProducerProps,
   ProducerSavedProps
@@ -20,14 +19,14 @@ export let isServer = typeof maybeWindow === "undefined" ||
 export let emptyArray = [];
 export let asyncStatesKey = freeze(Object.create(null));
 
-export function defaultHash(
-  args: any[] | undefined,
-  payload: Record<string, any> | null | undefined
+export function defaultHash<A extends unknown[]>(
+  args: A | undefined,
+  payload: Record<string, unknown> | null | undefined
 ): string {
   return JSON.stringify({args, payload});
 }
 
-export function didNotExpire<T, E, R>(cachedState: CachedState<T, E, R>) {
+export function didNotExpire<T, E, R, A extends unknown[]>(cachedState: CachedState<T, E, R, A>) {
   const {addedAt, deadline} = cachedState;
 
   return addedAt + deadline >= now();
@@ -45,7 +44,7 @@ export function isFunction(fn): fn is Function {
   return typeof fn === "function";
 }
 
-export function cloneProducerProps<T, E, R>(props: Partial<ProducerProps<T, E, R>>): ProducerSavedProps<T> {
+export function cloneProducerProps<T, E, R, A extends unknown[]>(props: Partial<ProducerProps<T, E, R, A>>): ProducerSavedProps<T, A> {
   return {
     args: props.args,
     payload: props.payload,

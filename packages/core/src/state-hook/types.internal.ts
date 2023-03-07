@@ -12,27 +12,27 @@ import {
 import {RunEffect, Status} from "../enums";
 import {HookChangeEvents} from "./StateHook";
 
-export interface BaseUseAsyncState<T, E, R, S = State<T, E, R>> extends Source<T, E, R> {
+export interface BaseUseAsyncState<T, E, R, A extends unknown[], S = State<T, E, R, A>> extends Source<T, E, R, A> {
   flags?: number,
-  source?: Source<T, E, R>,
+  source?: Source<T, E, R, A>,
   devFlags?: string[],
 
   onChange(
-    events: ((prevEvents?: HookChangeEvents<T, E, R>) => void) | HookChangeEvents<T, E, R>
+    events: ((prevEvents?: HookChangeEvents<T, E, R, A>) => void) | HookChangeEvents<T, E, R, A>
   ): void,
 
   onSubscribe(
-    events: ((prevEvents?: UseAsyncStateEventSubscribe<T, E, R>) => void) | UseAsyncStateEventSubscribe<T, E, R>
+    events: ((prevEvents?: UseAsyncStateEventSubscribe<T, E, R, A>) => void) | UseAsyncStateEventSubscribe<T, E, R, A>
   ): void,
 }
 
-export interface UseAsyncState<T, E = any, R = any, S = State<T, E, R>> extends BaseUseAsyncState<T, E, R, S> {
+export interface UseAsyncState<T, E = unknown, R = unknown, A extends unknown[] = unknown[], S = State<T, E, R, A>> extends BaseUseAsyncState<T, E, R, A, S> {
   state: S,
 
   read(suspend?: boolean, throwError?: boolean): S,
 
   version?: number,
-  lastSuccess?: LastSuccessSavedState<T>,
+  lastSuccess?: LastSuccessSavedState<T, A>,
 }
 
 export type EqualityFn<T> = (
@@ -40,98 +40,98 @@ export type EqualityFn<T> = (
   next: T
 ) => boolean;
 
-export interface BaseConfig<T, E, R> extends ProducerConfig<T, E, R> {
+export interface BaseConfig<T, E, R, A extends unknown[]> extends ProducerConfig<T, E, R, A> {
   key?: string,
   lane?: string,
-  source?: Source<T, E, R>,
-  autoRunArgs?: any[],
-  producer?: Producer<T, E, R>,
+  source?: Source<T, E, R, A>,
+  autoRunArgs?: A,
+  producer?: Producer<T, E, R, A>,
   subscriptionKey?: string,
-  payload?: Record<string, any>,
-  events?: UseAsyncStateEvents<T, E, R>,
+  payload?: Record<string, unknown>,
+  events?: UseAsyncStateEvents<T, E, R, A>,
 
   wait?: boolean,
   lazy?: boolean,
   condition?: boolean | ((
-    state: State<T, E, R>,
-    args?: any[],
-    payload?: Record<string, any> | null
+    state: State<T, E, R, A>,
+    args?: A,
+    payload?: Record<string, unknown> | null
   ) => boolean),
 
   fork?: boolean,
   forkConfig?: ForkConfig
 }
 
-export interface ConfigWithKeyWithSelector<T, E, R, S> extends ConfigWithKeyWithoutSelector<T, E, R> {
-  selector: useSelector<T, E, R, S>,
+export interface ConfigWithKeyWithSelector<T, E, R, A extends unknown[], S> extends ConfigWithKeyWithoutSelector<T, E, R, A> {
+  selector: useSelector<T, E, R, A, S>,
   areEqual?: EqualityFn<S>,
 }
 
-export interface ConfigWithKeyWithoutSelector<T, E, R> extends BaseConfig<T, E, R> {
+export interface ConfigWithKeyWithoutSelector<T, E, R, A extends unknown[]> extends BaseConfig<T, E, R, A> {
   key: string,
 }
 
-export interface ConfigWithSourceWithSelector<T, E, R, S> extends ConfigWithSourceWithoutSelector<T, E, R> {
-  selector: useSelector<T, E, R, S>,
+export interface ConfigWithSourceWithSelector<T, E, R, A extends unknown[], S> extends ConfigWithSourceWithoutSelector<T, E, R, A> {
+  selector: useSelector<T, E, R, A, S>,
   areEqual?: EqualityFn<S>,
 }
 
-export interface ConfigWithSourceWithoutSelector<T, E, R> extends BaseConfig<T, E, R> {
-  source: Source<T, E, R>,
+export interface ConfigWithSourceWithoutSelector<T, E, R, A extends unknown[]> extends BaseConfig<T, E, R, A> {
+  source: Source<T, E, R, A>,
 }
 
-export interface ConfigWithProducerWithSelector<T, E, R, S> extends ConfigWithProducerWithoutSelector<T, E, R> {
-  selector: useSelector<T, E, R, S>,
+export interface ConfigWithProducerWithSelector<T, E, R, A extends unknown[], S> extends ConfigWithProducerWithoutSelector<T, E, R, A> {
+  selector: useSelector<T, E, R, A, S>,
   areEqual?: EqualityFn<S>,
 }
 
-export interface ConfigWithProducerWithoutSelector<T, E, R> extends BaseConfig<T, E, R> {
-  producer?: Producer<T, E, R>,
+export interface ConfigWithProducerWithoutSelector<T, E, R, A extends unknown[]> extends BaseConfig<T, E, R, A> {
+  producer?: Producer<T, E, R, A>,
 }
 
-export type MixedConfig<T, E = any, R = any, S = any> =
+export type MixedConfig<T, E, R, A extends unknown[], S = State<T, E, R, A>> =
   string
   | undefined
-  | Source<T, E, R>
-  | Producer<T, E, R>
+  | Source<T, E, R, A>
+  | Producer<T, E, R, A>
   |
-  ConfigWithKeyWithSelector<T, E, R, S>
+  ConfigWithKeyWithSelector<T, E, R, A, S>
   |
-  ConfigWithKeyWithoutSelector<T, E, R>
+  ConfigWithKeyWithoutSelector<T, E, R, A>
   |
-  ConfigWithSourceWithSelector<T, E, R, S>
+  ConfigWithSourceWithSelector<T, E, R, A, S>
   |
-  ConfigWithSourceWithoutSelector<T, E, R>
+  ConfigWithSourceWithoutSelector<T, E, R, A>
   |
-  ConfigWithProducerWithSelector<T, E, R, S>
+  ConfigWithProducerWithSelector<T, E, R, A, S>
   |
-  ConfigWithProducerWithoutSelector<T, E, R>;
+  ConfigWithProducerWithoutSelector<T, E, R, A>;
 
 
-export type UseAsyncStateConfiguration<T, E = any, R = any, S = State<T, E, R>> = {
+export type UseAsyncStateConfiguration<T, E, R, A extends unknown[], S = State<T, E, R, A>> = {
   key?: string,
   lane?: string,
-  source?: Source<T, E, R>,
-  producer?: Producer<T, E, R>,
+  source?: Source<T, E, R, A>,
+  producer?: Producer<T, E, R, A>,
   skipPendingDelayMs?: number,
   skipPendingStatus?: boolean,
-  cacheConfig?: CacheConfig<T, E, R>,
+  cacheConfig?: CacheConfig<T, E, R, A>,
   runEffectDurationMs?: number,
   resetStateOnDispose?: boolean,
-  payload?: Record<string, any>,
+  payload?: Record<string, unknown>,
   runEffect?: RunEffect,
-  initialValue?: T | ((cache: Record<string, CachedState<T, E, R>>) => T),
+  initialValue?: T | ((cache: Record<string, CachedState<T, E, R, A>>) => T),
 
   fork?: boolean,
   forkConfig?: ForkConfig,
 
   lazy?: boolean,
-  autoRunArgs?: any[],
-  condition?: boolean | ((state: State<T, E, R>) => boolean),
+  autoRunArgs?: A,
+  condition?: boolean | ((state: State<T, E, R, A>) => boolean),
   areEqual: EqualityFn<S>,
   subscriptionKey?: string,
-  selector: useSelector<T, E, R, S>,
-  events?: UseAsyncStateEvents<T, E, R>,
+  selector?: useSelector<T, E, R, A, S>,
+  events?: UseAsyncStateEvents<T, E, R, A>,
 
   pool?: string,
   wait?: boolean,
@@ -140,80 +140,80 @@ export type UseAsyncStateConfiguration<T, E = any, R = any, S = State<T, E, R>> 
   hideFromDevtools?: boolean,
 }
 
-export type UseAsyncStateEventProps<T, E = any, R = any> = {
-  state: State<T, E, R>,
-  source: Source<T, E, R>,
+export type UseAsyncStateEventProps<T, E, R, A extends unknown[]> = {
+  state: State<T, E, R, A>,
+  source: Source<T, E, R, A>,
 };
 
-export type UseAsyncStateChangeEventHandler<T, E = any, R = any> =
-  ((props: UseAsyncStateEventProps<T, E, R>) => void)
+export type UseAsyncStateChangeEventHandler<T, E, R, A extends unknown[]> =
+  ((props: UseAsyncStateEventProps<T, E, R, A>) => void)
 
-export type UseAsyncStateEventFn<T, E = any, R = any> =
-  UseAsyncStateChangeEvent<T, E, R>
+export type UseAsyncStateEventFn<T, E, R, A extends unknown[]> =
+  UseAsyncStateChangeEvent<T, E, R, A>
   |
-  UseAsyncStateChangeEventHandler<T, E, R>;
+  UseAsyncStateChangeEventHandler<T, E, R, A>;
 
-export type UseAsyncStateChangeEvent<T, E = any, R = any> = {
+export type UseAsyncStateChangeEvent<T, E, R, A extends unknown[]> = {
   status: Status
-  handler: UseAsyncStateChangeEventHandler<T, E, R>,
+  handler: UseAsyncStateChangeEventHandler<T, E, R, A>,
 }
 
-export type UseAsyncStateEventSubscribe<T, E, R> =
-  ((props: SubscribeEventProps<T, E, R>) => CleanupFn)
-  | ((props: SubscribeEventProps<T, E, R>) => CleanupFn)[]
+export type UseAsyncStateEventSubscribe<T, E, R, A extends unknown[]> =
+  ((props: SubscribeEventProps<T, E, R, A>) => CleanupFn)
+  | ((props: SubscribeEventProps<T, E, R, A>) => CleanupFn)[]
 
-export type UseAsyncStateEvents<T, E = any, R = any> = {
-  change?: UseAsyncStateEventFn<T, E, R> | UseAsyncStateEventFn<T, E, R>[],
-  subscribe?: UseAsyncStateEventSubscribe<T, E, R>,
+export type UseAsyncStateEvents<T, E, R, A extends unknown[]> = {
+  change?: UseAsyncStateEventFn<T, E, R, A> | UseAsyncStateEventFn<T, E, R, A>[],
+  subscribe?: UseAsyncStateEventSubscribe<T, E, R, A>,
 }
 
-export type SubscribeEventProps<T, E = any, R = any> = Source<T, E, R>
+export type SubscribeEventProps<T, E, R, A extends unknown[]> = Source<T, E, R, A>
 
-export type useSelector<T, E, R, S> =
+export type useSelector<T, E, R, A extends unknown[], S> =
   (
-    currentState: State<T, E, R>, lastSuccess: LastSuccessSavedState<T>,
-    cache: { [id: string]: CachedState<T, E, R> } | null
+    currentState: State<T, E, R, A>, lastSuccess: LastSuccessSavedState<T, A>,
+    cache: { [id: string]: CachedState<T, E, R, A> } | null
   ) => S;
 
-export type PartialUseAsyncStateConfiguration<T, E, R, S> = Partial<UseAsyncStateConfiguration<T, E, R, S>>
+export type PartialUseAsyncStateConfiguration<T, E, R, A extends unknown[], S> = Partial<UseAsyncStateConfiguration<T, E, R, A, S>>
 
 export type CleanupFn = AbortFn
   | (() => void)
   | undefined;
 
-export interface UseAsyncStateType<T, E = any, R = any, S = State<T, E, R>> {
+export interface UseAsyncStateType<T, E, R, A extends unknown[], S = State<T, E, R, A>> {
   (
-    subscriptionConfig: MixedConfig<T, E, R, S>,
-    dependencies?: any[]
-  ): UseAsyncState<T, E, R, S>,
+    subscriptionConfig: MixedConfig<T, E, R, A, S>,
+    dependencies?: unknown[]
+  ): UseAsyncState<T, E, R, A, S>,
 
   auto(
-    subscriptionConfig: MixedConfig<T, E, R, S>,
-    dependencies?: any[]
-  ): UseAsyncState<T, E, R, S>,
+    subscriptionConfig: MixedConfig<T, E, R, A, S>,
+    dependencies?: unknown[]
+  ): UseAsyncState<T, E, R, A, S>,
 
   lazy(
-    subscriptionConfig: MixedConfig<T, E, R, S>,
-    dependencies?: any[]
-  ): UseAsyncState<T, E, R, S>,
+    subscriptionConfig: MixedConfig<T, E, R, A, S>,
+    dependencies?: unknown[]
+  ): UseAsyncState<T, E, R, A, S>,
 
   fork(
-    subscriptionConfig: MixedConfig<T, E, R, S>,
-    dependencies?: any[]
-  ): UseAsyncState<T, E, R, S>,
+    subscriptionConfig: MixedConfig<T, E, R, A, S>,
+    dependencies?: unknown[]
+  ): UseAsyncState<T, E, R, A, S>,
 
   hoist(
-    subscriptionConfig: MixedConfig<T, E, R, S>,
-    dependencies?: any[]
-  ): UseAsyncState<T, E, R, S>,
+    subscriptionConfig: MixedConfig<T, E, R, A, S>,
+    dependencies?: unknown[]
+  ): UseAsyncState<T, E, R, A, S>,
 
   forkAuto(
-    subscriptionConfig: MixedConfig<T, E, R, S>,
-    dependencies?: any[]
-  ): UseAsyncState<T, E, R, S>,
+    subscriptionConfig: MixedConfig<T, E, R, A, S>,
+    dependencies?: unknown[]
+  ): UseAsyncState<T, E, R, A, S>,
 
   hoistAuto(
-    subscriptionConfig: MixedConfig<T, E, R, S>,
-    dependencies?: any[]
-  ): UseAsyncState<T, E, R, S>,
+    subscriptionConfig: MixedConfig<T, E, R, A, S>,
+    dependencies?: unknown[]
+  ): UseAsyncState<T, E, R, A, S>,
 }

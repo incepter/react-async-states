@@ -14,23 +14,23 @@ type SuccessExtendedState = { isInitial: false, isPending: false, isError: false
 type ErrorExtendedState = { isInitial: false, isPending: false, isError: true, isAborted: false, isSuccess: false };
 type AbortedExtendedState = { isInitial: false, isPending: false, isError: false, isAborted: true, isSuccess: false };
 
-export type StateWithBooleanStatus<T, E = any, R = any> =
-  InitialState<T> & InitialExtendedState |
-  PendingState<T> & PendingExtendedState |
-  SuccessState<T> & SuccessExtendedState |
-  ErrorState<T, E> & ErrorExtendedState |
-  AbortedState<T, E, R> & AbortedExtendedState;
+export type StateWithBooleanStatus<T, E = unknown, R = unknown, A extends unknown[] = unknown[]> =
+  InitialState<T, A> & InitialExtendedState |
+  PendingState<T, A> & PendingExtendedState |
+  SuccessState<T, A> & SuccessExtendedState |
+  ErrorState<T, E, A> & ErrorExtendedState |
+  AbortedState<T, E, R, A> & AbortedExtendedState;
 
-type ExtendStatusReturn<T, E, R> =
+type ExtendStatusReturn<T, E, R, A extends unknown[]> =
   InitialExtendedState |
   PendingExtendedState |
   SuccessExtendedState |
   AbortedExtendedState |
   ErrorExtendedState;
 
-function extendStatus<T, E = any, R = any>(
-  state: State<T, E, R>
-): ExtendStatusReturn<T, E, R> {
+function extendStatus<T, E = unknown, R = unknown, A extends unknown[] = unknown[]>(
+  state: State<T, E, R, A>
+): ExtendStatusReturn<T, E, R, A> {
   let status = state.status;
   switch (status) {
     case Status.initial: {
@@ -82,7 +82,7 @@ function extendStatus<T, E = any, R = any>(
   throw new Error(`Status ${status} isn't recognized!`);
 }
 
-export function addBooleanStatus<T, E = any, R = any>(state: State<T, E, R>): StateWithBooleanStatus<T, E, R> {
+export function addBooleanStatus<T, E = unknown, R = unknown, A extends unknown[] = unknown[]>(state: State<T, E, R, A>): StateWithBooleanStatus<T, E, R, A> {
   let extended = extendStatus<T, E, R>(state);
-  return Object.assign({}, extended, state) as StateWithBooleanStatus<T, E, R>;
+  return Object.assign({}, extended, state) as StateWithBooleanStatus<T, E, R, A>;
 }

@@ -9,7 +9,7 @@ describe('should run another producer from producer', () => {
     const source1Producer = jest.fn().mockImplementation(() => 5);
     const source1 = createSource("source1", source1Producer);
 
-    const source2Producer: Producer<number> = jest.fn().mockImplementation((props: ProducerProps<number>) => {
+    const source2Producer: Producer<number, any, any, any[]> = jest.fn().mockImplementation((props: ProducerProps<number, any, any, any[]>) => {
       props.run(source1, null, 2);
       return 3;
     });
@@ -48,7 +48,7 @@ describe('should run another producer from producer', () => {
     const source1Producer = jest.fn().mockImplementation(() => 5);
     const source1 = createSource("source3", source1Producer);
 
-    const source2Producer: Producer<number> = jest.fn().mockImplementation((props: ProducerProps<number>) => {
+    const source2Producer: Producer<number, any, any, any[]> = jest.fn().mockImplementation((props: ProducerProps<number, any, any, any[]>) => {
       props.run(source1, null, 1);
       return 3;
     });
@@ -85,7 +85,7 @@ describe('should run another producer from producer', () => {
     // given
     const source2Producer = jest.fn().mockImplementation(() => 5);
 
-    const source1Producer = jest.fn().mockImplementation((props: ProducerProps<number>) => {
+    const source1Producer = jest.fn().mockImplementation((props: ProducerProps<number, any, any, any[]>) => {
       props.run("source2", null, 3);
       props.run("doesntExist", null, 3);
       return 3;
@@ -125,7 +125,7 @@ describe('should run another producer from producer', () => {
     // given
     const source2Producer = jest.fn().mockImplementation(() => 5);
 
-    const source1Producer = jest.fn().mockImplementation((props: ProducerProps<number>) => {
+    const source1Producer = jest.fn().mockImplementation((props: ProducerProps<number, any, any, any[]>) => {
       props.run(source2Producer, {payload: {hello: "world"}}, 4);
       return 3;
     });
@@ -159,7 +159,7 @@ describe('should run another producer from producer', () => {
     // given
     const source2Producer = jest.fn().mockImplementation(() => 5);
 
-    const source1Producer = jest.fn().mockImplementation((props: ProducerProps<number>) => {
+    const source1Producer = jest.fn().mockImplementation((props: ProducerProps<number, any, any, any[]>) => {
       props.run(source2Producer, null, 5);
       return 3;
     });

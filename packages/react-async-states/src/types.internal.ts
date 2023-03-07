@@ -5,8 +5,6 @@ import {
   InitialState,
   LastSuccessSavedState,
   PendingState,
-  Producer,
-  ProducerConfig,
   Source,
   State,
   StateInterface,
@@ -50,7 +48,7 @@ export type {
   PartialUseAsyncStateConfiguration,
 } from "async-states";
 
-export type BaseSelectorKey = string | Source<any, any, any>
+export type BaseSelectorKey = string | Source<unknown, unknown, unknown, unknown[]>
 
 export type UseSelectorFunctionKeys = ((allKeys: string[]) => BaseSelectorKey[]);
 
@@ -62,50 +60,50 @@ export type SelectorKeysArg =
 export type FunctionSelector<T> = (arg: FunctionSelectorArgument) => T;
 export type FunctionSelectorArgument = Record<string, FunctionSelectorItem<any, any, any> | undefined>;
 
-export interface InitialFunctionSelectorItem<T, E, R> extends Partial<InitialState<T>> {
+export interface InitialFunctionSelectorItem<T, E, R, A extends unknown[]> extends Partial<InitialState<T, A>> {
   key: string,
-  lastSuccess?: LastSuccessSavedState<T>,
-  cache?: Record<string, CachedState<T, E, R>> | null,
+  lastSuccess?: LastSuccessSavedState<T, A>,
+  cache?: Record<string, CachedState<T, E, R, A>> | null,
 }
 
-export interface PendingFunctionSelectorItem<T, E, R> extends Partial<PendingState<T>> {
+export interface PendingFunctionSelectorItem<T, E, R, A extends unknown[]> extends Partial<PendingState<T, A>> {
   key: string,
-  lastSuccess?: LastSuccessSavedState<T>,
-  cache?: Record<string, CachedState<T, E, R>> | null,
+  lastSuccess?: LastSuccessSavedState<T, A>,
+  cache?: Record<string, CachedState<T, E, R, A>> | null,
 }
 
-export interface AbortedFunctionSelectorItem<T, E, R> extends Partial<AbortedState<T, E, R>> {
+export interface AbortedFunctionSelectorItem<T, E, R, A extends unknown[]> extends Partial<AbortedState<T, E, R, A>> {
   key: string,
-  lastSuccess?: LastSuccessSavedState<T>,
-  cache?: Record<string, CachedState<T, E, R>> | null,
+  lastSuccess?: LastSuccessSavedState<T, A>,
+  cache?: Record<string, CachedState<T, E, R, A>> | null,
 }
 
-export interface SuccessFunctionSelectorItem<T, E, R> extends Partial<SuccessState<T>> {
+export interface SuccessFunctionSelectorItem<T, E, R, A extends unknown[]> extends Partial<SuccessState<T, A>> {
   key: string,
-  lastSuccess?: LastSuccessSavedState<T>,
-  cache?: Record<string, CachedState<T, E, R>> | null,
+  lastSuccess?: LastSuccessSavedState<T, A>,
+  cache?: Record<string, CachedState<T, E, R, A>> | null,
 }
 
-export interface ErrorFunctionSelectorItem<T, E, R> extends Partial<ErrorState<T, E>> {
+export interface ErrorFunctionSelectorItem<T, E, R, A extends unknown[]> extends Partial<ErrorState<T, E, A>> {
   key: string,
-  lastSuccess?: LastSuccessSavedState<T>,
-  cache?: Record<string, CachedState<T, E, R>> | null,
+  lastSuccess?: LastSuccessSavedState<T, A>,
+  cache?: Record<string, CachedState<T, E, R, A>> | null,
 }
 
-export type FunctionSelectorItem<T, E = any, R = any> =
-  InitialFunctionSelectorItem<T, E, R>
+export type FunctionSelectorItem<T, E = unknown, R = unknown, A extends unknown[] = unknown[]> =
+  InitialFunctionSelectorItem<T, E, R, A>
   |
-  PendingFunctionSelectorItem<T, E, R>
+  PendingFunctionSelectorItem<T, E, R, A>
   |
-  AbortedFunctionSelectorItem<T, E, R>
+  AbortedFunctionSelectorItem<T, E, R, A>
   |
-  SuccessFunctionSelectorItem<T, E, R>
+  SuccessFunctionSelectorItem<T, E, R, A>
   |
-  ErrorFunctionSelectorItem<T, E, R>;
+  ErrorFunctionSelectorItem<T, E, R, A>;
 
-export type SimpleSelector<T, E = any, R = any, D = State<T, E, R>> = (props: FunctionSelectorItem<T, E, R> | undefined) => D;
+export type SimpleSelector<T, E = unknown, R = unknown, A extends unknown[] = unknown[], D = State<T, E, R, A>> = (props: FunctionSelectorItem<T, E, R> | undefined) => D;
 export type ArraySelector<T> = (...states: (FunctionSelectorItem<any, any, any> | undefined)[]) => T;
 
-export type InstanceOrNull<T, E = any, R = any> =
-  StateInterface<T, E, R>
+export type InstanceOrNull<T, E = unknown, R = unknown, A extends unknown[] = unknown[]> =
+  StateInterface<T, E, R, A>
   | null;

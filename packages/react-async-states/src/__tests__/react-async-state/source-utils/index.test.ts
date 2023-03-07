@@ -2,7 +2,7 @@ import {createSource} from "async-states";
 
 describe('source utils', () => {
 
-  const source = createSource("test-source", null, {initialValue: 0});
+  const source = createSource<number, any>("test-source", null, {initialValue: 0});
 
   it('should run a source', () => {
     const abort = source.run(1);
