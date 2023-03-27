@@ -6,9 +6,17 @@ import {
 import {useAsyncState} from "../../../../../useAsyncState";
 import {createSource, ForkConfig} from "async-states";
 
+let originalConsoleError = console.error
 describe('should fork an initially hoisted async state', () => {
+  beforeAll(() => {
+    console.error = jest.fn().mockImplementation(() => {})
+  })
+  afterAll(() => {
+    console.error = originalConsoleError
+  })
   it('should fork and update both states ', async () => {
     // given
+
     createSource("counter", null, {initialValue: 0});
 
     function Test() {
