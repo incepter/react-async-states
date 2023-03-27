@@ -126,7 +126,7 @@ function getConfigFlags<T, E, R, A extends unknown[], S>(
 }
 
 
-function resolveInstance<T, E, R, A extends unknown[], S>(
+export function resolveInstance<T, E, R, A extends unknown[], S>(
   pool: PoolInterface,
   flags: number,
   config: MixedConfig<T, E, R, A, S>,
