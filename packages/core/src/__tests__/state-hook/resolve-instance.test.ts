@@ -30,7 +30,7 @@ describe('StateHook resolveInstance', () => {
     expect(instance!._source).toBe(src)
   });
   it('should correctly resolve instance from forked source', () => {
-    let src = Sources.for("key2")
+    let src = Sources.for("key3")
     let usedPool = createContext({}).getOrCreatePool()
     let config = {source: src, fork: true, forkConfig: {key: "test-fork"}}
 
@@ -39,7 +39,7 @@ describe('StateHook resolveInstance', () => {
     expect(instance!._source).not.toBe(src)
   });
   it('should correctly resolve instance from lane source', () => {
-    let src = Sources.for("key2")
+    let src = Sources.for("key4")
     let lane = src.getLaneSource("lane")
     let usedPool = createContext({}).getOrCreatePool()
     let config = {source: src, lane: "lane"}
@@ -75,38 +75,38 @@ describe('StateHook resolveInstance', () => {
     expect(instance!._source).toBe(src)
   });
   it('should correctly resolve standalone instance when already existing in pool by fork', () => {
-    let src = Sources.for("newOne")
+    let src = Sources.for("newOne1")
     let usedPool = createContext({}).getOrCreatePool()
     usedPool.set(src.key, readSource(src))
 
-    let config = {key: "newOne", fork: true, forkConfig: {key: "lala"}}
+    let config = {key: "newOne1", fork: true, forkConfig: {key: "lala"}}
 
     let instance = resolveInstance(usedPool, resolveFlags(config, usedPool), config)
     expect(instance!.key).toBe("lala")
     expect(instance!._source).not.toBe(src)
   });
   it('should correctly resolve standalone instance when already existing in pool by lane', () => {
-    let src = Sources.for("newOne")
+    let src = Sources.for("newOne2")
     let usedPool = createContext({}).getOrCreatePool()
     usedPool.set(src.key, readSource(src))
 
-    let config = {key: "newOne", lane: "some-lane"}
+    let config = {key: "newOne2", lane: "some-lane"}
 
     let instance = resolveInstance(usedPool, resolveFlags(config, usedPool), config)
     expect(instance!.key).toBe("some-lane")
     expect(instance!._source).toBe(src.getLaneSource("some-lane"))
   });
   it('should correctly resolve standalone instance when already existing and patch producer', () => {
-    let src = Sources.for("newOne")
+    let src = Sources.for("newOne3")
     let usedPool = createContext({}).getOrCreatePool()
     let inst = readSource(src);
     usedPool.set(src.key, inst)
 
-    let config = {key: "newOne", producer: () => {}}
+    let config = {key: "newOne3", producer: () => {}}
 
     expect(inst!._producer).not.toBe(config.producer)
     let instance = resolveInstance(usedPool, resolveFlags(config, usedPool), config)
-    expect(instance!.key).toBe("newOne")
+    expect(instance!.key).toBe("newOne3")
     expect(instance!._producer).toBe(config.producer)
   });
 });
