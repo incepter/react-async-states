@@ -10,6 +10,7 @@ import {API} from "../api";
 type Users = {}
 
 import {Sources} from "async-states";
+import React from "react";
 
 // function createLoaderOrAction<T, E, R, P>(
 //   key, producer?, config?: ProducerConfig<T, E, R>) {
@@ -29,13 +30,21 @@ const AppRoutes = (
       <Route index element={<UserList/>}
              loader={createLoaderOrAction("users", fetchUsers)}
              action={createLoaderOrAction("add-user", fetchUsers)}/>
-      <Route path={ROUTES.USER} element={<User/>}
-             loader={createLoaderOrAction("user", fetchUser)}
+      <Route path={ROUTES.USER} element={<UserDetails/>}
+             // loader={createLoaderOrAction("user", fetchUser)}
              action={createLoaderOrAction("patch-user", patchUser)}/>
     </Route>
     <Route path={ROUTES.ANY} element={<Navigate to={ROUTES.USERS} replace/>}/>
   </Route>
 );
+
+function UserDetails() {
+  return (
+    <React.Suspense>
+      <User/>
+    </React.Suspense>
+  )
+}
 
 
 function fetchUser(props: ProducerProps<Users>) {

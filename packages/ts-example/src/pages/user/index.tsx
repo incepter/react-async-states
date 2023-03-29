@@ -1,13 +1,16 @@
-import {useLoaderData} from "react-router-dom";
-import {Sources} from "async-states";
-import {useAsyncState} from "react-async-states";
+import {useParams} from "react-router-dom";
+import {use} from "react-async-states/src";
+import {API} from "../../api";
 
-function User() {
+function User(props) {
+	let {id: userId} = useParams()
+	let data = use(
+		"user-details",
+		() => API.get(`/users/${userId}`),
+		[userId]
+	)
 
-	let {state} = useAsyncState("user");
-
-	console.log('loader data');
-	return <h3 onClick={() => Sources.of("user").replay()}>ASYNC STATE FETCH USER DETAILS !</h3>;
+	return <details><pre>{JSON.stringify(data, null, 4)}</pre></details>;
 }
 
 export default User;

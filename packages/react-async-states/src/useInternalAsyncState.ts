@@ -10,7 +10,7 @@ import {
   PartialUseAsyncStateConfiguration,
   UseAsyncState,
 } from "./types.internal";
-import {emptyArray} from "./shared";
+import {didDepsChange, emptyArray} from "./shared";
 import {useExecutionContext} from "./hydration/context";
 
 function getContextFromMixedConfig(mixedConfig) {
@@ -63,16 +63,4 @@ export const useInternalAsyncState = function useAsyncStateImpl<T, E, R, A exten
   function createOwnHook(): HookOwnState<T, E, R, A, S> {
     return createHook(execContext, mixedConfig, deps, guard, overrides, callerName);
   }
-}
-
-export function didDepsChange(deps: any[], deps2: any[]) {
-  if (deps.length !== deps2.length) {
-    return true;
-  }
-  for (let i = 0, {length} = deps; i < length; i += 1) {
-    if (!Object.is(deps[i], deps2[i])) {
-      return true;
-    }
-  }
-  return false;
 }

@@ -107,3 +107,5 @@ export type ArraySelector<T> = (...states: (FunctionSelectorItem<any, any, any> 
 export type InstanceOrNull<T, E = unknown, R = unknown, A extends unknown[] = unknown[]> =
   StateInterface<T, E, R, A>
   | null;
+
+export type CreateType<T, E> = () => T
