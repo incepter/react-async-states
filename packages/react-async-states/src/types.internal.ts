@@ -1,6 +1,7 @@
 import {
   AbortedState,
   CachedState,
+  EqualityFn,
   ErrorState,
   InitialState,
   LastSuccessSavedState,
@@ -8,7 +9,10 @@ import {
   Source,
   State,
   StateInterface,
-  SuccessState
+  SuccessState,
+  UseAsyncStateEvents,
+  useSelector,
+  ForkConfig, Producer
 } from "async-states";
 
 export type {
@@ -109,3 +113,27 @@ export type InstanceOrNull<T, E = unknown, R = unknown, A extends unknown[] = un
   | null;
 
 export type CreateType<T, E> = () => T
+
+export type UseConfig<T, E, R, A extends unknown[], S = State<T, E, R, A>> = {
+  lane?: string,
+  producer?: Producer<T, E, R, A>,
+  payload?: Record<string, unknown>,
+
+  fork?: boolean,
+  forkConfig?: ForkConfig,
+
+  lazy?: boolean,
+  autoRunArgs?: A,
+  areEqual?: EqualityFn<S>,
+  subscriptionKey?: string,
+  selector?: useSelector<T, E, R, A, S>,
+  events?: UseAsyncStateEvents<T, E, R, A>,
+
+  condition?: boolean | ((
+    state: State<T, E, R, A>,
+    args?: A,
+    payload?: Record<string, unknown> | null
+  ) => boolean),
+
+  wait?: boolean,
+}

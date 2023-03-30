@@ -12,8 +12,10 @@ import type {
   useSelector
 } from "async-states"
 import {createSource,} from "async-states";
-import {__DEV__} from "../shared";
+import {__DEV__, emptyArray} from "../shared";
 import {useCallerName} from "../helpers/useCallerName";
+import {UseConfig} from "../types.internal";
+import use from "../use";
 
 let freeze = Object.freeze
 
@@ -140,6 +142,7 @@ function createToken<
 
   token.use = use;
   token.inject = inject;
+  token.r18Use = r18Use(source!);
   return token;
 
   function use<S = State<T, E, R, A>>(
@@ -188,30 +191,6 @@ export function api<T, E, R, A extends unknown[]>(
   return Object.assign({}, props, buildDefaultJT<T, E, R, A>())
 }
 
-export type UseConfig<T, E, R, A extends unknown[], S = State<T, E, R, A>> = {
-  lane?: string,
-  producer?: Producer<T, E, R, A>,
-  payload?: Record<string, unknown>,
-
-  fork?: boolean,
-  forkConfig?: ForkConfig,
-
-  lazy?: boolean,
-  autoRunArgs?: A,
-  areEqual?: EqualityFn<S>,
-  subscriptionKey?: string,
-  selector?: useSelector<T, E, R, A, S>,
-  events?: UseAsyncStateEvents<T, E, R, A>,
-
-  condition?: boolean | ((
-    state: State<T, E, R, A>,
-    args?: A,
-    payload?: Record<string, unknown> | null
-  ) => boolean),
-
-  wait?: boolean,
-}
-
 export type Token<T, E, R, A extends unknown[]> = {
   (): Source<T, E, R, A>,
   inject(
@@ -222,6 +201,23 @@ export type Token<T, E, R, A extends unknown[]> = {
     config?: UseConfig<T, E, R, A, S>,
     deps?: any[]
   ): UseAsyncState<T, E, R, A, S>,
+  r18Use(
+    config?: UseConfig<T, E, R, A, State<T, E, R, A>>,
+    deps?: any[]
+  ): T,
+}
+
+function r18Use<T, E, R, A extends unknown[]>(source: Source<T, E, R, A>): ((
+  config?: UseConfig<T, E, R, A, State<T, E, R, A>>,
+  deps?: any[]
+) => T) {
+
+  return function useImpl(
+    config?: UseConfig<T, E, R, A, State<T, E, R, A>>,
+    deps?: any[]
+  ) {
+    return use(source, config, deps)
+  }
 }
 
 // type Page<T = unknown> = {

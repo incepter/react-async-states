@@ -1166,8 +1166,9 @@ function attemptCache<T, E, R, A extends unknown[]>(
     if (cachedState) {
       if (didNotExpire(cachedState)) {
         if (cachedState.state !== instance.state) {
-          instance.replaceState(cachedState.state, true, runProps);
+          instance.replaceState(cachedState.state);
         }
+        invokeChangeCallbacks(cachedState.state, runProps);
         if (__DEV__) devtools.emitRunConsumedFromCache(instance, payload, args);
         return true;
       } else {

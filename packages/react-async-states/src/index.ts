@@ -24,7 +24,6 @@ export type {
   Application,
   DefaultFn,
   Token,
-  UseConfig,
   ApplicationEntry,
 } from "./application/Application"
 
@@ -63,6 +62,7 @@ export type {
 } from "async-states";
 
 export type {
+  UseConfig,
   EqualityFn,
   MixedConfig,
   UseAsyncState,

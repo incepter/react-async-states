@@ -1,18 +1,31 @@
-import {isServer} from "../hydration/context";
-import {emptyArray} from "../shared";
-import {PartialUseAsyncStateConfiguration, State} from "async-states";
-import {useInServer} from "./server";
-import {useInClient} from "./client";
-import {CreateType} from "../types.internal";
+import {Source, Status, SuccessState} from "async-states";
+import {UseConfig} from "../types.internal";
+import {__DEV__, emptyArray} from "../shared";
+import {useCallerName} from "../helpers/useCallerName";
+import {useInternalAsyncState} from "../useInternalAsyncState";
 
-export default function use<T, E>(
-  id: string,
-  create: CreateType<T, E>,
+export default function use<T, E, R, A extends unknown[]>(
+  source: Source<T, E, R, A>,
+  options?: UseConfig<T, E, R, A>,
   deps: any[] = emptyArray,
-  options?: PartialUseAsyncStateConfiguration<T, E, never, any[], State<T, E, never, any[]>>
 ) {
-  if (isServer) {
-    return useInServer(id, create, deps)
+  let caller;
+  if (__DEV__) {
+    caller = useCallerName(5);
   }
-  return useInClient(id, create, deps, options)
+
+  let {read, state, lastSuccess} = useInternalAsyncState(caller, {...options, source}, deps);
+
+  if (state.status === Status.initial) {
+    if (!options?.autoRunArgs) {
+      // @ts-ignore
+      throw source.runp()
+    }
+    throw source.runp(...options.autoRunArgs)
+  }
+  read() // suspends on pending, throws E in error
+  if (state.status === Status.aborted) {
+    throw state.data
+  }
+  return (lastSuccess as SuccessState<T, any>)!.data
 }
