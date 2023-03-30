@@ -3,16 +3,22 @@ import {
   hookReturn,
   createHook,
   HookOwnState,
-  autoRun
+  autoRun, State
 } from "async-states";
 import {
   MixedConfig,
   PartialUseAsyncStateConfiguration,
   UseAsyncState,
 } from "./types.internal";
-import {emptyArray} from "./shared";
+import {didDepsChange, emptyArray} from "./shared";
 import {useExecutionContext} from "./hydration/context";
-import {State} from "async-states";
+
+function getContextFromMixedConfig(mixedConfig) {
+  if (typeof mixedConfig !== "object") {
+    return undefined
+  }
+  return mixedConfig.context
+}
 
 export const useInternalAsyncState = function useAsyncStateImpl<T, E, R, A extends unknown[], S = State<T, E, R, A>>(
   callerName: string | undefined,
@@ -21,7 +27,7 @@ export const useInternalAsyncState = function useAsyncStateImpl<T, E, R, A exten
   overrides?: PartialUseAsyncStateConfiguration<T, E, R, A, S>,
 ): UseAsyncState<T, E, R, A, S> {
   // the current library's execution context
-  let execContext = useExecutionContext();
+  let execContext = useExecutionContext(getContextFromMixedConfig(mixedConfig));
   // used when waiting for a state to exist, this will trigger a recalculation
   let [guard, setGuard] = React.useState<number>(0);
   // this contains everything else, from the dependencies to configuration
@@ -57,16 +63,4 @@ export const useInternalAsyncState = function useAsyncStateImpl<T, E, R, A exten
   function createOwnHook(): HookOwnState<T, E, R, A, S> {
     return createHook(execContext, mixedConfig, deps, guard, overrides, callerName);
   }
-}
-
-export function didDepsChange(deps: any[], deps2: any[]) {
-  if (deps.length !== deps2.length) {
-    return true;
-  }
-  for (let i = 0, {length} = deps; i < length; i += 1) {
-    if (!Object.is(deps[i], deps2[i])) {
-      return true;
-    }
-  }
-  return false;
 }

@@ -3,15 +3,15 @@ import {api, createApplication,} from "react-async-states";
 
 let myApp = {
   users: {
-    search: api<Page<User>, Error, "reason", [QueryParams]>(),
-    findById: api<AxiosResponse<User>, Error, "reason", [string]>(),
-    add: api<boolean, Error, "reason", [User]>(),
-    posts: api<Page<Post>, Error, "reason", [string]>()
+    search: api<Page<User>, Error, never, [QueryParams]>(),
+    findById: api<AxiosResponse<User>, Error, never, [string]>(),
+    add: api<boolean, Error, never, [User]>(),
+    posts: api<Page<Post>, Error, never, [string]>()
   },
   posts: {
-    search: api<Page<User>, Error, "reason", [QueryParams]>(),
-    findById: api<Page<User>, Error, "reason", [string]>(),
-    delete: api<number, Error, "reason", [string]>()
+    search: api<Page<User>, Error, never, [QueryParams]>(),
+    findById: api<Page<User>, Error, never, [string]>(),
+    delete: api<number, Error, never, [string]>()
   },
 }
 

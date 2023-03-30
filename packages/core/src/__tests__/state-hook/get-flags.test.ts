@@ -1,5 +1,5 @@
 import {
-  AUTO_RUN,
+  AUTO_RUN, CHANGE_EVENTS,
   CONFIG_FUNCTION,
   CONFIG_OBJECT,
   CONFIG_SOURCE,
@@ -260,6 +260,16 @@ describe('resolveFlags', () => {
       }, pool))
         .toEqual(CONFIG_OBJECT | AUTO_RUN);
 
+    });
+    it('should infer flags from overrides object', () => {
+      expect(resolveFlags({
+        key: "test",
+        payload: {},
+        producer: () => 5,
+      }, pool, {lazy: false, events: {
+          change: () => {}
+        }}))
+        .toEqual(CONFIG_OBJECT | AUTO_RUN | CHANGE_EVENTS);
     });
   });
 

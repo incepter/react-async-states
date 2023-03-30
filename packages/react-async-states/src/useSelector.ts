@@ -101,11 +101,9 @@ function resolveInstances(
 ): Record<string, StateInterface<unknown, unknown, unknown, unknown[]> | undefined> {
   return keysArray.reduce((result, current) => {
     if (isSource(current)) {
-      let source = current as Source<unknown, unknown, unknown, unknown[]>;
-      result[source.key] = readSource(source);
+      result[current.key] = readSource(current);
     } else {
-      let key = current as string;
-      result[key] = pool.instances.get(key);
+      result[current] = pool.instances.get(current);
     }
     return result;
   }, {} as Record<string, StateInterface<unknown, unknown, unknown, unknown[]> | undefined>);

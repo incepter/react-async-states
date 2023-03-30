@@ -1,20 +1,18 @@
 import {useInternalAsyncState} from "../useInternalAsyncState";
-import {
-  createSource,
-} from "async-states";
-import {__DEV__} from "../shared";
 import type {
+  EqualityFn,
+  ForkConfig,
+  MixedConfig,
   Producer,
   ProducerConfig,
   Source,
   State,
   UseAsyncState,
-  MixedConfig,
-  CacheConfig,
-  CachedState, EqualityFn,
-  ForkConfig,
-  RunEffect, UseAsyncStateEvents, useSelector
+  UseAsyncStateEvents,
+  useSelector
 } from "async-states"
+import {createSource,} from "async-states";
+import {__DEV__} from "../shared";
 import {useCallerName} from "../helpers/useCallerName";
 
 let freeze = Object.freeze
@@ -27,18 +25,23 @@ export type ExtendedFn<D, E, R, A extends unknown[]> =
   DefaultFn<D, E, R, A>
   | typeof JT
 
-export interface Api<T, E, R, A extends unknown[]> {
+export interface Api<T extends unknown, E extends unknown, R extends unknown, A extends unknown[]> {
+
   fn: ExtendedFn<T, E, R, A>,
   eager?: boolean,
   producer?: Producer<T, E, R, A>,
   config?: ProducerConfig<T, E, R, A>
 }
 
-type AppShape = {
-  [resource: string]: {
-    [api: string]: Api<any, any, any, any>
-  }
-}
+type AppShape = Record<string, Record<string, any>>
+
+// let myApp = {
+//   users: {
+//     search: api<UserType[], Error, never, [string]>(),
+//   }
+// }
+//
+// export let app = createApplication<typeof myApp>(myApp)
 
 export type ApplicationEntry<T extends AppShape> = {
   [resource in keyof T]: {

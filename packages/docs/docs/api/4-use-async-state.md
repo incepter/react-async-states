@@ -879,7 +879,7 @@ The payload that the producer returns is the payload issued from all subscribers
 and the one that this function adds:
 
 ```typescript
-import {useAsyncState} from "react-async-states/src";
+import {useAsyncState} from "react-async-states";
 
 const {mergePayload} = useAsyncState();
 
