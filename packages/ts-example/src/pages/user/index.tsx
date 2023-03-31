@@ -1,5 +1,5 @@
 import {useParams} from "react-router-dom";
-import {use} from "react-async-states/src";
+import {use} from "react-async-statess";
 import {API} from "../../api";
 
 function User(props) {
