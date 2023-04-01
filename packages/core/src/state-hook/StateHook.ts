@@ -37,7 +37,7 @@ import {
   SUBSCRIBE_EVENTS,
   WAIT
 } from "./StateHookFlags";
-import {__DEV__, isFunction, nextKey,} from "../utils";
+import {__DEV__, emptyArray, isFunction, nextKey,} from "../utils";
 import {error, pending} from "../enums";
 import {isSource} from "../helpers/isSource";
 import {freeze, isArray} from "../helpers/corejs";
@@ -345,24 +345,41 @@ export function hookReturn<T, E, R, A extends unknown[], S>(
   if (instance) {
     newState.version = instance?.version;
     newState.lastSuccess = instance.lastSuccess;
-    newState.read = createReadInConcurrentMode(instance, newValue);
+    newState.read = createReadInConcurrentMode(instance, newValue, config);
   }
   newState.state = newValue;
 
   return freeze(newState);
 }
 
-function createReadInConcurrentMode<T, E, R, A extends unknown[], S>(
+export function createReadInConcurrentMode<T, E, R, A extends unknown[], S>(
   instance: StateInterface<T, E, R, A>,
   stateValue: S,
-
+  config: MixedConfig<T, E, R, A, S>,
 ) {
-  return function(
-    suspend: boolean = true,
+  return function (
+    suspend: 'initial' | 'pending'| 'both' | true | false = true,
     throwError: boolean = true,
   ) {
-    if (suspend && pending === instance.state.status && instance.promise) {
-      throw instance.promise;
+    let {state: {status}, promise} = instance;
+    let isInitial = status === 'initial'
+    let isPending = status === 'pending'
+
+    if (suspend) {
+      if (
+        (suspend === 'initial' || suspend === "both") &&
+        status === "initial"
+      ) {
+        let args = (typeof config === "object" ?
+          (config as BaseConfig<T, E, R, A>).autoRunArgs : emptyArray) as A
+        throw instance.runp.apply(null, args);
+      }
+      if (
+        (suspend === "both" || suspend === true || suspend === 'pending') &&
+        status === suspend
+      ) {
+        throw instance.promise;
+      }
     }
     if (throwError && error === instance.state.status) {
       throw instance.state.data;

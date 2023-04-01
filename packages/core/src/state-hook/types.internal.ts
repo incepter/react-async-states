@@ -29,7 +29,7 @@ export interface BaseUseAsyncState<T, E, R, A extends unknown[], S = State<T, E,
 export interface UseAsyncState<T, E = unknown, R = unknown, A extends unknown[] = unknown[], S = State<T, E, R, A>> extends BaseUseAsyncState<T, E, R, A, S> {
   state: S,
 
-  read(suspend?: boolean, throwError?: boolean): S,
+  read(suspend?: 'both' | 'initial' | 'pending' | true | false, throwError?: boolean): S,
 
   version?: number,
   lastSuccess?: LastSuccessSavedState<T, A>,

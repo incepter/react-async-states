@@ -8,24 +8,21 @@ export default function use<T, E, R, A extends unknown[]>(
   source: Source<T, E, R, A>,
   options?: UseConfig<T, E, R, A>,
   deps: any[] = emptyArray,
-) {
+): T {
   let caller;
   if (__DEV__) {
     caller = useCallerName(5);
   }
 
-  let {read, state, lastSuccess} = useInternalAsyncState(caller, {...options, source}, deps);
+  let config = options ? {...options, source} : source
 
-  if (state.status === Status.initial) {
-    if (!options?.autoRunArgs) {
-      // @ts-ignore
-      throw source.runp()
-    }
-    throw source.runp(...options.autoRunArgs)
-  }
-  read() // suspends on pending, throws E in error
+  let {read, state, lastSuccess} = useInternalAsyncState(caller, config, deps);
+
+  // suspends only when initial, throw in E and fallback to lastSuccess when pending
+  read("initial", true)
   if (state.status === Status.aborted) {
     throw state.data
   }
+
   return (lastSuccess as SuccessState<T, any>)!.data
 }

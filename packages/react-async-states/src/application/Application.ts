@@ -1,6 +1,5 @@
 import {useInternalAsyncState} from "../useInternalAsyncState";
 import type {
-  MixedConfig,
   Producer,
   ProducerConfig,
   Source,
@@ -120,46 +119,44 @@ function createToken<
     apiSource = createSource(name, api.producer, api.config) as Source<T, E, R, A>
   }
 
+
+  token.inject = inject;
+  token.useAsyncState = useHook;
+  token.use = createR18Use(() => apiSource!, resourceName, apiName);
+  return token;
+
   function token(): Source<T, E, R, A> {
     ensureSourceIsDefined(apiSource, resourceName, apiName);
     return apiSource!;
   }
 
-  token.use = useHook;
-  token.inject = inject;
-  token.r18Use = createR18Use(() => apiSource!, resourceName, apiName);
-  return token;
-
-  function useHook<S = State<T, E, R, A>>(
-    config?: UseConfig<T, E, R, A, S>,
-    deps?: any[]
-  ): UseAsyncState<T, E, R, A, S> {
-    ensureSourceIsDefined(apiSource, resourceName, apiName);
-    let caller;
-    if (__DEV__) {
-      caller = useCallerName(3);
-    }
-    let source = token()
-
-    if (config) {
-      return useInternalAsyncState(
-        caller,
-        {...config, source} as MixedConfig<T, E, R, A, S>,
-        deps
-      );
-    }
-    return useInternalAsyncState(caller, source, deps);
-  }
   function inject(
     fn: Producer<T, E, R, A> | null,
     config?: ProducerConfig<T, E, R, A>
   ): TokenType {
     if (!apiSource) {
       apiSource = createSource(name, fn, config);
+    } else {
+      apiSource.replaceProducer(fn || undefined)
+      apiSource.patchConfig(config)
     }
-    apiSource.replaceProducer(fn || undefined)
-    apiSource.patchConfig(config)
     return token
+  }
+
+  function useHook<S = State<T, E, R, A>>(
+    config?: UseConfig<T, E, R, A, S>,
+    deps?: any[]
+  ): UseAsyncState<T, E, R, A, S> {
+    ensureSourceIsDefined(apiSource, resourceName, apiName);
+
+    let caller;
+    if (__DEV__) {
+      caller = useCallerName(3);
+    }
+
+    let source = token()
+    let realConfig = config ? {...config, source} : source;
+    return useInternalAsyncState(caller, realConfig, deps);
   }
 }
 
@@ -181,14 +178,14 @@ export type Token<T, E, R, A extends unknown[]> = {
     fn: Producer<T, E, R, A>,
     config?: ProducerConfig<T, E, R, A>
   ): Token<T, E, R, A>
-  use<S = State<T, E, R, A>>(
-    config?: UseConfig<T, E, R, A, S>,
-    deps?: any[]
-  ): UseAsyncState<T, E, R, A, S>,
-  r18Use(
-    config?: UseConfig<T, E, R, A, State<T, E, R, A>>,
+  use(
+    config?: UseConfig<T, E, R, A>,
     deps?: any[]
   ): T,
+  useAsyncState<S = State<T, E, R, A>>(
+    config?: UseConfig<T, E, R, A, S>,
+    deps?: any[]
+  ): UseAsyncState<T, E, R, A, S>
 }
 
 function ensureSourceIsDefined(source, resourceName, resourceApi) {
@@ -207,7 +204,7 @@ function createR18Use<T, E, R, A extends unknown[]>(
   deps?: any[]
 ) => T) {
   return function useImpl(
-    config?: UseConfig<T, E, R, A, State<T, E, R, A>>,
+    config?: UseConfig<T, E, R, A>,
     deps?: any[]
   ) {
     let source = getSource();
