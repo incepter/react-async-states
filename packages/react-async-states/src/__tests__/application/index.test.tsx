@@ -2,21 +2,28 @@ import * as React from "react";
 import {act, render, screen} from "@testing-library/react";
 import {api, createApplication, Token} from "../../application/Application";
 import {flushPromises} from "../react-async-state/utils/test-utils";
+import {RunEffect} from "async-states";
 
 type User = {
   id: number,
   name: string,
 }
+
+let userSearch = async () => Promise.resolve({id: 15, name: "incepter"})
+
 let testShape = {
   auth: {
-    current: api<User, Error, "reason", []>()
+    current: api<User, Error, "reason", []>({
+      eager: true,
+      producer: userSearch,
+      config: {runEffect: RunEffect.debounce}
+    })
   },
   users: {
     search: api<User, Error, never, [string]>(),
     findOne: api<User, Error, never, [string]>()
   }
 }
-let userSearch = async () => Promise.resolve({id: 15, name: "incepter"})
 
 describe('createApplication abstraction tests', () => {
   let originalConsoleError = console.error
@@ -40,6 +47,8 @@ describe('createApplication abstraction tests', () => {
     expect(() => app.users.search()).toThrow(expectedThrownErrorMessage)
     expect(() => app.users.search.use()).toThrow(expectedThrownErrorMessage)
     expect(() => app.users.search.useAsyncState()).toThrow(expectedThrownErrorMessage)
+    // the following was eager
+    expect(() => app.auth.current.useAsyncState()).not.toThrow(expectedThrownErrorMessage)
   });
 
   it('should be able to inject producer and configuration and then not throw', () => {

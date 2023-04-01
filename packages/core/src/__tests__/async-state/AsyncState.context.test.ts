@@ -1,5 +1,6 @@
 import {Sources} from "../../AsyncState";
-import {createContext, terminateContext} from "../../pool";
+import {createContext, getContext, terminateContext} from "../../pool";
+import {expect} from "@jest/globals";
 
 describe('Create instances in different contexts', () => {
   let consoleErrorSpy;
@@ -25,6 +26,30 @@ describe('Create instances in different contexts', () => {
     let source1 = Sources.for("key2", null, {context: ctx})
     let source2 = Sources.for("key2", null, {context: ctx})
     expect(source1).toBe(source2)
+  });
+  it('should return the same context when creating with the same object', () => {
+    let ctx = {}
+    let context1 = createContext(ctx)
+    let context2 = createContext(ctx)
+    let context3 = createContext({})
+
+    expect(context1).toBe(context2)
+    expect(context1).not.toBe(context3)
+  });
+  it('should throw when a non object is passed (a part from null)', () => {
+    expect(() => createContext("string"))
+      .toThrow("createContext requires an object")
+    expect(() => createContext(Symbol("ok")))
+      .toThrow("createContext requires an object")
+    expect(() => createContext(15))
+      .toThrow("createContext requires an object")
+    expect(() => createContext(undefined))
+      .toThrow("createContext requires an object")
+
+    // should not throw when null is passed (default context)
+    expect(() => createContext(null))
+      .not
+      .toThrow("createContext requires an object")
   });
 
   it('should use a different instance from different pools', () => {
@@ -53,5 +78,17 @@ describe('Create instances in different contexts', () => {
     terminateContext(ctx)
     expect(() => Sources.for("key6", null, {context: ctx}))
       .toThrow("No execution context for context [object Object]")
+
+    // this should do nothing: terminate a non existing context
+    terminateContext(undefined)
+  });
+
+
+  it('getContext should return the actual context', () => {
+    let ctx = {}
+    let context = createContext(ctx)
+    let defaultContext = getContext(null)
+    expect(getContext(ctx)).toBe(context)
+    expect(defaultContext).not.toBe(context)
   });
 });
