@@ -38,7 +38,7 @@ import {
   WAIT
 } from "./StateHookFlags";
 import {__DEV__, emptyArray, isFunction, nextKey,} from "../utils";
-import {error, pending} from "../enums";
+import {error} from "../enums";
 import {isSource} from "../helpers/isSource";
 import {freeze, isArray} from "../helpers/corejs";
 import {mapFlags} from "../helpers/mapFlags";
@@ -93,15 +93,16 @@ let ConfigurationSpecialFlags = freeze({
   "selector": SELECTOR,
   "areEqual": EQUALITY_CHECK,
   "events": (events) => {
+    let flags = NO_MODE;
     if (events) {
       if (events.change) {
-        return CHANGE_EVENTS;
+        flags |= CHANGE_EVENTS;
       }
       if (events.subscribe) {
-        return SUBSCRIBE_EVENTS;
+        flags |= SUBSCRIBE_EVENTS;
       }
     }
-    return NO_MODE;
+    return flags;
   },
   "lazy": (lazy) => lazy === false ? AUTO_RUN : NO_MODE,
 });

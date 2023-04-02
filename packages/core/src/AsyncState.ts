@@ -416,7 +416,7 @@ export class AsyncState<T, E, R, A extends unknown[]> implements StateInterface<
       return;
     }
     this.willUpdate = true;
-    if (this.state?.status === pending || (
+    if (this.state.status === pending || (
       isFunction(this.currentAbort) && !this.isEmitting
     )) {
       this.abort();

@@ -6,7 +6,7 @@ import {
   CONFIG_STRING,
   FORK,
   LANE,
-  SOURCE,
+  SOURCE, SUBSCRIBE_EVENTS,
   WAIT
 } from "../../state-hook/StateHookFlags";
 import {requestContext} from "../../pool";
@@ -267,9 +267,10 @@ describe('resolveFlags', () => {
         payload: {},
         producer: () => 5,
       }, pool, {lazy: false, events: {
-          change: () => {}
+          change: () => {},
+          subscribe: () => () => {},
         }}))
-        .toEqual(CONFIG_OBJECT | AUTO_RUN | CHANGE_EVENTS);
+        .toEqual(CONFIG_OBJECT | AUTO_RUN | CHANGE_EVENTS | SUBSCRIBE_EVENTS);
     });
   });
 

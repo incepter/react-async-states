@@ -1,21 +1,13 @@
-import {createSource, readSource} from "async-states";
+import {createSource, readSource} from "../../AsyncState";
 
 describe('readSource', () => {
   it('should correctly read the source', () => {
-    // given
-    const source = createSource("test", null, {initialValue: 0});
-
-    // when
-    const asyncState = readSource(source);
-
-    // then
+    let source = createSource("test", null, {initialValue: 0});
+    let asyncState = readSource(source);
     expect(asyncState.state.data).toEqual(0);
   });
   it('should throw on invalid source', () => {
-    // given
-    const source = {key: "test", uniqueId: 0};
-
-    // then
+    let source = {key: "test", uniqueId: 0};
     // @ts-ignore
     expect(() => readSource(source))
       .toThrow("Incompatible Source object.");

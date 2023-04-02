@@ -13,6 +13,7 @@ module.exports = {
     "__tests__",
     "index-prod.js",
     "configuration-warn",
+    "devtools",
     "type*.ts"
   ],
   testMatch: [

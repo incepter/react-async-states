@@ -55,6 +55,7 @@ interface DevtoolsInterface {
   ): void,
 }
 
+/* istanbul ignore next */
 function createDevtools(): DevtoolsInterface {
   if (!__DEV__) {
     return {} as DevtoolsInterface;
@@ -548,6 +549,7 @@ function createDevtools(): DevtoolsInterface {
   }
 }
 
+/* istanbul ignore next */
 function mapSubscriptionToDevtools(sub: StateSubscription<any, any, any, any>) {
   return {
     key: sub.props.key,
@@ -556,6 +558,7 @@ function mapSubscriptionToDevtools(sub: StateSubscription<any, any, any, any>) {
   }
 }
 
+/* istanbul ignore next */
 function getSubscriptionOrigin(origin?: number) {
   switch (`${origin}`) {
     case "1":

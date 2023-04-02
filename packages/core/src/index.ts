@@ -15,7 +15,6 @@ export {RunEffect, Status} from "./enums";
 export {isSource} from "./helpers/isSource";
 export {mapFlags} from "./helpers/mapFlags";
 export {StateBuilder} from "./helpers/StateBuilder";
-export {hookReturn, createHook, autoRun} from "./state-hook/StateHook";
 
 export type {
   RetryConfig,
@@ -55,35 +54,5 @@ export type {
 
   LibraryPoolsContext,
 } from "./types";
-
-export type {
-  EqualityFn,
-  MixedConfig,
-  UseAsyncState,
-  UseAsyncStateType,
-  CleanupFn,
-  BaseConfig,
-  BaseUseAsyncState,
-  ConfigWithKeyWithoutSelector,
-  ConfigWithKeyWithSelector,
-  ConfigWithProducerWithoutSelector,
-  ConfigWithSourceWithoutSelector,
-  ConfigWithProducerWithSelector,
-  ConfigWithSourceWithSelector,
-  SubscribeEventProps,
-  UseAsyncStateEvents,
-  UseAsyncStateEventFn,
-  UseAsyncStateEventProps,
-  UseAsyncStateChangeEvent,
-  UseAsyncStateChangeEventHandler,
-  UseAsyncStateConfiguration,
-  useSelector,
-  UseAsyncStateEventSubscribe,
-  PartialUseAsyncStateConfiguration,
-} from "./state-hook/types.internal";
-
-export type {
-  HookOwnState,
-} from "./state-hook/StateHook";
 
 export {run as runner} from "./wrapper"
