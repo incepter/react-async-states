@@ -1,4 +1,4 @@
-import {
+import type {
   AbortFn,
   CacheConfig,
   CachedState,
@@ -8,8 +8,8 @@ import {
   ProducerConfig,
   Source,
   State
-} from "../types";
-import {RunEffect, Status} from "../enums";
+} from "async-states";
+import {RunEffect, Status} from "async-states";
 import {HookChangeEvents} from "./StateHook";
 
 export interface BaseUseAsyncState<T, E, R, A extends unknown[], S = State<T, E, R, A>> extends Source<T, E, R, A> {

@@ -1,17 +1,18 @@
 import {
-  AUTO_RUN, CHANGE_EVENTS,
+  AUTO_RUN,
+  CHANGE_EVENTS,
   CONFIG_FUNCTION,
   CONFIG_OBJECT,
   CONFIG_SOURCE,
   CONFIG_STRING,
   FORK,
   LANE,
-  SOURCE, SUBSCRIBE_EVENTS,
+  SOURCE,
+  SUBSCRIBE_EVENTS,
   WAIT
 } from "../../state-hook/StateHookFlags";
-import {requestContext} from "../../pool";
 import {resolveFlags} from "../../state-hook/StateHook";
-import {createSource} from "../../AsyncState";
+import {createSource, requestContext} from "async-states";
 
 describe('resolveFlags', () => {
   let pool = requestContext(null).getOrCreatePool();

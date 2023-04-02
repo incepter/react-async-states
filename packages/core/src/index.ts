@@ -13,7 +13,6 @@ export {
 
 export {RunEffect, Status} from "./enums";
 export {isSource} from "./helpers/isSource";
-export {mapFlags} from "./helpers/mapFlags";
 export {StateBuilder} from "./helpers/StateBuilder";
 
 export type {
@@ -56,3 +55,5 @@ export type {
 } from "./types";
 
 export {run as runner} from "./wrapper"
+
+export {nextKey} from "./utils";

@@ -1,4 +1,4 @@
-import {mapFlags} from "../../helpers/mapFlags";
+import {mapFlags} from "../../shared/mapFlags";
 
 describe('mapFlags', () => {
   it('should decode flags in production', () => {

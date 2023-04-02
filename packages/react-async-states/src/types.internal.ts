@@ -1,7 +1,6 @@
 import {
   AbortedState,
   CachedState,
-  EqualityFn,
   ErrorState,
   InitialState,
   LastSuccessSavedState,
@@ -10,10 +9,9 @@ import {
   State,
   StateInterface,
   SuccessState,
-  UseAsyncStateEvents,
-  useSelector,
   ForkConfig, Producer
 } from "async-states";
+import {EqualityFn, UseAsyncStateEvents, useSelector} from "./state-hook/types.internal";
 
 export type {
   Source,
@@ -27,12 +25,15 @@ export type {
   StateFunctionUpdater,
   StateInterface,
   SuccessState,
-  EqualityFn,
+} from "async-states";
+
+export type {
   MixedConfig,
   UseAsyncState,
   UseAsyncStateType,
   CleanupFn,
   BaseConfig,
+  EqualityFn,
   BaseUseAsyncState,
   ConfigWithKeyWithoutSelector,
   ConfigWithKeyWithSelector,
@@ -49,8 +50,8 @@ export type {
   UseAsyncStateConfiguration,
   useSelector,
   UseAsyncStateEventSubscribe,
-  PartialUseAsyncStateConfiguration,
-} from "async-states";
+  PartialUseAsyncStateConfiguration
+} from "./state-hook/types.internal"
 
 export type BaseSelectorKey = string | Source<unknown, unknown, unknown, unknown[]>
 

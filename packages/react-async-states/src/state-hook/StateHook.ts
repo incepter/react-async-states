@@ -9,7 +9,7 @@ import {
   UseAsyncStateEventFn,
   UseAsyncStateEventSubscribe
 } from "./types.internal";
-import {
+import type {
   AbortFn,
   LibraryPoolsContext,
   PoolInterface,
@@ -18,8 +18,8 @@ import {
   Source,
   State,
   StateInterface
-} from "../types";
-import {AsyncState, readSource,} from "../AsyncState";
+} from "async-states";
+import {AsyncState, isSource, nextKey, readSource, Status,} from "async-states";
 
 import {
   AUTO_RUN,
@@ -37,11 +37,8 @@ import {
   SUBSCRIBE_EVENTS,
   WAIT
 } from "./StateHookFlags";
-import {__DEV__, emptyArray, isFunction, nextKey,} from "../utils";
-import {error} from "../enums";
-import {isSource} from "../helpers/isSource";
-import {freeze, isArray} from "../helpers/corejs";
-import {mapFlags} from "../helpers/mapFlags";
+import {__DEV__, emptyArray, freeze, isArray, isFunction} from "../shared";
+import {mapFlags} from "../shared/mapFlags";
 
 export function resolveFlags<T, E, R, A extends unknown[], S>(
   mixedConfig: MixedConfig<T, E, R, A, S>,
@@ -362,9 +359,7 @@ export function createReadInConcurrentMode<T, E, R, A extends unknown[], S>(
     suspend: 'initial' | 'pending'| 'both' | true | false = true,
     throwError: boolean = true,
   ) {
-    let {state: {status}, promise} = instance;
-    let isInitial = status === 'initial'
-    let isPending = status === 'pending'
+    let {state: {status}} = instance;
 
     if (suspend) {
       if (
@@ -382,7 +377,7 @@ export function createReadInConcurrentMode<T, E, R, A extends unknown[], S>(
         throw instance.promise;
       }
     }
-    if (throwError && error === instance.state.status) {
+    if (throwError && Status.error === instance.state.status) {
       throw instance.state.data;
     }
     return stateValue;

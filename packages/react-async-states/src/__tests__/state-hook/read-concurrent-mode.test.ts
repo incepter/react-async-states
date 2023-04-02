@@ -1,6 +1,6 @@
 import {createReadInConcurrentMode} from "../../state-hook/StateHook";
-import {AsyncState} from "../../AsyncState";
-import {flushPromises} from "../utils/test-utils";
+import {AsyncState} from "async-states";
+import {flushPromises} from "../react-async-state/utils/test-utils";
 
 describe('readInConcurrentMode function creation', () => {
   let instance = new AsyncState("toto", () => Promise.resolve(12))

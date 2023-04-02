@@ -4,12 +4,11 @@ import type {
   ProducerConfig,
   Source,
   State,
-  UseAsyncState
 } from "async-states"
 import {createSource,} from "async-states";
 import {__DEV__} from "../shared";
 import {useCallerName} from "../helpers/useCallerName";
-import {UseConfig} from "../types.internal";
+import {UseAsyncState, UseConfig} from "../types.internal";
 import use from "../use";
 
 let freeze = Object.freeze
