@@ -1,5 +1,6 @@
 import {
-  AUTO_RUN, CHANGE_EVENTS,
+  AUTO_RUN,
+  CHANGE_EVENTS,
   CONFIG_FUNCTION,
   CONFIG_OBJECT,
   CONFIG_SOURCE,
@@ -7,11 +8,11 @@ import {
   FORK,
   LANE,
   SOURCE,
+  SUBSCRIBE_EVENTS,
   WAIT
 } from "../../state-hook/StateHookFlags";
-import {requestContext} from "../../pool";
 import {resolveFlags} from "../../state-hook/StateHook";
-import {createSource} from "../../AsyncState";
+import {createSource, requestContext} from "async-states";
 
 describe('resolveFlags', () => {
   let pool = requestContext(null).getOrCreatePool();
@@ -267,9 +268,10 @@ describe('resolveFlags', () => {
         payload: {},
         producer: () => 5,
       }, pool, {lazy: false, events: {
-          change: () => {}
+          change: () => {},
+          subscribe: () => () => {},
         }}))
-        .toEqual(CONFIG_OBJECT | AUTO_RUN | CHANGE_EVENTS);
+        .toEqual(CONFIG_OBJECT | AUTO_RUN | CHANGE_EVENTS | SUBSCRIBE_EVENTS);
     });
   });
 

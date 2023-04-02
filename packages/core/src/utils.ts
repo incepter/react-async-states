@@ -5,12 +5,6 @@ import {
 } from "./types";
 import {freeze, now} from "./helpers/corejs";
 
-declare global {
-  interface Window {
-    __ASYNC_STATES_HYDRATION_DATA__?: any;
-  }
-}
-
 export let __DEV__ = process.env.NODE_ENV !== "production";
 export let maybeWindow = typeof window !== "undefined" ? window : undefined;
 export let isServer = typeof maybeWindow === "undefined" ||

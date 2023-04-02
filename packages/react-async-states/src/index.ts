@@ -9,8 +9,9 @@ export {useAsyncState} from "./useAsyncState";
 export {
   createSource, Status, RunEffect,
   requestContext, createContext, getContext, terminateContext,
-  mapFlags,
 } from "async-states";
+
+export {mapFlags} from "./shared/mapFlags"
 
 export {default as use} from "./use"
 export {
@@ -24,7 +25,6 @@ export type {
   Application,
   DefaultFn,
   Token,
-  UseConfig,
   ApplicationEntry,
 } from "./application/Application"
 
@@ -64,6 +64,7 @@ export type {
 
 export type {
   EqualityFn,
+  UseConfig,
   MixedConfig,
   UseAsyncState,
   UseAsyncStateType,

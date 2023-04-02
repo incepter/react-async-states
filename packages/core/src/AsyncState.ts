@@ -416,7 +416,7 @@ export class AsyncState<T, E, R, A extends unknown[]> implements StateInterface<
       return;
     }
     this.willUpdate = true;
-    if (this.state?.status === pending || (
+    if (this.state.status === pending || (
       isFunction(this.currentAbort) && !this.isEmitting
     )) {
       this.abort();
@@ -1166,8 +1166,9 @@ function attemptCache<T, E, R, A extends unknown[]>(
     if (cachedState) {
       if (didNotExpire(cachedState)) {
         if (cachedState.state !== instance.state) {
-          instance.replaceState(cachedState.state, true, runProps);
+          instance.replaceState(cachedState.state);
         }
+        invokeChangeCallbacks(cachedState.state, runProps);
         if (__DEV__) devtools.emitRunConsumedFromCache(instance, payload, args);
         return true;
       } else {

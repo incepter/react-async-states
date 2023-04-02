@@ -3,7 +3,7 @@
   "license": "MIT",
   "author": "incepter",
   "sideEffects": false,
-  "version": "1.2.0",
+  "version": "1.3.0",
   "main": "dist/umd/index",
   "types": "dist/es/index",
   "module": "dist/es/index",
@@ -24,7 +24,7 @@
     "react": "^16.8.0 || ^17.0.2 || ^18.0.0"
   },
   "devDependencies": {
-    "async-states": "workspace:^1.2.0",
+    "async-states": "workspace:^1.3.0",
     "@babel/plugin-proposal-class-properties": "^7.18.6",
     "@babel/preset-env": "^7.20.2",
     "@babel/preset-react": "^7.18.6",

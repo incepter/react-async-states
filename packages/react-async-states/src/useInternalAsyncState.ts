@@ -1,10 +1,5 @@
 import * as React from "react";
-import {
-  hookReturn,
-  createHook,
-  HookOwnState,
-  autoRun, State
-} from "async-states";
+import {State} from "async-states";
 import {
   MixedConfig,
   PartialUseAsyncStateConfiguration,
@@ -12,6 +7,12 @@ import {
 } from "./types.internal";
 import {didDepsChange, emptyArray} from "./shared";
 import {useExecutionContext} from "./hydration/context";
+import {
+  autoRun,
+  createHook,
+  HookOwnState,
+  hookReturn
+} from "./state-hook/StateHook";
 
 function getContextFromMixedConfig(mixedConfig) {
   if (typeof mixedConfig !== "object") {

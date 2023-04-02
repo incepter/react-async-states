@@ -1,6 +1,5 @@
 import {resolveFlags, resolveInstance} from "../../state-hook/StateHook";
-import {createContext} from "../../pool";
-import {readSource, Sources} from "../../AsyncState";
+import {createContext, readSource, Sources} from "async-states";
 
 
 describe('StateHook resolveInstance', () => {

@@ -8,8 +8,10 @@ import {
   Source,
   State,
   StateInterface,
-  SuccessState
+  SuccessState,
+  ForkConfig, Producer
 } from "async-states";
+import {EqualityFn, UseAsyncStateEvents, useSelector} from "./state-hook/types.internal";
 
 export type {
   Source,
@@ -23,12 +25,15 @@ export type {
   StateFunctionUpdater,
   StateInterface,
   SuccessState,
-  EqualityFn,
+} from "async-states";
+
+export type {
   MixedConfig,
   UseAsyncState,
   UseAsyncStateType,
   CleanupFn,
   BaseConfig,
+  EqualityFn,
   BaseUseAsyncState,
   ConfigWithKeyWithoutSelector,
   ConfigWithKeyWithSelector,
@@ -45,8 +50,8 @@ export type {
   UseAsyncStateConfiguration,
   useSelector,
   UseAsyncStateEventSubscribe,
-  PartialUseAsyncStateConfiguration,
-} from "async-states";
+  PartialUseAsyncStateConfiguration
+} from "./state-hook/types.internal"
 
 export type BaseSelectorKey = string | Source<unknown, unknown, unknown, unknown[]>
 
@@ -109,3 +114,27 @@ export type InstanceOrNull<T, E = unknown, R = unknown, A extends unknown[] = un
   | null;
 
 export type CreateType<T, E> = () => T
+
+export type UseConfig<T, E, R, A extends unknown[], S = State<T, E, R, A>> = {
+  lane?: string,
+  producer?: Producer<T, E, R, A>,
+  payload?: Record<string, unknown>,
+
+  fork?: boolean,
+  forkConfig?: ForkConfig,
+
+  lazy?: boolean,
+  autoRunArgs?: A,
+  areEqual?: EqualityFn<S>,
+  subscriptionKey?: string,
+  selector?: useSelector<T, E, R, A, S>,
+  events?: UseAsyncStateEvents<T, E, R, A>,
+
+  condition?: boolean | ((
+    state: State<T, E, R, A>,
+    args?: A,
+    payload?: Record<string, unknown> | null
+  ) => boolean),
+
+  wait?: boolean,
+}

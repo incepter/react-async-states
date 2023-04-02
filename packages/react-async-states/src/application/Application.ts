@@ -1,19 +1,15 @@
 import {useInternalAsyncState} from "../useInternalAsyncState";
 import type {
-  EqualityFn,
-  ForkConfig,
-  MixedConfig,
   Producer,
   ProducerConfig,
   Source,
   State,
-  UseAsyncState,
-  UseAsyncStateEvents,
-  useSelector
 } from "async-states"
 import {createSource,} from "async-states";
 import {__DEV__} from "../shared";
 import {useCallerName} from "../helpers/useCallerName";
+import {UseAsyncState, UseConfig} from "../types.internal";
+import use from "../use";
 
 let freeze = Object.freeze
 
@@ -34,14 +30,6 @@ export interface Api<T extends unknown, E extends unknown, R extends unknown, A 
 }
 
 type AppShape = Record<string, Record<string, any>>
-
-// let myApp = {
-//   users: {
-//     search: api<UserType[], Error, never, [string]>(),
-//   }
-// }
-//
-// export let app = createApplication<typeof myApp>(myApp)
 
 export type ApplicationEntry<T extends AppShape> = {
   [resource in keyof T]: {
@@ -122,57 +110,52 @@ function createToken<
 
   type TokenType = Token<T, E, R, A>
 
-  let source: Source<T, E, R, A> | null = null
+  let apiSource: Source<T, E, R, A> | null = null
   let name = `app__${String(resourceName)}_${String(apiName)}__`
 
-  // eagerly create the source
+  // eagerly create the apiSource
   if (api.eager) {
-    source = createSource(name, api.producer, api.config) as Source<T, E, R, A>
+    apiSource = createSource(name, api.producer, api.config) as Source<T, E, R, A>
   }
 
-  function token(): Source<T, E, R, A> {
-    if (!source) {
-      let path = `app.${String(resourceName)}.${String(apiName)}`
-      throw new Error(`Must call ${path}.inject before calling ${path}() or ${path}.use()`)
-    }
-    return source;
-  }
 
-  token.use = use;
   token.inject = inject;
+  token.useAsyncState = useHook;
+  token.use = createR18Use(() => apiSource!, resourceName, apiName);
   return token;
 
-  function use<S = State<T, E, R, A>>(
-    config?: UseConfig<T, E, R, A, S>,
-    deps?: any[]
-  ): UseAsyncState<T, E, R, A, S> {
-
-    let caller;
-    if (__DEV__) {
-      caller = useCallerName(3);
-    }
-    let source = token()
-
-    if (config) {
-      return useInternalAsyncState(
-        caller,
-        {...config, source} as MixedConfig<T, E, R, A, S>,
-        deps
-      );
-    }
-    return useInternalAsyncState(caller, source, deps);
+  function token(): Source<T, E, R, A> {
+    ensureSourceIsDefined(apiSource, resourceName, apiName);
+    return apiSource!;
   }
 
   function inject(
     fn: Producer<T, E, R, A> | null,
     config?: ProducerConfig<T, E, R, A>
   ): TokenType {
-    if (!source) {
-      source = createSource(name, fn, config);
+    if (!apiSource) {
+      apiSource = createSource(name, fn, config);
+    } else {
+      apiSource.replaceProducer(fn || undefined)
+      apiSource.patchConfig(config)
     }
-    source.replaceProducer(fn || undefined)
-    source.patchConfig(config)
     return token
+  }
+
+  function useHook<S = State<T, E, R, A>>(
+    config?: UseConfig<T, E, R, A, S>,
+    deps?: any[]
+  ): UseAsyncState<T, E, R, A, S> {
+    ensureSourceIsDefined(apiSource, resourceName, apiName);
+
+    let caller;
+    if (__DEV__) {
+      caller = useCallerName(3);
+    }
+
+    let source = token()
+    let realConfig = config ? {...config, source} : source;
+    return useInternalAsyncState(caller, realConfig, deps);
   }
 }
 
@@ -188,65 +171,44 @@ export function api<T, E, R, A extends unknown[]>(
   return Object.assign({}, props, buildDefaultJT<T, E, R, A>())
 }
 
-export type UseConfig<T, E, R, A extends unknown[], S = State<T, E, R, A>> = {
-  lane?: string,
-  producer?: Producer<T, E, R, A>,
-  payload?: Record<string, unknown>,
-
-  fork?: boolean,
-  forkConfig?: ForkConfig,
-
-  lazy?: boolean,
-  autoRunArgs?: A,
-  areEqual?: EqualityFn<S>,
-  subscriptionKey?: string,
-  selector?: useSelector<T, E, R, A, S>,
-  events?: UseAsyncStateEvents<T, E, R, A>,
-
-  condition?: boolean | ((
-    state: State<T, E, R, A>,
-    args?: A,
-    payload?: Record<string, unknown> | null
-  ) => boolean),
-
-  wait?: boolean,
-}
-
 export type Token<T, E, R, A extends unknown[]> = {
   (): Source<T, E, R, A>,
   inject(
     fn: Producer<T, E, R, A>,
     config?: ProducerConfig<T, E, R, A>
   ): Token<T, E, R, A>
-  use<S = State<T, E, R, A>>(
+  use(
+    config?: UseConfig<T, E, R, A>,
+    deps?: any[]
+  ): T,
+  useAsyncState<S = State<T, E, R, A>>(
     config?: UseConfig<T, E, R, A, S>,
     deps?: any[]
-  ): UseAsyncState<T, E, R, A, S>,
+  ): UseAsyncState<T, E, R, A, S>
 }
 
-// type Page<T = unknown> = {
-//   content: T[]
-// }
-// export type User = {
-//   username: string,
-//   email: string
-// }
-// type Post = {
-//   title: string
-// }
-// type QueryParams = {}
-// let myApp = {
-//   users: {
-//     search: api<Page<User>, Error, "reason", [QueryParams]>(),
-//     findById: api<Page<User>, Error, "reason", [string]>(),
-//     add: api<boolean, Error, "reason", [User]>(),
-//     posts: api<Page<Post>, Error, "reason", [string]>()
-//   },
-//   posts: {
-//     search: api<Page<User>, Error, "reason", [QueryParams]>(),
-//     findById: api<Page<User>, Error, "reason", [string]>(),
-//     delete: api<number, Error, "reason", [string]>()
-//   },
-// }
-//
-// let app = createApplication<typeof myApp>(myApp)
+function ensureSourceIsDefined(source, resourceName, resourceApi) {
+  if (!source) {
+    let path = `app.${String(resourceName)}.${String(resourceApi)}`
+    throw new Error(`Must call ${path}.inject(producer) before calling ${path}() or ${path}.use()`)
+  }
+}
+
+function createR18Use<T, E, R, A extends unknown[]>(
+  getSource: () => Source<T, E, R, A>,
+  resourceName: string | symbol | number,
+  apiName: string | symbol | number
+): ((
+  config?: UseConfig<T, E, R, A, State<T, E, R, A>>,
+  deps?: any[]
+) => T) {
+  return function useImpl(
+    config?: UseConfig<T, E, R, A>,
+    deps?: any[]
+  ) {
+    let source = getSource();
+    ensureSourceIsDefined(source, resourceName, apiName);
+
+    return use(source, config, deps);
+  }
+}

@@ -17,3 +17,7 @@ export function didDepsChange(deps: any[], deps2: any[]) {
   }
   return false;
 }
+
+export let assign = Object.assign;
+export let freeze = Object.freeze;
+export let isArray = Array.isArray;

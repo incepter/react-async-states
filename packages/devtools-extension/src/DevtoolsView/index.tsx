@@ -70,7 +70,7 @@ export function DevtoolsView() {
   return <DevtoolsView/>;
 }
 
-export function AutoConfiguredDevtools() {
+export function AutoConfiguredDevtools(): React.ReactNode {
   if (!__DEV__) {
     return null;
   }
