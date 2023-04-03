@@ -72,9 +72,14 @@ describe('createApplication abstraction tests', () => {
   it('should subscribe to a created api in component using use (auto run)', async () => {
     let app = createApplication<typeof testShape>(testShape)
     app.users.search.inject(userSearch)
+    // @ts-ignore
+    app.users.search().setState(null, "initial")
 
     function Component() {
-      let data = app.users.search.use()
+      let data = app.users.search.use({
+        lazy: false,
+        condition: (s => s.status === "initial")
+      })
       return <span data-testid="data">{data.name}</span>
     }
 

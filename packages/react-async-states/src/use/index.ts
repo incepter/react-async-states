@@ -15,13 +15,10 @@ export default function use<T, E, R, A extends unknown[]>(
   }
 
   let config = options ? {...options, source} : source
-
   let {read, state, lastSuccess} = useInternalAsyncState(caller, config, deps);
-
-  // suspends only when initial, throw in E and fallback to lastSuccess when pending
-  read("initial", true)
+  read("initial", true) // suspends only when initial, throws E in Error
   if (state.status === Status.aborted) {
-    throw state.data
+    throw state
   }
 
   return (lastSuccess as SuccessState<T, any>)!.data

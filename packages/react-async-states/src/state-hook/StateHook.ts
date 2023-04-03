@@ -78,6 +78,7 @@ export function resolveFlags<T, E, R, A extends unknown[], S>(
         return flags;
       }
     }
+    // let result = useAsyncState() also should work (useAsyncState.lazy..also)
     default: {
       return flags | getConfigFlags(overrides);
     }
@@ -343,7 +344,7 @@ export function hookReturn<T, E, R, A extends unknown[], S>(
   if (instance) {
     newState.version = instance?.version;
     newState.lastSuccess = instance.lastSuccess;
-    newState.read = createReadInConcurrentMode(instance, newValue, config);
+    newState.read = createReadInConcurrentMode(instance, newValue, flags, config);
   }
   newState.state = newValue;
 
@@ -353,15 +354,15 @@ export function hookReturn<T, E, R, A extends unknown[], S>(
 export function createReadInConcurrentMode<T, E, R, A extends unknown[], S>(
   instance: StateInterface<T, E, R, A>,
   stateValue: S,
+  flags: number,
   config: MixedConfig<T, E, R, A, S>,
 ) {
   return function (
-    suspend: 'initial' | 'pending'| 'both' | true | false = true,
+    suspend: 'initial' | 'pending' | 'both' | true | false = true,
     throwError: boolean = true,
   ) {
     let {state: {status}} = instance;
-
-    if (suspend) {
+    if (suspend && (flags & AUTO_RUN)) {
       if (
         (suspend === 'initial' || suspend === "both") &&
         status === "initial"
@@ -488,9 +489,12 @@ export function subscribeEffect<T, E, R, A extends unknown[], S>(
   }
 
   let didClean = false;
-  let cleanups: AbortFn<R>[] = [() => didClean = true];
+  let cleanups: AbortFn<R>[] = [(() => didClean = true)];
 
   function onStateChange() {
+    if (didClean) {
+      return;
+    }
     let newSelectedState = readStateFromInstance(instance, flags, config);
 
     if (flags & EQUALITY_CHECK) {
@@ -654,13 +658,11 @@ export function createHook<T, E, R, A extends unknown[], S>(
   }
 }
 
-export function autoRun<T, E, R, A extends unknown[], S>(hookState: HookOwnState<T, E, R, A, S>): CleanupFn {
-  let {flags, instance, config, base} = hookState;
-  // auto run only if condition is met, and it is not lazy
-  if (!(flags & AUTO_RUN)) {
-    return;
-  }
-  // if dependencies change, if we run, the cleanup shall abort
+export function shouldRunGivenConfig<T, E, R, A extends unknown[]>(
+  flags: number,
+  config: MixedConfig<T, E, R, A>,
+  instance: StateInterface<T, E, R, A> | null
+): boolean {
   let shouldRun = true;
 
   if (flags & CONFIG_OBJECT) {
@@ -671,14 +673,23 @@ export function autoRun<T, E, R, A extends unknown[], S>(hookState: HookOwnState
           state: State<T, E, R, A>, args?: A,
           payload?: Record<string, unknown> | null
         ) => boolean);
-
       shouldRun = conditionFn(instance!.getState(), configObject.autoRunArgs, instance!.getPayload());
     } else if (configObject.condition === false) {
       shouldRun = false;
     }
   }
 
-  if (shouldRun) {
+  return shouldRun;
+}
+
+export function autoRun<T, E, R, A extends unknown[], S>(hookState: HookOwnState<T, E, R, A, S>): CleanupFn {
+  let {flags, instance, config, base} = hookState;
+
+  if (!(flags & AUTO_RUN)) {
+    return;
+  }
+
+  if (shouldRunGivenConfig(flags, config, instance)) {
     if (flags & CONFIG_OBJECT && (config as BaseConfig<T, E, R, A>).autoRunArgs) {
       let {autoRunArgs} = (config as BaseConfig<T, E, R, A>);
       if (autoRunArgs && isArray(autoRunArgs)) {
