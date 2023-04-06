@@ -357,24 +357,25 @@ export function createReadInConcurrentMode<T, E, R, A extends unknown[], S>(
   flags: number,
   config: MixedConfig<T, E, R, A, S>,
 ) {
-  return function (
+  return function read(
     suspend: 'initial' | 'pending' | 'both' | true | false = true,
     throwError: boolean = true,
   ) {
     let {state: {status}} = instance;
     if (suspend && (flags & AUTO_RUN)) {
       if (
-        (suspend === 'initial' || suspend === "both") &&
-        status === "initial"
+        (suspend === "both" || suspend === "initial") && status === "initial"
       ) {
-        let args = (typeof config === "object" ?
+        let args = ((flags & CONFIG_OBJECT) ?
           (config as BaseConfig<T, E, R, A>).autoRunArgs : emptyArray) as A
         throw instance.runp.apply(null, args);
       }
       if (
-        (suspend === "both" || suspend === true || suspend === 'pending') &&
-        status === suspend
+        (suspend === "both" || suspend === "pending") && status === "pending"
       ) {
+        throw instance.promise;
+      }
+      if (suspend === true && status === "pending") {
         throw instance.promise;
       }
     }
@@ -661,7 +662,8 @@ export function createHook<T, E, R, A extends unknown[], S>(
 export function shouldRunGivenConfig<T, E, R, A extends unknown[]>(
   flags: number,
   config: MixedConfig<T, E, R, A>,
-  instance: StateInterface<T, E, R, A> | null
+  state: State<T, E, R, A>,
+  payload?: Record<string, unknown> | null
 ): boolean {
   let shouldRun = true;
 
@@ -673,7 +675,7 @@ export function shouldRunGivenConfig<T, E, R, A extends unknown[]>(
           state: State<T, E, R, A>, args?: A,
           payload?: Record<string, unknown> | null
         ) => boolean);
-      shouldRun = conditionFn(instance!.getState(), configObject.autoRunArgs, instance!.getPayload());
+      shouldRun = conditionFn(state, configObject.autoRunArgs, payload);
     } else if (configObject.condition === false) {
       shouldRun = false;
     }
@@ -682,21 +684,25 @@ export function shouldRunGivenConfig<T, E, R, A extends unknown[]>(
   return shouldRun;
 }
 
-export function autoRun<T, E, R, A extends unknown[], S>(hookState: HookOwnState<T, E, R, A, S>): CleanupFn {
-  let {flags, instance, config, base} = hookState;
+export function autoRun<T, E, R, A extends unknown[], S>(
+  flags: number,
+  source: Source<T, E, R, A> | undefined,
+  config: MixedConfig<T, E, R, A>,
+): CleanupFn {
 
-  if (!(flags & AUTO_RUN)) {
+  if (!(flags & AUTO_RUN) || !source) {
     return;
   }
 
-  if (shouldRunGivenConfig(flags, config, instance)) {
+  if (shouldRunGivenConfig(flags, config, source.getState(), source.getPayload())) {
     if (flags & CONFIG_OBJECT && (config as BaseConfig<T, E, R, A>).autoRunArgs) {
       let {autoRunArgs} = (config as BaseConfig<T, E, R, A>);
       if (autoRunArgs && isArray(autoRunArgs)) {
-        return base.run.apply(null, autoRunArgs);
+        return source.run.apply(null, autoRunArgs);
       }
     }
 
-    return base.run.apply(null);
+    return source.run.apply(null);
   }
 }
+

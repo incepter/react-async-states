@@ -42,7 +42,7 @@ export const useInternalAsyncState = function useAsyncStateImpl<T, E, R, A exten
     () => hook.subscribeEffect(updateReturnState, setGuard),
     [renderInfo, flags, instance].concat(deps)
   );
-  React.useEffect(() => autoRun(hook), deps);
+  React.useEffect(() => autoRun(flags, instance?._source, config), deps);
 
   renderInfo.version = instance?.version;
   renderInfo.current = hook.return.state;

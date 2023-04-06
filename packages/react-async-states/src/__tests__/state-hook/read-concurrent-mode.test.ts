@@ -10,14 +10,14 @@ describe('readInConcurrentMode function creation', () => {
     expect(instance.state.status).toBe("initial")
     expect(read()).toEqual(15) // wont throw, because status is initial now
     try {
-      expect(read("both")) // throws in both initial and pending
+      read("both") // throws in both initial and pending
     } catch (e: any) {
       expect(e.constructor).toBe(Promise)
     }
 
     expect(instance.state.status).toBe("pending")
     try {
-      expect(read("pending")) // throws only in pending
+      read("pending") // throws only in pending
     } catch (e: any) {
       expect(e.constructor).toBe(Promise)
     }
