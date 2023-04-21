@@ -1,10 +1,10 @@
 import * as React from "react";
 import { render, fireEvent, screen } from "@testing-library/react";
-import AsyncStateComponent from "../utils/AsyncStateComponent";
-import { mockDateNow } from "../utils/setup";
 import { Sources } from "async-states";
 import Hydration from "../../../hydration/Hydration";
-import { flushPromises } from "../utils/test-utils";
+import AsyncStateComponent from "../../utils/AsyncStateComponent";
+import {flushPromises} from "../../utils/test-utils";
+import {mockDateNow} from "../../utils/setup";
 
 mockDateNow();
 jest.mock("../../../hydration/context", () => {
