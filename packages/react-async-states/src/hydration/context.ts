@@ -25,6 +25,7 @@ export let maybeWindow = typeof window !== "undefined" ? window : undefined;
 export let isServer = !maybeWindow || !maybeWindow.document || !maybeWindow.document.createComment;
 
 export type HydrationProps = {
+  id: string,
   context: any,
   exclude?: string | ((key: string, state: State<unknown, unknown, unknown, unknown[]>) => boolean),
   children?: any,

@@ -1,21 +1,26 @@
 import * as React from "react";
-import {createContext,} from "async-states";
-import {HydrationContext, HydrationProps, isServer,} from "./context";
+import { createContext } from "async-states";
+import { HydrationContext, HydrationProps, isServer } from "./context";
 import HydrationServer from "./HydrationServer";
 import HydrationDom from "./HydrationDom";
 
 export default function Hydration({
-  context,
-  exclude,
-  children
+	id,
+	context,
+	exclude,
+	children,
 }: HydrationProps) {
-  createContext(context);
-  return (
-    <HydrationContext.Provider value={context}>
-      {children}
-      {!isServer && <HydrationDom context={context}/>}
-      {isServer && <HydrationServer context={context} exclude={exclude}/>}
-    </HydrationContext.Provider>
-  );
+	if (!id) {
+		throw new Error("Please give a unique id to Hydration!");
+	}
+	createContext(context);
+	return (
+		<HydrationContext.Provider value={context}>
+			{children}
+			{!isServer && <HydrationDom id={id} context={context} />}
+			{isServer && (
+				<HydrationServer id={id} context={context} exclude={exclude} />
+			)}
+		</HydrationContext.Provider>
+	);
 }
-
