@@ -1,6 +1,6 @@
 import React from "react";
-import { HydrationData, requestContext } from "async-states";
-import { HydrationProps } from "./context";
+import {HydrationData, requestContext} from "async-states";
+import {HydrationProps} from "./context";
 
 export default function HydrationServer({
 	id,
