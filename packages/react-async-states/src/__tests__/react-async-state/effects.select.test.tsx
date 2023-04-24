@@ -2,6 +2,7 @@ import * as React from "react";
 import {render, screen} from "@testing-library/react";
 import {useAsyncState} from "../../useAsyncState";
 import {createSource, Source, State} from "async-states";
+import {SuccessState} from "async-states/src";
 
 describe('should select from another async state', () => {
   it('should select by source', () => {
@@ -9,10 +10,10 @@ describe('should select from another async state', () => {
     const counterSource = createSource("counter", null, {initialValue: 30});
     const loggerSource: Source<string, any, any, any[]> = createSource("logger", props => {
       const state = props.select(counterSource);
-      if (!state?.data) {
+      if (!state) {
         return "does not exist.";
       }
-      if (state?.data > 20) {
+      if ((state as SuccessState<number, any>)?.data > 20) {
         return "Greater than 20!";
       } else {
         return "Less than or equals 20!";
