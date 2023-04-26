@@ -1,11 +1,12 @@
 import * as React from "react";
 import {State} from "async-states";
 import {
+  BaseConfig,
   MixedConfig,
   PartialUseAsyncStateConfiguration,
   UseAsyncState,
 } from "./types.internal";
-import {didDepsChange, emptyArray} from "./shared";
+import {__DEV__, didDepsChange, emptyArray} from "./shared";
 import {useExecutionContext} from "./hydration/context";
 import {
   autoRun,
@@ -13,7 +14,7 @@ import {
   HookOwnState,
   hookReturn
 } from "./state-hook/StateHook";
-import {CONCURRENT} from "./state-hook/StateHookFlags";
+import {CONCURRENT, CONFIG_OBJECT, SOURCE} from "./state-hook/StateHookFlags";
 
 function getContextFromMixedConfig(mixedConfig) {
   if (typeof mixedConfig !== "object") {
@@ -64,7 +65,17 @@ export const useInternalAsyncState = function useAsyncStateImpl<T, E, R, A exten
   if (flags & CONCURRENT) {
     // both: when status is initial and pending, it will throw a promise
     // false: don't throw to error boundary in case of problems
-    hook.return.read("both", false);
+    if (
+      (flags & CONFIG_OBJECT) &&
+      !(flags & SOURCE) &&
+      !(mixedConfig as BaseConfig<any, any, any, any>).key
+    ) {
+      if (__DEV__) {
+        console.error("Concurrent isn't supported without giving a key or source");
+      }
+    } else {
+      hook.return.read("both", false);
+    }
   }
 
   return hook.return;
