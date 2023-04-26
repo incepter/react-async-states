@@ -13,6 +13,7 @@ import {
   HookOwnState,
   hookReturn
 } from "./state-hook/StateHook";
+import {CONCURRENT} from "./state-hook/StateHookFlags";
 
 function getContextFromMixedConfig(mixedConfig) {
   if (typeof mixedConfig !== "object") {
@@ -38,20 +39,34 @@ export const useInternalAsyncState = function useAsyncStateImpl<T, E, R, A exten
   // to ensure a certain isolation and that react would actually react to it
   // so no logic should depend on the "hook" object itself, but to what it holds
   let {flags, context, instance, base, renderInfo, config} = hook;
+
+  // performs subscription and events firing
   React.useEffect(
     () => hook.subscribeEffect(updateReturnState, setGuard),
     [renderInfo, flags, instance].concat(deps)
   );
+  // will auto run if necessary
   React.useEffect(() => autoRun(flags, instance?._source, config), deps);
 
+  //
   renderInfo.version = instance?.version;
   renderInfo.current = hook.return.state;
+
   if (hook.guard !== guard || context !== execContext || didDepsChange(hook.deps, deps)) {
     setHook(createOwnHook());
   }
+
+  // optimistic lock to never tear and stay up to date
   if (instance && hook.return.version !== instance.version) {
     updateReturnState();
   }
+
+  if (flags & CONCURRENT) {
+    // both: when status is initial and pending, it will throw a promise
+    // false: don't throw to error boundary in case of problems
+    hook.return.read("both", false);
+  }
+
   return hook.return;
 
   function updateReturnState() {

@@ -72,7 +72,7 @@ describe('createApplication abstraction tests', () => {
   it('should subscribe to a created api in component using use (auto run)', async () => {
     let app = createApplication<typeof testShape>(testShape)
     app.users.search.inject(userSearch)
-    // @ts-ignore
+    // @ts-expect-error state type is User, not null! forcing it to test
     app.users.search().setState(null, "initial")
 
     function Component() {

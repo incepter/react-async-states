@@ -26,7 +26,7 @@ export let isServer = !maybeWindow || !maybeWindow.document || !maybeWindow.docu
 
 export type HydrationProps = {
   id: string,
-  context: any,
+  context?: any,
   exclude?: string | ((key: string, state: State<unknown, unknown, unknown, unknown[]>) => boolean),
   children?: any,
 }

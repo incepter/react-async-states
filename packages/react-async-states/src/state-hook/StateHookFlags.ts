@@ -11,6 +11,7 @@ export const LANE /*             */ = 0b00000_00000_00100_00000;
 
 export const AUTO_RUN /*         */ = 0b00000_00001_00000_00000;
 export const WAIT /*             */ = 0b00000_00010_00000_00000;
+export const CONCURRENT /*       */ = 0b00000_00100_00000_00000;
 
 export const CHANGE_EVENTS /*    */ = 0b00001_00000_00000_00000;
 export const SUBSCRIBE_EVENTS/*  */ = 0b00010_00000_00000_00000;

@@ -2,7 +2,7 @@ import * as React from "react";
 import { render, screen } from "@testing-library/react";
 import Hydration from "../../../hydration/Hydration";
 import { createContext, createSource, requestContext } from "async-states";
-import {mockDateNow} from "../../utils/setup";
+import { mockDateNow } from "../../utils/setup";
 import AsyncStateComponent from "../../utils/AsyncStateComponent";
 
 mockDateNow();
@@ -16,11 +16,13 @@ describe("should hydrate async states", () => {
 	it("should perform basic hydration", async () => {
 		// given
 		let ctx = {};
+		createContext(ctx);
+		let src = createSource("counter", null, { initialValue: 0, context: ctx });
 		function Test() {
 			return (
 				<div data-testid="parent">
 					<Hydration id="test" context={ctx}>
-						<AsyncStateComponent config={{ key: "counter", initialValue: 0 }} />
+						<AsyncStateComponent config={src} />
 					</Hydration>
 				</div>
 			);
@@ -92,6 +94,15 @@ describe("should hydrate async states", () => {
 	it("should exclude instance from hydration by state value", async () => {
 		// given
 		let ctx = {};
+		createContext(ctx);
+		let src = createSource("counter2", null, {
+			initialValue: 14,
+			context: ctx,
+		});
+		let src2 = createSource("counter3", null, {
+			initialValue: 99,
+			context: ctx,
+		});
 		function Test() {
 			return (
 				<div data-testid="parent">
@@ -100,12 +111,8 @@ describe("should hydrate async states", () => {
 						exclude={(key, state) => state.data === 99}
 						context={ctx}
 					>
-						<AsyncStateComponent
-							config={{ key: "counter2", initialValue: 14 }}
-						/>
-						<AsyncStateComponent
-							config={{ key: "counter3", initialValue: 99 }}
-						/>
+						<AsyncStateComponent config={src} />
+						<AsyncStateComponent config={src2} />
 					</Hydration>
 				</div>
 			);

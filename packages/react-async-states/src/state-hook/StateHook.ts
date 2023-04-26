@@ -23,7 +23,7 @@ import {AsyncState, isSource, nextKey, readSource, Status,} from "async-states";
 
 import {
   AUTO_RUN,
-  CHANGE_EVENTS,
+  CHANGE_EVENTS, CONCURRENT,
   CONFIG_FUNCTION,
   CONFIG_OBJECT,
   CONFIG_SOURCE,
@@ -90,6 +90,7 @@ let ConfigurationSpecialFlags = freeze({
   "lane": LANE,
   "selector": SELECTOR,
   "areEqual": EQUALITY_CHECK,
+  "concurrent": (value) => value === true ? CONCURRENT : NO_MODE,
   "events": (events) => {
     let flags = NO_MODE;
     if (events) {
@@ -690,7 +691,8 @@ export function autoRun<T, E, R, A extends unknown[], S>(
   config: MixedConfig<T, E, R, A>,
 ): CleanupFn {
 
-  if (!(flags & AUTO_RUN) || !source) {
+  // in concurrent mode, runs will be performed by throwing a promise!
+  if (!(flags & AUTO_RUN) || !source || (flags & CONCURRENT)) {
     return;
   }
 

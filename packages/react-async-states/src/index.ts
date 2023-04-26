@@ -14,11 +14,15 @@ export {
 export {mapFlags} from "./shared/mapFlags"
 
 export {default as use} from "./application/internalUse"
+
 export {
   default as Hydration,
 } from "./hydration/Hydration";
 
+export {useExecutionContext} from "./hydration/context"
+
 export {createApplication, api} from "./application/Application"
+
 export type {
   Api,
   ExtendedFn,

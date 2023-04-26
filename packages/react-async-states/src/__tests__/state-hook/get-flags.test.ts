@@ -1,6 +1,6 @@
 import {
   AUTO_RUN,
-  CHANGE_EVENTS,
+  CHANGE_EVENTS, CONCURRENT,
   CONFIG_FUNCTION,
   CONFIG_OBJECT,
   CONFIG_SOURCE,
@@ -31,6 +31,9 @@ describe('resolveFlags', () => {
 
       expect(resolveFlags("key", pool, {lane: "lane"}))
         .toEqual(CONFIG_STRING | LANE);
+
+      expect(resolveFlags("key", pool, {concurrent: true}))
+        .toEqual(CONFIG_STRING | CONCURRENT);
     });
     it('should correctly infer configuration from key: -- object with key --', () => {
       let key = "key"
@@ -40,6 +43,9 @@ describe('resolveFlags', () => {
 
       expect(resolveFlags({key, lazy: false, }, pool))
         .toEqual(CONFIG_OBJECT | AUTO_RUN);
+
+      expect(resolveFlags({key, concurrent: true, }, pool))
+        .toEqual(CONFIG_OBJECT | CONCURRENT);
 
       expect(resolveFlags({key}, pool, {fork: true}))
         .toEqual(CONFIG_OBJECT | FORK);

@@ -43,6 +43,7 @@ export type EqualityFn<T> = (
 export interface BaseConfig<T, E, R, A extends unknown[]> extends ProducerConfig<T, E, R, A> {
   key?: string,
   lane?: string,
+  concurrent?: boolean,
   source?: Source<T, E, R, A>,
   autoRunArgs?: A,
   producer?: Producer<T, E, R, A>,
@@ -124,6 +125,8 @@ export type UseAsyncStateConfiguration<T, E, R, A extends unknown[], S = State<T
 
   fork?: boolean,
   forkConfig?: ForkConfig,
+
+  concurrent?: boolean,
 
   lazy?: boolean,
   autoRunArgs?: A,
