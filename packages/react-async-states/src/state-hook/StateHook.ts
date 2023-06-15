@@ -23,7 +23,7 @@ import {AsyncState, isSource, nextKey, readSource, Status,} from "async-states";
 
 import {
   AUTO_RUN,
-  CHANGE_EVENTS,
+  CHANGE_EVENTS, CONCURRENT,
   CONFIG_FUNCTION,
   CONFIG_OBJECT,
   CONFIG_SOURCE,
@@ -78,6 +78,7 @@ export function resolveFlags<T, E, R, A extends unknown[], S>(
         return flags;
       }
     }
+    // let result = useAsyncState() also should work (useAsyncState.lazy..also)
     default: {
       return flags | getConfigFlags(overrides);
     }
@@ -89,6 +90,7 @@ let ConfigurationSpecialFlags = freeze({
   "lane": LANE,
   "selector": SELECTOR,
   "areEqual": EQUALITY_CHECK,
+  "concurrent": (value) => value === true ? CONCURRENT : NO_MODE,
   "events": (events) => {
     let flags = NO_MODE;
     if (events) {
@@ -343,7 +345,7 @@ export function hookReturn<T, E, R, A extends unknown[], S>(
   if (instance) {
     newState.version = instance?.version;
     newState.lastSuccess = instance.lastSuccess;
-    newState.read = createReadInConcurrentMode(instance, newValue, config);
+    newState.read = createReadInConcurrentMode(instance, newValue, flags, config);
   }
   newState.state = newValue;
 
@@ -353,27 +355,28 @@ export function hookReturn<T, E, R, A extends unknown[], S>(
 export function createReadInConcurrentMode<T, E, R, A extends unknown[], S>(
   instance: StateInterface<T, E, R, A>,
   stateValue: S,
+  flags: number,
   config: MixedConfig<T, E, R, A, S>,
 ) {
-  return function (
-    suspend: 'initial' | 'pending'| 'both' | true | false = true,
+  return function read(
+    suspend: 'initial' | 'pending' | 'both' | true | false = true,
     throwError: boolean = true,
   ) {
     let {state: {status}} = instance;
-
-    if (suspend) {
+    if (suspend && (flags & AUTO_RUN)) {
       if (
-        (suspend === 'initial' || suspend === "both") &&
-        status === "initial"
+        (suspend === "both" || suspend === "initial") && status === "initial"
       ) {
-        let args = (typeof config === "object" ?
+        let args = ((flags & CONFIG_OBJECT) ?
           (config as BaseConfig<T, E, R, A>).autoRunArgs : emptyArray) as A
         throw instance.runp.apply(null, args);
       }
       if (
-        (suspend === "both" || suspend === true || suspend === 'pending') &&
-        status === suspend
+        (suspend === "both" || suspend === "pending") && status === "pending"
       ) {
+        throw instance.promise;
+      }
+      if (suspend === true && status === "pending") {
         throw instance.promise;
       }
     }
@@ -488,9 +491,12 @@ export function subscribeEffect<T, E, R, A extends unknown[], S>(
   }
 
   let didClean = false;
-  let cleanups: AbortFn<R>[] = [() => didClean = true];
+  let cleanups: AbortFn<R>[] = [(() => didClean = true)];
 
   function onStateChange() {
+    if (didClean) {
+      return;
+    }
     let newSelectedState = readStateFromInstance(instance, flags, config);
 
     if (flags & EQUALITY_CHECK) {
@@ -654,13 +660,12 @@ export function createHook<T, E, R, A extends unknown[], S>(
   }
 }
 
-export function autoRun<T, E, R, A extends unknown[], S>(hookState: HookOwnState<T, E, R, A, S>): CleanupFn {
-  let {flags, instance, config, base} = hookState;
-  // auto run only if condition is met, and it is not lazy
-  if (!(flags & AUTO_RUN)) {
-    return;
-  }
-  // if dependencies change, if we run, the cleanup shall abort
+export function shouldRunGivenConfig<T, E, R, A extends unknown[]>(
+  flags: number,
+  config: MixedConfig<T, E, R, A>,
+  state: State<T, E, R, A>,
+  payload?: Record<string, unknown> | null
+): boolean {
   let shouldRun = true;
 
   if (flags & CONFIG_OBJECT) {
@@ -671,21 +676,35 @@ export function autoRun<T, E, R, A extends unknown[], S>(hookState: HookOwnState
           state: State<T, E, R, A>, args?: A,
           payload?: Record<string, unknown> | null
         ) => boolean);
-
-      shouldRun = conditionFn(instance!.getState(), configObject.autoRunArgs, instance!.getPayload());
+      shouldRun = conditionFn(state, configObject.autoRunArgs, payload);
     } else if (configObject.condition === false) {
       shouldRun = false;
     }
   }
 
-  if (shouldRun) {
+  return shouldRun;
+}
+
+export function autoRun<T, E, R, A extends unknown[], S>(
+  flags: number,
+  source: Source<T, E, R, A> | undefined,
+  config: MixedConfig<T, E, R, A>,
+): CleanupFn {
+
+  // in concurrent mode, runs will be performed by throwing a promise!
+  if (!(flags & AUTO_RUN) || !source || (flags & CONCURRENT)) {
+    return;
+  }
+
+  if (shouldRunGivenConfig(flags, config, source.getState(), source.getPayload())) {
     if (flags & CONFIG_OBJECT && (config as BaseConfig<T, E, R, A>).autoRunArgs) {
       let {autoRunArgs} = (config as BaseConfig<T, E, R, A>);
       if (autoRunArgs && isArray(autoRunArgs)) {
-        return base.run.apply(null, autoRunArgs);
+        return source.run.apply(null, autoRunArgs);
       }
     }
 
-    return base.run.apply(null);
+    return source.run.apply(null);
   }
 }
+

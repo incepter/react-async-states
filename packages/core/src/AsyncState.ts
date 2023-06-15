@@ -157,6 +157,9 @@ export class AsyncState<T, E, R, A extends unknown[]> implements StateInterface<
         let initializer = this.config.initialValue;
         let initialData = isFunction(initializer) ? initializer(this.cache) : initializer;
         this.lastSuccess = StateBuilder.initial(initialData) as LastSuccessSavedState<T, A>;
+        if (maybeHydratedState.state.status === pending) {
+          this.promise = new Promise(() => {});
+        }
       }
     } else {
       let initializer = this.config.initialValue;

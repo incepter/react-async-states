@@ -9,7 +9,7 @@ import {createSource,} from "async-states";
 import {__DEV__} from "../shared";
 import {useCallerName} from "../helpers/useCallerName";
 import {UseAsyncState, UseConfig} from "../types.internal";
-import use from "../use";
+import internalUse from "./internalUse";
 
 let freeze = Object.freeze
 
@@ -209,6 +209,6 @@ function createR18Use<T, E, R, A extends unknown[]>(
     let source = getSource();
     ensureSourceIsDefined(source, resourceName, apiName);
 
-    return use(source, config, deps);
+    return internalUse(source, config, deps);
   }
 }
