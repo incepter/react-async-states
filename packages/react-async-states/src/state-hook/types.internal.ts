@@ -13,8 +13,8 @@ import {RunEffect, Status} from "async-states";
 import {HookChangeEvents} from "./StateHook";
 
 export interface BaseUseAsyncState<T, E, R, A extends unknown[], S = State<T, E, R, A>> extends Source<T, E, R, A> {
-  flags?: number,
-  source?: Source<T, E, R, A>,
+  flags: number,
+  source: Source<T, E, R, A>,
   devFlags?: string[],
 
   onChange(
@@ -43,6 +43,11 @@ export type EqualityFn<T> = (
 export interface BaseConfig<T, E, R, A extends unknown[]> extends ProducerConfig<T, E, R, A> {
   key?: string,
   lane?: string,
+
+  /**
+   * @deprecated useAsyncState 'concurrent' option is deprecated. it will have
+   * a new
+   */
   concurrent?: boolean,
   source?: Source<T, E, R, A>,
   autoRunArgs?: A,
@@ -51,6 +56,10 @@ export interface BaseConfig<T, E, R, A extends unknown[]> extends ProducerConfig
   payload?: Record<string, unknown>,
   events?: UseAsyncStateEvents<T, E, R, A>,
 
+  /**
+   * @deprecated useAsyncState 'wait' option is deprecated. It was never used
+   * in practice. And can be simulated easily.
+   */
   wait?: boolean,
   lazy?: boolean,
   condition?: boolean | ((
@@ -59,7 +68,16 @@ export interface BaseConfig<T, E, R, A extends unknown[]> extends ProducerConfig
     payload?: Record<string, unknown> | null
   ) => boolean),
 
+  /**
+   * @deprecated useAsyncState 'fork' option is deprecated. create a source
+   * separately or use the desired key to create the instance.
+   */
   fork?: boolean,
+
+  /**
+   * @deprecated useAsyncState 'forkConfig' option is deprecated. create a
+   * source separately or use the desired key to create the instance.
+   */
   forkConfig?: ForkConfig
 }
 
@@ -123,9 +141,22 @@ export type UseAsyncStateConfiguration<T, E, R, A extends unknown[], S = State<T
   runEffect?: RunEffect,
   initialValue?: T | ((cache: Record<string, CachedState<T, E, R, A>>) => T),
 
+  /**
+   * @deprecated useAsyncState 'fork' option is deprecated. create a source
+   * separately or use the desired key to create the instance.
+   */
   fork?: boolean,
+
+  /**
+   * @deprecated useAsyncState 'forkConfig' option is deprecated. create a
+   * source separately or use the desired key to create the instance.
+   */
   forkConfig?: ForkConfig,
 
+  /**
+   * @deprecated useAsyncState 'concurrent' option is deprecated. it will have
+   * a new
+   */
   concurrent?: boolean,
 
   lazy?: boolean,
@@ -137,6 +168,11 @@ export type UseAsyncStateConfiguration<T, E, R, A extends unknown[], S = State<T
   events?: UseAsyncStateEvents<T, E, R, A>,
 
   pool?: string,
+
+  /**
+   * @deprecated useAsyncState 'wait' option is deprecated. It was never used
+   * in practice. And can be simulated easily.
+   */
   wait?: boolean,
 
   // dev only
@@ -166,6 +202,10 @@ export type UseAsyncStateEventSubscribe<T, E, R, A extends unknown[]> =
   | ((props: SubscribeEventProps<T, E, R, A>) => CleanupFn)[]
 
 export type UseAsyncStateEvents<T, E, R, A extends unknown[]> = {
+  /**
+   * @deprecated events.change is deprecated and will be removed in v2
+   * use the runc API instead. or onChange, or useEffect.
+   */
   change?: UseAsyncStateEventFn<T, E, R, A> | UseAsyncStateEventFn<T, E, R, A>[],
   subscribe?: UseAsyncStateEventSubscribe<T, E, R, A>,
 }
@@ -205,17 +245,7 @@ export interface UseAsyncStateType<T, E, R, A extends unknown[], S = State<T, E,
     dependencies?: unknown[]
   ): UseAsyncState<T, E, R, A, S>,
 
-  hoist(
-    subscriptionConfig: MixedConfig<T, E, R, A, S>,
-    dependencies?: unknown[]
-  ): UseAsyncState<T, E, R, A, S>,
-
   forkAuto(
-    subscriptionConfig: MixedConfig<T, E, R, A, S>,
-    dependencies?: unknown[]
-  ): UseAsyncState<T, E, R, A, S>,
-
-  hoistAuto(
     subscriptionConfig: MixedConfig<T, E, R, A, S>,
     dependencies?: unknown[]
   ): UseAsyncState<T, E, R, A, S>,

@@ -3,7 +3,7 @@ import {render, screen} from "@testing-library/react";
 import {
   UseAsyncState
 } from "../../types.internal";
-import {useAsyncState} from "../../useAsyncState";
+import {useAsync} from "../../useAsync";
 import {mockDateNow, TESTS_TS} from "../utils/setup";
 import {createSource} from "async-states";
 
@@ -36,7 +36,7 @@ describe('should subscribe to an async state in provider', () => {
       const {
         devFlags,
         state,
-      } = useAsyncState<number>({key: subscribesTo, wait});
+      } = useAsync<number>({key: subscribesTo, wait});
 
       return (
         <div>

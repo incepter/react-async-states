@@ -1,14 +1,14 @@
 import * as React from "react";
 import { act, render, screen } from "@testing-library/react";
-import { useAsyncState } from "../../useAsyncState";
+import { useAsync } from "../../useAsync";
 import { Status } from "async-states";
 import { flushPromises } from "../utils/test-utils";
 
-describe("useAsyncState with concurrent", () => {
+describe("useAsync with concurrent", () => {
 	it("should suspend on initial and pending status and go to success", async () => {
 		jest.useFakeTimers();
 		function Component() {
-			const { state } = useAsyncState({
+			const { state } = useAsync({
 				lazy: false,
 				concurrent: true,
 				key: "test-success",
@@ -39,7 +39,7 @@ describe("useAsyncState with concurrent", () => {
 	it("should suspend on initial and pending status and go to error", async () => {
 		jest.useFakeTimers();
 		function Component() {
-			const { state } = useAsyncState<any, number>({
+			const { state } = useAsync<any, number>({
 				lazy: false,
 				concurrent: true,
 				key: "test-error",

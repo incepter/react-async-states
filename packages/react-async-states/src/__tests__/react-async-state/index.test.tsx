@@ -1,203 +1,232 @@
 import * as React from "react";
-import {act, fireEvent, render, screen} from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import AsyncStateComponent from "../utils/AsyncStateComponent";
-import {flushPromises} from "../utils/test-utils";
-import {createSource, RunEffect, Status} from "async-states";
+import { flushPromises } from "../utils/test-utils";
+import { createSource, RunEffect, Status } from "async-states";
 
-describe('should run producer', () => {
-  it('should delegate to replace state when no producer', async () => {
-    // given
-    const counterSource = createSource<number, any, any>("counter", null, {initialValue: 0});
+describe("should run producer", () => {
+	it("should delegate to replace state when no producer", async () => {
+		// given
+		const counterSource = createSource<number, any, any>("counter", null, {
+			initialValue: 0,
+		});
 
-    function Test() {
-      return (
-          <AsyncStateComponent config={counterSource}>
-            {({run, state}) => (
-              <div>
-                <button data-testid="run" onClick={() => run(old => old.data + 1)}>run</button>
-                <span data-testid="result">{state.data}</span>
-              </div>
-            )}
-          </AsyncStateComponent>
-      );
-    }
+		function Test() {
+			return (
+				<AsyncStateComponent config={counterSource}>
+					{({ source, state }) => (
+						<div>
+							<button
+								data-testid="run"
+								onClick={() => source.run((old) => old.data + 1)}
+							>
+								run
+							</button>
+							<span data-testid="result">{state.data}</span>
+						</div>
+					)}
+				</AsyncStateComponent>
+			);
+		}
 
-    // when
-    render(
-      <React.StrictMode>
-        <Test/>
-      </React.StrictMode>
-    )
-    expect(screen.getByTestId("result").innerHTML).toEqual("0");
+		// when
+		render(
+			<React.StrictMode>
+				<Test />
+			</React.StrictMode>
+		);
+		expect(screen.getByTestId("result").innerHTML).toEqual("0");
 
-    // then
-    act(() => {
-      fireEvent.click(screen.getByTestId("run"));
-    });
+		// then
+		act(() => {
+			fireEvent.click(screen.getByTestId("run"));
+		});
 
-    expect(screen.getByTestId("result").innerHTML).toEqual("1");
-  });
+		expect(screen.getByTestId("result").innerHTML).toEqual("1");
+	});
 
-  it('should run with payload after calling mergePayload', async () => {
-    // given
-    const counterSource = createSource<number, any, any>("counter-2", props => props.payload.userId as number);
+	it("should run with payload after calling mergePayload", async () => {
+		// given
+		const counterSource = createSource<number, any, any>(
+			"counter-2",
+			(props) => props.payload.userId as number
+		);
 
+		function Component({ run }) {
+			const [input, setInput] = React.useState("");
 
-    function Component({ run }) {
-      const [input, setInput] = React.useState("");
+			return (
+				<div>
+					<input
+						data-testid="input"
+						onChange={(e) => setInput(e.target.value)}
+					/>
+					<button data-testid="run" onClick={() => run(input)}>
+						run
+					</button>
+				</div>
+			);
+		}
 
-      return (
-        <div>
-          <input data-testid="input" onChange={e => setInput(e.target.value)} />
-          <button data-testid="run" onClick={() => run(input)}>run</button>
-        </div>
-      );
-    }
+		function Test() {
+			return (
+				<AsyncStateComponent
+					config={{
+						source: counterSource,
+						payload: { userId: "abc" },
+						lazy: false,
+					}}
+				>
+					{({ state, source }) => (
+						<div>
+							<Component
+								run={(value) => {
+									source.mergePayload({ userId: value });
+									source.run();
+								}}
+							/>
+							<span data-testid="result">{state.data}</span>
+						</div>
+					)}
+				</AsyncStateComponent>
+			);
+		}
 
-    function Test() {
-      return (
-        <AsyncStateComponent config={{source: counterSource, payload: {userId: "abc"}, lazy: false}}>
-          {({run, state, mergePayload}) => (
+		// when
+		render(
+			<React.StrictMode>
+				<Test />
+			</React.StrictMode>
+		);
+		expect(screen.getByTestId("result").innerHTML).toEqual("abc");
 
-            <div>
-              <Component run={value => {
-                mergePayload({userId: value});
-                run();
-              }} />
-              <span data-testid="result">{state.data}</span>
-            </div>
-          )}
-        </AsyncStateComponent>
-      );
-    }
+		// then
+		act(() => {
+			fireEvent.change(screen.getByTestId("input"), {
+				target: { value: "hello, world!" },
+			});
+		});
 
-    // when
-    render(
-      <React.StrictMode>
-        <Test/>
-      </React.StrictMode>
-    )
-    expect(screen.getByTestId("result").innerHTML).toEqual("abc");
+		await act(async () => {
+			await flushPromises();
+		});
 
-    // then
-    act(() => {
-      fireEvent.change(screen.getByTestId("input"), {target: {value: 'hello, world!'}});
-    });
+		act(() => {
+			fireEvent.click(screen.getByTestId("run"));
+		});
 
-    await act(async () => {
-      await flushPromises();
-    });
+		await act(async () => {
+			await flushPromises();
+		});
+		expect(screen.getByTestId("result").innerHTML).toEqual("hello, world!");
+	});
+	it("should run in throttle mode", async () => {
+		// given
+		jest.useFakeTimers();
+		let globalMeter = 0;
+		const throttledSource = createSource<number, any, any, [number]>(
+			"throttled",
+			(props) => {
+				return new Promise((resolve) => {
+					let id = setTimeout(() => resolve(props.args[0]), 100);
+					props.onAbort(() => clearTimeout(id));
+				});
+			},
+			{ runEffect: RunEffect.throttle, runEffectDurationMs: 100 }
+		);
 
-    act(() => {
-      fireEvent.click(screen.getByTestId("run"));
-    });
+		function Test() {
+			return (
+				<AsyncStateComponent config={throttledSource}>
+					{({ source: {run}, state }) => (
+						<div>
+							<button data-testid="run" onClick={() => run(++globalMeter)}>
+								run
+							</button>
+							<span data-testid="status">{state.status}</span>
+							<span data-testid="result">{state.data}</span>
+						</div>
+					)}
+				</AsyncStateComponent>
+			);
+		}
 
-    await act(async () => {
-      await flushPromises();
-    });
-    expect(screen.getByTestId("result").innerHTML).toEqual("hello, world!");
-  });
-  it('should run in throttle mode', async () => {
-    // given
-    jest.useFakeTimers();
-    let globalMeter = 0;
-    const throttledSource = createSource<number, any, any, [number]>("throttled", props => {
-      return new Promise(resolve => {
-        let id = setTimeout(() => resolve(props.args[0]), 100);
-        props.onAbort(() => clearTimeout(id));
-      });
-    }, {runEffect: RunEffect.throttle, runEffectDurationMs: 100});
+		// when
+		render(
+			<React.StrictMode>
+				<Test />
+			</React.StrictMode>
+		);
+		expect(screen.getByTestId("status").innerHTML).toEqual(Status.initial);
+		expect(screen.getByTestId("result").innerHTML).toEqual("");
 
-    function Test() {
-      return (
-        <AsyncStateComponent config={throttledSource}>
-          {({run, state}) => (
-            <div>
-              <button data-testid="run" onClick={() => run(++globalMeter)}>run</button>
-              <span data-testid="status">{state.status}</span>
-              <span data-testid="result">{state.data}</span>
-            </div>
-          )}
-        </AsyncStateComponent>
-      );
-    }
+		// then
+		act(() => {
+			fireEvent.click(screen.getByTestId("run")); // 1
+			fireEvent.click(screen.getByTestId("run")); // 2
+		});
 
-    // when
-    render(
-      <React.StrictMode>
-        <Test/>
-      </React.StrictMode>
-    )
-    expect(screen.getByTestId("status").innerHTML)
-      .toEqual(Status.initial);
-    expect(screen.getByTestId("result").innerHTML).toEqual("");
+		expect(screen.getByTestId("status").innerHTML).toEqual(Status.initial); // fires after 100ms
 
-    // then
-    act(() => {
-      fireEvent.click(screen.getByTestId("run")); // 1
-      fireEvent.click(screen.getByTestId("run")); // 2
-    });
+		await act(async () => {
+			await jest.advanceTimersByTime(200);
+		});
 
-    expect(screen.getByTestId("status").innerHTML)
-      .toEqual(Status.initial); // fires after 100ms
+		expect(screen.getByTestId("status").innerHTML).toEqual(Status.success);
+		expect(screen.getByTestId("result").innerHTML).toEqual("1");
+	});
+	it("should run in debounce mode", async () => {
+		// given
+		jest.useFakeTimers();
+		let globalMeter = 0;
+		const debouncedSource = createSource<number, any, any, number[]>(
+			"debounced",
+			(props) => {
+				return new Promise((resolve) => {
+					let id = setTimeout(() => resolve(props.args[0]), 100);
+					props.onAbort(() => clearTimeout(id));
+				});
+			},
+			{ runEffect: RunEffect.debounce, runEffectDurationMs: 100 }
+		);
 
-    await act(async () => {
-      await jest.advanceTimersByTime(200);
-    });
+		function Test() {
+			return (
+				<AsyncStateComponent config={debouncedSource}>
+					{({ source: {run}, state }) => (
+						<div>
+							<button data-testid="run" onClick={() => run(++globalMeter)}>
+								run
+							</button>
+							<span data-testid="status">{state.status}</span>
+							<span data-testid="result">{state.data}</span>
+						</div>
+					)}
+				</AsyncStateComponent>
+			);
+		}
 
-    expect(screen.getByTestId("status").innerHTML)
-      .toEqual(Status.success);
-    expect(screen.getByTestId("result").innerHTML).toEqual("1");
+		// when
+		render(
+			<React.StrictMode>
+				<Test />
+			</React.StrictMode>
+		);
 
-  });
-  it('should run in debounce mode', async () => {
-    // given
-    jest.useFakeTimers();
-    let globalMeter = 0;
-    const debouncedSource = createSource<number, any, any, number[]>("debounced", props => {
-      return new Promise(resolve => {
-        let id = setTimeout(() => resolve(props.args[0]), 100);
-        props.onAbort(() => clearTimeout(id));
-      });
-    }, {runEffect: RunEffect.debounce, runEffectDurationMs: 100});
+		// then
+		act(() => {
+			fireEvent.click(screen.getByTestId("run")); // 1
+			fireEvent.click(screen.getByTestId("run")); // 2
+			fireEvent.click(screen.getByTestId("run")); // 3
+		});
 
-    function Test() {
-      return (
-        <AsyncStateComponent config={debouncedSource}>
-          {({run, state}) => (
-            <div>
-              <button data-testid="run" onClick={() => run(++globalMeter)}>run</button>
-              <span data-testid="status">{state.status}</span>
-              <span data-testid="result">{state.data}</span>
-            </div>
-          )}
-        </AsyncStateComponent>
-      );
-    }
+		expect(screen.getByTestId("status").innerHTML).toEqual(Status.initial); // fires after 100 millis
 
-    // when
-    render(
-      <React.StrictMode>
-        <Test/>
-      </React.StrictMode>
-    )
+		await act(async () => {
+			await jest.advanceTimersByTime(200);
+		});
 
-    // then
-    act(() => {
-      fireEvent.click(screen.getByTestId("run")); // 1
-      fireEvent.click(screen.getByTestId("run")); // 2
-      fireEvent.click(screen.getByTestId("run")); // 3
-    });
-
-    expect(screen.getByTestId("status").innerHTML)
-      .toEqual(Status.initial); // fires after 100 millis
-
-    await act(async () => {
-      await jest.advanceTimersByTime(200);
-    });
-
-    expect(screen.getByTestId("status").innerHTML)
-      .toEqual(Status.success);
-    expect(screen.getByTestId("result").innerHTML).toEqual("3");
-  });
+		expect(screen.getByTestId("status").innerHTML).toEqual(Status.success);
+		expect(screen.getByTestId("result").innerHTML).toEqual("3");
+	});
 });

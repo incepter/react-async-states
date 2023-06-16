@@ -18,6 +18,7 @@ export function Component() {
       return <LoginPage/>
     }
   }
+  console.log('hehe', data);
 
   return (
     <div className="App">

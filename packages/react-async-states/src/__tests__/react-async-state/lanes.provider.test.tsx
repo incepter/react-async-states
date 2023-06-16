@@ -1,7 +1,7 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {mockDateNow} from "../utils/setup";
-import {useAsyncState} from "../../useAsyncState";
+import {useAsync} from "../../useAsync";
 import {createSource} from "async-states";
 import {flushPromises} from "../utils/test-utils";
 import {ProducerProps} from "async-states";
@@ -29,7 +29,7 @@ describe('subscribe to lane and operate on it', () => {
   );
 
   function Runner() {
-    const {run} = useAsyncState(async function (props) {
+    const {source: {run}} = useAsync(async function (props) {
       props.run("counters", {lane: "counter-1"})
       props.runp("counters", {lane: "counter-1-extra"})
       props.runp("not-found", null)
@@ -54,7 +54,7 @@ describe('subscribe to lane and operate on it', () => {
   }
 
   function CounterSub({counterKey = "default", alias = "default"}) {
-    const {state: {data}, run} = useAsyncState({
+    const {state: {data}, source: {run}} = useAsync({
       lane: counterKey,
       key: "counters",
     });

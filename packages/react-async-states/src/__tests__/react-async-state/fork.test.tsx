@@ -3,7 +3,7 @@ import {act, fireEvent, render, screen} from "@testing-library/react";
 import {
   UseAsyncState
 } from "../../types.internal";
-import {useAsyncState} from "../../useAsyncState";
+import {useAsync} from "../../useAsync";
 import {createSource, ForkConfig} from "async-states";
 
 let originalConsoleError = console.error
@@ -38,7 +38,7 @@ describe('should fork an initially hoisted async state', () => {
         run,
         devFlags,
         state,
-      }: UseAsyncState<number, any, any, any[]> = useAsyncState({
+      }: UseAsyncState<number, any, any, any[]> = useAsync({
         fork,
         forkConfig,
         key: subKey,

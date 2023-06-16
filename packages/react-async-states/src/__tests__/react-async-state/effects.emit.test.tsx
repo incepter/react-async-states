@@ -1,6 +1,6 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
-import {useAsyncState} from "../../useAsyncState";
+import {useAsync} from "../../useAsync";
 import {flushPromises} from "../utils/test-utils";
 import {Status} from "async-states";
 
@@ -18,7 +18,7 @@ describe('should emit from producer', () => {
     }
 
     function Component() {
-      const {state} = useAsyncState.auto<any>(producer);
+      const {state} = useAsync.auto<any>(producer);
 
       return <span data-testid="result">{state.data}</span>;
     }
@@ -56,7 +56,7 @@ describe('should emit from producer', () => {
     }
 
     function Component() {
-      const {state} = useAsyncState.auto<any>(producer);
+      const {state} = useAsync.auto<any>(producer);
 
       return <span data-testid="result">{state.data}</span>;
     }
@@ -101,7 +101,7 @@ describe('should emit from producer', () => {
     }
 
     function Component() {
-      const {state, abort} = useAsyncState<number, any, any>({
+      const {state, source: {abort}} = useAsync<number, any, any>({
         producer,
         lazy: false
       });
@@ -157,7 +157,7 @@ describe('should emit from producer', () => {
     }
 
     function Component() {
-      const {state} = useAsyncState<any>({
+      const {state} = useAsync<any>({
         producer,
         lazy: false
       });

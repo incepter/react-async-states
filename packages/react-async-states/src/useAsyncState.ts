@@ -14,6 +14,7 @@ import {__DEV__, emptyArray} from "./shared";
 import {useInternalAsyncState} from "./useInternalAsyncState";
 import {useCallerName} from "./helpers/useCallerName";
 
+let didWarnAboutUseAsyncStateDeprecation = false;
 export const useAsyncStateBase = function useAsyncStateImpl<T, E = unknown, R = unknown, A extends unknown[] = unknown[], S = State<T, E, R, A>>(
   mixedConfig: MixedConfig<T, E, R, A, S>,
   deps: any[] = emptyArray,
@@ -22,6 +23,11 @@ export const useAsyncStateBase = function useAsyncStateImpl<T, E = unknown, R = 
   let caller;
   if (__DEV__) {
     caller = useCallerName(4);
+    if (!didWarnAboutUseAsyncStateDeprecation) {
+      console.error("useAsyncState()  has been renamed to 'useAsync'. " +
+        "Please replace all usages. It should be just a replace in all files.");
+      didWarnAboutUseAsyncStateDeprecation = true;
+    }
   }
   return useInternalAsyncState(caller, mixedConfig, deps, overrides);
 }
@@ -87,10 +93,19 @@ function useLazyAsyncState<T, E = unknown, R = unknown, A extends unknown[] = un
   );
 }
 
+let  didWarnAboutUseForkAsyncStateDeprecation= false;
 function useForkAsyncState<T, E = unknown, R = unknown, A extends unknown[] = unknown[], S = State<T, E, R, A>>(
   subscriptionConfig: MixedConfig<T, E, R, A, S>,
   dependencies?: any[]
 ): UseAsyncState<T, E, R, A, S> {
+  if (__DEV__) {
+    if (!didWarnAboutUseForkAsyncStateDeprecation) {
+      console.error("useAsyncState.fork and useAsyncState.forkAuto are " +
+        "deprecated. The fork system is deprecated, it can be just a creation " +
+        "of a new source or state.");
+      didWarnAboutUseForkAsyncStateDeprecation = true;
+    }
+  }
   return useAsyncStateBase(
     subscriptionConfig,
     dependencies,
@@ -103,6 +118,14 @@ function useForkAutoAsyncState<T, E = unknown, R = unknown, A extends unknown[] 
   subscriptionConfig: MixedConfig<T, E, R, A, S>,
   dependencies?: any[]
 ): UseAsyncState<T, E, R, A, S> {
+  if (__DEV__) {
+    if (!didWarnAboutUseForkAsyncStateDeprecation) {
+      console.error("useAsyncState.fork and useAsyncState.forkAuto are " +
+        "deprecated. The fork system is deprecated, it can be just a creation " +
+        "of a new source or state.");
+      didWarnAboutUseForkAsyncStateDeprecation = true;
+    }
+  }
   return useAsyncStateBase(
     subscriptionConfig,
     dependencies,

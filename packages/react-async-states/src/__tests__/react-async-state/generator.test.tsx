@@ -1,13 +1,13 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
-import {useAsyncState} from "../../useAsyncState";
+import {useAsync} from "../../useAsync";
 import {Status} from "async-states";
 
 describe('should run async state with generator', () => {
   it('should run sync generator', async () => {
     // given
     function Component() {
-      const {state} = useAsyncState.auto<number, any, any>(function* producer() {
+      const {state} = useAsync.auto<number, any, any>(function* producer() {
         yield 1;
         yield 2;
         return yield 3;
@@ -30,7 +30,7 @@ describe('should run async state with generator', () => {
   it('should run sync generator and throw', async () => {
     // given
     function Component() {
-      const {state} = useAsyncState.auto(function* producer() {
+      const {state} = useAsync.auto(function* producer() {
         yield 1;
         yield 2;
         throw new Error("Error there!")
@@ -59,7 +59,7 @@ describe('should run async state with generator', () => {
   it('should run sync generator try and catch', async () => {
     // given
     function Component() {
-      const {state} = useAsyncState.auto<number, any, any>(function* producer() {
+      const {state} = useAsync.auto<number, any, any>(function* producer() {
         try {
           yield 1;
           yield 2;
@@ -92,7 +92,7 @@ describe('should run async state with generator', () => {
     // given
     jest.useFakeTimers();
     function Component() {
-      const {state} = useAsyncState.auto(function* producer() {
+      const {state} = useAsync.auto(function* producer() {
         yield 1;
         yield new Promise(res => setTimeout(res, 100));
         throw new Error("Error there!!")
@@ -128,10 +128,9 @@ describe('should run async state with generator', () => {
 
     function Component() {
       const {
-        run,
+        source: {run, abort},
         state,
-        abort,
-      } = useAsyncState.auto<number, any, any>(function* producer() {
+      } = useAsync.auto<number, any, any>(function* producer() {
         yield 1;
         const a = yield new Promise(resolve => setTimeout(() => resolve("a"), 100));
         const b = yield new Promise(resolve => setTimeout(() => resolve("b"), 100));
