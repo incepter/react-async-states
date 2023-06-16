@@ -1,7 +1,7 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {mockDateNow} from "../utils/setup";
-import {useAsyncState} from "../../useAsyncState";
+import {useAsync} from "../../useAsync";
 import {createSource} from "async-states";
 
 mockDateNow();
@@ -41,7 +41,7 @@ describe('subscribe to lane and operate on it', () => {
   }
 
   function CounterSub({counterKey = "default", alias = "default"}) {
-    const {state: {data}, run} = useAsyncState.lazy({
+    const {state: {data}, source: {run}} = useAsync.lazy({
       lane: counterKey,
       subscriptionKey: alias,
       source: countersSource,

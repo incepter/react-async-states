@@ -1,6 +1,6 @@
 import * as React from "react";
 import {render, screen} from "@testing-library/react";
-import {useAsyncState} from "../../useAsyncState";
+import {useAsync} from "../../useAsync";
 import {createSource, Source, State} from "async-states";
 import {SuccessState} from "async-states/src";
 
@@ -21,7 +21,7 @@ describe('should select from another async state', () => {
     }, {});
 
     function Test() {
-      const {state} = useAsyncState.auto(loggerSource);
+      const {state} = useAsync.auto(loggerSource);
 
       return (
         <>
@@ -57,7 +57,7 @@ describe('should select from another async state', () => {
     }, {});
 
     function Component() {
-      const {state} = useAsyncState({
+      const {state} = useAsync({
         source: loggerSource,
         lazy: false
       });

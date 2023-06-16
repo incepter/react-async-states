@@ -60,7 +60,7 @@ describe('should post subscribe', () => {
       return (
         <Wrapper>
           <AsyncStateComponent config={config}>
-            {({state, run}) => (
+            {({state, source: {run}}) => (
               <>
                 <button data-testid="run"
                         onClick={() => run("test")}>{state.data}</button>

@@ -14,7 +14,14 @@ import {
   HookOwnState,
   hookReturn
 } from "./state-hook/StateHook";
-import {CONCURRENT, CONFIG_OBJECT, SOURCE} from "./state-hook/StateHookFlags";
+import {
+  CHANGE_EVENTS,
+  CONCURRENT,
+  CONFIG_OBJECT, FORK,
+  SOURCE,
+  WAIT
+} from "./state-hook/StateHookFlags";
+import {mapFlags} from "./shared/mapFlags";
 
 function getContextFromMixedConfig(mixedConfig) {
   if (typeof mixedConfig !== "object") {
@@ -23,11 +30,45 @@ function getContextFromMixedConfig(mixedConfig) {
   return mixedConfig.context
 }
 
-export const useInternalAsyncState = function useAsyncStateImpl<T, E, R, A extends unknown[], S = State<T, E, R, A>>(
-  callerName: string | undefined,
-  mixedConfig: MixedConfig<T, E, R, A, S>,
-  deps: any[] = emptyArray,
-  overrides?: PartialUseAsyncStateConfiguration<T, E, R, A, S>,
+let didWarnAboutDeprecatingForkFeature = false;
+let didWarnAboutDeprecatingWaitFeature = false;
+let didWarnAboutDeprecatingChangeEventsOption = false;
+function warnInDevAboutOptionsDeprecation(
+	hook: HookOwnState<any, any, any, any, any>
+) {
+  let flags = hook.flags;
+  if ((flags & CHANGE_EVENTS) && !didWarnAboutDeprecatingChangeEventsOption) {
+    didWarnAboutDeprecatingChangeEventsOption = true;
+    console.error("[WARNING] - useAsyncState 'events.change' option is " +
+      "deprecated. Use source.runc({ onSuccess, onError }) directly. " +
+      "source is returned from useAsyncState and createSource. If you need to " +
+      "react to status changes, check the onChange API or useEffect.");
+  }
+  if ((flags & WAIT) && !didWarnAboutDeprecatingWaitFeature) {
+    didWarnAboutDeprecatingWaitFeature = true;
+    console.error("[WARNING] - useAsyncState 'wait' option is deprecated. " +
+      "We found no use cases for it in practice. The state will be created " +
+      "either ways. It should have no harm and you can reason about it using " +
+      "the existing features, such as status and payload.")
+  }
+  if ((flags & FORK) && !didWarnAboutDeprecatingForkFeature) {
+    didWarnAboutDeprecatingForkFeature = true;
+    console.error("[WARNING] - useAsyncState 'fork' option is deprecated. " +
+      "Create the source with the desired key independently and use it.")
+  }
+}
+
+export const useInternalAsyncState = function useAsyncStateImpl<
+	T,
+	E,
+	R,
+	A extends unknown[],
+	S = State<T, E, R, A>
+>(
+	callerName: string | undefined,
+	mixedConfig: MixedConfig<T, E, R, A, S>,
+	deps: any[] = emptyArray,
+	overrides?: PartialUseAsyncStateConfiguration<T, E, R, A, S>
 ): UseAsyncState<T, E, R, A, S> {
   // the current library's execution context
   let execContext = useExecutionContext(getContextFromMixedConfig(mixedConfig));
@@ -78,7 +119,11 @@ export const useInternalAsyncState = function useAsyncStateImpl<T, E, R, A exten
     }
   }
 
-  return hook.return;
+	if (__DEV__) {
+		warnInDevAboutOptionsDeprecation(hook);
+	}
+
+	return hook.return;
 
   function updateReturnState() {
     setHook(prev => {

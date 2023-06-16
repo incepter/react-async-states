@@ -1,6 +1,6 @@
 import * as React from "react";
 import {act, fireEvent, render, screen} from "@testing-library/react";
-import {useAsyncState} from "../../useAsyncState";
+import {useAsync} from "../../useAsync";
 import AsyncStateComponent from "../utils/AsyncStateComponent";
 import {createSource} from "async-states";
 
@@ -14,15 +14,15 @@ describe('should subscribe to a module level source object', () => {
     );
 
     function Controls() {
-      const {run} = useAsyncState(source);
+      useAsync(source);
 
       return (
         <div>
           <button data-testid="increment"
-                  onClick={() => run(old => old.data + 1)}>increment
+                  onClick={() => source.run(old => old.data + 1)}>increment
           </button>
           <button data-testid="decrement"
-                  onClick={() => run(old => old.data - 1)}>decrement
+                  onClick={() => source.run(old => old.data - 1)}>decrement
           </button>
         </div>
       );
@@ -87,7 +87,7 @@ describe('should subscribe to a module level source object', () => {
       return (
         <>
           <AsyncStateComponent config={source}>
-            {({state, run}) => (
+            {({state, source: {run}}) => (
               <>
                 <button
                   data-testid="increment-a"
@@ -100,7 +100,7 @@ describe('should subscribe to a module level source object', () => {
             )}
           </AsyncStateComponent>
           <AsyncStateComponent config={{source, fork: true}}>
-            {({state, run}) => (
+            {({state, source: {run}}) => (
               <>
                 <button
                   data-testid="increment-b"

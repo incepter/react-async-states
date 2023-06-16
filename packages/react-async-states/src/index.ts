@@ -4,6 +4,8 @@ export {useSelector} from "./useSelector";
 
 export {useProducer} from "./useProducer";
 
+export {useAsync} from "./useAsync";
+
 export {useAsyncState} from "./useAsyncState";
 
 export {
