@@ -150,7 +150,7 @@ function createToken<
 
     let caller;
     if (__DEV__) {
-      caller = useCallerName(3);
+      caller = useCallerName(4);
     }
 
     let source = token()
