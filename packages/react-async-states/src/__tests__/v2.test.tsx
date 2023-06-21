@@ -11,10 +11,15 @@ function getKey() {
 describe("v2 drafts", () => {
 	it("should run in global scope by bound source", async () => {
 		const spy = jest.fn();
-		const unboundSource = createSource(getKey(), spy);
+		const testKey = getKey();
+		const unboundSource = createSource(testKey, spy);
 
+		expect(unboundSource.src).toBe(null);
 		unboundSource.run(1);
 		expect(spy).toHaveBeenCalledTimes(1);
+		expect(unboundSource.src).not.toBe(null);
+		expect(unboundSource.src).not.toBe(unboundSource);
+		expect(unboundSource.src).toBe(createBoundSource(testKey, spy));
 	});
 	it("should create stable bound source", async () => {
 		const spy = jest.fn();
@@ -53,5 +58,7 @@ describe("v2 drafts", () => {
 		expect(boundToContext2).toBe(boundSourceFromContext2);
 
 		expect(boundToContext1).not.toBe(boundToContext2);
+
+		expect(unboundSource.src).toBe(null);
 	});
 });
