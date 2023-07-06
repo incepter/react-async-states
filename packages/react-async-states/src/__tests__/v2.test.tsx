@@ -9,7 +9,7 @@ function getKey() {
 }
 
 describe("v2 drafts", () => {
-	it("should run in global scope by bound source", async () => {
+	it("should run in global scope by unbound source", async () => {
 		const spy = jest.fn();
 		const testKey = getKey();
 		const unboundSource = createSource(testKey, spy);
