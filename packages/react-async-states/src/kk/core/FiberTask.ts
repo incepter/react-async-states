@@ -1,5 +1,5 @@
 import { ICallbacks, RunTask } from "./_types";
-import { noop } from "./utils";
+import { noop } from "../utils";
 
 export function createTask<T, A extends unknown[], R, P>(
 	args: A,

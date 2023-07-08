@@ -37,17 +37,17 @@ export interface IStateFiberRoot<T, A extends unknown[], R, P> {
 export interface IStateFiber<T, A extends unknown[], R, P>
 	extends IStateFiberRoot<T, A, R, P> {
 	id: number;
-	payload: P;
 	version: number;
 
-	state: State<T, A, R, P>;
+	payload: P;
+	state: State<T, A, R, P>; // the current state
 
 	context: ILibraryContext;
-	actions: IStateFiberActions<T, A, R, P>;
-	listeners: StateFiberListeners;
+	listeners: StateFiberListeners; // actual retainers
+	actions: IStateFiberActions<T, A, R, P>; // wrapper to manipulate this fiber
 
-	task: RunTask<T, A, R, P> | null;
-	pending: RunTask<T, A, R, P> | null;
+	task: RunTask<T, A, R, P> | null; // the latest executed task
+	pending: RunTask<T, A, R, P> | null; // the current pending task
 }
 
 export interface ILibraryContext {
@@ -88,6 +88,7 @@ export interface RunTask<T, A extends unknown[], R, P> {
 	args: A;
 	payload: P;
 
+	promise: Promise<T> | null;
 	controller: AbortController;
 	result: T | Promise<T> | null;
 

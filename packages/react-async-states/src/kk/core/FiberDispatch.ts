@@ -1,6 +1,6 @@
 import { IStateFiber, RunTask, SavedProps, State } from "./_types";
 import { cleanFiberTask } from "./FiberTask";
-import {isPromise} from "./utils";
+import {isPromise} from "../utils";
 
 export function dispatchFiberAbortEvent<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,

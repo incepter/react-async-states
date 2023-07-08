@@ -1,4 +1,3 @@
-//region State Root
 import {
 	ILibraryContext,
 	IStateFiber,
@@ -15,49 +14,7 @@ import {
 	enqueueErrorUpdate,
 	enqueueStateUpdate,
 } from "./FiberUpdate";
-
-//region Library Contexts
-let LibraryContexts = new Map();
-
-function requestContext(ctx: any): ILibraryContext {
-	let existing = LibraryContexts.get(ctx);
-	if (existing) {
-		return existing;
-	}
-
-	let context = new LibraryContext(ctx);
-	LibraryContexts.set(ctx, context);
-	return context;
-}
-
-export function retainContext(ctx: any, context: ILibraryContext) {
-	LibraryContexts.set(ctx, context);
-}
-
-export function removeContext(ctx: any) {
-	return LibraryContexts.delete(ctx);
-}
-
-export class LibraryContext implements ILibraryContext {
-	private readonly ctx: any;
-	private readonly list: Map<string, IStateFiber<any, any, any, any>>;
-	constructor(ctx) {
-		this.ctx = ctx;
-		this.get = this.get.bind(this);
-		this.set = this.set.bind(this);
-		this.remove = this.remove.bind(this);
-	}
-	get(key: string): IStateFiber<any, any, any, any> | undefined {
-		return this.list.get(key);
-	}
-	set(key: string, instance: IStateFiber<any, any, any, any>): void {
-		this.list.set(key, instance);
-	}
-	remove(key: string) {
-		this.list.delete(key);
-	}
-}
-//endregion
+import { requestContext } from "./FiberContext";
 
 let stateFiberId = 0;
 
@@ -65,17 +22,18 @@ export class StateFiberRoot<T, A extends unknown[], R, P>
 	implements IStateFiberRoot<T, A, R, P>
 {
 	root: StateRoot<T, A, R, P>;
-	constructor(root) {
+	constructor(root: StateRoot<T, A, R, P>) {
 		this.root = root;
 		this.bind = this.bind.bind(this);
 	}
 
 	bind(ctx: any): IStateFiber<T, A, R, P> {
 		let context = requestContext(ctx);
-		return new StateFiber(this.root, context);
+		let fiber = new StateFiber(this.root, context);
+		context.set(this.root.key, fiber);
+		return fiber;
 	}
 }
-//endregion
 
 export class StateFiber<T, A extends unknown[], R, P>
 	extends StateFiberRoot<T, A, R, P>
@@ -93,9 +51,9 @@ export class StateFiber<T, A extends unknown[], R, P>
 	actions: IStateFiberActions<T, A, R, P>;
 	listeners: StateFiberListeners;
 
-	constructor(root, context: ILibraryContext) {
+	constructor(root: StateRoot<T, A, R, P>, context: ILibraryContext) {
 		super(root);
-		let existingFiber = context.get(root.name);
+		let existingFiber = context.get(root.key);
 
 		if (existingFiber) {
 			return existingFiber;
@@ -110,7 +68,7 @@ export class StateFiber<T, A extends unknown[], R, P>
 		this.state = computeInitialState(this);
 		this.actions = new StateFiberActions(this);
 
-		context.set(root.name, this);
+		// context.set(root.key, this);
 	}
 }
 
