@@ -1,98 +1,182 @@
-import { HookSubscription, SelfHook, UseAsyncOptions } from "./_types";
-import { LibraryContext, requestContext } from "../core/FiberContext";
+import { UseAsyncOptions, UseAsyncReturn } from "./_types";
+import { requestContext } from "../core/FiberContext";
 import React from "react";
 import { AsyncContext } from "./Provider";
 import { ILibraryContext, IStateFiber } from "../core/_types";
 import { StateFiber } from "../core/Fiber";
-import { useSubscription } from "./useSubscription";
-import {isSuspending, registerSuspendingPromise} from "./Suspense";
+import {
+	registerSuspendingPromise,
+	resolveSuspendingPromise,
+} from "./Suspense";
 
+let ZERO = 0;
 export function useAsync<T, A extends unknown[], R, P, S>(
 	options: UseAsyncOptions<T, A, R, P, S>,
 	deps?: any[]
-) {
+): UseAsyncReturn<T, A, R, P, S> {
 	let context = useCurrentContext(options);
 	let fiber = resolveFiber(context, options);
 
-	// throw early on error
-	if (fiber.state.status === "error") {
-		throw fiber.state.error;
-	}
-
-	// suspend early ..
-	if (fiber.pending) {
-		// this means that the state is in pending mode, so we'll need to suspend
-		// until data arrives. Some other hooks "may not suspend"
-		let promise = fiber.pending.promise;
-		if (!promise) {
-			throw new Error("Pending fiber without a promise.");
-		}
-		registerSuspendingPromise(promise);
-
-		throw promise;
-	} else {
-    // check if it was suspending
-    let promise = fiber.task?.promise;
-    if (promise) {
-      let wasSuspending = isSuspending(promise);
-      if (wasSuspending) {
-        recoverFrom
-      }
-    }
-
-  }
-
-	let [hook, updater] = React.useState(() => selectFromFiber(fiber, options));
-	let previousSubscription = attemptHookPreviousSubscription(fiber, updater);
-
-	// this means that this component was already mounted and subscribed
-	// to the state fiber. This implies that we should prevent tearing
-	// mutating this hook.alternate will tell that the component is rendering
-	// we can always test against: hook.value and hook.alternate?.value
-	// these values should always be the same.
-	// When the alternate is found while not rendering, this means that
-	// the component was rendering and did not commit (suspense/offscreen)
-	// The commit of the subscription should always remove the alternate
-	if (previousSubscription) {
-		// this means that the component rendered before, but without committing
-		// probably offscreen, strict mode or something else.
-		if (hook.alternate) {
-		}
-		hook.alternate = {
-			alternate: null,
-			version: fiber.version,
-			value: selectStateFromFiber(fiber, options),
-		};
-	}
-	// this is the first time this hook renders
-	// this means that it cannot be out of sync
-	// another check will be performed when this subscription commits
-	if (!committedValue) {
-	}
-
-	let subscription = useSubscription(fiber, hook, updater, options);
-	renderFiberAtSubscriptionAndContext(context, fiber, subscription);
-
+	// useSubscribeToFiber(fiber)
+	let [start] = React.useTransition();
+	let [update] = React.useState(ZERO);
+	let subscription = getFiberSubscription(fiber, update, start);
 	React.useLayoutEffect(() => commitSubscription(subscription));
-	return hook;
+
+	renderFiber(fiber, subscription, options);
+	subscription.return = getOrCreateSubscriptionReturn(fiber, subscription);
+
+	return subscription.return;
 }
 
-function renderFiberAtSubscriptionAndContext<T, A extends unknown[], R, P, S>(
-	context: ILibraryContext,
-	fiber: IStateFiber<T, A, R, P>,
-	subscription: HookSubscription<T, A, R, P, S>
-) {}
-
-function selectFromFiber<T, A extends unknown[], R, P, S>(
-	fiber: IStateFiber<T, A, R, P>,
-	options: UseAsyncOptions<T, A, R, P, S>
-): SelfHook<T, A, R, P, S> {
-	let value = selectStateFromFiber(fiber, options) as S;
-	return {
-		value,
-		alternate: null,
-		version: fiber.version,
+function renderFiber(fiber, subscription, options) {
+	subscription.alternate = {
+		options,
+		return: subscription.return,
+		version: subscription.version,
 	};
+
+	let shouldRun = shouldSubscriptionTriggerRenderPhaseRun(subscription);
+	if (shouldRun) {
+		let renderRunArgs = getRenderRunArgs(options);
+		fiber.actions.run.apply(null, renderRunArgs);
+	}
+
+	let pending = fiber.pending;
+	if (pending) {
+		let promise = pending.promise;
+		registerSuspendingPromise(promise);
+		throw pending.promise;
+	} else {
+		let previousPromise = fiber.task.promise;
+		// async branch
+		if (previousPromise) {
+			resolveSuspendingPromise(previousPromise);
+		}
+		if (fiber.task.status === "error") {
+			throw fiber.task.error;
+		}
+	}
+}
+
+function getRenderRunArgs(options) {
+	if (!options) {
+		return [];
+	}
+}
+function shouldSubscriptionTriggerRenderPhaseRun(subscription) {
+	let fiber = subscription.fiber;
+	let options = subscription.alternate.options;
+	if (options && typeof options === "object") {
+		if (
+			options.lazy === false &&
+			!options.args &&
+			didArgsChange(options.args, fiber.state.args)
+		) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+function getOrCreateSubscriptionReturn(fiber, subscription) {
+	let alternate = subscription.alternate;
+	if (alternate.version !== fiber.version) {
+		let value;
+		if (fiber.state.status === "success") {
+			value = selectStateFromFiber(fiber, alternate.options);
+		}
+
+		if (!Object.is(value, alternate.return.data)) {
+			alternate.return = createSubscriptionReturn(subscription, value);
+		}
+
+		alternate.version = fiber.version;
+	}
+	return alternate.return;
+}
+
+function createSubscriptionReturn(subscription, value) {
+	let {
+		fiber,
+		alternate: { state },
+	} = subscription;
+	let { status, error } = state;
+
+	return {
+		error,
+		state,
+		data: value,
+		source: fiber.actions,
+		isError: status === "error",
+		isInitial: status === "initial",
+		isPending: status === "pending",
+		isSuccess: status === "success",
+	};
+}
+
+function getFiberSubscription(fiber, update, start) {
+	let prevSubscription = findFiberSubscription(fiber, update);
+	if (prevSubscription) {
+		return prevSubscription;
+	}
+	return createSubscription(fiber, update, start);
+}
+
+function findFiberSubscription(fiber, update) {
+	return fiber.listeners.get(update);
+}
+
+function createSubscription(fiber, update, start) {
+	return {
+		fiber,
+		start,
+		update,
+		flags: 0,
+		alternate: null,
+	};
+}
+
+function commitSubscription<T, A extends unknown[], R, P, S>(subscription) {
+	let { fiber, alternate, update } = subscription;
+
+	subscription.base = alternate.base;
+	subscription.flags = alternate.flags;
+	subscription.return = alternate.return;
+	subscription.version = alternate.version;
+
+	alternate = null;
+	subscription.alternate = null;
+
+	let unsubscribe = fiber.subscribe(
+		() => subscribeComponent(subscription),
+		subscription
+	);
+
+	return () => {
+		unsubscribe();
+	};
+}
+
+function subscribeComponent(subscription) {
+	let { fiber, return: returnedValue } = subscription.fiber;
+	return function update() {
+		if (fiber.version !== returnedValue.version) {
+			let newValue = selectValueForSubscription(fiber, subscription);
+			if (!Object.is(newValue, returnedValue.data)) {
+				subscription.update((prev) => prev + 1);
+			}
+		}
+	};
+}
+
+function selectValueForSubscription(fiber, subscription) {
+	let options = subscription.options;
+	if (options.selector) {
+		return options.selector(fiber.state);
+	}
+	return fiber.state;
 }
 
 function selectStateFromFiber(fiber, options) {
