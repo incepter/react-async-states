@@ -1,11 +1,12 @@
 import {
 	ILibraryContext,
+	InitialState,
 	IStateFiber,
 	IStateFiberActions,
 	IStateFiberRoot,
 	RuncProps,
 	RunTask,
-	StateFiberListeners,
+	State,
 	StateRoot,
 } from "./_types";
 import { runcStateFiber, runpStateFiber, runStateFiber } from "./FiberRun";
@@ -43,13 +44,14 @@ export class StateFiber<T, A extends unknown[], R, P>
 	payload: P;
 	version: number;
 
-	state: any; // TBD
+	state: State<T, A, R, P>; // TBD
+	// todo: keep only one of these, mostly the "pending" one
 	task: RunTask<T, A, R, P> | null;
 	pending: RunTask<T, A, R, P> | null;
 
 	context: ILibraryContext;
+	listeners: Map<Function, any>;
 	actions: IStateFiberActions<T, A, R, P>;
-	listeners: StateFiberListeners;
 
 	constructor(root: StateRoot<T, A, R, P>, context: ILibraryContext) {
 		super(root);
@@ -62,10 +64,12 @@ export class StateFiber<T, A extends unknown[], R, P>
 		this.version = 0;
 		this.task = null;
 		this.pending = null;
-		// this.payload = null; todo
+		// todo: support payload
+		// this.payload = null;
 		this.context = context;
 		this.id = ++stateFiberId;
 		this.state = computeInitialState(this);
+		this.listeners = new Map<Function, any>();
 		this.actions = new StateFiberActions(this);
 
 		// context.set(root.key, this);
@@ -74,7 +78,7 @@ export class StateFiber<T, A extends unknown[], R, P>
 
 function computeInitialState<T, A extends unknown[], R, P>(
 	instance: IStateFiber<T, A, R, P>
-) {
+): InitialState<T> {
 	let { root } = instance;
 	let config = root.config;
 	let state = {
@@ -84,10 +88,11 @@ function computeInitialState<T, A extends unknown[], R, P>(
 	if (config && Object.hasOwn(config, "initialValue")) {
 		// @ts-ignore
 		// todo: function + pass cache
+		// todo: try catch to trigger error initially
 		state.data = config.initialValue;
 	}
 
-	return Object.freeze(state);
+	return Object.freeze(state as InitialState<T>);
 }
 
 export class StateFiberActions<T, A extends unknown[], R, P>
@@ -97,13 +102,25 @@ export class StateFiberActions<T, A extends unknown[], R, P>
 
 	constructor(instance: IStateFiber<T, A, R, P>) {
 		this.self = instance;
+		this.getPayload = this.getPayload.bind(this);
+		this.mergePayload = this.mergePayload.bind(this);
+		this.run = this.run.bind(this);
+		this.runp = this.runp.bind(this);
+		this.runc = this.runc.bind(this);
+		this.setData = this.setData.bind(this);
+		this.setError = this.setError.bind(this);
+		this.setState = this.setState.bind(this);
+		this.runc = this.runc.bind(this);
+		this.dispose = this.dispose.bind(this);
+		this.getState = this.getState.bind(this);
+		this.subscribe = this.subscribe.bind(this);
 	}
 
-	getPayload(): any {
+	getPayload(): P {
 		return this.self.payload;
 	}
 
-	mergePayload(p: any): void {
+	mergePayload(p: Partial<P>): void {
 		this.self.payload = Object.assign({}, this.self.payload, p);
 	}
 
@@ -141,5 +158,11 @@ export class StateFiberActions<T, A extends unknown[], R, P>
 
 	getState(): any {
 		return this.self.state;
+	}
+
+	subscribe(cb: Function, data: any): () => void {
+		let instance = this.self;
+		instance.listeners.set(cb, data);
+		return () => instance.listeners.delete(cb);
 	}
 }

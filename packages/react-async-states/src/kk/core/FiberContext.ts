@@ -29,6 +29,7 @@ export class LibraryContext implements ILibraryContext {
 		this.get = this.get.bind(this);
 		this.set = this.set.bind(this);
 		this.remove = this.remove.bind(this);
+		this.list = new Map<string, IStateFiber<any, any, any, any>>();
 	}
 	get(key: string): IStateFiber<any, any, any, any> | undefined {
 		return this.list.get(key);

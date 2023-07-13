@@ -18,6 +18,7 @@ export function createTask<T, A extends unknown[], R, P>(
 		controller,
 		clean: noop,
 		result: null,
+		promise: null,
 
 		indicators: {
 			aborted: false,

@@ -1,6 +1,6 @@
 import { IStateFiber, RunTask, SavedProps, State } from "./_types";
 import { cleanFiberTask } from "./FiberTask";
-import {isPromise} from "../utils";
+import { isPromise } from "../utils";
 
 export function dispatchFiberAbortEvent<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
@@ -39,9 +39,9 @@ function trackPendingFiberPromise<T, A extends unknown[], R, P>(
 function dispatchFiberNotificationEvent<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>
 ) {
-	Object.values(fiber.listeners).forEach((listener) => {
-		listener.notify();
-	});
+	for (let listener of fiber.listeners.values()) {
+		listener.callback();
+	}
 }
 
 export function dispatchFiberDataEvent<T, A extends unknown[], R, P>(
@@ -54,6 +54,7 @@ export function dispatchFiberDataEvent<T, A extends unknown[], R, P>(
 		timestamp: Date.now(),
 		props: savedPropsFromDataUpdate<A, P>(data, fiber.payload),
 	};
+	fiber.version += 1;
 	dispatchFiberNotificationEvent(fiber);
 }
 
@@ -78,6 +79,7 @@ export function dispatchFiberErrorEvent<T, A extends unknown[], R, P>(
 		timestamp: Date.now(),
 		props: savedPropsFromDataUpdate<A, P>(error, fiber.payload),
 	};
+	fiber.version += 1;
 	dispatchFiberNotificationEvent(fiber);
 }
 
@@ -86,5 +88,6 @@ export function dispatchFiberStateChangeEvent<T, A extends unknown[], R, P>(
 	state: State<T, A, R, P>
 ) {
 	fiber.state = state;
+	fiber.version += 1;
 	dispatchFiberNotificationEvent(fiber);
 }

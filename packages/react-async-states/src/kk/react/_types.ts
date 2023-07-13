@@ -1,13 +1,12 @@
 import * as React from "react";
 import {
+	BaseFiberConfig,
 	Fn,
 	ILibraryContext,
 	IStateFiber,
 	IStateFiberActions,
-	State
+	State,
 } from "../core/_types";
-import { Config } from "../../v2/source";
-import {StateFiberActions} from "../core/Fiber";
 
 export type IAsyncContext = ILibraryContext;
 
@@ -17,8 +16,11 @@ export interface IAsyncProviderProps {
 }
 
 export interface UseAsyncOptions<T, A extends unknown[], R, P, S>
-	extends Config<T, A, R, P> {
+	extends BaseFiberConfig<T, A, R, P> {
+	args?: A;
+
 	key: string;
+	context?: any;
 	producer?: Fn<T, A, R, P>;
 	selector?: (p: State<T, A, R, P>) => S;
 }
@@ -40,8 +42,26 @@ export interface HookSubscription<T, A extends unknown[], R, P, S> {
 	self: React.Dispatch<React.SetStateAction<S>>;
 }
 
-export interface SelfHook<T, A extends unknown[], R, P, S> {
+export interface IFiberSubscription<T, A extends unknown[], R, P, S> {
+  // same as alternate
+	// the alternate gets merged on commit each time it renders
+	deps: any[];
+	flags: number;
 	version: number;
-	return: UseAsyncReturn<T, A, R, P, S>;
-	alternate: SelfHook<T, A, R, P, S> | null;
+	options: UseAsyncOptions<T, A, R, P, S>;
+	return: UseAsyncReturn<T, A, R, P, S> | null;
+
+	// static per subscription
+	callback: Function | null;
+	fiber: IStateFiber<T, A, R, P>;
+	start: React.TransitionStartFunction;
+	update: React.Dispatch<React.SetStateAction<number>>;
+
+	alternate: null | {
+		deps: any[];
+		flags: number;
+		version: number;
+		options: UseAsyncOptions<T, A, R, P, S>;
+		return: UseAsyncReturn<T, A, R, P, S> | null;
+	};
 }

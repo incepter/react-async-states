@@ -1,7 +1,7 @@
 export type AbortFn = () => void;
 
 export type Fn<T, A extends unknown[], R, P> = {
-	(props: FnProps<T, A, R, P>): AbortFn;
+	(props: FnProps<T, A, R, P>): T | Promise<T>;
 };
 
 export interface BaseFiberConfig<T, A extends unknown[], R, P> {
@@ -43,7 +43,7 @@ export interface IStateFiber<T, A extends unknown[], R, P>
 	state: State<T, A, R, P>; // the current state
 
 	context: ILibraryContext;
-	listeners: StateFiberListeners; // actual retainers
+	listeners: Map<Function, any>; // actual retainers
 	actions: IStateFiberActions<T, A, R, P>; // wrapper to manipulate this fiber
 
 	task: RunTask<T, A, R, P> | null; // the latest executed task
@@ -73,6 +73,7 @@ export interface IStateFiberActions<T, A extends unknown[], R, P> {
 	mergePayload(p: Partial<P>): void;
 
 	dispose(): void;
+	subscribe(cb: Function, data: any): () => void;
 }
 
 export interface RuncProps<T, A extends unknown[], R, P> {
@@ -81,8 +82,6 @@ export interface RuncProps<T, A extends unknown[], R, P> {
 	onError?(e: R): void;
 	onSuccess?(s: T): void;
 }
-
-export interface StateFiberListeners {}
 
 export interface RunTask<T, A extends unknown[], R, P> {
 	args: A;

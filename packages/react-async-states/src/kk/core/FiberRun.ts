@@ -1,4 +1,4 @@
-import { ICallbacks, IStateFiber, RuncProps, RunTask } from "./_types";
+import {FnProps, ICallbacks, IStateFiber, RuncProps, RunTask} from "./_types";
 import { cleanFiberTask, createTask } from "./FiberTask";
 import {
 	dispatchFiberAbortEvent,
@@ -57,12 +57,24 @@ function runFiberTask<T, A extends unknown[], R, P>(
 
 	// todo: cache support
 	// todo: run effects support
-	// todo: run "PROPS" construction and call, with gens support etc
 
 	task.clean = () => dispatchFiberAbortEvent(fiber, task);
 
-	// @ts-ignore
-	task.result = fn.apply(null, task.args);
+	// todo: add other effects (emit, select, run)
+	// todo:
+	task.result = fn({
+		args: task.args,
+		// todo: this abort is wrong, it can cause infinite pending states
+		// we need an abort that's bound to this task, that would bailout the work
+		// to the previous state and remove the pending state, and notify if needed
+		abort: task.clean,
+		onAbort: task.onAbort,
+		payload: task.payload,
+		signal: task.controller.signal,
+		isAborted(): boolean {
+			return task.indicators.aborted;
+		}
+	} as FnProps<T, A, R, P>);
 
 	if (fiber.task) {
 		cleanFiberTask(fiber.task);

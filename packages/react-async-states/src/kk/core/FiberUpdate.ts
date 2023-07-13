@@ -1,4 +1,4 @@
-import {IStateFiber, State, StateFiberUpdate, SuccessState} from "./_types";
+import { IStateFiber, State, StateFiberUpdate, SuccessState } from "./_types";
 import {
 	dispatchFiberDataEvent,
 	dispatchFiberErrorEvent,
@@ -10,19 +10,23 @@ export function enqueueDataUpdate<T, A extends unknown[], R, P>(
 	update: StateFiberUpdate<T>
 ) {
 	// todo: check queue
-  // todo: bring a succeeded state rather than stamping into error
+	// todo: bring a succeeded state rather than stamping into error
 	if (isFunction(update)) {
-    const current = fiber.state;
-    try {
-      const next = update((current as SuccessState<T, A, P>).data);
-      dispatchFiberDataEvent(fiber, next);
-    } catch (e) {
-      enqueueErrorUpdate(fiber, e);
-    }
+		const current = fiber.state;
+		try {
+			if (current.status === "success") {
+				dispatchFiberDataEvent(fiber, update(current.data));
+			} else {
+				let initialState = fiber.root.config?.initialValue as T;
+				dispatchFiberDataEvent(fiber, update(initialState));
+			}
+		} catch (e) {
+			enqueueErrorUpdate(fiber, e);
+		}
 	} else {
-    dispatchFiberDataEvent(fiber, update);
-    return;
-  }
+		dispatchFiberDataEvent(fiber, update);
+		return;
+	}
 }
 
 export function enqueueErrorUpdate<T, A extends unknown[], R, P>(
@@ -52,5 +56,5 @@ export function enqueueStateUpdate<T, A extends unknown[], R, P>(
 }
 
 export function isFunction(fn): fn is Function {
-  return typeof fn === "function";
+	return typeof fn === "function";
 }
