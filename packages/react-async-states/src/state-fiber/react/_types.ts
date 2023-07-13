@@ -1,11 +1,15 @@
 import * as React from "react";
 import {
 	BaseFiberConfig,
+	ErrorState,
 	Fn,
 	ILibraryContext,
+	InitialState,
 	IStateFiber,
 	IStateFiberActions,
+	PendingState,
 	State,
+	SuccessState,
 } from "../core/_types";
 
 export type IAsyncContext = ILibraryContext;
@@ -25,15 +29,11 @@ export interface UseAsyncOptions<T, A extends unknown[], R, P, S>
 	selector?: (p: State<T, A, R, P>) => S;
 }
 
-export interface UseAsyncReturn<T, A extends unknown[], R, P, S> {
-	data: S;
-	error: R;
-	isError: boolean;
-	isSuccess: boolean;
-	isPending: boolean;
-	state: State<T, A, R, P>;
-	source: IStateFiberActions<T, A, R, P>;
-}
+export type UseAsyncReturn<T, A extends unknown[], R, P, S> =
+	| UseAsyncInitialReturn<T, A, R, P, S>
+	| UseAsyncPendingReturn<T, A, R, P, S>
+	| UseAsyncSuccessReturn<T, A, R, P, S>
+	| UseAsyncErrorReturn<T, A, R, P, S>;
 
 export interface HookSubscription<T, A extends unknown[], R, P, S> {
 	flags: number;
@@ -43,7 +43,7 @@ export interface HookSubscription<T, A extends unknown[], R, P, S> {
 }
 
 export interface IFiberSubscription<T, A extends unknown[], R, P, S> {
-  // same as alternate
+	// same as alternate
 	// the alternate gets merged on commit each time it renders
 	deps: any[];
 	flags: number;
@@ -65,3 +65,47 @@ export interface IFiberSubscription<T, A extends unknown[], R, P, S> {
 		return: UseAsyncReturn<T, A, R, P, S> | null;
 	};
 }
+
+export type UseAsyncErrorReturn<T, A extends unknown[], R, P, S> = {
+	state: ErrorState<A, R, P>;
+	data: null;
+	isError: true;
+	isInitial: false;
+	isPending: false;
+	isSuccess: false;
+	error: R;
+	source: IStateFiberActions<T, A, R, P>;
+};
+
+export type UseAsyncInitialReturn<T, A extends unknown[], R, P, S> = {
+	state: InitialState<T>;
+	data: S;
+	isError: false;
+	isInitial: true;
+	isPending: false;
+	isSuccess: false;
+	error: null;
+	source: IStateFiberActions<T, A, R, P>;
+};
+
+export type UseAsyncPendingReturn<T, A extends unknown[], R, P, S> = {
+	state: PendingState<T, A, R, P>;
+	data: S;
+	isError: false;
+	isInitial: false;
+	isPending: true;
+	isSuccess: false;
+	error: null;
+	source: IStateFiberActions<T, A, R, P>;
+};
+
+export type UseAsyncSuccessReturn<T, A extends unknown[], R, P, S> = {
+	state: SuccessState<T, A, P>;
+	data: S;
+	isError: false;
+	isInitial: false;
+	isPending: false;
+	isSuccess: true;
+	error: null;
+	source: IStateFiberActions<T, A, R, P>;
+};

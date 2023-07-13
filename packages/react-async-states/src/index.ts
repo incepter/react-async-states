@@ -85,4 +85,4 @@ export type {
 	UseAsyncStateChangeEventHandler,
 } from "./types.internal";
 
-export { useAsync as useV2 } from "./kk/react/useAsync";
+export { useAsync as useV2 } from "./kk/react/FiberHooks";

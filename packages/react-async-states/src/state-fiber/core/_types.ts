@@ -114,8 +114,8 @@ export type InitialState<T> = {
 export type PendingState<T, A extends unknown[], R, P> = {
 	timestamp: number;
 	status: "pending";
-	prev: State<T, A, R, P>;
 	props: SavedProps<A, P>;
+	prev: InitialState<T> | ErrorState<A, R, P> | SuccessState<T, A, P>;
 };
 
 export type ErrorState<A extends unknown[], R, P> = {
