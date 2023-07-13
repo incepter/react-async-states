@@ -1,4 +1,4 @@
-import { IStateFiber, State, StateFiberUpdate, SuccessState } from "./_types";
+import { IStateFiber, State, StateFiberUpdate } from "./_types";
 import {
 	dispatchFiberDataEvent,
 	dispatchFiberErrorEvent,

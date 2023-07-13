@@ -1,4 +1,4 @@
-import {FnProps, ICallbacks, IStateFiber, RuncProps, RunTask} from "./_types";
+import { FnProps, ICallbacks, IStateFiber, RuncProps, RunTask } from "./_types";
 import { cleanFiberTask, createTask } from "./FiberTask";
 import {
 	dispatchFiberAbortEvent,
@@ -73,7 +73,7 @@ function runFiberTask<T, A extends unknown[], R, P>(
 		signal: task.controller.signal,
 		isAborted(): boolean {
 			return task.indicators.aborted;
-		}
+		},
 	} as FnProps<T, A, R, P>);
 
 	if (fiber.task) {
