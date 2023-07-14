@@ -1,61 +1,79 @@
 import { ILibraryContext, IStateFiber } from "../core/_types";
-import { IFiberSubscription, UseAsyncOptions } from "./_types";
 import {
+	IFiberSubscription,
+	IFiberSubscriptionAlternate,
+	HooksStandardOptions,
+} from "./_types";
+import {
+	isSuspending,
 	registerSuspendingPromise,
 	resolveSuspendingPromise,
 } from "./FiberSuspense";
 import { didDepsChange } from "../../shared";
 import { emptyArray } from "../utils";
 import { StateFiber } from "../core/Fiber";
+import {
+	CONCURRENT,
+	humanizeFlags,
+	SUSPENDING,
+	THROW_ON_ERROR
+} from "./FiberSubscriptionFlags";
 
 export function renderFiber<T, A extends unknown[], R, P, S>(
-	fiber: IStateFiber<T, A, R, P>,
+	renderFlags: number,
 	subscription: IFiberSubscription<T, A, R, P, S>,
-	options: UseAsyncOptions<T, A, R, P, S>,
-	deps: any[]
-) {
-	// this means that alternate has been constructed somewhere to make
-	// this path faster
-	if (
-		!subscription.alternate ||
-		subscription.alternate.version !== fiber.version
-	) {
-		subscription.alternate = {
+	options: HooksStandardOptions<T, A, R, P, S>,
+	deps: any[],
+): IFiberSubscriptionAlternate<T, A, R, P, S> {
+	let fiber = subscription.fiber;
+	let alternate = subscription.alternate;
+	// the alternate presence means that we started rendering without committing
+	// this is either because of StrictMode, Offscreen or we prepared the
+	// alternate so this path would be faster
+	if (!alternate || alternate.version !== fiber.version) {
+		alternate = {
 			deps,
 			options,
-			flags: 0,
+			flags: renderFlags,
 			return: subscription.return,
 			version: subscription.version,
 		};
 	}
 
-	let shouldRun = shouldSubscriptionTriggerRenderPhaseRun(subscription);
+	let shouldRun = shouldRunOnRender(subscription, alternate);
 
 	if (shouldRun) {
 		let renderRunArgs = getRenderRunArgs(options);
 		fiber.actions.run.apply(null, renderRunArgs);
 	}
 
-	let pending = fiber.pending;
-	if (pending) {
-		let promise = pending.promise;
-		registerSuspendingPromise(promise!);
-		throw pending.promise;
-	} else {
-		let task = fiber.task;
-		let previousPromise = task?.promise;
-		// async branch
-		if (previousPromise) {
-			resolveSuspendingPromise(previousPromise);
+	if (renderFlags & CONCURRENT) {
+		if (fiber.pending) {
+			let promise = fiber.pending.promise!;
+			registerSuspendingPromise(promise);
+			throw promise;
 		}
-		// if (fiber.state.status === "error") {
-		// 	throw fiber.state.error;
-		// }
+		let previousPromise = fiber.task?.promise;
+		if (previousPromise && isSuspending(previousPromise)) {
+			// we mark it as suspending, this means that this promise
+			// was previously suspending a tree.
+			// Since we don't know when/if react will recover from suspense,
+			// we mark the alternate as being suspending, so in commit phase,
+			// we will notify subscribers
+			if (!(alternate.flags & SUSPENDING)) {
+				alternate.flags |= SUSPENDING;
+			}
+		}
 	}
+	if ((renderFlags & THROW_ON_ERROR) && fiber.state.status === "error") {
+		throw fiber.state.error;
+	}
+
+	return alternate;
 }
 
 function getRenderRunArgs<T, A extends unknown[], R, P, S>(
-	options: UseAsyncOptions<T, A, R, P, S>
+	options: HooksStandardOptions<T, A, R, P, S>
 ) {
 	if (!options) {
 		return emptyArray as unknown as A;
@@ -63,20 +81,23 @@ function getRenderRunArgs<T, A extends unknown[], R, P, S>(
 	return (options.args || emptyArray) as A;
 }
 
-function shouldSubscriptionTriggerRenderPhaseRun<
-	T,
-	A extends unknown[],
-	R,
-	P,
-	S
->(subscription) {
+function shouldRunOnRender<T, A extends unknown[], R, P, S>(
+	subscription: IFiberSubscription<T, A, R, P, S>,
+	alternate: IFiberSubscriptionAlternate<T, A, R, P, S>
+) {
 	let fiber = subscription.fiber;
-	let options = subscription.alternate.options;
+	let options = alternate.options;
+
 	if (options && typeof options === "object") {
 		if (
 			options.lazy === false &&
-			!options.args &&
-			didDepsChange(options.args || emptyArray, fiber.state.args || emptyArray)
+			options.args &&
+			// todo: this is wrong, do something correct
+			didDepsChange(
+				options.args || emptyArray,
+				// @ts-ignore
+				fiber.state.props.args || emptyArray
+			)
 		) {
 			return true;
 		}
@@ -87,7 +108,7 @@ function shouldSubscriptionTriggerRenderPhaseRun<
 
 export function resolveFiber<T, A extends unknown[], R, P, S>(
 	context: ILibraryContext,
-	options: UseAsyncOptions<T, A, R, P, S>
+	options: HooksStandardOptions<T, A, R, P, S>
 ) {
 	if (typeof options === "object") {
 		// todo: get rid of object destructuring
@@ -111,7 +132,7 @@ export function resolveFiber<T, A extends unknown[], R, P, S>(
 }
 
 function sliceFiberConfig<T, A extends unknown[], R, P, S>(
-	options: UseAsyncOptions<T, A, R, P, S>
+	options: HooksStandardOptions<T, A, R, P, S>
 ) {
 	return options; // todo
 }

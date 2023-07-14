@@ -25,7 +25,6 @@ export function enqueueDataUpdate<T, A extends unknown[], R, P>(
 		}
 	} else {
 		dispatchFiberDataEvent(fiber, update);
-		return;
 	}
 }
 

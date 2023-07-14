@@ -1,10 +1,10 @@
 import * as React from "react";
-import { useV2 } from "react-async-states/src";
+import {useFiber, useModern} from "react-async-states/src";
 
 export default function V2() {
 	let rerender = React.useState({})[1];
 	console.time("v2")
-	let result = useV2({
+	let result = useModern({
 		key: "hello",
 		initialValue: 0,
 	});
@@ -14,7 +14,7 @@ export default function V2() {
 		<div>
 			Data: {result.data as string};
 			<br />
-			Error: {result.error?.toString()}
+			{/*Error: {result.error?.toString()}*/}
 			<br />
 			<button
 				onClick={() => {

@@ -19,51 +19,44 @@ export interface IAsyncProviderProps {
 	children: React.ReactNode;
 }
 
-export interface UseAsyncOptions<T, A extends unknown[], R, P, S>
+export interface HooksStandardOptions<T, A extends unknown[], R, P, S>
 	extends BaseFiberConfig<T, A, R, P> {
 	args?: A;
 
 	key: string;
 	context?: any;
+	lazy?: boolean;
 	producer?: Fn<T, A, R, P>;
 	selector?: (p: State<T, A, R, P>) => S;
 }
 
-export type UseAsyncReturn<T, A extends unknown[], R, P, S> =
+export type ModernHooksReturn<T, A extends unknown[], R, P, S> =
+	| UseAsyncInitialReturn<T, A, R, P, S>
+	| UseAsyncSuccessReturn<T, A, R, P, S>;
+
+export type LegacyHooksReturn<T, A extends unknown[], R, P, S> =
 	| UseAsyncInitialReturn<T, A, R, P, S>
 	| UseAsyncPendingReturn<T, A, R, P, S>
 	| UseAsyncSuccessReturn<T, A, R, P, S>
 	| UseAsyncErrorReturn<T, A, R, P, S>;
 
-export interface HookSubscription<T, A extends unknown[], R, P, S> {
-	flags: number;
-	fiber: IStateFiber<T, A, R, P>;
-	start: React.TransitionStartFunction;
-	self: React.Dispatch<React.SetStateAction<S>>;
-}
-
-export interface IFiberSubscription<T, A extends unknown[], R, P, S> {
-	// same as alternate
-	// the alternate gets merged on commit each time it renders
+export interface IFiberSubscriptionAlternate<T, A extends unknown[], R, P, S> {
 	deps: any[];
 	flags: number;
 	version: number;
-	options: UseAsyncOptions<T, A, R, P, S>;
-	return: UseAsyncReturn<T, A, R, P, S> | null;
+	options: HooksStandardOptions<T, A, R, P, S>;
+	return: LegacyHooksReturn<T, A, R, P, S> | null;
+}
 
+export interface IFiberSubscription<T, A extends unknown[], R, P, S>
+	extends IFiberSubscriptionAlternate<T, A, R, P, S> {
 	// static per subscription
 	callback: Function | null;
 	fiber: IStateFiber<T, A, R, P>;
 	start: React.TransitionStartFunction;
 	update: React.Dispatch<React.SetStateAction<number>>;
 
-	alternate: null | {
-		deps: any[];
-		flags: number;
-		version: number;
-		options: UseAsyncOptions<T, A, R, P, S>;
-		return: UseAsyncReturn<T, A, R, P, S> | null;
-	};
+	alternate: null | IFiberSubscriptionAlternate<T, A, R, P, S>;
 }
 
 export type UseAsyncErrorReturn<T, A extends unknown[], R, P, S> = {

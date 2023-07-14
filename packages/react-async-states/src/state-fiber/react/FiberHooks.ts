@@ -1,48 +1,56 @@
 import * as React from "react";
-import { UseAsyncOptions, UseAsyncReturn } from "./_types";
+import {
+	LegacyHooksReturn,
+	ModernHooksReturn,
+	HooksStandardOptions,
+} from "./_types";
 import { emptyArray } from "../utils";
 import { useCurrentContext } from "./FiberProvider";
 import {
-	getFiberSubscription,
-	getOrCreateSubscriptionReturn,
+	inferLegacySubscriptionReturn,
+	inferModernSubscriptionReturn,
+	useSubscription,
 } from "./FiberSubscription";
 import { renderFiber, resolveFiber } from "./FiberRender";
 import { commitSubscription } from "./FiberCommit";
+import { USE_ASYNC, USE_FIBER } from "./FiberSubscriptionFlags";
 
-let ZERO = 0;
-
-// useAsync suspends on pending and throws when error
-// it is equivalent to using React.use()
+// useAsync suspends on pending and throws when error, like React.use()
 export function useAsync<T, A extends unknown[], R, P, S>(
-	options: UseAsyncOptions<T, A, R, P, S>,
-	userDeps?: any[]
-): UseAsyncReturn<T, A, R, P, S> {
+	options: HooksStandardOptions<T, A, R, P, S>,
+	userDeps?: any[] // todo: remove deps
+): ModernHooksReturn<T, A, R, P, S> {
 	let deps = userDeps || emptyArray;
 	let context = useCurrentContext(options);
 	let fiber = resolveFiber(context, options);
 
-	// useSubscribeToFiber(fiber)
-	let [, start] = React.useTransition();
-	let [, update] = React.useState(ZERO);
+	let subscription = useSubscription(USE_ASYNC, fiber, options, deps);
+	let alternate = renderFiber(USE_ASYNC, subscription, options, deps);
+	React.useLayoutEffect(() => commitSubscription(subscription, alternate));
+	alternate.return = inferModernSubscriptionReturn(subscription, alternate);
 
-	let subscription = getFiberSubscription(fiber, update, start, options, deps);
-	renderFiber(fiber, subscription, options, deps);
-
-	React.useLayoutEffect(() => commitSubscription(subscription));
-	subscription.return = getOrCreateSubscriptionReturn(fiber, subscription);
-
-	if (!subscription.return) {
-		throw new Error("this is a bug");
-	}
-
-	return subscription.return;
+	return alternate.return;
 }
 
 // will not throw on pending and error
-// will give the complete statuses, this is the old useAsyncState :)
-export function useFiber() {}
+// will give the all statuses, this is the old useAsyncState :)
+// full backward compatibility will be smooth
+export function useFiber<T, A extends unknown[], R, P, S>(
+	options: HooksStandardOptions<T, A, R, P, S>
+): LegacyHooksReturn<T, A, R, P, S> {
+	let deps = emptyArray;
+	let context = useCurrentContext(options);
+	let fiber = resolveFiber(context, options);
 
-// will return T directly, no selector
+	let subscription = useSubscription(USE_FIBER, fiber, options, deps);
+	let alternate = renderFiber(USE_FIBER, subscription, options, deps);
+	React.useLayoutEffect(() => commitSubscription(subscription, alternate));
+	alternate.return = inferLegacySubscriptionReturn(subscription, alternate);
+
+	return alternate.return;
+}
+
+// will return data (T) directly, no selector
 // it will suspend and throw on error
 export function useData() {}
 

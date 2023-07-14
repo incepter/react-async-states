@@ -1,5 +1,5 @@
 import * as React from "react";
-import { IAsyncContext, IAsyncProviderProps, UseAsyncOptions } from "./_types";
+import { IAsyncContext, IAsyncProviderProps, HooksStandardOptions } from "./_types";
 import { requestContext } from "../core/FiberContext";
 import { ILibraryContext } from "../core/_types";
 
@@ -15,7 +15,7 @@ export function FiberProvider({ children, ctx }: IAsyncProviderProps) {
 }
 
 export function useCurrentContext<T, A extends unknown[], R, P, S>(
-	options: UseAsyncOptions<T, A, R, P, S>
+	options: HooksStandardOptions<T, A, R, P, S>
 ): ILibraryContext {
 	let reactContext = React.useContext(AsyncContext);
 	let desiredContext = typeof options === "object" ? options.context : null;

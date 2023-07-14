@@ -1,3 +1,4 @@
+import * as React from "react";
 import {
 	ErrorState,
 	InitialState,
@@ -6,41 +7,60 @@ import {
 	SuccessState,
 } from "../core/_types";
 import {
+	LegacyHooksReturn,
 	IFiberSubscription,
+	IFiberSubscriptionAlternate,
+	ModernHooksReturn,
 	UseAsyncErrorReturn,
 	UseAsyncInitialReturn,
-	UseAsyncOptions,
+	HooksStandardOptions,
 	UseAsyncPendingReturn,
-	UseAsyncReturn,
 	UseAsyncSuccessReturn,
 } from "./_types";
 
-export function getFiberSubscription<T, A extends unknown[], R, P, S>(
+let ZERO = 0;
+export function useSubscription<T, A extends unknown[], R, P, S>(
+	flags: number,
 	fiber: IStateFiber<T, A, R, P>,
-	update: IFiberSubscription<T, A, R, P, S>["update"],
-	start: IFiberSubscription<T, A, R, P, S>["start"],
-	options: IFiberSubscription<T, A, R, P, S>["options"],
-	deps: IFiberSubscription<T, A, R, P, S>["deps"]
+	options: HooksStandardOptions<T, A, R, P, S>,
+	deps: any[]
 ): IFiberSubscription<T, A, R, P, S> {
-	// need to annotate for the "S" ..
-	let prevSubscription = findFiberSubscription<T, A, R, P, S>(fiber, update);
-	if (prevSubscription) {
-		return prevSubscription;
+	let [, start] = React.useTransition();
+	let [, update] = React.useState(ZERO);
+
+	// a subscription is a function, we use a stateUpdater as identity
+	// since it is created and bound to the react state hook, so stable
+	// and we use it as a source of truth.
+	// this updater doesn't get retained until it gets committed
+	let previousSubscription = fiber.listeners.get(update);
+
+	if (previousSubscription) {
+		// the S part may be wrong during render, but alternate will commit it
+		return previousSubscription as IFiberSubscription<T, A, R, P, S>;
 	}
-	return createSubscription(fiber, update, start, options, deps);
+
+	let subscription: IFiberSubscription<T, A, R, P, S> = {
+		deps,
+		flags,
+		fiber,
+		start,
+		update,
+		options,
+		return: null,
+		callback: null,
+		alternate: null,
+		version: fiber.version,
+	};
+	subscription.callback = () => onFiberStateChange(subscription);
+	return subscription;
 }
 
-export function getOrCreateSubscriptionReturn<T, A extends unknown[], R, P, S>(
-	fiber: IStateFiber<T, A, R, P>,
-	subscription: IFiberSubscription<T, A, R, P, S>
-) {
-	let alternate = subscription.alternate;
-
-	if (!alternate) {
-		throw new Error("this is a bug");
-	}
-
-	if (!subscription.return || alternate.version !== fiber.version) {
+export function inferModernSubscriptionReturn<T, A extends unknown[], R, P, S>(
+	subscription: IFiberSubscription<T, A, R, P, S>,
+	alternate: IFiberSubscriptionAlternate<T, A, R, P, S>
+): ModernHooksReturn<T, A, R, P, S> {
+	let fiber = subscription.fiber;
+	if (!alternate.return || alternate.version !== fiber.version) {
 		let state = fiber.state;
 		let value: S | null = null;
 
@@ -49,17 +69,57 @@ export function getOrCreateSubscriptionReturn<T, A extends unknown[], R, P, S>(
 		}
 
 		alternate.version = fiber.version;
-		alternate.return = createSubscriptionReturn(subscription, value);
+		alternate.return = createModernSubscriptionReturn(fiber, value);
+
+		return alternate.return;
+	}
+
+	let prevOptions = subscription.options;
+	let pendingOptions = alternate.options;
+
+	// this means that we need to check what changed in the options
+	// todo: complete this
+	if (prevOptions !== pendingOptions) {
+	}
+
+	// todo: add checks in __DEV__ to throw if we encounter a legacy hook return
+	return alternate.return as ModernHooksReturn<T, A, R, P, S>;
+}
+
+export function inferLegacySubscriptionReturn<T, A extends unknown[], R, P, S>(
+	subscription: IFiberSubscription<T, A, R, P, S>,
+	alternate: IFiberSubscriptionAlternate<T, A, R, P, S>
+): LegacyHooksReturn<T, A, R, P, S> {
+	let fiber = subscription.fiber;
+	if (!alternate.return || alternate.version !== fiber.version) {
+		let state = fiber.state;
+		let value: S | null = null;
+
+		if (state.status !== "error") {
+			value = selectStateFromFiber(fiber, alternate.options);
+		}
+
+		alternate.version = fiber.version;
+		alternate.return = createLegacySubscriptionReturn(fiber, value);
+
+		return alternate.return;
+	}
+
+	let prevOptions = subscription.options;
+	let pendingOptions = alternate.options;
+
+	// this means that we need to check what changed in the options
+	// todo: complete this
+	if (prevOptions !== pendingOptions) {
 	}
 
 	return alternate.return;
 }
 
-function createSubscriptionReturn<T, A extends unknown[], R, P, S>(
-	subscription: IFiberSubscription<T, A, R, P, S>,
+function createLegacySubscriptionReturn<T, A extends unknown[], R, P, S>(
+	fiber: IStateFiber<T, A, R, P>,
 	value: S | null
-) {
-	let fiber = subscription.fiber;
+): LegacyHooksReturn<T, A, R, P, S> {
 	let state = fiber.state;
 
 	switch (state.status) {
@@ -75,6 +135,24 @@ function createSubscriptionReturn<T, A extends unknown[], R, P, S>(
 		case "success": {
 			return createSubscriptionSuccessReturn(state, fiber, value as S);
 		}
+		default: {
+			throw new Error("This is a bug");
+		}
+	}
+}
+function createModernSubscriptionReturn<T, A extends unknown[], R, P, S>(
+	fiber: IStateFiber<T, A, R, P>,
+	value: S | null
+): ModernHooksReturn<T, A, R, P, S> {
+	switch (fiber.state.status) {
+		case "initial": {
+			return createSubscriptionInitialReturn(fiber.state, fiber, value as S);
+		}
+		case "success": {
+			return createSubscriptionSuccessReturn(fiber.state, fiber, value as S);
+		}
+		case "error":
+		case "pending":
 		default: {
 			throw new Error("This is a bug");
 		}
@@ -148,42 +226,15 @@ function createSubscriptionErrorReturn<T, A extends unknown[], R, P, S>(
 	};
 }
 
-function findFiberSubscription<T, A extends unknown[], R, P, S>(
-	fiber: IStateFiber<T, A, R, P>,
-	update: IFiberSubscription<T, A, R, P, S>["update"]
-): IFiberSubscription<T, A, R, P, S> | undefined {
-	return fiber.listeners.get(update);
-}
-
-function createSubscription<T, A extends unknown[], R, P, S>(
-	fiber: IStateFiber<T, A, R, P>,
-	update: IFiberSubscription<T, A, R, P, S>["update"],
-	start: IFiberSubscription<T, A, R, P, S>["start"],
-	options: IFiberSubscription<T, A, R, P, S>["options"],
-	deps: IFiberSubscription<T, A, R, P, S>["deps"]
-): IFiberSubscription<T, A, R, P, S> {
-	return {
-		deps,
-		fiber,
-		start,
-		update,
-		options,
-		flags: 0,
-		return: null,
-		callback: null,
-		alternate: null,
-		version: fiber.version,
-	};
-}
-
 function selectStateFromFiber<T, A extends unknown[], R, P, S>(
 	fiber: IStateFiber<T, A, R, P>,
-	options: UseAsyncOptions<T, A, R, P, S>
+	options: HooksStandardOptions<T, A, R, P, S>
 ) {
 	if (options && typeof options === "object" && options.selector) {
 		return options.selector(fiber.state);
 	}
 	// @ts-ignore
+	// todo: fix this
 	return fiber.state.data as S;
 }
 
@@ -223,7 +274,7 @@ function forceComponentUpdate(prev: number) {
 
 function doesReturnMatchFiberStatus<T, A extends unknown[], R, P, S>(
 	status: "initial" | "pending" | "success",
-	returnedValue: UseAsyncReturn<T, A, R, P, S>
+	returnedValue: LegacyHooksReturn<T, A, R, P, S>
 ) {
 	if (returnedValue.isInitial && status !== "initial") {
 		return false;

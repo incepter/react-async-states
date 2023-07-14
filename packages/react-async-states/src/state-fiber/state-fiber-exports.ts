@@ -1,7 +1,7 @@
 export {
 	useFiber,
 	useData,
-	useAsync,
+	useAsync as useModern,
 	useQuery,
 	useParallel,
 	useMutation,
@@ -11,10 +11,10 @@ export {
 export { FiberProvider } from "./react/FiberProvider";
 
 export type {
-	UseAsyncReturn,
-	UseAsyncOptions,
+	ModernHooksReturn,
 	IAsyncProviderProps,
 	UseAsyncErrorReturn,
+	HooksStandardOptions,
 	UseAsyncSuccessReturn,
 	UseAsyncPendingReturn,
 	UseAsyncInitialReturn,
