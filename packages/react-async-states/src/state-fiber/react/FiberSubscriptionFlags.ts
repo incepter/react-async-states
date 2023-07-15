@@ -34,7 +34,6 @@ if (__DEV__) {
 		if (flags & COMMITTED) {
 			output.push("COMMITTED");
 		}
-
 		return output;
 	};
 }

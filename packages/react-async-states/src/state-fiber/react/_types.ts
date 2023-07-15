@@ -41,7 +41,6 @@ export type LegacyHooksReturn<T, A extends unknown[], R, P, S> =
 	| UseAsyncErrorReturn<T, A, R, P, S>;
 
 export interface IFiberSubscriptionAlternate<T, A extends unknown[], R, P, S> {
-	deps: any[];
 	flags: number;
 	version: number;
 	options: HooksStandardOptions<T, A, R, P, S>;

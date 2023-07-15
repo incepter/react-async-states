@@ -17,8 +17,7 @@ import {
 export function renderFiber<T, A extends unknown[], R, P, S>(
 	renderFlags: number,
 	subscription: IFiberSubscription<T, A, R, P, S>,
-	options: HooksStandardOptions<T, A, R, P, S>,
-	deps: any[]
+	options: HooksStandardOptions<T, A, R, P, S>
 ): IFiberSubscriptionAlternate<T, A, R, P, S> {
 	let fiber = subscription.fiber;
 	let alternate = subscription.alternate;
@@ -27,7 +26,6 @@ export function renderFiber<T, A extends unknown[], R, P, S>(
 	// alternate so this path would be faster
 	if (!alternate || alternate.version !== fiber.version) {
 		alternate = {
-			deps,
 			options,
 			flags: renderFlags,
 			return: subscription.return,

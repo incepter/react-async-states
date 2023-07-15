@@ -1,10 +1,10 @@
 import * as React from "react";
-import { useFiber, useModern } from "react-async-states/src";
+import { useFiber, useModern, useData } from "react-async-states/src";
 
 export default function V2() {
 	let rerender = React.useState({})[1];
 	console.time("v2");
-	let result = useFiber({
+	let result = useData({
 		args: [12],
 		key: "hello",
 		producer: test,
@@ -14,24 +14,26 @@ export default function V2() {
 	console.log("useV2", result);
 	return (
 		<div>
-			{result.isPending && "_____________pending________________"}
-			Data: {result.data as string};
-			<br />
-			Error: {result.error?.toString()}
+			{/*{result.isPending && "_____________pending________________"}*/}
+			{/*Data: {result.data as string};*/}
+			Data: {result[0]};{/*<br />*/}
+			{/*Error: {result.error?.toString()}*/}
 			<br />
 			<button
 				onClick={() => {
 					// React.startTransition(() => {
 					// 	result.source.run(1);
 					// });
-					result.source.run(1);
+					// result.source.run(1);
+					result[1].run(1);
 				}}
 			>
 				Run
 			</button>
 			<button
 				onClick={() => {
-					result.source.setData((prev) => prev + 1);
+					result[1].setData((prev) => prev + 1);
+					// result.source.setData((prev) => prev + 1);
 				}}
 			>
 				setData
@@ -39,7 +41,8 @@ export default function V2() {
 			<button onClick={() => rerender({})}>rerender</button>
 			<button
 				onClick={() => {
-					result.source.setError(new Error("OKOK"));
+					result[1].setError(new Error("KKK"));
+					// result.source.setError(new Error("OKOK"));
 				}}
 			>
 				setError

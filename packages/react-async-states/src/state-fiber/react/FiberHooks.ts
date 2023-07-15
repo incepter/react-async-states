@@ -1,10 +1,9 @@
 import * as React from "react";
 import {
+	HooksStandardOptions,
 	LegacyHooksReturn,
 	ModernHooksReturn,
-	HooksStandardOptions,
 } from "./_types";
-import { emptyArray } from "../utils";
 import { useCurrentContext } from "./FiberProvider";
 import {
 	inferLegacySubscriptionReturn,
@@ -14,18 +13,17 @@ import {
 import { renderFiber, resolveFiber } from "./FiberRender";
 import { commitSubscription } from "./FiberCommit";
 import { USE_ASYNC, USE_FIBER } from "./FiberSubscriptionFlags";
+import { IStateFiberActions } from "../core/_types";
 
 // useAsync suspends on pending and throws when error, like React.use()
 export function useAsync<T, A extends unknown[], R, P, S>(
-	options: HooksStandardOptions<T, A, R, P, S>,
-	userDeps?: any[] // todo: remove deps
+	options: HooksStandardOptions<T, A, R, P, S>
 ): ModernHooksReturn<T, A, R, P, S> {
-	let deps = userDeps || emptyArray;
 	let context = useCurrentContext(options);
 	let fiber = resolveFiber(context, options);
 
-	let subscription = useSubscription(USE_ASYNC, fiber, options, deps);
-	let alternate = renderFiber(USE_ASYNC, subscription, options, deps);
+	let subscription = useSubscription(USE_ASYNC, fiber, options);
+	let alternate = renderFiber(USE_ASYNC, subscription, options);
 	React.useLayoutEffect(() => commitSubscription(subscription, alternate));
 	alternate.return = inferModernSubscriptionReturn(subscription, alternate);
 
@@ -38,12 +36,11 @@ export function useAsync<T, A extends unknown[], R, P, S>(
 export function useFiber<T, A extends unknown[], R, P, S>(
 	options: HooksStandardOptions<T, A, R, P, S>
 ): LegacyHooksReturn<T, A, R, P, S> {
-	let deps = emptyArray;
 	let context = useCurrentContext(options);
 	let fiber = resolveFiber(context, options);
 
-	let subscription = useSubscription(USE_FIBER, fiber, options, deps);
-	let alternate = renderFiber(USE_FIBER, subscription, options, deps);
+	let subscription = useSubscription(USE_FIBER, fiber, options);
+	let alternate = renderFiber(USE_FIBER, subscription, options);
 	React.useLayoutEffect(() => commitSubscription(subscription, alternate));
 	alternate.return = inferLegacySubscriptionReturn(subscription, alternate);
 
@@ -52,7 +49,13 @@ export function useFiber<T, A extends unknown[], R, P, S>(
 
 // will return data (T) directly, no selector
 // it will suspend and throw on error
-export function useData() {}
+// it will also return the fiber source so manipulation is possible
+export function useData<T, A extends unknown[], R, P>(
+	options: HooksStandardOptions<T, A, R, P, T>
+): [T, IStateFiberActions<T, A, R, P>] {
+	let result = useAsync(options);
+	return [result.data, result.source];
+}
 
 // will mark the fiber as a query: predefined opinionated configuration
 // similar to other libraries such react-query, rtk-query and apollo

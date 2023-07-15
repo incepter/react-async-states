@@ -23,7 +23,6 @@ export function useSubscription<T, A extends unknown[], R, P, S>(
 	flags: number,
 	fiber: IStateFiber<T, A, R, P>,
 	options: HooksStandardOptions<T, A, R, P, S>,
-	deps: any[]
 ): IFiberSubscription<T, A, R, P, S> {
 	let [, start] = React.useTransition();
 	let [, update] = React.useState(ZERO);
@@ -40,7 +39,6 @@ export function useSubscription<T, A extends unknown[], R, P, S>(
 	}
 
 	let subscription: IFiberSubscription<T, A, R, P, S> = {
-		deps,
 		flags,
 		fiber,
 		start,

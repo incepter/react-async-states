@@ -48,8 +48,7 @@ function trackPendingFiberPromise<T, A extends unknown[], R, P>(
 	let promise = task.result as FiberPromise<T, R>;
 	task.promise = promise;
 
-	// this means this promise already processed and then it passes through again
-	// for one of the many reasons that we may have
+	// this means this promise has never been tracked or used by the lib or react
 	if (!promise.status) {
 		// todo: move this logic to a new function
 		let untrackedPromise = promise as FiberPromise<T, R>;
