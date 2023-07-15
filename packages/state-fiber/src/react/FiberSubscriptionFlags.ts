@@ -1,5 +1,6 @@
 // these flags will be used to give capabilities to hooks
-import { __DEV__ } from "../../shared";
+
+import { __DEV__ } from "../utils";
 
 export const LEGACY /*          */ = 0b0000_0000_0001;
 export const CONCURRENT /*      */ = 0b0000_0000_0010;

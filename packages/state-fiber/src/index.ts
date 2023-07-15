@@ -1,7 +1,7 @@
 export {
 	useFiber,
 	useData,
-	useAsync as useModern,
+	useAsync,
 	useQuery,
 	useParallel,
 	useMutation,

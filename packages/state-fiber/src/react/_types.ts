@@ -49,6 +49,7 @@ export interface IFiberSubscriptionAlternate<T, A extends unknown[], R, P, S> {
 
 export interface IFiberSubscription<T, A extends unknown[], R, P, S>
 	extends IFiberSubscriptionAlternate<T, A, R, P, S> {
+	at?: string,
 	// static per subscription
 	callback: Function | null;
 	fiber: IStateFiber<T, A, R, P>;

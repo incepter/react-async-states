@@ -84,5 +84,3 @@ export type {
 	UseAsyncStateChangeEvent,
 	UseAsyncStateChangeEventHandler,
 } from "./types.internal";
-
-export * from "./state-fiber/state-fiber-exports";

@@ -5,7 +5,7 @@ import {
 	IFiberSubscriptionAlternate,
 } from "./_types";
 import { isSuspending, registerSuspendingPromise } from "./FiberSuspense";
-import { didDepsChange } from "../../shared";
+import { didDepsChange } from "../utils";
 import { emptyArray } from "../utils";
 import { StateFiber } from "../core/Fiber";
 import {

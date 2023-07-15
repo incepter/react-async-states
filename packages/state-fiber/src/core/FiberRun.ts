@@ -59,6 +59,10 @@ function runFiberTask<T, A extends unknown[], R, P>(
 		cleanFiberTask(fiber.task);
 	}
 
+	if (fiber.pending) {
+		cleanFiberTask(fiber.pending);
+	}
+
 	// todo: cache support
 	// todo: run effects support
 

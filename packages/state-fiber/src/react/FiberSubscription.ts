@@ -17,12 +17,13 @@ import {
 	UseAsyncPendingReturn,
 	UseAsyncSuccessReturn,
 } from "./_types";
+import { __DEV__, resolveComponentName } from "../utils";
 
 let ZERO = 0;
 export function useSubscription<T, A extends unknown[], R, P, S>(
 	flags: number,
 	fiber: IStateFiber<T, A, R, P>,
-	options: HooksStandardOptions<T, A, R, P, S>,
+	options: HooksStandardOptions<T, A, R, P, S>
 ): IFiberSubscription<T, A, R, P, S> {
 	let [, start] = React.useTransition();
 	let [, update] = React.useState(ZERO);
@@ -50,6 +51,9 @@ export function useSubscription<T, A extends unknown[], R, P, S>(
 		version: fiber.version,
 	};
 	subscription.callback = () => onFiberStateChange(subscription);
+	if (__DEV__) {
+		subscription.at = resolveComponentName();
+	}
 	return subscription;
 }
 
@@ -66,10 +70,7 @@ export function inferModernSubscriptionReturn<T, A extends unknown[], R, P, S>(
 			value = selectStateFromFiber(fiber, alternate.options);
 		}
 
-		alternate.version = fiber.version;
-		alternate.return = createModernSubscriptionReturn(fiber, value);
-
-		return alternate.return;
+		return createModernSubscriptionReturn(fiber, value);
 	}
 
 	let prevOptions = subscription.options;
@@ -97,10 +98,7 @@ export function inferLegacySubscriptionReturn<T, A extends unknown[], R, P, S>(
 			value = selectStateFromFiber(fiber, alternate.options);
 		}
 
-		alternate.version = fiber.version;
-		alternate.return = createLegacySubscriptionReturn(fiber, value);
-
-		return alternate.return;
+		return createLegacySubscriptionReturn(fiber, value);
 	}
 
 	let prevOptions = subscription.options;

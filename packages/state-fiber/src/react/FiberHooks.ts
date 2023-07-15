@@ -24,8 +24,11 @@ export function useAsync<T, A extends unknown[], R, P, S>(
 
 	let subscription = useSubscription(USE_ASYNC, fiber, options);
 	let alternate = renderFiber(USE_ASYNC, subscription, options);
+
 	React.useLayoutEffect(() => commitSubscription(subscription, alternate));
 	alternate.return = inferModernSubscriptionReturn(subscription, alternate);
+
+	alternate.version = fiber.version;
 
 	return alternate.return;
 }
@@ -41,8 +44,11 @@ export function useFiber<T, A extends unknown[], R, P, S>(
 
 	let subscription = useSubscription(USE_FIBER, fiber, options);
 	let alternate = renderFiber(USE_FIBER, subscription, options);
+
 	React.useLayoutEffect(() => commitSubscription(subscription, alternate));
 	alternate.return = inferLegacySubscriptionReturn(subscription, alternate);
+
+	alternate.version = fiber.version;
 
 	return alternate.return;
 }

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useFiber, useModern, useData } from "react-async-states/src";
+import { useData, useAsync, useFiber } from "state-fiber";
 
 export default function V2() {
 	let rerender = React.useState({})[1];
