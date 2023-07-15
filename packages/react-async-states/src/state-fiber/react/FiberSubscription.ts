@@ -259,7 +259,7 @@ export function onFiberStateChange<T, A extends unknown[], R, P, S>(
 			let newValue = selectValueForSubscription(state, subscription);
 			if (
 				!Object.is(newValue, returnedValue.data) ||
-				doesReturnMatchFiberStatus(state.status, returnedValue)
+				!doesReturnMatchFiberStatus(state.status, returnedValue)
 			) {
 				// todo: prepare alternate for the next render
 				subscription.update(forceComponentUpdate);
@@ -276,6 +276,9 @@ function doesReturnMatchFiberStatus<T, A extends unknown[], R, P, S>(
 	status: "initial" | "pending" | "success",
 	returnedValue: LegacyHooksReturn<T, A, R, P, S>
 ) {
+	if (returnedValue.isError) {
+		return false;
+	}
 	if (returnedValue.isInitial && status !== "initial") {
 		return false;
 	}

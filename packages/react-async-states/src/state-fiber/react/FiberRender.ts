@@ -1,29 +1,24 @@
 import { ILibraryContext, IStateFiber } from "../core/_types";
 import {
+	HooksStandardOptions,
 	IFiberSubscription,
 	IFiberSubscriptionAlternate,
-	HooksStandardOptions,
 } from "./_types";
-import {
-	isSuspending,
-	registerSuspendingPromise,
-	resolveSuspendingPromise,
-} from "./FiberSuspense";
+import { isSuspending, registerSuspendingPromise } from "./FiberSuspense";
 import { didDepsChange } from "../../shared";
 import { emptyArray } from "../utils";
 import { StateFiber } from "../core/Fiber";
 import {
 	CONCURRENT,
-	humanizeFlags,
 	SUSPENDING,
-	THROW_ON_ERROR
+	THROW_ON_ERROR,
 } from "./FiberSubscriptionFlags";
 
 export function renderFiber<T, A extends unknown[], R, P, S>(
 	renderFlags: number,
 	subscription: IFiberSubscription<T, A, R, P, S>,
 	options: HooksStandardOptions<T, A, R, P, S>,
-	deps: any[],
+	deps: any[]
 ): IFiberSubscriptionAlternate<T, A, R, P, S> {
 	let fiber = subscription.fiber;
 	let alternate = subscription.alternate;
@@ -65,7 +60,7 @@ export function renderFiber<T, A extends unknown[], R, P, S>(
 			}
 		}
 	}
-	if ((renderFlags & THROW_ON_ERROR) && fiber.state.status === "error") {
+	if (renderFlags & THROW_ON_ERROR && fiber.state.status === "error") {
 		throw fiber.state.error;
 	}
 

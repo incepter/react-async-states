@@ -55,6 +55,10 @@ function runFiberTask<T, A extends unknown[], R, P>(
 		throw new Error("Not supported yet");
 	}
 
+	if (fiber.task) {
+		cleanFiberTask(fiber.task);
+	}
+
 	// todo: cache support
 	// todo: run effects support
 
@@ -76,9 +80,7 @@ function runFiberTask<T, A extends unknown[], R, P>(
 		},
 	} as FnProps<T, A, R, P>);
 
-	if (fiber.task) {
-		cleanFiberTask(fiber.task);
-	}
+	// todo: mark task as cleaned if not a pending promise
 
 	dispatchFiberRunEvent(fiber, task);
 	return task.clean;

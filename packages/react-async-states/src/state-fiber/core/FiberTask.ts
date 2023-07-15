@@ -27,7 +27,10 @@ export function createTask<T, A extends unknown[], R, P>(
 	};
 }
 
-export function cleanFiberTask(task) {
+export function cleanFiberTask<T, A extends unknown[], R, P>(
+	task: RunTask<T, A, R, P>
+) {
 	task.controller.abort();
-	task.clear.forEach((cb) => cb());
+	task.indicators.cleared = true;
+	task.indicators.aborted = true;
 }

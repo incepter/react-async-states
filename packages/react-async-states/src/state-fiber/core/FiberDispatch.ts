@@ -1,4 +1,15 @@
-import { IStateFiber, RunTask, SavedProps, State } from "./_types";
+import {
+	ErrorState,
+	FiberPromise,
+	FulfilledPromise,
+	InitialState,
+	IStateFiber,
+	RejectedPromise,
+	RunTask,
+	SavedProps,
+	State,
+	SuccessState,
+} from "./_types";
 import { cleanFiberTask } from "./FiberTask";
 import { isPromise } from "../utils";
 
@@ -22,7 +33,6 @@ export function dispatchFiberRunEvent<T, A extends unknown[], R, P>(
 	const result = task.result;
 	if (isPromise(result)) {
 		trackPendingFiberPromise(fiber, task);
-		fiber.pending = task;
 	} else {
 		fiber.task = task;
 		dispatchFiberDataEvent(fiber, task.result as T);
@@ -33,7 +43,49 @@ function trackPendingFiberPromise<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
 	task: RunTask<T, A, R, P>
 ) {
-	throw new Error("Not implemented yet");
+	let indicators = task.indicators;
+	// this is the pending path, the task is always pending
+	let promise = task.result as FiberPromise<T, R>;
+	task.promise = promise;
+
+	// this means this promise already processed and then it passes through again
+	// for one of the many reasons that we may have
+	if (!promise.status) {
+		// todo: move this logic to a new function
+		let untrackedPromise = promise as FiberPromise<T, R>;
+
+		untrackedPromise.status = "pending";
+		untrackedPromise.then(
+			(value: T) => {
+				untrackedPromise.status = "fulfilled";
+				(untrackedPromise as FulfilledPromise<T>).value = value;
+
+				if (!indicators.aborted) {
+					// todo: all dispatch from here should include the 'task'
+					//       so we are aware of callbacks and other stuff
+					dispatchFiberDataEvent(fiber, value);
+				}
+				if (fiber.pending === task) {
+					fiber.pending = null;
+				}
+			},
+			(error: R) => {
+				untrackedPromise.status = "rejected";
+				(untrackedPromise as RejectedPromise<R>).reason = error;
+
+				if (!indicators.aborted) {
+					dispatchFiberErrorEvent(fiber, error);
+				}
+				if (fiber.pending === task) {
+					fiber.pending = null;
+				}
+			}
+		);
+	}
+	if (!indicators.aborted && promise.status === "pending") {
+		fiber.pending = task;
+		dispatchFiberPendingEvent(fiber, task);
+	}
 }
 
 function dispatchFiberNotificationEvent<T, A extends unknown[], R, P>(
@@ -44,10 +96,49 @@ function dispatchFiberNotificationEvent<T, A extends unknown[], R, P>(
 	}
 }
 
+export function dispatchFiberPendingEvent<T, A extends unknown[], R, P>(
+	fiber: IStateFiber<T, A, R, P>,
+	task: RunTask<T, A, R, P>
+) {
+	let previousSettledState:
+		| InitialState<T>
+		| ErrorState<A, R, P>
+		| SuccessState<T, A, P> = resolveLatestState(fiber, fiber.state);
+
+	fiber.version += 1;
+	fiber.state = {
+		status: "pending",
+		timestamp: Date.now(),
+		prev: previousSettledState,
+		props: { payload: task.payload, args: task.args },
+	};
+
+	dispatchFiberNotificationEvent(fiber);
+}
+
+function resolveLatestState<T, A extends unknown[], R, P>(
+	fiber: IStateFiber<T, A, R, P>,
+	currentState: IStateFiber<T, A, R, P>["state"]
+) {
+	if (currentState.status === "initial") {
+		return currentState;
+	}
+	if (currentState.status === "success") {
+		return currentState;
+	}
+	if (currentState.status === "error") {
+		return currentState;
+	}
+	return resolveLatestState(fiber, currentState.prev);
+}
+
 export function dispatchFiberDataEvent<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
 	data: T
 ) {
+	if (fiber.pending) {
+		cleanFiberTask(fiber.pending);
+	}
 	fiber.state = {
 		data,
 		status: "success",
@@ -73,6 +164,9 @@ export function dispatchFiberErrorEvent<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
 	error: R
 ) {
+	if (fiber.pending) {
+		cleanFiberTask(fiber.pending);
+	}
 	fiber.state = {
 		error,
 		status: "error",
@@ -87,6 +181,9 @@ export function dispatchFiberStateChangeEvent<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
 	state: State<T, A, R, P>
 ) {
+	if (fiber.pending) {
+		cleanFiberTask(fiber.pending);
+	}
 	fiber.state = state;
 	fiber.version += 1;
 	dispatchFiberNotificationEvent(fiber);

@@ -83,13 +83,30 @@ export interface RuncProps<T, A extends unknown[], R, P> {
 	onSuccess?(s: T): void;
 }
 
+export type FiberPromise<T, R> =
+	| PendingPromise<T>
+	| FulfilledPromise<T>
+	| RejectedPromise<R>;
+
+export interface PendingPromise<T> extends Promise<T> {
+	status: "pending";
+}
+export interface FulfilledPromise<T> extends Promise<T> {
+	value: T;
+	status: "fulfilled";
+}
+export interface RejectedPromise<R> extends Promise<any> {
+	reason: R;
+	status: "rejected";
+}
+
 export interface RunTask<T, A extends unknown[], R, P> {
 	args: A;
 	payload: P;
 
-	promise: Promise<T> | null;
 	controller: AbortController;
 	result: T | Promise<T> | null;
+	promise: FiberPromise<T, R> | null;
 
 	clean: () => void;
 	onAbort(cb): void;
