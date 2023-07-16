@@ -5,14 +5,17 @@ import {
 	IFiberSubscriptionAlternate,
 } from "./_types";
 import { isSuspending, registerSuspendingPromise } from "./FiberSuspense";
-import { didDepsChange } from "../utils";
-import { emptyArray } from "../utils";
+import { didDepsChange, emptyArray } from "../utils";
 import { StateFiber } from "../core/Fiber";
 import {
 	CONCURRENT,
 	SUSPENDING,
 	THROW_ON_ERROR,
 } from "./FiberSubscriptionFlags";
+import {
+	completeRenderPhaseRun,
+	startRenderPhaseRun,
+} from "./FiberSubscription";
 
 export function renderFiber<T, A extends unknown[], R, P, S>(
 	renderFlags: number,
@@ -37,13 +40,18 @@ export function renderFiber<T, A extends unknown[], R, P, S>(
 
 	if (shouldRun) {
 		let renderRunArgs = getRenderRunArgs(options);
+		let prev = startRenderPhaseRun();
 		fiber.actions.run.apply(null, renderRunArgs);
+		completeRenderPhaseRun(prev);
 	}
 
 	if (renderFlags & CONCURRENT) {
 		if (fiber.pending) {
+			subscription.flags |= SUSPENDING;
 			let promise = fiber.pending.promise!;
-			registerSuspendingPromise(promise);
+			if (shouldRun) {
+				registerSuspendingPromise(promise, subscription.update);
+			}
 			throw promise;
 		}
 		let previousPromise = fiber.task?.promise;
@@ -82,17 +90,14 @@ function shouldRunOnRender<T, A extends unknown[], R, P, S>(
 	let options = alternate.options;
 
 	if (options && typeof options === "object") {
-		if (
-			options.lazy === false &&
-			options.args &&
-			// todo: this is wrong, do something correct
-			didDepsChange(
-				options.args || emptyArray,
-				// @ts-ignore
-				fiber.state.props.args || emptyArray
-			)
-		) {
-			return true;
+		if (options.lazy === false && options.args) {
+			let nextArgs = options.args || emptyArray;
+			let prevArgs =
+				fiber.state.status !== "initial" ? fiber.state.props.args : emptyArray;
+			let didArgsChange = didDepsChange(prevArgs, nextArgs);
+			if (didArgsChange) {
+				return true;
+			}
 		}
 	}
 

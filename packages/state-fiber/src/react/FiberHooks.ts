@@ -12,8 +12,9 @@ import {
 } from "./FiberSubscription";
 import { renderFiber, resolveFiber } from "./FiberRender";
 import { commitSubscription } from "./FiberCommit";
-import { USE_ASYNC, USE_FIBER } from "./FiberSubscriptionFlags";
+import { COMMITTED, USE_ASYNC, USE_FIBER } from "./FiberSubscriptionFlags";
 import { IStateFiberActions } from "../core/_types";
+import { guardAgainstInfiniteLoop } from "../utils";
 
 // useAsync suspends on pending and throws when error, like React.use()
 export function useAsync<T, A extends unknown[], R, P, S>(
@@ -28,6 +29,7 @@ export function useAsync<T, A extends unknown[], R, P, S>(
 	React.useLayoutEffect(() => commitSubscription(subscription, alternate));
 	alternate.return = inferModernSubscriptionReturn(subscription, alternate);
 
+	// guardAgainstInfiniteLoop();
 	alternate.version = fiber.version;
 
 	return alternate.return;
@@ -49,6 +51,9 @@ export function useFiber<T, A extends unknown[], R, P, S>(
 	alternate.return = inferLegacySubscriptionReturn(subscription, alternate);
 
 	alternate.version = fiber.version;
+
+	guardAgainstInfiniteLoop();
+	console.log("useFiber render", fiber.state, alternate.return);
 
 	return alternate.return;
 }

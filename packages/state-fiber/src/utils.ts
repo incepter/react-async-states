@@ -18,7 +18,7 @@ export function resolveComponentName() {
 	let match = regex.exec(stackTrace);
 
 	let i = 0;
-	while (i < 4 && match) {
+	while (i < 3 && match) {
 		match = regex.exec(stackTrace);
 
 		i += 1;
@@ -31,10 +31,17 @@ export function didDepsChange(deps: any[], deps2: any[]) {
 	if (deps.length !== deps2.length) {
 		return true;
 	}
-	for (let i = 0, {length} = deps; i < length; i += 1) {
+	for (let i = 0, { length } = deps; i < length; i += 1) {
 		if (!Object.is(deps[i], deps2[i])) {
 			return true;
 		}
 	}
 	return false;
+}
+
+let renders = 0;
+export function guardAgainstInfiniteLoop() {
+	if (++renders > 10) {
+		throw new Error("Stop");
+	}
 }

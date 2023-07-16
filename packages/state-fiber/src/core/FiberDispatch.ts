@@ -35,7 +35,7 @@ export function dispatchFiberRunEvent<T, A extends unknown[], R, P>(
 		trackPendingFiberPromise(fiber, task);
 	} else {
 		fiber.task = task;
-		dispatchFiberDataEvent(fiber, task.result as T);
+		dispatchSetData(fiber, task.result as T, null);
 	}
 }
 
@@ -62,21 +62,25 @@ function trackPendingFiberPromise<T, A extends unknown[], R, P>(
 				if (!indicators.aborted) {
 					// todo: all dispatch from here should include the 'task'
 					//       so we are aware of callbacks and other stuff
-					dispatchFiberDataEvent(fiber, value);
-				}
-				if (fiber.pending === task) {
-					fiber.pending = null;
+					let { args, payload } = task;
+					if (fiber.pending === task) {
+						fiber.task = task;
+						fiber.pending = null;
+					}
+					dispatchSetData(fiber, value, { args, payload });
 				}
 			},
 			(error: R) => {
 				untrackedPromise.status = "rejected";
 				(untrackedPromise as RejectedPromise<R>).reason = error;
 
-				if (!indicators.aborted) {
-					dispatchFiberErrorEvent(fiber, error);
-				}
+				let { args, payload } = task;
 				if (fiber.pending === task) {
+					fiber.task = task;
 					fiber.pending = null;
+				}
+				if (!indicators.aborted) {
+					dispatchSetError(fiber, error, { args, payload });
 				}
 			}
 		);
@@ -87,11 +91,23 @@ function trackPendingFiberPromise<T, A extends unknown[], R, P>(
 	}
 }
 
-function dispatchFiberNotificationEvent<T, A extends unknown[], R, P>(
+export function dispatchNotification<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>
 ) {
 	for (let listener of fiber.listeners.values()) {
 		listener.callback();
+	}
+}
+
+export function dispatchNotificationExceptFor<T, A extends unknown[], R, P>(
+	fiber: IStateFiber<T, A, R, P>,
+	cause: any
+) {
+	for (let listener of fiber.listeners.values()) {
+		if (cause !== listener.update) {
+			console.log("notifying", listener.flags);
+			listener.callback();
+		}
 	}
 }
 
@@ -112,7 +128,7 @@ export function dispatchFiberPendingEvent<T, A extends unknown[], R, P>(
 		props: { payload: task.payload, args: task.args },
 	};
 
-	dispatchFiberNotificationEvent(fiber);
+	dispatchNotification(fiber);
 }
 
 function resolveLatestState<T, A extends unknown[], R, P>(
@@ -131,21 +147,31 @@ function resolveLatestState<T, A extends unknown[], R, P>(
 	return resolveLatestState(fiber, currentState.prev);
 }
 
-export function dispatchFiberDataEvent<T, A extends unknown[], R, P>(
+export function dispatchSetData<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
-	data: T
+	data: T,
+	props: SavedProps<A, P> | null
 ) {
 	if (fiber.pending) {
 		cleanFiberTask(fiber.pending);
 	}
+
+	// null means setData was called directly, not when ran
+	let savedProps =
+		props !== null
+			? props
+			: savedPropsFromDataUpdate<A, P>(data, fiber.payload);
+
 	fiber.state = {
 		data,
+		props: savedProps,
 		status: "success",
 		timestamp: Date.now(),
-		props: savedPropsFromDataUpdate<A, P>(data, fiber.payload),
 	};
+
 	fiber.version += 1;
-	dispatchFiberNotificationEvent(fiber);
+
+	dispatchNotification(fiber);
 }
 
 function savedPropsFromDataUpdate<A extends unknown[], P>(
@@ -159,21 +185,29 @@ function savedPropsFromDataUpdate<A extends unknown[], P>(
 	} as SavedProps<A, P>;
 }
 
-export function dispatchFiberErrorEvent<T, A extends unknown[], R, P>(
+export function dispatchSetError<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
-	error: R
+	error: R,
+	props: SavedProps<A, P> | null
 ) {
 	if (fiber.pending) {
 		cleanFiberTask(fiber.pending);
 	}
+
+	// null means setData was called directly, not when ran
+	let savedProps =
+		props !== null
+			? props
+			: savedPropsFromDataUpdate<A, P>(error, fiber.payload);
+
 	fiber.state = {
 		error,
 		status: "error",
+		props: savedProps,
 		timestamp: Date.now(),
-		props: savedPropsFromDataUpdate<A, P>(error, fiber.payload),
 	};
 	fiber.version += 1;
-	dispatchFiberNotificationEvent(fiber);
+	dispatchNotification(fiber);
 }
 
 export function dispatchFiberStateChangeEvent<T, A extends unknown[], R, P>(
@@ -185,5 +219,5 @@ export function dispatchFiberStateChangeEvent<T, A extends unknown[], R, P>(
 	}
 	fiber.state = state;
 	fiber.version += 1;
-	dispatchFiberNotificationEvent(fiber);
+	dispatchNotification(fiber);
 }

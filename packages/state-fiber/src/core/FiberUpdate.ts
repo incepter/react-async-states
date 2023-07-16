@@ -1,7 +1,7 @@
 import { IStateFiber, State, StateFiberUpdate } from "./_types";
 import {
-	dispatchFiberDataEvent,
-	dispatchFiberErrorEvent,
+	dispatchSetData,
+	dispatchSetError,
 	dispatchFiberStateChangeEvent,
 } from "./FiberDispatch";
 
@@ -15,16 +15,16 @@ export function enqueueDataUpdate<T, A extends unknown[], R, P>(
 		const current = fiber.state;
 		try {
 			if (current.status === "success") {
-				dispatchFiberDataEvent(fiber, update(current.data));
+				dispatchSetData(fiber, update(current.data), null);
 			} else {
 				let initialState = fiber.root.config?.initialValue as T;
-				dispatchFiberDataEvent(fiber, update(initialState));
+				dispatchSetData(fiber, update(initialState), null);
 			}
 		} catch (e) {
 			enqueueErrorUpdate(fiber, e);
 		}
 	} else {
-		dispatchFiberDataEvent(fiber, update);
+		dispatchSetData(fiber, update, null);
 	}
 }
 
@@ -33,7 +33,7 @@ export function enqueueErrorUpdate<T, A extends unknown[], R, P>(
 	error: R
 ) {
 	// todo: check queue
-	dispatchFiberErrorEvent(fiber, error);
+	dispatchSetError(fiber, error, null);
 }
 
 export function enqueueStateUpdate<T, A extends unknown[], R, P>(

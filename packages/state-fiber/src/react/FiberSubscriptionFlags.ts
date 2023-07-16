@@ -10,7 +10,7 @@ export const TRANSITION /*      */ = 0b0000_0000_1000;
 export const SUSPENDING /*      */ = 0b0000_0001_0000;
 export const COMMITTED /*       */ = 0b0000_0010_0000;
 
-export const USE_FIBER = LEGACY | TRANSITION;
+export const USE_FIBER = LEGACY;
 export const USE_ASYNC = CONCURRENT | THROW_ON_ERROR | TRANSITION;
 
 export let humanizeFlags;

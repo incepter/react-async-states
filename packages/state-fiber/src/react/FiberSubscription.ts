@@ -7,17 +7,20 @@ import {
 	SuccessState,
 } from "../core/_types";
 import {
-	LegacyHooksReturn,
+	HooksStandardOptions,
 	IFiberSubscription,
 	IFiberSubscriptionAlternate,
+	LegacyHooksReturn,
 	ModernHooksReturn,
 	UseAsyncErrorReturn,
 	UseAsyncInitialReturn,
-	HooksStandardOptions,
 	UseAsyncPendingReturn,
 	UseAsyncSuccessReturn,
 } from "./_types";
 import { __DEV__, resolveComponentName } from "../utils";
+import { isSuspending } from "./FiberSuspense";
+import { SUSPENDING, TRANSITION } from "./FiberSubscriptionFlags";
+import { dispatchNotificationExceptFor } from "../core/FiberDispatch";
 
 let ZERO = 0;
 export function useSubscription<T, A extends unknown[], R, P, S>(
@@ -56,6 +59,7 @@ export function useSubscription<T, A extends unknown[], R, P, S>(
 	}
 	return subscription;
 }
+let ps = 0;
 
 export function inferModernSubscriptionReturn<T, A extends unknown[], R, P, S>(
 	subscription: IFiberSubscription<T, A, R, P, S>,
@@ -237,28 +241,60 @@ function selectStateFromFiber<T, A extends unknown[], R, P, S>(
 export function onFiberStateChange<T, A extends unknown[], R, P, S>(
 	subscription: IFiberSubscription<T, A, R, P, S>
 ) {
+	// todo: prepare alternate for the next render
+	// todo: bailout pending sometimes, if possible
 	let { fiber, version, return: returnedValue } = subscription;
-
 	if (!returnedValue) {
 		throw new Error("This is a bug");
 	}
+	console.log(
+		"############start notification",
+		subscription.flags
+		// new Error().stack
+	);
+	if (fiber.version === version) {
+		console.log("same version found, quitting");
+		return;
+	}
 
 	let state = fiber.state;
-	if (fiber.version !== version) {
-		if (state.status === "error") {
-			if (!returnedValue.isError || state.error !== returnedValue.error) {
-				// todo: prepare alternate for the next render
-				subscription.update(forceComponentUpdate);
-			}
-		} else {
-			// todo: bailout pending sometimes, if possible
-			let newValue = selectValueForSubscription(state, subscription);
-			if (
-				!Object.is(newValue, returnedValue.data) ||
-				!doesReturnMatchFiberStatus(state.status, returnedValue)
-			) {
-				// todo: prepare alternate for the next render
-				subscription.update(forceComponentUpdate);
+	let finishedTask = fiber.task;
+	let wasTheFinishedTaskSuspending =
+		finishedTask && finishedTask.promise && isSuspending(finishedTask.promise);
+
+	if (wasTheFinishedTaskSuspending) {
+		console.log("previous task was suspending, suspender should notify");
+		return;
+	}
+
+	if (state.status === "error") {
+		let didReturnError = returnedValue.isError;
+		let didErrorChange = state.error !== returnedValue.error;
+		if (!didReturnError || didErrorChange) {
+			console.log("rerendering :)", subscription.flags);
+			subscription.update(forceComponentUpdate);
+		}
+	} else {
+		if (state.status === "pending" && subscription.flags & SUSPENDING) {
+			// no need to update to the pending state
+			console.log("bailout notification,,,,", subscription.flags);
+			return;
+		}
+		let newValue = selectValueForSubscription(state, subscription);
+		if (
+			!Object.is(newValue, returnedValue.data) ||
+			!doesReturnMatchFiberStatus(state.status, returnedValue)
+		) {
+			if (isRenderPhaseRun) {
+				queueMicrotask(() => {
+					subscription.start(() => {
+						subscription.update(forceComponentUpdate);
+					});
+				});
+			} else {
+				subscription.start(() => {
+					subscription.update(forceComponentUpdate);
+				});
 			}
 		}
 	}
@@ -304,4 +340,14 @@ function selectValueForSubscription<T, A extends unknown[], R, P, S>(
 	} else {
 		return state.data as S;
 	}
+}
+
+let isRenderPhaseRun = false;
+export function startRenderPhaseRun(): boolean {
+	let prev = isRenderPhaseRun;
+	isRenderPhaseRun = true;
+	return prev;
+}
+export function completeRenderPhaseRun(prev) {
+	isRenderPhaseRun = prev;
 }

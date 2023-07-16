@@ -164,17 +164,17 @@ importers:
         specifier: ^1.3.4
         version: 1.3.4
       react:
-        specifier: ^18.2.0
-        version: 18.2.0
+        specifier: canary
+        version: 18.3.0-canary-fdc8c81e0-20230707
       react-async-states:
         specifier: workspace:^1.4.0
         version: link:../../react-async-states
       react-dom:
-        specifier: ^18.2.0
-        version: 18.2.0(react@18.2.0)
+        specifier: canary
+        version: 18.3.0-canary-546fe4681-20230713(react@18.3.0-canary-fdc8c81e0-20230707)
       react-router-dom:
         specifier: 6.10.0
-        version: 6.10.0(react-dom@18.2.0)(react@18.2.0)
+        version: 6.10.0(react-dom@18.3.0-canary-546fe4681-20230713)(react@18.3.0-canary-fdc8c81e0-20230707)
       state-fiber:
         specifier: workspace:^0.0.0
         version: link:../../state-fiber
@@ -14059,6 +14059,16 @@ packages:
       react: 18.2.0
       scheduler: 0.23.0
 
+  /react-dom@18.3.0-canary-546fe4681-20230713(react@18.3.0-canary-fdc8c81e0-20230707):
+    resolution: {integrity: sha512-m99kIuTDiL3/zmsB4o1ENCtE7xvkTx+0AV9bm29jRod+wFE0jadyov8a7zhoHTVgkjgKy231rykh01NDRsVgag==}
+    peerDependencies:
+      react: 18.3.0-canary-546fe4681-20230713
+    dependencies:
+      loose-envify: 1.4.0
+      react: 18.3.0-canary-fdc8c81e0-20230707
+      scheduler: 0.24.0-canary-546fe4681-20230713
+    dev: false
+
   /react-draggable@4.4.5(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-OMHzJdyJbYTZo4uQE393fHcqqPYsEtkjfMgvCHr6rejT+Ezn4OZbNyGH50vv+SunC1RMvwOTSWkEODQLzw1M9g==}
     peerDependencies:
@@ -14209,7 +14219,7 @@ packages:
       tiny-warning: 1.0.3
     dev: false
 
-  /react-router-dom@6.10.0(react-dom@18.2.0)(react@18.2.0):
+  /react-router-dom@6.10.0(react-dom@18.3.0-canary-546fe4681-20230713)(react@18.3.0-canary-fdc8c81e0-20230707):
     resolution: {integrity: sha512-E5dfxRPuXKJqzwSe/qGcqdwa18QiWC6f3H3cWXM24qj4N0/beCIf/CWTipop2xm7mR0RCS99NnaqPNjHtrAzCg==}
     engines: {node: '>=14'}
     peerDependencies:
@@ -14217,9 +14227,9 @@ packages:
       react-dom: '>=16.8'
     dependencies:
       '@remix-run/router': 1.5.0
-      react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
-      react-router: 6.10.0(react@18.2.0)
+      react: 18.3.0-canary-fdc8c81e0-20230707
+      react-dom: 18.3.0-canary-546fe4681-20230713(react@18.3.0-canary-fdc8c81e0-20230707)
+      react-router: 6.10.0(react@18.3.0-canary-fdc8c81e0-20230707)
     dev: false
 
   /react-router@5.3.4(react@18.2.0):
@@ -14239,14 +14249,14 @@ packages:
       tiny-warning: 1.0.3
     dev: false
 
-  /react-router@6.10.0(react@18.2.0):
+  /react-router@6.10.0(react@18.3.0-canary-fdc8c81e0-20230707):
     resolution: {integrity: sha512-Nrg0BWpQqrC3ZFFkyewrflCud9dio9ME3ojHCF/WLsprJVzkq3q3UeEhMCAW1dobjeGbWgjNn/PVF6m46ANxXQ==}
     engines: {node: '>=14'}
     peerDependencies:
       react: '>=16.8'
     dependencies:
       '@remix-run/router': 1.5.0
-      react: 18.2.0
+      react: 18.3.0-canary-fdc8c81e0-20230707
     dev: false
 
   /react-shallow-renderer@16.15.0(react@18.2.0):
@@ -14299,6 +14309,13 @@ packages:
     engines: {node: '>=0.10.0'}
     dependencies:
       loose-envify: 1.4.0
+
+  /react@18.3.0-canary-fdc8c81e0-20230707:
+    resolution: {integrity: sha512-0qxlig3L0HyqS2ksDB5rwTyxaroALQZZqWCMj4YgJt1nkbSbGc0bVtuKGRyGzG3mGSl3lHEzHNrB6eoHdPWHoA==}
+    engines: {node: '>=0.10.0'}
+    dependencies:
+      loose-envify: 1.4.0
+    dev: false
 
   /read-cache@1.0.0:
     resolution: {integrity: sha512-Owdv/Ft7IjOgm/i0xvNDZ1LrRANRfew4b2prF3OWMQLxLfu3bS8FVhCsrSCMK4lR56Y9ya+AThoTpDCTxCmpRA==}
@@ -14851,6 +14868,12 @@ packages:
     resolution: {integrity: sha512-CtuThmgHNg7zIZWAXi3AsyIzA3n4xx7aNyjwC2VJldO2LMVDhFK+63xGqq6CsJH4rTAt6/M+N4GhZiDYPx9eUw==}
     dependencies:
       loose-envify: 1.4.0
+
+  /scheduler@0.24.0-canary-546fe4681-20230713:
+    resolution: {integrity: sha512-/JDhG6OGuF/3x22+q9i2WY/PmUKqbKVOHUavQ3HJosQcyM3I5SD5G+Jjd6U2CO/CjFISBWuc73F7u9oWElWOSQ==}
+    dependencies:
+      loose-envify: 1.4.0
+    dev: false
 
   /schema-utils@2.7.0:
     resolution: {integrity: sha512-0ilKFI6QQF5nxDZLFn2dMjvc4hjg/Wkg7rHd3jK6/A4a1Hl9VFdQWvgB1UMGoU94pad1P/8N7fMcEnLnSiju8A==}
