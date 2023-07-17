@@ -105,7 +105,6 @@ export function dispatchNotificationExceptFor<T, A extends unknown[], R, P>(
 ) {
 	for (let listener of fiber.listeners.values()) {
 		if (cause !== listener.update) {
-			console.log("notifying", listener.flags);
 			listener.callback();
 		}
 	}

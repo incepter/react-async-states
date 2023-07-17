@@ -52,8 +52,7 @@ export function useFiber<T, A extends unknown[], R, P, S>(
 
 	alternate.version = fiber.version;
 
-	guardAgainstInfiniteLoop();
-	console.log("useFiber render", fiber.state, alternate.return);
+	// guardAgainstInfiniteLoop();
 
 	return alternate.return;
 }

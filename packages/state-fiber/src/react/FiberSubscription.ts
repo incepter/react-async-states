@@ -59,7 +59,6 @@ export function useSubscription<T, A extends unknown[], R, P, S>(
 	}
 	return subscription;
 }
-let ps = 0;
 
 export function inferModernSubscriptionReturn<T, A extends unknown[], R, P, S>(
 	subscription: IFiberSubscription<T, A, R, P, S>,
@@ -228,7 +227,7 @@ function createSubscriptionErrorReturn<T, A extends unknown[], R, P, S>(
 
 function selectStateFromFiber<T, A extends unknown[], R, P, S>(
 	fiber: IStateFiber<T, A, R, P>,
-	options: HooksStandardOptions<T, A, R, P, S>
+	options: HooksStandardOptions<T, A, R, P, S> | null
 ) {
 	if (options && typeof options === "object" && options.selector) {
 		return options.selector(fiber.state);
@@ -247,13 +246,7 @@ export function onFiberStateChange<T, A extends unknown[], R, P, S>(
 	if (!returnedValue) {
 		throw new Error("This is a bug");
 	}
-	console.log(
-		"############start notification",
-		subscription.flags
-		// new Error().stack
-	);
 	if (fiber.version === version) {
-		console.log("same version found, quitting");
 		return;
 	}
 
@@ -263,7 +256,6 @@ export function onFiberStateChange<T, A extends unknown[], R, P, S>(
 		finishedTask && finishedTask.promise && isSuspending(finishedTask.promise);
 
 	if (wasTheFinishedTaskSuspending) {
-		console.log("previous task was suspending, suspender should notify");
 		return;
 	}
 
@@ -271,13 +263,11 @@ export function onFiberStateChange<T, A extends unknown[], R, P, S>(
 		let didReturnError = returnedValue.isError;
 		let didErrorChange = state.error !== returnedValue.error;
 		if (!didReturnError || didErrorChange) {
-			console.log("rerendering :)", subscription.flags);
 			subscription.update(forceComponentUpdate);
 		}
 	} else {
 		if (state.status === "pending" && subscription.flags & SUSPENDING) {
 			// no need to update to the pending state
-			console.log("bailout notification,,,,", subscription.flags);
 			return;
 		}
 		let newValue = selectValueForSubscription(state, subscription);
@@ -286,15 +276,11 @@ export function onFiberStateChange<T, A extends unknown[], R, P, S>(
 			!doesReturnMatchFiberStatus(state.status, returnedValue)
 		) {
 			if (isRenderPhaseRun) {
-				queueMicrotask(() => {
-					subscription.start(() => {
-						subscription.update(forceComponentUpdate);
-					});
-				});
-			} else {
-				subscription.start(() => {
+				setTimeout(() => {
 					subscription.update(forceComponentUpdate);
 				});
+			} else {
+				subscription.update(forceComponentUpdate);
 			}
 		}
 	}
@@ -328,7 +314,7 @@ function selectValueForSubscription<T, A extends unknown[], R, P, S>(
 	subscription: IFiberSubscription<T, A, R, P, S>
 ) {
 	let options = subscription.options;
-	if (options.selector) {
+	if (options && options.selector) {
 		return options.selector(state);
 	}
 	if (state.status === "pending") {

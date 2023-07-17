@@ -8,7 +8,8 @@ import { isSuspending, registerSuspendingPromise } from "./FiberSuspense";
 import { didDepsChange, emptyArray } from "../utils";
 import { StateFiber } from "../core/Fiber";
 import {
-	CONCURRENT,
+	CONCURRENT, humanizeFlags,
+	MOUNTED,
 	SUSPENDING,
 	THROW_ON_ERROR,
 } from "./FiberSubscriptionFlags";
@@ -87,16 +88,28 @@ function shouldRunOnRender<T, A extends unknown[], R, P, S>(
 	alternate: IFiberSubscriptionAlternate<T, A, R, P, S>
 ) {
 	let fiber = subscription.fiber;
-	let options = alternate.options;
+	let nextOptions = alternate.options;
+	let prevOptions = subscription.options;
 
-	if (options && typeof options === "object") {
-		if (options.lazy === false && options.args) {
-			let nextArgs = options.args || emptyArray;
-			let prevArgs =
-				fiber.state.status !== "initial" ? fiber.state.props.args : emptyArray;
-			let didArgsChange = didDepsChange(prevArgs, nextArgs);
-			if (didArgsChange) {
+	if (nextOptions && typeof nextOptions === "object") {
+		if (nextOptions.lazy === false) {
+			let state = fiber.state;
+			let nextArgs = nextOptions.args || emptyArray;
+
+			let isInitial = state.status === "initial";
+			if (isInitial) {
 				return true;
+			}
+			let fiberCurrentArgs =
+				state.status === "initial" ? emptyArray : state.props.args;
+
+			let didArgsChange = didDepsChange(fiberCurrentArgs, nextArgs);
+			if (didArgsChange) {
+				let didArgsChange = didDepsChange(
+					prevOptions.args || emptyArray,
+					nextArgs
+				);
+				return didArgsChange;
 			}
 		}
 	}

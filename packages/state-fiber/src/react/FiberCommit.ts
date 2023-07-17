@@ -1,5 +1,5 @@
 import { IFiberSubscription, IFiberSubscriptionAlternate } from "./_types";
-import { COMMITTED, SUSPENDING } from "./FiberSubscriptionFlags";
+import { COMMITTED, MOUNTED, SUSPENDING } from "./FiberSubscriptionFlags";
 import { isSuspending, resolveSuspendingPromise } from "./FiberSuspense";
 import { dispatchNotificationExceptFor } from "../core/FiberDispatch";
 import { IStateFiber } from "../core/_types";
@@ -8,9 +8,9 @@ export function commitSubscription<T, A extends unknown[], R, P, S>(
 	subscription: IFiberSubscription<T, A, R, P, S>,
 	alternate: IFiberSubscriptionAlternate<T, A, R, P, S>
 ) {
+	subscription.flags |= COMMITTED;
 	// todo: verify subscription is painting latest version
 	let fiber = subscription.fiber;
-	console.log("comitting", subscription, alternate);
 
 	// if alternate is falsy, this means this subscription is ran again
 	// without the component rendering (StrictEffects, Offscreen .. )
@@ -28,7 +28,6 @@ export function commitSubscription<T, A extends unknown[], R, P, S>(
 		}
 	}
 
-	subscription.flags |= COMMITTED;
 	let unsubscribe = fiber.actions.subscribe(subscription.update, subscription);
 
 	if (fiber.task) {
@@ -50,7 +49,6 @@ export function commitSubscription<T, A extends unknown[], R, P, S>(
 				subscription.flags &= ~SUSPENDING;
 				resolveSuspendingPromise(latestResolvedPromise);
 				// todo: check if suspendingUpdater is "stale"
-				console.log("sending notifications________________________");
 				dispatchNotificationExceptFor(fiber, suspendingUpdater);
 			}
 		}

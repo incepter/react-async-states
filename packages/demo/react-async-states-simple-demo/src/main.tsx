@@ -143,6 +143,7 @@ async function getUsersDetails(props): Promise<User> {
 	await new Promise((res) => setTimeout(res, 1000));
 	return promise.data;
 }
+
 export function InvalidateButton({ id, api }: { id: number; api: any }) {
 	const [isPending, start] = useTransition();
 	return (
