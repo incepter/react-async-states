@@ -22,7 +22,7 @@ import { useAsync, useData, useFiber } from "state-fiber/src";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement, {}).render(
 	<React.StrictMode>
-		<React.Suspense fallback="llkjlkljk">
+		<React.Suspense fallback="Top level suspense">
 			<App />
 		</React.Suspense>
 	</React.StrictMode>
@@ -30,30 +30,40 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement, {}).render(
 
 export const userIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20];
 
-let paintedId: number | null = null;
+function SuspenseBoundary(props) {
+	let color = props.color || "white";
+	return (
+		<section style={{ padding: 16, border: `1px dashed ${color}` }}>
+			<summary style={{ marginBottom: 16 }}>
+				This is a suspense boundary
+			</summary>
+			<Suspense fallback={props.fallback}>{props.children}</Suspense>
+		</section>
+	);
+}
+
+function Section({ open, children, summary }) {
+	return (
+		<details open>
+			<summary>{summary}</summary>
+			{children}
+		</details>
+	);
+}
+
 function App() {
 	const [userId, setId] = React.useState(1);
-	let setUserId = (id) => {
-		console.log("_______spy");
-		setId(id);
-	};
-
-	React.useEffect(() => {
-		paintedId = userId;
-	}, [userId]);
 	console.log("App", userId);
 
 	return (
 		<div>
-			<Suspense fallback="boundary 1">
+			<Buttons setId={setId} />
+			<SuspenseBoundary fallback="boundary 1 fallback" color="red">
 				<UserDetails alias="1" useHook={useAsync} userId={userId} />
-				<Buttons setId={setUserId} />
-			</Suspense>
-			<hr />
-			<Suspense fallback="boundary 2">
 				<UserDetails alias="2" useHook={useFiber} userId={userId} />
-				<Buttons setId={setUserId} />
-			</Suspense>
+			</SuspenseBoundary>
+			<hr />
+			<UserDetails alias="3" useHook={useFiber} userId={userId} />
 			<br />
 			<hr />
 		</div>
@@ -78,12 +88,9 @@ function UserDetails(props) {
 		props
 		// paintedId
 	);
-	React.useLayoutEffect(() => {
-		console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&layouteffect", alias);
-	});
-	React.useEffect(() => {
-		console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&effect", alias);
-	});
+	// React.useLayoutEffect(() => {
+	// 	console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&layouteffect", alias);
+	// });
 	// if (paintedId === userId) {
 	// 	throw new Error("STOP");
 	// }
@@ -91,16 +98,18 @@ function UserDetails(props) {
 		key: "user",
 		lazy: false,
 		args: [userId],
+		initialValue: {},
 		producer: getUsersDetails,
 	});
+
 	console.log("render for", alias, "completed");
 	const { data } = result;
 	if (result.isPending) {
-		console.log("_______________pending________________");
-		return "Pending...";
+		return `Pending for props (${userId}), and optimistic args (${result.state.props.args[0]})`;
 	}
 	return <UserDetailsImpl data={data} />;
 }
+
 function UserDetailsImpl({ data: user }) {
 	return (
 		<details>
@@ -160,6 +169,7 @@ export function InvalidateButton({ id, api }: { id: number; api: any }) {
 		</button>
 	);
 }
+
 export type Page<T> = {
 	page: number;
 	size: number;

@@ -8,8 +8,7 @@ import { isSuspending, registerSuspendingPromise } from "./FiberSuspense";
 import { didDepsChange, emptyArray } from "../utils";
 import { StateFiber } from "../core/Fiber";
 import {
-	CONCURRENT, humanizeFlags,
-	MOUNTED,
+	CONCURRENT,
 	SUSPENDING,
 	THROW_ON_ERROR,
 } from "./FiberSubscriptionFlags";
@@ -17,6 +16,7 @@ import {
 	completeRenderPhaseRun,
 	startRenderPhaseRun,
 } from "./FiberSubscription";
+import { dispatchNotificationExceptFor } from "../core/FiberDispatch";
 
 export function renderFiber<T, A extends unknown[], R, P, S>(
 	renderFlags: number,
@@ -37,41 +37,56 @@ export function renderFiber<T, A extends unknown[], R, P, S>(
 		};
 	}
 
-	let shouldRun = shouldRunOnRender(subscription, alternate);
-
-	if (shouldRun) {
-		let renderRunArgs = getRenderRunArgs(options);
-		let prev = startRenderPhaseRun();
-		fiber.actions.run.apply(null, renderRunArgs);
-		completeRenderPhaseRun(prev);
-	}
-
 	if (renderFlags & CONCURRENT) {
-		if (fiber.pending) {
-			subscription.flags |= SUSPENDING;
-			let promise = fiber.pending.promise!;
-			if (shouldRun) {
-				registerSuspendingPromise(promise, subscription.update);
-			}
-			throw promise;
-		}
-		let previousPromise = fiber.task?.promise;
-		if (previousPromise && isSuspending(previousPromise)) {
-			// we mark it as suspending, this means that this promise
-			// was previously suspending a tree.
-			// Since we don't know when/if react will recover from suspense,
-			// we mark the alternate as being suspending, so in commit phase,
-			// we will notify subscribers
-			if (!(alternate.flags & SUSPENDING)) {
-				alternate.flags |= SUSPENDING;
-			}
-		}
+		renderFiberConcurrent(renderFlags, subscription, alternate);
 	}
+
 	if (renderFlags & THROW_ON_ERROR && fiber.state.status === "error") {
 		throw fiber.state.error;
 	}
 
 	return alternate;
+}
+
+function renderFiberConcurrent<T, A extends unknown[], R, P, S>(
+	renderFlags: number,
+	subscription: IFiberSubscription<T, A, R, P, S>,
+	alternate: IFiberSubscriptionAlternate<T, A, R, P, S>
+) {
+	let fiber = subscription.fiber;
+	let options = alternate.options;
+	let shouldRun = shouldRunOnRender(subscription, alternate);
+
+	if (shouldRun) {
+		let renderRunArgs = getRenderRunArgs(options);
+		let prev = startRenderPhaseRun();
+
+		fiber.actions.run.apply(null, renderRunArgs);
+
+		if (renderFlags & CONCURRENT && fiber.pending) {
+			dispatchNotificationExceptFor(fiber, subscription.update);
+		}
+
+		completeRenderPhaseRun(prev);
+	}
+
+	if (fiber.pending) {
+		subscription.flags |= SUSPENDING;
+		let promise = fiber.pending.promise!;
+		registerSuspendingPromise(promise, subscription.update);
+		throw promise;
+	}
+	let previousPromise = fiber.task?.promise;
+	if (previousPromise && isSuspending(previousPromise)) {
+		// we mark it as suspending, this means that this promise
+		// was previously suspending a tree.
+		// Since we don't know when/if react will recover from suspense,
+		// we mark the alternate as being suspending, so in commit phase,
+		// we will notify subscribers
+		if (!(alternate.flags & SUSPENDING)) {
+			alternate.flags |= SUSPENDING;
+		}
+	}
 }
 
 function getRenderRunArgs<T, A extends unknown[], R, P, S>(
@@ -95,6 +110,12 @@ function shouldRunOnRender<T, A extends unknown[], R, P, S>(
 		if (nextOptions.lazy === false) {
 			let state = fiber.state;
 			let nextArgs = nextOptions.args || emptyArray;
+
+			if (fiber.pending) {
+				// if already pending, re-run only if args changed
+				let pendingArgs = fiber.pending.args;
+				return didDepsChange(pendingArgs, nextArgs);
+			}
 
 			let isInitial = state.status === "initial";
 			if (isInitial) {

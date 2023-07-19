@@ -17,10 +17,9 @@ import {
 	UseAsyncPendingReturn,
 	UseAsyncSuccessReturn,
 } from "./_types";
-import { __DEV__, resolveComponentName } from "../utils";
+import { __DEV__, didDepsChange, resolveComponentName } from "../utils";
 import { isSuspending } from "./FiberSuspense";
-import { SUSPENDING, TRANSITION } from "./FiberSubscriptionFlags";
-import { dispatchNotificationExceptFor } from "../core/FiberDispatch";
+import { SUSPENDING } from "./FiberSubscriptionFlags";
 
 let ZERO = 0;
 export function useSubscription<T, A extends unknown[], R, P, S>(
@@ -120,6 +119,16 @@ function createLegacySubscriptionReturn<T, A extends unknown[], R, P, S>(
 	value: S | null
 ): LegacyHooksReturn<T, A, R, P, S> {
 	let state = fiber.state;
+	if (fiber.pending) {
+		let pending = fiber.pending;
+		const pendingState: PendingState<T, A, R, P> = {
+			prev: state,
+			status: "pending",
+			timestamp: Date.now(),
+			props: { payload: pending.payload, args: pending.args },
+		};
+		return createSubscriptionPendingReturn(pendingState, fiber, value as S);
+	}
 
 	switch (state.status) {
 		case "error": {
@@ -127,9 +136,6 @@ function createLegacySubscriptionReturn<T, A extends unknown[], R, P, S>(
 		}
 		case "initial": {
 			return createSubscriptionInitialReturn(state, fiber, value as S);
-		}
-		case "pending": {
-			return createSubscriptionPendingReturn(state, fiber, value as S);
 		}
 		case "success": {
 			return createSubscriptionSuccessReturn(state, fiber, value as S);
@@ -151,7 +157,6 @@ function createModernSubscriptionReturn<T, A extends unknown[], R, P, S>(
 			return createSubscriptionSuccessReturn(fiber.state, fiber, value as S);
 		}
 		case "error":
-		case "pending":
 		default: {
 			throw new Error("This is a bug");
 		}
@@ -242,8 +247,8 @@ export function onFiberStateChange<T, A extends unknown[], R, P, S>(
 ) {
 	// todo: prepare alternate for the next render
 	// todo: bailout pending sometimes, if possible
-	let { fiber, version, return: returnedValue } = subscription;
-	if (!returnedValue) {
+	let { fiber, version, return: committedReturn } = subscription;
+	if (!committedReturn) {
 		throw new Error("This is a bug");
 	}
 	if (fiber.version === version) {
@@ -252,31 +257,50 @@ export function onFiberStateChange<T, A extends unknown[], R, P, S>(
 
 	let state = fiber.state;
 	let finishedTask = fiber.task;
-	let wasTheFinishedTaskSuspending =
+	let currentSuspender =
 		finishedTask && finishedTask.promise && isSuspending(finishedTask.promise);
 
-	if (wasTheFinishedTaskSuspending) {
-		return;
+	// this means that the fiber's most recent "task" was "suspending"
+	if (currentSuspender) {
+		let isThisSubscriptionSuspending = currentSuspender === subscription.update;
+		if (isThisSubscriptionSuspending) {
+			// leave react recover it and ignore this notification
+			// todo: schedule an auto-recovery if react stops rendering the suspending
+			//       tree. This can happen, the delay is TDB (~50-100ms)
+			return;
+		}
+		let isNotPending = !fiber.pending;
+		let wasCommittingPending = subscription.return!.isPending;
+		if (isNotPending && wasCommittingPending) {
+			// this is case do nothing, because since it was suspending
+			// the suspender will recover back using react suspense and then it will
+			// notify other components from its commit effect
+			return;
+		}
 	}
 
 	if (state.status === "error") {
-		let didReturnError = returnedValue.isError;
-		let didErrorChange = state.error !== returnedValue.error;
+		let didReturnError = committedReturn.isError;
+		let didErrorChange = state.error !== committedReturn.error;
 		if (!didReturnError || didErrorChange) {
 			subscription.update(forceComponentUpdate);
-		}
-	} else {
-		if (state.status === "pending" && subscription.flags & SUSPENDING) {
-			// no need to update to the pending state
 			return;
 		}
-		let newValue = selectValueForSubscription(state, subscription);
+	} else {
+		let willBePending = fiber.pending;
+		let isSubscriptionSuspending = subscription.flags & SUSPENDING;
+		if (willBePending && isSubscriptionSuspending) {
+			// no need to resuspend
+			return;
+		}
+		// at this point, state is either Initial or Success
+		let newValue = selectValueForSubscription(fiber, state, subscription);
 		if (
-			!Object.is(newValue, returnedValue.data) ||
-			!doesReturnMatchFiberStatus(state.status, returnedValue)
+			!Object.is(newValue, committedReturn.data) ||
+			!doesPreviousReturnMatchFiberStatus(fiber, state.status, committedReturn)
 		) {
 			if (isRenderPhaseRun) {
-				setTimeout(() => {
+				queueMicrotask(() => {
 					subscription.update(forceComponentUpdate);
 				});
 			} else {
@@ -290,35 +314,44 @@ function forceComponentUpdate(prev: number) {
 	return prev + 1;
 }
 
-function doesReturnMatchFiberStatus<T, A extends unknown[], R, P, S>(
-	status: "initial" | "pending" | "success",
-	returnedValue: LegacyHooksReturn<T, A, R, P, S>
+function doesPreviousReturnMatchFiberStatus<T, A extends unknown[], R, P, S>(
+	fiber: IStateFiber<T, A, R, P>,
+	status: "initial" | "success",
+	previousReturn: LegacyHooksReturn<T, A, R, P, S>
 ) {
-	if (returnedValue.isError) {
+	if (fiber.pending && previousReturn.isPending) {
+		let nextArgs = fiber.pending.args;
+		let prevArgs = previousReturn.state.props.args;
+		let didArgsChange = didDepsChange(prevArgs, nextArgs);
+		// if args changed, return doesnt match anymore optimistic, schedule update
+		return !didArgsChange;
+	}
+	if (fiber.pending && !previousReturn.isPending) {
 		return false;
 	}
-	if (returnedValue.isInitial && status !== "initial") {
+	if (previousReturn.isError) {
 		return false;
 	}
-	if (returnedValue.isSuccess && status !== "success") {
+	if (previousReturn.isInitial && status !== "initial") {
 		return false;
 	}
-	if (returnedValue.isPending && status !== "pending") {
+	if (previousReturn.isSuccess && status !== "success") {
 		return false;
 	}
 	return true;
 }
 
 function selectValueForSubscription<T, A extends unknown[], R, P, S>(
-	state: InitialState<T> | PendingState<T, A, R, P> | SuccessState<T, A, P>,
+	fiber: IStateFiber<T, A, R, P>,
+	state: InitialState<T> | SuccessState<T, A, P>,
 	subscription: IFiberSubscription<T, A, R, P, S>
 ) {
 	let options = subscription.options;
 	if (options && options.selector) {
 		return options.selector(state);
 	}
-	if (state.status === "pending") {
-		let previousState = state.prev;
+	if (fiber.pending) {
+		let previousState = fiber.state;
 		if (previousState.status === "error") {
 			return null;
 		}

@@ -46,7 +46,7 @@ export interface IStateFiber<T, A extends unknown[], R, P>
 	listeners: Map<Function, any>; // actual retainers
 	actions: IStateFiberActions<T, A, R, P>; // wrapper to manipulate this fiber
 
-	task: RunTask<T, A, R, P> | null; // the latest executed task
+	task: RunTask<T, A, R, P> | null; // the latest executed task that completed
 	pending: RunTask<T, A, R, P> | null; // the current pending task
 }
 
@@ -156,6 +156,5 @@ export type SavedProps<A extends unknown[], P> = {
 
 export type State<T, A extends unknown[], R, P> =
 	| InitialState<T>
-	| PendingState<T, A, R, P>
 	| ErrorState<A, R, P>
 	| SuccessState<T, A, P>;

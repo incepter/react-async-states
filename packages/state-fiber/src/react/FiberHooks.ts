@@ -17,7 +17,7 @@ import { IStateFiberActions } from "../core/_types";
 import { guardAgainstInfiniteLoop } from "../utils";
 
 // useAsync suspends on pending and throws when error, like React.use()
-export function useAsync<T, A extends unknown[], R, P, S>(
+export function useAsync<T, A extends unknown[], R, P, S = T>(
 	options: HooksStandardOptions<T, A, R, P, S>
 ): ModernHooksReturn<T, A, R, P, S> {
 	let context = useCurrentContext(options);
@@ -25,7 +25,6 @@ export function useAsync<T, A extends unknown[], R, P, S>(
 
 	let subscription = useSubscription(USE_ASYNC, fiber, options);
 	let alternate = renderFiber(USE_ASYNC, subscription, options);
-
 	React.useLayoutEffect(() => commitSubscription(subscription, alternate));
 	alternate.return = inferModernSubscriptionReturn(subscription, alternate);
 
@@ -38,7 +37,7 @@ export function useAsync<T, A extends unknown[], R, P, S>(
 // will not throw on pending and error
 // will give the all statuses, this is the old useAsyncState :)
 // full backward compatibility will be smooth
-export function useFiber<T, A extends unknown[], R, P, S>(
+export function useFiber<T, A extends unknown[], R, P, S = T>(
 	options: HooksStandardOptions<T, A, R, P, S>
 ): LegacyHooksReturn<T, A, R, P, S> {
 	let context = useCurrentContext(options);
@@ -50,6 +49,7 @@ export function useFiber<T, A extends unknown[], R, P, S>(
 	React.useLayoutEffect(() => commitSubscription(subscription, alternate));
 	alternate.return = inferLegacySubscriptionReturn(subscription, alternate);
 
+	// console.log("useFiber", { ...alternate.return, source: null });
 	alternate.version = fiber.version;
 
 	// guardAgainstInfiniteLoop();

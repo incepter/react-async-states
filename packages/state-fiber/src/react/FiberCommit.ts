@@ -1,5 +1,5 @@
 import { IFiberSubscription, IFiberSubscriptionAlternate } from "./_types";
-import { COMMITTED, MOUNTED, SUSPENDING } from "./FiberSubscriptionFlags";
+import { COMMITTED, SUSPENDING } from "./FiberSubscriptionFlags";
 import { isSuspending, resolveSuspendingPromise } from "./FiberSuspense";
 import { dispatchNotificationExceptFor } from "../core/FiberDispatch";
 import { IStateFiber } from "../core/_types";

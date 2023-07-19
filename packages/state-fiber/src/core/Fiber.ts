@@ -45,7 +45,6 @@ export class StateFiber<T, A extends unknown[], R, P>
 	version: number;
 
 	state: State<T, A, R, P>; // TBD
-	// todo: keep only one of these, mostly the "pending" one
 	task: RunTask<T, A, R, P> | null;
 	pending: RunTask<T, A, R, P> | null;
 

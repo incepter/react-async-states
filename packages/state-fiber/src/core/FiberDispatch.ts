@@ -112,38 +112,9 @@ export function dispatchNotificationExceptFor<T, A extends unknown[], R, P>(
 
 export function dispatchFiberPendingEvent<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
-	task: RunTask<T, A, R, P>
+	task: RunTask<T, A, R, P> // unused
 ) {
-	let previousSettledState:
-		| InitialState<T>
-		| ErrorState<A, R, P>
-		| SuccessState<T, A, P> = resolveLatestState(fiber, fiber.state);
-
 	fiber.version += 1;
-	fiber.state = {
-		status: "pending",
-		timestamp: Date.now(),
-		prev: previousSettledState,
-		props: { payload: task.payload, args: task.args },
-	};
-
-	dispatchNotification(fiber);
-}
-
-function resolveLatestState<T, A extends unknown[], R, P>(
-	fiber: IStateFiber<T, A, R, P>,
-	currentState: IStateFiber<T, A, R, P>["state"]
-) {
-	if (currentState.status === "initial") {
-		return currentState;
-	}
-	if (currentState.status === "success") {
-		return currentState;
-	}
-	if (currentState.status === "error") {
-		return currentState;
-	}
-	return resolveLatestState(fiber, currentState.prev);
 }
 
 export function dispatchSetData<T, A extends unknown[], R, P>(
