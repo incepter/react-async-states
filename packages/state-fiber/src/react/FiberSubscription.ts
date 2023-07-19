@@ -255,7 +255,6 @@ export function onFiberStateChange<T, A extends unknown[], R, P, S>(
 		return;
 	}
 
-	let state = fiber.state;
 	let finishedTask = fiber.task;
 	let currentSuspender =
 		finishedTask && finishedTask.promise && isSuspending(finishedTask.promise);
@@ -279,22 +278,37 @@ export function onFiberStateChange<T, A extends unknown[], R, P, S>(
 		}
 	}
 
+	ensureSubscriptionIsUpToDate(subscription);
+}
+
+// returns true if it did schedule an update for this component
+export function ensureSubscriptionIsUpToDate<T, A extends unknown[], R, P, S>(
+	subscription: IFiberSubscription<T, A, R, P, S>
+): boolean {
+	let { fiber, return: committedReturn } = subscription;
+
+	// this may never happen, but let's keep it safe
+	if (!committedReturn) {
+		return false;
+	}
+
+	let state = fiber.state;
 	if (state.status === "error") {
 		let didReturnError = committedReturn.isError;
 		let didErrorChange = state.error !== committedReturn.error;
 		if (!didReturnError || didErrorChange) {
 			subscription.update(forceComponentUpdate);
-			return;
+			return true;
 		}
 	} else {
 		let willBePending = fiber.pending;
 		let isSubscriptionSuspending = subscription.flags & SUSPENDING;
 		if (willBePending && isSubscriptionSuspending) {
 			// no need to resuspend
-			return;
+			return false;
 		}
 		// at this point, state is either Initial or Success
-		let newValue = selectValueForSubscription(fiber, state, subscription);
+		let newValue = selectSubscriptionData(fiber, state, subscription);
 		if (
 			!Object.is(newValue, committedReturn.data) ||
 			!doesPreviousReturnMatchFiberStatus(fiber, state.status, committedReturn)
@@ -306,15 +320,26 @@ export function onFiberStateChange<T, A extends unknown[], R, P, S>(
 			} else {
 				subscription.update(forceComponentUpdate);
 			}
+			return true;
 		}
 	}
+	return false;
 }
 
 function forceComponentUpdate(prev: number) {
 	return prev + 1;
 }
 
-function doesPreviousReturnMatchFiberStatus<T, A extends unknown[], R, P, S>(
+// this will check whether the returned version (or the committed one)
+// is synced with fiber's state, including pending
+// keep it stupid
+export function doesPreviousReturnMatchFiberStatus<
+	T,
+	A extends unknown[],
+	R,
+	P,
+	S
+>(
 	fiber: IStateFiber<T, A, R, P>,
 	status: "initial" | "success",
 	previousReturn: LegacyHooksReturn<T, A, R, P, S>
@@ -341,7 +366,7 @@ function doesPreviousReturnMatchFiberStatus<T, A extends unknown[], R, P, S>(
 	return true;
 }
 
-function selectValueForSubscription<T, A extends unknown[], R, P, S>(
+export function selectSubscriptionData<T, A extends unknown[], R, P, S>(
 	fiber: IStateFiber<T, A, R, P>,
 	state: InitialState<T> | SuccessState<T, A, P>,
 	subscription: IFiberSubscription<T, A, R, P, S>

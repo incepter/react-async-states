@@ -18,7 +18,7 @@ import React, { Suspense, useTransition } from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
 import { API } from "./app/api";
-import { useAsync, useData, useFiber } from "state-fiber/src";
+import { useAsync, useFiber } from "state-fiber/src";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement, {}).render(
 	<React.StrictMode>
@@ -79,6 +79,8 @@ function ErrorComponent({ error }) {
 	);
 }
 
+let run: Function | undefined = undefined;
+
 function UserDetails(props) {
 	let { userId, useHook, alias } = props;
 	console.log(
@@ -101,6 +103,7 @@ function UserDetails(props) {
 		initialValue: {},
 		producer: getUsersDetails,
 	});
+	run = result.source.run;
 
 	console.log("render for", alias, "completed");
 	const { data } = result;
@@ -139,6 +142,7 @@ export function SetUserButton({ id, setUserId }) {
 			onClick={() => {
 				// setUserId(id);
 				start(() => setUserId(id));
+				// run?.(id);
 			}}
 			className={isPending ? "pending" : ""}
 		>
@@ -148,7 +152,9 @@ export function SetUserButton({ id, setUserId }) {
 }
 
 async function getUsersDetails(props): Promise<User> {
-	let promise = await API.get(`/users/${props.args[0]}`);
+	let promise = await API.get(`/users/${props.args[0]}`, {
+		signal: props.signal,
+	});
 	await new Promise((res) => setTimeout(res, 1000));
 	return promise.data;
 }

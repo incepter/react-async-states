@@ -1,8 +1,18 @@
-import { IFiberSubscription, IFiberSubscriptionAlternate } from "./_types";
-import { COMMITTED, SUSPENDING } from "./FiberSubscriptionFlags";
+import {
+	HooksStandardOptions,
+	IFiberSubscription,
+	IFiberSubscriptionAlternate,
+} from "./_types";
+import { COMMITTED, CONCURRENT, SUSPENDING } from "./FiberSubscriptionFlags";
 import { isSuspending, resolveSuspendingPromise } from "./FiberSuspense";
-import { dispatchNotificationExceptFor } from "../core/FiberDispatch";
+import {
+	dispatchNotification,
+	dispatchNotificationExceptFor,
+	togglePendingNotification,
+} from "../core/FiberDispatch";
 import { IStateFiber } from "../core/_types";
+import { ensureSubscriptionIsUpToDate } from "./FiberSubscription";
+import { didDepsChange, emptyArray } from "../utils";
 
 export function commitSubscription<T, A extends unknown[], R, P, S>(
 	subscription: IFiberSubscription<T, A, R, P, S>,
@@ -11,6 +21,7 @@ export function commitSubscription<T, A extends unknown[], R, P, S>(
 	subscription.flags |= COMMITTED;
 	// todo: verify subscription is painting latest version
 	let fiber = subscription.fiber;
+	let committedOptions = subscription.options;
 
 	// if alternate is falsy, this means this subscription is ran again
 	// without the component rendering (StrictEffects, Offscreen .. )
@@ -28,8 +39,33 @@ export function commitSubscription<T, A extends unknown[], R, P, S>(
 		}
 	}
 
-	let unsubscribe = fiber.actions.subscribe(subscription.update, subscription);
+	if (subscription.version !== fiber.version) {
+		let didScheduleUpdate = ensureSubscriptionIsUpToDate(subscription);
+		// this means that subscription was stale and did schedule an update
+		// to rerender the component. no need to perform subscription since
+		// we will be rendering again
+		if (didScheduleUpdate) {
+			return;
+		}
+	}
 
+	if (subscription.flags & CONCURRENT) {
+		commitConcurrentSubscription(subscription);
+	} else {
+		commitLegacySubscription(subscription, committedOptions);
+	}
+
+	let unsubscribe = fiber.actions.subscribe(subscription.update, subscription);
+	return () => {
+		unsubscribe();
+		subscription.flags &= ~COMMITTED;
+	};
+}
+
+function commitConcurrentSubscription<T, A extends unknown[], R, P, S>(
+	subscription: IFiberSubscription<T, A, R, P, S>
+) {
+	let fiber = subscription.fiber;
 	if (fiber.task) {
 		let latestResolvedPromise = fiber.task.promise;
 		if (latestResolvedPromise) {
@@ -39,28 +75,83 @@ export function commitSubscription<T, A extends unknown[], R, P, S>(
 			if (
 				suspendingUpdater &&
 				(suspendingUpdater === subscription.update ||
-					// suspendingUpdater is garbage collected happens when a component suspends
-					// on the initial render, because react does not preserve
+					// suspendingUpdater is garbage collected happens when a component
+					// suspends on the initial render, because react does not preserve
 					// the identity of the state and creates another.
 					// in this case, in first committing subscription will notify others
 					// this does not happen on updates
-					wasSuspenderGCed(fiber, suspendingUpdater))
+					wasSuspenderGarbageCollected(fiber, suspendingUpdater))
 			) {
 				subscription.flags &= ~SUSPENDING;
 				resolveSuspendingPromise(latestResolvedPromise);
-				// todo: check if suspendingUpdater is "stale"
 				dispatchNotificationExceptFor(fiber, suspendingUpdater);
 			}
 		}
 	}
-
-	return () => {
-		unsubscribe();
-		subscription.flags &= ~COMMITTED;
-	};
 }
 
-function wasSuspenderGCed(fiber: IStateFiber<any, any, any, any>, updater) {
+function commitLegacySubscription<T, A extends unknown[], R, P, S>(
+	subscription: IFiberSubscription<T, A, R, P, S>,
+	prevOptions: HooksStandardOptions<T, A, R, P, S>
+) {
+	let shouldRun = shouldLegacySubscriptionRun(subscription, prevOptions);
+	if (shouldRun) {
+		if (shouldRun) {
+			let fiber = subscription.fiber;
+			let options = subscription.options;
+			let renderRunArgs = (options.args || emptyArray) as A;
+
+			// we enable notifications about "pending" updates via this
+			let previousNotification = togglePendingNotification(true);
+
+			fiber.actions.run.apply(null, renderRunArgs);
+
+			togglePendingNotification(previousNotification);
+			dispatchNotification(fiber);
+		}
+	}
+}
+
+function shouldLegacySubscriptionRun<T, A extends unknown[], R, P, S>(
+	subscription: IFiberSubscription<T, A, R, P, S>,
+	prevOptions: HooksStandardOptions<T, A, R, P, S>
+) {
+	let nextOptions = subscription.options;
+	if (!nextOptions || nextOptions.lazy !== false) {
+		return false;
+	}
+
+	let fiber = subscription.fiber;
+	let prevArgs = prevOptions.args || emptyArray;
+	let nextArgs = nextOptions.args || emptyArray;
+
+	if (fiber.pending) {
+		let pendingPromise = fiber.pending.promise!;
+		if (isSuspending(pendingPromise)) {
+			return false;
+		}
+
+		let pendingArgs = fiber.pending.args;
+		return didDepsChange(pendingArgs, nextArgs);
+	}
+
+	let state = fiber.state;
+	if (state.status === "initial") {
+		return true;
+	}
+
+	let fiberCurrentArgs = state.props.args;
+	let didArgsChange = didDepsChange(fiberCurrentArgs, nextArgs);
+
+	if (didArgsChange) {
+		return didDepsChange(prevArgs, nextArgs);
+	}
+}
+
+function wasSuspenderGarbageCollected(
+	fiber: IStateFiber<any, any, any, any>,
+	updater
+) {
 	for (let t of fiber.listeners.keys()) {
 		if (t === updater) {
 			return false;

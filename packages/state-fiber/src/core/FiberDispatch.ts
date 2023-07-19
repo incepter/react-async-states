@@ -1,14 +1,11 @@
 import {
-	ErrorState,
 	FiberPromise,
 	FulfilledPromise,
-	InitialState,
 	IStateFiber,
 	RejectedPromise,
 	RunTask,
 	SavedProps,
 	State,
-	SuccessState,
 } from "./_types";
 import { cleanFiberTask } from "./FiberTask";
 import { isPromise } from "../utils";
@@ -110,11 +107,20 @@ export function dispatchNotificationExceptFor<T, A extends unknown[], R, P>(
 	}
 }
 
+let notifyOnPending = true;
+export function togglePendingNotification(nextValue: boolean) {
+	let previousValue = notifyOnPending;
+	notifyOnPending = nextValue;
+	return previousValue;
+}
 export function dispatchFiberPendingEvent<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
 	task: RunTask<T, A, R, P> // unused
 ) {
 	fiber.version += 1;
+	if (notifyOnPending) {
+		dispatchNotification(fiber);
+	}
 }
 
 export function dispatchSetData<T, A extends unknown[], R, P>(

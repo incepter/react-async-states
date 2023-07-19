@@ -16,7 +16,10 @@ import {
 	completeRenderPhaseRun,
 	startRenderPhaseRun,
 } from "./FiberSubscription";
-import { dispatchNotificationExceptFor } from "../core/FiberDispatch";
+import {
+	dispatchNotificationExceptFor,
+	togglePendingNotification,
+} from "../core/FiberDispatch";
 
 export function renderFiber<T, A extends unknown[], R, P, S>(
 	renderFlags: number,
@@ -60,20 +63,28 @@ function renderFiberConcurrent<T, A extends unknown[], R, P, S>(
 	if (shouldRun) {
 		let renderRunArgs = getRenderRunArgs(options);
 		let prev = startRenderPhaseRun();
+		// we stop notifications for pending or render
+		let previousNotification = togglePendingNotification(false);
 
 		fiber.actions.run.apply(null, renderRunArgs);
 
+		// this means that this render will suspender, so we notify other subscribers
+		// since the commit phase won't get executed for this component, so basically
+		// the outside world is unaware of this update
 		if (renderFlags & CONCURRENT && fiber.pending) {
 			dispatchNotificationExceptFor(fiber, subscription.update);
 		}
 
 		completeRenderPhaseRun(prev);
+		togglePendingNotification(previousNotification);
 	}
 
 	if (fiber.pending) {
 		subscription.flags |= SUSPENDING;
 		let promise = fiber.pending.promise!;
+
 		registerSuspendingPromise(promise, subscription.update);
+
 		throw promise;
 	}
 	let previousPromise = fiber.task?.promise;
@@ -117,14 +128,13 @@ function shouldRunOnRender<T, A extends unknown[], R, P, S>(
 				return didDepsChange(pendingArgs, nextArgs);
 			}
 
-			let isInitial = state.status === "initial";
-			if (isInitial) {
+			if (state.status === "initial") {
 				return true;
 			}
-			let fiberCurrentArgs =
-				state.status === "initial" ? emptyArray : state.props.args;
 
+			let fiberCurrentArgs = state.props.args;
 			let didArgsChange = didDepsChange(fiberCurrentArgs, nextArgs);
+
 			if (didArgsChange) {
 				let didArgsChange = didDepsChange(
 					prevOptions.args || emptyArray,
