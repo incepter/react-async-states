@@ -19,7 +19,7 @@ export function commitSubscription<T, A extends unknown[], R, P, S>(
 	alternate: IFiberSubscriptionAlternate<T, A, R, P, S>
 ) {
 	subscription.flags |= COMMITTED;
-	// todo: verify subscription is painting latest version
+
 	let fiber = subscription.fiber;
 	let committedOptions = subscription.options;
 
@@ -49,13 +49,14 @@ export function commitSubscription<T, A extends unknown[], R, P, S>(
 		}
 	}
 
+	let unsubscribe = fiber.actions.subscribe(subscription.update, subscription);
+
 	if (subscription.flags & CONCURRENT) {
 		commitConcurrentSubscription(subscription);
 	} else {
 		commitLegacySubscription(subscription, committedOptions);
 	}
 
-	let unsubscribe = fiber.actions.subscribe(subscription.update, subscription);
 	return () => {
 		unsubscribe();
 		subscription.flags &= ~COMMITTED;
