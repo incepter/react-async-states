@@ -6,7 +6,7 @@ import { waitFor } from "@testing-library/dom";
 import { doesNodeExist, flushPromises } from "./utils";
 import { FnProps } from "../core/_types";
 
-describe("should perform basic form separately", () => {
+describe("should perform basic forms separately", () => {
 	async function getCurrentNumberProducer(
 		props: FnProps<number, [number], never, never>
 	) {

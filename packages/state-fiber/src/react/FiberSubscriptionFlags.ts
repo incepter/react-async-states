@@ -15,6 +15,7 @@ export const USE_FIBER = LEGACY;
 export const USE_ASYNC = CONCURRENT | THROW_ON_ERROR | TRANSITION;
 
 export let humanizeFlags;
+/* istanbul ignore next */
 if (__DEV__) {
 	humanizeFlags = (flags: number) => {
 		let output: string[] = [];
