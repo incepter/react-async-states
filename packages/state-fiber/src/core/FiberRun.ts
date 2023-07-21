@@ -1,9 +1,17 @@
-import { FnProps, ICallbacks, IStateFiber, RuncProps, RunTask } from "./_types";
+import {
+	FnProps,
+	ICallbacks,
+	IStateFiber,
+	RuncProps,
+	RunTask,
+	StateRoot,
+} from "./_types";
 import { cleanFiberTask, createTask } from "./FiberTask";
 import {
 	dispatchFiberAbortEvent,
 	dispatchFiberRunEvent,
 } from "./FiberDispatch";
+import { noop } from "../utils";
 
 export function runStateFiber<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
@@ -32,10 +40,6 @@ export function runcStateFiber<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
 	props: RuncProps<T, A, R, P>
 ): () => void {
-	if (fiber.pending) {
-		dispatchFiberAbortEvent(fiber, fiber.pending);
-	}
-
 	let callbacks: ICallbacks<T, R> = {
 		onError: props.onError,
 		onSuccess: props.onSuccess,
@@ -55,6 +59,43 @@ function runFiberTask<T, A extends unknown[], R, P>(
 		throw new Error("Not supported yet");
 	}
 
+	let root = fiber.root;
+	let applyEffects = doesRootHaveEffects(root);
+	if (applyEffects) {
+		let { effect, effectDurationMs } = root.config!;
+		switch (effect) {
+			case "delay":
+			case "debounce": {
+				let pendingRun = getFiberPendingRun(fiber);
+				if (pendingRun) {
+					bailoutPendingRun(pendingRun);
+				}
+				return scheduleEffectRunOnFiber(fiber, task, effect, effectDurationMs);
+			}
+			case "throttle": {
+				let pendingRun = getFiberPendingRun(fiber);
+				if (pendingRun) {
+					bailoutPendingRun(pendingRun);
+				}
+				let latestRanTask = resolveLatestTaskFiberWasRan(fiber);
+				if (latestRanTask.at + effectDurationMs > Date.now()) {
+					bailoutPendingRun(latestRanTask);
+					return scheduleEffectRunOnFiber(
+						fiber,
+						task,
+						effect,
+						effectDurationMs
+					);
+				}
+				// do nothing, you are throttled, probably return previous cleanup ?
+				return () => {};
+			}
+			default: {
+				throw new Error("Unsupported run effect " + String(effect));
+			}
+		}
+	}
+
 	if (fiber.task) {
 		cleanFiberTask(fiber.task);
 	}
@@ -63,8 +104,18 @@ function runFiberTask<T, A extends unknown[], R, P>(
 		cleanFiberTask(fiber.pending);
 	}
 
-	// todo: cache support
-	// todo: run effects support
+	let cacheEnabled = hasCacheEnabled(root);
+	if (cacheEnabled) {
+		let taskHash = computeTaskHash(root, task);
+		let existingCache = requestCacheWithHash(fiber, taskHash);
+		if (existingCache) {
+			let replace = shouldReplaceStateWithCache(existingCache);
+			if (replace) {
+				replaceFiberStateWithCache(existingCache);
+				return noop;
+			}
+		}
+	}
 
 	task.clean = () => dispatchFiberAbortEvent(fiber, task);
 
@@ -88,4 +139,19 @@ function runFiberTask<T, A extends unknown[], R, P>(
 
 	dispatchFiberRunEvent(fiber, task);
 	return task.clean;
+}
+
+export function hasCacheEnabled(fiber: IStateFiber<any, any, any, any>) {
+	return fiber.root.config?.cacheConfig?.enabled || false;
+}
+
+export function doesRootHaveEffects(root: StateRoot<any, any, any, any>) {
+	let config = root.config;
+	if (!config) {
+		return false;
+	}
+	let enableByEffect = !!config.effect || false;
+	if (enableByEffect) {
+		return (config.effectDurationMs || 0) > 0;
+	}
 }

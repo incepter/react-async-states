@@ -4,8 +4,53 @@ export type Fn<T, A extends unknown[], R, P> = {
 	(props: FnProps<T, A, R, P>): T | Promise<T>;
 };
 
+export type RunEffect = "delay" | "debounce" | "throttle";
+
+export type CacheConfig<T, A extends unknown[], R, P> = {
+	enabled?: boolean;
+	hash?(args: A, payload: P): string;
+	deadline?: CacheEntryDeadline<T, A, R, P>; // in Ms
+
+	load?(): CachedStateList<T, A, P>;
+	persist?(cache: CachedStateList<T, A, P>): void;
+};
+
+export type RetryConfig<T, A extends unknown[], R, P> = {
+	enabled?: boolean;
+	max?: number;
+	backoff?: number;
+	retry(e: R, retryCounter: number): boolean;
+};
+
+export type CachedStateList<T, A extends unknown[], P> = {
+	[hash: string]: CachedState<T, A, P>;
+};
+
+export type CachedState<T, A extends unknown[], P> = {
+	args: A;
+	payload: P;
+	data: T;
+	timestamp: number;
+	deadline: number;
+};
+
+export type CacheEntryDeadline<T, A extends unknown[], R, P> =
+	| number
+	| ((state: SuccessState<T, A, P>) => number);
+
 export interface BaseFiberConfig<T, A extends unknown[], R, P> {
 	initialValue?: T;
+
+	effect?: RunEffect;
+	effectDurationMs?: number;
+
+	keepPendingForMs?: number;
+	skipPendingDelayMs?: number;
+
+	reset?: boolean;
+
+	retryConfig?: RetryConfig<T, A, R, P>;
+	cacheConfig?: CacheConfig<T, A, R, P>;
 }
 
 export interface FnProps<T, A extends unknown[], R, P> {

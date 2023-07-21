@@ -62,9 +62,9 @@ function renderFiberConcurrent<T, A extends unknown[], R, P, S>(
 
 	if (shouldRun) {
 		let renderRunArgs = getRenderRunArgs(options);
-		let prev = startRenderPhaseRun();
+		let wasRunningOnRender = startRenderPhaseRun();
 		// we stop notifications for pending on render
-		let previousNotification = togglePendingNotification(false);
+		let wasNotifyingOnPending = togglePendingNotification(false);
 
 		fiber.actions.run.apply(null, renderRunArgs);
 
@@ -75,8 +75,8 @@ function renderFiberConcurrent<T, A extends unknown[], R, P, S>(
 			dispatchNotificationExceptFor(fiber, subscription.update);
 		}
 
-		completeRenderPhaseRun(prev);
-		togglePendingNotification(previousNotification);
+		completeRenderPhaseRun(wasRunningOnRender);
+		togglePendingNotification(wasNotifyingOnPending);
 	}
 
 	if (fiber.pending) {
