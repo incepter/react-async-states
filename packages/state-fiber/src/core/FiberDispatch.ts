@@ -146,12 +146,6 @@ export function dispatchSetData<T, A extends unknown[], R, P>(
 		timestamp: Date.now(),
 	};
 
-	if (enableCache(fiber)) {
-
-	}
-	let justAddedState = fiber.state;
-
-
 	dispatchNotification(fiber);
 }
 

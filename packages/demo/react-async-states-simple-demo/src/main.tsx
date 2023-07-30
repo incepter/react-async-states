@@ -24,6 +24,8 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement, {}).render(
 	<React.StrictMode>
 		<React.Suspense fallback="Top level suspense">
 			<App />
+			<hr />
+			<EffectsDemo />
 		</React.Suspense>
 	</React.StrictMode>
 );
@@ -102,6 +104,9 @@ function UserDetails(props) {
 		args: [userId],
 		initialValue: {},
 		producer: getUsersDetails,
+
+		// effect: "delay",
+		// effectDurationMs: 600,
 	});
 	run = result.source.run;
 
@@ -193,3 +198,38 @@ export type Post = {
 	title: string;
 	userId: number;
 };
+
+function EffectsDemo() {
+	let {
+		state,
+		error,
+		source: { run },
+	} = useFiber({
+		key: "user-d",
+		effect: "throttle",
+		effectDurationMs: 1000,
+		producer(props): Promise<{ id: number; username: string }> {
+			return API.get(`/users/${props.args[0]}`, { signal: props.signal });
+		},
+	});
+	let dataToDisplay = error ? error.toString?.() : state.data?.data;
+	return (
+		<div className="App">
+			<input
+				placeholder="userId (1, 2)"
+				onChange={(e) => run(e.target.value)}
+			/>
+			<hr />
+			<details open>
+				<summary>State - {state.status}</summary>
+				<pre style={{ maxHeight: "60", overflow: "auto" }}>
+					{JSON.stringify(
+						{ status: state.status, data: dataToDisplay },
+						null,
+						4
+					)}
+				</pre>
+			</details>
+		</div>
+	);
+}

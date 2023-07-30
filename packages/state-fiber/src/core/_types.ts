@@ -93,6 +93,15 @@ export interface IStateFiber<T, A extends unknown[], R, P>
 
 	task: RunTask<T, A, R, P> | null; // the latest executed task that completed
 	pending: RunTask<T, A, R, P> | null; // the current pending task
+
+	pendingRun: PendingRun | null;
+}
+
+export type PendingRun = {
+	at: number; // datetime
+	id: ReturnType<typeof setTimeout>;
+
+	// clean: () => void;
 }
 
 export interface ILibraryContext {
@@ -149,6 +158,7 @@ export interface RunTask<T, A extends unknown[], R, P> {
 	args: A;
 	payload: P;
 
+	at: number; // datetime
 	controller: AbortController;
 	result: T | Promise<T> | null;
 	promise: FiberPromise<T, R> | null;
