@@ -138,14 +138,13 @@ export function dispatchSetData<T, A extends unknown[], R, P>(
 			? props
 			: savedPropsFromDataUpdate<A, P>(data, fiber.payload);
 
+	fiber.version += 1;
 	fiber.state = {
 		data,
 		props: savedProps,
 		status: "success",
 		timestamp: Date.now(),
 	};
-
-	fiber.version += 1;
 
 	dispatchNotification(fiber);
 }

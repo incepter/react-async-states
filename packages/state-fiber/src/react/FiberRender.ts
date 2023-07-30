@@ -62,9 +62,9 @@ function renderFiberConcurrent<T, A extends unknown[], R, P, S>(
 
 	if (shouldRun) {
 		let renderRunArgs = getRenderRunArgs(options);
-		let prev = startRenderPhaseRun();
-		// we stop notifications for pending or render
-		let previousNotification = togglePendingNotification(false);
+		let wasRunningOnRender = startRenderPhaseRun();
+		// we stop notifications for pending on render
+		let wasNotifyingOnPending = togglePendingNotification(false);
 
 		fiber.actions.run.apply(null, renderRunArgs);
 
@@ -75,8 +75,8 @@ function renderFiberConcurrent<T, A extends unknown[], R, P, S>(
 			dispatchNotificationExceptFor(fiber, subscription.update);
 		}
 
-		completeRenderPhaseRun(prev);
-		togglePendingNotification(previousNotification);
+		completeRenderPhaseRun(wasRunningOnRender);
+		togglePendingNotification(wasNotifyingOnPending);
 	}
 
 	if (fiber.pending) {
@@ -113,11 +113,12 @@ function shouldRunOnRender<T, A extends unknown[], R, P, S>(
 	subscription: IFiberSubscription<T, A, R, P, S>,
 	alternate: IFiberSubscriptionAlternate<T, A, R, P, S>
 ) {
-	let fiber = subscription.fiber;
 	let nextOptions = alternate.options;
-	let prevOptions = subscription.options;
 
 	if (nextOptions && typeof nextOptions === "object") {
+		let fiber = subscription.fiber;
+		let prevOptions = subscription.options;
+
 		if (nextOptions.lazy === false) {
 			let state = fiber.state;
 			let nextArgs = nextOptions.args || emptyArray;

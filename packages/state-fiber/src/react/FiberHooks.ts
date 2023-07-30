@@ -28,7 +28,6 @@ export function useAsync<T, A extends unknown[], R, P, S = T>(
 	React.useLayoutEffect(() => commitSubscription(subscription, alternate));
 	alternate.return = inferModernSubscriptionReturn(subscription, alternate);
 
-	// guardAgainstInfiniteLoop();
 	alternate.version = fiber.version;
 
 	return alternate.return;
