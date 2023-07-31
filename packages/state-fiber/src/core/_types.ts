@@ -95,12 +95,19 @@ export interface IStateFiber<T, A extends unknown[], R, P>
 	pending: RunTask<T, A, R, P> | null; // the current pending task
 
 	pendingRun: PendingRun | null;
+	pendingUpdate: PendingUpdate | null;
 }
 
 export type PendingRun = {
 	at: number; // datetime
 	id: ReturnType<typeof setTimeout>;
 
+	// clean: () => void;
+}
+export type PendingUpdate = {
+	at: number; // datetime
+	id: ReturnType<typeof setTimeout>;
+	task: RunTask<any, any, any, any>;
 	// clean: () => void;
 }
 

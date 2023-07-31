@@ -23,7 +23,7 @@ import { useAsync, useFiber } from "state-fiber/src";
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement, {}).render(
 	<React.StrictMode>
 		<React.Suspense fallback="Top level suspense">
-			<App />
+			{/*<App />*/}
 			<hr />
 			<EffectsDemo />
 		</React.Suspense>
@@ -160,7 +160,7 @@ async function getUsersDetails(props): Promise<User> {
 	let promise = await API.get(`/users/${props.args[0]}`, {
 		signal: props.signal,
 	});
-	await new Promise((res) => setTimeout(res, 1000));
+	// await new Promise((res) => setTimeout(res, 1000));
 	return promise.data;
 }
 
@@ -206,9 +206,11 @@ function EffectsDemo() {
 		source: { run },
 	} = useFiber({
 		key: "user-d",
-		effect: "throttle",
-		effectDurationMs: 1000,
-		producer(props): Promise<{ id: number; username: string }> {
+		effect: "debounce",
+		effectDurationMs: 300,
+		skipPendingDelayMs: 200,
+		async producer(props): Promise<{ id: number; username: string }> {
+			await new Promise(res => setTimeout(res, 2000));
 			return API.get(`/users/${props.args[0]}`, { signal: props.signal });
 		},
 	});

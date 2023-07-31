@@ -4,6 +4,8 @@ import {
 	IStateFiber,
 	IStateFiberActions,
 	IStateFiberRoot,
+	PendingRun,
+	PendingUpdate,
 	RuncProps,
 	RunTask,
 	State,
@@ -52,6 +54,9 @@ export class StateFiber<T, A extends unknown[], R, P>
 	listeners: Map<Function, any>;
 	actions: IStateFiberActions<T, A, R, P>;
 
+	pendingRun: PendingRun | null;
+	pendingUpdate: PendingUpdate | null;
+
 	constructor(root: StateRoot<T, A, R, P>, context: ILibraryContext) {
 		super(root);
 		let existingFiber = context.get(root.key);
@@ -70,6 +75,9 @@ export class StateFiber<T, A extends unknown[], R, P>
 		this.state = computeInitialState(this);
 		this.listeners = new Map<Function, any>();
 		this.actions = new StateFiberActions(this);
+
+		this.pendingRun = null;
+		this.pendingUpdate = null;
 
 		// context.set(root.key, this);
 	}

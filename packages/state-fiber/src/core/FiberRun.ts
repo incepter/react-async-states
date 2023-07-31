@@ -127,7 +127,6 @@ function runFiberTask<T, A extends unknown[], R, P>(
 				let latestRanTask = resolveLatestTaskFiberWasRan(fiber);
 				if (latestRanTask) {
 					let isElapsed = Date.now() - latestRanTask.at > effectDuration;
-					console.log("throttle shit", latestRanTask.at, isElapsed, Date.now());
 					if (isElapsed) {
 						return executeFiberTask(fiber, task);
 					} else {

@@ -15,7 +15,6 @@ export function dispatchFiberAbortEvent<T, A extends unknown[], R, P>(
 	task: RunTask<T, A, R, P>
 ) {
 	cleanFiberTask(task);
-	task.indicators.aborted = true;
 
 	// remove if it is the current pending
 	if (fiber.pending === task) {
@@ -83,7 +82,6 @@ function trackPendingFiberPromise<T, A extends unknown[], R, P>(
 		);
 	}
 	if (!indicators.aborted && promise.status === "pending") {
-		fiber.pending = task;
 		dispatchFiberPendingEvent(fiber, task);
 	}
 }
@@ -117,9 +115,68 @@ export function dispatchFiberPendingEvent<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
 	task: RunTask<T, A, R, P> // unused
 ) {
-	fiber.version += 1;
-	if (notifyOnPending) {
-		dispatchNotification(fiber);
+	let pendingUpdate = fiber.pendingUpdate;
+	let config = fiber.root.config;
+
+	// you should not be pending for skipPending to work
+	// if fast, if you are already giving the pending state to subscribers,
+	// no need to wait again, just change the props synchronously
+	// this behavior can be tuned via a flag if it turns out to be not viable
+	if (
+		!fiber.pending &&
+		config &&
+		config.skipPendingDelayMs &&
+		config.skipPendingDelayMs > 0
+	) {
+		let now = Date.now();
+		let pendingUpdateAt = now;
+		let delay = config.skipPendingDelayMs;
+		// if a previous pending update is scheduled, we should remove the elapsed
+		// time from the delay
+		if (pendingUpdate) {
+			// this cleanup after referencing ensures that pendingUpdate.task
+			// gets invalidated so even if it resolves later, it doesn't affect fiber
+			cleanPendingFiberUpdate(fiber);
+			let prevPendingAt = pendingUpdate.at;
+			let elapsedTime = now - prevPendingAt;
+
+			// we deduce here the elapsed time from the previous "scheduled pending"
+			delay = delay - elapsedTime;
+			pendingUpdateAt = delay < 0 ? now : prevPendingAt;
+		}
+
+		let id = setTimeout(() => {
+			// do nothing when task was aborted
+			// and also only update if status is "still pending"
+			// or else, the resolving event is responsible for update and notification
+			if (!task.indicators.aborted && task.promise?.status === "pending") {
+				cleanPendingFiberUpdate(fiber);
+				fiber.version += 1;
+				fiber.pending = task;
+				if (notifyOnPending) {
+					dispatchNotification(fiber);
+				}
+			}
+		}, delay);
+		fiber.pendingUpdate = { id, at: pendingUpdateAt, task };
+	} else {
+		cleanPendingFiberUpdate(fiber);
+		fiber.version += 1;
+		fiber.pending = task;
+		if (notifyOnPending) {
+			dispatchNotification(fiber);
+		}
+	}
+}
+
+export function cleanPendingFiberUpdate(
+	fiber: IStateFiber<any, any, any, any>
+) {
+	let pendingUpdate = fiber.pendingUpdate;
+	if (pendingUpdate) {
+		cleanFiberTask(pendingUpdate.task);
+		clearTimeout(pendingUpdate.id);
+		fiber.pendingUpdate = null;
 	}
 }
 
@@ -128,6 +185,7 @@ export function dispatchSetData<T, A extends unknown[], R, P>(
 	data: T,
 	props: SavedProps<A, P> | null
 ) {
+	cleanPendingFiberUpdate(fiber);
 	if (fiber.pending) {
 		cleanFiberTask(fiber.pending);
 	}
@@ -165,6 +223,7 @@ export function dispatchSetError<T, A extends unknown[], R, P>(
 	error: R,
 	props: SavedProps<A, P> | null
 ) {
+	cleanPendingFiberUpdate(fiber);
 	if (fiber.pending) {
 		cleanFiberTask(fiber.pending);
 	}
@@ -189,6 +248,7 @@ export function dispatchFiberStateChangeEvent<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
 	state: State<T, A, R, P>
 ) {
+	cleanPendingFiberUpdate(fiber);
 	if (fiber.pending) {
 		cleanFiberTask(fiber.pending);
 	}
