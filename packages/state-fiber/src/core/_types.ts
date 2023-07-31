@@ -114,7 +114,7 @@ export type PendingUpdate = {
 export interface ILibraryContext {
 	get(key: string): IStateFiber<any, any, any, any> | undefined;
 	set(key: string, instance: IStateFiber<any, any, any, any>): void;
-	remove(key: string);
+	remove(key: string): boolean;
 }
 
 export type StateFiberUpdate<T> = T | ((prev: T) => T);

@@ -154,8 +154,7 @@ export function resolveFiber<T, A extends unknown[], R, P, S>(
 	options: HooksStandardOptions<T, A, R, P, S>
 ) {
 	if (typeof options === "object") {
-		// todo: get rid of object destructuring
-		let { key, producer, ...config } = options;
+		let { key, producer } = options;
 		let existingFiber = context.get(key);
 		let fiberConfig = sliceFiberConfig(options);
 
@@ -177,7 +176,7 @@ export function resolveFiber<T, A extends unknown[], R, P, S>(
 function sliceFiberConfig<T, A extends unknown[], R, P, S>(
 	options: HooksStandardOptions<T, A, R, P, S>
 ) {
-	return options; // todo
+	return options; // todo: clone & remove hooks specific options
 }
 
 function reconcileFiberConfig<T, A extends unknown[], R, P, S>(

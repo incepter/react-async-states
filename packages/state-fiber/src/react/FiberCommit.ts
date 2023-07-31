@@ -97,19 +97,17 @@ function commitLegacySubscription<T, A extends unknown[], R, P, S>(
 ) {
 	let shouldRun = shouldLegacySubscriptionRun(subscription, prevOptions);
 	if (shouldRun) {
-		if (shouldRun) {
-			let fiber = subscription.fiber;
-			let options = subscription.options;
-			let renderRunArgs = (options.args || emptyArray) as A;
+		let fiber = subscription.fiber;
+		let options = subscription.options;
+		let renderRunArgs = (options.args || emptyArray) as A;
 
-			// we enable notifications about "pending" updates via this
-			let previousNotification = togglePendingNotification(true);
+		// we enable notifications about "pending" updates via this
+		let previousNotification = togglePendingNotification(true);
 
-			fiber.actions.run.apply(null, renderRunArgs);
+		fiber.actions.run.apply(null, renderRunArgs);
 
-			togglePendingNotification(previousNotification);
-			dispatchNotification(fiber);
-		}
+		togglePendingNotification(previousNotification);
+		dispatchNotification(fiber);
 	}
 }
 
@@ -127,6 +125,7 @@ function shouldLegacySubscriptionRun<T, A extends unknown[], R, P, S>(
 	let nextArgs = nextOptions.args || emptyArray;
 
 	if (fiber.pending) {
+		// todo: add fiber.flags and test easily with (fiber.flags | SUSPENDING)
 		let pendingPromise = fiber.pending.promise!;
 		if (isSuspending(pendingPromise)) {
 			return false;

@@ -210,7 +210,7 @@ function EffectsDemo() {
 		effectDurationMs: 300,
 		skipPendingDelayMs: 200,
 		async producer(props): Promise<{ id: number; username: string }> {
-			await new Promise(res => setTimeout(res, 2000));
+			// await new Promise(res => setTimeout(res, 2000));
 			return API.get(`/users/${props.args[0]}`, { signal: props.signal });
 		},
 	});
@@ -226,7 +226,11 @@ function EffectsDemo() {
 				<summary>State - {state.status}</summary>
 				<pre style={{ maxHeight: "60", overflow: "auto" }}>
 					{JSON.stringify(
-						{ status: state.status, data: dataToDisplay },
+						{
+							status: state.status,
+							data: dataToDisplay,
+							props: state.props,
+						},
 						null,
 						4
 					)}

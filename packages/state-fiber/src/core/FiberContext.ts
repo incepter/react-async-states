@@ -24,7 +24,7 @@ export function removeContext(ctx: any) {
 export class LibraryContext implements ILibraryContext {
 	private readonly ctx: any;
 	private readonly list: Map<string, IStateFiber<any, any, any, any>>;
-	constructor(ctx) {
+	constructor(ctx: any) {
 		this.ctx = ctx;
 		this.get = this.get.bind(this);
 		this.set = this.set.bind(this);
@@ -38,6 +38,6 @@ export class LibraryContext implements ILibraryContext {
 		this.list.set(key, instance);
 	}
 	remove(key: string) {
-		this.list.delete(key);
+		return this.list.delete(key);
 	}
 }

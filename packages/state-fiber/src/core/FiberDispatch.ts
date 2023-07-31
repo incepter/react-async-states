@@ -59,7 +59,10 @@ function trackPendingFiberPromise<T, A extends unknown[], R, P>(
 					// todo: all dispatch from here should include the 'task'
 					//       so we are aware of callbacks and other stuff
 					let { args, payload } = task;
-					if (fiber.pending === task) {
+					if (
+						task === fiber.pending ||
+						(fiber.pendingUpdate && task === fiber.pendingUpdate.task)
+					) {
 						fiber.task = task;
 						fiber.pending = null;
 					}
@@ -70,13 +73,16 @@ function trackPendingFiberPromise<T, A extends unknown[], R, P>(
 				untrackedPromise.status = "rejected";
 				(untrackedPromise as RejectedPromise<R>).reason = error;
 
-				let { args, payload } = task;
-				if (fiber.pending === task) {
-					fiber.task = task;
-					fiber.pending = null;
-				}
 				if (!indicators.aborted) {
-					dispatchSetError(fiber, error, { args, payload });
+					if (
+						task === fiber.pending ||
+						(fiber.pendingUpdate && task === fiber.pendingUpdate.task)
+					) {
+						fiber.task = task;
+						fiber.pending = null;
+						let { args, payload } = task;
+						dispatchSetError(fiber, error, { args, payload });
+					}
 				}
 			}
 		);
@@ -149,13 +155,15 @@ export function dispatchFiberPendingEvent<T, A extends unknown[], R, P>(
 			// do nothing when task was aborted
 			// and also only update if status is "still pending"
 			// or else, the resolving event is responsible for update and notification
-			if (!task.indicators.aborted && task.promise?.status === "pending") {
-				cleanPendingFiberUpdate(fiber);
-				fiber.version += 1;
-				fiber.pending = task;
-				if (notifyOnPending) {
-					dispatchNotification(fiber);
-				}
+			if (!task.indicators.aborted) {
+				 if (task.promise?.status === "pending") {
+					 fiber.version += 1;
+					 fiber.pending = task;
+					 fiber.pendingRun = null;
+					 if (notifyOnPending) {
+						 dispatchNotification(fiber);
+					 }
+				 }
 			}
 		}, delay);
 		fiber.pendingUpdate = { id, at: pendingUpdateAt, task };
