@@ -164,7 +164,7 @@ export interface RunTask<T, A extends unknown[], R, P> {
 	promise: FiberPromise<T, R> | null;
 
 	clean: () => void;
-	onAbort(cb): void;
+	onAbort(cb: () => void): void;
 	indicators: {
 		aborted: boolean;
 		cleared: boolean;

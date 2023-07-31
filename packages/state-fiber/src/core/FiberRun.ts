@@ -105,12 +105,6 @@ function runFiberTask<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
 	task: RunTask<T, A, R, P>
 ) {
-	let { fn } = fiber.root;
-
-	if (!fn || typeof fn !== "function") {
-		throw new Error("Not supported yet");
-	}
-
 	let root = fiber.root;
 	let applyEffects = doesRootHaveEffects(root);
 	if (applyEffects) {
@@ -133,7 +127,7 @@ function runFiberTask<T, A extends unknown[], R, P>(
 				let latestRanTask = resolveLatestTaskFiberWasRan(fiber);
 				if (latestRanTask) {
 					let isElapsed = Date.now() - latestRanTask.at > effectDuration;
-					console.log('throttle shit', latestRanTask.at, isElapsed, Date.now())
+					console.log("throttle shit", latestRanTask.at, isElapsed, Date.now());
 					if (isElapsed) {
 						return executeFiberTask(fiber, task);
 					} else {
@@ -157,12 +151,22 @@ function executeFiberTask<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
 	task: RunTask<T, A, R, P>
 ) {
-	if (fiber.task) {
-		cleanFiberTask(fiber.task);
+	let {
+		root: { fn },
+		task: latestTask,
+		pending: pendingTask,
+	} = fiber;
+
+	if (!fn || typeof fn !== "function") {
+		throw new Error("Not supported yet");
 	}
 
-	if (fiber.pending) {
-		cleanFiberTask(fiber.pending);
+	if (latestTask) {
+		cleanFiberTask(latestTask);
+	}
+
+	if (pendingTask) {
+		cleanFiberTask(pendingTask);
 	}
 
 	// let cacheEnabled = hasCacheEnabled(fiber.root);
@@ -183,7 +187,7 @@ function executeFiberTask<T, A extends unknown[], R, P>(
 	// todo: add other effects (emit, select, run)
 	// todo: catch this execution
 	// todo:
-	task.result = fiber.root.fn!({
+	task.result = fn({
 		args: task.args,
 		// todo: this abort is wrong, it can cause infinite pending states
 		// we need an abort that's bound to this task, that would bailout the work
