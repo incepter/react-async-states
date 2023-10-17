@@ -14,7 +14,11 @@ import {
 	trackPendingFiberPromise,
 } from "./FiberDispatch";
 import { isPromise, noop } from "../utils";
-import { enqueueDataUpdate, enqueueStateUpdate } from "./FiberUpdate";
+import {
+	enqueueDataUpdate,
+	enqueueErrorUpdate,
+	enqueueStateUpdate,
+} from "./FiberUpdate";
 import {
 	computeTaskHash,
 	didCachedStateExpire,
@@ -205,29 +209,37 @@ function executeFiberTask<T, A extends unknown[], R, P>(
 	}
 
 	task.at = Date.now();
-	task.clean = () => dispatchFiberAbortEvent(fiber, task);
+	task.clean = () => {
+		let currentlyPending = fiber.pending;
+		dispatchFiberAbortEvent(fiber, task);
 
-	// todo: add other effects (emit, select, run)
-	// todo: catch this execution
-	// todo:
-	task.result = fn({
-		args: task.args,
-		// todo: this abort is wrong, it can cause infinite pending states
-		// we need an abort that's bound to this task, that would bailout the work
-		// to the previous state and remove the pending state, and notify if needed
-		abort: task.clean,
-		onAbort: task.onAbort,
-		payload: task.payload,
-		signal: task.controller.signal,
-		isAborted(): boolean {
-			return task.indicators.aborted;
-		},
-	} as FnProps<T, A, R, P>);
+		// only notify when we clean/abort this particular task when it's the current
+		if (currentlyPending === task) {
+			dispatchNotification(fiber);
+		}
+	};
 
-	// todo: mark task as cleaned if not a pending promise
+	let result: T | Promise<T>;
 
-	const result = task.result;
+	try {
+		// todo: add other effects (emit, select, run)
+		result = fn({
+			args: task.args,
+			abort: task.clean,
+			onAbort: task.onAbort,
+			payload: task.payload,
+			signal: task.controller.signal,
+			isAborted(): boolean {
+				return task.indicators.aborted;
+			},
+		} as FnProps<T, A, R, P>);
+	} catch (e: any) {
+		enqueueErrorUpdate(fiber, e as R, task);
+		dispatchNotification(fiber);
+		return noop;
+	}
 
+	task.result = result;
 	if (isPromise(result)) {
 		trackPendingFiberPromise(fiber, task);
 	} else {

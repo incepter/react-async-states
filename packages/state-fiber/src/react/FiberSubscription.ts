@@ -79,11 +79,11 @@ export function inferModernSubscriptionReturn<T, A extends unknown[], R, P, S>(
 	let pendingOptions = alternate.options;
 
 	// this means that we need to check what changed in the options
+	// this will be always false if the user is provider an object/fn literal
 	// todo: complete this
 	if (prevOptions !== pendingOptions) {
 	}
 
-	// todo: add checks in __DEV__ to throw if we encounter a legacy hook return
 	return alternate.return as ModernHooksReturn<T, A, R, P, S>;
 }
 

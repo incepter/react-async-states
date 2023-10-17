@@ -125,7 +125,6 @@ function shouldLegacySubscriptionRun<T, A extends unknown[], R, P, S>(
 	let nextArgs = nextOptions.args || emptyArray;
 
 	if (fiber.pending) {
-		// todo: add fiber.flags and test easily with (fiber.flags | SUSPENDING)
 		let pendingPromise = fiber.pending.promise!;
 		if (isSuspending(pendingPromise)) {
 			return false;

@@ -207,12 +207,12 @@ function EffectsDemo() {
 		source: { runc },
 	} = useFiber<any, [string], Error, never>({
 		key: "user-d",
-		effect: "debounce",
-		effectDurationMs: 400,
-		keepPendingForMs: 400,
-		skipPendingDelayMs: 400,
+		// effect: "debounce",
+		// effectDurationMs: 400,
+		// keepPendingForMs: 400,
+		// skipPendingDelayMs: 400,
 		cacheConfig: {
-			enabled: true,
+			enabled: false,
 			hash(args): string {
 				return args[0] + "";
 			},
@@ -225,11 +225,11 @@ function EffectsDemo() {
 				return JSON.parse(localStorage.getItem("__test__2") || "{}");
 			},
 		},
-		async producer(props): Promise<{ id: number; username: string }> {
-			// if (!props.args[0]) {
-			// 	throw new Error("Missing id");
-			// }
-			await new Promise((res) => setTimeout(res, 400));
+		producer(props): Promise<{ id: number; username: string }> {
+			if (!props.args[0]) {
+				throw new Error("Missing id");
+			}
+			// await new Promise((res) => setTimeout(res, 400));
 			return API.get(`/users/${props.args[0]}`, { signal: props.signal });
 		},
 	});
