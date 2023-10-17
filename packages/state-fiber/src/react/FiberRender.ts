@@ -1,4 +1,4 @@
-import { ILibraryContext, IStateFiber } from "../core/_types";
+import { BaseFiberConfig, ILibraryContext, IStateFiber } from "../core/_types";
 import {
 	HooksStandardOptions,
 	IFiberSubscription,
@@ -175,13 +175,20 @@ export function resolveFiber<T, A extends unknown[], R, P, S>(
 
 function sliceFiberConfig<T, A extends unknown[], R, P, S>(
 	options: HooksStandardOptions<T, A, R, P, S>
-) {
-	return options; // todo: clone & remove hooks specific options
+): BaseFiberConfig<T, A, R, P> | undefined {
+	if (!options || typeof options !== "object") {
+		return undefined;
+	}
+	return options;
 }
 
 function reconcileFiberConfig<T, A extends unknown[], R, P, S>(
 	fiber: IStateFiber<T, A, R, P>,
-	config
+	config: BaseFiberConfig<T, A, R, P> | undefined
 ) {
-	// todo
+	if (!fiber.root.config) {
+		Object.assign({}, config);
+	} else {
+		Object.assign(fiber.root.config, config);
+	}
 }

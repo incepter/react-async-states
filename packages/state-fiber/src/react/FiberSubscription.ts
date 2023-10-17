@@ -267,20 +267,21 @@ function createSubscriptionErrorReturn<T, A extends unknown[], R, P, S>(
 function selectStateFromFiber<T, A extends unknown[], R, P, S>(
 	fiber: IStateFiber<T, A, R, P>,
 	options: HooksStandardOptions<T, A, R, P, S> | null
-) {
+): S {
 	if (options && typeof options === "object" && options.selector) {
 		return options.selector(fiber.state);
 	}
-	// @ts-ignore
-	// todo: fix this
+
+	if (fiber.state.status === "error") {
+		throw new Error("This is a bug");
+	}
+
 	return fiber.state.data as S;
 }
 
 export function onFiberStateChange<T, A extends unknown[], R, P, S>(
 	subscription: IFiberSubscription<T, A, R, P, S>
 ) {
-	// todo: prepare alternate for the next render
-	// todo: bailout pending sometimes, if possible
 	let { fiber, version, return: committedReturn } = subscription;
 	if (!committedReturn) {
 		throw new Error("This is a bug");
@@ -298,8 +299,8 @@ export function onFiberStateChange<T, A extends unknown[], R, P, S>(
 		let isThisSubscriptionSuspending = currentSuspender === subscription.update;
 		if (isThisSubscriptionSuspending) {
 			// leave react recover it and ignore this notification
-			// todo: schedule an auto-recovery if react stops rendering the suspending
-			//       tree. This can happen, the delay is TDB (~50-100ms)
+			// We need to schedule an auto-recovery if react stops rendering the
+			// suspending tree. This can happen, the delay is TDB (~50-100ms)
 			return;
 		}
 		let isNotPending = !fiber.pending;
