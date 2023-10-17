@@ -10,7 +10,6 @@ import {
 } from "./_types";
 import {
 	cleanPendingFiberUpdate,
-	dispatchNotification,
 	savedPropsFromDataUpdate,
 } from "./FiberDispatch";
 import { cleanFiberTask } from "./FiberTask";
@@ -57,9 +56,14 @@ export function flushDataUpdate<T, A extends unknown[], R, P>(
 	fiber.state = {
 		data: value,
 		props: savedProps,
-		status: "success",
 		timestamp: Date.now(),
+		status: "success" as const,
 	};
+
+	let successCallback = task?.callbacks?.onSuccess;
+	if (typeof successCallback === "function") {
+		successCallback(value);
+	}
 
 	if (
 		task === fiber.pending ||
@@ -141,6 +145,11 @@ export function flushErrorUpdate<T, A extends unknown[], R, P>(
 		timestamp: Date.now(),
 	};
 	fiber.version += 1;
+
+	let errorCallback = task?.callbacks?.onError;
+	if (typeof errorCallback === "function") {
+		errorCallback(value);
+	}
 
 	if (
 		task === fiber.pending ||

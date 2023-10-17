@@ -202,9 +202,8 @@ export type Post = {
 function EffectsDemo() {
 	let {
 		state,
-		isError,
 		error,
-		source: { run },
+		source: { runc },
 	} = useFiber<any, [string], Error, never>({
 		key: "user-d",
 		effect: "debounce",
@@ -225,7 +224,17 @@ function EffectsDemo() {
 			<input
 				autoFocus
 				placeholder="userId (1, 2)"
-				onChange={(e) => run(e.target.value)}
+				onChange={(e) =>
+					runc({
+						args: [e.target.value],
+						onSuccess(s) {
+							console.log("onSuccess state callback", s);
+						},
+						onError(e) {
+							console.log("onError state callback", e);
+						},
+					})
+				}
 			/>
 			<hr />
 			<details open>
