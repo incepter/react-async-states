@@ -95,7 +95,6 @@ export class StateFiber<T, A extends unknown[], R, P>
 		this.context = context;
 		this.payload = null as P;
 		this.id = ++stateFiberId;
-		this.state = computeInitialState(this);
 		this.listeners = new Map<Function, any>();
 		this.actions = new StateFiberActions(this);
 
@@ -106,6 +105,7 @@ export class StateFiber<T, A extends unknown[], R, P>
 		this.pendingUpdate = null;
 
 		loadFiberCache(this);
+		this.state = computeInitialState(this);
 
 		// context.set(root.key, this);
 	}
@@ -116,15 +116,23 @@ function computeInitialState<T, A extends unknown[], R, P>(
 ): InitialState<T> {
 	let { root } = instance;
 	let config = root.config;
-	let state = {
+	let state: InitialState<T> = {
+		timestamp: Date.now(),
 		status: "initial",
 	};
 
 	if (config && Object.hasOwn(config, "initialValue")) {
-		// @ts-ignore
-		// todo: function + pass cache
-		// todo: try catch to trigger error initially
-		state.data = config.initialValue;
+		let initializer = config.initialValue;
+
+
+		if (typeof initializer !== "function") {
+			state.data = initializer;
+		} else {
+			let initializerFn = initializer as (
+				cache: CachedStateList<T, A, P> | null
+			) => T;
+			state.data = initializerFn(instance.cache);
+		}
 	}
 
 	return Object.freeze(state as InitialState<T>);

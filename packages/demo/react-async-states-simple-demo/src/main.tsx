@@ -218,10 +218,11 @@ function EffectsDemo() {
 			},
 			deadline: (s) => 20000,
 			persist(cache) {
-				localStorage.setItem("__test__", JSON.stringify(cache));
+				localStorage.setItem("__test__2", JSON.stringify(cache));
 			},
 			load() {
-				return JSON.parse(localStorage.getItem("__test__") || "");
+				console.log("loading");
+				return JSON.parse(localStorage.getItem("__test__2") || "{}");
 			},
 		},
 		async producer(props): Promise<{ id: number; username: string }> {
@@ -232,6 +233,7 @@ function EffectsDemo() {
 			return API.get(`/users/${props.args[0]}`, { signal: props.signal });
 		},
 	});
+	console.log("hhhh", state.data);
 	let dataToDisplay = error ? error.toString?.() : state.data?.data;
 	return (
 		<div className="App">

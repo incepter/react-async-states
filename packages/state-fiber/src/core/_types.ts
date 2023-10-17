@@ -13,6 +13,8 @@ export type CacheConfig<T, A extends unknown[], R, P> = {
 
 	load?(): CachedStateList<T, A, P>;
 	persist?(cache: CachedStateList<T, A, P>): void;
+
+	// todo: add onCacheLoad support
 };
 
 export type RetryConfig<T, A extends unknown[], R, P> = {
@@ -36,7 +38,7 @@ export type CacheEntryDeadline<T, A extends unknown[], R, P> =
 	| ((state: SuccessState<T, A, P>) => number);
 
 export interface BaseFiberConfig<T, A extends unknown[], R, P> {
-	initialValue?: T;
+	initialValue?: T | ((cache: CachedStateList<T, A, R> | null) => T);
 
 	effect?: RunEffect;
 	effectDurationMs?: number;
