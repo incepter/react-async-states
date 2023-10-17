@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 importers:
 
   .: {}
@@ -212,7 +216,7 @@ importers:
     devDependencies:
       '@rollup/plugin-replace':
         specifier: ^5.0.1
-        version: 5.0.1(rollup@3.7.4)
+        version: 5.0.1
       '@types/node':
         specifier: ^18.11.9
         version: 18.11.15
@@ -643,7 +647,7 @@ importers:
         version: 2.0.0
       rollup-plugin-dts:
         specifier: ^5.3.0
-        version: 5.3.0(rollup@3.23.0)(typescript@5.1.1-rc)
+        version: 5.3.0(rollup@3.23.0)(typescript@5.2.2)
       rollup-plugin-gzip:
         specifier: 3.1.0
         version: 3.1.0(rollup@3.23.0)
@@ -652,19 +656,19 @@ importers:
         version: 0.6.3(@types/node@20.2.5)(rollup@3.23.0)
       rollup-plugin-typescript2:
         specifier: ^0.34.1
-        version: 0.34.1(rollup@3.23.0)(typescript@5.1.1-rc)
+        version: 0.34.1(rollup@3.23.0)(typescript@5.2.2)
       ts-jest:
         specifier: ^29.1.0
-        version: 29.1.0(@babel/core@7.21.0)(babel-jest@29.5.0)(jest@29.5.0)(typescript@5.1.1-rc)
+        version: 29.1.0(@babel/core@7.21.0)(babel-jest@29.5.0)(jest@29.5.0)(typescript@5.2.2)
       tslib:
         specifier: ^2.5.2
         version: 2.5.2
       ttypescript:
         specifier: ^1.5.15
-        version: 1.5.15(ts-node@10.9.1)(typescript@5.1.1-rc)
+        version: 1.5.15(ts-node@10.9.1)(typescript@5.2.2)
       typescript:
-        specifier: 5.1.1-rc
-        version: 5.1.1-rc
+        specifier: 5.2.2
+        version: 5.2.2
 
 packages:
 
@@ -1100,12 +1104,12 @@ packages:
       '@babel/core': ^7.4.0-0
     dependencies:
       '@babel/core': 7.21.0
-      '@babel/helper-compilation-targets': 7.20.7(@babel/core@7.21.0)
+      '@babel/helper-compilation-targets': 7.22.9(@babel/core@7.21.0)
       '@babel/helper-plugin-utils': 7.22.5
       debug: 4.3.4
       lodash.debounce: 4.0.8
       resolve: 1.22.1
-      semver: 6.3.0
+      semver: 6.3.1
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -6028,6 +6032,19 @@ packages:
       rollup: 3.23.0
     dev: true
 
+  /@rollup/plugin-replace@5.0.1:
+    resolution: {integrity: sha512-Z3MfsJ4CK17BfGrZgvrcp/l6WXoKb0kokULO+zt/7bmcyayokDaQ2K3eDJcRLCTAlp5FPI4/gz9MHAsosz4Rag==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      rollup: ^1.20.0||^2.0.0||^3.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+    dependencies:
+      '@rollup/pluginutils': 5.0.2(rollup@3.23.0)
+      magic-string: 0.26.7
+    dev: true
+
   /@rollup/plugin-replace@5.0.1(rollup@3.7.4):
     resolution: {integrity: sha512-Z3MfsJ4CK17BfGrZgvrcp/l6WXoKb0kokULO+zt/7bmcyayokDaQ2K3eDJcRLCTAlp5FPI4/gz9MHAsosz4Rag==}
     engines: {node: '>=14.0.0'}
@@ -7623,10 +7640,10 @@ packages:
     peerDependencies:
       '@babel/core': ^7.0.0-0
     dependencies:
-      '@babel/compat-data': 7.22.9
+      '@babel/compat-data': 7.20.5
       '@babel/core': 7.20.5
       '@babel/helper-define-polyfill-provider': 0.3.3(@babel/core@7.20.5)
-      semver: 6.3.1
+      semver: 6.3.0
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -9560,6 +9577,34 @@ packages:
     transitivePeerDependencies:
       - supports-color
 
+  /eslint-module-utils@2.7.4(eslint-import-resolver-node@0.3.7)(eslint@8.39.0):
+    resolution: {integrity: sha512-j4GT+rqzCoRKHwURX7pddtIPGySnX9Si/cgMI5ztrcqOPtk5dDEeZ34CQVPphnqkJytlc97Vuk05Um2mJ3gEQA==}
+    engines: {node: '>=4'}
+    peerDependencies:
+      '@typescript-eslint/parser': '*'
+      eslint: '*'
+      eslint-import-resolver-node: '*'
+      eslint-import-resolver-typescript: '*'
+      eslint-import-resolver-webpack: '*'
+    peerDependenciesMeta:
+      '@typescript-eslint/parser':
+        optional: true
+      eslint:
+        optional: true
+      eslint-import-resolver-node:
+        optional: true
+      eslint-import-resolver-typescript:
+        optional: true
+      eslint-import-resolver-webpack:
+        optional: true
+    dependencies:
+      debug: 3.2.7
+      eslint: 8.39.0
+      eslint-import-resolver-node: 0.3.7
+    transitivePeerDependencies:
+      - supports-color
+    dev: true
+
   /eslint-plugin-es@4.1.0(eslint@8.39.0):
     resolution: {integrity: sha512-GILhQTnjYE2WorX5Jyi5i4dz5ALWxBIdQECVQavL6s7cI76IZTDWleTHkxz/QT3kvcs2QlGHvKLYsSlPOlPXnQ==}
     engines: {node: '>=8.10.0'}
@@ -9618,7 +9663,7 @@ packages:
       doctrine: 2.1.0
       eslint: 8.39.0
       eslint-import-resolver-node: 0.3.7
-      eslint-module-utils: 2.7.4(@typescript-eslint/parser@5.46.1)(eslint-import-resolver-node@0.3.6)(eslint-import-resolver-typescript@3.5.5)(eslint@8.39.0)
+      eslint-module-utils: 2.7.4(eslint-import-resolver-node@0.3.7)(eslint@8.39.0)
       has: 1.0.3
       is-core-module: 2.11.0
       is-glob: 4.0.3
@@ -11612,7 +11657,7 @@ packages:
       pretty-format: 29.6.1
       slash: 3.0.0
       strip-json-comments: 3.1.1
-      ts-node: 10.9.1(@types/node@20.2.5)(typescript@5.1.1-rc)
+      ts-node: 10.9.1(@types/node@20.2.5)(typescript@5.2.2)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -14716,7 +14761,7 @@ packages:
       '@babel/code-frame': 7.22.5
     dev: true
 
-  /rollup-plugin-dts@5.3.0(rollup@3.23.0)(typescript@5.1.1-rc):
+  /rollup-plugin-dts@5.3.0(rollup@3.23.0)(typescript@5.2.2):
     resolution: {integrity: sha512-8FXp0ZkyZj1iU5klkIJYLjIq/YZSwBoERu33QBDxm/1yw5UU4txrEtcmMkrq+ZiKu3Q4qvPCNqc3ovX6rjqzbQ==}
     engines: {node: '>=v14'}
     peerDependencies:
@@ -14725,7 +14770,7 @@ packages:
     dependencies:
       magic-string: 0.30.1
       rollup: 3.23.0
-      typescript: 5.1.1-rc
+      typescript: 5.2.2
     optionalDependencies:
       '@babel/code-frame': 7.22.5
     dev: true
@@ -14780,7 +14825,7 @@ packages:
       source-map-resolve: 0.6.0
     dev: true
 
-  /rollup-plugin-typescript2@0.34.1(rollup@3.23.0)(typescript@5.1.1-rc):
+  /rollup-plugin-typescript2@0.34.1(rollup@3.23.0)(typescript@5.2.2):
     resolution: {integrity: sha512-P4cHLtGikESmqi1CA+tdMDUv8WbQV48mzPYt77TSTOPJpERyZ9TXdDgjSDix8Fkqce6soYz3+fa4lrC93IEkcw==}
     peerDependencies:
       rollup: '>=1.26.3'
@@ -14792,7 +14837,7 @@ packages:
       rollup: 3.23.0
       semver: 7.3.8
       tslib: 2.5.2
-      typescript: 5.1.1-rc
+      typescript: 5.2.2
     dev: true
 
   /rollup-plugin-typescript2@0.34.1(rollup@3.7.4)(typescript@4.9.5):
@@ -15728,7 +15773,7 @@ packages:
       yargs-parser: 21.1.1
     dev: true
 
-  /ts-jest@29.1.0(@babel/core@7.21.0)(babel-jest@29.5.0)(jest@29.5.0)(typescript@5.1.1-rc):
+  /ts-jest@29.1.0(@babel/core@7.21.0)(babel-jest@29.5.0)(jest@29.5.0)(typescript@5.2.2):
     resolution: {integrity: sha512-ZhNr7Z4PcYa+JjMl62ir+zPiNJfXJN6E8hSLnaUKhOgqcn8vb3e537cpkd0FuAfRK3sR1LSqM1MOhliXNgOFPA==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     hasBin: true
@@ -15759,7 +15804,7 @@ packages:
       lodash.memoize: 4.1.2
       make-error: 1.3.6
       semver: 7.3.8
-      typescript: 5.1.1-rc
+      typescript: 5.2.2
       yargs-parser: 21.1.1
     dev: true
 
@@ -15801,7 +15846,7 @@ packages:
       yn: 3.1.1
     dev: true
 
-  /ts-node@10.9.1(@types/node@20.2.5)(typescript@5.1.1-rc):
+  /ts-node@10.9.1(@types/node@20.2.5)(typescript@5.2.2):
     resolution: {integrity: sha512-NtVysVPkxxrwFGUUxGYhfux8k78pQB3JqYBXlLRZgdGUqTO5wU/UyHop5p70iEbGhB7q5KmiZiU0Y3KlJrScEw==}
     hasBin: true
     peerDependencies:
@@ -15827,7 +15872,7 @@ packages:
       create-require: 1.1.1
       diff: 4.0.2
       make-error: 1.3.6
-      typescript: 5.1.1-rc
+      typescript: 5.2.2
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
     dev: true
@@ -15870,7 +15915,7 @@ packages:
       typescript: 4.9.5
     dev: true
 
-  /ttypescript@1.5.15(ts-node@10.9.1)(typescript@5.1.1-rc):
+  /ttypescript@1.5.15(ts-node@10.9.1)(typescript@5.2.2):
     resolution: {integrity: sha512-48ykDNHzFnPMnv4hYX1P8Q84TvCZyL1QlFxeuxsuZ48X2+ameBgPenvmCkHJtoOSxpoWTWi8NcgNrRnVDOmfSg==}
     hasBin: true
     peerDependencies:
@@ -15878,8 +15923,8 @@ packages:
       typescript: '>=3.2.2'
     dependencies:
       resolve: 1.22.1
-      ts-node: 10.9.1(@types/node@20.2.5)(typescript@5.1.1-rc)
-      typescript: 5.1.1-rc
+      ts-node: 10.9.1(@types/node@20.2.5)(typescript@5.2.2)
+      typescript: 5.2.2
     dev: true
 
   /type-check@0.3.2:
@@ -15950,8 +15995,8 @@ packages:
     engines: {node: '>=12.20'}
     hasBin: true
 
-  /typescript@5.1.1-rc:
-    resolution: {integrity: sha512-+yHTPe5QCxw5cgN+B81z+k65xTHcwNCRwJN7OGVUe3srPULTZHF7J9QCgrptL7F8mrO7gmsert7XrMksAjutRw==}
+  /typescript@5.2.2:
+    resolution: {integrity: sha512-mI4WrpHsbCIcwT9cF4FZvr80QUeKvsUsUvKDoR+X/7XHQH98xYD8YHZg7ANtz2GtZt/CBq2QJ0thkGJMHfqc1w==}
     engines: {node: '>=14.17'}
     hasBin: true
     dev: true

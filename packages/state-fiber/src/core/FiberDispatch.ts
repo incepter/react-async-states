@@ -5,10 +5,13 @@ import {
 	RejectedPromise,
 	RunTask,
 	SavedProps,
-	State,
 } from "./_types";
 import { cleanFiberTask } from "./FiberTask";
-import { isPromise } from "../utils";
+import {
+	enqueueDataUpdate,
+	enqueueErrorUpdate,
+	enqueuePendingUpdate,
+} from "./FiberUpdate";
 
 export function dispatchFiberAbortEvent<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
@@ -22,20 +25,7 @@ export function dispatchFiberAbortEvent<T, A extends unknown[], R, P>(
 	}
 }
 
-export function dispatchFiberRunEvent<T, A extends unknown[], R, P>(
-	fiber: IStateFiber<T, A, R, P>,
-	task: RunTask<T, A, R, P>
-) {
-	const result = task.result;
-	if (isPromise(result)) {
-		trackPendingFiberPromise(fiber, task);
-	} else {
-		fiber.task = task;
-		dispatchSetData(fiber, task.result as T, null);
-	}
-}
-
-function trackPendingFiberPromise<T, A extends unknown[], R, P>(
+export function trackPendingFiberPromise<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
 	task: RunTask<T, A, R, P>
 ) {
@@ -46,9 +36,7 @@ function trackPendingFiberPromise<T, A extends unknown[], R, P>(
 
 	// this means this promise has never been tracked or used by the lib or react
 	if (!promise.status) {
-		// todo: move this logic to a new function
 		let untrackedPromise = promise as FiberPromise<T, R>;
-
 		untrackedPromise.status = "pending";
 		untrackedPromise.then(
 			(value: T) => {
@@ -56,37 +44,21 @@ function trackPendingFiberPromise<T, A extends unknown[], R, P>(
 				(untrackedPromise as FulfilledPromise<T>).value = value;
 
 				if (!indicators.aborted) {
-					// todo: all dispatch from here should include the 'task'
-					//       so we are aware of callbacks and other stuff
-					let { args, payload } = task;
-					if (
-						task === fiber.pending ||
-						(fiber.pendingUpdate && task === fiber.pendingUpdate.task)
-					) {
-						fiber.task = task;
-						fiber.pending = null;
-					}
-					dispatchSetData(fiber, value, { args, payload });
+					enqueueDataUpdate(fiber, value, task);
+					dispatchNotification(fiber);
 				}
 			},
 			(error: R) => {
 				untrackedPromise.status = "rejected";
 				(untrackedPromise as RejectedPromise<R>).reason = error;
-
 				if (!indicators.aborted) {
-					if (
-						task === fiber.pending ||
-						(fiber.pendingUpdate && task === fiber.pendingUpdate.task)
-					) {
-						fiber.task = task;
-						fiber.pending = null;
-						let { args, payload } = task;
-						dispatchSetError(fiber, error, { args, payload });
-					}
+					enqueueErrorUpdate(fiber, error, task);
+					dispatchNotification(fiber);
 				}
 			}
 		);
 	}
+
 	if (!indicators.aborted && promise.status === "pending") {
 		dispatchFiberPendingEvent(fiber, task);
 	}
@@ -121,15 +93,16 @@ export function dispatchFiberPendingEvent<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
 	task: RunTask<T, A, R, P> // unused
 ) {
-	let pendingUpdate = fiber.pendingUpdate;
 	let config = fiber.root.config;
 
-	// you should not be pending for skipPending to work
-	// if fast, if you are already giving the pending state to subscribers,
-	// no need to wait again, just change the props synchronously
-	// this behavior can be tuned via a flag if it turns out to be not viable
+	// the first thing is to check whether this "pending" update should be
+	// delayed or skipped.
+	// If the fiber is already pending, then "skipPending" has no effect.
+	// if the fiber isn't pending, and "skipPending" is configured, then it should
+	// delay it a little.
 	if (
-		!fiber.pending &&
+		!fiber.pending && // fiber.pending holds the pending state
+		// means we have skipPending configured with a positive delay
 		config &&
 		config.skipPendingDelayMs &&
 		config.skipPendingDelayMs > 0
@@ -137,12 +110,14 @@ export function dispatchFiberPendingEvent<T, A extends unknown[], R, P>(
 		let now = Date.now();
 		let pendingUpdateAt = now;
 		let delay = config.skipPendingDelayMs;
+
 		// if a previous pending update is scheduled, we should remove the elapsed
 		// time from the delay
+		let pendingUpdate = fiber.pendingUpdate;
 		if (pendingUpdate) {
 			// this cleanup after referencing ensures that pendingUpdate.task
 			// gets invalidated so even if it resolves later, it doesn't affect fiber
-			cleanPendingFiberUpdate(fiber);
+			cleanPendingFiberUpdate(fiber, task);
 			let prevPendingAt = pendingUpdate.at;
 			let elapsedTime = now - prevPendingAt;
 
@@ -156,66 +131,50 @@ export function dispatchFiberPendingEvent<T, A extends unknown[], R, P>(
 			// and also only update if status is "still pending"
 			// or else, the resolving event is responsible for update and notification
 			if (!task.indicators.aborted) {
-				 if (task.promise?.status === "pending") {
-					 fiber.version += 1;
-					 fiber.pending = task;
-					 fiber.pendingRun = null;
-					 if (notifyOnPending) {
-						 dispatchNotification(fiber);
-					 }
-				 }
+				if (task.promise?.status === "pending") {
+					cleanPendingFiberUpdate(fiber, task);
+					enqueuePendingUpdate(fiber, task);
+					if (notifyOnPending) {
+						dispatchNotification(fiber);
+					}
+				}
 			}
 		}, delay);
 		fiber.pendingUpdate = { id, at: pendingUpdateAt, task };
 	} else {
-		cleanPendingFiberUpdate(fiber);
-		fiber.version += 1;
-		fiber.pending = task;
+		cleanPendingFiberUpdate(fiber, task);
+		enqueuePendingUpdate(fiber, task);
 		if (notifyOnPending) {
 			dispatchNotification(fiber);
 		}
 	}
 }
 
+// pending update has a status "pending", we may delay it if we choose
+// to skipPending under some delay.
+// How skipPending works: when the run yields a promise and skipPending
+// is configured, it is delayed by the chosen delay and not added to the
+// queue immediately. When a non "pending" update arrives, the delayed
+// pending has no sense any more and should be removed.
 export function cleanPendingFiberUpdate(
-	fiber: IStateFiber<any, any, any, any>
+	fiber: IStateFiber<any, any, any, any>,
+	task: RunTask<any, any, any, any> | null
 ) {
 	let pendingUpdate = fiber.pendingUpdate;
 	if (pendingUpdate) {
-		cleanFiberTask(pendingUpdate.task);
+		if (task !== null && pendingUpdate.task !== task) {
+			// mark the pending task as aborted only if it is not the current one
+			cleanFiberTask(pendingUpdate.task);
+		}
+
+		// clear the scheduled pending update
 		clearTimeout(pendingUpdate.id);
+		// remove the update from the fiber
 		fiber.pendingUpdate = null;
 	}
 }
 
-export function dispatchSetData<T, A extends unknown[], R, P>(
-	fiber: IStateFiber<T, A, R, P>,
-	data: T,
-	props: SavedProps<A, P> | null
-) {
-	cleanPendingFiberUpdate(fiber);
-	if (fiber.pending) {
-		cleanFiberTask(fiber.pending);
-	}
-
-	// null means setData was called directly, not when ran
-	let savedProps =
-		props !== null
-			? props
-			: savedPropsFromDataUpdate<A, P>(data, fiber.payload);
-
-	fiber.version += 1;
-	fiber.state = {
-		data,
-		props: savedProps,
-		status: "success",
-		timestamp: Date.now(),
-	};
-
-	dispatchNotification(fiber);
-}
-
-function savedPropsFromDataUpdate<A extends unknown[], P>(
+export function savedPropsFromDataUpdate<A extends unknown[], P>(
 	data,
 	payload: P
 ): SavedProps<A, P> {
@@ -224,43 +183,4 @@ function savedPropsFromDataUpdate<A extends unknown[], P>(
 		args: [data],
 		payload: Object.assign({}, payload),
 	} as SavedProps<A, P>;
-}
-
-export function dispatchSetError<T, A extends unknown[], R, P>(
-	fiber: IStateFiber<T, A, R, P>,
-	error: R,
-	props: SavedProps<A, P> | null
-) {
-	cleanPendingFiberUpdate(fiber);
-	if (fiber.pending) {
-		cleanFiberTask(fiber.pending);
-	}
-
-	// null means setData was called directly, not when ran
-	let savedProps =
-		props !== null
-			? props
-			: savedPropsFromDataUpdate<A, P>(error, fiber.payload);
-
-	fiber.state = {
-		error,
-		status: "error",
-		props: savedProps,
-		timestamp: Date.now(),
-	};
-	fiber.version += 1;
-	dispatchNotification(fiber);
-}
-
-export function dispatchFiberStateChangeEvent<T, A extends unknown[], R, P>(
-	fiber: IStateFiber<T, A, R, P>,
-	state: State<T, A, R, P>
-) {
-	cleanPendingFiberUpdate(fiber);
-	if (fiber.pending) {
-		cleanFiberTask(fiber.pending);
-	}
-	fiber.state = state;
-	fiber.version += 1;
-	dispatchNotification(fiber);
 }

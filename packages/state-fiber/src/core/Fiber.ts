@@ -1,4 +1,6 @@
 import {
+	FiberDataUpdate,
+	FiberDataUpdater,
 	ILibraryContext,
 	InitialState,
 	IStateFiber,
@@ -10,6 +12,7 @@ import {
 	RunTask,
 	State,
 	StateRoot,
+	UpdateQueue,
 } from "./_types";
 import { runcStateFiber, runpStateFiber, runStateFiber } from "./FiberRun";
 import {
@@ -18,6 +21,7 @@ import {
 	enqueueStateUpdate,
 } from "./FiberUpdate";
 import { requestContext } from "./FiberContext";
+import { dispatchNotification } from "./FiberDispatch";
 
 let stateFiberId = 0;
 
@@ -57,6 +61,9 @@ export class StateFiber<T, A extends unknown[], R, P>
 	pendingRun: PendingRun | null;
 	pendingUpdate: PendingUpdate | null;
 
+	queue: UpdateQueue<T, A, R, P> | null;
+	queueId: ReturnType<typeof setTimeout> | null;
+
 	constructor(root: StateRoot<T, A, R, P>, context: ILibraryContext) {
 		super(root);
 		let existingFiber = context.get(root.key);
@@ -76,6 +83,8 @@ export class StateFiber<T, A extends unknown[], R, P>
 		this.listeners = new Map<Function, any>();
 		this.actions = new StateFiberActions(this);
 
+		this.queue = null;
+		this.queueId = null;
 		this.pendingRun = null;
 		this.pendingUpdate = null;
 
@@ -149,16 +158,21 @@ export class StateFiberActions<T, A extends unknown[], R, P>
 		return runpStateFiber(instance, args, payload);
 	}
 
-	setData(update): void {
-		enqueueDataUpdate(this.self, update);
+	setData(update: FiberDataUpdate<T> | FiberDataUpdater<T>): void {
+		enqueueDataUpdate(this.self, update, null);
+		dispatchNotification(this.self);
 	}
 
-	setError(error): void {
-		enqueueErrorUpdate(this.self, error);
+	setError(error: R): void {
+		enqueueErrorUpdate(this.self, error, null);
+		dispatchNotification(this.self);
 	}
 
-	setState(state): void {
-		enqueueStateUpdate(this.self, state);
+	setState(
+		state: State<T, A, R, P> | ((prev: State<T, A, R, P>) => State<T, A, R, P>)
+	): void {
+		enqueueStateUpdate(this.self, state, null);
+		dispatchNotification(this.self);
 	}
 
 	dispose(): void {}

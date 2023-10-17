@@ -96,20 +96,68 @@ export interface IStateFiber<T, A extends unknown[], R, P>
 
 	pendingRun: PendingRun | null;
 	pendingUpdate: PendingUpdate | null;
+
+	queue: UpdateQueue<T, A, R, P> | null;
+	queueId: ReturnType<typeof setTimeout> | null;
 }
+
+export type FiberDataUpdate<T> = T;
+export type FiberErrorUpdate<R> = R;
+export type FiberDataUpdater<T> = (prev: T) => T;
+export type FiberStateUpdate<T, A extends unknown[], R, P> = State<T, A, R, P>;
+export type FiberStateUpdater<T, A extends unknown[], R, P> = (
+	prev: State<T, A, R, P>
+) => State<T, A, R, P>;
+
+export type UpdateQueue<T, A extends unknown[], R, P> =
+	| {
+			kind: 0; // normal setData update
+			value: FiberDataUpdate<T>;
+			task: RunTask<T, A, R, P> | null;
+			next: UpdateQueue<T, A, R, P> | null;
+	  }
+	| {
+			kind: 1; // setData with function updater
+			value: FiberDataUpdater<T>;
+			task: RunTask<T, A, R, P> | null;
+			next: UpdateQueue<T, A, R, P> | null;
+	  }
+	| {
+			kind: 2; // setError
+			value: FiberErrorUpdate<R>;
+			task: RunTask<T, A, R, P> | null;
+			next: UpdateQueue<T, A, R, P> | null;
+	  }
+	| {
+			kind: 3; // normal setState update
+			value: FiberStateUpdate<T, A, R, P>;
+			task: RunTask<T, A, R, P> | null;
+			next: UpdateQueue<T, A, R, P> | null;
+	  }
+	| {
+			kind: 4; // setState with function updater
+			value: FiberStateUpdater<T, A, R, P>;
+			task: RunTask<T, A, R, P> | null;
+			next: UpdateQueue<T, A, R, P> | null;
+	  }
+	| {
+			kind: 5; // pending
+			task: RunTask<T, A, R, P>;
+			next: UpdateQueue<T, A, R, P> | null;
+	  };
 
 export type PendingRun = {
 	at: number; // datetime
 	id: ReturnType<typeof setTimeout>;
 
 	// clean: () => void;
-}
+};
 export type PendingUpdate = {
 	at: number; // datetime
 	id: ReturnType<typeof setTimeout>;
 	task: RunTask<any, any, any, any>;
 	// clean: () => void;
-}
+};
 
 export interface ILibraryContext {
 	get(key: string): IStateFiber<any, any, any, any> | undefined;
@@ -125,7 +173,9 @@ export interface IStateFiberActions<T, A extends unknown[], R, P> {
 	runc(props: RuncProps<T, A, R, P>): () => void;
 
 	setError(error: R): void;
-	setState(state: State<T, A, R, P>): void;
+	setState(
+		state: State<T, A, R, P> | ((prev: State<T, A, R, P>) => State<T, A, R, P>)
+	): void;
 	setData(update: StateFiberUpdate<T>): void;
 
 	getState(): State<T, A, R, P>;

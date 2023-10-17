@@ -9,8 +9,10 @@ import {
 import { cleanFiberTask, createTask } from "./FiberTask";
 import {
 	dispatchFiberAbortEvent,
-	dispatchFiberRunEvent,
+	trackPendingFiberPromise,
 } from "./FiberDispatch";
+import { isPromise } from "../utils";
+import { enqueueDataUpdate } from "./FiberUpdate";
 
 export function runStateFiber<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
@@ -29,8 +31,8 @@ export function runpStateFiber<T, A extends unknown[], R, P>(
 		runcStateFiber(fiber, {
 			args,
 			payload,
-			onSuccess: resolve,
 			onError: resolve,
+			onSuccess: resolve,
 		});
 	});
 }
@@ -48,25 +50,16 @@ export function runcStateFiber<T, A extends unknown[], R, P>(
 	return runFiberTask(fiber, task);
 }
 
-function bailoutFiberPendingRun(fiber: IStateFiber<any, any, any, any>) {
-	if (!fiber.pendingRun) {
-		return;
-	}
-	clearTimeout(fiber.pendingRun.id);
-	fiber.pendingRun = null;
-}
-
-function scheduledTaskRun<T, A extends unknown[], R, P>(
+function executeScheduledTaskRun<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
 	task: RunTask<T, A, R, P>
 ) {
 	if (!task.indicators.aborted) {
 		let pendingRun = fiber.pendingRun;
 		if (!pendingRun) {
-			throw new Error("This is a bug");
+			return;
 		}
 
-		// removed the pending run
 		clearTimeout(pendingRun.id);
 		fiber.pendingRun = null;
 
@@ -79,13 +72,19 @@ function scheduleRunOnFiber<T, A extends unknown[], R, P>(
 	task: RunTask<T, A, R, P>,
 	effectDurationMs: number
 ) {
-	let id = setTimeout(() => scheduledTaskRun(fiber, task), effectDurationMs);
+	let id = setTimeout(
+		() => executeScheduledTaskRun(fiber, task),
+		effectDurationMs
+	);
 	fiber.pendingRun = { id, at: Date.now() };
 
 	// cleanup
 	return () => clearTimeout(id);
 }
 
+// returns the latest ran task, or null.
+// the latest run is either fiber.pending or fiber.task
+// I test on task.at since they are both technically tasks
 function resolveLatestTaskFiberWasRan<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>
 ) {
@@ -101,6 +100,35 @@ function resolveLatestTaskFiberWasRan<T, A extends unknown[], R, P>(
 	return null;
 }
 
+function throttleFiberRun(
+	fiber: IStateFiber<any, any, any, any>,
+	task: RunTask<any, any, any, any>,
+	duration: number
+) {
+	let latestRanTask = resolveLatestTaskFiberWasRan(fiber);
+
+	if (latestRanTask) {
+		let isElapsed = Date.now() - latestRanTask.at > duration;
+
+		if (isElapsed) {
+			return executeFiberTask(fiber, task);
+		} else {
+			// do nothing, you are throttled, probably return previous cleanup ?
+			return () => {};
+		}
+	} else {
+		return executeFiberTask(fiber, task);
+	}
+}
+
+function bailoutFiberPendingRun(fiber: IStateFiber<any, any, any, any>) {
+	if (!fiber.pendingRun) {
+		return;
+	}
+	clearTimeout(fiber.pendingRun.id);
+	fiber.pendingRun = null;
+}
+
 function runFiberTask<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
 	task: RunTask<T, A, R, P>
@@ -113,29 +141,12 @@ function runFiberTask<T, A extends unknown[], R, P>(
 		switch (effect) {
 			case "delay":
 			case "debounce": {
-				let pendingRun = fiber.pendingRun;
-				if (pendingRun) {
-					bailoutFiberPendingRun(fiber);
-				}
+				bailoutFiberPendingRun(fiber);
 				return scheduleRunOnFiber(fiber, task, effectDuration);
 			}
 			case "throttle": {
-				let pendingRun = fiber.pendingRun;
-				if (pendingRun) {
-					bailoutFiberPendingRun(fiber);
-				}
-				let latestRanTask = resolveLatestTaskFiberWasRan(fiber);
-				if (latestRanTask) {
-					let isElapsed = Date.now() - latestRanTask.at > effectDuration;
-					if (isElapsed) {
-						return executeFiberTask(fiber, task);
-					} else {
-						// do nothing, you are throttled, probably return previous cleanup ?
-						return () => {};
-					}
-				} else {
-					return executeFiberTask(fiber, task);
-				}
+				bailoutFiberPendingRun(fiber);
+				return throttleFiberRun(fiber, task, effectDuration);
 			}
 			default: {
 				throw new Error("Unsupported run effect " + String(effect));
@@ -181,6 +192,7 @@ function executeFiberTask<T, A extends unknown[], R, P>(
 	// 	}
 	// }
 
+	task.at = Date.now();
 	task.clean = () => dispatchFiberAbortEvent(fiber, task);
 
 	// todo: add other effects (emit, select, run)
@@ -202,7 +214,14 @@ function executeFiberTask<T, A extends unknown[], R, P>(
 
 	// todo: mark task as cleaned if not a pending promise
 
-	dispatchFiberRunEvent(fiber, task);
+	const result = task.result;
+
+	if (isPromise(result)) {
+		trackPendingFiberPromise(fiber, task);
+	} else {
+		enqueueDataUpdate(fiber, result, task);
+	}
+
 	return task.clean;
 }
 

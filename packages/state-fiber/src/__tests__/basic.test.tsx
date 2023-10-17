@@ -165,6 +165,9 @@ describe("should perform basic forms separately", () => {
 		// it will take a few time to recover, this delay is arbitrary and we
 		// should not rely on it either ways, so, wait for it
 		await waitFor(() => screen.getByTestId("success_1"));
+		await act(async () => {
+			await jest.advanceTimersByTime(1000);
+		});
 		expect(user2.getAttribute("class")).toBe("");
 
 		expect(renderCount).toBe(2);
@@ -323,7 +326,6 @@ describe("should perform basic forms separately", () => {
 		await act(async () => {
 			await jest.advanceTimersByTime(100);
 		});
-
 
 		expect(renderCount).toBe(2);
 		expect(user2.getAttribute("class")).toBe("");

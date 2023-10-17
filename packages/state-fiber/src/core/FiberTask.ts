@@ -7,7 +7,8 @@ export function createTask<T, A extends unknown[], R, P>(
 	callbacks: ICallbacks<T, R>
 ): RunTask<T, A, R, P> {
 	const controller = new AbortController();
-	const onAbort = (cb) => controller.signal.addEventListener("abort", cb);
+	const onAbort = (cb: () => void) =>
+		controller.signal.addEventListener("abort", cb);
 
 	return {
 		args,

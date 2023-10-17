@@ -202,15 +202,20 @@ export type Post = {
 function EffectsDemo() {
 	let {
 		state,
+		isError,
 		error,
 		source: { run },
-	} = useFiber({
+	} = useFiber<any, [string], Error, never>({
 		key: "user-d",
 		effect: "debounce",
-		effectDurationMs: 300,
-		skipPendingDelayMs: 200,
+		effectDurationMs: 400,
+		keepPendingForMs: 400,
+		skipPendingDelayMs: 400,
 		async producer(props): Promise<{ id: number; username: string }> {
-			// await new Promise(res => setTimeout(res, 2000));
+			// if (!props.args[0]) {
+			// 	throw new Error("Missing id");
+			// }
+			await new Promise((res) => setTimeout(res, 400));
 			return API.get(`/users/${props.args[0]}`, { signal: props.signal });
 		},
 	});
@@ -218,6 +223,7 @@ function EffectsDemo() {
 	return (
 		<div className="App">
 			<input
+				autoFocus
 				placeholder="userId (1, 2)"
 				onChange={(e) => run(e.target.value)}
 			/>

@@ -63,7 +63,7 @@
     "ts-jest": "^29.1.0",
     "tslib": "^2.5.2",
     "ttypescript": "^1.5.15",
-    "typescript": "5.1.1-rc"
+    "typescript": "5.2.2"
   },
   "engines": {
     "npm": ">=5",
