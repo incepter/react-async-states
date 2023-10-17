@@ -80,8 +80,25 @@ export function inferModernSubscriptionReturn<T, A extends unknown[], R, P, S>(
 
 	// this means that we need to check what changed in the options
 	// this will be always false if the user is provider an object/fn literal
-	// todo: complete this
 	if (prevOptions !== pendingOptions) {
+		// at this point, we need to check the relevant options that may impact
+		// the returned value. The impacting options are:
+		// - select: well, that's what we select
+		// - areEqual
+		let prevSelector = prevOptions.selector;
+		let nextSelector = pendingOptions.selector;
+
+		let nextAreEqual = pendingOptions.areEqual;
+
+		if (nextSelector && prevSelector !== nextSelector) {
+			let selectedValue = nextSelector(fiber.state);
+
+			let equalityFn = nextAreEqual ? nextAreEqual : Object.is;
+
+			if (!equalityFn(selectedValue, alternate.return.data as S)) {
+				return createModernSubscriptionReturn(fiber, selectedValue);
+			}
+		}
 	}
 
 	return alternate.return as ModernHooksReturn<T, A, R, P, S>;
@@ -107,10 +124,27 @@ export function inferLegacySubscriptionReturn<T, A extends unknown[], R, P, S>(
 	let pendingOptions = alternate.options;
 
 	// this means that we need to check what changed in the options
-	// todo: complete this
+	// this will be always false if the user is provider an object/fn literal
 	if (prevOptions !== pendingOptions) {
-	}
+		// at this point, we need to check the relevant options that may impact
+		// the returned value. The impacting options are:
+		// - select: well, that's what we select
+		// - areEqual
+		let prevSelector = prevOptions.selector;
+		let nextSelector = pendingOptions.selector;
 
+		let nextAreEqual = pendingOptions.areEqual;
+
+		if (nextSelector && prevSelector !== nextSelector) {
+			let selectedValue = nextSelector(fiber.state);
+
+			let equalityFn = nextAreEqual ? nextAreEqual : Object.is;
+
+			if (!equalityFn(selectedValue, alternate.return.data)) {
+				return createLegacySubscriptionReturn(fiber, selectedValue);
+			}
+		}
+	}
 	return alternate.return;
 }
 
@@ -309,8 +343,12 @@ export function ensureSubscriptionIsUpToDate<T, A extends unknown[], R, P, S>(
 		}
 		// at this point, state is either Initial or Success
 		let newValue = selectSubscriptionData(fiber, state, subscription);
+
+		let areEqual = subscription.options.areEqual;
+		let equalityFn = areEqual ? areEqual : Object.is;
+
 		if (
-			!Object.is(newValue, committedReturn.data) ||
+			!equalityFn(newValue, committedReturn.data) ||
 			!doesPreviousReturnMatchFiberStatus(fiber, state.status, committedReturn)
 		) {
 			if (isRenderPhaseRun) {

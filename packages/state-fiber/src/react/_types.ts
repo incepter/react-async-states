@@ -28,6 +28,7 @@ export interface HooksStandardOptions<T, A extends unknown[], R, P, S>
 	lazy?: boolean;
 	producer?: Fn<T, A, R, P>;
 	selector?: (p: State<T, A, R, P>) => S;
+	areEqual?: (prevSelectedValue: S, nextValue: S) => boolean;
 }
 
 export type ModernHooksReturn<T, A extends unknown[], R, P, S> =
