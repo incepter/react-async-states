@@ -1,4 +1,5 @@
 import {
+	CachedStateList,
 	FiberDataUpdate,
 	FiberDataUpdater,
 	ILibraryContext,
@@ -42,6 +43,20 @@ export class StateFiberRoot<T, A extends unknown[], R, P>
 	}
 }
 
+export function loadFiberCache<T, A extends unknown[], R, P>(
+	fiber: IStateFiber<T, A, R, P>
+) {
+	let loader = fiber.root.config?.cacheConfig?.load;
+	if (!loader) {
+		return;
+	}
+	let loadedCache = loader();
+	// todo: support async cache
+	if (loadedCache) {
+		fiber.cache = loadedCache;
+	}
+}
+
 export class StateFiber<T, A extends unknown[], R, P>
 	extends StateFiberRoot<T, A, R, P>
 	implements IStateFiber<T, A, R, P>
@@ -64,6 +79,8 @@ export class StateFiber<T, A extends unknown[], R, P>
 	queue: UpdateQueue<T, A, R, P> | null;
 	queueId: ReturnType<typeof setTimeout> | null;
 
+	cache: CachedStateList<T, A, P> | null;
+
 	constructor(root: StateRoot<T, A, R, P>, context: ILibraryContext) {
 		super(root);
 		let existingFiber = context.get(root.key);
@@ -75,18 +92,20 @@ export class StateFiber<T, A extends unknown[], R, P>
 		this.version = 0;
 		this.task = null;
 		this.pending = null;
-		// todo: support payload
-		// this.payload = null;
 		this.context = context;
+		this.payload = null as P;
 		this.id = ++stateFiberId;
 		this.state = computeInitialState(this);
 		this.listeners = new Map<Function, any>();
 		this.actions = new StateFiberActions(this);
 
+		this.cache = null;
 		this.queue = null;
 		this.queueId = null;
 		this.pendingRun = null;
 		this.pendingUpdate = null;
+
+		loadFiberCache(this);
 
 		// context.set(root.key, this);
 	}

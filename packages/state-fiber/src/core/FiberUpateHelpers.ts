@@ -13,6 +13,7 @@ import {
 	savedPropsFromDataUpdate,
 } from "./FiberDispatch";
 import { cleanFiberTask } from "./FiberTask";
+import { hasCacheEnabled } from "./FiberCache";
 
 export const UPDATE_KIND_SET_DATA /*      */ = 0 as const;
 export const UPDATE_KIND_SET_DATA_FUNC /* */ = 1 as const;
@@ -53,16 +54,36 @@ export function flushDataUpdate<T, A extends unknown[], R, P>(
 
 	fiber.task = task;
 	fiber.version += 1;
-	fiber.state = {
+
+	let newState = {
 		data: value,
 		props: savedProps,
 		timestamp: Date.now(),
 		status: "success" as const,
 	};
 
+	fiber.state = newState;
+
 	let successCallback = task?.callbacks?.onSuccess;
 	if (typeof successCallback === "function") {
 		successCallback(value);
+	}
+
+	// this means only one thing: cache is enabled, and we should store this state
+	if (task && task.hash !== null) {
+		if (!fiber.cache) {
+			fiber.cache = {};
+		}
+
+		fiber.cache[task.hash] = {
+			state: newState,
+			at: newState.timestamp,
+		};
+
+		let cachePersistFunction = fiber.root.config?.cacheConfig?.persist;
+		if (cachePersistFunction) {
+			cachePersistFunction(fiber.cache);
+		}
 	}
 
 	if (

@@ -21,6 +21,7 @@ export function createTask<T, A extends unknown[], R, P>(
 		result: null,
 		promise: null,
 
+		hash: null,
 		at: Date.now(),
 		indicators: {
 			aborted: false,

@@ -53,6 +53,7 @@ export function useFiber<T, A extends unknown[], R, P, S = T>(
 
 	// guardAgainstInfiniteLoop();
 
+	console.log("hehehe", fiber.cache);
 	return alternate.return;
 }
 

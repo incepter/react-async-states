@@ -27,11 +27,8 @@ export type CachedStateList<T, A extends unknown[], P> = {
 };
 
 export type CachedState<T, A extends unknown[], P> = {
-	args: A;
-	payload: P;
-	data: T;
-	timestamp: number;
-	deadline: number;
+	at: number;
+	state: SuccessState<T, A, P>;
 };
 
 export type CacheEntryDeadline<T, A extends unknown[], R, P> =
@@ -99,6 +96,8 @@ export interface IStateFiber<T, A extends unknown[], R, P>
 
 	queue: UpdateQueue<T, A, R, P> | null;
 	queueId: ReturnType<typeof setTimeout> | null;
+
+	cache: CachedStateList<T, A, P> | null;
 }
 
 export type FiberDataUpdate<T> = T;
@@ -227,6 +226,9 @@ export interface RunTask<T, A extends unknown[], R, P> {
 		cleared: boolean;
 	};
 	callbacks: ICallbacks<T, R> | null;
+
+	// when cache is supported, to avoid computing it again
+	hash: string | null;
 }
 
 export interface ICallbacks<T, R> {

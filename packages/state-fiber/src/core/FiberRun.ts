@@ -1,4 +1,5 @@
 import {
+	CachedState,
 	FnProps,
 	ICallbacks,
 	IStateFiber,
@@ -9,10 +10,18 @@ import {
 import { cleanFiberTask, createTask } from "./FiberTask";
 import {
 	dispatchFiberAbortEvent,
+	dispatchNotification,
 	trackPendingFiberPromise,
 } from "./FiberDispatch";
-import { isPromise } from "../utils";
-import { enqueueDataUpdate } from "./FiberUpdate";
+import { isPromise, noop } from "../utils";
+import { enqueueDataUpdate, enqueueStateUpdate } from "./FiberUpdate";
+import {
+	computeTaskHash,
+	didCachedStateExpire,
+	hasCacheEnabled,
+	requestCacheWithHash,
+	shouldReplaceStateWithCache,
+} from "./FiberCache";
 
 export function runStateFiber<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
@@ -161,11 +170,9 @@ function executeFiberTask<T, A extends unknown[], R, P>(
 	fiber: IStateFiber<T, A, R, P>,
 	task: RunTask<T, A, R, P>
 ) {
-	let {
-		root: { fn },
-		task: latestTask,
-		pending: pendingTask,
-	} = fiber;
+	let { root, task: latestTask, pending: pendingTask } = fiber;
+
+	let { fn } = root;
 
 	if (!fn || typeof fn !== "function") {
 		throw new Error("Not supported yet");
@@ -179,18 +186,23 @@ function executeFiberTask<T, A extends unknown[], R, P>(
 		cleanFiberTask(pendingTask);
 	}
 
-	// let cacheEnabled = hasCacheEnabled(fiber.root);
-	// if (cacheEnabled) {
-	// 	let taskHash = computeTaskHash(root, task);
-	// 	let existingCache = requestCacheWithHash(fiber, taskHash);
-	// 	if (existingCache) {
-	// 		let replace = shouldReplaceStateWithCache(existingCache);
-	// 		if (replace) {
-	// 			replaceFiberStateWithCache(existingCache);
-	// 			return noop;
-	// 		}
-	// 	}
-	// }
+	if (hasCacheEnabled(fiber.root)) {
+		let taskHash = computeTaskHash(root, task);
+		let existingCache = requestCacheWithHash(fiber, taskHash);
+		if (existingCache) {
+			let isEntryExpired = didCachedStateExpire(root, existingCache);
+			if (!isEntryExpired) {
+				let replace = shouldReplaceStateWithCache(fiber, existingCache);
+				if (replace) {
+					enqueueStateUpdate(fiber, existingCache.state, task);
+					dispatchNotification(fiber);
+				}
+				return noop;
+			}
+		}
+
+		task.hash = taskHash;
+	}
 
 	task.at = Date.now();
 	task.clean = () => dispatchFiberAbortEvent(fiber, task);
@@ -223,10 +235,6 @@ function executeFiberTask<T, A extends unknown[], R, P>(
 	}
 
 	return task.clean;
-}
-
-export function hasCacheEnabled(root: StateRoot<any, any, any, any>) {
-	return root.config?.cacheConfig?.enabled || false;
 }
 
 export function doesRootHaveEffects(root: StateRoot<any, any, any, any>) {

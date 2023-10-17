@@ -19,6 +19,7 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import { API } from "./app/api";
 import { useAsync, useFiber } from "state-fiber/src";
+import { CachedStateList } from "state-fiber/src/core/_types";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement, {}).render(
 	<React.StrictMode>
@@ -210,6 +211,19 @@ function EffectsDemo() {
 		effectDurationMs: 400,
 		keepPendingForMs: 400,
 		skipPendingDelayMs: 400,
+		cacheConfig: {
+			enabled: true,
+			hash(args): string {
+				return args[0] + "";
+			},
+			deadline: (s) => 20000,
+			persist(cache) {
+				localStorage.setItem("__test__", JSON.stringify(cache));
+			},
+			load() {
+				return JSON.parse(localStorage.getItem("__test__") || "");
+			},
+		},
 		async producer(props): Promise<{ id: number; username: string }> {
 			// if (!props.args[0]) {
 			// 	throw new Error("Missing id");
@@ -227,12 +241,12 @@ function EffectsDemo() {
 				onChange={(e) =>
 					runc({
 						args: [e.target.value],
-						onSuccess(s) {
-							console.log("onSuccess state callback", s);
-						},
-						onError(e) {
-							console.log("onError state callback", e);
-						},
+						// onSuccess(s) {
+						// 	console.log("onSuccess state callback", s);
+						// },
+						// onError(e) {
+						// 	console.log("onError state callback", e);
+						// },
 					})
 				}
 			/>
