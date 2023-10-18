@@ -5,7 +5,7 @@
     "strictNullChecks": true,
     "module": "esnext",
     "jsx": "react",
-    "target": "es5",
+    "target": "ESNext",
     "allowJs": true,
     "preserveSymlinks": true,
     "moduleResolution": "Node",
