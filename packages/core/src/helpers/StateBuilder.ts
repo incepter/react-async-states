@@ -40,7 +40,7 @@ function state<T, E, R, A extends unknown[]>(
 	data,
 	props: ProducerSavedProps<T, A> | null,
 	timestamp: number
-): State<T, E, R, A> {
+): State<T, E, A> {
 	// @ts-ignore
 	return {
 		status,

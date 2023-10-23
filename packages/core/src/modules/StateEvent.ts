@@ -9,9 +9,9 @@ import { aborted, error, success } from "../enums";
 import { isArray } from "../helpers/core";
 import { isFunction } from "../utils";
 
-export function invokeChangeCallbacks<T, E, R, A extends unknown[]>(
-	state: State<T, E, R, A>,
-	callbacks: ProducerCallbacks<T, E, R, A> | undefined
+export function invokeChangeCallbacks<T, E, A extends unknown[]>(
+	state: State<T, E, A>,
+	callbacks: ProducerCallbacks<T, E, A> | undefined
 ) {
 	if (!callbacks) {
 		return;
@@ -25,9 +25,9 @@ export function invokeChangeCallbacks<T, E, R, A extends unknown[]>(
 	}
 }
 
-export function invokeSingleChangeEvent<T, E, R, A extends unknown[]>(
-	state: State<T, E, R, A>,
-	event: StateChangeEventHandler<T, E, R, A>
+export function invokeSingleChangeEvent<T, E, A extends unknown[]>(
+	state: State<T, E, A>,
+	event: StateChangeEventHandler<T, E, A>
 ) {
 	if (isFunction(event)) {
 		event(state);
@@ -36,8 +36,8 @@ export function invokeSingleChangeEvent<T, E, R, A extends unknown[]>(
 	}
 }
 
-export function invokeInstanceEvents<T, E, R, A extends unknown[]>(
-	instance: StateInterface<T, E, R, A>,
+export function invokeInstanceEvents<T, E, A extends unknown[]>(
+	instance: StateInterface<T, E, A>,
 	type: InstanceEventType
 ) {
 	let events = instance.events;
@@ -52,7 +52,10 @@ export function invokeInstanceEvents<T, E, R, A extends unknown[]>(
 						invokeSingleChangeEvent(instance.actions.getState(), evt);
 					});
 				} else {
-					invokeSingleChangeEvent(instance.actions.getState(), registeredEvents);
+					invokeSingleChangeEvent(
+						instance.actions.getState(),
+						registeredEvents
+					);
 				}
 			});
 			return;

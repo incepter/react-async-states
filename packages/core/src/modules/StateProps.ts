@@ -8,20 +8,20 @@ import {
 } from "../types";
 import { __DEV__, emptyArray, isFunction } from "../utils";
 import { pending, Status } from "../enums";
-import {isAlteringState, startEmitting, stopEmitting} from "./StateUpdate";
+import { isAlteringState, startEmitting, stopEmitting } from "./StateUpdate";
 
-export function createProps<T, E, R, A extends unknown[]>(
-	instance: StateInterface<T, E, R, A>,
+export function createProps<T, E, A extends unknown[]>(
+	instance: StateInterface<T, E, A>,
 	indicators: RunIndicators,
 	payload: unknown,
-	runProps: RUNCProps<T, E, R, A> | undefined
-): ProducerProps<T, E, R, A> {
+	runProps: RUNCProps<T, E, A> | undefined
+): ProducerProps<T, E, A> {
 	let lastSuccess = instance.lastSuccess;
 	let getState = instance.actions.getState;
 	let args = (runProps?.args || emptyArray) as A;
 
 	let controller = new AbortController();
-	let producerProps: ProducerProps<T, E, R, A> = {
+	let producerProps: ProducerProps<T, E, A> = {
 		emit,
 		args,
 		abort,
@@ -29,7 +29,7 @@ export function createProps<T, E, R, A extends unknown[]>(
 		lastSuccess,
 		payload: payload as any,
 		signal: controller.signal,
-		onAbort(callback: AbortFn<R>) {
+		onAbort(callback: AbortFn) {
 			if (isFunction(callback)) {
 				controller.signal.addEventListener("abort", () => {
 					callback(controller.signal.reason);
@@ -44,7 +44,7 @@ export function createProps<T, E, R, A extends unknown[]>(
 	return producerProps;
 
 	function emit(
-		updater: T | StateFunctionUpdater<T, E, R, A>,
+		updater: T | StateFunctionUpdater<T, E, A>,
 		status?: Status
 	): void {
 		if (indicators.cleared) {
@@ -65,7 +65,7 @@ export function createProps<T, E, R, A extends unknown[]>(
 		stopEmitting(prevIsEmitting);
 	}
 
-	function abort(reason?: R): AbortFn<R> | undefined {
+	function abort(reason?: any): AbortFn | undefined {
 		if (indicators.aborted || indicators.cleared) {
 			return;
 		}

@@ -565,7 +565,7 @@ export function subscribeEffect<T, E, R, A extends unknown[], S>(
 	}
 
 	let didClean = false;
-	let cleanups: AbortFn<R>[] = [() => (didClean = true)];
+	let cleanups: AbortFn[] = [() => (didClean = true)];
 
 	function onStateChange() {
 		if (didClean) {

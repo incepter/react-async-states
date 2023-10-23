@@ -11,7 +11,7 @@ describe("AsyncState - retry", () => {
 		let key = "retry-1";
 		let spy = jest.fn();
 		let retry = jest.fn().mockImplementation(() => true);
-		let config: ProducerConfig<number, unknown, unknown, unknown[]> = {
+		let config: ProducerConfig<number, unknown, unknown[]> = {
 			retryConfig: {
 				retry,
 				enabled: true,
@@ -57,7 +57,7 @@ describe("AsyncState - retry", () => {
 			});
 		};
 		let retry = jest.fn().mockImplementation(() => true);
-		let config: ProducerConfig<number, unknown, unknown, unknown[]> = {
+		let config: ProducerConfig<number, unknown, unknown[]> = {
 			retryConfig: {
 				retry,
 				enabled: true,

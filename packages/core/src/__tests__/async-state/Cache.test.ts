@@ -23,7 +23,7 @@ describe("async state cache", () => {
 		);
 	});
 	it("should add to cache and spread on lanes", () => {
-		const cache: Record<string, CachedState<number, any, any, any>> = {
+		const cache: Record<string, CachedState<number, any, any>> = {
 			[`1`]: {
 				state: {
 					data: 1,
@@ -58,23 +58,19 @@ describe("async state cache", () => {
 			asyncState.cache
 		);
 		expect(
-			asyncState.actions.getLane("test2-lane").inst.cache![`2`]?.state
-				?.data
+			asyncState.actions.getLane("test2-lane").inst.cache![`2`]?.state?.data
 		).toBe(2);
 
 		producer.mockClear();
 		asyncState.actions.getLane("test2-lane").run(1);
 		expect(
-			asyncState.actions.getLane("test2-lane").inst.cache![`1`]?.state
-				?.data
+			asyncState.actions.getLane("test2-lane").inst.cache![`1`]?.state?.data
 		).toBe(1);
-		expect(asyncState.actions.getLane("test2-lane").inst.state.data).toBe(
-			1
-		);
+		expect(asyncState.actions.getLane("test2-lane").inst.state.data).toBe(1);
 		expect(producer).not.toHaveBeenCalled();
 	});
 	it("should set state when cache loads cache and pass it to lanes", async () => {
-		const cache: Record<string, CachedState<number, any, any, any>> = {
+		const cache: Record<string, CachedState<number, any, any>> = {
 			[`1`]: {
 				state: {
 					data: 1,
@@ -105,7 +101,7 @@ describe("async state cache", () => {
 		expect(load).toHaveBeenCalled();
 	});
 	it("should invalidate cache", async () => {
-		const cache: Record<string, CachedState<number, any, any, any>> = {
+		const cache: Record<string, CachedState<number, any, any>> = {
 			[`1`]: {
 				state: {
 					data: 1,

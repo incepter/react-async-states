@@ -9,11 +9,9 @@ import {
 import { __DEV__, isFunction } from "../utils";
 import devtools from "../devtools/Devtools";
 
-export function subscribeToInstance<T, E, R, A extends unknown[]>(
-	instance: StateInterface<T, E, R, A>,
-	options:
-		| ((s: State<T, E, R, A>) => void)
-		| AsyncStateSubscribeProps<T, E, R, A>
+export function subscribeToInstance<T, E, A extends unknown[]>(
+	instance: StateInterface<T, E, A>,
+	options: ((s: State<T, E, A>) => void) | AsyncStateSubscribeProps<T, E, A>
 ) {
 	let props = isFunction(options) ? { cb: options } : options;
 
@@ -51,13 +49,13 @@ export function subscribeToInstance<T, E, R, A extends unknown[]>(
 	if (__DEV__) devtools.emitSubscription(instance, subscriptionKey);
 	return cleanup;
 }
-export function subscribeToInstanceEvent<T, E, R, A extends unknown[]>(
-	instance: StateInterface<T, E, R, A>,
+export function subscribeToInstanceEvent<T, E, A extends unknown[]>(
+	instance: StateInterface<T, E, A>,
 	eventType: InstanceEventType,
-	eventHandler: InstanceEventHandlerType<T, E, R, A>
+	eventHandler: InstanceEventHandlerType<T, E, A>
 ) {
 	if (!instance.events) {
-		instance.events = {} as InstanceEvents<T, E, R, A>;
+		instance.events = {} as InstanceEvents<T, E, A>;
 	}
 	if (!instance.events[eventType]) {
 		instance.events[eventType] = {};
@@ -77,8 +75,8 @@ export function subscribeToInstanceEvent<T, E, R, A extends unknown[]>(
 	};
 }
 
-export function notifySubscribers<T, E, R, A extends unknown[]>(
-	instance: StateInterface<T, E, R, A>
+export function notifySubscribers<T, E, A extends unknown[]>(
+	instance: StateInterface<T, E, A>
 ) {
 	if (!instance.subscriptions) {
 		return;
