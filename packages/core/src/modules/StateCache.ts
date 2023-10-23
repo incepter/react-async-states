@@ -56,7 +56,12 @@ export function removeCachedStateAndSpreadOnLanes<T, E, R, A extends unknown[]>(
 	}
 
 	delete topLevelParent.cache[hash];
+	persistAndSpreadCache(topLevelParent);
+}
 
+export function persistAndSpreadCache<T, E, R, A extends unknown[]>(
+	topLevelParent: StateInterface<T, E, R, A>
+): void {
 	if (
 		topLevelParent.cache &&
 		isFunction(topLevelParent.config.cacheConfig?.persist)

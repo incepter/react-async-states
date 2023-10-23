@@ -42,6 +42,7 @@ import {
 	getTopLevelParent,
 	hasCacheEnabled,
 	loadCache,
+	persistAndSpreadCache,
 	spreadCacheChangeOnLanes,
 } from "./modules/StateCache";
 import {
@@ -50,6 +51,10 @@ import {
 	setInstanceState,
 } from "./modules/StateUpdate";
 import { attemptHydratedState } from "./modules/StateHydration";
+import {
+	subscribeToInstance,
+	subscribeToInstanceEvent,
+} from "./modules/StateSubscription";
 
 // this is the main instance that will hold and manipulate the state
 // it is referenced by its 'key' or name.
@@ -225,27 +230,7 @@ export class StateSource<T, E, R, A extends unknown[]>
 		eventType: InstanceEventType,
 		eventHandler: InstanceEventHandlerType<T, E, R, A>
 	): () => void {
-		let instance = this.inst;
-
-		if (!instance.events) {
-			instance.events = {} as InstanceEvents<T, E, R, A>;
-		}
-		if (!instance.events[eventType]) {
-			instance.events[eventType] = {};
-		}
-
-		let events = instance.events[eventType]!;
-
-		if (!instance.eventsIndex) {
-			instance.eventsIndex = 0;
-		}
-		let index = ++instance.eventsIndex;
-
-		events[index] = eventHandler;
-
-		return function () {
-			delete events[index];
-		};
+		return subscribeToInstanceEvent(this.inst, eventType, eventHandler);
 	}
 
 	run(...args: A) {
@@ -300,14 +285,7 @@ export class StateSource<T, E, R, A extends unknown[]>
 				delete topLevelParent.cache[cacheKey];
 			}
 
-			if (
-				topLevelParent.cache &&
-				isFunction(topLevelParent.config.cacheConfig?.persist)
-			) {
-				topLevelParent.config.cacheConfig!.persist(topLevelParent.cache);
-			}
-
-			spreadCacheChangeOnLanes(topLevelParent);
+			persistAndSpreadCache(instance);
 		}
 	}
 
@@ -414,41 +392,7 @@ export class StateSource<T, E, R, A extends unknown[]>
 			| ((s: State<T, E, R, A>) => void)
 			| AsyncStateSubscribeProps<T, E, R, A>
 	): AbortFn<R> {
-		let props = isFunction(argv) ? { cb: argv } : argv;
-		if (!isFunction(props.cb)) {
-			return;
-		}
-
-		let instance = this.inst;
-		if (!instance.subsIndex) {
-			instance.subsIndex = 0;
-		}
-		if (!instance.subscriptions) {
-			instance.subscriptions = {};
-		}
-
-		instance.subsIndex += 1;
-
-		let subscriptionKey: string | undefined = props.key;
-
-		if (subscriptionKey === undefined) {
-			subscriptionKey = `$${instance.subsIndex}`;
-		}
-
-		function cleanup() {
-			delete instance.subscriptions![subscriptionKey!];
-			if (__DEV__) devtools.emitUnsubscription(instance, subscriptionKey!);
-			if (instance.config.resetStateOnDispose) {
-				if (Object.values(instance.subscriptions!).length === 0) {
-					instance.actions.dispose();
-				}
-			}
-		}
-
-		instance.subscriptions[subscriptionKey] = { props, cleanup };
-
-		if (__DEV__) devtools.emitSubscription(instance, subscriptionKey);
-		return cleanup;
+		return subscribeToInstance(this.inst, argv);
 	}
 
 	replaceState(
