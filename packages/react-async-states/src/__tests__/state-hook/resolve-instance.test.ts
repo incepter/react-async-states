@@ -1,5 +1,5 @@
 import { resolveFlags, resolveInstance } from "../../state-hook/StateHook";
-import { createContext, readSource, Sources } from "async-states";
+import { createContext, createSource, readSource } from "async-states";
 
 describe("StateHook resolveInstance", () => {
 	it("should return null when waiting for the instance", () => {
@@ -14,7 +14,7 @@ describe("StateHook resolveInstance", () => {
 		expect(instance).toBe(null);
 	});
 	it("should correctly resolve instance from source configuration", () => {
-		let src = Sources.for("key1");
+		let src = createSource("key1");
 		let usedPool = createContext({}).getOrCreatePool();
 		let config = src;
 
@@ -27,7 +27,7 @@ describe("StateHook resolveInstance", () => {
 		expect(instance!.actions).toBe(src);
 	});
 	it("should correctly resolve instance from source property configuration", () => {
-		let src = Sources.for("key2");
+		let src = createSource("key2");
 		let usedPool = createContext({}).getOrCreatePool();
 		let config = { source: src };
 
@@ -40,7 +40,7 @@ describe("StateHook resolveInstance", () => {
 		expect(instance!.actions).toBe(src);
 	});
 	it("should correctly resolve instance from lane source", () => {
-		let src = Sources.for("key4");
+		let src = createSource("key4");
 		let lane = src.getLane("lane");
 		let usedPool = createContext({}).getOrCreatePool();
 		let config = { source: src, lane: "lane" };
@@ -77,7 +77,7 @@ describe("StateHook resolveInstance", () => {
 		expect(instance!.key).toBe("std-lane");
 	});
 	it("should correctly resolve standalone instance when already existing in pool", () => {
-		let src = Sources.for("newOne");
+		let src = createSource("newOne");
 		let usedPool = createContext({}).getOrCreatePool();
 		usedPool.set(src.key, readSource(src));
 
@@ -92,7 +92,7 @@ describe("StateHook resolveInstance", () => {
 		expect(instance!.actions).toBe(src);
 	});
 	it("should correctly resolve standalone instance when already existing in pool by lane", () => {
-		let src = Sources.for("newOne2");
+		let src = createSource("newOne2");
 		let usedPool = createContext({}).getOrCreatePool();
 		usedPool.set(src.key, readSource(src));
 
@@ -107,7 +107,7 @@ describe("StateHook resolveInstance", () => {
 		expect(instance!.actions).toBe(src.getLane("some-lane"));
 	});
 	it("should correctly resolve standalone instance when already existing and patch producer", () => {
-		let src = Sources.for("newOne3");
+		let src = createSource("newOne3");
 		let usedPool = createContext({}).getOrCreatePool();
 		let inst = readSource(src);
 		usedPool.set(src.key, inst);

@@ -55,13 +55,6 @@ function warnInDevAboutOptionsDeprecation(
 				"the existing features, such as status and payload."
 		);
 	}
-	if (flags & FORK && !didWarnAboutDeprecatingForkFeature) {
-		didWarnAboutDeprecatingForkFeature = true;
-		console.error(
-			"[WARNING] - useAsyncState 'fork' option is deprecated. " +
-				"Create the source with the desired key independently and use it."
-		);
-	}
 }
 
 export const useInternalAsyncState = function useAsyncStateImpl<

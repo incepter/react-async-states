@@ -69,7 +69,7 @@ export interface InitialFunctionSelectorItem<T, E, R, A extends unknown[]> exten
   cache?: Record<string, CachedState<T, E, R, A>> | null,
 }
 
-export interface PendingFunctionSelectorItem<T, E, R, A extends unknown[]> extends Partial<PendingState<T, A>> {
+export interface PendingFunctionSelectorItem<T, E, R, A extends unknown[]> extends Partial<PendingState<T, E, A>> {
   key: string,
   lastSuccess?: LastSuccessSavedState<T, A>,
   cache?: Record<string, CachedState<T, E, R, A>> | null,

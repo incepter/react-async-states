@@ -1,10 +1,10 @@
 import * as React from "react";
 import { render, fireEvent, screen } from "@testing-library/react";
-import { Sources } from "async-states";
+import { getSource } from "async-states";
 import Hydration from "../../../hydration/Hydration";
 import AsyncStateComponent from "../../utils/AsyncStateComponent";
-import {flushPromises} from "../../utils/test-utils";
-import {mockDateNow} from "../../utils/setup";
+import { flushPromises } from "../../utils/test-utils";
+import { mockDateNow } from "../../utils/setup";
 
 mockDateNow();
 jest.mock("../../../hydration/context", () => {
@@ -48,10 +48,10 @@ describe("should hydrate async states", () => {
 			</React.StrictMode>
 		);
 
-		let src = Sources.of("state-1", undefined, ctx);
+		let src = getSource("state-1", undefined, ctx)!;
 		expect(src.getState().status).toBe("success");
 		expect(src.getState().data).toBe(42);
-		let src2 = Sources.of("state-2", undefined, ctx);
+		let src2 = getSource("state-2", undefined, ctx)!;
 		expect(src2.getState().status).toBe("initial");
 		expect(src2.getState().data).toBe(undefined);
 	});
@@ -96,7 +96,7 @@ describe("should hydrate async states", () => {
 				<Test />
 			</React.StrictMode>
 		);
-		let src = Sources.of("state-1", undefined, ctx);
+		let src = getSource("state-1", undefined, ctx)!;
 		expect(src.getState().status).toBe("success");
 		expect(src.getState().data).toBe(42);
 		fireEvent.click(screen.getByTestId("toggle"));

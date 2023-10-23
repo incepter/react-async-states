@@ -136,7 +136,7 @@ function createToken<
     if (!apiSource) {
       apiSource = createSource(name, fn, config);
     } else {
-      apiSource.replaceProducer(fn || undefined)
+      apiSource.replaceProducer(fn || null)
       apiSource.patchConfig(config)
     }
     return token

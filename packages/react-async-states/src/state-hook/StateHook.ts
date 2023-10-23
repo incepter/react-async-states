@@ -45,7 +45,6 @@ import {
 } from "./StateHookFlags";
 import { __DEV__, emptyArray, freeze, isArray, isFunction } from "../shared";
 import { mapFlags } from "../shared/mapFlags";
-import { useAsyncState } from "../useAsyncState";
 
 export function resolveFlags<T, E, R, A extends unknown[], S>(
 	mixedConfig: MixedConfig<T, E, R, A, S>,
@@ -205,7 +204,7 @@ function resolveStandaloneInstance<T, E, R, A extends unknown[], S>(
 		}
 
 		if (Object.prototype.hasOwnProperty.call(config, "producer")) {
-			instance.actions.replaceProducer(producer);
+			instance.actions.replaceProducer(producer || null);
 		}
 		if (producerConfig) {
 			instance.actions.patchConfig(producerConfig);
@@ -298,30 +297,30 @@ if (__DEV__) {
 }
 
 const ignoredProps = {
-  key: true,
-  source: true,
-  devFlags: true,
-  uniqueId: true,
-}
+	key: true,
+	source: true,
+	devFlags: true,
+	uniqueId: true,
+};
 function assignSourcePropertiesWithDeprecationUsage(source) {
 	let output = {};
 	for (let [key, value] of Object.entries(source)) {
-    if (ignoredProps[key]) {
-      output[key] = value;
-    } else {
-      Object.defineProperty(output, key, {
-        enumerable: true,
-        configurable: false,
-        get(): any {
-          if (!warnedSourcePropertiesMap.get(key)) {
-            console.error(`[WARNING] - useAsyncState.${key} is deprecated. 
+		if (ignoredProps[key]) {
+			output[key] = value;
+		} else {
+			Object.defineProperty(output, key, {
+				enumerable: true,
+				configurable: false,
+				get(): any {
+					if (!warnedSourcePropertiesMap.get(key)) {
+						console.error(`[WARNING] - useAsyncState.${key} is deprecated. 
           please use useAsyncState(...).source.${key} instead.`);
-            warnedSourcePropertiesMap.set(key, true);
-          }
-          return value;
-        },
-      });
-    }
+						warnedSourcePropertiesMap.set(key, true);
+					}
+					return value;
+				},
+			});
+		}
 	}
 	return output;
 }
@@ -368,7 +367,7 @@ function calculateSubscriptionKey<T, E, R, A extends unknown[], S>(
 	}
 	if (__DEV__) {
 		let instance = stateInterface as AsyncState<T, E, R, A>;
-		if (instance.subsIndex === undefined) {
+		if (!instance.subsIndex) {
 			instance.subsIndex = 0;
 		}
 		let index = ++instance.subsIndex;

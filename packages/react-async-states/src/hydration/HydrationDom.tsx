@@ -32,7 +32,7 @@ export default function HydrationDom({ id, context }: HydrationProps) {
 	) : null;
 }
 
-function hydrateContext(currentContext) {
+function hydrateContext(currentContext: any) {
 	let allHydrationData = window.__ASYNC_STATES_HYDRATION_DATA__;
 
 	// nothing to do
