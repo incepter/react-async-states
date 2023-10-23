@@ -8,7 +8,6 @@ import {
 	maybeWindow,
 } from "./utils";
 import devtools from "./devtools/Devtools";
-import { hideStateInstanceInNewObject } from "./hide-object";
 import {
 	AbortFn,
 	AsyncStateSubscribeProps,
