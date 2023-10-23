@@ -1,6 +1,7 @@
 import React from "react";
-import {HydrationData, requestContext} from "async-states";
-import {HydrationProps} from "./context";
+import { HydrationData, requestContext } from "async-states";
+import { HydrationProps } from "./context";
+import { StateInterface } from "async-states/src";
 
 declare global {
 	interface Window {
@@ -43,12 +44,13 @@ function hydrateContext(currentContext) {
 	for (let [hydrationId, hydrationData] of Object.entries(allHydrationData)) {
 		let { poolName, key } = parseInstanceHydratedData(hydrationId);
 		if (key && poolName && currentContext.pools[poolName]) {
-			let instance = currentContext.pools[poolName].instances.get(key);
+			let instance: StateInterface<any, any, any, any> =
+				currentContext.pools[poolName].instances.get(key);
 			if (instance) {
 				instance.state = hydrationData.state;
 				instance.payload = hydrationData.payload;
 				instance.latestRun = hydrationData.latestRun;
-				instance.replaceState(instance.state); // does a notification
+				instance.actions.replaceState(instance.state); // does a notification
 
 				delete allHydrationData[hydrationId];
 			}

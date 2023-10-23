@@ -1,6 +1,6 @@
 import React from "react";
-import {HydrationData, requestContext} from "async-states";
-import {HydrationProps} from "./context";
+import { StateInterface, HydrationData, requestContext } from "async-states";
+import { HydrationProps } from "./context";
 
 export default function HydrationServer({
 	id,
@@ -39,11 +39,14 @@ function buildHydrationData(
 	}
 }
 
-function shouldExcludeInstanceFromHydration(instance, exclude) {
+function shouldExcludeInstanceFromHydration(
+	instance: StateInterface<any, any, any, any>,
+	exclude
+) {
 	return (
 		exclude &&
 		((typeof exclude === "function" &&
-			exclude(instance.key, instance.getState())) ||
+			exclude(instance.key, instance.actions.getState())) ||
 			(typeof exclude === "string" && !new RegExp(exclude).test(instance.key)))
 	);
 }
@@ -58,7 +61,7 @@ function buildHydrationDataForAllContextPools(
 				result[`${pool.name}__INSTANCE__${instance.key}`] = {
 					state: instance.state,
 					latestRun: instance.latestRun,
-					payload: instance.getPayload(),
+					payload: instance.actions.getPayload(),
 				};
 			}
 		});

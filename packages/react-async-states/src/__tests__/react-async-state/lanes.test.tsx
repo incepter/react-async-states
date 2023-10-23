@@ -140,7 +140,7 @@ describe('subscribe to lane and operate on it', () => {
     // now, let's run counter-3
 
     act(() => {
-      countersSource.getLaneSource("counter-3").run();
+      countersSource.getLane("counter-3").run();
     });
 
     await act(async () => {
@@ -154,7 +154,7 @@ describe('subscribe to lane and operate on it', () => {
       .toEqual("counter-counter-4-default-0");
 
     act(() => {
-      countersSource.getLaneSource("counter-4").run();
+      countersSource.getLane("counter-4").run();
     });
 
     await act(async () => {
@@ -179,8 +179,8 @@ describe('subscribe to lane and operate on it', () => {
       createSource(
         "temporary-will-run-counter-2",
         async function (props) {
-          props.run(countersSource, {lane: "counter-2-extra"})
-          props.runp(countersSource, {lane: "counter-2"})
+          countersSource.getLane("counter-2-extra").run();
+          countersSource.getLane("counter-2").runp();
         }
       ).run();
     });

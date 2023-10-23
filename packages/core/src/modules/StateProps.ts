@@ -31,8 +31,9 @@ export function createProps<T, E, R, A extends unknown[]>(
 		signal: controller.signal,
 		onAbort(callback: AbortFn<R>) {
 			if (isFunction(callback)) {
-				// @ts-ignore
-				controller.signal.addEventListener("abort", callback);
+				controller.signal.addEventListener("abort", () => {
+					callback(controller.signal.reason);
+				});
 			}
 		},
 		isAborted() {

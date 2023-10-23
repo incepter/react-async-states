@@ -36,7 +36,6 @@ import {
 	CONFIG_SOURCE,
 	CONFIG_STRING,
 	EQUALITY_CHECK,
-	FORK,
 	LANE,
 	NO_MODE,
 	SELECTOR,
@@ -102,7 +101,6 @@ export function resolveFlags<T, E, R, A extends unknown[], S>(
 }
 
 let ConfigurationSpecialFlags = freeze({
-	fork: FORK,
 	lane: LANE,
 	selector: SELECTOR,
 	areEqual: EQUALITY_CHECK,
@@ -170,25 +168,19 @@ function resolveSourceInstance<T, E, R, A extends unknown[], S>(
 ) {
 	if (flags & CONFIG_SOURCE) {
 		let instance = readSource(config as Source<T, E, R, A>);
-		if (flags & FORK) {
-			instance = instance.fork();
-		}
 		if (flags & LANE) {
 			// config is a source, so ofc doesn't contain lane prop
 			let laneKey = overrides?.lane;
-			instance = instance.getLane(laneKey);
+			instance = instance.actions.getLane(laneKey).inst;
 		}
 		return instance;
 	}
 
 	let givenConfig = config as BaseConfig<T, E, R, A>;
 	let instance = readSource(givenConfig.source!);
-	if (flags & FORK) {
-		instance = instance.fork(givenConfig.forkConfig);
-	}
 	if (flags & LANE) {
 		let laneKey = (config as BaseConfig<T, E, R, A>).lane || overrides?.lane;
-		return instance.getLane(laneKey);
+		return instance.actions.getLane(laneKey).inst;
 	}
 	return instance;
 }
@@ -207,19 +199,16 @@ function resolveStandaloneInstance<T, E, R, A extends unknown[], S>(
 
 	if (prevInstance) {
 		let instance = prevInstance;
-		if (flags & FORK) {
-			instance = instance.fork((config as BaseConfig<T, E, R, A>).forkConfig);
-		}
 		if (flags & LANE) {
 			let lane = readLaneFromConfig(config, overrides);
-			instance = instance.getLane(lane);
+			instance = instance.actions.getLane(lane).inst;
 		}
 
 		if (Object.prototype.hasOwnProperty.call(config, "producer")) {
-			instance.replaceProducer(producer);
+			instance.actions.replaceProducer(producer);
 		}
 		if (producerConfig) {
-			instance.patchConfig(producerConfig);
+			instance.actions.patchConfig(producerConfig);
 		}
 
 		return instance;
@@ -236,7 +225,7 @@ function resolveStandaloneInstance<T, E, R, A extends unknown[], S>(
 
 	if (flags & LANE) {
 		let lane = readLaneFromConfig(config, overrides);
-		instance = instance.getLane(lane);
+		instance = instance.actions.getLane(lane).inst;
 	}
 
 	return instance;
@@ -351,9 +340,9 @@ function makeBaseReturn<T, E, R, A extends unknown[], S>(
 		}
 		return output;
 	}
-	let output = Object.assign({}, instance._source, {
+	let output = Object.assign({}, instance.actions, {
 		flags,
-		source: instance._source,
+		source: instance.actions,
 	}) as BaseUseAsyncState<T, E, R, A, S>;
 
 	if (__DEV__) {
@@ -443,7 +432,7 @@ export function createReadInConcurrentMode<T, E, R, A extends unknown[], S>(
 						? (config as BaseConfig<T, E, R, A>).autoRunArgs
 						: emptyArray
 				) as A;
-				throw instance.runp.apply(null, args);
+				throw instance.actions.runp.apply(null, args);
 			}
 			if (
 				(suspend === "both" || suspend === "pending") &&
@@ -464,14 +453,13 @@ export function createReadInConcurrentMode<T, E, R, A extends unknown[], S>(
 
 function invokeSubscribeEvents<T, E, R, A extends unknown[]>(
 	events: UseAsyncStateEventSubscribe<T, E, R, A> | undefined,
-	run: (...args: A) => AbortFn<R>,
 	instance?: StateInterface<T, E, R, A>
 ): CleanupFn[] | null {
 	if (!events || !instance) {
 		return null;
 	}
 
-	let eventProps: SubscribeEventProps<T, E, R, A> = instance._source;
+	let eventProps: SubscribeEventProps<T, E, R, A> = instance.actions;
 
 	let handlers: ((props: SubscribeEventProps<T, E, R, A>) => CleanupFn)[] =
 		isArray(events) ? events : [events];
@@ -488,7 +476,7 @@ function invokeChangeEvents<T, E, R, A extends unknown[]>(
 		? events
 		: [events];
 
-	const eventProps = { state: nextState, source: instance._source };
+	const eventProps = { state: nextState, source: instance.actions };
 
 	changeHandlers.forEach((event) => {
 		if (typeof event === "object") {
@@ -613,7 +601,7 @@ export function subscribeEffect<T, E, R, A extends unknown[], S>(
 
 	// subscription
 	cleanups.push(
-		instance!.subscribe({
+		instance!.actions.subscribe({
 			flags,
 			key: subKey,
 			cb: onStateChange,
@@ -626,7 +614,6 @@ export function subscribeEffect<T, E, R, A extends unknown[], S>(
 	if (flags & SUBSCRIBE_EVENTS) {
 		let unsubscribeFns = invokeSubscribeEvents(
 			(config as BaseConfig<T, E, R, A>).events!.subscribe,
-			instance!.run,
 			instance!
 		);
 
@@ -639,7 +626,6 @@ export function subscribeEffect<T, E, R, A extends unknown[], S>(
 	if (maybeSubscriptionEvents) {
 		let unsubscribeFns = invokeSubscribeEvents(
 			maybeSubscriptionEvents,
-			instance!.run,
 			instance!
 		);
 		if (unsubscribeFns) {
@@ -697,7 +683,7 @@ export function createHook<T, E, R, A extends unknown[], S>(
 	if (newInstance && newFlags & CONFIG_OBJECT) {
 		let configObject = config as BaseConfig<T, E, R, A>;
 		if (configObject.payload) {
-			newInstance.mergePayload(configObject.payload);
+			newInstance.actions.mergePayload(configObject.payload);
 		}
 	}
 

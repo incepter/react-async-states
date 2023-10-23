@@ -9,7 +9,7 @@ import {
   State,
   StateInterface,
   SuccessState,
-  ForkConfig, Producer
+  Producer
 } from "async-states";
 import {EqualityFn, UseAsyncStateEvents, useSelector} from "./state-hook/types.internal";
 
@@ -113,15 +113,10 @@ export type InstanceOrNull<T, E = unknown, R = unknown, A extends unknown[] = un
   StateInterface<T, E, R, A>
   | null;
 
-export type CreateType<T, E> = () => T
-
 export type UseConfig<T, E, R, A extends unknown[], S = State<T, E, R, A>> = {
   lane?: string,
   producer?: Producer<T, E, R, A>,
   payload?: Record<string, unknown>,
-
-  fork?: boolean,
-  forkConfig?: ForkConfig,
 
   lazy?: boolean,
   autoRunArgs?: A,

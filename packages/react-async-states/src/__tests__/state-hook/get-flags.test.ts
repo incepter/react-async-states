@@ -26,9 +26,6 @@ describe('resolveFlags', () => {
       }))
         .toEqual(CONFIG_STRING | AUTO_RUN);
 
-      expect(resolveFlags("key", pool, {fork: true}))
-        .toEqual(CONFIG_STRING | FORK);
-
       expect(resolveFlags("key", pool, {lane: "lane"}))
         .toEqual(CONFIG_STRING | LANE);
 
@@ -47,9 +44,6 @@ describe('resolveFlags', () => {
       expect(resolveFlags({key, concurrent: true, }, pool))
         .toEqual(CONFIG_OBJECT | CONCURRENT);
 
-      expect(resolveFlags({key}, pool, {fork: true}))
-        .toEqual(CONFIG_OBJECT | FORK);
-
       expect(resolveFlags({key, lane: "lane"}, pool))
         .toEqual(CONFIG_OBJECT | LANE);
 
@@ -64,9 +58,6 @@ describe('resolveFlags', () => {
 
       expect(resolveFlags(source, pool, {lazy: false}))
         .toEqual(CONFIG_SOURCE | SOURCE | AUTO_RUN);
-
-      expect(resolveFlags(source, pool, {fork: true}))
-        .toEqual(CONFIG_SOURCE | SOURCE | FORK);
 
       expect(resolveFlags(source, pool, {lane: "lane"}))
         .toEqual(CONFIG_SOURCE | SOURCE | LANE);
@@ -83,9 +74,6 @@ describe('resolveFlags', () => {
       expect(resolveFlags({source}, pool, {lazy: false}))
         .toEqual(CONFIG_OBJECT | SOURCE | AUTO_RUN);
 
-      expect(resolveFlags({source}, pool, {fork: true}))
-        .toEqual(CONFIG_OBJECT | SOURCE | FORK);
-
       expect(resolveFlags({source}, pool, {lane: "lane"}))
         .toEqual(CONFIG_OBJECT | SOURCE | LANE);
 
@@ -101,9 +89,6 @@ describe('resolveFlags', () => {
       expect(resolveFlags(producer, pool, {lazy: false}))
         .toEqual(CONFIG_FUNCTION | AUTO_RUN);
 
-      expect(resolveFlags(producer, pool, {fork: true}))
-        .toEqual(CONFIG_FUNCTION | FORK);
-
       expect(resolveFlags(producer, pool, {lane: "lane"}))
         .toEqual(CONFIG_FUNCTION | LANE);
     });
@@ -115,9 +100,6 @@ describe('resolveFlags', () => {
 
       expect(resolveFlags({producer}, pool, {lazy: false}))
         .toEqual(CONFIG_OBJECT | AUTO_RUN);
-
-      expect(resolveFlags({producer}, pool, {fork: true}))
-        .toEqual(CONFIG_OBJECT | FORK);
 
       expect(resolveFlags({producer}, pool, {lane: "lane"}))
         .toEqual(CONFIG_OBJECT | LANE);
@@ -150,9 +132,6 @@ describe('resolveFlags', () => {
       }))
         .toEqual(CONFIG_STRING | AUTO_RUN);
 
-      expect(resolveFlags("key", pool, {fork: true}))
-        .toEqual(CONFIG_STRING | FORK);
-
       expect(resolveFlags("key", pool, {lane: "lane"}))
         .toEqual(CONFIG_STRING | LANE);
     });
@@ -166,9 +145,6 @@ describe('resolveFlags', () => {
 
       expect(resolveFlags({key, lazy: false, }, pool))
         .toEqual(CONFIG_OBJECT | AUTO_RUN);
-
-      expect(resolveFlags({key}, pool, {fork: true}))
-        .toEqual(CONFIG_OBJECT | FORK);
 
       expect(resolveFlags({key, lane: "lane"}, pool))
         .toEqual(CONFIG_OBJECT | LANE);
@@ -185,9 +161,6 @@ describe('resolveFlags', () => {
       expect(resolveFlags(source, pool, {lazy: false}))
         .toEqual(CONFIG_SOURCE | SOURCE | AUTO_RUN);
 
-      expect(resolveFlags(source, pool, {fork: true}))
-        .toEqual(CONFIG_SOURCE | SOURCE | FORK);
-
       expect(resolveFlags(source, pool, {lane: "lane"}))
         .toEqual(CONFIG_SOURCE | SOURCE | LANE);
 
@@ -202,9 +175,6 @@ describe('resolveFlags', () => {
 
       expect(resolveFlags({source}, pool, {lazy: false}))
         .toEqual(CONFIG_OBJECT | SOURCE | AUTO_RUN);
-
-      expect(resolveFlags({source}, pool, {fork: true}))
-        .toEqual(CONFIG_OBJECT | SOURCE | FORK);
 
       expect(resolveFlags({source}, pool, {lane: "lane"}))
         .toEqual(CONFIG_OBJECT | SOURCE | LANE);
@@ -221,9 +191,6 @@ describe('resolveFlags', () => {
       expect(resolveFlags(producer, pool, {lazy: false}))
         .toEqual(CONFIG_FUNCTION | AUTO_RUN);
 
-      expect(resolveFlags(producer, pool, {fork: true}))
-        .toEqual(CONFIG_FUNCTION | FORK);
-
       expect(resolveFlags(producer, pool, {lane: "lane"}))
         .toEqual(CONFIG_FUNCTION | LANE);
     });
@@ -235,9 +202,6 @@ describe('resolveFlags', () => {
 
       expect(resolveFlags({producer}, pool, {lazy: false}))
         .toEqual(CONFIG_OBJECT | AUTO_RUN);
-
-      expect(resolveFlags({producer}, pool, {fork: true}))
-        .toEqual(CONFIG_OBJECT | FORK);
 
       expect(resolveFlags({producer}, pool, {lane: "lane"}))
         .toEqual(CONFIG_OBJECT | LANE);

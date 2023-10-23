@@ -2,7 +2,6 @@ import type {
   AbortFn,
   CacheConfig,
   CachedState,
-  ForkConfig,
   LastSuccessSavedState,
   Producer,
   ProducerConfig,
@@ -68,17 +67,6 @@ export interface BaseConfig<T, E, R, A extends unknown[]> extends ProducerConfig
     payload?: Record<string, unknown> | null
   ) => boolean),
 
-  /**
-   * @deprecated useAsyncState 'fork' option is deprecated. create a source
-   * separately or use the desired key to create the instance.
-   */
-  fork?: boolean,
-
-  /**
-   * @deprecated useAsyncState 'forkConfig' option is deprecated. create a
-   * source separately or use the desired key to create the instance.
-   */
-  forkConfig?: ForkConfig
 }
 
 export interface ConfigWithKeyWithSelector<T, E, R, A extends unknown[], S> extends ConfigWithKeyWithoutSelector<T, E, R, A> {
@@ -140,18 +128,6 @@ export type UseAsyncStateConfiguration<T, E, R, A extends unknown[], S = State<T
   payload?: Record<string, unknown>,
   runEffect?: RunEffect,
   initialValue?: T | ((cache: Record<string, CachedState<T, E, R, A>>) => T),
-
-  /**
-   * @deprecated useAsyncState 'fork' option is deprecated. create a source
-   * separately or use the desired key to create the instance.
-   */
-  fork?: boolean,
-
-  /**
-   * @deprecated useAsyncState 'forkConfig' option is deprecated. create a
-   * source separately or use the desired key to create the instance.
-   */
-  forkConfig?: ForkConfig,
 
   /**
    * @deprecated useAsyncState 'concurrent' option is deprecated. it will have

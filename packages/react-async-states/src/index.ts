@@ -11,7 +11,6 @@ export { useAsyncState } from "./useAsyncState";
 export {
 	createSource,
 	Status,
-	RunEffect,
 	requestContext,
 	createContext,
 	getContext,
@@ -41,6 +40,7 @@ export type {
 	State,
 	Source,
 	Producer,
+	RunEffect,
 	CacheConfig,
 	CachedState,
 	ProducerProps,
