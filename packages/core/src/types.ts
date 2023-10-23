@@ -168,7 +168,6 @@ export interface StateInterface<T, E, R, A extends unknown[]>
 	currentAbort?: AbortFn<R>;
 
 	// lanes and forks
-	forksIndex?: number;
 	parent?: StateInterface<T, E, R, A> | null;
 	lanes?: Record<string, StateInterface<T, E, R, A>> | null;
 
@@ -187,14 +186,10 @@ export interface StateInterface<T, E, R, A extends unknown[]>
 
 	getLane(laneKey?: string): StateInterface<T, E, R, A>;
 
-	fork(forkConfig?: ForkConfig): StateInterface<T, E, R, A>;
-
 	// lanes and forks
 	removeLane(laneKey?: string): boolean;
 
 	getLane(laneKey?: string): BaseSource<T, E, R, A>;
-
-	fork(forkConfig?: ForkConfig): BaseSource<T, E, R, A>;
 
 	run(...args: A): AbortFn<R>;
 
@@ -438,11 +433,6 @@ export interface StateBuilderInterface {
 	) => AbortedState<T, E, R, A>;
 }
 
-export type ForkConfig = {
-	key?: string;
-	keepState?: boolean;
-	keepCache?: boolean;
-};
 export type AsyncStateKeyOrSource<T, E, R, A extends unknown[]> =
 	| string
 	| Source<T, E, R, A>;

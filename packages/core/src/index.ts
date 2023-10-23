@@ -27,7 +27,6 @@ export type {
 	ProducerRunInput,
 	ProducerEffects,
 	AsyncStateKeyOrSource,
-	ForkConfig,
 	StateBuilderInterface,
 	CachedState,
 	CacheConfig,

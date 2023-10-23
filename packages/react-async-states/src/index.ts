@@ -41,7 +41,6 @@ export type {
 	State,
 	Source,
 	Producer,
-	ForkConfig,
 	CacheConfig,
 	CachedState,
 	ProducerProps,

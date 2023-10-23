@@ -21,7 +21,6 @@ import {
 	CreatePropsConfig,
 	CreateSourceObject,
 	ErrorState,
-	ForkConfig,
 	HydrationData,
 	InstanceCacheChangeEvent,
 	InstanceCacheChangeEventHandlerType,
@@ -109,7 +108,6 @@ export class AsyncState<T, E, R, A extends unknown[]>
 	eventsIndex?: number;
 	events?: InstanceEvents<T, E, R, A>;
 
-	forksIndex?: number;
 	parent?: StateInterface<T, E, R, A> | null;
 	lanes?: Record<string, StateInterface<T, E, R, A>> | null;
 
@@ -311,14 +309,13 @@ export class AsyncState<T, E, R, A extends unknown[]>
 			return this.lanes[laneKey];
 		}
 
-		const newLane = this.fork({
-			key: laneKey,
-			keepCache: true,
-			keepState: false,
-		});
-		newLane.parent = this;
+		let producer = this.fn;
+		let config = shallowClone(this.config);
+		let newLane = new AsyncState(laneKey, producer, config);
 
+		newLane.parent = this;
 		this.lanes[laneKey] = newLane;
+
 		return newLane;
 	}
 
@@ -564,34 +561,6 @@ export class AsyncState<T, E, R, A extends unknown[]>
 		this.willUpdate = false;
 		invokeInstanceEvents(this, "dispose");
 		return true;
-	}
-
-	fork(forkConfig?: ForkConfig) {
-		if (!this.forksIndex) {
-			this.forksIndex = 0;
-		}
-		const mergedConfig: ForkConfig = forkConfig || {};
-
-		let { key } = mergedConfig;
-
-		if (key === undefined) {
-			key = `${this.key}-fork-${this.forksIndex + 1}`;
-		}
-
-		let clone = new AsyncState(key, this.fn, this.config);
-
-		// if something fail, no need to increment
-		this.forksIndex += 1;
-
-		if (mergedConfig.keepState) {
-			clone.state = shallowClone(this.state);
-			clone.lastSuccess = shallowClone(this.lastSuccess);
-		}
-		if (mergedConfig.keepCache) {
-			clone.cache = this.cache;
-		}
-
-		return clone as StateInterface<T, E, R, A>;
 	}
 
 	mergePayload(partialPayload?: Record<string, any>): void {
