@@ -8,7 +8,7 @@ export type ProducerWrapperInput<T, E, R, A extends unknown[]> = {
 		newState: State<T, E, R, A>,
 		notify?: boolean,
 		callbacks?: ProducerCallbacks<T, E, R, A>
-	);
+	): void;
 	getProducer(): Producer<T, E, R, A> | undefined | null;
 };
 
@@ -22,7 +22,7 @@ export interface BaseSource<T, E, R, A extends unknown[]> {
 
 	getPayload(): Record<string, unknown>;
 
-	mergePayload(partialPayload?: Record<string, unknown>);
+	mergePayload(partialPayload?: Record<string, unknown>): void;
 
 	// state
 	getState(): State<T, E, R, A>;
@@ -56,14 +56,14 @@ export interface BaseSource<T, E, R, A extends unknown[]> {
 
 	abort(reason?: R): void;
 
-	replaceProducer(newProducer: Producer<T, E, R, A> | undefined);
+	replaceProducer(newProducer: Producer<T, E, R, A> | null): void;
 
 	// cache
 	invalidateCache(cacheKey?: string): void;
 
 	replaceCache(cacheKey: string, cache: CachedState<T, E, R, A>): void;
 
-	patchConfig(partialConfig?: Partial<ProducerConfig<T, E, R, A>>);
+	patchConfig(partialConfig?: Partial<ProducerConfig<T, E, R, A>>): void;
 
 	getConfig(): ProducerConfig<T, E, R, A>;
 
@@ -133,7 +133,7 @@ export type InstanceEvents<T, E, R, A extends unknown[]> = {
 export type HydrationData<T, E, R, A extends unknown[]> = {
 	state: State<T, E, R, A>;
 	payload: Record<string, unknown>;
-	latestRun?: RunTask<T, E, R, A> | null;
+	latestRun: RunTask<T, E, R, A> | null;
 };
 
 export interface StateInterface<T, E, R, A extends unknown[]> {
@@ -143,7 +143,7 @@ export interface StateInterface<T, E, R, A extends unknown[]> {
 	uniqueId: number;
 	actions: Source<T, E, R, A>;
 	config: ProducerConfig<T, E, R, A>;
-	payload?: Record<string, unknown> | null;
+	payload: Record<string, any> | null;
 
 	// state
 	state: State<T, E, R, A>;
@@ -152,35 +152,31 @@ export interface StateInterface<T, E, R, A extends unknown[]> {
 	pendingUpdate: PendingUpdate | null;
 	pendingTimeout: PendingTimeout | null;
 
-	queue?: UpdateQueue<T, E, R, A>;
-	flushing?: boolean;
+	queue: UpdateQueue<T, E, R, A> | null;
 
 	// subscriptions
-	subsIndex?: number;
-	subscriptions?: Record<number, StateSubscription<T, E, R, A>> | null;
+	subsIndex: number | null;
+	subscriptions: Record<number, StateSubscription<T, E, R, A>> | null;
 
 	// producer
-	promise?: Promise<T>;
-	fn: Producer<T, E, R, A> | undefined | null;
+	promise: Promise<T> | null;
+	fn: Producer<T, E, R, A> | null;
 	pool: PoolInterface;
 
-	request?: Request;
+	willUpdate: boolean | null;
 
-	isEmitting?: boolean;
-	willUpdate?: boolean;
-
-	latestRun?: RunTask<T, E, R, A> | null;
-	currentAbort?: AbortFn<R>;
+	latestRun: RunTask<T, E, R, A> | null;
+	currentAbort: AbortFn<R> | null;
 
 	// lanes and forks
-	parent?: StateInterface<T, E, R, A> | null;
-	lanes?: Record<string, StateInterface<T, E, R, A>> | null;
+	parent: StateInterface<T, E, R, A> | null;
+	lanes: Record<string, StateInterface<T, E, R, A>> | null;
 
 	// cache
-	cache?: Record<string, CachedState<T, E, R, A>> | null;
+	cache: Record<string, CachedState<T, E, R, A>> | null;
 
-	events?: InstanceEvents<T, E, R, A>;
-	eventsIndex?: number;
+	events: InstanceEvents<T, E, R, A> | null;
+	eventsIndex: number | null;
 	// dev properties
 	journal?: any[]; // for devtools, dev only
 }
@@ -281,7 +277,9 @@ export type ProducerFunction<T, E, R, A extends unknown[]> = (
 ) => AbortFn<R>;
 export type ProducerConfig<T, E, R, A extends unknown[]> = {
 	skipPendingStatus?: boolean;
-	initialValue?: T | ((cache?: Record<string, CachedState<T, E, R, A>>) => T);
+	initialValue?:
+		| T
+		| ((cache: Record<string, CachedState<T, E, R, A>> | null) => T);
 	cacheConfig?: CacheConfig<T, E, R, A>;
 	runEffectDurationMs?: number;
 	runEffect?: RunEffect;
@@ -317,20 +315,6 @@ export type CreateSourceObject<T, E, R, A extends unknown[]> = {
 	key: string;
 	config?: ProducerConfig<T, E, R, A>;
 	producer?: Producer<T, E, R, A> | null;
-};
-
-export type CreateSourceType = {
-	<T, E, R, A extends unknown[]>(props: CreateSourceObject<T, E, R, A>): Source<
-		T,
-		E,
-		R,
-		A
-	>;
-	<T, E, R, A extends unknown[]>(
-		key: string,
-		producer?: Producer<T, E, R, A> | undefined | null,
-		config?: ProducerConfig<T, E, R, A>
-	): Source<T, E, R, A>;
 };
 
 export interface Source<T, E, R, A extends unknown[]>
@@ -409,21 +393,6 @@ export type AsyncStateKeyOrSource<T, E, R, A extends unknown[]> =
 	| string
 	| Source<T, E, R, A>;
 
-export type EffectsRunType<T, E, R, A extends unknown[]> = (
-	input: ProducerRunInput<T, E, R, A>,
-	config: ProducerRunConfig | null,
-	...args: A
-) => AbortFn<R>;
-
-export type EffectsRunpType<T, E, R, A extends unknown[]> = (
-	input: ProducerRunInput<T, E, R, A>,
-	config: ProducerRunConfig | null,
-	...args: A
-) => Promise<State<T, E, R, A>> | undefined;
-export type EffectsSelectType<T, E, R, A extends unknown[]> = (
-	input: AsyncStateKeyOrSource<T, E, R, A>,
-	lane?: string
-) => State<T, E, R, A> | undefined;
 export interface ProducerEffects {}
 
 export type ProducerRunInput<T, E, R, A extends unknown[]> =
@@ -520,18 +489,4 @@ export type OnSettled<T, E, R, A extends unknown[]> = {
 		savedProps: ProducerSavedProps<T, A>,
 		callbacks?: ProducerCallbacks<T, E, R, A>
 	): void;
-};
-export type CreatePropsConfig<T, E, R, A extends unknown[]> = {
-	args: A;
-	context: LibraryPoolsContext;
-	payload: Record<string, unknown>;
-	indicators: RunIndicators;
-	lastSuccess: LastSuccessSavedState<T, A>;
-	getState: () => State<T, E, R, A>;
-	onEmit: (
-		updater: T | StateFunctionUpdater<T, E, R, A>,
-		status?: Status
-	) => void;
-	onAborted: (reason?: R) => void;
-	onCleared: () => void;
 };

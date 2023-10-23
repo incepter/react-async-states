@@ -1,5 +1,5 @@
 import { maybeWindow } from "../../utils";
-import {AsyncState, createSource, getSource} from "../../AsyncState";
+import { AsyncState, createSource, getSource } from "../../AsyncState";
 import { mockDateNow } from "../utils/setup";
 import { Status } from "../../enums";
 import { expect } from "@jest/globals";
@@ -133,7 +133,7 @@ describe("AsyncState instance creation", () => {
 		let prevConsoleError = console.error;
 		console.error = () => {}; // shut warning
 		// @ts-ignore
-		expect(Sources("state-9")).toBe(src);
+		expect(getSource("state-9")).toBe(src);
 		expect(createSource("state-9")).toBe(src);
 		console.error = prevConsoleError;
 	});

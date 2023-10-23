@@ -9,6 +9,7 @@ import {
 import { __DEV__, cloneProducerProps, emptyArray, isFunction } from "../utils";
 import { aborted, Status } from "../enums";
 import { StateBuilder } from "../helpers/StateBuilder";
+import { startEmitting, stopEmitting } from "./StateUpdate";
 
 export function createProps<T, E, R, A extends unknown[]>(
 	instance: StateInterface<T, E, R, A>,
@@ -68,9 +69,9 @@ export function createProps<T, E, R, A extends unknown[]>(
 			return;
 		}
 
-		instance.isEmitting = true;
+		let prevIsEmitting = startEmitting();
 		instance.actions.setState(updater, status, runProps);
-		instance.isEmitting = false;
+		stopEmitting(prevIsEmitting);
 	}
 
 	function abort(reason?: R): AbortFn<R> | undefined {

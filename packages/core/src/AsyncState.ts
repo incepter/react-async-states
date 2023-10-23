@@ -1,4 +1,4 @@
-import { __DEV__, cloneProducerProps, isFunction } from "./utils";
+import { __DEV__, isFunction } from "./utils";
 import devtools from "./devtools/Devtools";
 import {
 	AbortFn,
@@ -39,21 +39,15 @@ import { StateBuilder } from "./helpers/StateBuilder";
 import { nextUniqueId, shallowClone } from "./helpers/core";
 import { runcInstance, runInstanceImmediately } from "./modules/StateRun";
 import {
-	invokeChangeCallbacks,
-	invokeInstanceEvents,
-} from "./modules/StateEvent";
-import {
 	getTopLevelParent,
 	hasCacheEnabled,
 	loadCache,
-	saveCacheAfterSuccessfulUpdate,
 	spreadCacheChangeOnLanes,
 } from "./modules/StateCache";
-import { notifySubscribers } from "./modules/StateSubscription";
 import {
-	enqueueSetState,
-	enqueueUpdate,
-	scheduleDelayedPendingUpdate,
+	disposeInstance,
+	replaceInstanceState,
+	setInstanceState,
 } from "./modules/StateUpdate";
 import { attemptHydratedState } from "./modules/StateHydration";
 
@@ -64,43 +58,43 @@ import { attemptHydratedState } from "./modules/StateHydration";
 export class AsyncState<T, E, R, A extends unknown[]>
 	implements StateInterface<T, E, R, A>
 {
-	journal?: any[]; // used only in dev mode
+	// used only in __DEV__ mode
+	journal?: any[];
 
+	readonly pool: PoolInterface;
+
+	// this contains all methods, such as getState, setState and so on
 	actions: Source<T, E, R, A>;
-	fn: Producer<T, E, R, A> | undefined;
 
 	key: string;
 	uniqueId: number;
 	version: number = 0;
-	payload?: Record<string, any>;
 	config: ProducerConfig<T, E, R, A>;
-	cache?: Record<string, CachedState<T, E, R, A>>;
+	payload: Record<string, any> | null;
+	cache: Record<string, CachedState<T, E, R, A>> | null;
 
-	promise?: Promise<T>;
-	currentAbort?: AbortFn<R>;
+	parent: StateInterface<T, E, R, A> | null;
+	lanes: Record<string, StateInterface<T, E, R, A>> | null;
+
 	state: State<T, E, R, A>;
-	queue?: UpdateQueue<T, E, R, A>;
-
+	queue: UpdateQueue<T, E, R, A> | null;
+	latestRun: RunTask<T, E, R, A> | null;
 	lastSuccess: LastSuccessSavedState<T, A>;
+
+	promise: Promise<T> | null;
+	currentAbort: AbortFn<R> | null;
+	fn: Producer<T, E, R, A> | null;
 
 	pendingUpdate: PendingUpdate | null;
 	pendingTimeout: PendingTimeout | null;
 
-	flushing?: boolean;
-	eventsIndex?: number;
-	events?: InstanceEvents<T, E, R, A>;
+	subsIndex: number | null;
+	subscriptions: Record<number, StateSubscription<T, E, R, A>> | null;
 
-	parent?: StateInterface<T, E, R, A> | null;
-	lanes?: Record<string, StateInterface<T, E, R, A>> | null;
+	eventsIndex: number | null;
+	events: InstanceEvents<T, E, R, A> | null;
 
-	subsIndex?: number;
-	subscriptions?: Record<number, StateSubscription<T, E, R, A>> | null;
-
-	willUpdate?: boolean;
-	isEmitting?: boolean;
-	latestRun?: RunTask<T, E, R, A> | null;
-
-	readonly pool: PoolInterface;
+	willUpdate: boolean | null;
 
 	constructor(
 		key: string,
@@ -123,7 +117,7 @@ export class AsyncState<T, E, R, A extends unknown[]>
 			if (__DEV__) {
 				warnAboutAlreadyExistingSourceWithSameKey(key);
 			}
-			maybeInstance.actions.replaceProducer(producer || undefined);
+			maybeInstance.actions.replaceProducer(producer || null);
 			maybeInstance.actions.patchConfig(config);
 			return maybeInstance;
 		}
@@ -135,10 +129,10 @@ export class AsyncState<T, E, R, A extends unknown[]>
 
 		this.key = key;
 		this.pool = poolToUse;
+		this.fn = producer ?? null;
 		this.uniqueId = nextUniqueId();
 		this.actions = new StateSource(this);
 		this.config = shallowClone(config);
-		this.fn = producer ?? undefined;
 
 		loadCache(this);
 
@@ -409,34 +403,10 @@ export class StateSource<T, E, R, A extends unknown[]>
 	}
 
 	dispose() {
-		let instance = this.inst;
-		if (instance.subscriptions && Object.keys(instance.subscriptions).length) {
-			// this means that this state is retained by some subscriptions
-			return false;
-		}
-		instance.willUpdate = true;
-		instance.actions.abort();
-		if (instance.queue) {
-			clearTimeout(instance.queue.id);
-			delete instance.queue;
-		}
-
-		let initialState = instance.config.initialValue;
-		if (isFunction(initialState)) {
-			initialState = initialState(instance.cache || undefined);
-		}
-		const newState: State<T, E, R, A> = StateBuilder.initial<T, A>(
-			initialState as T
-		);
-		instance.actions.replaceState(newState);
-		if (__DEV__) devtools.emitDispose(instance);
-
-		instance.willUpdate = false;
-		invokeInstanceEvents(instance, "dispose");
-		return true;
+		return disposeInstance(this.inst);
 	}
 
-	replaceProducer(newProducer: Producer<T, E, R, A> | undefined) {
+	replaceProducer(newProducer: Producer<T, E, R, A> | null) {
 		this.inst.fn = newProducer;
 	}
 
@@ -489,67 +459,7 @@ export class StateSource<T, E, R, A extends unknown[]>
 		notify: boolean = true,
 		callbacks?: ProducerCallbacks<T, E, R, A>
 	): void {
-		let instance = this.inst;
-		let { config } = instance;
-		let isPending = newState.status === pending;
-
-		if (isPending && config.skipPendingStatus) {
-			return;
-		}
-
-		if (instance.queue) {
-			enqueueUpdate(instance, newState, callbacks);
-			return;
-		}
-
-		if (
-			config.keepPendingForMs &&
-			instance.state.status === pending &&
-			!instance.flushing
-		) {
-			enqueueUpdate(instance, newState, callbacks);
-			return;
-		}
-
-		// pending update has always a pending status
-		// setting the state should always clear this pending update
-		// because it is stale, and we can safely skip it
-		if (instance.pendingUpdate) {
-			clearTimeout(instance.pendingUpdate.id);
-			instance.pendingUpdate = null;
-		}
-
-		if (
-			isPending &&
-			instance.config.skipPendingDelayMs &&
-			isFunction(setTimeout) &&
-			instance.config.skipPendingDelayMs > 0
-		) {
-			scheduleDelayedPendingUpdate(instance, newState, notify);
-			return;
-		}
-
-		if (__DEV__) devtools.startUpdate(instance);
-		instance.state = newState;
-		instance.version += 1;
-		invokeChangeCallbacks(newState, callbacks);
-		invokeInstanceEvents(instance, "change");
-		if (__DEV__) devtools.emitUpdate(instance);
-
-		if (instance.state.status === success) {
-			instance.lastSuccess = instance.state;
-			if (hasCacheEnabled(instance)) {
-				saveCacheAfterSuccessfulUpdate(instance);
-			}
-		}
-
-		if (!isPending) {
-			instance.promise = undefined;
-		}
-
-		if (notify && !instance.flushing) {
-			notifySubscribers(instance as StateInterface<T, E, R, A>);
-		}
+		replaceInstanceState(this.inst, newState, notify, callbacks);
 	}
 
 	setState(
@@ -557,41 +467,7 @@ export class StateSource<T, E, R, A extends unknown[]>
 		status: Status = success,
 		callbacks?: ProducerCallbacks<T, E, R, A>
 	): void {
-		if (!StateBuilder[status]) {
-			throw new Error(`Unknown status ('${status}')`);
-		}
-		let instance = this.inst;
-		if (instance.queue) {
-			enqueueSetState(instance, newValue, status, callbacks);
-			return;
-		}
-		instance.willUpdate = true;
-		if (
-			instance.state.status === pending ||
-			(isFunction(instance.currentAbort) && !instance.isEmitting)
-		) {
-			instance.actions.abort();
-			instance.currentAbort = undefined;
-		}
-
-		let effectiveValue = newValue;
-		if (isFunction(newValue)) {
-			effectiveValue = newValue(instance.state);
-		}
-		const savedProps = cloneProducerProps<T, E, R, A>({
-			args: [effectiveValue] as A,
-			payload: shallowClone(instance.payload),
-		});
-		if (__DEV__) devtools.emitReplaceState(instance, savedProps);
-		// @ts-ignore
-		let newState = StateBuilder[status](effectiveValue, savedProps) as State<
-			T,
-			E,
-			R,
-			A
-		>;
-		instance.actions.replaceState(newState, true, callbacks);
-		instance.willUpdate = false;
+		setInstanceState(this.inst, newValue, status, callbacks);
 	}
 
 	getAllLanes() {
