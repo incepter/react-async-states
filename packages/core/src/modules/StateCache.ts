@@ -7,7 +7,7 @@ import {
 	SuccessState,
 } from "../types";
 import { defaultHash, emptyArray, isFunction, isPromise } from "../utils";
-import { now } from "../helpers/corejs";
+import { now } from "../helpers/core";
 import { invokeInstanceEvents } from "./StateEvent";
 
 export function hasCacheEnabled<T, E, R, A extends unknown[]>(

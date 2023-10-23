@@ -10,7 +10,7 @@ import {
 } from "../types";
 import { RunEffect, Status } from "../enums";
 import { __DEV__, cloneProducerProps, emptyArray, isFunction } from "../utils";
-import { freeze, noop, now } from "../helpers/corejs";
+import { freeze, noop, now } from "../helpers/core";
 import {
 	computeRunHash,
 	didCachedStateExpire,

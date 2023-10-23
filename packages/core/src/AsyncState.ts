@@ -1,19 +1,10 @@
-import {
-	__DEV__,
-	asyncStatesKey,
-	cloneProducerProps,
-	isFunction,
-	isPromise,
-	isServer,
-	maybeWindow,
-} from "./utils";
+import { __DEV__, cloneProducerProps, isFunction } from "./utils";
 import devtools from "./devtools/Devtools";
 import {
 	AbortFn,
 	AsyncStateSubscribeProps,
 	CachedState,
 	CreateSourceObject,
-	HydrationData,
 	InstanceCacheChangeEvent,
 	InstanceCacheChangeEventHandlerType,
 	InstanceChangeEvent,
@@ -33,7 +24,6 @@ import {
 	RUNCProps,
 	RunTask,
 	Source,
-	SourcesType,
 	State,
 	StateFunctionUpdater,
 	StateInterface,
@@ -45,20 +35,27 @@ import {
 	requestContext,
 	warnAboutAlreadyExistingSourceWithSameKey,
 } from "./pool";
-import { sourceSymbol } from "./helpers/isSource";
 import { StateBuilder } from "./helpers/StateBuilder";
-import { freeze } from "./helpers/corejs";
+import { nextUniqueId, shallowClone } from "./helpers/core";
 import { runcInstance, runInstanceImmediately } from "./modules/StateRun";
 import {
 	invokeChangeCallbacks,
 	invokeInstanceEvents,
 } from "./modules/StateEvent";
 import {
+	getTopLevelParent,
 	hasCacheEnabled,
 	loadCache,
 	saveCacheAfterSuccessfulUpdate,
 	spreadCacheChangeOnLanes,
 } from "./modules/StateCache";
+import { notifySubscribers } from "./modules/StateSubscription";
+import {
+	enqueueSetState,
+	enqueueUpdate,
+	scheduleDelayedPendingUpdate,
+} from "./modules/StateUpdate";
+import { attemptHydratedState } from "./modules/StateHydration";
 
 // this is the main instance that will hold and manipulate the state
 // it is referenced by its 'key' or name.
@@ -139,7 +136,7 @@ export class AsyncState<T, E, R, A extends unknown[]>
 		this.key = key;
 		this.pool = poolToUse;
 		this.uniqueId = nextUniqueId();
-		this.actions = makeSource(this);
+		this.actions = new StateSource(this);
 		this.config = shallowClone(config);
 		this.fn = producer ?? undefined;
 
@@ -185,265 +182,6 @@ export class AsyncState<T, E, R, A extends unknown[]>
 		}
 	}
 }
-
-//region AsyncState methods helpers
-let uniqueId: number = 0;
-let HYDRATION_DATA_KEY = "__ASYNC_STATES_HYDRATION_DATA__";
-
-export let Sources: SourcesType = (function () {
-	let output: Omit<Omit<SourcesType, "of">, "for"> = createSource;
-	(output as SourcesType).of = getSource;
-	(output as SourcesType).for = createSource;
-	return output as SourcesType;
-})();
-
-function nextUniqueId() {
-	return ++uniqueId;
-}
-
-function shallowClone(source1, source2?) {
-	return Object.assign({}, source1, source2);
-}
-
-function makeSource<T, E, R, A extends unknown[]>(
-	instance: StateInterface<T, E, R, A>
-): Readonly<Source<T, E, R, A>> {
-	let source: Source<T, E, R, A> = new StateSource(instance);
-
-	return freeze(source);
-}
-
-export function createSource<
-	T,
-	E = unknown,
-	R = unknown,
-	A extends unknown[] = unknown[]
->(
-	props: string | CreateSourceObject<T, E, R, A>,
-	maybeProducer?: Producer<T, E, R, A> | undefined | null,
-	maybeConfig?: ProducerConfig<T, E, R, A>
-): Source<T, E, R, A> {
-	if (typeof props === "object") {
-		return new AsyncState(props.key, props.producer, props.config).actions;
-	}
-	return new AsyncState(props, maybeProducer, maybeConfig).actions;
-}
-
-export function getSource(key: string, poolName?: string, context?: unknown) {
-	let executionContext = requestContext(context);
-	let pool = executionContext.getOrCreatePool(poolName);
-	return pool.instances.get(key)?.actions;
-}
-
-export function readSource<T, E, R, A extends unknown[]>(
-	possiblySource: Source<T, E, R, A>
-): StateInterface<T, E, R, A> {
-	let instance = possiblySource.inst;
-	if (!instance) {
-		throw new Error("Incompatible Source object.");
-	}
-	return instance;
-}
-
-function notifySubscribers<T, E, R, A extends unknown[]>(
-	instance: StateInterface<T, E, R, A>
-) {
-	if (!instance.subscriptions) {
-		return;
-	}
-	Object.values(instance.subscriptions).forEach((subscription) => {
-		subscription.props.cb(instance.state);
-	});
-}
-
-function attemptHydratedState<T, E, R, A extends unknown[]>(
-	poolName: string,
-	key: string
-): HydrationData<T, E, R, A> | null {
-	// do not attempt hydration outside server
-	if (isServer) {
-		return null;
-	}
-	if (!maybeWindow || !maybeWindow[HYDRATION_DATA_KEY]) {
-		return null;
-	}
-
-	let savedHydrationData = maybeWindow[HYDRATION_DATA_KEY];
-	let name = `${poolName}__INSTANCE__${key}`;
-	let maybeState = savedHydrationData[name];
-
-	if (!maybeState) {
-		return null;
-	}
-
-	delete savedHydrationData[name];
-	if (Object.keys(savedHydrationData).length === 0) {
-		delete maybeWindow[HYDRATION_DATA_KEY];
-	}
-
-	return maybeState as HydrationData<T, E, R, A>;
-}
-
-function getTopLevelParent<T, E, R, A extends unknown[]>(
-	base: StateInterface<T, E, R, A>
-): StateInterface<T, E, R, A> {
-	let current = base;
-	while (current.parent) {
-		current = current.parent;
-	}
-	return current;
-}
-
-function scheduleDelayedPendingUpdate<T, E, R, A extends unknown[]>(
-	instance: StateInterface<T, E, R, A>,
-	newState: State<T, E, R, A>,
-	notify: boolean
-) {
-	function callback() {
-		// callback always sets the state with a pending status
-		if (__DEV__) devtools.startUpdate(instance);
-		let clonedState = shallowClone(newState);
-		clonedState.timestamp = Date.now();
-		instance.state = freeze(clonedState); // <-- status is pending!
-		instance.pendingUpdate = null;
-		instance.version += 1;
-		invokeInstanceEvents(instance, "change");
-		if (__DEV__) devtools.emitUpdate(instance);
-
-		if (notify) {
-			notifySubscribers(instance as StateInterface<T, E, R, A>);
-		}
-	}
-
-	let timeoutId = setTimeout(callback, instance.config.skipPendingDelayMs);
-	instance.pendingUpdate = { callback, id: timeoutId };
-}
-
-//endregion
-
-//region UPDATE QUEUE
-function getQueueTail<T, E, R, A extends unknown[]>(
-	instance: StateInterface<T, E, R, A>
-): UpdateQueue<T, E, R, A> | null {
-	if (!instance.queue) {
-		return null;
-	}
-	let current = instance.queue;
-	while (current.next !== null) {
-		current = current.next;
-	}
-	return current;
-}
-
-function enqueueUpdate<T, E, R, A extends unknown[]>(
-	instance: StateInterface<T, E, R, A>,
-	newState: State<T, E, R, A>,
-	callbacks?: ProducerCallbacks<T, E, R, A>
-) {
-	let update: UpdateQueue<T, E, R, A> = {
-		callbacks,
-		data: newState,
-		kind: 0,
-		next: null,
-	};
-	if (!instance.queue) {
-		instance.queue = update;
-	} else {
-		let tail = getQueueTail(instance);
-		if (!tail) {
-			return;
-		}
-		tail.next = update;
-	}
-
-	ensureQueueIsScheduled(instance);
-}
-
-function enqueueSetState<T, E, R, A extends unknown[]>(
-	instance: StateInterface<T, E, R, A>,
-	newValue: T | StateFunctionUpdater<T, E, R, A>,
-	status = success,
-	callbacks?: ProducerCallbacks<T, E, R, A>
-) {
-	let update: UpdateQueue<T, E, R, A> = {
-		callbacks,
-		kind: 1,
-		data: { data: newValue, status },
-		next: null,
-	};
-	if (!instance.queue) {
-		instance.queue = update;
-	} else {
-		let tail = getQueueTail(instance);
-		if (!tail) {
-			return;
-		}
-		tail.next = update;
-	}
-
-	ensureQueueIsScheduled(instance);
-}
-
-function ensureQueueIsScheduled<T, E, R, A extends unknown[]>(
-	instance: StateInterface<T, E, R, A>
-) {
-	if (!instance.queue) {
-		return;
-	}
-	let queue: UpdateQueue<T, E, R, A> = instance.queue;
-	if (queue.id) {
-		return;
-	}
-	let delay = instance.config.keepPendingForMs || 0;
-	let elapsedTime = Date.now() - instance.state.timestamp;
-	let remainingTime = delay - elapsedTime;
-
-	if (remainingTime > 0) {
-		queue.id = setTimeout(() => flushUpdateQueue(instance), remainingTime);
-	} else {
-		flushUpdateQueue(instance);
-	}
-}
-
-function flushUpdateQueue<T, E, R, A extends unknown[]>(
-	instance: StateInterface<T, E, R, A>
-) {
-	if (!instance.queue) {
-		return;
-	}
-
-	let current: UpdateQueue<T, E, R, A> | null = instance.queue;
-
-	delete instance.queue;
-
-	instance.flushing = true;
-	while (current !== null) {
-		let {
-			data: { status },
-			callbacks,
-		} = current;
-		let canBailoutPendingStatus = status === pending && current.next !== null;
-
-		if (canBailoutPendingStatus) {
-			current = current.next;
-		} else {
-			if (current.kind === 0) {
-				instance.actions.replaceState(current.data, undefined, callbacks);
-			}
-			if (current.kind === 1) {
-				let {
-					data: { data, status },
-				} = current;
-				instance.actions.setState(data, status, callbacks);
-			}
-			current = current.next;
-		}
-	}
-	delete instance.flushing;
-	notifySubscribers(instance);
-}
-
-//endregion
 
 export class StateSource<T, E, R, A extends unknown[]>
 	implements Source<T, E, R, A>
@@ -863,4 +601,58 @@ export class StateSource<T, E, R, A extends unknown[]>
 		}
 		return Object.values(instance.lanes).map((lane) => lane.actions);
 	}
+}
+
+export function getSource(key: string, poolName?: string, context?: unknown) {
+	let executionContext = requestContext(context);
+	let pool = executionContext.getOrCreatePool(poolName);
+	return pool.instances.get(key)?.actions;
+}
+
+export function readSource<T, E, R, A extends unknown[]>(
+	possiblySource: Source<T, E, R, A>
+): StateInterface<T, E, R, A> {
+	let instance = possiblySource.inst;
+	if (!instance) {
+		throw new Error("Incompatible Source object.");
+	}
+	return instance;
+}
+
+export function createSource<
+	T,
+	E = unknown,
+	R = unknown,
+	A extends unknown[] = unknown[]
+>(props: CreateSourceObject<T, E, R, A>): Source<T, E, R, A>;
+export function createSource<
+	T,
+	E = unknown,
+	R = unknown,
+	A extends unknown[] = unknown[]
+>(
+	key: string,
+	producer?: Producer<T, E, R, A> | undefined | null,
+	config?: ProducerConfig<T, E, R, A>
+): Source<T, E, R, A>;
+export function createSource<
+	T,
+	E = unknown,
+	R = unknown,
+	A extends unknown[] = unknown[]
+>(
+	props: string | CreateSourceObject<T, E, R, A>,
+	maybeProducer?: Producer<T, E, R, A> | undefined | null,
+	maybeConfig?: ProducerConfig<T, E, R, A>
+): Source<T, E, R, A> {
+	let instance: StateInterface<T, E, R, A>;
+
+	if (typeof props === "object") {
+		let { key, producer, config } = props;
+		instance = new AsyncState(key, producer, config);
+	} else {
+		instance = new AsyncState(props, maybeProducer, maybeConfig);
+	}
+
+	return instance.actions;
 }

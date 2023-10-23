@@ -8,7 +8,7 @@ import {
 } from "./types";
 import {version} from "../package.json";
 import {__DEV__, isServer, maybeWindow} from "./utils";
-import {freeze} from "./helpers/corejs";
+import {freeze} from "./helpers/core";
 
 let defaultPoolName = "default";
 let didWarnAboutExistingInstanceRecreation = false;

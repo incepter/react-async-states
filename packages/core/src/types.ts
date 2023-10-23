@@ -331,21 +331,6 @@ export type CreateSourceType = {
 		producer?: Producer<T, E, R, A> | undefined | null,
 		config?: ProducerConfig<T, E, R, A>
 	): Source<T, E, R, A>;
-	<T, E, R, A extends unknown[]>(
-		props: string | CreateSourceObject<T, E, R, A>,
-		maybeProducer?: Producer<T, E, R, A> | undefined | null,
-		maybeConfig?: ProducerConfig<T, E, R, A>
-	): Source<T, E, R, A>;
-};
-
-export type SourcesType = {
-	<T, E, R, A extends unknown[]>(): Source<T, E, R, A>;
-	for: CreateSourceType;
-	of<T, E, R, A extends unknown[]>(
-		key: string,
-		pool?: string,
-		context?: unknown
-	);
 };
 
 export interface Source<T, E, R, A extends unknown[]>

@@ -6,7 +6,7 @@ import {
 	StateInterface,
 } from "../types";
 import { aborted, error, success } from "../enums";
-import { isArray } from "../helpers/corejs";
+import { isArray } from "../helpers/core";
 import { isFunction } from "../utils";
 
 export function invokeChangeCallbacks<T, E, R, A extends unknown[]>(

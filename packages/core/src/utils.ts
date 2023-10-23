@@ -3,7 +3,7 @@ import {
   ProducerProps,
   ProducerSavedProps
 } from "./types";
-import {freeze, now} from "./helpers/corejs";
+import {freeze, now} from "./helpers/core";
 
 export let __DEV__ = process.env.NODE_ENV !== "production";
 export let maybeWindow = typeof window !== "undefined" ? window : undefined;

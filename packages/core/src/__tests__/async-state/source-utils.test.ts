@@ -1,5 +1,6 @@
-import { createSource } from "../../AsyncState";
-import {noop} from "../../helpers/corejs";
+import {noop} from "../../helpers/core";
+
+import {createSource} from "../../AsyncState";
 
 describe("source utils", () => {
 	const source = createSource<number, any>("test-source", null, {

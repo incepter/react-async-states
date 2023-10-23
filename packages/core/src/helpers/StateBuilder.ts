@@ -9,7 +9,7 @@ import {
   StateBuilderInterface,
   SuccessState
 } from "../types";
-import {freeze, now} from "./corejs";
+import {freeze, now} from "./core";
 
 function state<T, A extends unknown[]>(
   status: Status.initial, data: T | undefined,
