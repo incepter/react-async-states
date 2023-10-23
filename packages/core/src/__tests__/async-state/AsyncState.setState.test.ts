@@ -13,7 +13,7 @@ describe('AsyncState - setState', () => {
   let myConfig = {initialValue: null};
   let myAsyncState = new AsyncState(key, producer, myConfig);
   let subscription = jest.fn();
-  myAsyncState._source.subscribe({cb: subscription});
+  myAsyncState.actions.subscribe({cb: subscription});
 
   beforeEach(() => {
     subscription.mockClear();
@@ -21,7 +21,7 @@ describe('AsyncState - setState', () => {
 
   it('should synchronously mutate the state after setState call and notify subscribers', () => {
     // when
-    myAsyncState._source.replaceState(StateBuilder.pending({}));
+    myAsyncState.actions.replaceState(StateBuilder.pending({}));
     // then
     let expectedState = {
       props: {},
@@ -37,7 +37,7 @@ describe('AsyncState - setState', () => {
   it('should update state and do not notify subscribers', async () => {
     let lastSuccess = myAsyncState.lastSuccess;
 
-    myAsyncState._source.replaceState(StateBuilder.success({}, null), false);
+    myAsyncState.actions.replaceState(StateBuilder.success({}, null), false);
     // then
     expect(subscription).not.toHaveBeenCalled();
   });

@@ -9,7 +9,7 @@ describe('AsyncState instance subscription', () => {
     let instance = new AsyncState("state-1", null)
     expect(instance.subsIndex).toBe(undefined)
     // @ts-ignore
-    instance._source.subscribe({})
+    instance.actions.subscribe({})
     expect(instance.subsIndex).toBe(undefined)
   });
 });

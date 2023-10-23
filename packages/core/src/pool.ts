@@ -48,7 +48,7 @@ function createPool(name: string, context: LibraryPoolsContext): PoolInterface {
   }
 
   function mergePayload(payload: Record<string, any>) {
-    instances.forEach(instance => instance._source.mergePayload(payload))
+    instances.forEach(instance => instance.actions.mergePayload(payload))
   }
 
   function listen<T, E, R, A extends unknown[]>(notify: WatchCallback<T, E, R, A>): AbortFn {

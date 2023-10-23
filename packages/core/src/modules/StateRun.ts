@@ -117,7 +117,7 @@ function cleanInstancePendingStateBeforeImmediateRun(
 		instance.pendingUpdate = null;
 	}
 
-	instance._source.abort();
+	instance.actions.abort();
 	instance.currentAbort = undefined;
 }
 
@@ -133,7 +133,7 @@ function replaceStateBecauseNoProducerProvided<T, E, R, A extends unknown[]>(
 	let newStateCallbacks = props; // runcProps extends the callbacks
 
 	// @ts-expect-error this is obviously unsafe and cannot be typed
-	instance._source.setState(newStateData, newStateStatus, newStateCallbacks);
+	instance.actions.setState(newStateData, newStateStatus, newStateCallbacks);
 
 	// todo: this needs to be removed
 	instance.willUpdate = false;
@@ -150,7 +150,7 @@ function replaceStateAndBailoutRunFromCachedState<T, E, R, A extends unknown[]>(
 	// this means that the current state reference isn't the same
 	if (actualState !== nextState) {
 		// this sets the new state and notifies subscriptions
-		instance._source.replaceState(nextState);
+		instance.actions.replaceState(nextState);
 	}
 }
 
@@ -224,7 +224,7 @@ export function runInstanceImmediately<T, E, R, A extends unknown[]>(
 
 		instance.promise = runResult;
 		let pendingState = StateBuilder.pending(cloneProducerProps(producerProps));
-		instance._source.replaceState(pendingState, true, props);
+		instance.actions.replaceState(pendingState, true, props);
 
 		instance.willUpdate = false;
 		return producerProps.abort;
@@ -247,6 +247,6 @@ export function runInstanceImmediately<T, E, R, A extends unknown[]>(
 			props: savedProps,
 			timestamp: now(),
 		} as SuccessState<T, A> | ErrorState<T, E, A>);
-		instance._source.replaceState(state, true, callbacks);
+		instance.actions.replaceState(state, true, callbacks);
 	}
 }

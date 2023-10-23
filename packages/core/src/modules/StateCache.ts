@@ -211,7 +211,7 @@ function resolveCache<T, E, R, A extends unknown[]>(
 	if (isFunction(cacheConfig!.onCacheLoad)) {
 		cacheConfig!.onCacheLoad({
 			cache: instance.cache,
-			setState: instance._source.setState,
+			setState: instance.actions.setState,
 		});
 	}
 }

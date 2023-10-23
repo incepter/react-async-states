@@ -17,16 +17,16 @@ describe('AsyncState instance run', () => {
       }
     )
     expect(instance.pendingUpdate).toBe(undefined)
-    instance._source.run()
+    instance.actions.run()
     let timeoutId = instance.pendingUpdate!.id
     expect(instance.pendingUpdate).not.toBe(undefined)
     expect(instance.state.status).toBe("initial") // skip pending
-    instance._source.run()
+    instance.actions.run()
     let newTimeoutId = instance.pendingUpdate!.id
     expect(newTimeoutId).not.toBe(timeoutId)
     expect(instance.state.status).toBe("initial") // still skipping
 
-    instance._source.replaceState({
+    instance.actions.replaceState({
       data: 17,
       props: {args: [17]},
       timestamp: Date.now(),
@@ -42,7 +42,7 @@ describe('AsyncState instance run', () => {
         skipPendingStatus: true,
       }
     )
-    instance._source.run()
+    instance.actions.run()
     expect(instance.state.status).toBe("initial")
     await flushPromises()
     expect(instance.state.status).toBe("success")
@@ -53,15 +53,15 @@ describe('AsyncState instance run', () => {
       spy(props.args[0])
       return props.args[0]
     })
-    instance._source.replay()
+    instance.actions.replay()
     expect(spy).not.toHaveBeenCalled()
-    instance._source.run(12)
+    instance.actions.run(12)
     let prevState = instance.state;
     expect(prevState.data).toBe(12)
     expect(spy).toHaveBeenCalledTimes(1)
     expect(spy).toHaveBeenCalledWith(12)
     spy.mockClear()
-    instance._source.replay()
+    instance.actions.replay()
     expect(instance.state.data).toBe(12)
     expect(spy).toHaveBeenCalledTimes(1)
     expect(spy).toHaveBeenCalledWith(12)
@@ -73,10 +73,10 @@ describe('AsyncState instance run', () => {
     }
 
     let instance = new AsyncState("state-4", producer)
-    instance._source.run()
+    instance.actions.run()
     await jest.advanceTimersByTime(99)
     expect(instance.state.status).toBe("pending")
-    instance._source.run()
+    instance.actions.run()
     await jest.advanceTimersByTime(100)
     await flushPromises()
     expect(instance.state.status).toBe("success")
@@ -92,7 +92,7 @@ describe('AsyncState instance run', () => {
         maxAttempts: 2
       }
     })
-    instance._source.run()
+    instance.actions.run()
     await jest.advanceTimersByTime(100)
     await flushPromises()
     expect(instance.state.status).toBe("pending")
@@ -109,12 +109,12 @@ describe('AsyncState instance run', () => {
       runEffectDurationMs: 100,
       runEffect: "debounce",
     })
-    instance._source.run()
+    instance.actions.run()
     expect(instance.state.status).toBe("initial")
     await jest.advanceTimersByTime(150)
     await flushPromises()
     expect(instance.state.status).toBe("pending")
-    let abort = instance._source.run()
+    let abort = instance.actions.run()
     await jest.advanceTimersByTime(150)
     expect(instance.state.status).toBe("pending")
     abort!()

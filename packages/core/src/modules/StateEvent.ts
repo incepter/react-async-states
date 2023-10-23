@@ -52,10 +52,10 @@ export function invokeInstanceEvents<T, E, R, A extends unknown[]>(
 			Object.values(events[type]!).forEach((registeredEvents) => {
 				if (isArray(registeredEvents)) {
 					registeredEvents.forEach((evt) => {
-						invokeSingleChangeEvent(instance._source.getState(), evt);
+						invokeSingleChangeEvent(instance.actions.getState(), evt);
 					});
 				} else {
-					invokeSingleChangeEvent(instance._source.getState(), registeredEvents);
+					invokeSingleChangeEvent(instance.actions.getState(), registeredEvents);
 				}
 			});
 			return;

@@ -17,8 +17,8 @@ describe("async state cache", () => {
 
 		expect(asyncState.state.data).toBe(0);
 		expect(load).toHaveBeenCalled();
-		asyncState._source.getLane("test-lane");
-		expect(asyncState._source.getLane("test-lane").inst.cache).toBe(
+		asyncState.actions.getLane("test-lane");
+		expect(asyncState.actions.getLane("test-lane").inst.cache).toBe(
 			asyncState.cache
 		);
 	});
@@ -48,27 +48,27 @@ describe("async state cache", () => {
 
 		expect(asyncState.state.data).toBe(1);
 		expect(load).toHaveBeenCalled();
-		asyncState._source.getLane("test2-lane");
-		expect(asyncState._source.getLane("test2-lane").inst.cache).toBe(
+		asyncState.actions.getLane("test2-lane");
+		expect(asyncState.actions.getLane("test2-lane").inst.cache).toBe(
 			asyncState.cache
 		);
 
-		asyncState._source.getLane("test2-lane").run(2);
-		expect(asyncState._source.getLane("test2-lane").inst.cache).toBe(
+		asyncState.actions.getLane("test2-lane").run(2);
+		expect(asyncState.actions.getLane("test2-lane").inst.cache).toBe(
 			asyncState.cache
 		);
 		expect(
-			asyncState._source.getLane("test2-lane").inst.cache![`2`]?.state
+			asyncState.actions.getLane("test2-lane").inst.cache![`2`]?.state
 				?.data
 		).toBe(2);
 
 		producer.mockClear();
-		asyncState._source.getLane("test2-lane").run(1);
+		asyncState.actions.getLane("test2-lane").run(1);
 		expect(
-			asyncState._source.getLane("test2-lane").inst.cache![`1`]?.state
+			asyncState.actions.getLane("test2-lane").inst.cache![`1`]?.state
 				?.data
 		).toBe(1);
-		expect(asyncState._source.getLane("test2-lane").inst.state.data).toBe(
+		expect(asyncState.actions.getLane("test2-lane").inst.state.data).toBe(
 			1
 		);
 		expect(producer).not.toHaveBeenCalled();
@@ -134,10 +134,10 @@ describe("async state cache", () => {
 				enabled: true,
 			},
 		});
-		asyncState._source.invalidateCache(`1`);
+		asyncState.actions.invalidateCache(`1`);
 		expect(asyncState.cache![`1`]).not.toBeDefined();
 		expect(asyncState.cache![`2`]).toBeDefined();
-		asyncState._source.invalidateCache();
+		asyncState.actions.invalidateCache();
 		expect(asyncState.cache![`1`]).not.toBeDefined();
 		expect(asyncState.cache![`2`]).not.toBeDefined();
 		expect(asyncState.cache).toEqual({});

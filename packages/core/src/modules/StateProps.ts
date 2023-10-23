@@ -17,7 +17,7 @@ export function createProps<T, E, R, A extends unknown[]>(
 	runProps: RUNCProps<T, E, R, A> | undefined
 ): ProducerProps<T, E, R, A> {
 	let lastSuccess = instance.lastSuccess;
-	let getState = instance._source.getState;
+	let getState = instance.actions.getState;
 	let args = (runProps?.args || emptyArray) as A;
 
 	let controller = new AbortController();
@@ -68,7 +68,7 @@ export function createProps<T, E, R, A extends unknown[]>(
 		}
 
 		instance.isEmitting = true;
-		instance._source.setState(updater, status, runProps);
+		instance.actions.setState(updater, status, runProps);
 		instance.isEmitting = false;
 	}
 
@@ -91,7 +91,7 @@ export function createProps<T, E, R, A extends unknown[]>(
 					reason,
 					cloneProducerProps(producerProps)
 				);
-				instance._source.replaceState(abortedState, true, runProps);
+				instance.actions.replaceState(abortedState, true, runProps);
 			}
 		}
 

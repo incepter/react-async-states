@@ -69,7 +69,7 @@ export class AsyncState<T, E, R, A extends unknown[]>
 {
 	journal?: any[]; // used only in dev mode
 
-	_source: Source<T, E, R, A>;
+	actions: Source<T, E, R, A>;
 	fn: Producer<T, E, R, A> | undefined;
 
 	key: string;
@@ -126,8 +126,8 @@ export class AsyncState<T, E, R, A extends unknown[]>
 			if (__DEV__) {
 				warnAboutAlreadyExistingSourceWithSameKey(key);
 			}
-			maybeInstance._source.replaceProducer(producer || undefined);
-			maybeInstance._source.patchConfig(config);
+			maybeInstance.actions.replaceProducer(producer || undefined);
+			maybeInstance.actions.patchConfig(config);
 			return maybeInstance;
 		}
 
@@ -139,7 +139,7 @@ export class AsyncState<T, E, R, A extends unknown[]>
 		this.key = key;
 		this.pool = poolToUse;
 		this.uniqueId = nextUniqueId();
-		this._source = makeSource(this);
+		this.actions = makeSource(this);
 		this.config = shallowClone(config);
 		this.fn = producer ?? undefined;
 
@@ -224,15 +224,15 @@ export function createSource<
 	maybeConfig?: ProducerConfig<T, E, R, A>
 ): Source<T, E, R, A> {
 	if (typeof props === "object") {
-		return new AsyncState(props.key, props.producer, props.config)._source;
+		return new AsyncState(props.key, props.producer, props.config).actions;
 	}
-	return new AsyncState(props, maybeProducer, maybeConfig)._source;
+	return new AsyncState(props, maybeProducer, maybeConfig).actions;
 }
 
 export function getSource(key: string, poolName?: string, context?: unknown) {
 	let executionContext = requestContext(context);
 	let pool = executionContext.getOrCreatePool(poolName);
-	return pool.instances.get(key)?._source;
+	return pool.instances.get(key)?.actions;
 }
 
 export function readSource<T, E, R, A extends unknown[]>(
@@ -428,13 +428,13 @@ function flushUpdateQueue<T, E, R, A extends unknown[]>(
 			current = current.next;
 		} else {
 			if (current.kind === 0) {
-				instance._source.replaceState(current.data, undefined, callbacks);
+				instance.actions.replaceState(current.data, undefined, callbacks);
 			}
 			if (current.kind === 1) {
 				let {
 					data: { data, status },
 				} = current;
-				instance._source.setState(data, status, callbacks);
+				instance.actions.setState(data, status, callbacks);
 			}
 			current = current.next;
 		}
@@ -519,7 +519,7 @@ export class StateSource<T, E, R, A extends unknown[]>
 	}
 
 	run(...args: A) {
-		return this.inst._source.runc({ args });
+		return this.inst.actions.runc({ args });
 	}
 
 	runp(...args: A) {
@@ -622,7 +622,7 @@ export class StateSource<T, E, R, A extends unknown[]>
 
 		let existingLane = instance.lanes[laneKey];
 		if (existingLane) {
-			return existingLane._source;
+			return existingLane.actions;
 		}
 
 		let producer = instance.fn;
@@ -635,7 +635,7 @@ export class StateSource<T, E, R, A extends unknown[]>
 
 		// console.log("created shit", instance.lanes);
 
-		return newLane._source;
+		return newLane.actions;
 	}
 
 	getVersion(): number {
@@ -677,7 +677,7 @@ export class StateSource<T, E, R, A extends unknown[]>
 			return false;
 		}
 		instance.willUpdate = true;
-		instance._source.abort();
+		instance.actions.abort();
 		if (instance.queue) {
 			clearTimeout(instance.queue.id);
 			delete instance.queue;
@@ -690,7 +690,7 @@ export class StateSource<T, E, R, A extends unknown[]>
 		const newState: State<T, E, R, A> = StateBuilder.initial<T, A>(
 			initialState as T
 		);
-		instance._source.replaceState(newState);
+		instance.actions.replaceState(newState);
 		if (__DEV__) devtools.emitDispose(instance);
 
 		instance.willUpdate = false;
@@ -735,7 +735,7 @@ export class StateSource<T, E, R, A extends unknown[]>
 			if (__DEV__) devtools.emitUnsubscription(instance, subscriptionKey!);
 			if (instance.config.resetStateOnDispose) {
 				if (Object.values(instance.subscriptions!).length === 0) {
-					instance._source.dispose();
+					instance.actions.dispose();
 				}
 			}
 		}
@@ -832,7 +832,7 @@ export class StateSource<T, E, R, A extends unknown[]>
 			instance.state.status === pending ||
 			(isFunction(instance.currentAbort) && !instance.isEmitting)
 		) {
-			instance._source.abort();
+			instance.actions.abort();
 			instance.currentAbort = undefined;
 		}
 
@@ -852,7 +852,7 @@ export class StateSource<T, E, R, A extends unknown[]>
 			R,
 			A
 		>;
-		instance._source.replaceState(newState, true, callbacks);
+		instance.actions.replaceState(newState, true, callbacks);
 		instance.willUpdate = false;
 	}
 
@@ -861,6 +861,6 @@ export class StateSource<T, E, R, A extends unknown[]>
 		if (!instance.lanes) {
 			return [];
 		}
-		return Object.values(instance.lanes).map((lane) => lane._source);
+		return Object.values(instance.lanes).map((lane) => lane.actions);
 	}
 }

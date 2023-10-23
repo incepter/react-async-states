@@ -23,10 +23,10 @@ describe('AsyncState - subscriptions', () => {
     // then
     expect(myAsyncState.subsIndex).toBe(undefined);
 
-    let unsubscribe = myAsyncState._source.subscribe({cb: subscriptionFn});
+    let unsubscribe = myAsyncState.actions.subscribe({cb: subscriptionFn});
     expect(typeof unsubscribe).toBe("function");
 
-    myAsyncState._source.run();
+    myAsyncState.actions.run();
     await jest.advanceTimersByTime(50);
 
     expect(subscriptionFn.mock.calls).toEqual(
@@ -71,11 +71,11 @@ describe('AsyncState - subscriptions', () => {
 
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
-    let unsubscribe = myAsyncState._source.subscribe({cb: subscriptionFn});
+    let unsubscribe = myAsyncState.actions.subscribe({cb: subscriptionFn});
 
     // then
 
-    myAsyncState._source.run();
+    myAsyncState.actions.run();
     await jest.advanceTimersByTime(49);
     unsubscribe!(); // unsubscribe one milli before resolve; we should only receive the pending notification
     await jest.advanceTimersByTime(5);
@@ -107,12 +107,12 @@ describe('AsyncState - subscriptions', () => {
 
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
-    let unsubscribe = myAsyncState._source.subscribe({cb: subscriptionFn});
+    let unsubscribe = myAsyncState.actions.subscribe({cb: subscriptionFn});
     unsubscribe!();
 
     // then
 
-    myAsyncState._source.run();
+    myAsyncState.actions.run();
     await jest.advanceTimersByTime(50);
 
     expect(subscriptionFn.mock.calls).toEqual([]);

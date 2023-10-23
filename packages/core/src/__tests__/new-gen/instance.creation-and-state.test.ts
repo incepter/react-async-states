@@ -18,16 +18,16 @@ describe("AsyncState instance creation", () => {
 			'window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"ASYNC-STATES-default-POOL__INSTANCE__state-1":{"state":{"status":"success","data":42,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"payload":{}}})'
 		);
 		let instance = new AsyncState("state-1", null);
-		expect(instance._source.getVersion()).toBe(0);
-		expect(instance._source.getState().data).toBe(42);
-		expect(instance._source.getState().status).toBe("success");
-		expect(instance.lastSuccess).toBe(instance._source.getState());
+		expect(instance.actions.getVersion()).toBe(0);
+		expect(instance.actions.getState().data).toBe(42);
+		expect(instance.actions.getState().status).toBe("success");
+		expect(instance.lastSuccess).toBe(instance.actions.getState());
 		bootHydration(
 			'window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"ASYNC-STATES-default-POOL__INSTANCE__state-2":{"state":{"status":"error","data":42,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"payload":{}}})'
 		);
 		let instance2 = new AsyncState("state-2", null, { initialValue: 15 });
-		expect(instance2._source.getState().data).toBe(42);
-		expect(instance2._source.getState().status).toBe("error");
+		expect(instance2.actions.getState().data).toBe(42);
+		expect(instance2.actions.getState().status).toBe("error");
 		expect(instance2.lastSuccess.data).toBe(15);
 		expect(instance2.lastSuccess.status).toBe("initial");
 	});
@@ -69,24 +69,24 @@ describe("AsyncState instance creation", () => {
 			},
 		});
 
-		expect(instance._source.getState().status).toBe("initial");
-		expect(instance._source.getState().data).toBe(55);
+		expect(instance.actions.getState().status).toBe("initial");
+		expect(instance.actions.getState().data).toBe(55);
 
 		let prevCache1 = instance.cache!.stateHash;
 
-		instance._source.replaceCache("stateHash", { ...prevCache1 });
+		instance.actions.replaceCache("stateHash", { ...prevCache1 });
 		expect(instance.cache!.stateHash).not.toBe(prevCache1);
 
 		persistSpy.mockClear();
 		expect(instance.cache!.stateHash).not.toBe(undefined);
 		expect(instance.cache!.stateHash2).not.toBe(undefined);
-		instance._source.invalidateCache("stateHash");
+		instance.actions.invalidateCache("stateHash");
 		expect(persistSpy).toHaveBeenCalledTimes(1);
 		expect(instance.cache!.stateHash).toBe(undefined);
 		expect(instance.cache!.stateHash2).not.toBe(undefined);
 
 		persistSpy.mockClear();
-		instance._source.invalidateCache();
+		instance.actions.invalidateCache();
 		expect(persistSpy).toHaveBeenCalledTimes(1);
 		expect(instance.cache!.stateHash).toBe(undefined);
 		expect(instance.cache!.stateHash2).toBe(undefined);
@@ -94,36 +94,36 @@ describe("AsyncState instance creation", () => {
 
 	it("should update given configuration", () => {
 		let instance = new AsyncState("state-4", null, { initialValue: 15 });
-		expect(instance._source.getConfig().initialValue).toBe(15);
-		instance._source.patchConfig({ initialValue: 16 });
-		expect(instance._source.getConfig().initialValue).toBe(16);
+		expect(instance.actions.getConfig().initialValue).toBe(15);
+		instance.actions.patchConfig({ initialValue: 16 });
+		expect(instance.actions.getConfig().initialValue).toBe(16);
 	});
 	it("should answer correctly for hasLane and delete lane", () => {
 		let instance = new AsyncState("state-5", null);
 		// expect(instance._source.removeLane()).toBe(false);
 		// expect(instance._source.hasLane("notfound")).toBe(false);
-		instance._source.getLane("toBeForgotten");
-		expect(instance._source.hasLane("toBeForgotten")).toBe(true);
+		instance.actions.getLane("toBeForgotten");
+		expect(instance.actions.hasLane("toBeForgotten")).toBe(true);
 
-		expect(instance._source.removeLane("toBeForgotten")).toBe(true);
-		expect(instance._source.hasLane("toBeForgotten")).toBe(false);
+		expect(instance.actions.removeLane("toBeForgotten")).toBe(true);
+		expect(instance.actions.hasLane("toBeForgotten")).toBe(false);
 	});
 	it("should return main instance on getLane", () => {
 		let instance = new AsyncState("state-6", null);
-		expect(instance._source.getLane()).toBe(instance._source);
+		expect(instance.actions.getLane()).toBe(instance.actions);
 	});
 	it("should throw when attempting to force a non existing status", () => {
 		let instance = new AsyncState("state-7", null, { initialValue: 1 });
 		// @ts-ignore
-		expect(() => instance._source.setState(15, "unknown")).toThrow(
+		expect(() => instance.actions.setState(15, "unknown")).toThrow(
 			"Unknown status ('unknown')"
 		);
 	});
 	it("should return all lanes", () => {
 		let instance = new AsyncState("state-8", null);
-		expect(instance._source.getAllLanes()).toEqual([]);
-		let secondSrc = instance._source.getLane("toForget");
-		expect(instance._source.getAllLanes()).toEqual([secondSrc]);
+		expect(instance.actions.getAllLanes()).toEqual([]);
+		let secondSrc = instance.actions.getLane("toForget");
+		expect(instance.actions.getAllLanes()).toEqual([secondSrc]);
 	});
 	it("should get source by all ways", () => {
 		let src = createSource({ key: "state-9" });

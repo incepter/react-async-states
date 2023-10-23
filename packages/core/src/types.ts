@@ -141,7 +141,7 @@ export interface StateInterface<T, E, R, A extends unknown[]> {
 	key: string;
 	version: number;
 	uniqueId: number;
-	_source: Source<T, E, R, A>;
+	actions: Source<T, E, R, A>;
 	config: ProducerConfig<T, E, R, A>;
 	payload?: Record<string, unknown> | null;
 
