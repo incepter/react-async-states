@@ -15,6 +15,7 @@ import { hasCacheEnabled, saveCacheAfterSuccessfulUpdate } from "./StateCache";
 import { StateBuilder } from "../helpers/StateBuilder";
 
 let isCurrentlyEmitting = false;
+let isCurrentlyAlteringState = false;
 let isCurrentlyFlushingAQueue = false;
 
 export function startEmitting() {
@@ -24,6 +25,18 @@ export function startEmitting() {
 }
 export function stopEmitting(restoreToThisValue: boolean) {
 	isCurrentlyEmitting = restoreToThisValue;
+}
+
+export function isAlteringState() {
+	return isCurrentlyAlteringState;
+}
+export function startAlteringState() {
+	let prevIsAltering = isCurrentlyAlteringState;
+	isCurrentlyAlteringState = true;
+	return prevIsAltering;
+}
+export function stopAlteringState(restoreToThisValue: boolean) {
+	isCurrentlyAlteringState = restoreToThisValue;
 }
 
 export function getQueueTail<T, E, R, A extends unknown[]>(
@@ -255,7 +268,9 @@ export function setInstanceState<T, E, R, A extends unknown[]>(
 		enqueueSetState(instance, newValue, status, callbacks);
 		return;
 	}
-	instance.willUpdate = true;
+
+	let wasAlteringState = startAlteringState();
+
 	if (
 		instance.state.status === pending ||
 		(isFunction(instance.currentAbort) && !isCurrentlyEmitting)
@@ -281,7 +296,7 @@ export function setInstanceState<T, E, R, A extends unknown[]>(
 		A
 	>;
 	instance.actions.replaceState(newState, true, callbacks);
-	instance.willUpdate = false;
+	stopAlteringState(wasAlteringState);
 }
 
 export function disposeInstance<T, E, R, A extends unknown[]>(
@@ -291,7 +306,9 @@ export function disposeInstance<T, E, R, A extends unknown[]>(
 		// this means that this state is retained by some subscriptions
 		return false;
 	}
-	instance.willUpdate = true;
+
+	let wasAltering = startAlteringState();
+
 	instance.actions.abort();
 	if (instance.queue) {
 		clearTimeout(instance.queue.id);
@@ -308,7 +325,7 @@ export function disposeInstance<T, E, R, A extends unknown[]>(
 	instance.actions.replaceState(newState);
 	if (__DEV__) devtools.emitDispose(instance);
 
-	instance.willUpdate = false;
+	stopAlteringState(wasAltering);
 	invokeInstanceEvents(instance, "dispose");
 	return true;
 }

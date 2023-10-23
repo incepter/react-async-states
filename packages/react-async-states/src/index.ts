@@ -57,7 +57,6 @@ export type {
 	ErrorState,
 	InitialState,
 	PendingState,
-	AbortedState,
 	SuccessState,
 	StateUpdater,
 	RunIndicators,

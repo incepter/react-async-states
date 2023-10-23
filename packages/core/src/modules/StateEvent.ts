@@ -16,12 +16,9 @@ export function invokeChangeCallbacks<T, E, R, A extends unknown[]>(
 	if (!callbacks) {
 		return;
 	}
-	let { onError, onAborted, onSuccess } = callbacks;
+	let { onError, onSuccess } = callbacks;
 	if (onSuccess && state.status === success) {
 		onSuccess(state);
-	}
-	if (onAborted && state.status === aborted) {
-		onAborted(state);
 	}
 	if (onError && state.status === error) {
 		onError(state);

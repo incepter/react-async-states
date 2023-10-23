@@ -163,8 +163,6 @@ export interface StateInterface<T, E, R, A extends unknown[]> {
 	fn: Producer<T, E, R, A> | null;
 	pool: PoolInterface;
 
-	willUpdate: boolean | null;
-
 	latestRun: RunTask<T, E, R, A> | null;
 	currentAbort: AbortFn<R> | null;
 
@@ -209,28 +207,30 @@ export type ErrorState<T, E, A extends unknown[]> = {
 	status: Status.error;
 	props: ProducerSavedProps<T, A>;
 };
-export type PendingState<T, A extends unknown[]> = {
+export type PendingState<T, E, A extends unknown[]> = {
 	data: null;
 	timestamp: number;
 	status: Status.pending;
 	props: ProducerSavedProps<T, A>;
+
+	prev: PendingPreviousState<T, E, A>;
 };
+
+export type PendingPreviousState<T, E, A extends unknown[]> =
+	| InitialState<T, A>
+	| SuccessState<T, A>
+	| ErrorState<T, E, A>;
+
 export type InitialState<T, A extends unknown[]> = {
 	timestamp: number;
 	data: T | undefined;
 	status: Status.initial;
 	props: ProducerSavedProps<T, A> | null;
 };
-export type AbortedState<T, E, R, A extends unknown[]> = {
-	data: R;
-	timestamp: number;
-	status: Status.aborted;
-	props: ProducerSavedProps<T, A>;
-};
+
 export type State<T, E, R, A extends unknown[]> =
 	| InitialState<T, A>
-	| PendingState<T, A>
-	| AbortedState<T, E, R, A>
+	| PendingState<T, E, A>
 	| SuccessState<T, A>
 	| ErrorState<T, E, A>;
 export type AbortFn<R = unknown> = ((reason?: R) => void) | undefined;
@@ -261,7 +261,6 @@ export type RunIndicators = {
 export type ProducerCallbacks<T, E, R, A extends unknown[]> = {
 	onError?(errorState: ErrorState<T, E, A>): void;
 	onSuccess?(successState: SuccessState<T, A>): void;
-	onAborted?(aborted: AbortedState<T, E, R, A>): void;
 };
 export type ProducerSavedProps<T, A extends unknown[]> = {
 	args?: A;
@@ -372,9 +371,10 @@ export type CachedState<T, E, R, A extends unknown[]> = {
 
 export interface StateBuilderInterface {
 	initial: <T, A extends unknown[]>(initialValue: T) => InitialState<T, A>;
-	pending: <T, A extends unknown[]>(
+	pending: <T, E, A extends unknown[]>(
+		prev: PendingPreviousState<T, E, A>,
 		props: ProducerSavedProps<T, A>
-	) => PendingState<T, A>;
+	) => PendingState<T, E, A>;
 	success: <T, A extends unknown[]>(
 		data: T,
 		props: ProducerSavedProps<T, A> | null
@@ -383,10 +383,6 @@ export interface StateBuilderInterface {
 		data: E,
 		props: ProducerSavedProps<T, A>
 	) => ErrorState<T, E, A>;
-	aborted: <T, E, R, A extends unknown[]>(
-		reason: R | undefined,
-		props: ProducerSavedProps<T, A>
-	) => AbortedState<T, E, R, A>;
 }
 
 export type AsyncStateKeyOrSource<T, E, R, A extends unknown[]> =

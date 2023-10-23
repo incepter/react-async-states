@@ -3,7 +3,6 @@ import {
   PendingState,
   SuccessState,
   ErrorState,
-  AbortedState,
   State,
   Status
 } from "react-async-states";
@@ -18,8 +17,7 @@ export type StateWithBooleanStatus<T, E = unknown, R = unknown, A extends unknow
   InitialState<T, A> & InitialExtendedState |
   PendingState<T, A> & PendingExtendedState |
   SuccessState<T, A> & SuccessExtendedState |
-  ErrorState<T, E, A> & ErrorExtendedState |
-  AbortedState<T, E, R, A> & AbortedExtendedState;
+  ErrorState<T, E, A> & ErrorExtendedState;
 
 type ExtendStatusReturn<T, E, R, A extends unknown[]> =
   InitialExtendedState |

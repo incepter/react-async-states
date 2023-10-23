@@ -6,10 +6,9 @@ import {
 	StateFunctionUpdater,
 	StateInterface,
 } from "../types";
-import { __DEV__, cloneProducerProps, emptyArray, isFunction } from "../utils";
-import { aborted, Status } from "../enums";
-import { StateBuilder } from "../helpers/StateBuilder";
-import { startEmitting, stopEmitting } from "./StateUpdate";
+import { __DEV__, emptyArray, isFunction } from "../utils";
+import { pending, Status } from "../enums";
+import {isAlteringState, startEmitting, stopEmitting} from "./StateUpdate";
 
 export function createProps<T, E, R, A extends unknown[]>(
 	instance: StateInterface<T, E, R, A>,
@@ -48,15 +47,7 @@ export function createProps<T, E, R, A extends unknown[]>(
 		updater: T | StateFunctionUpdater<T, E, R, A>,
 		status?: Status
 	): void {
-		let state = getState();
-		if (indicators.cleared && state.status === aborted) {
-			if (__DEV__) {
-				console.error(
-					"You are emitting while your producer is passing to aborted state." +
-						"This has no effect and not supported by the library. The next " +
-						"state value on aborted state is the reason of the abort."
-				);
-			}
+		if (indicators.cleared) {
 			return;
 		}
 		if (!indicators.done) {
@@ -81,19 +72,16 @@ export function createProps<T, E, R, A extends unknown[]>(
 
 		if (!indicators.done) {
 			indicators.aborted = true;
-			// in case we will be running right next, there is no need to step in the
-			// aborted state since we'll be immediately (sync) later in pending again, so
-			// we bail out this aborted state update.
-			// this is to distinguish between aborts that are called from the wild
-			// from aborts that will be called synchronously
-			// by the library replace the state again
-			// these state updates are only with aborted status
-			if (!instance.willUpdate) {
-				let abortedState = StateBuilder.aborted<T, E, R, A>(
-					reason,
-					cloneProducerProps(producerProps)
-				);
-				instance.actions.replaceState(abortedState, true, runProps);
+			let currentState = instance.state;
+			if (currentState.status === pending) {
+				currentState = currentState.prev;
+			}
+
+			// revert back to previous state when aborting only if we won't be updating
+			// the state right next.
+			let isCurrentlyAlteringState = isAlteringState();
+			if (!isCurrentlyAlteringState) {
+				instance.actions.replaceState(currentState, true, runProps);
 			}
 		}
 

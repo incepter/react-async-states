@@ -43,7 +43,6 @@ export type {
 	ProducerProps,
 	AbortFn,
 	State,
-	AbortedState,
 	InitialState,
 	PendingState,
 	ErrorState,

@@ -1,5 +1,4 @@
 import {
-  AbortedState,
   CachedState,
   ErrorState,
   InitialState,
@@ -15,7 +14,6 @@ import {EqualityFn, UseAsyncStateEvents, useSelector} from "./state-hook/types.i
 
 export type {
   Source,
-  AbortedState,
   CachedState,
   ErrorState,
   InitialState,
@@ -77,12 +75,6 @@ export interface PendingFunctionSelectorItem<T, E, R, A extends unknown[]> exten
   cache?: Record<string, CachedState<T, E, R, A>> | null,
 }
 
-export interface AbortedFunctionSelectorItem<T, E, R, A extends unknown[]> extends Partial<AbortedState<T, E, R, A>> {
-  key: string,
-  lastSuccess?: LastSuccessSavedState<T, A>,
-  cache?: Record<string, CachedState<T, E, R, A>> | null,
-}
-
 export interface SuccessFunctionSelectorItem<T, E, R, A extends unknown[]> extends Partial<SuccessState<T, A>> {
   key: string,
   lastSuccess?: LastSuccessSavedState<T, A>,
@@ -99,8 +91,6 @@ export type FunctionSelectorItem<T, E = unknown, R = unknown, A extends unknown[
   InitialFunctionSelectorItem<T, E, R, A>
   |
   PendingFunctionSelectorItem<T, E, R, A>
-  |
-  AbortedFunctionSelectorItem<T, E, R, A>
   |
   SuccessFunctionSelectorItem<T, E, R, A>
   |

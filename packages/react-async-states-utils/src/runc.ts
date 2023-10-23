@@ -1,5 +1,4 @@
 import {
-  AbortedState,
   AbortFn,
   createProps,
   ErrorState,
@@ -23,7 +22,6 @@ type RuncConfig<T, E = unknown, R = unknown, A extends unknown[] = unknown[]> = 
 
   onError?(e: ErrorState<T, E, A>),
   onSuccess?(s: SuccessState<T, A>),
-  onAborted?(a: AbortedState<T, E, R, A>),
   onFulfillment?(a: State<T, E, R, A>), // called always
 
   args?: A,

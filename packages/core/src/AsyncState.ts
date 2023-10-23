@@ -94,8 +94,6 @@ export class AsyncState<T, E, R, A extends unknown[]>
 	eventsIndex: number | null;
 	events: InstanceEvents<T, E, R, A> | null;
 
-	willUpdate: boolean | null;
-
 	constructor(
 		key: string,
 		producer: Producer<T, E, R, A> | undefined | null,
@@ -261,7 +259,6 @@ export class StateSource<T, E, R, A extends unknown[]>
 				args,
 				onError: resolve,
 				onSuccess: resolve,
-				onAborted: resolve,
 			};
 
 			runcInstance(instance, runcProps);

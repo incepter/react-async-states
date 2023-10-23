@@ -8,7 +8,7 @@ import {
 	StateInterface,
 	SuccessState,
 } from "../types";
-import { RunEffect, Status } from "../enums";
+import { pending, RunEffect, Status } from "../enums";
 import { __DEV__, cloneProducerProps, emptyArray, isFunction } from "../utils";
 import { freeze, noop, now } from "../helpers/core";
 import {
@@ -22,6 +22,7 @@ import { createProps } from "./StateProps";
 import { run } from "../wrapper";
 import devtools from "../devtools/Devtools";
 import { StateBuilder } from "../helpers/StateBuilder";
+import {startAlteringState, stopAlteringState} from "./StateUpdate";
 
 export function runcInstance<T, E, R, A extends unknown[]>(
 	instance: StateInterface<T, E, R, A>,
@@ -130,13 +131,10 @@ function replaceStateBecauseNoProducerProvided<T, E, R, A extends unknown[]>(
 	// keep these for readability
 	let newStateData = args[0];
 	let newStateStatus = args[1];
-	let newStateCallbacks = props; // runcProps extends the callbacks
 
 	// @ts-expect-error this is obviously unsafe and cannot be typed
-	instance.actions.setState(newStateData, newStateStatus, newStateCallbacks);
+	instance.actions.setState(newStateData, newStateStatus, props);
 
-	// todo: this needs to be removed
-	instance.willUpdate = false;
 	return noop;
 }
 
@@ -165,7 +163,7 @@ export function runInstanceImmediately<T, E, R, A extends unknown[]>(
 		return replaceStateBecauseNoProducerProvided(instance, props);
 	}
 
-	instance.willUpdate = true;
+	let wasAltering = startAlteringState();
 
 	// the pendingUpdate has always a "pending" status, it is delayed because
 	// of the config.skipPendingDelayMs configuration option.
@@ -223,17 +221,24 @@ export function runInstanceImmediately<T, E, R, A extends unknown[]>(
 			devtools.emitRunPromise(instance, cloneProducerProps(producerProps));
 
 		instance.promise = runResult;
-		let pendingState = StateBuilder.pending(cloneProducerProps(producerProps));
+		let currentState = instance.state;
+		if (currentState.status === pending) {
+			currentState = currentState.prev;
+		}
+		let pendingState = StateBuilder.pending(
+			currentState,
+			cloneProducerProps(producerProps)
+		);
 		instance.actions.replaceState(pendingState, true, props);
 
-		instance.willUpdate = false;
+		stopAlteringState(wasAltering);
 		return producerProps.abort;
 	} else if (__DEV__) {
 		devtools.emitRunSync(instance, cloneProducerProps(producerProps));
 	}
 
-	instance.willUpdate = false;
-	return () => {};
+	stopAlteringState(wasAltering);
+	return noop;
 
 	function onSettled(
 		data: T | E,
