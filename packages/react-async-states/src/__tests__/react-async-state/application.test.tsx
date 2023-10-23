@@ -16,7 +16,7 @@ let testShape = {
     current: api<User, Error, "reason", []>({
       eager: true,
       producer: userSearch,
-      config: {runEffect: RunEffect.debounce}
+      config: {runEffect: "debounce"}
     })
   },
   users: {

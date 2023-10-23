@@ -18,11 +18,11 @@ describe('AsyncState instance run', () => {
     )
     expect(instance.pendingUpdate).toBe(undefined)
     instance.run()
-    let timeoutId = instance.pendingUpdate!.timeoutId
+    let timeoutId = instance.pendingUpdate!.id
     expect(instance.pendingUpdate).not.toBe(undefined)
     expect(instance.state.status).toBe("initial") // skip pending
     instance.run()
-    let newTimeoutId = instance.pendingUpdate!.timeoutId
+    let newTimeoutId = instance.pendingUpdate!.id
     expect(newTimeoutId).not.toBe(timeoutId)
     expect(instance.state.status).toBe("initial") // still skipping
 
@@ -107,7 +107,7 @@ describe('AsyncState instance run', () => {
     // never resolves
     let instance = new AsyncState("state-6", () => new Promise(res => setTimeout(res, 100)), {
       runEffectDurationMs: 100,
-      runEffect: RunEffect.debounce,
+      runEffect: "debounce",
     })
     instance.run()
     expect(instance.state.status).toBe("initial")

@@ -138,7 +138,7 @@ import {useAsyncState, RunEffect} from "react-async-states";
 const {run} = useAsyncState({
   producer: userSearchByUsername,
   // debounce runs
-  runEffect: RunEffect.debounce,
+  runEffect: "debounce",
   runEffectDurationMs: 300,
   // skip pending status if it answers less than 200ms
   skipPendingDelayMs: 200,
@@ -163,7 +163,7 @@ import {useAsyncState, RunEffect} from "react-async-states";
 const {run} = useAsyncState({
   producer: userSearchByUsername,
   // debounce runs
-  runEffect: RunEffect.debounce,
+  runEffect: "debounce",
   runEffectDurationMs: 300,
   // skip pending status if it answers less than 200ms
   skipPendingDelayMs: 200,

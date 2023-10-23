@@ -132,7 +132,7 @@ describe("should run producer", () => {
 					props.onAbort(() => clearTimeout(id));
 				});
 			},
-			{ runEffect: RunEffect.throttle, runEffectDurationMs: 100 }
+			{ runEffect: "throttle", runEffectDurationMs: 100 }
 		);
 
 		function Test() {
@@ -187,7 +187,7 @@ describe("should run producer", () => {
 					props.onAbort(() => clearTimeout(id));
 				});
 			},
-			{ runEffect: RunEffect.debounce, runEffectDurationMs: 100 }
+			{ runEffect: "debounce", runEffectDurationMs: 100 }
 		);
 
 		function Test() {
