@@ -6,10 +6,10 @@ import { useCallerName } from "./helpers/useCallerName";
 
 let didWarnAboutUseSourceDeprecation = false;
 
-export function useSource<T, E, R, A extends unknown[]>(
-	source: Source<T, E, R, A>,
+export function useSource<T, E, A extends unknown[]>(
+	source: Source<T, E, A>,
 	lane?: string
-): UseAsyncState<T, E, R, A, State<T, E, R, A>> {
+): UseAsyncState<T, E, A, State<T, E, A>> {
 	let caller;
 	if (__DEV__) {
 		caller = useCallerName(3);

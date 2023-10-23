@@ -14,7 +14,7 @@ describe("should do basic subscription to an async state", () => {
 					source: { run, setState },
 					state,
 				} = useAsync({
-					producer(props: ProducerProps<number, any, any, [number]>) {
+					producer(props: ProducerProps<number, any, [number]>) {
 						return props.args[0];
 					},
 					initialValue: 0,
@@ -96,11 +96,9 @@ describe("should do basic subscription to an async state", () => {
 		function Component() {
 			const {
 				state: { status, data },
-				source: {run},
+				source: { run },
 			} = useAsync({
-				producer(
-					props: ProducerProps<number, any, any, [number]>
-				): Promise<number> {
+				producer(props: ProducerProps<number, any, [number]>): Promise<number> {
 					return new Promise<number>((resolve) => {
 						let id = setTimeout(() => resolve(props.args[0]), 100);
 						props.onAbort(() => clearTimeout(id));

@@ -34,7 +34,7 @@ let didWarnAboutDeprecatingForkFeature = false;
 let didWarnAboutDeprecatingWaitFeature = false;
 let didWarnAboutDeprecatingChangeEventsOption = false;
 function warnInDevAboutOptionsDeprecation(
-	hook: HookOwnState<any, any, any, any, any>
+	hook: HookOwnState<any, any, any, any>
 ) {
 	let flags = hook.flags;
 	if (flags & CHANGE_EVENTS && !didWarnAboutDeprecatingChangeEventsOption) {
@@ -60,23 +60,21 @@ function warnInDevAboutOptionsDeprecation(
 export const useInternalAsyncState = function useAsyncStateImpl<
 	T,
 	E,
-	R,
 	A extends unknown[],
-	S = State<T, E, R, A>
+	S = State<T, E, A>
 >(
 	callerName: string | undefined,
-	mixedConfig: MixedConfig<T, E, R, A, S>,
+	mixedConfig: MixedConfig<T, E, A, S>,
 	deps: any[] = emptyArray,
-	overrides?: PartialUseAsyncStateConfiguration<T, E, R, A, S>
-): UseAsyncState<T, E, R, A, S> {
+	overrides?: PartialUseAsyncStateConfiguration<T, E, A, S>
+): UseAsyncState<T, E, A, S> {
 	// the current library's execution context
 	let execContext = useExecutionContext(getContextFromMixedConfig(mixedConfig));
 	// used when waiting for a state to exist, this will trigger a recalculation
 	let [guard, setGuard] = React.useState<number>(0);
 	// this contains everything else, from the dependencies to configuration
 	// to internal variables used by the library
-	let [hook, setHook] =
-		React.useState<HookOwnState<T, E, R, A, S>>(createOwnHook);
+	let [hook, setHook] = React.useState<HookOwnState<T, E, A, S>>(createOwnHook);
 	// the reference towards this "hook" object changes every state update
 	// to ensure a certain isolation and that react would actually react to it
 	// so no logic should depend on the "hook" object itself, but to what it holds
@@ -113,7 +111,7 @@ export const useInternalAsyncState = function useAsyncStateImpl<
 		if (
 			flags & CONFIG_OBJECT &&
 			!(flags & SOURCE) &&
-			!(mixedConfig as BaseConfig<any, any, any, any>).key
+			!(mixedConfig as BaseConfig<any, any, any>).key
 		) {
 			if (__DEV__) {
 				console.error(
@@ -138,7 +136,7 @@ export const useInternalAsyncState = function useAsyncStateImpl<
 		});
 	}
 
-	function createOwnHook(): HookOwnState<T, E, R, A, S> {
+	function createOwnHook(): HookOwnState<T, E, A, S> {
 		return createHook(
 			execContext,
 			mixedConfig,

@@ -23,7 +23,7 @@ import { useExecutionContext } from "./hydration/context";
 
 export function useSelector<T>(
 	keys: BaseSelectorKey,
-	selector?: SimpleSelector<unknown, unknown, unknown, unknown[], T>
+	selector?: SimpleSelector<unknown, unknown, unknown[], T>
 ): T;
 export function useSelector<T>(
 	keys: BaseSelectorKey[],
@@ -36,7 +36,7 @@ export function useSelector<T>(
 export function useSelector<T>(
 	keys: BaseSelectorKey | BaseSelectorKey[] | UseSelectorFunctionKeys,
 	selector:
-		| SimpleSelector<unknown, unknown, unknown, unknown[], T>
+		| SimpleSelector<unknown, unknown, unknown[], T>
 		| ArraySelector<T>
 		| FunctionSelector<T> = identity
 ): T {
@@ -86,7 +86,7 @@ export function useSelector<T>(
 function readKeys(
 	keys: SelectorKeysArg,
 	pool: PoolInterface
-): (string | Source<unknown, unknown, unknown, unknown[]>)[] {
+): (string | Source<unknown, unknown, unknown[]>)[] {
 	if (isFunction(keys)) {
 		const availableKeys = pool.instances.keys();
 		return readKeys(
@@ -108,12 +108,9 @@ function identity<T>(): T {
 }
 
 function resolveInstances(
-	keysArray: (string | Source<unknown, unknown, unknown, unknown[]>)[],
+	keysArray: (string | Source<unknown, unknown, unknown[]>)[],
 	pool: PoolInterface
-): Record<
-	string,
-	StateInterface<unknown, unknown, unknown, unknown[]> | undefined
-> {
+): Record<string, StateInterface<unknown, unknown, unknown[]> | undefined> {
 	return keysArray.reduce((result, current) => {
 		if (isSource(current)) {
 			result[current.key] = readSource(current);
@@ -121,18 +118,18 @@ function resolveInstances(
 			result[current] = pool.instances.get(current);
 		}
 		return result;
-	}, {} as Record<string, StateInterface<unknown, unknown, unknown, unknown[]> | undefined>);
+	}, {} as Record<string, StateInterface<unknown, unknown, unknown[]> | undefined>);
 }
 
 function selectValue<T>(
 	keys: BaseSelectorKey | BaseSelectorKey[] | UseSelectorFunctionKeys,
 	selector:
-		| SimpleSelector<unknown, unknown, unknown, unknown[], T>
+		| SimpleSelector<unknown, unknown, unknown[], T>
 		| ArraySelector<T>
 		| FunctionSelector<T>,
 	instances: Record<
 		string,
-		StateInterface<unknown, unknown, unknown, unknown[]> | undefined
+		StateInterface<unknown, unknown, unknown[]> | undefined
 	>
 ): T {
 	if (isFunction(keys)) {
@@ -179,10 +176,10 @@ function selectValue<T>(
 
 function subscribeAndWatch<T>(
 	pool: PoolInterface,
-	keysArray: (string | Source<unknown, unknown, unknown, unknown[]>)[],
+	keysArray: (string | Source<unknown, unknown, unknown[]>)[],
 	resolvedInstances: Record<
 		string,
-		StateInterface<unknown, unknown, unknown, unknown[]> | undefined
+		StateInterface<unknown, unknown, unknown[]> | undefined
 	>,
 	onUpdate: () => void,
 	setGuard: React.Dispatch<React.SetStateAction<number>>,

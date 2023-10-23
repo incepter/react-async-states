@@ -40,7 +40,7 @@ function buildHydrationData(
 }
 
 function shouldExcludeInstanceFromHydration(
-	instance: StateInterface<any, any, any, any>,
+	instance: StateInterface<any, any, any>,
 	exclude
 ) {
 	return (
@@ -54,7 +54,7 @@ function shouldExcludeInstanceFromHydration(
 function buildHydrationDataForAllContextPools(
 	context: any,
 	exclude?: HydrationProps["exclude"]
-): Record<string, HydrationData<unknown, unknown, unknown, unknown[]>> {
+): Record<string, HydrationData<unknown, unknown, unknown[]>> {
 	return Object.values(requestContext(context).pools).reduce((result, pool) => {
 		pool.instances.forEach((instance) => {
 			if (!shouldExcludeInstanceFromHydration(instance, exclude)) {
@@ -67,5 +67,5 @@ function buildHydrationDataForAllContextPools(
 		});
 
 		return result;
-	}, {} as Record<string, HydrationData<unknown, unknown, unknown, unknown[]>>);
+	}, {} as Record<string, HydrationData<unknown, unknown, unknown[]>>);
 }

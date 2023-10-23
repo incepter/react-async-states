@@ -4,9 +4,9 @@ import { __DEV__, emptyArray } from "../shared";
 import { useCallerName } from "../helpers/useCallerName";
 import { useInternalAsyncState } from "../useInternalAsyncState";
 
-export default function internalUse<T, E, R, A extends unknown[]>(
-	source: Source<T, E, R, A>,
-	options?: UseConfig<T, E, R, A>,
+export default function internalUse<T, E, A extends unknown[]>(
+	source: Source<T, E, A>,
+	options?: UseConfig<T, E, A>,
 	deps: any[] = emptyArray
 ): T {
 	let caller;

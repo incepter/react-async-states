@@ -32,9 +32,6 @@ export type HydrationProps = {
 	context?: any;
 	exclude?:
 		| string
-		| ((
-				key: string,
-				state: State<unknown, unknown, unknown, unknown[]>
-		  ) => boolean);
+		| ((key: string, state: State<unknown, unknown, unknown[]>) => boolean);
 	children?: any;
 };

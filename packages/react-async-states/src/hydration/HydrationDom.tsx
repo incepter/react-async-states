@@ -7,7 +7,7 @@ declare global {
 	interface Window {
 		__ASYNC_STATES_HYDRATION_DATA__?: Record<
 			string,
-			HydrationData<unknown, unknown, unknown, unknown[]>
+			HydrationData<unknown, unknown, unknown[]>
 		>;
 	}
 }
@@ -44,7 +44,7 @@ function hydrateContext(currentContext: any) {
 	for (let [hydrationId, hydrationData] of Object.entries(allHydrationData)) {
 		let { poolName, key } = parseInstanceHydratedData(hydrationId);
 		if (key && poolName && currentContext.pools[poolName]) {
-			let instance: StateInterface<any, any, any, any> =
+			let instance: StateInterface<any, any, any> =
 				currentContext.pools[poolName].instances.get(key);
 			if (instance) {
 				instance.state = hydrationData.state;

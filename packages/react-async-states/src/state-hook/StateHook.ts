@@ -46,10 +46,10 @@ import {
 import { __DEV__, emptyArray, freeze, isArray, isFunction } from "../shared";
 import { mapFlags } from "../shared/mapFlags";
 
-export function resolveFlags<T, E, R, A extends unknown[], S>(
-	mixedConfig: MixedConfig<T, E, R, A, S>,
+export function resolveFlags<T, E, A extends unknown[], S>(
+	mixedConfig: MixedConfig<T, E, A, S>,
 	pool: PoolInterface,
-	overrides?: PartialUseAsyncStateConfiguration<T, E, R, A, S>
+	overrides?: PartialUseAsyncStateConfiguration<T, E, A, S>
 ): number {
 	let flags = NO_MODE;
 
@@ -67,7 +67,7 @@ export function resolveFlags<T, E, R, A extends unknown[], S>(
 
 		case "object": {
 			// attempt source first
-			let baseConfig = mixedConfig as BaseConfig<T, E, R, A>;
+			let baseConfig = mixedConfig as BaseConfig<T, E, A>;
 			if (isSource(baseConfig)) {
 				return flags | CONFIG_SOURCE | SOURCE | getConfigFlags(overrides);
 			} else if (isSource(baseConfig.source)) {
@@ -119,8 +119,8 @@ let ConfigurationSpecialFlags = freeze({
 	lazy: (lazy) => (lazy === false ? AUTO_RUN : NO_MODE),
 });
 
-function getConfigFlags<T, E, R, A extends unknown[], S>(
-	config?: PartialUseAsyncStateConfiguration<T, E, R, A, S>
+function getConfigFlags<T, E, A extends unknown[], S>(
+	config?: PartialUseAsyncStateConfiguration<T, E, A, S>
 ): number {
 	if (!config) {
 		return NO_MODE;
@@ -138,35 +138,30 @@ function getConfigFlags<T, E, R, A extends unknown[], S>(
 	return flags;
 }
 
-export function resolveInstance<T, E, R, A extends unknown[], S>(
+export function resolveInstance<T, E, A extends unknown[], S>(
 	pool: PoolInterface,
 	flags: number,
-	config: MixedConfig<T, E, R, A, S>,
-	overrides?: PartialUseAsyncStateConfiguration<T, E, R, A, S>
-): StateInterface<T, E, R, A> | null {
+	config: MixedConfig<T, E, A, S>,
+	overrides?: PartialUseAsyncStateConfiguration<T, E, A, S>
+): StateInterface<T, E, A> | null {
 	if (flags & WAIT) {
 		return null;
 	}
 
 	if (flags & SOURCE) {
-		return resolveSourceInstance<T, E, R, A, S>(flags, config, overrides);
+		return resolveSourceInstance<T, E, A, S>(flags, config, overrides);
 	}
 
-	return resolveStandaloneInstance<T, E, R, A, S>(
-		pool,
-		flags,
-		config,
-		overrides
-	);
+	return resolveStandaloneInstance<T, E, A, S>(pool, flags, config, overrides);
 }
 
-function resolveSourceInstance<T, E, R, A extends unknown[], S>(
+function resolveSourceInstance<T, E, A extends unknown[], S>(
 	flags: number,
-	config: MixedConfig<T, E, R, A, S>,
-	overrides?: PartialUseAsyncStateConfiguration<T, E, R, A, S>
+	config: MixedConfig<T, E, A, S>,
+	overrides?: PartialUseAsyncStateConfiguration<T, E, A, S>
 ) {
 	if (flags & CONFIG_SOURCE) {
-		let instance = readSource(config as Source<T, E, R, A>);
+		let instance = readSource(config as Source<T, E, A>);
 		if (flags & LANE) {
 			// config is a source, so ofc doesn't contain lane prop
 			let laneKey = overrides?.lane;
@@ -175,26 +170,26 @@ function resolveSourceInstance<T, E, R, A extends unknown[], S>(
 		return instance;
 	}
 
-	let givenConfig = config as BaseConfig<T, E, R, A>;
+	let givenConfig = config as BaseConfig<T, E, A>;
 	let instance = readSource(givenConfig.source!);
 	if (flags & LANE) {
-		let laneKey = (config as BaseConfig<T, E, R, A>).lane || overrides?.lane;
+		let laneKey = (config as BaseConfig<T, E, A>).lane || overrides?.lane;
 		return instance.actions.getLane(laneKey).inst;
 	}
 	return instance;
 }
 
-function resolveStandaloneInstance<T, E, R, A extends unknown[], S>(
+function resolveStandaloneInstance<T, E, A extends unknown[], S>(
 	pool: PoolInterface,
 	flags: number,
-	config: MixedConfig<T, E, R, A, S>,
-	overrides?: PartialUseAsyncStateConfiguration<T, E, R, A, S>
-): StateInterface<T, E, R, A> {
+	config: MixedConfig<T, E, A, S>,
+	overrides?: PartialUseAsyncStateConfiguration<T, E, A, S>
+): StateInterface<T, E, A> {
 	let key = readKeyFromConfig(flags, config, null);
 	let producer = readProducerFromConfig(flags, config);
 	let producerConfig = readProducerConfigFromConfig(flags, config);
 
-	let prevInstance = pool.instances.get(key) as StateInterface<T, E, R, A>;
+	let prevInstance = pool.instances.get(key) as StateInterface<T, E, A>;
 
 	if (prevInstance) {
 		let instance = prevInstance;
@@ -213,7 +208,7 @@ function resolveStandaloneInstance<T, E, R, A extends unknown[], S>(
 		return instance;
 	}
 
-	let instance: StateInterface<T, E, R, A> = new AsyncState(
+	let instance: StateInterface<T, E, A> = new AsyncState(
 		key,
 		producer,
 		Object.assign({}, producerConfig, {
@@ -230,17 +225,17 @@ function resolveStandaloneInstance<T, E, R, A extends unknown[], S>(
 	return instance;
 }
 
-function readKeyFromConfig<T, E, R, A extends unknown[], S>(
+function readKeyFromConfig<T, E, A extends unknown[], S>(
 	flags: number,
-	config: MixedConfig<T, E, R, A, S>,
-	prevInstance: StateInterface<T, E, R, A> | null
+	config: MixedConfig<T, E, A, S>,
+	prevInstance: StateInterface<T, E, A> | null
 ): string {
 	if (flags & CONFIG_STRING) {
 		return config as string;
 	}
 
-	if (flags & CONFIG_OBJECT && (config as BaseConfig<T, E, R, A>).key) {
-		return (config as BaseConfig<T, E, R, A>).key!;
+	if (flags & CONFIG_OBJECT && (config as BaseConfig<T, E, A>).key) {
+		return (config as BaseConfig<T, E, A>).key!;
 	}
 
 	if (!prevInstance) {
@@ -250,45 +245,45 @@ function readKeyFromConfig<T, E, R, A extends unknown[], S>(
 	return prevInstance.key;
 }
 
-function readProducerFromConfig<T, E, R, A extends unknown[]>(
+function readProducerFromConfig<T, E, A extends unknown[]>(
 	flags: number,
-	config: MixedConfig<T, E, R, A>
-): Producer<T, E, R, A> | undefined {
+	config: MixedConfig<T, E, A>
+): Producer<T, E, A> | undefined {
 	if (flags & CONFIG_FUNCTION) {
-		return config as Producer<T, E, R, A>;
+		return config as Producer<T, E, A>;
 	}
 
 	if (flags & CONFIG_OBJECT) {
-		return (config as BaseConfig<T, E, R, A>).producer;
+		return (config as BaseConfig<T, E, A>).producer;
 	}
 
 	return undefined;
 }
 
-function readProducerConfigFromConfig<T, E, R, A extends unknown[], S>(
+function readProducerConfigFromConfig<T, E, A extends unknown[], S>(
 	flags: number,
-	config: MixedConfig<T, E, R, A, S>
-): ProducerConfig<T, E, R, A> | undefined {
+	config: MixedConfig<T, E, A, S>
+): ProducerConfig<T, E, A> | undefined {
 	if (flags & CONFIG_FUNCTION) {
 		return undefined;
 	}
 
 	if (flags & CONFIG_OBJECT && !(flags & SOURCE)) {
-		return config as BaseConfig<T, E, R, A>;
+		return config as BaseConfig<T, E, A>;
 	}
 
 	return undefined;
 }
 
-function readLaneFromConfig<T, E, R, A extends unknown[], S>(
-	config: MixedConfig<T, E, R, A, S>,
-	overrides?: PartialUseAsyncStateConfiguration<T, E, R, A, S>
+function readLaneFromConfig<T, E, A extends unknown[], S>(
+	config: MixedConfig<T, E, A, S>,
+	overrides?: PartialUseAsyncStateConfiguration<T, E, A, S>
 ): string | undefined {
 	if (overrides && overrides.lane) {
 		return overrides.lane;
 	}
 
-	return (config as BaseConfig<T, E, R, A>).lane;
+	return (config as BaseConfig<T, E, A>).lane;
 }
 
 let warnedSourcePropertiesMap;
@@ -325,15 +320,15 @@ function assignSourcePropertiesWithDeprecationUsage(source) {
 	return output;
 }
 
-function makeBaseReturn<T, E, R, A extends unknown[], S>(
+function makeBaseReturn<T, E, A extends unknown[], S>(
 	flags: number,
-	config: MixedConfig<T, E, R, A, S>,
-	instance: StateInterface<T, E, R, A> | null
+	config: MixedConfig<T, E, A, S>,
+	instance: StateInterface<T, E, A> | null
 ) {
 	if (!instance) {
 		let key =
-			flags & CONFIG_STRING ? config : (config as BaseConfig<T, E, R, A>).key;
-		let output = { key, flags } as BaseUseAsyncState<T, E, R, A, S>;
+			flags & CONFIG_STRING ? config : (config as BaseConfig<T, E, A>).key;
+		let output = { key, flags } as BaseUseAsyncState<T, E, A, S>;
 		if (__DEV__) {
 			output.devFlags = mapFlags(flags);
 		}
@@ -342,7 +337,7 @@ function makeBaseReturn<T, E, R, A extends unknown[], S>(
 	let output = Object.assign({}, instance.actions, {
 		flags,
 		source: instance.actions,
-	}) as BaseUseAsyncState<T, E, R, A, S>;
+	}) as BaseUseAsyncState<T, E, A, S>;
 
 	if (__DEV__) {
 		output.devFlags = mapFlags(flags);
@@ -350,23 +345,23 @@ function makeBaseReturn<T, E, R, A extends unknown[], S>(
 	return output;
 }
 
-function calculateSubscriptionKey<T, E, R, A extends unknown[], S>(
+function calculateSubscriptionKey<T, E, A extends unknown[], S>(
 	flags: number,
-	config: MixedConfig<T, E, R, A, S>,
+	config: MixedConfig<T, E, A, S>,
 	callerName: string | undefined,
-	stateInterface: StateInterface<T, E, R, A> | null
+	stateInterface: StateInterface<T, E, A> | null
 ): string | undefined {
 	if (
 		flags & CONFIG_OBJECT &&
-		(config as BaseConfig<T, E, R, A>).subscriptionKey
+		(config as BaseConfig<T, E, A>).subscriptionKey
 	) {
-		return (config as BaseConfig<T, E, R, A>).subscriptionKey;
+		return (config as BaseConfig<T, E, A>).subscriptionKey;
 	}
 	if (flags & WAIT || !stateInterface) {
 		return;
 	}
 	if (__DEV__) {
-		let instance = stateInterface as AsyncState<T, E, R, A>;
+		let instance = stateInterface as AsyncState<T, E, A>;
 		if (!instance.subsIndex) {
 			instance.subsIndex = 0;
 		}
@@ -375,21 +370,21 @@ function calculateSubscriptionKey<T, E, R, A extends unknown[], S>(
 	}
 }
 
-export function hookReturn<T, E, R, A extends unknown[], S>(
+export function hookReturn<T, E, A extends unknown[], S>(
 	flags: number,
-	config: MixedConfig<T, E, R, A, S>,
-	base: BaseUseAsyncState<T, E, R, A, S>,
-	instance: StateInterface<T, E, R, A> | null
-): Readonly<UseAsyncState<T, E, R, A, S>> {
+	config: MixedConfig<T, E, A, S>,
+	base: BaseUseAsyncState<T, E, A, S>,
+	instance: StateInterface<T, E, A> | null
+): Readonly<UseAsyncState<T, E, A, S>> {
 	let baseToUse = base;
-	let newState: UseAsyncState<T, E, R, A, S>;
+	let newState: UseAsyncState<T, E, A, S>;
 	if (__DEV__) {
 		baseToUse = assignSourcePropertiesWithDeprecationUsage(
 			base
-		) as BaseUseAsyncState<T, E, R, A, S>;
-		newState = baseToUse as UseAsyncState<T, E, R, A, S>;
+		) as BaseUseAsyncState<T, E, A, S>;
+		newState = baseToUse as UseAsyncState<T, E, A, S>;
 	} else {
-		newState = Object.assign({}, base) as UseAsyncState<T, E, R, A, S>;
+		newState = Object.assign({}, base) as UseAsyncState<T, E, A, S>;
 	}
 
 	const newValue = readStateFromInstance(instance, flags, config);
@@ -408,11 +403,11 @@ export function hookReturn<T, E, R, A extends unknown[], S>(
 	return freeze(newState);
 }
 
-export function createReadInConcurrentMode<T, E, R, A extends unknown[], S>(
-	instance: StateInterface<T, E, R, A>,
+export function createReadInConcurrentMode<T, E, A extends unknown[], S>(
+	instance: StateInterface<T, E, A>,
 	stateValue: S,
 	flags: number,
-	config: MixedConfig<T, E, R, A, S>
+	config: MixedConfig<T, E, A, S>
 ) {
 	return function read(
 		suspend: "initial" | "pending" | "both" | true | false = true,
@@ -428,7 +423,7 @@ export function createReadInConcurrentMode<T, E, R, A extends unknown[], S>(
 			) {
 				let args = (
 					flags & CONFIG_OBJECT
-						? (config as BaseConfig<T, E, R, A>).autoRunArgs
+						? (config as BaseConfig<T, E, A>).autoRunArgs
 						: emptyArray
 				) as A;
 				throw instance.actions.runp.apply(null, args);
@@ -450,28 +445,28 @@ export function createReadInConcurrentMode<T, E, R, A extends unknown[], S>(
 	};
 }
 
-function invokeSubscribeEvents<T, E, R, A extends unknown[]>(
-	events: UseAsyncStateEventSubscribe<T, E, R, A> | undefined,
-	instance?: StateInterface<T, E, R, A>
+function invokeSubscribeEvents<T, E, A extends unknown[]>(
+	events: UseAsyncStateEventSubscribe<T, E, A> | undefined,
+	instance?: StateInterface<T, E, A>
 ): CleanupFn[] | null {
 	if (!events || !instance) {
 		return null;
 	}
 
-	let eventProps: SubscribeEventProps<T, E, R, A> = instance.actions;
+	let eventProps: SubscribeEventProps<T, E, A> = instance.actions;
 
-	let handlers: ((props: SubscribeEventProps<T, E, R, A>) => CleanupFn)[] =
+	let handlers: ((props: SubscribeEventProps<T, E, A>) => CleanupFn)[] =
 		isArray(events) ? events : [events];
 
 	return handlers.map((handler) => handler(eventProps));
 }
 
-function invokeChangeEvents<T, E, R, A extends unknown[]>(
-	instance: StateInterface<T, E, R, A>,
-	events: UseAsyncStateEventFn<T, E, R, A> | UseAsyncStateEventFn<T, E, R, A>[]
+function invokeChangeEvents<T, E, A extends unknown[]>(
+	instance: StateInterface<T, E, A>,
+	events: UseAsyncStateEventFn<T, E, A> | UseAsyncStateEventFn<T, E, A>[]
 ) {
 	let nextState = instance.state;
-	const changeHandlers: UseAsyncStateEventFn<T, E, R, A>[] = isArray(events)
+	const changeHandlers: UseAsyncStateEventFn<T, E, A>[] = isArray(events)
 		? events
 		: [events];
 
@@ -496,18 +491,18 @@ export function readStateFromInstance<
 	E,
 	R,
 	A extends unknown[],
-	S = State<T, E, R, A>
+	S = State<T, E, A>
 >(
-	asyncState: StateInterface<T, E, R, A> | null,
+	asyncState: StateInterface<T, E, A> | null,
 	flags: number,
-	config: MixedConfig<T, E, R, A, S>
+	config: MixedConfig<T, E, A, S>
 ): S {
 	if (!asyncState) {
 		return undefined as S;
 	}
 	const selector =
 		flags & SELECTOR
-			? (config as PartialUseAsyncStateConfiguration<T, E, R, A, S>).selector!
+			? (config as PartialUseAsyncStateConfiguration<T, E, A, S>).selector!
 			: <K>(obj): K => obj;
 	return selector(
 		asyncState.state,
@@ -516,29 +511,29 @@ export function readStateFromInstance<
 	);
 }
 
-export type HookChangeEvents<T, E, R, A extends unknown[]> =
-	| UseAsyncStateEventFn<T, E, R, A>
-	| UseAsyncStateEventFn<T, E, R, A>[];
+export type HookChangeEvents<T, E, A extends unknown[]> =
+	| UseAsyncStateEventFn<T, E, A>
+	| UseAsyncStateEventFn<T, E, A>[];
 
-export interface HookOwnState<T, E, R, A extends unknown[], S> {
+export interface HookOwnState<T, E, A extends unknown[], S> {
 	context: LibraryPoolsContext;
 	guard: number;
 	pool: PoolInterface;
-	config: MixedConfig<T, E, R, A, S>;
-	return: UseAsyncState<T, E, R, A, S>;
-	base: BaseUseAsyncState<T, E, R, A, S>;
+	config: MixedConfig<T, E, A, S>;
+	return: UseAsyncState<T, E, A, S>;
+	base: BaseUseAsyncState<T, E, A, S>;
 	deps: unknown[];
 	subKey: string | undefined;
 	flags: number;
-	instance: StateInterface<T, E, R, A> | null;
+	instance: StateInterface<T, E, A> | null;
 	renderInfo: {
 		current: S;
 		version: number | undefined;
 	};
 
 	getEvents(): {
-		change: HookChangeEvents<T, E, R, A> | undefined;
-		sub: UseAsyncStateEventSubscribe<T, E, R, A> | undefined;
+		change: HookChangeEvents<T, E, A> | undefined;
+		sub: UseAsyncStateEventSubscribe<T, E, A> | undefined;
 	};
 
 	subscribeEffect(
@@ -547,8 +542,8 @@ export interface HookOwnState<T, E, R, A extends unknown[], S> {
 	): CleanupFn;
 }
 
-export function subscribeEffect<T, E, R, A extends unknown[], S>(
-	hookState: HookOwnState<T, E, R, A, S>,
+export function subscribeEffect<T, E, A extends unknown[], S>(
+	hookState: HookOwnState<T, E, A, S>,
 	updateState: () => void,
 	setGuard: (updater: (prev: number) => number) => void
 ): CleanupFn {
@@ -557,7 +552,7 @@ export function subscribeEffect<T, E, R, A extends unknown[], S>(
 		let key: string =
 			flags & CONFIG_STRING
 				? (config as string)
-				: (config as BaseConfig<T, E, R, A>).key!;
+				: (config as BaseConfig<T, E, A>).key!;
 
 		return pool.watch(key, function () {
 			setGuard((old) => old + 1);
@@ -574,9 +569,8 @@ export function subscribeEffect<T, E, R, A extends unknown[], S>(
 		let newSelectedState = readStateFromInstance(instance, flags, config);
 
 		if (flags & EQUALITY_CHECK) {
-			let areEqual = (
-				config as PartialUseAsyncStateConfiguration<T, E, R, A, S>
-			).areEqual!(newSelectedState, renderInfo.current);
+			let areEqual = (config as PartialUseAsyncStateConfiguration<T, E, A, S>)
+				.areEqual!(newSelectedState, renderInfo.current);
 
 			if (!areEqual) {
 				updateState();
@@ -588,7 +582,7 @@ export function subscribeEffect<T, E, R, A extends unknown[], S>(
 		let maybeEvents = hookState.getEvents();
 		let maybeChangeEvents = maybeEvents.change;
 		if (flags & CHANGE_EVENTS) {
-			let changeEvents = (config as BaseConfig<T, E, R, A>).events?.change;
+			let changeEvents = (config as BaseConfig<T, E, A>).events?.change;
 			if (changeEvents) {
 				invokeChangeEvents(instance!, changeEvents);
 			}
@@ -612,7 +606,7 @@ export function subscribeEffect<T, E, R, A extends unknown[], S>(
 
 	if (flags & SUBSCRIBE_EVENTS) {
 		let unsubscribeFns = invokeSubscribeEvents(
-			(config as BaseConfig<T, E, R, A>).events!.subscribe,
+			(config as BaseConfig<T, E, A>).events!.subscribe,
 			instance!
 		);
 
@@ -641,24 +635,24 @@ export function subscribeEffect<T, E, R, A extends unknown[], S>(
 	};
 }
 
-function resolvePool<T, E, R, A extends unknown[], S>(
+function resolvePool<T, E, A extends unknown[], S>(
 	context: LibraryPoolsContext,
-	mixedConfig: MixedConfig<T, E, R, A, S>
+	mixedConfig: MixedConfig<T, E, A, S>
 ) {
 	let pool =
 		typeof mixedConfig === "object" &&
-		(mixedConfig as ProducerConfig<T, E, R, A>).pool;
+		(mixedConfig as ProducerConfig<T, E, A>).pool;
 	return context.getOrCreatePool(pool || "default");
 }
 
-export function createHook<T, E, R, A extends unknown[], S>(
+export function createHook<T, E, A extends unknown[], S>(
 	executionContext: LibraryPoolsContext,
-	config: MixedConfig<T, E, R, A, S>,
+	config: MixedConfig<T, E, A, S>,
 	deps: unknown[],
 	guard: number,
-	overrides?: PartialUseAsyncStateConfiguration<T, E, R, A, S>,
+	overrides?: PartialUseAsyncStateConfiguration<T, E, A, S>,
 	caller?: string
-): HookOwnState<T, E, R, A, S> {
+): HookOwnState<T, E, A, S> {
 	let newPool = resolvePool(executionContext, config);
 	let newFlags = resolveFlags(config, newPool, overrides);
 	let newInstance = resolveInstance(newPool, newFlags, config, overrides);
@@ -680,18 +674,18 @@ export function createHook<T, E, R, A extends unknown[], S>(
 	);
 
 	if (newInstance && newFlags & CONFIG_OBJECT) {
-		let configObject = config as BaseConfig<T, E, R, A>;
+		let configObject = config as BaseConfig<T, E, A>;
 		if (configObject.payload) {
 			newInstance.actions.mergePayload(configObject.payload);
 		}
 	}
 
-	let changeEvents: HookChangeEvents<T, E, R, A> | undefined = undefined;
-	let subscribeEvents: UseAsyncStateEventSubscribe<T, E, R, A> | undefined =
+	let changeEvents: HookChangeEvents<T, E, A> | undefined = undefined;
+	let subscribeEvents: UseAsyncStateEventSubscribe<T, E, A> | undefined =
 		undefined;
 	// ts complains about subscribeEffect not present, it is assigned later
 	// @ts-ignore
-	let hook: HookOwnState<T, E, R, A, S> = {
+	let hook: HookOwnState<T, E, A, S> = {
 		deps,
 		guard,
 		config,
@@ -720,58 +714,56 @@ export function createHook<T, E, R, A extends unknown[], S>(
 
 	function onChange(
 		events:
-			| ((
-					prevEvents?: HookChangeEvents<T, E, R, A>
-			  ) => HookChangeEvents<T, E, R, A>)
-			| HookChangeEvents<T, E, R, A>
+			| ((prevEvents?: HookChangeEvents<T, E, A>) => HookChangeEvents<T, E, A>)
+			| HookChangeEvents<T, E, A>
 	) {
 		if (isFunction(events)) {
 			let maybeEvents = (
 				events as (
-					prevEvents?: HookChangeEvents<T, E, R, A>
-				) => HookChangeEvents<T, E, R, A>
+					prevEvents?: HookChangeEvents<T, E, A>
+				) => HookChangeEvents<T, E, A>
 			)(changeEvents);
 			if (maybeEvents) {
 				changeEvents = maybeEvents;
 			}
 		} else if (events) {
-			changeEvents = events as HookChangeEvents<T, E, R, A>;
+			changeEvents = events as HookChangeEvents<T, E, A>;
 		}
 	}
 
 	function onSubscribe(
 		events:
-			| ((prevEvents?: UseAsyncStateEventSubscribe<T, E, R, A>) => void)
-			| UseAsyncStateEventSubscribe<T, E, R, A>
+			| ((prevEvents?: UseAsyncStateEventSubscribe<T, E, A>) => void)
+			| UseAsyncStateEventSubscribe<T, E, A>
 	) {
 		if (isFunction(events)) {
 			let maybeEvents = (
 				events as (
-					prevEvents?: UseAsyncStateEventSubscribe<T, E, R, A>
-				) => UseAsyncStateEventSubscribe<T, E, R, A>
+					prevEvents?: UseAsyncStateEventSubscribe<T, E, A>
+				) => UseAsyncStateEventSubscribe<T, E, A>
 			)(subscribeEvents);
 			if (maybeEvents) {
 				subscribeEvents = maybeEvents;
 			}
 		} else if (events) {
-			subscribeEvents = events as UseAsyncStateEventSubscribe<T, E, R, A>;
+			subscribeEvents = events as UseAsyncStateEventSubscribe<T, E, A>;
 		}
 	}
 }
 
-export function shouldRunGivenConfig<T, E, R, A extends unknown[]>(
+export function shouldRunGivenConfig<T, E, A extends unknown[]>(
 	flags: number,
-	config: MixedConfig<T, E, R, A>,
-	state: State<T, E, R, A>,
+	config: MixedConfig<T, E, A>,
+	state: State<T, E, A>,
 	payload?: Record<string, unknown> | null
 ): boolean {
 	let shouldRun = true;
 
 	if (flags & CONFIG_OBJECT) {
-		let configObject = config as BaseConfig<T, E, R, A>;
+		let configObject = config as BaseConfig<T, E, A>;
 		if (isFunction(configObject.condition)) {
 			let conditionFn = configObject.condition as (
-				state: State<T, E, R, A>,
+				state: State<T, E, A>,
 				args?: A,
 				payload?: Record<string, unknown> | null
 			) => boolean;
@@ -784,10 +776,10 @@ export function shouldRunGivenConfig<T, E, R, A extends unknown[]>(
 	return shouldRun;
 }
 
-export function autoRun<T, E, R, A extends unknown[], S>(
+export function autoRun<T, E, A extends unknown[], S>(
 	flags: number,
-	source: Source<T, E, R, A> | undefined,
-	config: MixedConfig<T, E, R, A>
+	source: Source<T, E, A> | undefined,
+	config: MixedConfig<T, E, A>
 ): CleanupFn {
 	// in concurrent mode, runs will be performed by throwing a promise!
 	if (!(flags & AUTO_RUN) || !source || flags & CONCURRENT) {
@@ -797,11 +789,8 @@ export function autoRun<T, E, R, A extends unknown[], S>(
 	if (
 		shouldRunGivenConfig(flags, config, source.getState(), source.getPayload())
 	) {
-		if (
-			flags & CONFIG_OBJECT &&
-			(config as BaseConfig<T, E, R, A>).autoRunArgs
-		) {
-			let { autoRunArgs } = config as BaseConfig<T, E, R, A>;
+		if (flags & CONFIG_OBJECT && (config as BaseConfig<T, E, A>).autoRunArgs) {
+			let { autoRunArgs } = config as BaseConfig<T, E, A>;
 			if (autoRunArgs && isArray(autoRunArgs)) {
 				return source.run.apply(null, autoRunArgs);
 			}
