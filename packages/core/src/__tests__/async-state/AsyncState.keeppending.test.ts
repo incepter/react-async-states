@@ -16,7 +16,7 @@ describe('AsyncState - keepPending', () => {
 
     // then
     expect(instance.state.status).toBe(Status.initial);
-    instance.run();
+    instance._source.run();
     expect(instance.state.status).toBe(Status.pending);
     await jest.advanceTimersByTime(150); // producer resolves after 100
     expect(instance.state.status).toBe(Status.pending); // keepPending retains this
@@ -33,9 +33,9 @@ describe('AsyncState - keepPending', () => {
     let instance = new AsyncState(key, producer, config);
 
     // then
-    instance.run();
+    instance._source.run();
     await jest.advanceTimersByTime(50); // producer resolves after 100
-    instance.abort();
+    instance._source.abort();
     expect(instance.state.status).toBe(Status.pending);
 
     await jest.advanceTimersByTime(150);
@@ -43,19 +43,19 @@ describe('AsyncState - keepPending', () => {
 
 
     // then
-    instance.run();
+    instance._source.run();
     await jest.advanceTimersByTime(50); // producer resolves after 100
-    instance.setState(1);
+    instance._source.setState(1);
     expect(instance.state.status).toBe(Status.pending);
 
     await jest.advanceTimersByTime(150);
     expect(instance.state.data).toBe(1);
 
     // then
-    instance.run();
+    instance._source.run();
     await jest.advanceTimersByTime(50); // producer resolves after 100
-    instance.setState(2);
-    instance.setState(prev => prev.data + 1);
+    instance._source.setState(2);
+    instance._source.setState(prev => prev.data + 1);
     expect(instance.state.status).toBe(Status.pending);
 
     await jest.advanceTimersByTime(150);
@@ -70,14 +70,14 @@ describe('AsyncState - keepPending', () => {
     // when
     let spy = jest.fn();
     let instance = new AsyncState(key, producer, config);
-    instance.on("change", spy);
+    instance._source.on("change", spy);
 
     // then
-    instance.run();
+    instance._source.run();
     await jest.advanceTimersByTime(50); // producer resolves after 100
-    instance.setState(2);
-    instance.run();
-    instance.setState(3);
+    instance._source.setState(2);
+    instance._source.run();
+    instance._source.setState(3);
     expect(instance.state.status).toBe(Status.pending);
 
     await jest.advanceTimersByTime(150);
@@ -103,9 +103,9 @@ describe('AsyncState - keepPending', () => {
     let instance = new AsyncState(key, producer, config);
 
     // then
-    instance.run();
+    instance._source.run();
     await jest.advanceTimersByTime(50); // producer resolves after 100
-    instance.dispose();
+    instance._source.dispose();
 
     await jest.advanceTimersByTime(150);
     expect(instance.state.data).toBe(1);
@@ -125,7 +125,7 @@ describe('AsyncState - keepPending', () => {
     let instance = new AsyncState(key, producer, config);
 
     // then
-    instance.run();
+    instance._source.run();
     await jest.advanceTimersByTime(250); // producer resolves after 300
     expect(instance.state.status).toBe(Status.pending);
     await jest.advanceTimersByTime(200);
@@ -150,11 +150,11 @@ describe('AsyncState - keepPending', () => {
     let instance = new AsyncState(key, producer, config);
 
     // then
-    instance.runc({onAborted: abortedSpy});
+    instance._source.runc({onAborted: abortedSpy});
 
     await jest.advanceTimersByTime(250); // producer resolves after 300
     expect(instance.state.status).toBe(Status.pending);
-    instance.run();
+    instance._source.run();
     expect(instance.state.status).toBe(Status.pending);
     expect(abortedSpy).toHaveBeenCalledTimes(1);
   });
@@ -172,7 +172,7 @@ describe('AsyncState - keepPending', () => {
     let instance = new AsyncState(key, producer, config);
 
     // then
-    instance.runc({
+    instance._source.runc({
       onSuccess,
     });
     await jest.advanceTimersByTime(60);

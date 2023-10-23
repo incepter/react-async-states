@@ -20,7 +20,7 @@ describe('AsyncState - run - abort', () => {
 
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
-    myAsyncState.subscribe({cb: subscription});
+    myAsyncState._source.subscribe({cb: subscription});
     // then
     // should have initial status
     expect(myAsyncState.state).toEqual({
@@ -30,7 +30,7 @@ describe('AsyncState - run - abort', () => {
       status: Status.initial,
     });
 
-    const abort = myAsyncState.run();
+    const abort = myAsyncState._source.run();
 
     await jest.advanceTimersByTime(50);
 
@@ -92,10 +92,10 @@ describe('AsyncState - run - abort', () => {
 
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
-    myAsyncState.subscribe({cb: subscription});
+    myAsyncState._source.subscribe({cb: subscription});
     // then
 
-    const abort = myAsyncState.run();
+    const abort = myAsyncState._source.run();
 
     await jest.advanceTimersByTime(50);
 
@@ -134,10 +134,10 @@ describe('AsyncState - run - abort', () => {
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
 
-    myAsyncState.subscribe({cb: subscription});
+    myAsyncState._source.subscribe({cb: subscription});
     // then
 
-    myAsyncState.run();
+    myAsyncState._source.run();
 
     await jest.advanceTimersByTime(50);
 
@@ -145,7 +145,7 @@ describe('AsyncState - run - abort', () => {
 
     // rerun while pending should interrupt previous
     subscription.mockClear();
-    myAsyncState.run();
+    myAsyncState._source.run();
 
     expect(subscription.mock.calls[0][0].status).toBe(Status.pending);
 

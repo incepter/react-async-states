@@ -18,15 +18,15 @@ describe("source utils", () => {
 		expect(state).toBe(source.getState());
 	});
 	it("should run a source lane", () => {
-		const abort = source.getLaneSource("test-lane").run(3);
-		expect(source.getLaneSource("test-lane").getState().data).toBe(3);
+		const abort = source.getLane("test-lane").run(3);
+		expect(source.getLane("test-lane").getState().data).toBe(3);
     expect(abort).toBe(noop);
 	});
 	it("should runp a source lane", async () => {
-		const state = await source.getLaneSource("test-lane").runp(4);
-		expect(source.getLaneSource("test-lane").getState().data).toBe(4);
+		const state = await source.getLane("test-lane").runp(4);
+		expect(source.getLane("test-lane").getState().data).toBe(4);
 		expect(typeof state).toBe("object"); // promise
-		expect(state).toBe(source.getLaneSource("test-lane").getState());
+		expect(state).toBe(source.getLane("test-lane").getState());
 	});
 	it("should replace the state with a value", () => {
 		source.setState(5);

@@ -16,7 +16,7 @@ export function hasCacheEnabled<T, E, R, A extends unknown[]>(
 	return !!instance.config.cacheConfig?.enabled;
 }
 
-function getTopLevelParent<T, E, R, A extends unknown[]>(
+export function getTopLevelParent<T, E, R, A extends unknown[]>(
 	base: StateInterface<T, E, R, A>
 ): StateInterface<T, E, R, A> {
 	let current = base;
@@ -211,7 +211,7 @@ function resolveCache<T, E, R, A extends unknown[]>(
 	if (isFunction(cacheConfig!.onCacheLoad)) {
 		cacheConfig!.onCacheLoad({
 			cache: instance.cache,
-			setState: instance.setState,
+			setState: instance._source.setState,
 		});
 	}
 }

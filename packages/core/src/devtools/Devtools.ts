@@ -530,7 +530,7 @@ function createDevtools(): DevtoolsInterface {
     if (message.data.type === "change-async-state") {
       const {data, status, isJson} = message.data;
       const newData = formatData(data, isJson);
-      retainedInstances[uniqueId].setState(newData, status);
+      retainedInstances[uniqueId]._source.setState(newData, status);
     }
   }
 

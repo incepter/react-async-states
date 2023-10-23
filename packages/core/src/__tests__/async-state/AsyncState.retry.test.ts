@@ -24,10 +24,10 @@ describe("AsyncState - retry", () => {
 
 		// when
 		let instance = new AsyncState(key, producer, config);
-		instance.on("change", { status: Status.error, handler: spy });
+		instance._source.on("change", { status: Status.error, handler: spy });
 
 		// then
-		instance.run();
+		instance._source.run();
 		await jest.advanceTimersByTime(1);
 		await flushPromises();
 
@@ -70,7 +70,7 @@ describe("AsyncState - retry", () => {
 		let instance = new AsyncState(key, producer, config);
 
 		// then
-		instance.run();
+		instance._source.run();
 		await jest.advanceTimersByTime(50);
 		await flushPromises();
 

@@ -68,7 +68,7 @@ export function createProps<T, E, R, A extends unknown[]>(
 		}
 
 		instance.isEmitting = true;
-		instance.setState(updater, status, runProps);
+		instance._source.setState(updater, status, runProps);
 		instance.isEmitting = false;
 	}
 
@@ -91,7 +91,7 @@ export function createProps<T, E, R, A extends unknown[]>(
 					reason,
 					cloneProducerProps(producerProps)
 				);
-				instance.replaceState(abortedState, true, runProps);
+				instance._source.replaceState(abortedState, true, runProps);
 			}
 		}
 

@@ -22,7 +22,7 @@ describe('Native Response support', () => {
       }
     });
 
-    instance.setState(response);
+    instance._source.setState(response);
     let firstCache = instance.cache![Object.keys(instance.cache!)[0]];
     expect(firstCache.deadline).toBe(500);
     expect(firstCache.state.data).toBe(response);

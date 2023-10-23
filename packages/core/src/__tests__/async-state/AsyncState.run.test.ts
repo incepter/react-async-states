@@ -29,7 +29,7 @@ describe('AsyncState - run', () => {
       status: Status.initial,
     });
 
-    myAsyncState.run();
+    myAsyncState._source.run();
     // should transition synchronously to pending state
     expect(myAsyncState.state).toEqual({
       props: {
@@ -75,7 +75,7 @@ describe('AsyncState - run', () => {
     let myAsyncState = new AsyncState(key, producer, myConfig);
 
     // then
-    myAsyncState.run();
+    myAsyncState._source.run();
     await jest.advanceTimersByTime(50);
     await flushPromises();
     // async state should be in success state with data

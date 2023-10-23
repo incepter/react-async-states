@@ -49,7 +49,7 @@ function scheduleDelayedRun<T, E, R, A extends unknown[]>(
 	instance: StateInterface<T, E, R, A>,
 	durationMs: number,
 	props?: RUNCProps<T, E, R, A>
-) {
+): AbortFn<R> {
 	let abortCallback: AbortFn<R> | null = null;
 
 	let timeoutId = setTimeout(function theDelayedRunExecution() {
@@ -61,7 +61,7 @@ function scheduleDelayedRun<T, E, R, A extends unknown[]>(
 
 	instance.pendingTimeout = { at: Date.now(), id: timeoutId };
 
-	return function abortCleanup(reason: R) {
+	return function abortCleanup(reason?: R) {
 		clearTimeout(timeoutId);
 		instance.pendingTimeout = null;
 
@@ -76,7 +76,7 @@ function runInstanceWithEffects<T, E, R, A extends unknown[]>(
 	effect: RunEffect,
 	durationMs: number,
 	props?: RUNCProps<T, E, R, A>
-) {
+): AbortFn<R> {
 	switch (effect) {
 		case "delay":
 		case "debounce": {
@@ -133,7 +133,7 @@ function replaceStateBecauseNoProducerProvided<T, E, R, A extends unknown[]>(
 	let newStateCallbacks = props; // runcProps extends the callbacks
 
 	// @ts-expect-error this is obviously unsafe and cannot be typed
-	instance.setState(newStateData, newStateStatus, newStateCallbacks);
+	instance._source.setState(newStateData, newStateStatus, newStateCallbacks);
 
 	// todo: this needs to be removed
 	instance.willUpdate = false;
@@ -150,7 +150,7 @@ function replaceStateAndBailoutRunFromCachedState<T, E, R, A extends unknown[]>(
 	// this means that the current state reference isn't the same
 	if (actualState !== nextState) {
 		// this sets the new state and notifies subscriptions
-		instance.replaceState(nextState);
+		instance._source.replaceState(nextState);
 	}
 }
 
@@ -224,7 +224,7 @@ export function runInstanceImmediately<T, E, R, A extends unknown[]>(
 
 		instance.promise = runResult;
 		let pendingState = StateBuilder.pending(cloneProducerProps(producerProps));
-		instance.replaceState(pendingState, true, props);
+		instance._source.replaceState(pendingState, true, props);
 
 		instance.willUpdate = false;
 		return producerProps.abort;
@@ -247,6 +247,6 @@ export function runInstanceImmediately<T, E, R, A extends unknown[]>(
 			props: savedProps,
 			timestamp: now(),
 		} as SuccessState<T, A> | ErrorState<T, E, A>);
-		instance.replaceState(state, true, callbacks);
+		instance._source.replaceState(state, true, callbacks);
 	}
 }

@@ -127,12 +127,11 @@ export class AsyncState<T, E, R, A extends unknown[]>
 			if (__DEV__) {
 				warnAboutAlreadyExistingSourceWithSameKey(key);
 			}
-			maybeInstance.replaceProducer(producer || undefined);
-			maybeInstance.patchConfig(config);
+			maybeInstance._source.replaceProducer(producer || undefined);
+			maybeInstance._source.patchConfig(config);
 			return maybeInstance;
 		}
 
-		this.bindMethods();
 		if (__DEV__) {
 			this.journal = [];
 		}
@@ -186,387 +185,6 @@ export class AsyncState<T, E, R, A extends unknown[]>
 			devtools.emitCreation(this);
 		}
 	}
-
-	private bindMethods() {
-		this.on = this.on.bind(this);
-		this.run = this.run.bind(this);
-		this.runp = this.runp.bind(this);
-		this.runc = this.runc.bind(this);
-		this.abort = this.abort.bind(this);
-		this.getState = this.getState.bind(this);
-		this.setState = this.setState.bind(this);
-		this.subscribe = this.subscribe.bind(this);
-		this.getPayload = this.getPayload.bind(this);
-		this.mergePayload = this.mergePayload.bind(this);
-
-		this.replay = this.replay.bind(this);
-		this.hasLane = this.hasLane.bind(this);
-		this.getConfig = this.getConfig.bind(this);
-		this.getVersion = this.getVersion.bind(this);
-		this.removeLane = this.removeLane.bind(this);
-		this.patchConfig = this.patchConfig.bind(this);
-		this.replaceCache = this.replaceCache.bind(this);
-		this.invalidateCache = this.invalidateCache.bind(this);
-		this.replaceProducer = this.replaceProducer.bind(this);
-	}
-
-	getVersion(): number {
-		return this.version;
-	}
-
-	getState(): State<T, E, R, A> {
-		return this.state;
-	}
-
-	getConfig(): ProducerConfig<T, E, R, A> {
-		return this.config;
-	}
-
-	on(
-		eventType: InstanceChangeEvent,
-		eventHandler: InstanceChangeEventHandlerType<T, E, R, A>
-	): () => void;
-	on(
-		eventType: InstanceDisposeEvent,
-		eventHandler: InstanceDisposeEventHandlerType<T, E, R, A>
-	): () => void;
-	on(
-		eventType: InstanceCacheChangeEvent,
-		eventHandler: InstanceCacheChangeEventHandlerType<T, E, R, A>
-	): () => void;
-	on(
-		eventType: InstanceEventType,
-		eventHandler: InstanceEventHandlerType<T, E, R, A>
-	): () => void {
-		if (!this.events) {
-			this.events = {} as InstanceEvents<T, E, R, A>;
-		}
-		if (!this.events[eventType]) {
-			this.events[eventType] = {};
-		}
-
-		let events = this.events[eventType]!;
-
-		if (!this.eventsIndex) {
-			this.eventsIndex = 0;
-		}
-		let index = ++this.eventsIndex;
-
-		events[index] = eventHandler;
-
-		return function () {
-			delete events[index];
-		};
-	}
-
-	patchConfig(partialConfig?: Partial<ProducerConfig<T, E, R, A>>) {
-		Object.assign(this.config, partialConfig);
-	}
-
-	getPayload(): Record<string, any> {
-		if (!this.payload) {
-			this.payload = {};
-		}
-		return this.payload;
-	}
-
-	hasLane(laneKey: string): boolean {
-		if (!this.lanes) {
-			return false;
-		}
-		return !!this.lanes[laneKey];
-	}
-
-	removeLane(laneKey?: string): boolean {
-		if (!this.lanes || !laneKey) {
-			return false;
-		}
-		return delete this.lanes[laneKey];
-	}
-
-	getLane(laneKey?: string): StateInterface<T, E, R, A> {
-		if (!laneKey) {
-			return this;
-		}
-		if (!this.lanes) {
-			this.lanes = {};
-		}
-		if (this.lanes[laneKey]) {
-			return this.lanes[laneKey];
-		}
-
-		let producer = this.fn;
-		let config = shallowClone(this.config);
-		let newLane = new AsyncState(laneKey, producer, config);
-
-		newLane.parent = this;
-		this.lanes[laneKey] = newLane;
-
-		return newLane;
-	}
-
-	replaceState(
-		newState: State<T, E, R, A>,
-		notify: boolean = true,
-		callbacks?: ProducerCallbacks<T, E, R, A>
-	): void {
-		let { config } = this;
-		let isPending = newState.status === pending;
-
-		if (isPending && config.skipPendingStatus) {
-			return;
-		}
-
-		if (this.queue) {
-			enqueueUpdate(this, newState, callbacks);
-			return;
-		}
-
-		if (
-			config.keepPendingForMs &&
-			this.state.status === pending &&
-			!this.flushing
-		) {
-			enqueueUpdate(this, newState, callbacks);
-			return;
-		}
-
-		// pending update has always a pending status
-		// setting the state should always clear this pending update
-		// because it is stale, and we can safely skip it
-		if (this.pendingUpdate) {
-			clearTimeout(this.pendingUpdate.id);
-			this.pendingUpdate = null;
-		}
-
-		if (
-			isPending &&
-			this.config.skipPendingDelayMs &&
-			isFunction(setTimeout) &&
-			this.config.skipPendingDelayMs > 0
-		) {
-			scheduleDelayedPendingUpdate(this, newState, notify);
-			return;
-		}
-
-		if (__DEV__) devtools.startUpdate(this);
-		this.state = newState;
-		this.version += 1;
-		invokeChangeCallbacks(newState, callbacks);
-		invokeInstanceEvents(this, "change");
-		if (__DEV__) devtools.emitUpdate(this);
-
-		if (this.state.status === success) {
-			this.lastSuccess = this.state;
-			if (hasCacheEnabled(this)) {
-				saveCacheAfterSuccessfulUpdate(this);
-			}
-		}
-
-		if (!isPending) {
-			this.promise = undefined;
-		}
-
-		if (notify && !this.flushing) {
-			notifySubscribers(this as StateInterface<T, E, R, A>);
-		}
-	}
-
-	subscribe(cb: (s: State<T, E, R, A>) => void): AbortFn<R>;
-	subscribe(subProps: AsyncStateSubscribeProps<T, E, R, A>): AbortFn<R>;
-	subscribe(
-		argv:
-			| ((s: State<T, E, R, A>) => void)
-			| AsyncStateSubscribeProps<T, E, R, A>
-	): AbortFn<R> {
-		let props = isFunction(argv) ? { cb: argv } : argv;
-		if (!isFunction(props.cb)) {
-			return;
-		}
-
-		if (!this.subsIndex) {
-			this.subsIndex = 0;
-		}
-		if (!this.subscriptions) {
-			this.subscriptions = {};
-		}
-
-		let that = this;
-		this.subsIndex += 1;
-
-		let subscriptionKey: string | undefined = props.key;
-
-		if (subscriptionKey === undefined) {
-			subscriptionKey = `$${this.subsIndex}`;
-		}
-
-		function cleanup() {
-			delete that.subscriptions![subscriptionKey!];
-			if (__DEV__) devtools.emitUnsubscription(that, subscriptionKey!);
-			if (that.config.resetStateOnDispose) {
-				if (Object.values(that.subscriptions!).length === 0) {
-					that.dispose();
-				}
-			}
-		}
-
-		this.subscriptions[subscriptionKey] = { props, cleanup };
-
-		if (__DEV__) devtools.emitSubscription(this, subscriptionKey);
-		return cleanup;
-	}
-
-	setState(
-		newValue: T | StateFunctionUpdater<T, E, R, A>,
-		status: Status = success,
-		callbacks?: ProducerCallbacks<T, E, R, A>
-	): void {
-		if (!StateBuilder[status]) {
-			throw new Error(`Unknown status ('${status}')`);
-		}
-		if (this.queue) {
-			enqueueSetState(this, newValue, status, callbacks);
-			return;
-		}
-		this.willUpdate = true;
-		if (
-			this.state.status === pending ||
-			(isFunction(this.currentAbort) && !this.isEmitting)
-		) {
-			this.abort();
-			this.currentAbort = undefined;
-		}
-
-		let effectiveValue = newValue;
-		if (isFunction(newValue)) {
-			effectiveValue = newValue(this.state);
-		}
-		const savedProps = cloneProducerProps<T, E, R, A>({
-			args: [effectiveValue] as A,
-			payload: shallowClone(this.payload),
-		});
-		if (__DEV__) devtools.emitReplaceState(this, savedProps);
-		// @ts-ignore
-		let newState = StateBuilder[status](effectiveValue, savedProps) as State<
-			T,
-			E,
-			R,
-			A
-		>;
-		this.replaceState(newState, true, callbacks);
-		this.willUpdate = false;
-	}
-
-	replay(): AbortFn<R> {
-		let latestRunTask = this.latestRun;
-		if (!latestRunTask) {
-			return undefined;
-		}
-		let { args, payload } = latestRunTask;
-
-		return runInstanceImmediately(this, payload, { args });
-	}
-
-	replaceProducer(newProducer: Producer<T, E, R, A> | undefined) {
-		this.fn = newProducer;
-	}
-
-	invalidateCache(cacheKey?: string) {
-		if (hasCacheEnabled(this)) {
-			const topLevelParent: StateInterface<T, E, R, A> =
-				getTopLevelParent(this);
-
-			if (!cacheKey) {
-				topLevelParent.cache = {};
-			} else if (topLevelParent.cache) {
-				delete topLevelParent.cache[cacheKey];
-			}
-
-			if (
-				topLevelParent.cache &&
-				isFunction(topLevelParent.config.cacheConfig?.persist)
-			) {
-				topLevelParent.config.cacheConfig!.persist(topLevelParent.cache);
-			}
-
-			spreadCacheChangeOnLanes(topLevelParent);
-		}
-	}
-
-	run(...args: A) {
-		return this.runc({ args });
-	}
-
-	runp(...args: A) {
-		let instance = this;
-		return new Promise<State<T, E, R, A>>(function runpInstance(resolve) {
-			let runcProps = {
-				args,
-				onError: resolve,
-				onSuccess: resolve,
-				onAborted: resolve,
-			};
-
-			runcInstance(instance, runcProps);
-		});
-	}
-
-	runc(props?: RUNCProps<T, E, R, A>) {
-		let instance = this;
-		return runcInstance(instance, props);
-	}
-
-	abort(reason: R | undefined = undefined) {
-		if (isFunction(this.currentAbort)) {
-			this.currentAbort(reason);
-		}
-	}
-
-	dispose() {
-		if (this.subscriptions && Object.keys(this.subscriptions).length) {
-			// this means that this state is retained by some subscriptions
-			return false;
-		}
-		this.willUpdate = true;
-		this.abort();
-		if (this.queue) {
-			clearTimeout(this.queue.id);
-			delete this.queue;
-		}
-
-		let initialState = this.config.initialValue;
-		if (isFunction(initialState)) {
-			initialState = initialState(this.cache);
-		}
-		const newState: State<T, E, R, A> = StateBuilder.initial<T, A>(
-			initialState as T
-		);
-		this.replaceState(newState);
-		if (__DEV__) devtools.emitDispose(this);
-
-		this.willUpdate = false;
-		invokeInstanceEvents(this, "dispose");
-		return true;
-	}
-
-	mergePayload(partialPayload?: Record<string, any>): void {
-		if (!this.payload) {
-			this.payload = {};
-		}
-		this.payload = Object.assign(this.payload, partialPayload);
-	}
-
-	replaceCache(cacheKey: string, cache: CachedState<T, E, R, A>): void {
-		if (!hasCacheEnabled(this)) {
-			return;
-		}
-		const topLevelParent = getTopLevelParent(this);
-		if (!topLevelParent.cache) {
-			topLevelParent.cache = {};
-		}
-		topLevelParent.cache[cacheKey] = cache;
-		spreadCacheChangeOnLanes(topLevelParent);
-	}
 }
 
 //region AsyncState methods helpers
@@ -591,50 +209,7 @@ function shallowClone(source1, source2?) {
 function makeSource<T, E, R, A extends unknown[]>(
 	instance: StateInterface<T, E, R, A>
 ): Readonly<Source<T, E, R, A>> {
-	let hiddenInstance = hideStateInstanceInNewObject(instance);
-
-	let source: Source<T, E, R, A> = Object.assign(hiddenInstance, {
-		key: instance.key,
-		uniqueId: instance.uniqueId,
-
-		on: instance.on,
-		run: instance.run,
-		runp: instance.runp,
-		runc: instance.runc,
-		abort: instance.abort,
-		replay: instance.replay,
-		hasLane: instance.hasLane,
-		getState: instance.getState,
-		setState: instance.setState,
-		getConfig: instance.getConfig,
-		subscribe: instance.subscribe,
-		getPayload: instance.getPayload,
-		removeLane: instance.removeLane,
-		getVersion: instance.getVersion,
-		patchConfig: instance.patchConfig,
-		mergePayload: instance.mergePayload,
-		replaceCache: instance.replaceCache,
-		invalidateCache: instance.invalidateCache,
-		replaceProducer: instance.replaceProducer,
-
-		getAllLanes() {
-			if (!instance.lanes) {
-				return [];
-			}
-			return Object.values(instance.lanes).map((lane) => lane._source);
-		},
-
-		getLaneSource(lane?: string) {
-			return instance.getLane(lane)._source;
-		},
-	});
-
-	Object.defineProperty(source, sourceSymbol, {
-		value: true,
-		writable: false,
-		enumerable: false,
-		configurable: false,
-	});
+	let source: Source<T, E, R, A> = new StateSource(instance);
 
 	return freeze(source);
 }
@@ -664,15 +239,11 @@ export function getSource(key: string, poolName?: string, context?: unknown) {
 export function readSource<T, E, R, A extends unknown[]>(
 	possiblySource: Source<T, E, R, A>
 ): StateInterface<T, E, R, A> {
-	try {
-		const candidate = possiblySource.constructor(asyncStatesKey);
-		if (!(candidate instanceof AsyncState)) {
-			throw new Error(""); // error is thrown to trigger the catch block
-		}
-		return candidate; // async state instance
-	} catch (e) {
+	let instance = possiblySource.inst;
+	if (!instance) {
 		throw new Error("Incompatible Source object.");
 	}
+	return instance;
 }
 
 function notifySubscribers<T, E, R, A extends unknown[]>(
@@ -725,7 +296,7 @@ function getTopLevelParent<T, E, R, A extends unknown[]>(
 }
 
 function scheduleDelayedPendingUpdate<T, E, R, A extends unknown[]>(
-	instance: AsyncState<T, E, R, A>,
+	instance: StateInterface<T, E, R, A>,
 	newState: State<T, E, R, A>,
 	notify: boolean
 ) {
@@ -858,13 +429,13 @@ function flushUpdateQueue<T, E, R, A extends unknown[]>(
 			current = current.next;
 		} else {
 			if (current.kind === 0) {
-				instance.replaceState(current.data, undefined, callbacks);
+				instance._source.replaceState(current.data, undefined, callbacks);
 			}
 			if (current.kind === 1) {
 				let {
 					data: { data, status },
 				} = current;
-				instance.setState(data, status, callbacks);
+				instance._source.setState(data, status, callbacks);
 			}
 			current = current.next;
 		}
@@ -874,3 +445,423 @@ function flushUpdateQueue<T, E, R, A extends unknown[]>(
 }
 
 //endregion
+
+export class StateSource<T, E, R, A extends unknown[]>
+	implements Source<T, E, R, A>
+{
+	key: string;
+	uniqueId: number;
+	readonly inst: StateInterface<T, E, R, A>;
+
+	constructor(instance: StateInterface<T, E, R, A>) {
+		this.inst = instance;
+		this.key = instance.key;
+		this.uniqueId = instance.uniqueId;
+
+		this.on = this.on.bind(this);
+		this.run = this.run.bind(this);
+		this.runp = this.runp.bind(this);
+		this.runc = this.runc.bind(this);
+		this.abort = this.abort.bind(this);
+		this.replay = this.replay.bind(this);
+		this.hasLane = this.hasLane.bind(this);
+		this.getState = this.getState.bind(this);
+		this.setState = this.setState.bind(this);
+		this.getConfig = this.getConfig.bind(this);
+		this.subscribe = this.subscribe.bind(this);
+		this.getPayload = this.getPayload.bind(this);
+		this.removeLane = this.removeLane.bind(this);
+		this.getVersion = this.getVersion.bind(this);
+		this.patchConfig = this.patchConfig.bind(this);
+		this.mergePayload = this.mergePayload.bind(this);
+		this.replaceCache = this.replaceCache.bind(this);
+		this.getLane = this.getLane.bind(this);
+		this.invalidateCache = this.invalidateCache.bind(this);
+		this.replaceProducer = this.replaceProducer.bind(this);
+	}
+
+	on(
+		eventType: InstanceChangeEvent,
+		eventHandler: InstanceChangeEventHandlerType<T, E, R, A>
+	): () => void;
+	on(
+		eventType: InstanceDisposeEvent,
+		eventHandler: InstanceDisposeEventHandlerType<T, E, R, A>
+	): () => void;
+	on(
+		eventType: InstanceCacheChangeEvent,
+		eventHandler: InstanceCacheChangeEventHandlerType<T, E, R, A>
+	): () => void;
+	on(
+		eventType: InstanceEventType,
+		eventHandler: InstanceEventHandlerType<T, E, R, A>
+	): () => void {
+		let instance = this.inst;
+
+		if (!instance.events) {
+			instance.events = {} as InstanceEvents<T, E, R, A>;
+		}
+		if (!instance.events[eventType]) {
+			instance.events[eventType] = {};
+		}
+
+		let events = instance.events[eventType]!;
+
+		if (!instance.eventsIndex) {
+			instance.eventsIndex = 0;
+		}
+		let index = ++instance.eventsIndex;
+
+		events[index] = eventHandler;
+
+		return function () {
+			delete events[index];
+		};
+	}
+
+	run(...args: A) {
+		return this.inst._source.runc({ args });
+	}
+
+	runp(...args: A) {
+		let instance = this.inst;
+		return new Promise<State<T, E, R, A>>(function runpInstance(resolve) {
+			let runcProps: RUNCProps<T, E, R, A> = {
+				args,
+				onError: resolve,
+				onSuccess: resolve,
+				onAborted: resolve,
+			};
+
+			runcInstance(instance, runcProps);
+		});
+	}
+
+	runc(props?: RUNCProps<T, E, R, A>) {
+		let instance = this.inst;
+		return runcInstance(instance, props);
+	}
+
+	abort(reason: R | undefined = undefined) {
+		let abortFn = this.inst.currentAbort;
+		if (isFunction(abortFn)) {
+			abortFn(reason);
+		}
+	}
+
+	replay(): AbortFn<R> {
+		let instance = this.inst;
+		let latestRunTask = instance.latestRun;
+		if (!latestRunTask) {
+			return undefined;
+		}
+		let { args, payload } = latestRunTask;
+
+		return runInstanceImmediately(instance, payload, { args });
+	}
+
+	invalidateCache(cacheKey?: string) {
+		let instance = this.inst;
+		if (hasCacheEnabled(instance)) {
+			const topLevelParent: StateInterface<T, E, R, A> =
+				getTopLevelParent(instance);
+
+			if (!cacheKey) {
+				topLevelParent.cache = {};
+			} else if (topLevelParent.cache) {
+				delete topLevelParent.cache[cacheKey];
+			}
+
+			if (
+				topLevelParent.cache &&
+				isFunction(topLevelParent.config.cacheConfig?.persist)
+			) {
+				topLevelParent.config.cacheConfig!.persist(topLevelParent.cache);
+			}
+
+			spreadCacheChangeOnLanes(topLevelParent);
+		}
+	}
+
+	replaceCache(cacheKey: string, cache: CachedState<T, E, R, A>): void {
+		let instance = this.inst;
+		if (!hasCacheEnabled(instance)) {
+			return;
+		}
+		const topLevelParent = getTopLevelParent(instance);
+		if (!topLevelParent.cache) {
+			topLevelParent.cache = {};
+		}
+		topLevelParent.cache[cacheKey] = cache;
+		spreadCacheChangeOnLanes(topLevelParent);
+	}
+
+	hasLane(laneKey: string): boolean {
+		let instance = this.inst;
+		if (!instance.lanes) {
+			return false;
+		}
+		return !!instance.lanes[laneKey];
+	}
+
+	removeLane(laneKey?: string): boolean {
+		let instance = this.inst;
+		if (!instance.lanes || !laneKey) {
+			return false;
+		}
+		return delete instance.lanes[laneKey];
+	}
+
+	getLane(laneKey?: string): Source<T, E, R, A> {
+		if (!laneKey) {
+			return this;
+		}
+		let instance = this.inst;
+		if (!instance.lanes) {
+			instance.lanes = {};
+		}
+
+		let existingLane = instance.lanes[laneKey];
+		if (existingLane) {
+			return existingLane._source;
+		}
+
+		let producer = instance.fn;
+		let config = Object.assign({}, instance.config);
+
+		let newLane = new AsyncState(laneKey, producer, config);
+
+		newLane.parent = instance;
+		instance.lanes[laneKey] = newLane;
+
+		// console.log("created shit", instance.lanes);
+
+		return newLane._source;
+	}
+
+	getVersion(): number {
+		return this.inst.version;
+	}
+
+	getState(): State<T, E, R, A> {
+		return this.inst.state;
+	}
+
+	getConfig(): ProducerConfig<T, E, R, A> {
+		return this.inst.config;
+	}
+
+	patchConfig(partialConfig?: Partial<ProducerConfig<T, E, R, A>>) {
+		Object.assign(this.inst.config, partialConfig);
+	}
+
+	getPayload(): Record<string, any> {
+		let instance = this.inst;
+		if (!instance.payload) {
+			instance.payload = {};
+		}
+		return instance.payload;
+	}
+
+	mergePayload(partialPayload?: Record<string, any>): void {
+		let instance = this.inst;
+		if (!instance.payload) {
+			instance.payload = {};
+		}
+		instance.payload = Object.assign(instance.payload, partialPayload);
+	}
+
+	dispose() {
+		let instance = this.inst;
+		if (instance.subscriptions && Object.keys(instance.subscriptions).length) {
+			// this means that this state is retained by some subscriptions
+			return false;
+		}
+		instance.willUpdate = true;
+		instance._source.abort();
+		if (instance.queue) {
+			clearTimeout(instance.queue.id);
+			delete instance.queue;
+		}
+
+		let initialState = instance.config.initialValue;
+		if (isFunction(initialState)) {
+			initialState = initialState(instance.cache || undefined);
+		}
+		const newState: State<T, E, R, A> = StateBuilder.initial<T, A>(
+			initialState as T
+		);
+		instance._source.replaceState(newState);
+		if (__DEV__) devtools.emitDispose(instance);
+
+		instance.willUpdate = false;
+		invokeInstanceEvents(instance, "dispose");
+		return true;
+	}
+
+	replaceProducer(newProducer: Producer<T, E, R, A> | undefined) {
+		this.inst.fn = newProducer;
+	}
+
+	subscribe(cb: (s: State<T, E, R, A>) => void): AbortFn<R>;
+	subscribe(subProps: AsyncStateSubscribeProps<T, E, R, A>): AbortFn<R>;
+	subscribe(
+		argv:
+			| ((s: State<T, E, R, A>) => void)
+			| AsyncStateSubscribeProps<T, E, R, A>
+	): AbortFn<R> {
+		let props = isFunction(argv) ? { cb: argv } : argv;
+		if (!isFunction(props.cb)) {
+			return;
+		}
+
+		let instance = this.inst;
+		if (!instance.subsIndex) {
+			instance.subsIndex = 0;
+		}
+		if (!instance.subscriptions) {
+			instance.subscriptions = {};
+		}
+
+		instance.subsIndex += 1;
+
+		let subscriptionKey: string | undefined = props.key;
+
+		if (subscriptionKey === undefined) {
+			subscriptionKey = `$${instance.subsIndex}`;
+		}
+
+		function cleanup() {
+			delete instance.subscriptions![subscriptionKey!];
+			if (__DEV__) devtools.emitUnsubscription(instance, subscriptionKey!);
+			if (instance.config.resetStateOnDispose) {
+				if (Object.values(instance.subscriptions!).length === 0) {
+					instance._source.dispose();
+				}
+			}
+		}
+
+		instance.subscriptions[subscriptionKey] = { props, cleanup };
+
+		if (__DEV__) devtools.emitSubscription(instance, subscriptionKey);
+		return cleanup;
+	}
+
+	replaceState(
+		newState: State<T, E, R, A>,
+		notify: boolean = true,
+		callbacks?: ProducerCallbacks<T, E, R, A>
+	): void {
+		let instance = this.inst;
+		let { config } = instance;
+		let isPending = newState.status === pending;
+
+		if (isPending && config.skipPendingStatus) {
+			return;
+		}
+
+		if (instance.queue) {
+			enqueueUpdate(instance, newState, callbacks);
+			return;
+		}
+
+		if (
+			config.keepPendingForMs &&
+			instance.state.status === pending &&
+			!instance.flushing
+		) {
+			enqueueUpdate(instance, newState, callbacks);
+			return;
+		}
+
+		// pending update has always a pending status
+		// setting the state should always clear this pending update
+		// because it is stale, and we can safely skip it
+		if (instance.pendingUpdate) {
+			clearTimeout(instance.pendingUpdate.id);
+			instance.pendingUpdate = null;
+		}
+
+		if (
+			isPending &&
+			instance.config.skipPendingDelayMs &&
+			isFunction(setTimeout) &&
+			instance.config.skipPendingDelayMs > 0
+		) {
+			scheduleDelayedPendingUpdate(instance, newState, notify);
+			return;
+		}
+
+		if (__DEV__) devtools.startUpdate(instance);
+		instance.state = newState;
+		instance.version += 1;
+		invokeChangeCallbacks(newState, callbacks);
+		invokeInstanceEvents(instance, "change");
+		if (__DEV__) devtools.emitUpdate(instance);
+
+		if (instance.state.status === success) {
+			instance.lastSuccess = instance.state;
+			if (hasCacheEnabled(instance)) {
+				saveCacheAfterSuccessfulUpdate(instance);
+			}
+		}
+
+		if (!isPending) {
+			instance.promise = undefined;
+		}
+
+		if (notify && !instance.flushing) {
+			notifySubscribers(instance as StateInterface<T, E, R, A>);
+		}
+	}
+
+	setState(
+		newValue: T | StateFunctionUpdater<T, E, R, A>,
+		status: Status = success,
+		callbacks?: ProducerCallbacks<T, E, R, A>
+	): void {
+		if (!StateBuilder[status]) {
+			throw new Error(`Unknown status ('${status}')`);
+		}
+		let instance = this.inst;
+		if (instance.queue) {
+			enqueueSetState(instance, newValue, status, callbacks);
+			return;
+		}
+		instance.willUpdate = true;
+		if (
+			instance.state.status === pending ||
+			(isFunction(instance.currentAbort) && !instance.isEmitting)
+		) {
+			instance._source.abort();
+			instance.currentAbort = undefined;
+		}
+
+		let effectiveValue = newValue;
+		if (isFunction(newValue)) {
+			effectiveValue = newValue(instance.state);
+		}
+		const savedProps = cloneProducerProps<T, E, R, A>({
+			args: [effectiveValue] as A,
+			payload: shallowClone(instance.payload),
+		});
+		if (__DEV__) devtools.emitReplaceState(instance, savedProps);
+		// @ts-ignore
+		let newState = StateBuilder[status](effectiveValue, savedProps) as State<
+			T,
+			E,
+			R,
+			A
+		>;
+		instance._source.replaceState(newState, true, callbacks);
+		instance.willUpdate = false;
+	}
+
+	getAllLanes() {
+		let instance = this.inst;
+		if (!instance.lanes) {
+			return [];
+		}
+		return Object.values(instance.lanes).map((lane) => lane._source);
+	}
+}

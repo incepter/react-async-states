@@ -16,6 +16,7 @@ export interface BaseSource<T, E, R, A extends unknown[]> {
 	// identity
 	key: string;
 	uniqueId: number;
+	readonly inst: StateInterface<T, E, R, A>;
 
 	getVersion(): number;
 
@@ -30,6 +31,12 @@ export interface BaseSource<T, E, R, A extends unknown[]> {
 	setState(
 		updater: StateFunctionUpdater<T, E, R, A> | T,
 		status?: Status,
+		callbacks?: ProducerCallbacks<T, E, R, A>
+	): void;
+
+	replaceState(
+		newState: State<T, E, R, A>,
+		notify?: boolean,
 		callbacks?: ProducerCallbacks<T, E, R, A>
 	): void;
 
@@ -74,6 +81,8 @@ export interface BaseSource<T, E, R, A extends unknown[]> {
 		eventType: InstanceCacheChangeEvent,
 		eventHandler: InstanceCacheChangeEventHandlerType<T, E, R, A>
 	): () => void;
+
+	dispose(): boolean;
 }
 
 export type InstanceEventHandlerType<T, E, R, A extends unknown[]> =
@@ -127,10 +136,11 @@ export type HydrationData<T, E, R, A extends unknown[]> = {
 	latestRun?: RunTask<T, E, R, A> | null;
 };
 
-export interface StateInterface<T, E, R, A extends unknown[]>
-	extends BaseSource<T, E, R, A> {
+export interface StateInterface<T, E, R, A extends unknown[]> {
 	// identity
+	key: string;
 	version: number;
+	uniqueId: number;
 	_source: Source<T, E, R, A>;
 	config: ProducerConfig<T, E, R, A>;
 	payload?: Record<string, unknown> | null;
@@ -144,11 +154,6 @@ export interface StateInterface<T, E, R, A extends unknown[]>
 
 	queue?: UpdateQueue<T, E, R, A>;
 	flushing?: boolean;
-	replaceState(
-		newState: State<T, E, R, A>,
-		notify?: boolean,
-		callbacks?: ProducerCallbacks<T, E, R, A>
-	): void;
 
 	// subscriptions
 	subsIndex?: number;
@@ -178,24 +183,6 @@ export interface StateInterface<T, E, R, A extends unknown[]>
 	eventsIndex?: number;
 	// dev properties
 	journal?: any[]; // for devtools, dev only
-
-	// methods & overrides
-	dispose(): boolean;
-
-	hasLane(laneKey: string): boolean;
-
-	getLane(laneKey?: string): StateInterface<T, E, R, A>;
-
-	// lanes and forks
-	removeLane(laneKey?: string): boolean;
-
-	getLane(laneKey?: string): BaseSource<T, E, R, A>;
-
-	run(...args: A): AbortFn<R>;
-
-	runp(...args: A): Promise<State<T, E, R, A>>;
-
-	runc(props?: RUNCProps<T, E, R, A>): AbortFn<R>;
 }
 
 export interface RUNCProps<T, E, R, A extends unknown[]>
@@ -373,7 +360,7 @@ export interface Source<T, E, R, A extends unknown[]>
 
 	removeLane(laneKey?: string): boolean;
 
-	getLaneSource(laneKey?: string): Source<T, E, R, A>;
+	getLane(laneKey?: string): Source<T, E, R, A>;
 
 	getAllLanes(): Source<T, E, R, A>[];
 }
