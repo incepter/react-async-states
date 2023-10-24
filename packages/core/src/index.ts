@@ -16,7 +16,6 @@ export { StateBuilder } from "./helpers/StateBuilder";
 
 export type {
 	RetryConfig,
-	PoolInterface,
 	ProducerRunConfig,
 	ProducerRunInput,
 	ProducerEffects,
@@ -47,7 +46,6 @@ export type {
 	StateInterface,
 	BaseSource,
 	ProducerWrapperInput,
-	LibraryPoolsContext,
 	LibraryContext,
 } from "./types";
 

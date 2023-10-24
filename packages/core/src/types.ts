@@ -388,7 +388,6 @@ export type ProducerRunConfig = {
 	lane?: string;
 	fork?: boolean;
 	payload?: Record<string, unknown> | null;
-	pool?: string;
 };
 export type PendingTimeout = {
 	id: ReturnType<typeof setTimeout>;
@@ -397,44 +396,6 @@ export type PendingTimeout = {
 export type PendingUpdate = {
 	id: ReturnType<typeof setTimeout>;
 	callback(): void;
-};
-export type AsyncStatePools = Record<string, PoolInterface>;
-export type WatchCallback<T, E, A extends unknown[]> = (
-	value: StateInterface<T, E, A> | null,
-	key: string
-) => void;
-
-export interface PoolInterface {
-	name: string;
-	simpleName: string;
-	version: { version: string; copyright: string };
-
-	mergePayload(payload: Record<string, unknown>): void;
-
-	instances: Map<string, StateInterface<any, any, any>>;
-
-	watch<T, E, A extends unknown[]>(
-		key: string,
-		value: WatchCallback<T, E, A>
-	): AbortFn;
-
-	listen<T, E, A extends unknown[]>(cb: WatchCallback<T, E, A>): AbortFn;
-
-	set<T, E, A extends unknown[]>(
-		key: string,
-		instance: StateInterface<T, E, A>
-	): void;
-
-	context: LibraryPoolsContext;
-}
-
-export type LibraryPoolsContext = {
-	context: unknown;
-	pools: AsyncStatePools;
-	poolInUse: PoolInterface;
-	enableDiscovery(name?: string): void;
-	setDefaultPool(name: string): Promise<void>;
-	getOrCreatePool(name?: string): PoolInterface;
 };
 
 export type SetStateUpdateQueue<T, E, A extends unknown[]> = {
