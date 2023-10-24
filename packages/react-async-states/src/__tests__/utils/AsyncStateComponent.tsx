@@ -8,7 +8,6 @@ const defaultDeps = [];
 export default function AsyncStateComponent<
 	T,
 	E = any,
-	R = any,
 	A extends unknown[] = unknown[],
 	S = State<T, E, A>
 >({

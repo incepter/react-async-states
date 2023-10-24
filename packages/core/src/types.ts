@@ -1,5 +1,4 @@
 import { RunEffect, Status } from "./enums";
-import { LibraryContext } from "./modules/StateContext";
 
 export type ProducerWrapperInput<T, E, A extends unknown[]> = {
 	setState: StateUpdater<T, E, A>;
@@ -474,4 +473,15 @@ export type OnSettled<T, E, A extends unknown[]> = {
 		savedProps: ProducerSavedProps<T, A>,
 		callbacks?: ProducerCallbacks<T, E, A>
 	): void;
+};
+
+export type LibraryContext = {
+	ctx: any;
+	version: { version: string; copyright: string };
+
+	remove(key: string): boolean;
+	get(key: string): StateInterface<any, any, any> | undefined;
+	set(key: string, inst: StateInterface<any, any, any>): void;
+
+	getAll(): StateInterface<any, any, any>[];
 };

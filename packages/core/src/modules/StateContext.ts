@@ -1,15 +1,6 @@
 import { freeze } from "../helpers/core";
-import { StateInterface } from "../types";
+import { LibraryContext, StateInterface } from "../types";
 import { version } from "../../package.json";
-
-export type LibraryContext = {
-	ctx: any;
-	version: { version: string; copyright: string };
-
-	remove(key: string): boolean;
-	get(key: string): StateInterface<any, any, any> | undefined;
-	set(key: string, inst: StateInterface<any, any, any>): void;
-};
 
 let libraryVersion = freeze({
 	version,
@@ -35,6 +26,9 @@ function createNewContext(arg: any): LibraryContext {
 		},
 		set(key: string, inst: StateInterface<any, any, any>) {
 			instances.set(key, inst);
+		},
+		getAll() {
+			return [...instances.values()];
 		},
 	});
 }

@@ -1,7 +1,5 @@
 export { useSource } from "./useSource";
 
-export { useSelector } from "./useSelector";
-
 export { useProducer } from "./useProducer";
 
 export { useAsync } from "./useAsync";

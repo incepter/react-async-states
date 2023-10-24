@@ -48,6 +48,7 @@ export type {
 	BaseSource,
 	ProducerWrapperInput,
 	LibraryPoolsContext,
+	LibraryContext,
 } from "./types";
 
 export { run as runner } from "./wrapper";

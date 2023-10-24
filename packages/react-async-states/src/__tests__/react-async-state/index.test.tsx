@@ -124,7 +124,7 @@ describe("should run producer", () => {
 		// given
 		jest.useFakeTimers();
 		let globalMeter = 0;
-		const throttledSource = createSource<number, any, any, [number]>(
+		const throttledSource = createSource<number, any, [number]>(
 			"throttled",
 			(props) => {
 				return new Promise((resolve) => {
@@ -179,7 +179,7 @@ describe("should run producer", () => {
 		// given
 		jest.useFakeTimers();
 		let globalMeter = 0;
-		const debouncedSource = createSource<number, any, any, number[]>(
+		const debouncedSource = createSource<number, any, number[]>(
 			"debounced",
 			(props) => {
 				return new Promise((resolve) => {

@@ -55,17 +55,20 @@ function buildHydrationDataForAllContextPools(
 	context: any,
 	exclude?: HydrationProps["exclude"]
 ): Record<string, HydrationData<unknown, unknown, unknown[]>> {
-	return Object.values(requestContext(context).pools).reduce((result, pool) => {
-		pool.instances.forEach((instance) => {
-			if (!shouldExcludeInstanceFromHydration(instance, exclude)) {
-				result[`${pool.name}__INSTANCE__${instance.key}`] = {
-					state: instance.state,
-					latestRun: instance.latestRun,
-					payload: instance.actions.getPayload(),
-				};
-			}
-		});
+	let execContext = requestContext(context);
+	let result = {} as Record<string, HydrationData<unknown, unknown, unknown[]>>;
 
-		return result;
-	}, {} as Record<string, HydrationData<unknown, unknown, unknown[]>>);
+	let allInstancesInContext = execContext.getAll();
+
+	allInstancesInContext.forEach((instance: StateInterface<any, any, any>) => {
+		if (!shouldExcludeInstanceFromHydration(instance, exclude)) {
+			result[`__INSTANCE__${instance.key}`] = {
+				state: instance.state,
+				latestRun: instance.latestRun,
+				payload: instance.actions.getPayload(),
+			};
+		}
+	});
+
+	return result;
 }

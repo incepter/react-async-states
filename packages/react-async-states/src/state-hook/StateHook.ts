@@ -11,13 +11,12 @@ import {
 } from "./types.internal";
 import type {
 	AbortFn,
-	LibraryPoolsContext,
-	PoolInterface,
 	Producer,
 	ProducerConfig,
 	Source,
 	State,
 	StateInterface,
+	LibraryContext,
 } from "async-states";
 import {
 	AsyncState,
@@ -41,14 +40,12 @@ import {
 	SELECTOR,
 	SOURCE,
 	SUBSCRIBE_EVENTS,
-	WAIT,
 } from "./StateHookFlags";
 import { __DEV__, emptyArray, freeze, isArray, isFunction } from "../shared";
 import { mapFlags } from "../shared/mapFlags";
 
 export function resolveFlags<T, E, A extends unknown[], S>(
 	mixedConfig: MixedConfig<T, E, A, S>,
-	pool: PoolInterface,
 	overrides?: PartialUseAsyncStateConfiguration<T, E, A, S>
 ): number {
 	let flags = NO_MODE;
@@ -59,9 +56,6 @@ export function resolveFlags<T, E, A extends unknown[], S>(
 		}
 		case "string": {
 			flags |= CONFIG_STRING | getConfigFlags(overrides);
-			if (!pool.instances.has(mixedConfig) && overrides?.wait) {
-				return flags | WAIT;
-			}
 			return flags;
 		}
 
@@ -83,12 +77,7 @@ export function resolveFlags<T, E, A extends unknown[], S>(
 					CONFIG_OBJECT |
 					getConfigFlags(baseConfig) |
 					getConfigFlags(overrides);
-				if (baseConfig.key && !pool.instances.has(baseConfig.key)) {
-					let wait = baseConfig.wait || overrides?.wait;
-					if (wait) {
-						return flags | WAIT;
-					}
-				}
+
 				return flags;
 			}
 		}
@@ -139,20 +128,21 @@ function getConfigFlags<T, E, A extends unknown[], S>(
 }
 
 export function resolveInstance<T, E, A extends unknown[], S>(
-	pool: PoolInterface,
+	context: LibraryContext,
 	flags: number,
 	config: MixedConfig<T, E, A, S>,
 	overrides?: PartialUseAsyncStateConfiguration<T, E, A, S>
 ): StateInterface<T, E, A> | null {
-	if (flags & WAIT) {
-		return null;
-	}
-
 	if (flags & SOURCE) {
 		return resolveSourceInstance<T, E, A, S>(flags, config, overrides);
 	}
 
-	return resolveStandaloneInstance<T, E, A, S>(pool, flags, config, overrides);
+	return resolveStandaloneInstance<T, E, A, S>(
+		context,
+		flags,
+		config,
+		overrides
+	);
 }
 
 function resolveSourceInstance<T, E, A extends unknown[], S>(
@@ -180,7 +170,7 @@ function resolveSourceInstance<T, E, A extends unknown[], S>(
 }
 
 function resolveStandaloneInstance<T, E, A extends unknown[], S>(
-	pool: PoolInterface,
+	context: LibraryContext,
 	flags: number,
 	config: MixedConfig<T, E, A, S>,
 	overrides?: PartialUseAsyncStateConfiguration<T, E, A, S>
@@ -189,7 +179,7 @@ function resolveStandaloneInstance<T, E, A extends unknown[], S>(
 	let producer = readProducerFromConfig(flags, config);
 	let producerConfig = readProducerConfigFromConfig(flags, config);
 
-	let prevInstance = pool.instances.get(key) as StateInterface<T, E, A>;
+	let prevInstance = context.get(key) as StateInterface<T, E, A> | undefined;
 
 	if (prevInstance) {
 		let instance = prevInstance;
@@ -212,8 +202,7 @@ function resolveStandaloneInstance<T, E, A extends unknown[], S>(
 		key,
 		producer,
 		Object.assign({}, producerConfig, {
-			context: pool.context.context,
-			pool: pool.simpleName,
+			context: context.ctx,
 		})
 	);
 
@@ -357,9 +346,7 @@ function calculateSubscriptionKey<T, E, A extends unknown[], S>(
 	) {
 		return (config as BaseConfig<T, E, A>).subscriptionKey;
 	}
-	if (flags & WAIT || !stateInterface) {
-		return;
-	}
+
 	if (__DEV__) {
 		let instance = stateInterface as AsyncState<T, E, A>;
 		if (!instance.subsIndex) {
@@ -516,9 +503,8 @@ export type HookChangeEvents<T, E, A extends unknown[]> =
 	| UseAsyncStateEventFn<T, E, A>[];
 
 export interface HookOwnState<T, E, A extends unknown[], S> {
-	context: LibraryPoolsContext;
+	context: LibraryContext;
 	guard: number;
-	pool: PoolInterface;
 	config: MixedConfig<T, E, A, S>;
 	return: UseAsyncState<T, E, A, S>;
 	base: BaseUseAsyncState<T, E, A, S>;
@@ -547,17 +533,7 @@ export function subscribeEffect<T, E, A extends unknown[], S>(
 	updateState: () => void,
 	setGuard: (updater: (prev: number) => number) => void
 ): CleanupFn {
-	let { flags, config, instance, renderInfo, subKey, pool } = hookState;
-	if (flags & WAIT) {
-		let key: string =
-			flags & CONFIG_STRING
-				? (config as string)
-				: (config as BaseConfig<T, E, A>).key!;
-
-		return pool.watch(key, function () {
-			setGuard((old) => old + 1);
-		});
-	}
+	let { flags, config, instance, renderInfo, subKey } = hookState;
 
 	let didClean = false;
 	let cleanups: AbortFn[] = [() => (didClean = true)];
@@ -635,31 +611,21 @@ export function subscribeEffect<T, E, A extends unknown[], S>(
 	};
 }
 
-function resolvePool<T, E, A extends unknown[], S>(
-	context: LibraryPoolsContext,
-	mixedConfig: MixedConfig<T, E, A, S>
-) {
-	let pool =
-		typeof mixedConfig === "object" &&
-		(mixedConfig as ProducerConfig<T, E, A>).pool;
-	return context.getOrCreatePool(pool || "default");
-}
-
 export function createHook<T, E, A extends unknown[], S>(
-	executionContext: LibraryPoolsContext,
+	executionContext: LibraryContext,
 	config: MixedConfig<T, E, A, S>,
 	deps: unknown[],
 	guard: number,
 	overrides?: PartialUseAsyncStateConfiguration<T, E, A, S>,
 	caller?: string
 ): HookOwnState<T, E, A, S> {
-	let newPool = resolvePool(executionContext, config);
-	let newFlags = resolveFlags(config, newPool, overrides);
-	let newInstance = resolveInstance(newPool, newFlags, config, overrides);
-
-	if (!newInstance && !(newFlags & WAIT)) {
-		throw new Error("Undefined instance with no WAIT mode. This is a bug.");
-	}
+	let newFlags = resolveFlags(config, overrides);
+	let newInstance = resolveInstance(
+		executionContext,
+		newFlags,
+		config,
+		overrides
+	);
 
 	let baseReturn = makeBaseReturn(newFlags, config, newInstance);
 	baseReturn.onChange = onChange;
@@ -689,7 +655,6 @@ export function createHook<T, E, A extends unknown[], S>(
 		deps,
 		guard,
 		config,
-		pool: newPool,
 		flags: newFlags,
 		base: baseReturn,
 		return: currentReturn,

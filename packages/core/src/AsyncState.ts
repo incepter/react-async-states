@@ -15,6 +15,7 @@ import {
 	InstanceEvents,
 	InstanceEventType,
 	LastSuccessSavedState,
+	LibraryContext,
 	PendingTimeout,
 	PendingUpdate,
 	Producer,
@@ -47,7 +48,7 @@ import {
 	subscribeToInstance,
 	subscribeToInstanceEvent,
 } from "./modules/StateSubscription";
-import { LibraryContext, requestContext } from "./modules/StateContext";
+import { requestContext } from "./modules/StateContext";
 import { initializeInstance } from "./modules/StateInitialization";
 
 // this is the main instance that will hold and manipulate the state

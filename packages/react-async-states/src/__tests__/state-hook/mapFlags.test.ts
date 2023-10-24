@@ -17,7 +17,6 @@ describe('mapFlags', () => {
     expect(mapFlags(17652)).toEqual([
       "CONFIG_SOURCE",
       "SOURCE",
-      "FORK",
       "LANE",
       "AUTO_RUN"
     ])

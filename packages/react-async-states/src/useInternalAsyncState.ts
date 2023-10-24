@@ -18,9 +18,7 @@ import {
 	CHANGE_EVENTS,
 	CONCURRENT,
 	CONFIG_OBJECT,
-	FORK,
 	SOURCE,
-	WAIT,
 } from "./state-hook/StateHookFlags";
 
 function getContextFromMixedConfig(mixedConfig) {
@@ -30,8 +28,6 @@ function getContextFromMixedConfig(mixedConfig) {
 	return mixedConfig.context;
 }
 
-let didWarnAboutDeprecatingForkFeature = false;
-let didWarnAboutDeprecatingWaitFeature = false;
 let didWarnAboutDeprecatingChangeEventsOption = false;
 function warnInDevAboutOptionsDeprecation(
 	hook: HookOwnState<any, any, any, any>
@@ -44,15 +40,6 @@ function warnInDevAboutOptionsDeprecation(
 				"deprecated. Use source.runc({ onSuccess, onError }) directly. " +
 				"source is returned from useAsyncState and createSource. If you need to " +
 				"react to status changes, check the onChange API or useEffect."
-		);
-	}
-	if (flags & WAIT && !didWarnAboutDeprecatingWaitFeature) {
-		didWarnAboutDeprecatingWaitFeature = true;
-		console.error(
-			"[WARNING] - useAsyncState 'wait' option is deprecated. " +
-				"We found no use cases for it in practice. The state will be created " +
-				"either ways. It should have no harm and you can reason about it using " +
-				"the existing features, such as status and payload."
 		);
 	}
 }

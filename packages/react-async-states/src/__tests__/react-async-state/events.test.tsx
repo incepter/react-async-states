@@ -10,7 +10,7 @@ describe("useAsync - events", () => {
 		const mockedFn = jest.fn();
 		const mockedFn2 = jest.fn();
 		const mockedFn3 = jest.fn();
-		const counterSource = createSource<number, any, any, any[]>(
+		const counterSource = createSource<number, any, any[]>(
 			"counter",
 			null,
 			{ initialValue: 0 }

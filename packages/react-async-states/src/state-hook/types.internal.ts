@@ -163,14 +163,6 @@ export type UseAsyncStateConfiguration<
 	selector?: useSelector<T, E, A, S>;
 	events?: UseAsyncStateEvents<T, E, A>;
 
-	pool?: string;
-
-	/**
-	 * @deprecated useAsyncState 'wait' option is deprecated. It was never used
-	 * in practice. And can be simulated easily.
-	 */
-	wait?: boolean;
-
 	// dev only
 	hideFromDevtools?: boolean;
 };

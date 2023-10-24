@@ -1,11 +1,9 @@
 import * as React from "react";
-import { State, requestContext, LibraryPoolsContext } from "async-states";
+import { State, requestContext, LibraryContext } from "async-states";
 
 export let HydrationContext = React.createContext<any | null>(null);
 
-export function useExecutionContext(
-	probablyContext?: any
-): LibraryPoolsContext {
+export function useExecutionContext(probablyContext?: any): LibraryContext {
 	let currentHydrationContext = React.useContext(HydrationContext);
 
 	if (probablyContext) {

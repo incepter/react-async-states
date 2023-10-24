@@ -1,7 +1,7 @@
 import * as React from "react";
 import { render, screen } from "@testing-library/react";
 import Hydration from "../../../hydration/Hydration";
-import { createContext, createSource, requestContext } from "async-states";
+import { createContext, createSource } from "async-states";
 import { mockDateNow } from "../../utils/setup";
 import AsyncStateComponent from "../../utils/AsyncStateComponent";
 
@@ -35,7 +35,7 @@ describe("should hydrate async states", () => {
 			</React.StrictMode>
 		);
 		expect(screen.getByTestId("parent").innerHTML).toEqual(
-			'<script id="test">window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"ASYNC-STATES-default-POOL__INSTANCE__counter":{"state":{"status":"initial","data":0,"props":null,"timestamp":1487076708000},"payload":{}}})</script>'
+			'<script id="test">window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__counter":{"state":{"status":"initial","data":0,"props":null,"timestamp":1487076708000},"latestRun":null,"payload":{}}})</script>'
 		);
 	});
 	it("should perform basic hydration when status did succeed", async () => {
@@ -61,7 +61,7 @@ describe("should hydrate async states", () => {
 			</React.StrictMode>
 		);
 		expect(screen.getByTestId("parent").innerHTML).toEqual(
-			'<script id="test">window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"ASYNC-STATES-default-POOL__INSTANCE__state-1":{"state":{"status":"success","data":42,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"payload":{}}})</script>'
+			'<script id="test">window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__state-1":{"state":{"status":"success","data":42,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"latestRun":null,"payload":{}}})</script>'
 		);
 	});
 	it("should exclude instance from hydration by key", async () => {
@@ -125,7 +125,7 @@ describe("should hydrate async states", () => {
 			</React.StrictMode>
 		);
 		expect(screen.getByTestId("parent").innerHTML).toEqual(
-			'<script id="test">window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"ASYNC-STATES-default-POOL__INSTANCE__counter2":{"state":{"status":"initial","data":14,"props":null,"timestamp":1487076708000},"payload":{}}})</script>'
+			'<script id="test">window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__counter2":{"state":{"status":"initial","data":14,"props":null,"timestamp":1487076708000},"latestRun":null,"payload":{}}})</script>'
 		);
 	});
 });

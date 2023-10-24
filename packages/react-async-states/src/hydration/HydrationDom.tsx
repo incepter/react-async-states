@@ -42,10 +42,9 @@ function hydrateContext(currentContext: any) {
 
 	// state id is of shape: pool__instance__key
 	for (let [hydrationId, hydrationData] of Object.entries(allHydrationData)) {
-		let { poolName, key } = parseInstanceHydratedData(hydrationId);
-		if (key && poolName && currentContext.pools[poolName]) {
-			let instance: StateInterface<any, any, any> =
-				currentContext.pools[poolName].instances.get(key);
+		let { key } = parseInstanceHydratedData(hydrationId);
+		if (key) {
+			let instance: StateInterface<any, any, any> = currentContext.get(key);
 			if (instance) {
 				instance.state = hydrationData.state;
 				instance.payload = hydrationData.payload;
@@ -58,20 +57,17 @@ function hydrateContext(currentContext: any) {
 	}
 }
 
-function parseInstanceHydratedData(identifier: string): {
-	poolName?: string;
+function parseInstanceHydratedData(hydrationId: string): {
 	key?: string;
 } {
 	let key: string | undefined = undefined;
-	let poolName: string | undefined = undefined;
 
-	if (identifier) {
-		let matches = identifier.match(/(^.*?)__INSTANCE__(.*$)/);
+	if (hydrationId) {
+		let matches = hydrationId.match(/__INSTANCE__(.*$)/);
 		if (matches) {
-			key = matches[2];
-			poolName = matches[1];
+			key = matches[1];
 		}
 	}
 
-	return { key, poolName };
+	return { key };
 }
