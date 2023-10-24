@@ -3,14 +3,14 @@ export { AsyncState } from "./AsyncState";
 export { createProps } from "./modules/StateProps";
 
 export {
-	requestContext,
-	createContext,
 	getContext,
+	createContext,
+	requestContext,
 	terminateContext,
-} from "./pool";
+} from "./modules/StateContext";
 
-export type { RunEffect } from "./enums";
 export { Status } from "./enums";
+export type { RunEffect } from "./enums";
 export { isSource } from "./helpers/isSource";
 export { StateBuilder } from "./helpers/StateBuilder";
 

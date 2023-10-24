@@ -6,7 +6,7 @@ import { expect } from "@jest/globals";
 
 mockDateNow();
 describe("AsyncState instance creation", () => {
-	function bootHydration(data) {
+	function bootHydration(data: any) {
 		eval(data);
 	}
 
@@ -15,7 +15,7 @@ describe("AsyncState instance creation", () => {
 			throw new Error("No globalThis");
 		}
 		bootHydration(
-			'window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"ASYNC-STATES-default-POOL__INSTANCE__state-1":{"state":{"status":"success","data":42,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"payload":{}}})'
+			'window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__state-1":{"state":{"status":"success","data":42,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"payload":{}}})'
 		);
 		let instance = new AsyncState("state-1", null);
 		expect(instance.actions.getVersion()).toBe(0);
@@ -23,7 +23,7 @@ describe("AsyncState instance creation", () => {
 		expect(instance.actions.getState().status).toBe("success");
 		expect(instance.lastSuccess).toBe(instance.actions.getState());
 		bootHydration(
-			'window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"ASYNC-STATES-default-POOL__INSTANCE__state-2":{"state":{"status":"error","data":42,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"payload":{}}})'
+			'window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__state-2":{"state":{"status":"error","data":42,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"payload":{}}})'
 		);
 		let instance2 = new AsyncState("state-2", null, { initialValue: 15 });
 		expect(instance2.actions.getState().data).toBe(42);

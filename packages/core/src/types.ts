@@ -1,4 +1,5 @@
 import { RunEffect, Status } from "./enums";
+import { LibraryContext } from "./modules/StateContext";
 
 export type ProducerWrapperInput<T, E, A extends unknown[]> = {
 	setState: StateUpdater<T, E, A>;
@@ -157,7 +158,7 @@ export interface StateInterface<T, E, A extends unknown[]> {
 	// producer
 	promise: Promise<T> | null;
 	fn: Producer<T, E, A> | null;
-	pool: PoolInterface;
+	readonly ctx: LibraryContext;
 
 	latestRun: RunTask<T, E, A> | null;
 	currentAbort: AbortFn | null;
@@ -282,8 +283,6 @@ export type ProducerConfig<T, E, A extends unknown[]> = {
 	skipPendingDelayMs?: number;
 	resetStateOnDispose?: boolean;
 	context?: unknown;
-
-	pool?: string;
 
 	// dev only
 	hideFromDevtools?: boolean;

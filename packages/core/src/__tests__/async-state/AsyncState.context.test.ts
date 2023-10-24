@@ -1,8 +1,11 @@
-import { createContext, getContext, terminateContext } from "../../pool";
+import {
+	createContext,
+	getContext,
+	terminateContext,
+} from "../../modules/StateContext";
 import { expect } from "@jest/globals";
 
-
-import {createSource} from "../../AsyncState";
+import { createSource } from "../../AsyncState";
 
 describe("Create instances in different contexts", () => {
 	let consoleErrorSpy;
@@ -15,11 +18,9 @@ describe("Create instances in different contexts", () => {
 	});
 
 	it("should reuse the same instance when no context is provided", () => {
-		consoleErrorSpy.mockClear();
 		let source1 = createSource("key1");
 		let source2 = createSource("key1");
 		expect(source1).toBe(source2);
-		expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
 	});
 
 	it("should reuse the same instance in the same pool", () => {
@@ -68,7 +69,7 @@ describe("Create instances in different contexts", () => {
 	it("should throw when context isnt created first", () => {
 		let ctx1 = {};
 		expect(() => createSource("key4", null, { context: ctx1 })).toThrow(
-			"No execution context for context [object Object]"
+			"Context not found. Please make sure to call createContext before requestContext."
 		);
 	});
 	it("should throw when context is already terminated", () => {
@@ -76,12 +77,12 @@ describe("Create instances in different contexts", () => {
 
 		createContext(ctx);
 		expect(() => createSource("key5", null, { context: ctx })).not.toThrow(
-			"No execution context for context [object Object]"
+			"Context not found. Please make sure to call createContext before requestContext."
 		);
 
 		terminateContext(ctx);
 		expect(() => createSource("key6", null, { context: ctx })).toThrow(
-			"No execution context for context [object Object]"
+			"Context not found. Please make sure to call createContext before requestContext."
 		);
 
 		// this should do nothing: terminate a non existing context

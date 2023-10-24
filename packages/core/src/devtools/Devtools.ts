@@ -254,7 +254,6 @@ function createDevtools(): DevtoolsInterface {
 				config: asyncState.config,
 				journal: asyncState.journal,
 				uniqueId: asyncState.uniqueId,
-				pool: asyncState.pool.simpleName,
 				lastSuccess: asyncState.lastSuccess,
 				subscriptions: (asyncState.subscriptions
 					? Object.values(asyncState.subscriptions)

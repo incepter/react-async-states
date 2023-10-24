@@ -17,7 +17,6 @@ import {
 	LastSuccessSavedState,
 	PendingTimeout,
 	PendingUpdate,
-	PoolInterface,
 	Producer,
 	ProducerCallbacks,
 	ProducerConfig,
@@ -30,18 +29,12 @@ import {
 	StateSubscription,
 	UpdateQueue,
 } from "./types";
-import { pending, Status, success } from "./enums";
-import {
-	requestContext,
-	warnAboutAlreadyExistingSourceWithSameKey,
-} from "./pool";
-import { StateBuilder } from "./helpers/StateBuilder";
+import { Status, success } from "./enums";
 import { nextUniqueId, shallowClone } from "./helpers/core";
 import { runcInstance, runInstanceImmediately } from "./modules/StateRun";
 import {
 	getTopLevelParent,
 	hasCacheEnabled,
-	loadCache,
 	persistAndSpreadCache,
 	spreadCacheChangeOnLanes,
 } from "./modules/StateCache";
@@ -50,11 +43,12 @@ import {
 	replaceInstanceState,
 	setInstanceState,
 } from "./modules/StateUpdate";
-import { attemptHydratedState } from "./modules/StateHydration";
 import {
 	subscribeToInstance,
 	subscribeToInstanceEvent,
 } from "./modules/StateSubscription";
+import { LibraryContext, requestContext } from "./modules/StateContext";
+import { initializeInstance } from "./modules/StateInitialization";
 
 // this is the main instance that will hold and manipulate the state
 // it is referenced by its 'key' or name.
@@ -63,10 +57,10 @@ import {
 export class AsyncState<T, E, A extends unknown[]>
 	implements StateInterface<T, E, A>
 {
+	readonly ctx: LibraryContext;
+
 	// used only in __DEV__ mode
 	journal?: any[];
-
-	readonly pool: PoolInterface;
 
 	// this contains all methods, such as getState, setState and so on
 	actions: Source<T, E, A>;
@@ -104,75 +98,51 @@ export class AsyncState<T, E, A extends unknown[]>
 		producer: Producer<T, E, A> | undefined | null,
 		config?: ProducerConfig<T, E, A>
 	) {
-		let ctx = config && config.context;
-		let { poolInUse: poolToUse, getOrCreatePool } = requestContext(ctx);
+		// fallback to globalContext (null)
+		let context = config?.context || null;
+		let libraryContext = requestContext(context);
+		let existingInstance = libraryContext.get(key);
 
-		let poolName = config && config.pool;
-		if (poolName) {
-			poolToUse = getOrCreatePool(poolName);
+		// when an instance with the same key exists, reuse it
+		if (existingInstance) {
+			existingInstance.actions.patchConfig(config);
+			existingInstance.actions.replaceProducer(producer || null);
+
+			return existingInstance;
 		}
 
-		let maybeInstance = poolToUse.instances.get(key) as
-			| AsyncState<T, E, A>
-			| undefined;
-
-		if (maybeInstance) {
-			if (__DEV__) {
-				warnAboutAlreadyExistingSourceWithSameKey(key);
-			}
-			maybeInstance.actions.replaceProducer(producer || null);
-			maybeInstance.actions.patchConfig(config);
-			return maybeInstance;
-		}
-
+		// start recording journal events early before end of creation
 		if (__DEV__) {
 			this.journal = [];
 		}
-		poolToUse.set(key, this);
+		libraryContext.set(key, this);
 
 		this.key = key;
-		this.pool = poolToUse;
+		this.ctx = libraryContext;
 		this.fn = producer ?? null;
 		this.uniqueId = nextUniqueId();
-		this.actions = new StateSource(this);
 		this.config = shallowClone(config);
+		this.actions = new StateSource(this);
 
-		loadCache(this);
+		this.lanes = null;
+		this.queue = null;
+		this.cache = null;
+		this.events = null;
+		this.parent = null;
+		this.promise = null;
+		this.payload = null;
+		this.latestRun = null;
+		this.subsIndex = null;
+		this.eventsIndex = null;
+		this.currentAbort = null;
+		this.subscriptions = null;
+		this.pendingUpdate = null;
+		this.pendingTimeout = null;
 
-		let maybeHydratedState = attemptHydratedState<T, E, A>(
-			this.pool.name,
-			this.key
-		);
-		if (maybeHydratedState) {
-			this.state = maybeHydratedState.state;
-			this.payload = maybeHydratedState.payload;
-			this.latestRun = maybeHydratedState.latestRun;
-
-			if (this.state.status === success) {
-				this.lastSuccess = this.state;
-			} else {
-				let initializer = this.config.initialValue;
-				let initialData = isFunction(initializer)
-					? initializer(this.cache)
-					: initializer;
-				this.lastSuccess = StateBuilder.initial(
-					initialData
-				) as LastSuccessSavedState<T, A>;
-				if (maybeHydratedState.state.status === pending) {
-					this.promise = new Promise(() => {});
-				}
-			}
-		} else {
-			let initializer = this.config.initialValue;
-			let initialData = isFunction(initializer)
-				? initializer(this.cache)
-				: (initializer as T);
-
-			let initialState = StateBuilder.initial<T, A>(initialData);
-
-			this.state = initialState;
-			this.lastSuccess = initialState as LastSuccessSavedState<T, A>;
-		}
+		// this function will loadCache if applied and also attempt
+		// hydrated data if existing and also set the initial state
+		// it was moved from here for simplicity and keep the constructor readable
+		initializeInstance(this);
 
 		if (__DEV__) {
 			devtools.emitCreation(this);
@@ -416,10 +386,12 @@ export class StateSource<T, E, A extends unknown[]> implements Source<T, E, A> {
 	}
 }
 
-export function getSource(key: string, poolName?: string, context?: unknown) {
-	let executionContext = requestContext(context);
-	let pool = executionContext.getOrCreatePool(poolName);
-	return pool.instances.get(key)?.actions;
+export function getSource<T, E, A extends unknown[]>(
+	key: string,
+	context?: unknown
+): Source<T, E, A> | undefined {
+	let executionContext = requestContext(context || null);
+	return executionContext.get(key)?.actions;
 }
 
 export function readSource<T, E, A extends unknown[]>(
@@ -432,28 +404,15 @@ export function readSource<T, E, A extends unknown[]>(
 	return instance;
 }
 
-export function createSource<
-	T,
-	E = unknown,
-	R = unknown,
-	A extends unknown[] = unknown[]
->(props: CreateSourceObject<T, E, A>): Source<T, E, A>;
-export function createSource<
-	T,
-	E = unknown,
-	R = unknown,
-	A extends unknown[] = unknown[]
->(
+export function createSource<T, E = unknown, A extends unknown[] = unknown[]>(
+	props: CreateSourceObject<T, E, A>
+): Source<T, E, A>;
+export function createSource<T, E = unknown, A extends unknown[] = unknown[]>(
 	key: string,
 	producer?: Producer<T, E, A> | undefined | null,
 	config?: ProducerConfig<T, E, A>
 ): Source<T, E, A>;
-export function createSource<
-	T,
-	E = unknown,
-	R = unknown,
-	A extends unknown[] = unknown[]
->(
+export function createSource<T, E = unknown, A extends unknown[] = unknown[]>(
 	props: string | CreateSourceObject<T, E, A>,
 	maybeProducer?: Producer<T, E, A> | undefined | null,
 	maybeConfig?: ProducerConfig<T, E, A>

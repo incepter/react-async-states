@@ -1,6 +1,6 @@
 import { AsyncState } from "../../AsyncState";
 import { mockDateNow } from "../utils/setup";
-import { RunEffect, Status } from "../../enums";
+import { Status } from "../../enums";
 import { expect } from "@jest/globals";
 import { flushPromises } from "../utils/test-utils";
 
@@ -16,10 +16,10 @@ describe("AsyncState instance run", () => {
 				skipPendingDelayMs: 500,
 			}
 		);
-		expect(instance.pendingUpdate).toBe(undefined);
+		expect(instance.pendingUpdate).toBe(null);
 		instance.actions.run();
 		let timeoutId = instance.pendingUpdate!.id;
-		expect(instance.pendingUpdate).not.toBe(undefined);
+		expect(instance.pendingUpdate).not.toBe(null);
 		expect(instance.state.status).toBe("initial"); // skip pending
 		instance.actions.run();
 		let newTimeoutId = instance.pendingUpdate!.id;

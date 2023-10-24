@@ -18,7 +18,7 @@ describe("AsyncState - subscriptions", () => {
 		let myAsyncState = new AsyncState(key, producer, myConfig);
 
 		// then
-		expect(myAsyncState.subsIndex).toBe(undefined);
+		expect(myAsyncState.subsIndex).toBe(null);
 
 		let unsubscribe = myAsyncState.actions.subscribe({ cb: subscriptionFn });
 		expect(typeof unsubscribe).toBe("function");
