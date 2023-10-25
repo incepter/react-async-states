@@ -1,7 +1,3 @@
-// the goal of this function is to retrieve the following objects:
-// - a configuration object to use { key, producer, source, lazy ... }
-// - the LibraryContext object
-// - the state instance
 import {
 	BaseConfig,
 	MixedConfig,
@@ -18,6 +14,9 @@ import {
 	StateInterface,
 } from "async-states";
 
+// the goal of this function is to retrieve the following objects:
+// - a configuration object to use { key, producer, source, lazy ... }
+// - the state instance
 export function parseConfig<T, E, A extends unknown[], S = State<T, E, A>>(
 	currentExecContext: any,
 	mixedConfig: MixedConfig<T, E, A, S>,
@@ -84,57 +83,6 @@ export function parseConfig<T, E, A extends unknown[], S = State<T, E, A>>(
 		instance,
 		config: parsedConfiguration,
 	};
-}
-
-export function resolveInstance<T, E, A extends unknown[], S = State<T, E, A>>(
-	currentExecContext: any,
-	mixedConfig: MixedConfig<T, E, A, S>,
-	overrides?: PartialUseAsyncStateConfiguration<T, E, A, S>
-): StateInterface<T, E, A> {
-	switch (typeof mixedConfig) {
-		// the user provided an object configuration or a Source
-		case "object": {
-			if (isSource<T, E, A>(mixedConfig)) {
-				return mixedConfig.inst;
-			}
-
-			let baseConfig = mixedConfig as BaseConfig<T, E, A>;
-			if (baseConfig.source && isSource<T, E, A>(baseConfig.source)) {
-				return baseConfig.source.inst;
-			}
-
-			let contextArgToUse = baseConfig.context || currentExecContext;
-			let executionContext = requestContext(contextArgToUse);
-			let parsedConfiguration = assign({}, mixedConfig, overrides);
-			// the parsed config is created by the library, so okay to mutate it.
-			parsedConfiguration.context = contextArgToUse;
-
-			return resolveFromObjectConfig(executionContext, parsedConfiguration);
-		}
-		// the user provided a string key
-		case "string": {
-			let executionContext = requestContext(currentExecContext);
-			let parsedConfiguration = assign({}, overrides, { key: mixedConfig });
-			// the parsed config is created by the library, so okay to mutate it.
-			parsedConfiguration.context = currentExecContext;
-			return resolveFromStringConfig(executionContext, parsedConfiguration);
-		}
-		// first, detect the LibraryContext
-		case "function": {
-			let parsedConfiguration = assign({}, overrides, {
-				producer: mixedConfig,
-			});
-			parsedConfiguration.context = currentExecContext;
-			return resolveFromFunctionConfig(parsedConfiguration);
-		}
-
-		default: {
-			let parsedConfiguration = assign({}, overrides);
-			parsedConfiguration.context = currentExecContext;
-			let executionContext = requestContext(currentExecContext);
-			return resolveFromObjectConfig(executionContext, parsedConfiguration);
-		}
-	}
 }
 
 // object type has these specific rules:

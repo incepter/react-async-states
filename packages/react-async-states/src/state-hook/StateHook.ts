@@ -507,6 +507,9 @@ export type HookChangeEvents<T, E, A extends unknown[]> =
 	| UseAsyncStateEventFn<T, E, A>
 	| UseAsyncStateEventFn<T, E, A>[];
 
+export type HookChangeEventsFunction<T, E, A extends unknown[]> =
+	(prev?: HookChangeEvents<T, E, A>) => HookChangeEvents<T, E, A>
+
 export interface HookOwnState<T, E, A extends unknown[], S> {
 	context: LibraryContext;
 	guard: number;

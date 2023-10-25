@@ -15,6 +15,7 @@ interface BaseHooksReturn<T, E, A extends unknown[], S = State<T, E, A>> {
 	state: S; // backward compatibility
 	source: Source<T, E, A>;
 	lastSuccess: LastSuccessSavedState<T, A>;
+	read(suspend?: boolean, throwError?: boolean): S;
 
 	onChange(
 		events:
@@ -78,6 +79,19 @@ export type LegacyHookReturn<T, E, A extends unknown[], S> =
 export interface HookSubscription<T, E, A extends unknown[], S>
 	extends SubscriptionAlternate<T, E, A, S> {
 	alternate: SubscriptionAlternate<T, E, A, S> | null;
+	read(suspend?: boolean, throwError?: boolean): S;
+
+	onChange(
+		events:
+			| ((prevEvents?: HookChangeEvents<T, E, A>) => void)
+			| HookChangeEvents<T, E, A>
+	): void;
+
+	onSubscribe(
+		events:
+			| ((prevEvents?: UseAsyncStateEventSubscribe<T, E, A>) => void)
+			| UseAsyncStateEventSubscribe<T, E, A>
+	): void;
 }
 
 export interface SubscriptionAlternate<T, E, A extends unknown[], S> {

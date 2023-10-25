@@ -4,6 +4,7 @@ import {
 	HookReturnInitial,
 	HookReturnPending,
 	HookReturnSuccess,
+	HookSubscription,
 	LegacyHookReturn,
 } from "../types";
 import { freeze } from "../../shared";
@@ -17,26 +18,25 @@ import {
 } from "async-states";
 
 export function createSubscriptionLegacyReturn<T, E, A extends unknown[], S>(
-	instance: StateInterface<T, E, A>,
+	subscription: HookSubscription<T, E, A, S>,
 	config: PartialUseAsyncStateConfiguration<T, E, A, S>
 ): LegacyHookReturn<T, E, A, S> {
-	let currentState = instance.state;
-	let currentStatus = currentState.status;
+	let currentStatus = subscription.instance.state.status;
 
 	switch (currentStatus) {
 		case "initial": {
 			// when config is lazy, this means we will run synchronously in the
 			// layout effect phase. so we will prepare an optimistic pending state
-			return createLegacyInitialReturn(instance, config);
+			return createLegacyInitialReturn(subscription, config);
 		}
 		case "pending": {
-			return createLegacyPendingReturn(instance, config);
+			return createLegacyPendingReturn(subscription, config);
 		}
 		case "success": {
-			return createLegacySuccessReturn(instance, config);
+			return createLegacySuccessReturn(subscription, config);
 		}
 		case "error": {
-			return createLegacyErrorReturn(instance, config);
+			return createLegacyErrorReturn(subscription, config);
 		}
 		default: {
 			throw new Error("Unknown status " + String(currentStatus));
@@ -45,9 +45,10 @@ export function createSubscriptionLegacyReturn<T, E, A extends unknown[], S>(
 }
 
 export function createLegacyInitialReturn<T, E, A extends unknown[], S>(
-	instance: StateInterface<T, E, A>,
+	subscription: HookSubscription<T, E, A, S>,
 	config: PartialUseAsyncStateConfiguration<T, E, A, S>
 ): HookReturnInitial<T, E, A, S> {
+	let instance = subscription.instance;
 	let selectedState: S;
 	let lastSuccess = instance.lastSuccess;
 	let currentState = instance.state as InitialState<T, A>;
@@ -71,19 +72,17 @@ export function createLegacyInitialReturn<T, E, A extends unknown[], S>(
 		data: currentState.data,
 		lastSuccess: instance.lastSuccess,
 
-		onChange() {
-			throw new Error("Not implemented yet");
-		},
-		onSubscribe() {
-			throw new Error("Not implemented yet");
-		},
+		read: subscription.read,
+		onChange: subscription.onChange,
+		onSubscribe: subscription.onSubscribe,
 	});
 }
 
 export function createLegacySuccessReturn<T, E, A extends unknown[], S>(
-	instance: StateInterface<T, E, A>,
+	subscription: HookSubscription<T, E, A, S>,
 	config: PartialUseAsyncStateConfiguration<T, E, A, S>
 ): HookReturnSuccess<T, E, A, S> {
+	let instance = subscription.instance;
 	let selectedState: S;
 	let lastSuccess = instance.lastSuccess;
 	let currentState = instance.state as SuccessState<T, A>;
@@ -106,19 +105,17 @@ export function createLegacySuccessReturn<T, E, A extends unknown[], S>(
 		data: currentState.data,
 		lastSuccess: instance.lastSuccess,
 
-		onChange() {
-			throw new Error("Not implemented yet");
-		},
-		onSubscribe() {
-			throw new Error("Not implemented yet");
-		},
+		read: subscription.read,
+		onChange: subscription.onChange,
+		onSubscribe: subscription.onSubscribe,
 	});
 }
 
 export function createLegacyErrorReturn<T, E, A extends unknown[], S>(
-	instance: StateInterface<T, E, A>,
+	subscription: HookSubscription<T, E, A, S>,
 	config: PartialUseAsyncStateConfiguration<T, E, A, S>
 ): HookReturnError<T, E, A, S> {
+	let instance = subscription.instance;
 	let selectedState: S;
 	let lastSuccess = instance.lastSuccess;
 	let currentState = instance.state as ErrorState<T, E, A>;
@@ -141,19 +138,17 @@ export function createLegacyErrorReturn<T, E, A extends unknown[], S>(
 		error: currentState.data,
 		lastSuccess: instance.lastSuccess,
 
-		onChange() {
-			throw new Error("Not implemented yet");
-		},
-		onSubscribe() {
-			throw new Error("Not implemented yet");
-		},
+		read: subscription.read,
+		onChange: subscription.onChange,
+		onSubscribe: subscription.onSubscribe,
 	});
 }
 
 export function createLegacyPendingReturn<T, E, A extends unknown[], S>(
-	instance: StateInterface<T, E, A>,
+	subscription: HookSubscription<T, E, A, S>,
 	config: PartialUseAsyncStateConfiguration<T, E, A, S>
 ): HookReturnPending<T, E, A, S> {
+	let instance = subscription.instance;
 	let selectedState: S;
 	let lastSuccess = instance.lastSuccess;
 	let currentState = instance.state as PendingState<T, E, A>;
@@ -176,17 +171,14 @@ export function createLegacyPendingReturn<T, E, A extends unknown[], S>(
 		rawState: currentState,
 		lastSuccess: instance.lastSuccess,
 
-		onChange() {
-			throw new Error("Not implemented yet");
-		},
-		onSubscribe() {
-			throw new Error("Not implemented yet");
-		},
+		read: subscription.read,
+		onChange: subscription.onChange,
+		onSubscribe: subscription.onSubscribe,
 	});
 }
 
 export function selectWholeState<T, E, A extends unknown[], S>(
 	state: State<T, E, A>
 ): S {
-  return state as S;
+	return state as S;
 }

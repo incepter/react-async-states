@@ -16,7 +16,7 @@ export interface BaseUseAsyncState<
 	E,
 	A extends unknown[],
 	S = State<T, E, A>
->  {
+> {
 	source: Source<T, E, A>;
 
 	onChange(
@@ -196,6 +196,10 @@ export type UseAsyncStateChangeEvent<T, E, A extends unknown[]> = {
 export type UseAsyncStateEventSubscribe<T, E, A extends unknown[]> =
 	| ((props: SubscribeEventProps<T, E, A>) => CleanupFn)
 	| ((props: SubscribeEventProps<T, E, A>) => CleanupFn)[];
+
+export type UseAsyncStateEventSubscribeFunction<T, E, A extends unknown[]> = (
+	prevEvents?: UseAsyncStateEventSubscribe<T, E, A>
+) => UseAsyncStateEventSubscribe<T, E, A>;
 
 export type UseAsyncStateEvents<T, E, A extends unknown[]> = {
 	change?: UseAsyncStateEventFn<T, E, A> | UseAsyncStateEventFn<T, E, A>[];
