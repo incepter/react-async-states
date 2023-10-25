@@ -77,17 +77,20 @@ describe("should run producer", () => {
 						lazy: false,
 					}}
 				>
-					{({ state, source }) => (
-						<div>
-							<Component
-								run={(value) => {
-									source.mergePayload({ userId: value });
-									source.run();
-								}}
-							/>
-							<span data-testid="result">{state.data}</span>
-						</div>
-					)}
+					{({ state, source }) => {
+						// console.log('hahahahaha', state);
+						return (
+							<div>
+								<Component
+									run={(value) => {
+										source.mergePayload({ userId: value });
+										source.run();
+									}}
+								/>
+								<span data-testid="result">{state.data}</span>
+							</div>
+						)
+					}}
 				</AsyncStateComponent>
 			);
 		}

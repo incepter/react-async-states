@@ -22,7 +22,7 @@ import { createProps } from "./StateProps";
 import { run } from "../wrapper";
 import devtools from "../devtools/Devtools";
 import { StateBuilder } from "../helpers/StateBuilder";
-import {startAlteringState, stopAlteringState} from "./StateUpdate";
+import { startAlteringState, stopAlteringState } from "./StateUpdate";
 
 export function runcInstance<T, E, A extends unknown[]>(
 	instance: StateInterface<T, E, A>,
