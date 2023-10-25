@@ -18,8 +18,7 @@ describe("useAsync - events", () => {
 
 		function Component({ subKey }: { subKey: string }) {
 			const {
-				key,
-				source: { run },
+				source: { key, run },
 				state,
 			} = useAsync({
 				source: counterSource,

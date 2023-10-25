@@ -31,7 +31,7 @@ describe("should post subscribe", () => {
 			const mocked = jest.fn();
 			const onSubscribe = jest
 				.fn()
-				.mockImplementation(({ run, mode, getState }) => {
+				.mockImplementation(({ run, getState }) => {
 					mocked(getState());
 					const abort = run("hourray!");
 					return function cleanup() {

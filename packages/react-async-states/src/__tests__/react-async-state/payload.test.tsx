@@ -15,9 +15,7 @@ describe("should add static payload to async state", () => {
 		function Component() {
 			const {
 				source: { run },
-				devFlags,
 				state,
-				uniqueId,
 			} = useAsync<number, any, any, any>({
 				initialValue: 0,
 				payload: {
@@ -35,7 +33,6 @@ describe("should add static payload to async state", () => {
 					<button data-testid="increment" onClick={increment}>
 						increment
 					</button>
-					<span data-testid="mode">{JSON.stringify(devFlags)}</span>
 					<span data-testid="result">{state.data}</span>
 				</div>
 			);
@@ -51,7 +48,6 @@ describe("should add static payload to async state", () => {
 
 		const incrementBtn = screen.getByTestId("increment");
 		// then
-		expect(screen.getByTestId("mode").innerHTML).toEqual('["CONFIG_OBJECT"]');
 
 		// +1
 		fireEvent.click(incrementBtn);

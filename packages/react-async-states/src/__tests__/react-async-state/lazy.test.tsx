@@ -40,7 +40,9 @@ describe('should auto run async state', () => {
     function producer(props): Promise<number> {
       return new Promise<number>((resolve => {
         let id = setTimeout(() => resolve(props.payload.content), 100);
-        props.onAbort(() => clearTimeout(id));
+        props.onAbort(() => {
+          clearTimeout(id);
+        });
       }));
     }
 
