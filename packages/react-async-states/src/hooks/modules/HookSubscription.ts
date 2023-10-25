@@ -15,13 +15,11 @@ import {
 	createSubscriptionLegacyReturn,
 	selectWholeState,
 } from "./HookReturnValue";
-import { isFunction } from "../../shared";
-import { forceComponentUpdate } from "./HookUpdate";
+import { __DEV__, isFunction } from "../../shared";
 import { AbortFn, State, StateInterface } from "async-states";
 
 export function useRetainInstance<T, E, A extends unknown[], S>(
 	instance: StateInterface<T, E, A>,
-	update: React.Dispatch<React.SetStateAction<number>>,
 	config: PartialUseAsyncStateConfiguration<T, E, A, S>,
 	deps: unknown[]
 ): HookSubscription<T, E, A, S> {
@@ -31,8 +29,9 @@ export function useRetainInstance<T, E, A extends unknown[], S>(
 	// so basically, we won't care about any dependency array except the instance
 	// itself. Because all the other information will be held by the alternate.
 	// so, sorry typescript and all readers 🙂
+	let [, forceUpdate] = React.useState(0);
 	return React.useMemo(
-		() => createSubscription(instance, update, config, deps),
+		() => createSubscription(instance, forceUpdate, config, deps),
 		[instance]
 	);
 }
@@ -67,6 +66,9 @@ function createSubscription<T, E, A extends unknown[], S>(
 		onChange,
 		onSubscribe,
 		alternate: null,
+
+		// used in dev mode
+		at: currentlyRenderingComponentName,
 	};
 
 	let subscription = subscriptionWithoutReturn as HookSubscription<T, E, A, S>;
@@ -135,7 +137,7 @@ function createSubscription<T, E, A extends unknown[], S>(
 	}
 }
 
-export function renderSubscription<T, E, A extends unknown[], S>(
+export function beginRenderSubscription<T, E, A extends unknown[], S>(
 	subscription: HookSubscription<T, E, A, S>,
 	newConfig: PartialUseAsyncStateConfiguration<T, E, A, S>,
 	deps: unknown[]
@@ -150,6 +152,7 @@ export function renderSubscription<T, E, A extends unknown[], S>(
 		// on the versions in case something bad happened.
 		if (subscription.version === instance.version) {
 			// null to bail out the render
+			completeRenderSubscription(subscription);
 			return null;
 		}
 	}
@@ -173,6 +176,7 @@ export function renderSubscription<T, E, A extends unknown[], S>(
 		alternate.return = createSubscriptionLegacyReturn(subscription, newConfig);
 		// no need to check anything else since this is a fresh value
 
+		completeRenderSubscription(subscription);
 		return alternate;
 	}
 
@@ -195,7 +199,22 @@ export function renderSubscription<T, E, A extends unknown[], S>(
 		}
 	}
 
+	completeRenderSubscription(subscription);
 	return alternate;
+}
+
+export function completeRenderSubscription<T, E, A extends unknown[], S>(
+	subscription: HookSubscription<T, E, A, S>
+): void {
+	if (__DEV__) {
+		__DEV__unsetHookCallerName();
+	}
+	let { config, alternate } = subscription;
+	let usedReturn = (alternate || subscription).return;
+
+	if (config.concurrent) {
+		usedReturn.read(true, false);
+	}
 }
 
 export function commit<T, E, A extends unknown[], S>(
@@ -204,6 +223,9 @@ export function commit<T, E, A extends unknown[], S>(
 ) {
 	// here, we commit the alternate
 	Object.assign(subscription, pendingAlternate);
+	if (subscription.alternate === pendingAlternate) {
+		subscription.alternate = null;
+	}
 
 	// on commit, the first thing to do is to detect whether a state change
 	// occurred before commit
@@ -260,6 +282,14 @@ function doesStateMismatchSubscriptionReturn(
 	}
 }
 
+function resolveSubscriptionKey<T, E, A extends unknown[], S>(
+	subscription: HookSubscription<T, E, A, S>
+) {
+	let key = subscription.config.subscriptionKey || subscription.at || undefined;
+
+	return `${key}-${(subscription.instance.subsIndex || 0) + 1}`;
+}
+
 export function autoRunAndSubscribeEvents<T, E, A extends unknown[], S>(
 	subscription: HookSubscription<T, E, A, S>
 ) {
@@ -271,8 +301,12 @@ export function autoRunAndSubscribeEvents<T, E, A extends unknown[], S>(
 	let committedState = currentInstance.state;
 	// perform the subscription to the instance here
 	let onStateChangeCallback = onStateChange<T, E, A, S>;
+	let subscriptionKey = __DEV__
+		? resolveSubscriptionKey(subscription)
+		: undefined;
+
 	let unsubscribeFromInstance = instanceActions.subscribe({
-		// todo: add subscription key and component name
+		key: subscriptionKey,
 		cb: onStateChangeCallback.bind(null, subscription, committedState),
 	});
 
@@ -392,4 +426,20 @@ function shouldRunSubscription<T, E, A extends unknown[], S>(
 	}
 
 	return false;
+}
+
+export function forceComponentUpdate(prev: number) {
+	return prev + 1;
+}
+
+// dev mode helpers
+let currentlyRenderingComponentName: string | null = null;
+export function __DEV__setHookCallerName(name: string | undefined) {
+	if (name) {
+		currentlyRenderingComponentName = name;
+	}
+}
+
+export function __DEV__unsetHookCallerName() {
+	currentlyRenderingComponentName = null;
 }

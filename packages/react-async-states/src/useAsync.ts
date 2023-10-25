@@ -13,7 +13,8 @@ import {
 import { __DEV__, emptyArray } from "./shared";
 import { useInternalAsyncState } from "./useInternalAsyncState";
 import { useCallerName } from "./helpers/useCallerName";
-import {useAsync_internal} from "./hooks/useAsync";
+import { useAsync_internal } from "./hooks/useAsync";
+import { __DEV__setHookCallerName } from "./hooks/modules/HookSubscription";
 
 export const useAsyncBase = function useAsyncImpl<
 	T,
@@ -25,13 +26,11 @@ export const useAsyncBase = function useAsyncImpl<
 	deps: any[] = emptyArray,
 	overrides?: PartialUseAsyncStateConfiguration<T, E, A, S>
 ): UseAsyncState<T, E, A, S> {
-	let caller;
 	if (__DEV__) {
-		caller = useCallerName(4);
+		__DEV__setHookCallerName(useCallerName(4));
 	}
 
 	return useAsync_internal(mixedConfig, deps, overrides);
-	// return useInternalAsyncState(caller, mixedConfig, deps, overrides);
 };
 
 function useAsyncExport<T, E = unknown, A extends unknown[] = unknown[]>(

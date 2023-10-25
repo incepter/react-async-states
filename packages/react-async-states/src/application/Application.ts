@@ -1,4 +1,3 @@
-import {useInternalAsyncState} from "../useInternalAsyncState";
 import type {
   Producer,
   ProducerConfig,
@@ -10,6 +9,8 @@ import {__DEV__} from "../shared";
 import {useCallerName} from "../helpers/useCallerName";
 import {UseAsyncState, UseConfig} from "../types.internal";
 import internalUse from "./internalUse";
+import {useAsync_internal} from "../hooks/useAsync";
+import {__DEV__setHookCallerName} from "../hooks/modules/HookSubscription";
 
 let freeze = Object.freeze
 
@@ -138,18 +139,17 @@ function createToken<
 
   function useHook<S = State<T, E, A>>(
     config?: UseConfig<T, E, A, S>,
-    deps?: any[]
+    deps?: unknown[]
   ): UseAsyncState<T, E, A, S> {
     ensureSourceIsDefined(apiSource, resourceName, apiName);
 
-    let caller;
     if (__DEV__) {
-      caller = useCallerName(4);
+      __DEV__setHookCallerName(useCallerName(4));
     }
 
-    let source = token()
+    let source = token();
     let realConfig = config ? {...config, source} : source;
-    return useInternalAsyncState(caller, realConfig, deps);
+    return useAsync_internal(realConfig, deps || []);
   }
 }
 
