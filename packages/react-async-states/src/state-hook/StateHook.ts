@@ -315,22 +315,27 @@ function makeBaseReturn<T, E, A extends unknown[], S>(
 	instance: StateInterface<T, E, A> | null
 ) {
 	if (!instance) {
-		let key =
-			flags & CONFIG_STRING ? config : (config as BaseConfig<T, E, A>).key;
+		let key: string =
+			flags & CONFIG_STRING
+				? (config as string)
+				: (config as BaseConfig<T, E, A>).key!;
+
+		// @ts-ignore
 		let output = { key, flags } as BaseUseAsyncState<T, E, A, S>;
-		if (__DEV__) {
-			output.devFlags = mapFlags(flags);
-		}
+		// if (__DEV__) {
+		// 	output.devFlags = mapFlags(flags);
+		// }
 		return output;
 	}
-	let output = Object.assign({}, instance.actions, {
+	// @ts-ignore
+	let output = Object.assign({}, {
 		flags,
 		source: instance.actions,
 	}) as BaseUseAsyncState<T, E, A, S>;
 
-	if (__DEV__) {
-		output.devFlags = mapFlags(flags);
-	}
+	// if (__DEV__) {
+	// 	output.devFlags = mapFlags(flags);
+	// }
 	return output;
 }
 
@@ -378,12 +383,12 @@ export function hookReturn<T, E, A extends unknown[], S>(
 	if (instance) {
 		newState.version = instance?.version;
 		newState.lastSuccess = instance.lastSuccess;
-		newState.read = createReadInConcurrentMode(
-			instance,
-			newValue,
-			flags,
-			config
-		);
+		// newState.read = createReadInConcurrentMode(
+		// 	instance,
+		// 	newValue,
+		// 	flags,
+		// 	config
+		// );
 	}
 	newState.state = newValue;
 
@@ -432,9 +437,9 @@ export function createReadInConcurrentMode<T, E, A extends unknown[], S>(
 	};
 }
 
-function invokeSubscribeEvents<T, E, A extends unknown[]>(
-	events: UseAsyncStateEventSubscribe<T, E, A> | undefined,
-	instance?: StateInterface<T, E, A>
+export function invokeSubscribeEvents<T, E, A extends unknown[]>(
+	instance: StateInterface<T, E, A>,
+	events: UseAsyncStateEventSubscribe<T, E, A> | undefined
 ): CleanupFn[] | null {
 	if (!events || !instance) {
 		return null;
@@ -448,7 +453,7 @@ function invokeSubscribeEvents<T, E, A extends unknown[]>(
 	return handlers.map((handler) => handler(eventProps));
 }
 
-function invokeChangeEvents<T, E, A extends unknown[]>(
+export function invokeChangeEvents<T, E, A extends unknown[]>(
 	instance: StateInterface<T, E, A>,
 	events: UseAsyncStateEventFn<T, E, A> | UseAsyncStateEventFn<T, E, A>[]
 ) {
@@ -582,8 +587,8 @@ export function subscribeEffect<T, E, A extends unknown[], S>(
 
 	if (flags & SUBSCRIBE_EVENTS) {
 		let unsubscribeFns = invokeSubscribeEvents(
-			(config as BaseConfig<T, E, A>).events!.subscribe,
-			instance!
+			instance!,
+			(config as BaseConfig<T, E, A>).events!.subscribe
 		);
 
 		if (unsubscribeFns) {
@@ -594,8 +599,8 @@ export function subscribeEffect<T, E, A extends unknown[], S>(
 	let maybeSubscriptionEvents = hookState.getEvents().sub;
 	if (maybeSubscriptionEvents) {
 		let unsubscribeFns = invokeSubscribeEvents(
-			maybeSubscriptionEvents,
-			instance!
+			instance!,
+			maybeSubscriptionEvents
 		);
 		if (unsubscribeFns) {
 			cleanups = cleanups.concat(unsubscribeFns);

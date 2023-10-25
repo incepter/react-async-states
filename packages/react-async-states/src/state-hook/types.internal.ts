@@ -16,10 +16,8 @@ export interface BaseUseAsyncState<
 	E,
 	A extends unknown[],
 	S = State<T, E, A>
-> extends Source<T, E, A> {
-	flags: number;
+>  {
 	source: Source<T, E, A>;
-	devFlags?: string[];
 
 	onChange(
 		events:
@@ -41,11 +39,11 @@ export interface UseAsyncState<
 	S = State<T, E, A>
 > extends BaseUseAsyncState<T, E, A, S> {
 	state: S;
-
-	read(
-		suspend?: "both" | "initial" | "pending" | true | false,
-		throwError?: boolean
-	): S;
+	//
+	// read(
+	// 	suspend?: "both" | "initial" | "pending" | true | false,
+	// 	throwError?: boolean
+	// ): S;
 
 	version?: number;
 	lastSuccess?: LastSuccessSavedState<T, A>;
@@ -147,7 +145,11 @@ export type UseAsyncStateConfiguration<
 	resetStateOnDispose?: boolean;
 	payload?: Record<string, unknown>;
 	runEffect?: RunEffect;
-	initialValue?: T | ((cache: Record<string, CachedState<T, E, A>>) => T);
+	initialValue?:
+		| T
+		| ((cache: Record<string, CachedState<T, E, A>> | null) => T);
+
+	context?: unknown;
 
 	/**
 	 * @deprecated useAsyncState 'concurrent' option is deprecated. it will have
@@ -157,7 +159,13 @@ export type UseAsyncStateConfiguration<
 
 	lazy?: boolean;
 	autoRunArgs?: A;
-	condition?: boolean | ((state: State<T, E, A>) => boolean);
+	condition?:
+		| boolean
+		| ((
+				state: State<T, E, A>,
+				args: A,
+				payload: Record<string, unknown>
+		  ) => boolean);
 	areEqual: EqualityFn<S>;
 	subscriptionKey?: string;
 	selector?: useSelector<T, E, A, S>;
@@ -190,10 +198,6 @@ export type UseAsyncStateEventSubscribe<T, E, A extends unknown[]> =
 	| ((props: SubscribeEventProps<T, E, A>) => CleanupFn)[];
 
 export type UseAsyncStateEvents<T, E, A extends unknown[]> = {
-	/**
-	 * @deprecated events.change is deprecated and will be removed in v2
-	 * use the runc API instead. or onChange, or useEffect.
-	 */
 	change?: UseAsyncStateEventFn<T, E, A> | UseAsyncStateEventFn<T, E, A>[];
 	subscribe?: UseAsyncStateEventSubscribe<T, E, A>;
 };
@@ -232,16 +236,6 @@ export interface UseAsyncStateType<
 	): UseAsyncState<T, E, A, S>;
 
 	lazy(
-		subscriptionConfig: MixedConfig<T, E, A, S>,
-		dependencies?: unknown[]
-	): UseAsyncState<T, E, A, S>;
-
-	fork(
-		subscriptionConfig: MixedConfig<T, E, A, S>,
-		dependencies?: unknown[]
-	): UseAsyncState<T, E, A, S>;
-
-	forkAuto(
 		subscriptionConfig: MixedConfig<T, E, A, S>,
 		dependencies?: unknown[]
 	): UseAsyncState<T, E, A, S>;

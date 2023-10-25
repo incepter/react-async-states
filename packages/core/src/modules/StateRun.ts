@@ -212,7 +212,7 @@ export function runInstanceImmediately<T, E, A extends unknown[]>(
 		indicators,
 		onSettled,
 		instance.config.retryConfig,
-		props
+		props // callbacks
 	);
 
 	if (runResult) {

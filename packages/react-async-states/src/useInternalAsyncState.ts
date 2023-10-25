@@ -106,7 +106,7 @@ export const useInternalAsyncState = function useAsyncStateImpl<
 				);
 			}
 		} else {
-			hook.return.read("both", false);
+			// hook.return.read("both", false);
 		}
 	}
 
