@@ -9,9 +9,8 @@ import {
 	MixedConfig,
 	PartialUseAsyncStateConfiguration,
 	UseAsyncState,
-} from "./types.internal";
+} from "./hooks/types";
 import { __DEV__, emptyArray } from "./shared";
-import { useInternalAsyncState } from "./useInternalAsyncState";
 import { useCallerName } from "./helpers/useCallerName";
 import { useAsync_internal } from "./hooks/useAsync";
 import { __DEV__setHookCallerName } from "./hooks/modules/HookSubscription";

@@ -10,11 +10,8 @@ import {
 	SuccessState,
 	Producer,
 } from "async-states";
-import {
-	EqualityFn,
-	UseAsyncStateEvents,
-	useSelector,
-} from "./state-hook/types.internal";
+
+import { EqualityFn, UseAsyncStateEvents, useSelector } from "./hooks/types";
 
 export type {
 	Source,
@@ -28,47 +25,6 @@ export type {
 	StateInterface,
 	SuccessState,
 } from "async-states";
-
-export type {
-	MixedConfig,
-	UseAsyncState,
-	UseAsyncStateType,
-	CleanupFn,
-	BaseConfig,
-	EqualityFn,
-	BaseUseAsyncState,
-	ConfigWithKeyWithoutSelector,
-	ConfigWithKeyWithSelector,
-	ConfigWithProducerWithoutSelector,
-	ConfigWithSourceWithoutSelector,
-	ConfigWithProducerWithSelector,
-	ConfigWithSourceWithSelector,
-	SubscribeEventProps,
-	UseAsyncStateEvents,
-	UseAsyncStateEventFn,
-	UseAsyncStateEventProps,
-	UseAsyncStateChangeEvent,
-	UseAsyncStateChangeEventHandler,
-	UseAsyncStateConfiguration,
-	useSelector,
-	UseAsyncStateEventSubscribe,
-	PartialUseAsyncStateConfiguration,
-} from "./state-hook/types.internal";
-
-export type BaseSelectorKey = string | Source<unknown, unknown, unknown[]>;
-
-export type UseSelectorFunctionKeys = (allKeys: string[]) => BaseSelectorKey[];
-
-export type SelectorKeysArg =
-	| BaseSelectorKey
-	| BaseSelectorKey[]
-	| UseSelectorFunctionKeys;
-
-export type FunctionSelector<T> = (arg: FunctionSelectorArgument) => T;
-export type FunctionSelectorArgument = Record<
-	string,
-	FunctionSelectorItem<any, any, any> | undefined
->;
 
 export interface InitialFunctionSelectorItem<T, E, A extends unknown[]>
 	extends Partial<InitialState<T, A>> {
@@ -146,3 +102,28 @@ export type UseConfig<T, E, A extends unknown[], S = State<T, E, A>> = {
 
 	wait?: boolean;
 };
+
+export type {
+	UseAsyncStateType,
+	CleanupFn,
+	PartialUseAsyncStateConfiguration,
+	useSelector,
+	SubscribeEventProps,
+	UseAsyncStateEvents,
+	UseAsyncStateEventSubscribe,
+	UseAsyncStateChangeEvent,
+	UseAsyncStateEventFn,
+	UseAsyncStateChangeEventHandler,
+	UseAsyncStateEventProps,
+	UseAsyncStateConfiguration,
+	MixedConfig,
+	ConfigWithProducerWithoutSelector,
+	ConfigWithProducerWithSelector,
+	ConfigWithSourceWithoutSelector,
+	ConfigWithSourceWithSelector,
+	ConfigWithKeyWithoutSelector,
+	ConfigWithKeyWithSelector,
+	BaseConfig,
+	EqualityFn,
+	UseAsyncState,
+} from "./hooks/types";

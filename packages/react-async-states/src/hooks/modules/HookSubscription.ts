@@ -1,21 +1,21 @@
 import * as React from "react";
 import {
-	PartialUseAsyncStateConfiguration,
-	UseAsyncStateEventSubscribe,
-	UseAsyncStateEventSubscribeFunction,
-} from "../../state-hook/types.internal";
-import { HookSubscription, SubscriptionAlternate } from "../types";
-import {
+	CleanupFn,
 	HookChangeEvents,
 	HookChangeEventsFunction,
-	invokeChangeEvents,
-	invokeSubscribeEvents,
-} from "../../state-hook/StateHook";
+	HookSubscription,
+	PartialUseAsyncStateConfiguration,
+	SubscribeEventProps,
+	SubscriptionAlternate,
+	UseAsyncStateEventFn,
+	UseAsyncStateEventSubscribe,
+	UseAsyncStateEventSubscribeFunction,
+} from "../types";
 import {
 	createSubscriptionLegacyReturn,
 	selectWholeState,
 } from "./HookReturnValue";
-import { __DEV__, isFunction } from "../../shared";
+import { __DEV__, isArray, isFunction } from "../../shared";
 import { AbortFn, State, StateInterface } from "async-states";
 
 export function useRetainInstance<T, E, A extends unknown[], S>(
@@ -430,6 +430,45 @@ function shouldRunSubscription<T, E, A extends unknown[], S>(
 
 export function forceComponentUpdate(prev: number) {
 	return prev + 1;
+}
+
+export function invokeChangeEvents<T, E, A extends unknown[]>(
+	instance: StateInterface<T, E, A>,
+	events: UseAsyncStateEventFn<T, E, A> | UseAsyncStateEventFn<T, E, A>[]
+) {
+	let nextState = instance.state;
+	const changeHandlers: UseAsyncStateEventFn<T, E, A>[] = isArray(events)
+		? events
+		: [events];
+
+	const eventProps = { state: nextState, source: instance.actions };
+
+	changeHandlers.forEach((event) => {
+		if (typeof event === "object") {
+			const { handler, status } = event;
+			if (!status || nextState.status === status) {
+				handler(eventProps);
+			}
+		} else {
+			event(eventProps);
+		}
+	});
+}
+
+export function invokeSubscribeEvents<T, E, A extends unknown[]>(
+	instance: StateInterface<T, E, A>,
+	events: UseAsyncStateEventSubscribe<T, E, A> | undefined
+): CleanupFn[] | null {
+	if (!events || !instance) {
+		return null;
+	}
+
+	let eventProps: SubscribeEventProps<T, E, A> = instance.actions;
+
+	let handlers: ((props: SubscribeEventProps<T, E, A>) => CleanupFn)[] =
+		isArray(events) ? events : [events];
+
+	return handlers.map((handler) => handler(eventProps));
 }
 
 // dev mode helpers

@@ -1,15 +1,15 @@
 import * as React from "react";
-import {
-	MixedConfig,
-	PartialUseAsyncStateConfiguration,
-} from "../state-hook/types.internal";
 import { HydrationContext } from "../hydration/context";
 import { parseConfig } from "./modules/HookResolveConfig";
-import { LegacyHookReturn } from "./types";
+import {
+	LegacyHookReturn,
+	MixedConfig,
+	PartialUseAsyncStateConfiguration,
+} from "./types";
 import {
 	autoRunAndSubscribeEvents,
-	commit,
 	beginRenderSubscription,
+	commit,
 	useRetainInstance,
 } from "./modules/HookSubscription";
 

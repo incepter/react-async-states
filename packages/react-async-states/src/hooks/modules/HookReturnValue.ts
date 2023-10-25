@@ -1,4 +1,3 @@
-import { PartialUseAsyncStateConfiguration } from "../../state-hook/types.internal";
 import {
 	HookReturnError,
 	HookReturnInitial,
@@ -6,6 +5,7 @@ import {
 	HookReturnSuccess,
 	HookSubscription,
 	LegacyHookReturn,
+	PartialUseAsyncStateConfiguration,
 } from "../types";
 import { freeze } from "../../shared";
 import {
