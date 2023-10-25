@@ -1,8 +1,3 @@
-import {
-	BaseConfig,
-	MixedConfig,
-	PartialUseAsyncStateConfiguration,
-} from "../../state-hook/types.internal";
 import { assign } from "../../shared";
 import {
 	createSource,
@@ -13,6 +8,11 @@ import {
 	State,
 	StateInterface,
 } from "async-states";
+import {
+	BaseConfig,
+	MixedConfig,
+	PartialUseAsyncStateConfiguration,
+} from "../types";
 
 // the goal of this function is to retrieve the following objects:
 // - a configuration object to use { key, producer, source, lazy ... }

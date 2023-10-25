@@ -8,12 +8,12 @@ import {
 	ConfigWithSourceWithSelector,
 	MixedConfig,
 	PartialUseAsyncStateConfiguration,
-	UseAsyncState,
-} from "./types.internal";
+} from "./hooks/types";
 import { __DEV__, emptyArray } from "./shared";
-import { useInternalAsyncState } from "./useInternalAsyncState";
 import { useCallerName } from "./helpers/useCallerName";
 import { __DEV__setHookCallerName } from "./hooks/modules/HookSubscription";
+import { useAsync_internal } from "./hooks/useAsync";
+import { LegacyHookReturn } from "./hooks/types";
 
 let didWarnAboutUseAsyncStateDeprecation = false;
 export const useAsyncStateBase = function useAsyncStateImpl<
@@ -25,8 +25,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<
 	mixedConfig: MixedConfig<T, E, A, S>,
 	deps: any[] = emptyArray,
 	overrides?: PartialUseAsyncStateConfiguration<T, E, A, S>
-): UseAsyncState<T, E, A, S> {
-	let caller;
+): LegacyHookReturn<T, E, A, S> {
 	if (__DEV__) {
 		__DEV__setHookCallerName(useCallerName(4));
 		if (!didWarnAboutUseAsyncStateDeprecation) {
@@ -37,21 +36,21 @@ export const useAsyncStateBase = function useAsyncStateImpl<
 			didWarnAboutUseAsyncStateDeprecation = true;
 		}
 	}
-	return useInternalAsyncState(caller, mixedConfig, deps, overrides);
+	return useAsync_internal(mixedConfig, deps, overrides);
 };
 
 function useAsyncStateExport<T, E = unknown, A extends unknown[] = unknown[]>(
 	key: string,
 	deps?: any[]
-): UseAsyncState<T, E, A>;
+): LegacyHookReturn<T, E, A>;
 function useAsyncStateExport<T, E = unknown, A extends unknown[] = unknown[]>(
 	source: Source<T, E, A>,
 	deps?: any[]
-): UseAsyncState<T, E, A>;
+): LegacyHookReturn<T, E, A>;
 function useAsyncStateExport<T, E = unknown, A extends unknown[] = unknown[]>(
 	producer: Producer<T, E, A>,
 	deps?: any[]
-): UseAsyncState<T, E, A>;
+): LegacyHookReturn<T, E, A>;
 function useAsyncStateExport<
 	T,
 	E = unknown,
@@ -60,11 +59,11 @@ function useAsyncStateExport<
 >(
 	configWithKeyWithSelector: ConfigWithKeyWithSelector<T, E, A, S>,
 	deps?: any[]
-): UseAsyncState<T, E, A, S>;
+): LegacyHookReturn<T, E, A, S>;
 function useAsyncStateExport<T, E = unknown, A extends unknown[] = unknown[]>(
 	configWithKeyWithoutSelector: ConfigWithKeyWithoutSelector<T, E, A>,
 	deps?: any[]
-): UseAsyncState<T, E, A>;
+): LegacyHookReturn<T, E, A>;
 function useAsyncStateExport<
 	T,
 	E = unknown,
@@ -73,11 +72,11 @@ function useAsyncStateExport<
 >(
 	configWithSourceWithSelector: ConfigWithSourceWithSelector<T, E, A, S>,
 	deps?: any[]
-): UseAsyncState<T, E, A, S>;
+): LegacyHookReturn<T, E, A, S>;
 function useAsyncStateExport<T, E = unknown, A extends unknown[] = unknown[]>(
 	configWithSourceWithoutSelector: ConfigWithSourceWithoutSelector<T, E, A>,
 	deps?: any[]
-): UseAsyncState<T, E, A>;
+): LegacyHookReturn<T, E, A>;
 function useAsyncStateExport<
 	T,
 	E = unknown,
@@ -86,11 +85,11 @@ function useAsyncStateExport<
 >(
 	configWithProducerWithSelector: ConfigWithProducerWithSelector<T, E, A, S>,
 	deps?: any[]
-): UseAsyncState<T, E, A, S>;
+): LegacyHookReturn<T, E, A, S>;
 function useAsyncStateExport<T, E = unknown, A extends unknown[] = unknown[]>(
 	configWithProducerWithoutSelector: ConfigWithProducerWithoutSelector<T, E, A>,
 	deps?: any[]
-): UseAsyncState<T, E, A>;
+): LegacyHookReturn<T, E, A>;
 function useAsyncStateExport<
 	T,
 	E = unknown,
@@ -99,11 +98,11 @@ function useAsyncStateExport<
 >(
 	mixedConfig: MixedConfig<T, E, A, S>,
 	deps?: any[]
-): UseAsyncState<T, E, A, S>;
+): LegacyHookReturn<T, E, A, S>;
 function useAsyncStateExport<T, E, A extends unknown[], S = State<T, E, A>>(
 	mixedConfig: MixedConfig<T, E, A, S>,
 	deps?: any[]
-): UseAsyncState<T, E, A, S> {
+): LegacyHookReturn<T, E, A, S> {
 	return useAsyncStateBase(mixedConfig, deps);
 }
 
@@ -115,7 +114,7 @@ function useAutoAsyncState<
 >(
 	subscriptionConfig: MixedConfig<T, E, A, S>,
 	dependencies?: any[]
-): UseAsyncState<T, E, A, S> {
+): LegacyHookReturn<T, E, A, S> {
 	return useAsyncStateBase(subscriptionConfig, dependencies, { lazy: false });
 }
 
@@ -127,7 +126,7 @@ function useLazyAsyncState<
 >(
 	subscriptionConfig: MixedConfig<T, E, A, S>,
 	dependencies?: any[]
-): UseAsyncState<T, E, A, S> {
+): LegacyHookReturn<T, E, A, S> {
 	return useAsyncStateBase(subscriptionConfig, dependencies, { lazy: true });
 }
 
