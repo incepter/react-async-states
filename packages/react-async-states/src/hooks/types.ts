@@ -102,4 +102,7 @@ export interface SubscriptionAlternate<T, E, A extends unknown[], S> {
 	update: React.Dispatch<React.SetStateAction<number>>;
 
 	config: PartialUseAsyncStateConfiguration<T, E, A, S>;
+
+	// dev mode properties
+	at?: string | null;
 }

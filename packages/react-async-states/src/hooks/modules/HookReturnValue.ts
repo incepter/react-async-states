@@ -13,7 +13,6 @@ import {
 	InitialState,
 	PendingState,
 	State,
-	StateInterface,
 	SuccessState,
 } from "async-states";
 

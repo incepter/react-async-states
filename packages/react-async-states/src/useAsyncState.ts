@@ -13,6 +13,7 @@ import {
 import { __DEV__, emptyArray } from "./shared";
 import { useInternalAsyncState } from "./useInternalAsyncState";
 import { useCallerName } from "./helpers/useCallerName";
+import { __DEV__setHookCallerName } from "./hooks/modules/HookSubscription";
 
 let didWarnAboutUseAsyncStateDeprecation = false;
 export const useAsyncStateBase = function useAsyncStateImpl<
@@ -27,7 +28,7 @@ export const useAsyncStateBase = function useAsyncStateImpl<
 ): UseAsyncState<T, E, A, S> {
 	let caller;
 	if (__DEV__) {
-		caller = useCallerName(4);
+		__DEV__setHookCallerName(useCallerName(4));
 		if (!didWarnAboutUseAsyncStateDeprecation) {
 			console.error(
 				"useAsyncState()  has been renamed to 'useAsync'. " +
