@@ -5,12 +5,12 @@ import { pending, success } from "../enums";
 import { isFunction } from "../utils";
 import { StateBuilder } from "../helpers/StateBuilder";
 
-export function initializeInstance<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>
+export function initializeInstance<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>
 ) {
 	loadCache(instance);
 
-	let maybeHydratedState = attemptHydratedState<T, E, A>(instance.key);
+	let maybeHydratedState = attemptHydratedState<T, A, E>(instance.key);
 
 	if (maybeHydratedState) {
 		instance.state = maybeHydratedState.state;

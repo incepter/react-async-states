@@ -1,6 +1,6 @@
 import * as React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { useAsync } from "../../useAsync";
+import { useAsync } from "../../hooks/useAsync_export";
 import { ProducerProps, Status } from "async-states";
 
 describe("should do basic subscription to an async state", () => {
@@ -14,7 +14,7 @@ describe("should do basic subscription to an async state", () => {
 					source: { run, setState },
 					state,
 				} = useAsync({
-					producer(props: ProducerProps<number, any, [number]>) {
+					producer(props: ProducerProps<number, [number], any>) {
 						return props.args[0];
 					},
 					initialValue: 0,
@@ -98,7 +98,7 @@ describe("should do basic subscription to an async state", () => {
 				state: { status, data },
 				source: { run },
 			} = useAsync({
-				producer(props: ProducerProps<number, any, [number]>): Promise<number> {
+				producer(props: ProducerProps<number, [number], any>): Promise<number> {
 					return new Promise<number>((resolve) => {
 						let id = setTimeout(() => resolve(props.args[0]), 100);
 						props.onAbort(() => clearTimeout(id));

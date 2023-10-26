@@ -18,11 +18,11 @@ import {
 import { __DEV__, isArray, isFunction } from "../../shared";
 import { AbortFn, State, StateInterface } from "async-states";
 
-export function useRetainInstance<T, E, A extends unknown[], S>(
-	instance: StateInterface<T, E, A>,
-	config: PartialUseAsyncStateConfiguration<T, E, A, S>,
+export function useRetainInstance<T, A extends unknown[], E, S>(
+	instance: StateInterface<T, A, E>,
+	config: PartialUseAsyncStateConfiguration<T, A, E, S>,
 	deps: unknown[]
-): HookSubscription<T, E, A, S> {
+): HookSubscription<T, A, E, S> {
 	// ⚠️⚠️⚠️
 	// the subscription will be constructed fully in the first time (per instance)
 	// then we will update its properties through the alternate after rendering
@@ -36,25 +36,25 @@ export function useRetainInstance<T, E, A extends unknown[], S>(
 	);
 }
 
-type SubscriptionWithoutReturn<T, E, A extends unknown[], S> = Omit<
-	HookSubscription<T, E, A, S>,
+type SubscriptionWithoutReturn<T, A extends unknown[], E, S> = Omit<
+	HookSubscription<T, A, E, S>,
 	"return"
 >;
 
-function createSubscription<T, E, A extends unknown[], S>(
-	instance: StateInterface<T, E, A>,
+function createSubscription<T, A extends unknown[], E, S>(
+	instance: StateInterface<T, A, E>,
 	update: React.Dispatch<React.SetStateAction<number>>,
-	config: PartialUseAsyncStateConfiguration<T, E, A, S>,
+	config: PartialUseAsyncStateConfiguration<T, A, E, S>,
 	deps: unknown[]
 ) {
 	// these properties are to store the single onChange or onSubscribe
 	// events (a single variable, but may be an array)
 	// and every time you call onChange it overrides this value
 	// sure, it receives the previous events as argument if function
-	let changeEvents: HookChangeEvents<T, E, A> | null = null;
-	let subscribeEvents: UseAsyncStateEventSubscribe<T, E, A> | null = null;
+	let changeEvents: HookChangeEvents<T, A, E> | null = null;
+	let subscribeEvents: UseAsyncStateEventSubscribe<T, A, E> | null = null;
 
-	let subscriptionWithoutReturn: SubscriptionWithoutReturn<T, E, A, S> = {
+	let subscriptionWithoutReturn: SubscriptionWithoutReturn<T, A, E, S> = {
 		deps,
 		config,
 		update,
@@ -73,7 +73,7 @@ function createSubscription<T, E, A extends unknown[], S>(
 		at: currentlyRenderingComponentName,
 	};
 
-	let subscription = subscriptionWithoutReturn as HookSubscription<T, E, A, S>;
+	let subscription = subscriptionWithoutReturn as HookSubscription<T, A, E, S>;
 	subscription.return = createSubscriptionLegacyReturn(subscription, config);
 
 	return subscription;
@@ -91,11 +91,15 @@ function createSubscription<T, E, A extends unknown[], S>(
 			if (currentStatus === "initial") {
 				let shouldRun = shouldRunSubscription(instance, config);
 				if (shouldRun) {
+					// The configuration may change the producer or an important option
+					// So, it is important to reconcile before running.
+					// In the normal flow, this reconciliation happens at the commit phase
+					// but if we are to run during render, we should do it now.
+					reconcileInstance(instance, config);
+
 					let runArgs = (config.autoRunArgs || []) as A;
-					let promise = instance.actions.runp.apply(null, runArgs);
-					if (promise) {
-						throw promise;
-					}
+					// runp guarantees returning a promise
+					throw instance.actions.runp.apply(null, runArgs);
 				}
 			} else if (currentStatus === "pending") {
 				throw instance.promise!;
@@ -109,41 +113,41 @@ function createSubscription<T, E, A extends unknown[], S>(
 	}
 
 	function onChange(
-		newEvents: HookChangeEventsFunction<T, E, A> | HookChangeEvents<T, E, A>
+		newEvents: HookChangeEventsFunction<T, A, E> | HookChangeEvents<T, A, E>
 	) {
 		if (isFunction(newEvents)) {
-			let events = newEvents as HookChangeEventsFunction<T, E, A>;
+			let events = newEvents as HookChangeEventsFunction<T, A, E>;
 			let maybeEvents = events(changeEvents);
 			if (maybeEvents) {
 				changeEvents = maybeEvents;
 			}
 		} else if (newEvents) {
-			changeEvents = newEvents as HookChangeEvents<T, E, A>;
+			changeEvents = newEvents as HookChangeEvents<T, A, E>;
 		}
 	}
 
 	function onSubscribe(
 		newEvents:
-			| UseAsyncStateEventSubscribeFunction<T, E, A>
-			| UseAsyncStateEventSubscribe<T, E, A>
+			| UseAsyncStateEventSubscribeFunction<T, A, E>
+			| UseAsyncStateEventSubscribe<T, A, E>
 	) {
 		if (isFunction(newEvents)) {
-			let events = newEvents as UseAsyncStateEventSubscribeFunction<T, E, A>;
+			let events = newEvents as UseAsyncStateEventSubscribeFunction<T, A, E>;
 			let maybeEvents = events(subscribeEvents);
 			if (maybeEvents) {
 				subscribeEvents = maybeEvents;
 			}
 		} else if (newEvents) {
-			subscribeEvents = newEvents as UseAsyncStateEventSubscribe<T, E, A>;
+			subscribeEvents = newEvents as UseAsyncStateEventSubscribe<T, A, E>;
 		}
 	}
 }
 
-export function beginRenderSubscription<T, E, A extends unknown[], S>(
-	subscription: HookSubscription<T, E, A, S>,
-	newConfig: PartialUseAsyncStateConfiguration<T, E, A, S>,
+export function beginRenderSubscription<T, A extends unknown[], E, S>(
+	subscription: HookSubscription<T, A, E, S>,
+	newConfig: PartialUseAsyncStateConfiguration<T, A, E, S>,
 	deps: unknown[]
-): SubscriptionAlternate<T, E, A, S> | null {
+): SubscriptionAlternate<T, A, E, S> | null {
 	let instance = subscription.instance;
 
 	if (newConfig === subscription.config) {
@@ -205,8 +209,8 @@ export function beginRenderSubscription<T, E, A extends unknown[], S>(
 	return alternate;
 }
 
-export function completeRenderSubscription<T, E, A extends unknown[], S>(
-	subscription: HookSubscription<T, E, A, S>
+export function completeRenderSubscription<T, A extends unknown[], E, S>(
+	subscription: HookSubscription<T, A, E, S>
 ): void {
 	if (__DEV__) {
 		__DEV__unsetHookCallerName();
@@ -215,13 +219,17 @@ export function completeRenderSubscription<T, E, A extends unknown[], S>(
 	let usedReturn = (alternate || subscription).return;
 
 	if (config.concurrent) {
+		// Reading via "read" may result in running the instance's producer.
+		// So, it is important to reconcile before running.
+		// Reconciliation is done inside the "read" function and only
+		// when we should run.
 		usedReturn.read(true, false);
 	}
 }
 
-export function commit<T, E, A extends unknown[], S>(
-	subscription: HookSubscription<T, E, A, S>,
-	pendingAlternate: SubscriptionAlternate<T, E, A, S> | null
+export function commit<T, A extends unknown[], E, S>(
+	subscription: HookSubscription<T, A, E, S>,
+	pendingAlternate: SubscriptionAlternate<T, A, E, S> | null
 ) {
 	// here, we commit the alternate
 	Object.assign(subscription, pendingAlternate);
@@ -234,14 +242,19 @@ export function commit<T, E, A extends unknown[], S>(
 	let version = subscription.version;
 	let currentInstance = subscription.instance;
 
-	let currentConfig = subscription.config;
-
 	if (version !== currentInstance.version) {
 		subscription.update(forceComponentUpdate);
 		return;
 	}
 
-	let instanceActions = currentInstance.actions;
+	reconcileInstance(currentInstance, subscription.config);
+}
+
+function reconcileInstance<T, A extends unknown[], E, S>(
+	instance: StateInterface<T, A, E>,
+	currentConfig: PartialUseAsyncStateConfiguration<T, A, E, S>
+) {
+	let instanceActions = instance.actions;
 
 	// 📝 We can call this part the instance reconciliation
 	// patch the given config and the new producer if provided and different
@@ -252,7 +265,7 @@ export function commit<T, E, A extends unknown[], S>(
 		instanceActions.mergePayload(currentConfig.payload);
 	}
 
-	let currentProducer = currentInstance.fn;
+	let currentProducer = instance.fn;
 	let pendingProducer = currentConfig.producer;
 	if (pendingProducer !== undefined && pendingProducer !== currentProducer) {
 		instanceActions.replaceProducer(pendingProducer);
@@ -284,16 +297,16 @@ function doesStateMismatchSubscriptionReturn(
 	}
 }
 
-function resolveSubscriptionKey<T, E, A extends unknown[], S>(
-	subscription: HookSubscription<T, E, A, S>
+function resolveSubscriptionKey<T, A extends unknown[], E, S>(
+	subscription: HookSubscription<T, A, E, S>
 ) {
 	let key = subscription.config.subscriptionKey || subscription.at || undefined;
 
 	return `${key}-${(subscription.instance.subsIndex || 0) + 1}`;
 }
 
-export function autoRunAndSubscribeEvents<T, E, A extends unknown[], S>(
-	subscription: HookSubscription<T, E, A, S>
+export function autoRunAndSubscribeEvents<T, A extends unknown[], E, S>(
+	subscription: HookSubscription<T, A, E, S>
 ) {
 	let currentConfig = subscription.config;
 	let currentInstance = subscription.instance;
@@ -302,7 +315,7 @@ export function autoRunAndSubscribeEvents<T, E, A extends unknown[], S>(
 	// we capture this state here to test it against updates in a fast way
 	let committedState = currentInstance.state;
 	// perform the subscription to the instance here
-	let onStateChangeCallback = onStateChange<T, E, A, S>;
+	let onStateChangeCallback = onStateChange<T, A, E, S>;
 	let subscriptionKey = __DEV__
 		? resolveSubscriptionKey(subscription)
 		: undefined;
@@ -364,10 +377,10 @@ export function autoRunAndSubscribeEvents<T, E, A extends unknown[], S>(
 	};
 }
 
-function onStateChange<T, E, A extends unknown[], S>(
-	subscription: HookSubscription<T, E, A, S>,
-	committedState: State<T, E, A>,
-	newState: State<T, E, A>
+function onStateChange<T, A extends unknown[], E, S>(
+	subscription: HookSubscription<T, A, E, S>,
+	committedState: State<T, A, E>,
+	newState: State<T, A, E>
 ) {
 	let currentReturn = subscription.return;
 	let currentConfig = subscription.config;
@@ -424,9 +437,9 @@ function onStateChange<T, E, A extends unknown[], S>(
 	}
 }
 
-function shouldRunSubscription<T, E, A extends unknown[], S>(
-	instance: StateInterface<T, E, A>,
-	config: PartialUseAsyncStateConfiguration<T, E, A, S>
+function shouldRunSubscription<T, A extends unknown[], E, S>(
+	instance: StateInterface<T, A, E>,
+	config: PartialUseAsyncStateConfiguration<T, A, E, S>
 ) {
 	if (config.lazy === false) {
 		let condition = config.condition;
@@ -449,12 +462,12 @@ export function forceComponentUpdate(prev: number) {
 	return prev + 1;
 }
 
-export function invokeChangeEvents<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>,
-	events: UseAsyncStateEventFn<T, E, A> | UseAsyncStateEventFn<T, E, A>[]
+export function invokeChangeEvents<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>,
+	events: UseAsyncStateEventFn<T, A, E> | UseAsyncStateEventFn<T, A, E>[]
 ) {
 	let nextState = instance.state;
-	const changeHandlers: UseAsyncStateEventFn<T, E, A>[] = isArray(events)
+	const changeHandlers: UseAsyncStateEventFn<T, A, E>[] = isArray(events)
 		? events
 		: [events];
 
@@ -472,17 +485,17 @@ export function invokeChangeEvents<T, E, A extends unknown[]>(
 	});
 }
 
-export function invokeSubscribeEvents<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>,
-	events: UseAsyncStateEventSubscribe<T, E, A> | undefined
+export function invokeSubscribeEvents<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>,
+	events: UseAsyncStateEventSubscribe<T, A, E> | undefined
 ): CleanupFn[] | null {
 	if (!events || !instance) {
 		return null;
 	}
 
-	let eventProps: SubscribeEventProps<T, E, A> = instance.actions;
+	let eventProps: SubscribeEventProps<T, A, E> = instance.actions;
 
-	let handlers: ((props: SubscribeEventProps<T, E, A>) => CleanupFn)[] =
+	let handlers: ((props: SubscribeEventProps<T, A, E>) => CleanupFn)[] =
 		isArray(events) ? events : [events];
 
 	return handlers.map((handler) => handler(eventProps));

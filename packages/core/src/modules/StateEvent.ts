@@ -5,13 +5,13 @@ import {
 	StateChangeEventHandler,
 	StateInterface,
 } from "../types";
-import { aborted, error, success } from "../enums";
+import { error, success } from "../enums";
 import { isArray } from "../helpers/core";
 import { isFunction } from "../utils";
 
-export function invokeChangeCallbacks<T, E, A extends unknown[]>(
-	state: State<T, E, A>,
-	callbacks: ProducerCallbacks<T, E, A> | undefined
+export function invokeChangeCallbacks<T, A extends unknown[], E>(
+	state: State<T, A, E>,
+	callbacks: ProducerCallbacks<T, A, E> | undefined
 ) {
 	if (!callbacks) {
 		return;
@@ -25,9 +25,9 @@ export function invokeChangeCallbacks<T, E, A extends unknown[]>(
 	}
 }
 
-export function invokeSingleChangeEvent<T, E, A extends unknown[]>(
-	state: State<T, E, A>,
-	event: StateChangeEventHandler<T, E, A>
+export function invokeSingleChangeEvent<T, A extends unknown[], E>(
+	state: State<T, A, E>,
+	event: StateChangeEventHandler<T, A, E>
 ) {
 	if (isFunction(event)) {
 		event(state);
@@ -36,8 +36,8 @@ export function invokeSingleChangeEvent<T, E, A extends unknown[]>(
 	}
 }
 
-export function invokeInstanceEvents<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>,
+export function invokeInstanceEvents<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>,
 	type: InstanceEventType
 ) {
 	let events = instance.events;

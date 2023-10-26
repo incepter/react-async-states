@@ -54,9 +54,9 @@ function shouldExcludeInstanceFromHydration(
 function buildHydrationDataForAllContextPools(
 	context: any,
 	exclude?: HydrationProps["exclude"]
-): Record<string, HydrationData<unknown, unknown, unknown[]>> {
+): Record<string, HydrationData<unknown, unknown[], unknown>> {
 	let execContext = requestContext(context);
-	let result = {} as Record<string, HydrationData<unknown, unknown, unknown[]>>;
+	let result = {} as Record<string, HydrationData<unknown, unknown[], unknown>>;
 
 	let allInstancesInContext = execContext.getAll();
 

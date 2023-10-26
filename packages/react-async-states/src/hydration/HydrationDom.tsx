@@ -1,13 +1,12 @@
 import React from "react";
-import { HydrationData, requestContext } from "async-states";
+import { HydrationData, requestContext, StateInterface } from "async-states";
 import { HydrationProps } from "./context";
-import { StateInterface } from "async-states/src";
 
 declare global {
 	interface Window {
 		__ASYNC_STATES_HYDRATION_DATA__?: Record<
 			string,
-			HydrationData<unknown, unknown, unknown[]>
+			HydrationData<unknown, unknown[], unknown>
 		>;
 	}
 }

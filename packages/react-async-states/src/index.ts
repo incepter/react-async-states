@@ -1,6 +1,4 @@
-export { useAsync } from "./useAsync";
-
-export { useAsyncState } from "./useAsyncState";
+export { useAsyncState, useAsync } from "./hooks/useAsync_export";
 
 export {
 	createSource,

@@ -31,8 +31,8 @@ export function isFunction(fn): fn is Function {
 	return typeof fn === "function";
 }
 
-export function cloneProducerProps<T, E, A extends unknown[]>(
-	props: Partial<ProducerProps<T, E, A>>
+export function cloneProducerProps<T, A extends unknown[], E>(
+	props: Partial<ProducerProps<T, A, E>>
 ): ProducerSavedProps<T, A> {
 	return {
 		args: props.args,
