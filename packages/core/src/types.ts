@@ -232,7 +232,7 @@ export type State<T, A extends unknown[], E> =
 export type AbortFn = ((reason?: any) => void) | undefined;
 export type OnAbortFn<R = unknown> = (cb?: (reason?: R) => void) => void;
 
-export interface ProducerProps<T, A extends unknown[], E>
+export interface ProducerProps<T, A extends unknown[] = [], E = Error>
 	extends ProducerEffects {
 	abort: AbortFn;
 	onAbort: OnAbortFn;
@@ -254,17 +254,21 @@ export type RunIndicators = {
 	cleared: boolean;
 	aborted: boolean;
 };
+
 export type ProducerCallbacks<T, A extends unknown[], E> = {
 	onError?(errorState: ErrorState<T, A, E>): void;
 	onSuccess?(successState: SuccessState<T, A>): void;
 };
+
 export type ProducerSavedProps<T, A extends unknown[]> = {
 	args?: A;
 	payload?: Record<string, unknown> | null;
 };
-export type Producer<T, A extends unknown[], E> = (
+
+export type Producer<T, A extends unknown[] = [], E = Error> = (
 	props: ProducerProps<T, A, E>
 ) => T | Promise<T> | Generator<any, T, any>;
+
 export type ProducerFunction<T, A extends unknown[], E> = (
 	props: ProducerProps<T, A, E>,
 	runIndicators: RunIndicators,

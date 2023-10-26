@@ -1,3 +1,17 @@
+import {
+	ConfigWithKeyWithoutSelector,
+	ConfigWithKeyWithSelector,
+	ConfigWithProducerWithoutSelector,
+	ConfigWithProducerWithSelector,
+	ConfigWithSourceWithoutSelector,
+	ConfigWithSourceWithSelector,
+	MixedConfig,
+	UseAsyncState,
+} from "./types";
+import { emptyArray, freeze } from "../shared";
+import { useAsync_internal } from "./useAsync_internal";
+import { Producer, Source, State } from "async-states";
+
 // now we should overload and construct the exported part of this hook
 // the main usage that we should overload
 // - when config is a string, S = State
@@ -18,20 +32,6 @@
 // - useAsync.auto(...same) : inject a lazy: false configuration override
 // - useAsync.lazy(...same) : forces the lazy: true configuration
 //region useAsyncOverloads
-import {
-	ConfigWithKeyWithoutSelector,
-	ConfigWithKeyWithSelector,
-	ConfigWithProducerWithoutSelector,
-	ConfigWithProducerWithSelector,
-	ConfigWithSourceWithoutSelector,
-	ConfigWithSourceWithSelector,
-	MixedConfig,
-	UseAsyncState,
-} from "./types";
-import { emptyArray, freeze } from "../shared";
-import { useAsync_internal } from "./useAsync_internal";
-import { Producer, Source, State } from "async-states";
-
 function useAsync_export<T, A extends unknown[], E>(
 	config: string,
 	deps?: unknown[]
@@ -88,7 +88,6 @@ function useAuto<T, A extends unknown[], E, S>(
 	return useAsync_internal(config, deps, getAutoRunOverride());
 }
 
-
 // we avoid creating this object everytime, so it is created on-demand
 // and then reused when necessary
 let autoRunOverride: { lazy: false } | null = null;
@@ -117,7 +116,6 @@ type UseAsyncType = {
 		...args: UseAsyncParams<T, A, E, S>
 	): UseAsyncReturn<T, A, E, S>;
 };
-
 
 useAsync_export.auto = useAuto;
 export const useAsync: UseAsyncType = freeze(useAsync_export);

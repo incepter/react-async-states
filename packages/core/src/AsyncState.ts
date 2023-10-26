@@ -405,15 +405,15 @@ export function readSource<T, A extends unknown[], E>(
 	return instance;
 }
 
-export function createSource<T, E = unknown, A extends unknown[] = unknown[]>(
+export function createSource<T, A extends unknown[] = [], E = Error>(
 	props: CreateSourceObject<T, A, E>
 ): Source<T, A, E>;
-export function createSource<T, E = unknown, A extends unknown[] = unknown[]>(
+export function createSource<T, A extends unknown[] = [], E = Error>(
 	key: string,
 	producer?: Producer<T, A, E> | undefined | null,
 	config?: ProducerConfig<T, A, E>
 ): Source<T, A, E>;
-export function createSource<T, E = unknown, A extends unknown[] = unknown[]>(
+export function createSource<T, A extends unknown[] = [], E = Error>(
 	props: string | CreateSourceObject<T, A, E>,
 	maybeProducer?: Producer<T, A, E> | undefined | null,
 	maybeConfig?: ProducerConfig<T, A, E>
