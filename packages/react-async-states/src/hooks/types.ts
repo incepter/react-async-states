@@ -15,129 +15,119 @@ import {
 
 export interface BaseUseAsyncState<
 	T,
-	E,
 	A extends unknown[],
-	S = State<T, E, A>
+	E,
+	S = State<T, A, E>
 > {
-	source: Source<T, E, A>;
+	source: Source<T, A, E>;
 
 	onChange(
 		events:
-			| ((prevEvents?: HookChangeEvents<T, E, A>) => void)
-			| HookChangeEvents<T, E, A>
+			| ((prevEvents?: HookChangeEvents<T, A, E>) => void)
+			| HookChangeEvents<T, A, E>
 	): void;
 
 	onSubscribe(
 		events:
-			| ((prevEvents?: UseAsyncStateEventSubscribe<T, E, A>) => void)
-			| UseAsyncStateEventSubscribe<T, E, A>
+			| ((prevEvents?: UseAsyncStateEventSubscribe<T, A, E>) => void)
+			| UseAsyncStateEventSubscribe<T, A, E>
 	): void;
 }
 
 export type UseAsyncState<
 	T,
-	E = unknown,
 	A extends unknown[] = unknown[],
-	S = State<T, E, A>
-> = LegacyHookReturn<T, E, A, S>;
+	E = unknown,
+	S = State<T, A, E>
+> = LegacyHookReturn<T, A, E, S>;
 export type EqualityFn<T> = (prev: T, next: T) => boolean;
 
-export interface BaseConfig<T, E, A extends unknown[]>
-	extends ProducerConfig<T, E, A> {
+export interface BaseConfig<T, A extends unknown[], E>
+	extends ProducerConfig<T, A, E> {
 	key?: string;
 	lane?: string;
-
-	/**
-	 * @deprecated useAsyncState 'concurrent' option is deprecated. it will have
-	 * a new
-	 */
 	concurrent?: boolean;
-	source?: Source<T, E, A>;
+	source?: Source<T, A, E>;
 	autoRunArgs?: A;
-	producer?: Producer<T, E, A>;
+	producer?: Producer<T, A, E>;
 	subscriptionKey?: string;
 	payload?: Record<string, unknown>;
-	events?: UseAsyncStateEvents<T, E, A>;
+	events?: UseAsyncStateEvents<T, A, E>;
 
-	/**
-	 * @deprecated useAsyncState 'wait' option is deprecated. It was never used
-	 * in practice. And can be simulated easily.
-	 */
-	wait?: boolean;
 	lazy?: boolean;
 	condition?:
 		| boolean
 		| ((
-				state: State<T, E, A>,
+				state: State<T, A, E>,
 				args?: A,
 				payload?: Record<string, unknown> | null
 		  ) => boolean);
 }
 
-export interface ConfigWithKeyWithSelector<T, E, A extends unknown[], S>
-	extends ConfigWithKeyWithoutSelector<T, E, A> {
-	selector: useSelector<T, E, A, S>;
+export interface ConfigWithKeyWithSelector<T, A extends unknown[], E, S>
+	extends ConfigWithKeyWithoutSelector<T, A, E> {
+	selector: useSelector<T, A, E, S>;
 	areEqual?: EqualityFn<S>;
 }
 
-export interface ConfigWithKeyWithoutSelector<T, E, A extends unknown[]>
-	extends BaseConfig<T, E, A> {
+export interface ConfigWithKeyWithoutSelector<T, A extends unknown[], E>
+	extends BaseConfig<T, A, E> {
 	key: string;
 }
 
-export interface ConfigWithSourceWithSelector<T, E, A extends unknown[], S>
-	extends ConfigWithSourceWithoutSelector<T, E, A> {
-	selector: useSelector<T, E, A, S>;
+export interface ConfigWithSourceWithSelector<T, A extends unknown[], E, S>
+	extends ConfigWithSourceWithoutSelector<T, A, E> {
+	selector: useSelector<T, A, E, S>;
 	areEqual?: EqualityFn<S>;
 }
 
-export interface ConfigWithSourceWithoutSelector<T, E, A extends unknown[]>
-	extends BaseConfig<T, E, A> {
-	source: Source<T, E, A>;
+export interface ConfigWithSourceWithoutSelector<T, A extends unknown[], E>
+	extends BaseConfig<T, A, E> {
+	source: Source<T, A, E>;
 }
 
-export interface ConfigWithProducerWithSelector<T, E, A extends unknown[], S>
-	extends ConfigWithProducerWithoutSelector<T, E, A> {
-	selector: useSelector<T, E, A, S>;
+export interface ConfigWithProducerWithSelector<T, A extends unknown[], E, S>
+	extends ConfigWithProducerWithoutSelector<T, A, E> {
+	selector: useSelector<T, A, E, S>;
 	areEqual?: EqualityFn<S>;
 }
 
-export interface ConfigWithProducerWithoutSelector<T, E, A extends unknown[]>
-	extends BaseConfig<T, E, A> {
-	producer?: Producer<T, E, A>;
+export interface ConfigWithProducerWithoutSelector<T, A extends unknown[], E>
+	extends BaseConfig<T, A, E> {
+	producer?: Producer<T, A, E>;
 }
 
-export type MixedConfig<T, E, A extends unknown[], S = State<T, E, A>> =
+export type MixedConfig<T, A extends unknown[], E, S = State<T, A, E>> =
 	| string
 	| undefined
-	| Source<T, E, A>
-	| Producer<T, E, A>
-	| ConfigWithKeyWithSelector<T, E, A, S>
-	| ConfigWithKeyWithoutSelector<T, E, A>
-	| ConfigWithSourceWithSelector<T, E, A, S>
-	| ConfigWithSourceWithoutSelector<T, E, A>
-	| ConfigWithProducerWithSelector<T, E, A, S>
-	| ConfigWithProducerWithoutSelector<T, E, A>;
+	| Source<T, A, E>
+	| Producer<T, A, E>
+	| ConfigWithKeyWithSelector<T, A, E, S>
+	| ConfigWithKeyWithoutSelector<T, A, E>
+	| ConfigWithSourceWithSelector<T, A, E, S>
+	| ConfigWithSourceWithoutSelector<T, A, E>
+	| ConfigWithProducerWithSelector<T, A, E, S>
+	| ConfigWithProducerWithoutSelector<T, A, E>;
 export type UseAsyncStateConfiguration<
 	T,
-	E,
 	A extends unknown[],
-	S = State<T, E, A>
+	E,
+	S = State<T, A, E>
 > = {
 	key?: string;
 	lane?: string;
-	source?: Source<T, E, A>;
-	producer?: Producer<T, E, A>;
+	source?: Source<T, A, E>;
+	producer?: Producer<T, A, E>;
 	skipPendingDelayMs?: number;
 	skipPendingStatus?: boolean;
-	cacheConfig?: CacheConfig<T, E, A>;
+	cacheConfig?: CacheConfig<T, A, E>;
 	runEffectDurationMs?: number;
 	resetStateOnDispose?: boolean;
 	payload?: Record<string, unknown>;
 	runEffect?: RunEffect;
 	initialValue?:
 		| T
-		| ((cache: Record<string, CachedState<T, E, A>> | null) => T);
+		| ((cache: Record<string, CachedState<T, A, E>> | null) => T);
 
 	context?: unknown;
 
@@ -152,99 +142,99 @@ export type UseAsyncStateConfiguration<
 	condition?:
 		| boolean
 		| ((
-				state: State<T, E, A>,
+				state: State<T, A, E>,
 				args: A,
 				payload: Record<string, unknown>
 		  ) => boolean);
 	areEqual: EqualityFn<S>;
 	subscriptionKey?: string;
-	selector?: useSelector<T, E, A, S>;
-	events?: UseAsyncStateEvents<T, E, A>;
+	selector?: useSelector<T, A, E, S>;
+	events?: UseAsyncStateEvents<T, A, E>;
 
 	// dev only
 	hideFromDevtools?: boolean;
 };
-export type UseAsyncStateEventProps<T, E, A extends unknown[]> = {
-	state: State<T, E, A>;
-	source: Source<T, E, A>;
+export type UseAsyncStateEventProps<T, A extends unknown[], E> = {
+	state: State<T, A, E>;
+	source: Source<T, A, E>;
 };
-export type UseAsyncStateChangeEventHandler<T, E, A extends unknown[]> = (
-	props: UseAsyncStateEventProps<T, E, A>
+export type UseAsyncStateChangeEventHandler<T, A extends unknown[], E> = (
+	props: UseAsyncStateEventProps<T, A, E>
 ) => void;
-export type UseAsyncStateEventFn<T, E, A extends unknown[]> =
-	| UseAsyncStateChangeEvent<T, E, A>
-	| UseAsyncStateChangeEventHandler<T, E, A>;
-export type UseAsyncStateChangeEvent<T, E, A extends unknown[]> = {
+export type UseAsyncStateEventFn<T, A extends unknown[], E> =
+	| UseAsyncStateChangeEvent<T, A, E>
+	| UseAsyncStateChangeEventHandler<T, A, E>;
+export type UseAsyncStateChangeEvent<T, A extends unknown[], E> = {
 	status: Status;
-	handler: UseAsyncStateChangeEventHandler<T, E, A>;
+	handler: UseAsyncStateChangeEventHandler<T, A, E>;
 };
-export type UseAsyncStateEventSubscribe<T, E, A extends unknown[]> =
-	| ((props: SubscribeEventProps<T, E, A>) => CleanupFn)
-	| ((props: SubscribeEventProps<T, E, A>) => CleanupFn)[];
-export type UseAsyncStateEventSubscribeFunction<T, E, A extends unknown[]> = (
-	prevEvents: UseAsyncStateEventSubscribe<T, E, A> | null
-) => UseAsyncStateEventSubscribe<T, E, A>;
-export type UseAsyncStateEvents<T, E, A extends unknown[]> = {
-	change?: UseAsyncStateEventFn<T, E, A> | UseAsyncStateEventFn<T, E, A>[];
-	subscribe?: UseAsyncStateEventSubscribe<T, E, A>;
+export type UseAsyncStateEventSubscribe<T, A extends unknown[], E> =
+	| ((props: SubscribeEventProps<T, A, E>) => CleanupFn)
+	| ((props: SubscribeEventProps<T, A, E>) => CleanupFn)[];
+export type UseAsyncStateEventSubscribeFunction<T, A extends unknown[], E> = (
+	prevEvents: UseAsyncStateEventSubscribe<T, A, E> | null
+) => UseAsyncStateEventSubscribe<T, A, E>;
+export type UseAsyncStateEvents<T, A extends unknown[], E> = {
+	change?: UseAsyncStateEventFn<T, A, E> | UseAsyncStateEventFn<T, A, E>[];
+	subscribe?: UseAsyncStateEventSubscribe<T, A, E>;
 };
-export type SubscribeEventProps<T, E, A extends unknown[]> = Source<T, E, A>;
-export type useSelector<T, E, A extends unknown[], S> = (
-	currentState: State<T, E, A>,
+export type SubscribeEventProps<T, A extends unknown[], E> = Source<T, A, E>;
+export type useSelector<T, A extends unknown[], E, S> = (
+	currentState: State<T, A, E>,
 	lastSuccess: LastSuccessSavedState<T, A>,
-	cache: { [id: string]: CachedState<T, E, A> } | null
+	cache: { [id: string]: CachedState<T, A, E> } | null
 ) => S;
 export type PartialUseAsyncStateConfiguration<
 	T,
-	E,
 	A extends unknown[],
+	E,
 	S
-> = Partial<UseAsyncStateConfiguration<T, E, A, S>>;
+> = Partial<UseAsyncStateConfiguration<T, A, E, S>>;
 export type CleanupFn = AbortFn | (() => void) | undefined;
 
 export interface UseAsyncStateType<
 	T,
-	E,
 	A extends unknown[],
-	S = State<T, E, A>
+	E,
+	S = State<T, A, E>
 > {
 	(
-		subscriptionConfig: MixedConfig<T, E, A, S>,
+		subscriptionConfig: MixedConfig<T, A, E, S>,
 		dependencies?: unknown[]
-	): UseAsyncState<T, E, A, S>;
+	): UseAsyncState<T, A, E, S>;
 
 	auto(
-		subscriptionConfig: MixedConfig<T, E, A, S>,
+		subscriptionConfig: MixedConfig<T, A, E, S>,
 		dependencies?: unknown[]
-	): UseAsyncState<T, E, A, S>;
+	): UseAsyncState<T, A, E, S>;
 
 	lazy(
-		subscriptionConfig: MixedConfig<T, E, A, S>,
+		subscriptionConfig: MixedConfig<T, A, E, S>,
 		dependencies?: unknown[]
-	): UseAsyncState<T, E, A, S>;
+	): UseAsyncState<T, A, E, S>;
 }
 
-interface BaseHooksReturn<T, E, A extends unknown[], S = State<T, E, A>> {
+interface BaseHooksReturn<T, A extends unknown[], E, S = State<T, A, E>> {
 	state: S; // backward compatibility
-	source: Source<T, E, A>;
+	source: Source<T, A, E>;
 	lastSuccess: LastSuccessSavedState<T, A>;
 	read(suspend?: boolean, throwError?: boolean): S;
 
 	onChange(
 		events:
-			| ((prevEvents: HookChangeEvents<T, E, A> | null) => void)
-			| HookChangeEvents<T, E, A>
+			| ((prevEvents: HookChangeEvents<T, A, E> | null) => void)
+			| HookChangeEvents<T, A, E>
 	): void;
 
 	onSubscribe(
 		events:
-			| ((prevEvents: UseAsyncStateEventSubscribe<T, E, A> | null) => void)
-			| UseAsyncStateEventSubscribe<T, E, A>
+			| ((prevEvents: UseAsyncStateEventSubscribe<T, A, E> | null) => void)
+			| UseAsyncStateEventSubscribe<T, A, E>
 	): void;
 }
 
-export interface HookReturnInitial<T, E, A extends unknown[], S>
-	extends BaseHooksReturn<T, E, A, S> {
+export interface HookReturnInitial<T, A extends unknown[], E, S>
+	extends BaseHooksReturn<T, A, E, S> {
 	isError: false;
 	isInitial: true;
 	isSuccess: false;
@@ -253,8 +243,8 @@ export interface HookReturnInitial<T, E, A extends unknown[], S>
 	data: T | undefined;
 }
 
-export interface HookReturnSuccess<T, E, A extends unknown[], S>
-	extends BaseHooksReturn<T, E, A, S> {
+export interface HookReturnSuccess<T, A extends unknown[], E, S>
+	extends BaseHooksReturn<T, A, E, S> {
 	isError: false;
 	isInitial: false;
 	isSuccess: true;
@@ -263,8 +253,8 @@ export interface HookReturnSuccess<T, E, A extends unknown[], S>
 	data: T;
 }
 
-export interface HookReturnError<T, E, A extends unknown[], S>
-	extends BaseHooksReturn<T, E, A, S> {
+export interface HookReturnError<T, A extends unknown[], E, S>
+	extends BaseHooksReturn<T, A, E, S> {
 	isError: true;
 	isInitial: false;
 	isSuccess: false;
@@ -273,9 +263,9 @@ export interface HookReturnError<T, E, A extends unknown[], S>
 	error: E;
 }
 
-export interface HookReturnPending<T, E, A extends unknown[], S>
-	extends BaseHooksReturn<T, E, A, S> {
-	rawState: PendingState<T, E, A>;
+export interface HookReturnPending<T, A extends unknown[], E, S>
+	extends BaseHooksReturn<T, A, E, S> {
+	rawState: PendingState<T, A, E>;
 
 	isError: false;
 	isPending: true;
@@ -283,48 +273,48 @@ export interface HookReturnPending<T, E, A extends unknown[], S>
 	isSuccess: false;
 }
 
-export type LegacyHookReturn<T, E, A extends unknown[], S = State<T, E, A>> =
-	| HookReturnInitial<T, E, A, S>
-	| HookReturnPending<T, E, A, S>
-	| HookReturnSuccess<T, E, A, S>
-	| HookReturnError<T, E, A, S>;
+export type LegacyHookReturn<T, A extends unknown[], E, S = State<T, A, E>> =
+	| HookReturnInitial<T, A, E, S>
+	| HookReturnPending<T, A, E, S>
+	| HookReturnSuccess<T, A, E, S>
+	| HookReturnError<T, A, E, S>;
 
-export type HookChangeEvents<T, E, A extends unknown[]> =
-	| UseAsyncStateEventFn<T, E, A>
-	| UseAsyncStateEventFn<T, E, A>[];
+export type HookChangeEvents<T, A extends unknown[], E> =
+	| UseAsyncStateEventFn<T, A, E>
+	| UseAsyncStateEventFn<T, A, E>[];
 
-export type HookChangeEventsFunction<T, E, A extends unknown[]> = (
-	prev: HookChangeEvents<T, E, A> | null
-) => HookChangeEvents<T, E, A>;
+export type HookChangeEventsFunction<T, A extends unknown[], E> = (
+	prev: HookChangeEvents<T, A, E> | null
+) => HookChangeEvents<T, A, E>;
 
-export interface HookSubscription<T, E, A extends unknown[], S>
-	extends SubscriptionAlternate<T, E, A, S> {
-	alternate: SubscriptionAlternate<T, E, A, S> | null;
+export interface HookSubscription<T, A extends unknown[], E, S>
+	extends SubscriptionAlternate<T, A, E, S> {
+	alternate: SubscriptionAlternate<T, A, E, S> | null;
 	read(suspend?: boolean, throwError?: boolean): S;
 
-	changeEvents: HookChangeEvents<T, E, A> | null;
-	subscribeEvents: UseAsyncStateEventSubscribe<T, E, A> | null;
+	changeEvents: HookChangeEvents<T, A, E> | null;
+	subscribeEvents: UseAsyncStateEventSubscribe<T, A, E> | null;
 	onChange(
 		events:
-			| ((prevEvents: HookChangeEvents<T, E, A> | null) => void)
-			| HookChangeEvents<T, E, A>
+			| ((prevEvents: HookChangeEvents<T, A, E> | null) => void)
+			| HookChangeEvents<T, A, E>
 	): void;
 
 	onSubscribe(
 		events:
-			| ((prevEvents: UseAsyncStateEventSubscribe<T, E, A> | null) => void)
-			| UseAsyncStateEventSubscribe<T, E, A>
+			| ((prevEvents: UseAsyncStateEventSubscribe<T, A, E> | null) => void)
+			| UseAsyncStateEventSubscribe<T, A, E>
 	): void;
 }
 
-export interface SubscriptionAlternate<T, E, A extends unknown[], S> {
+export interface SubscriptionAlternate<T, A extends unknown[], E, S> {
 	deps: unknown[];
 	version: number;
-	instance: StateInterface<T, E, A>;
-	return: LegacyHookReturn<T, E, A, S>;
+	instance: StateInterface<T, A, E>;
+	return: LegacyHookReturn<T, A, E, S>;
 	update: React.Dispatch<React.SetStateAction<number>>;
 
-	config: PartialUseAsyncStateConfiguration<T, E, A, S>;
+	config: PartialUseAsyncStateConfiguration<T, A, E, S>;
 
 	// dev mode properties
 	at?: string | null;

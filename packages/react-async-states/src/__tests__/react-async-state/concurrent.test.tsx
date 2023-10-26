@@ -1,6 +1,6 @@
 import * as React from "react";
 import { act, render, screen } from "@testing-library/react";
-import { useAsync } from "../../useAsync";
+import { useAsync } from "../../hooks/useAsync_export";
 import { Status } from "async-states";
 import { flushPromises } from "../utils/test-utils";
 
@@ -39,12 +39,13 @@ describe("useAsync with concurrent", () => {
 	it("should suspend on initial and pending status and go to error", async () => {
 		jest.useFakeTimers();
 		function Component() {
-			const { state } = useAsync<any, number>({
+			const { state } = useAsync<unknown, never, number>({
 				lazy: false,
 				concurrent: true,
 				key: "test-error",
 				producer: () => new Promise<any>((_, rej) => rej(17)),
 			});
+
 			if (state.status !== Status.error) {
 				throw new Error("Illegal state");
 			}

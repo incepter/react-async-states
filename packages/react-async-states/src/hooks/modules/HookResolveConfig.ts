@@ -17,26 +17,26 @@ import {
 // the goal of this function is to retrieve the following objects:
 // - a configuration object to use { key, producer, source, lazy ... }
 // - the state instance
-export function parseConfig<T, E, A extends unknown[], S = State<T, E, A>>(
+export function parseConfig<T, A extends unknown[], E, S = State<T, A, E>>(
 	currentExecContext: any,
-	mixedConfig: MixedConfig<T, E, A, S>,
-	overrides?: PartialUseAsyncStateConfiguration<T, E, A, S>
+	mixedConfig: MixedConfig<T, A, E, S>,
+	overrides?: PartialUseAsyncStateConfiguration<T, A, E, S> | null
 ) {
 	let executionContext: LibraryContext;
-	let instance: StateInterface<T, E, A>;
-	let parsedConfiguration: PartialUseAsyncStateConfiguration<T, E, A, S>;
+	let instance: StateInterface<T, A, E>;
+	let parsedConfiguration: PartialUseAsyncStateConfiguration<T, A, E, S>;
 
 	switch (typeof mixedConfig) {
 		// the user provided an object configuration or a Source
 		case "object": {
-			if (isSource<T, E, A>(mixedConfig)) {
+			if (isSource<T, A, E>(mixedConfig)) {
 				instance = mixedConfig.inst;
 				parsedConfiguration = assign({}, overrides, { source: mixedConfig });
 				break;
 			}
 
-			let baseConfig = mixedConfig as BaseConfig<T, E, A>;
-			if (baseConfig.source && isSource<T, E, A>(baseConfig.source)) {
+			let baseConfig = mixedConfig as BaseConfig<T, A, E>;
+			if (baseConfig.source && isSource<T, A, E>(baseConfig.source)) {
 				let realSource = baseConfig.source.getLane(baseConfig.lane);
 				instance = realSource.inst;
 				parsedConfiguration = assign({}, baseConfig, overrides, {
@@ -89,10 +89,10 @@ export function parseConfig<T, E, A extends unknown[], S = State<T, E, A>>(
 // - it is not a source
 // - the user provided a configuration object (not through overrides)
 // - cases when it contains { source } should be supported before calling this
-function resolveFromObjectConfig<T, E, A extends unknown[]>(
+function resolveFromObjectConfig<T, A extends unknown[], E>(
 	executionContext: LibraryContext,
-	parsedConfiguration: PartialUseAsyncStateConfiguration<T, E, A, any>
-): StateInterface<T, E, A> {
+	parsedConfiguration: PartialUseAsyncStateConfiguration<T, A, E, any>
+): StateInterface<T, A, E> {
 	let { key, producer } = parsedConfiguration;
 	if (!key) {
 		key = nextKey();
@@ -109,10 +109,10 @@ function resolveFromObjectConfig<T, E, A extends unknown[]>(
 }
 
 // the user provided a string to useAsync(key, deps)
-function resolveFromStringConfig<T, E, A extends unknown[]>(
+function resolveFromStringConfig<T, A extends unknown[], E>(
 	executionContext: LibraryContext,
-	parsedConfiguration: PartialUseAsyncStateConfiguration<T, E, A, any>
-): StateInterface<T, E, A> {
+	parsedConfiguration: PartialUseAsyncStateConfiguration<T, A, E, any>
+): StateInterface<T, A, E> {
 	// key should never be undefined in this path
 	let key = parsedConfiguration.key!;
 	let existingInstance = executionContext.get(key);
@@ -124,9 +124,9 @@ function resolveFromStringConfig<T, E, A extends unknown[]>(
 	return createSource(key, null, parsedConfiguration).inst;
 }
 
-function resolveFromFunctionConfig<T, E, A extends unknown[]>(
-	parsedConfiguration: PartialUseAsyncStateConfiguration<T, E, A, any>
-): StateInterface<T, E, A> {
+function resolveFromFunctionConfig<T, A extends unknown[], E>(
+	parsedConfiguration: PartialUseAsyncStateConfiguration<T, A, E, any>
+): StateInterface<T, A, E> {
 	let key = nextKey();
 	// todo: reuse instance from previous render
 	return createSource(key, parsedConfiguration.producer!, parsedConfiguration)

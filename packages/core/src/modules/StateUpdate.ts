@@ -39,9 +39,9 @@ export function stopAlteringState(restoreToThisValue: boolean) {
 	isCurrentlyAlteringState = restoreToThisValue;
 }
 
-export function getQueueTail<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>
-): UpdateQueue<T, E, A> | null {
+export function getQueueTail<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>
+): UpdateQueue<T, A, E> | null {
 	if (!instance.queue) {
 		return null;
 	}
@@ -52,12 +52,12 @@ export function getQueueTail<T, E, A extends unknown[]>(
 	return current;
 }
 
-export function enqueueUpdate<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>,
-	newState: State<T, E, A>,
-	callbacks?: ProducerCallbacks<T, E, A>
+export function enqueueUpdate<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>,
+	newState: State<T, A, E>,
+	callbacks?: ProducerCallbacks<T, A, E>
 ) {
-	let update: UpdateQueue<T, E, A> = {
+	let update: UpdateQueue<T, A, E> = {
 		callbacks,
 		data: newState,
 		kind: 0,
@@ -76,13 +76,13 @@ export function enqueueUpdate<T, E, A extends unknown[]>(
 	ensureQueueIsScheduled(instance);
 }
 
-export function enqueueSetState<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>,
-	newValue: T | StateFunctionUpdater<T, E, A>,
+export function enqueueSetState<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>,
+	newValue: T | StateFunctionUpdater<T, A, E>,
 	status = success,
-	callbacks?: ProducerCallbacks<T, E, A>
+	callbacks?: ProducerCallbacks<T, A, E>
 ) {
-	let update: UpdateQueue<T, E, A> = {
+	let update: UpdateQueue<T, A, E> = {
 		callbacks,
 		kind: 1,
 		data: { data: newValue, status },
@@ -101,13 +101,13 @@ export function enqueueSetState<T, E, A extends unknown[]>(
 	ensureQueueIsScheduled(instance);
 }
 
-export function ensureQueueIsScheduled<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>
+export function ensureQueueIsScheduled<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>
 ) {
 	if (!instance.queue) {
 		return;
 	}
-	let queue: UpdateQueue<T, E, A> = instance.queue;
+	let queue: UpdateQueue<T, A, E> = instance.queue;
 	if (queue.id) {
 		return;
 	}
@@ -122,14 +122,14 @@ export function ensureQueueIsScheduled<T, E, A extends unknown[]>(
 	}
 }
 
-export function flushUpdateQueue<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>
+export function flushUpdateQueue<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>
 ) {
 	if (!instance.queue) {
 		return;
 	}
 
-	let current: UpdateQueue<T, E, A> | null = instance.queue;
+	let current: UpdateQueue<T, A, E> | null = instance.queue;
 
 	instance.queue = null;
 
@@ -162,9 +162,9 @@ export function flushUpdateQueue<T, E, A extends unknown[]>(
 	notifySubscribers(instance);
 }
 
-export function scheduleDelayedPendingUpdate<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>,
-	newState: State<T, E, A>,
+export function scheduleDelayedPendingUpdate<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>,
+	newState: State<T, A, E>,
 	notify: boolean
 ) {
 	function callback() {
@@ -179,7 +179,7 @@ export function scheduleDelayedPendingUpdate<T, E, A extends unknown[]>(
 		if (__DEV__) devtools.emitUpdate(instance);
 
 		if (notify) {
-			notifySubscribers(instance as StateInterface<T, E, A>);
+			notifySubscribers(instance as StateInterface<T, A, E>);
 		}
 	}
 
@@ -187,11 +187,11 @@ export function scheduleDelayedPendingUpdate<T, E, A extends unknown[]>(
 	instance.pendingUpdate = { callback, id: timeoutId };
 }
 
-export function replaceInstanceState<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>,
-	newState: State<T, E, A>,
+export function replaceInstanceState<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>,
+	newState: State<T, A, E>,
 	notify: boolean = true,
-	callbacks?: ProducerCallbacks<T, E, A>
+	callbacks?: ProducerCallbacks<T, A, E>
 ) {
 	let { config } = instance;
 	let isPending = newState.status === pending;
@@ -251,15 +251,15 @@ export function replaceInstanceState<T, E, A extends unknown[]>(
 	}
 
 	if (notify && !isCurrentlyFlushingAQueue) {
-		notifySubscribers(instance as StateInterface<T, E, A>);
+		notifySubscribers(instance as StateInterface<T, A, E>);
 	}
 }
 
-export function setInstanceState<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>,
-	newValue: T | StateFunctionUpdater<T, E, A>,
+export function setInstanceState<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>,
+	newValue: T | StateFunctionUpdater<T, A, E>,
 	status: Status = success,
-	callbacks?: ProducerCallbacks<T, E, A>
+	callbacks?: ProducerCallbacks<T, A, E>
 ) {
 	if (!StateBuilder[status]) {
 		throw new Error(`Unknown status ('${status}')`);
@@ -283,7 +283,7 @@ export function setInstanceState<T, E, A extends unknown[]>(
 	if (isFunction(newValue)) {
 		effectiveValue = newValue(instance.state);
 	}
-	const savedProps = cloneProducerProps<T, E, A>({
+	const savedProps = cloneProducerProps<T, A, E>({
 		args: [effectiveValue] as A,
 		payload: shallowClone(instance.payload),
 	});
@@ -291,15 +291,15 @@ export function setInstanceState<T, E, A extends unknown[]>(
 	// @ts-ignore
 	let newState = StateBuilder[status](effectiveValue, savedProps) as State<
 		T,
-		E,
-		A
+		A,
+		E
 	>;
 	instance.actions.replaceState(newState, true, callbacks);
 	stopAlteringState(wasAlteringState);
 }
 
-export function disposeInstance<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>
+export function disposeInstance<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>
 ) {
 	if (instance.subscriptions && Object.keys(instance.subscriptions).length) {
 		// this means that this state is retained by some subscriptions
@@ -318,7 +318,7 @@ export function disposeInstance<T, E, A extends unknown[]>(
 	if (isFunction(initialState)) {
 		initialState = initialState(instance.cache);
 	}
-	const newState: State<T, E, A> = StateBuilder.initial<T, A>(
+	const newState: State<T, A, E> = StateBuilder.initial<T, A>(
 		initialState as T
 	);
 	instance.actions.replaceState(newState);

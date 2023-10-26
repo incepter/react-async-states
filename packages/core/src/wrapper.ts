@@ -14,13 +14,13 @@ import {
 } from "./utils";
 import { error as errorStatus, success } from "./enums";
 
-export function run<T, E, A extends unknown[]>(
-	producer: Producer<T, E, A>,
-	props: ProducerProps<T, E, A>,
+export function run<T, A extends unknown[], E>(
+	producer: Producer<T, A, E>,
+	props: ProducerProps<T, A, E>,
 	indicators: RunIndicators,
-	onSettled: OnSettled<T, E, A>,
-	retryConfig?: RetryConfig<T, E, A>,
-	callbacks?: ProducerCallbacks<T, E, A>
+	onSettled: OnSettled<T, A, E>,
+	retryConfig?: RetryConfig<T, A, E>,
+	callbacks?: ProducerCallbacks<T, A, E>
 ): Promise<T> | undefined {
 	let pendingPromise: Promise<T>;
 	let executionValue;
@@ -102,9 +102,9 @@ export function run<T, E, A extends unknown[]>(
 	}
 }
 
-function shouldRetry<T, E, A extends unknown[]>(
+function shouldRetry<T, A extends unknown[], E>(
 	attempt: number,
-	retryConfig: RetryConfig<T, E, A>,
+	retryConfig: RetryConfig<T, A, E>,
 	error: E
 ): boolean {
 	let { retry, maxAttempts } = retryConfig;
@@ -117,9 +117,9 @@ function shouldRetry<T, E, A extends unknown[]>(
 	return canRetry && shouldRetry;
 }
 
-function getRetryBackoff<T, E, A extends unknown[]>(
+function getRetryBackoff<T, A extends unknown[], E>(
 	attempt: number,
-	retryConfig: RetryConfig<T, E, A>,
+	retryConfig: RetryConfig<T, A, E>,
 	error: E
 ): number {
 	let { backoff } = retryConfig;

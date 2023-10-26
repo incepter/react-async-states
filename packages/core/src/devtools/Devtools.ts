@@ -40,28 +40,28 @@ interface DevtoolsInterface {
 		subscriptionKey: string
 	);
 
-	emitRunSync<T, E, A extends unknown[]>(
-		instance: StateInterface<T, E, A>,
+	emitRunSync<T, A extends unknown[], E>(
+		instance: StateInterface<T, A, E>,
 		props: ProducerSavedProps<T, A>
 	): void;
 
-	emitRunPromise<T, E, A extends unknown[]>(
-		instance: StateInterface<T, E, A>,
+	emitRunPromise<T, A extends unknown[], E>(
+		instance: StateInterface<T, A, E>,
 		props: ProducerSavedProps<T, A>
 	): void;
 
-	emitRunGenerator<T, E, A extends unknown[]>(
-		instance: StateInterface<T, E, A>,
+	emitRunGenerator<T, A extends unknown[], E>(
+		instance: StateInterface<T, A, E>,
 		props: ProducerSavedProps<T, A>
 	): void;
 
-	emitReplaceState<T, E, A extends unknown[]>(
-		instance: StateInterface<T, E, A>,
+	emitReplaceState<T, A extends unknown[], E>(
+		instance: StateInterface<T, A, E>,
 		props: ProducerSavedProps<T, A>
 	): void;
 
-	emitRunConsumedFromCache<T, E, A extends unknown[]>(
-		instance: StateInterface<T, E, A>,
+	emitRunConsumedFromCache<T, A extends unknown[], E>(
+		instance: StateInterface<T, A, E>,
 		payload: Record<string, any> | undefined | null,
 		args: A
 	): void;

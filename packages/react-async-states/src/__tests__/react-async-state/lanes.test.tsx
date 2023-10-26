@@ -1,7 +1,7 @@
 import * as React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { mockDateNow } from "../utils/setup";
-import { useAsync } from "../../useAsync";
+import { useAsync } from "../../hooks/useAsync_export";
 import { createSource } from "async-states";
 
 mockDateNow();
@@ -42,7 +42,7 @@ describe("subscribe to lane and operate on it", () => {
 		const {
 			state: { data },
 			source: { run },
-		} = useAsync.lazy({
+		} = useAsync({
 			lane: counterKey,
 			subscriptionKey: alias,
 			source: countersSource,

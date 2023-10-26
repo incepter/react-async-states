@@ -1,15 +1,4 @@
-import {
-	CachedState,
-	ErrorState,
-	InitialState,
-	LastSuccessSavedState,
-	PendingState,
-	Source,
-	State,
-	StateInterface,
-	SuccessState,
-	Producer,
-} from "async-states";
+import { Producer, State } from "async-states";
 
 import { EqualityFn, UseAsyncStateEvents, useSelector } from "./hooks/types";
 
@@ -26,76 +15,22 @@ export type {
 	SuccessState,
 } from "async-states";
 
-export interface InitialFunctionSelectorItem<T, E, A extends unknown[]>
-	extends Partial<InitialState<T, A>> {
-	key: string;
-	lastSuccess?: LastSuccessSavedState<T, A>;
-	cache?: Record<string, CachedState<T, E, A>> | null;
-}
-
-export interface PendingFunctionSelectorItem<T, E, A extends unknown[]>
-	extends Partial<PendingState<T, E, A>> {
-	key: string;
-	lastSuccess?: LastSuccessSavedState<T, A>;
-	cache?: Record<string, CachedState<T, E, A>> | null;
-}
-
-export interface SuccessFunctionSelectorItem<T, E, A extends unknown[]>
-	extends Partial<SuccessState<T, A>> {
-	key: string;
-	lastSuccess?: LastSuccessSavedState<T, A>;
-	cache?: Record<string, CachedState<T, E, A>> | null;
-}
-
-export interface ErrorFunctionSelectorItem<T, E, A extends unknown[]>
-	extends Partial<ErrorState<T, E, A>> {
-	key: string;
-	lastSuccess?: LastSuccessSavedState<T, A>;
-	cache?: Record<string, CachedState<T, E, A>> | null;
-}
-
-export type FunctionSelectorItem<
-	T,
-	E = unknown,
-	A extends unknown[] = unknown[]
-> =
-	| InitialFunctionSelectorItem<T, E, A>
-	| PendingFunctionSelectorItem<T, E, A>
-	| SuccessFunctionSelectorItem<T, E, A>
-	| ErrorFunctionSelectorItem<T, E, A>;
-
-export type SimpleSelector<
-	T,
-	E = unknown,
-	A extends unknown[] = unknown[],
-	D = State<T, E, A>
-> = (props: FunctionSelectorItem<T, E, A> | undefined) => D;
-export type ArraySelector<T> = (
-	...states: (FunctionSelectorItem<any, any, any> | undefined)[]
-) => T;
-
-export type InstanceOrNull<
-	T,
-	E = unknown,
-	A extends unknown[] = unknown[]
-> = StateInterface<T, E, A> | null;
-
-export type UseConfig<T, E, A extends unknown[], S = State<T, E, A>> = {
+export type UseConfig<T, A extends unknown[], E, S = State<T, A, E>> = {
 	lane?: string;
-	producer?: Producer<T, E, A>;
+	producer?: Producer<T, A, E>;
 	payload?: Record<string, unknown>;
 
 	lazy?: boolean;
 	autoRunArgs?: A;
 	areEqual?: EqualityFn<S>;
 	subscriptionKey?: string;
-	selector?: useSelector<T, E, A, S>;
-	events?: UseAsyncStateEvents<T, E, A>;
+	selector?: useSelector<T, A, E, S>;
+	events?: UseAsyncStateEvents<T, A, E>;
 
 	condition?:
 		| boolean
 		| ((
-				state: State<T, E, A>,
+				state: State<T, A, E>,
 				args?: A,
 				payload?: Record<string, unknown> | null
 		  ) => boolean);
