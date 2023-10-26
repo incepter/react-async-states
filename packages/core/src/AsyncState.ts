@@ -55,8 +55,8 @@ import { initializeInstance } from "./modules/StateInitialization";
 // it is referenced by its 'key' or name.
 // when a state with the same name exists, it is returned instead of creating
 // a new one.
-export class AsyncState<T, E, A extends unknown[]>
-	implements StateInterface<T, E, A>
+export class AsyncState<T, A extends unknown[], E>
+	implements StateInterface<T, A, E>
 {
 	readonly ctx: LibraryContext;
 
@@ -64,40 +64,40 @@ export class AsyncState<T, E, A extends unknown[]>
 	journal?: any[];
 
 	// this contains all methods, such as getState, setState and so on
-	actions: Source<T, E, A>;
+	actions: Source<T, A, E>;
 
 	key: string;
 	uniqueId: number;
 	version: number = 0;
-	config: ProducerConfig<T, E, A>;
+	config: ProducerConfig<T, A, E>;
 	payload: Record<string, any> | null;
-	cache: Record<string, CachedState<T, E, A>> | null;
+	cache: Record<string, CachedState<T, A, E>> | null;
 
-	parent: StateInterface<T, E, A> | null;
-	lanes: Record<string, StateInterface<T, E, A>> | null;
+	parent: StateInterface<T, A, E> | null;
+	lanes: Record<string, StateInterface<T, A, E>> | null;
 
-	state: State<T, E, A>;
-	queue: UpdateQueue<T, E, A> | null;
-	latestRun: RunTask<T, E, A> | null;
+	state: State<T, A, E>;
+	queue: UpdateQueue<T, A, E> | null;
+	latestRun: RunTask<T, A, E> | null;
 	lastSuccess: LastSuccessSavedState<T, A>;
 
 	promise: Promise<T> | null;
 	currentAbort: AbortFn | null;
-	fn: Producer<T, E, A> | null;
+	fn: Producer<T, A, E> | null;
 
 	pendingUpdate: PendingUpdate | null;
 	pendingTimeout: PendingTimeout | null;
 
 	subsIndex: number | null;
-	subscriptions: Record<number, StateSubscription<T, E, A>> | null;
+	subscriptions: Record<number, StateSubscription<T, A, E>> | null;
 
 	eventsIndex: number | null;
-	events: InstanceEvents<T, E, A> | null;
+	events: InstanceEvents<T, A, E> | null;
 
 	constructor(
 		key: string,
-		producer: Producer<T, E, A> | undefined | null,
-		config?: ProducerConfig<T, E, A>
+		producer: Producer<T, A, E> | undefined | null,
+		config?: ProducerConfig<T, A, E>
 	) {
 		// fallback to globalContext (null)
 		let context = config?.context || null;
@@ -151,12 +151,12 @@ export class AsyncState<T, E, A extends unknown[]>
 	}
 }
 
-export class StateSource<T, E, A extends unknown[]> implements Source<T, E, A> {
+export class StateSource<T, A extends unknown[], E> implements Source<T, A, E> {
 	key: string;
 	uniqueId: number;
-	readonly inst: StateInterface<T, E, A>;
+	readonly inst: StateInterface<T, A, E>;
 
-	constructor(instance: StateInterface<T, E, A>) {
+	constructor(instance: StateInterface<T, A, E>) {
 		this.inst = instance;
 		this.key = instance.key;
 		this.uniqueId = instance.uniqueId;
@@ -185,19 +185,19 @@ export class StateSource<T, E, A extends unknown[]> implements Source<T, E, A> {
 
 	on(
 		eventType: InstanceChangeEvent,
-		eventHandler: InstanceChangeEventHandlerType<T, E, A>
+		eventHandler: InstanceChangeEventHandlerType<T, A, E>
 	): () => void;
 	on(
 		eventType: InstanceDisposeEvent,
-		eventHandler: InstanceDisposeEventHandlerType<T, E, A>
+		eventHandler: InstanceDisposeEventHandlerType<T, A, E>
 	): () => void;
 	on(
 		eventType: InstanceCacheChangeEvent,
-		eventHandler: InstanceCacheChangeEventHandlerType<T, E, A>
+		eventHandler: InstanceCacheChangeEventHandlerType<T, A, E>
 	): () => void;
 	on(
 		eventType: InstanceEventType,
-		eventHandler: InstanceEventHandlerType<T, E, A>
+		eventHandler: InstanceEventHandlerType<T, A, E>
 	): () => void {
 		return subscribeToInstanceEvent(this.inst, eventType, eventHandler);
 	}
@@ -208,8 +208,8 @@ export class StateSource<T, E, A extends unknown[]> implements Source<T, E, A> {
 
 	runp(...args: A) {
 		let instance = this.inst;
-		return new Promise<State<T, E, A>>(function runpInstance(resolve) {
-			let runcProps: RUNCProps<T, E, A> = {
+		return new Promise<State<T, A, E>>(function runpInstance(resolve) {
+			let runcProps: RUNCProps<T, A, E> = {
 				args,
 				onError: resolve,
 				onSuccess: resolve,
@@ -219,7 +219,7 @@ export class StateSource<T, E, A extends unknown[]> implements Source<T, E, A> {
 		});
 	}
 
-	runc(props?: RUNCProps<T, E, A>) {
+	runc(props?: RUNCProps<T, A, E>) {
 		let instance = this.inst;
 		return runcInstance(instance, props);
 	}
@@ -245,7 +245,7 @@ export class StateSource<T, E, A extends unknown[]> implements Source<T, E, A> {
 	invalidateCache(cacheKey?: string) {
 		let instance = this.inst;
 		if (hasCacheEnabled(instance)) {
-			const topLevelParent: StateInterface<T, E, A> =
+			const topLevelParent: StateInterface<T, A, E> =
 				getTopLevelParent(instance);
 
 			if (!cacheKey) {
@@ -258,7 +258,7 @@ export class StateSource<T, E, A extends unknown[]> implements Source<T, E, A> {
 		}
 	}
 
-	replaceCache(cacheKey: string, cache: CachedState<T, E, A>): void {
+	replaceCache(cacheKey: string, cache: CachedState<T, A, E>): void {
 		let instance = this.inst;
 		if (!hasCacheEnabled(instance)) {
 			return;
@@ -287,7 +287,7 @@ export class StateSource<T, E, A extends unknown[]> implements Source<T, E, A> {
 		return delete instance.lanes[laneKey];
 	}
 
-	getLane(laneKey?: string): Source<T, E, A> {
+	getLane(laneKey?: string): Source<T, A, E> {
 		if (!laneKey) {
 			return this;
 		}
@@ -318,15 +318,15 @@ export class StateSource<T, E, A extends unknown[]> implements Source<T, E, A> {
 		return this.inst.version;
 	}
 
-	getState(): State<T, E, A> {
+	getState(): State<T, A, E> {
 		return this.inst.state;
 	}
 
-	getConfig(): ProducerConfig<T, E, A> {
+	getConfig(): ProducerConfig<T, A, E> {
 		return this.inst.config;
 	}
 
-	patchConfig(partialConfig?: Partial<ProducerConfig<T, E, A>>) {
+	patchConfig(partialConfig?: Partial<ProducerConfig<T, A, E>>) {
 		Object.assign(this.inst.config, partialConfig);
 	}
 
@@ -350,30 +350,30 @@ export class StateSource<T, E, A extends unknown[]> implements Source<T, E, A> {
 		return disposeInstance(this.inst);
 	}
 
-	replaceProducer(newProducer: Producer<T, E, A> | null) {
+	replaceProducer(newProducer: Producer<T, A, E> | null) {
 		this.inst.fn = newProducer;
 	}
 
-	subscribe(cb: (s: State<T, E, A>) => void): AbortFn;
-	subscribe(subProps: AsyncStateSubscribeProps<T, E, A>): AbortFn;
+	subscribe(cb: (s: State<T, A, E>) => void): AbortFn;
+	subscribe(subProps: AsyncStateSubscribeProps<T, A, E>): AbortFn;
 	subscribe(
-		argv: ((s: State<T, E, A>) => void) | AsyncStateSubscribeProps<T, E, A>
+		argv: ((s: State<T, A, E>) => void) | AsyncStateSubscribeProps<T, A, E>
 	): AbortFn {
 		return subscribeToInstance(this.inst, argv);
 	}
 
 	replaceState(
-		newState: State<T, E, A>,
+		newState: State<T, A, E>,
 		notify: boolean = true,
-		callbacks?: ProducerCallbacks<T, E, A>
+		callbacks?: ProducerCallbacks<T, A, E>
 	): void {
 		replaceInstanceState(this.inst, newState, notify, callbacks);
 	}
 
 	setState(
-		newValue: T | StateFunctionUpdater<T, E, A>,
+		newValue: T | StateFunctionUpdater<T, A, E>,
 		status: Status = success,
-		callbacks?: ProducerCallbacks<T, E, A>
+		callbacks?: ProducerCallbacks<T, A, E>
 	): void {
 		setInstanceState(this.inst, newValue, status, callbacks);
 	}
@@ -387,17 +387,17 @@ export class StateSource<T, E, A extends unknown[]> implements Source<T, E, A> {
 	}
 }
 
-export function getSource<T, E, A extends unknown[]>(
+export function getSource<T, A extends unknown[], E>(
 	key: string,
 	context?: unknown
-): Source<T, E, A> | undefined {
+): Source<T, A, E> | undefined {
 	let executionContext = requestContext(context || null);
 	return executionContext.get(key)?.actions;
 }
 
-export function readSource<T, E, A extends unknown[]>(
-	possiblySource: Source<T, E, A>
-): StateInterface<T, E, A> {
+export function readSource<T, A extends unknown[], E>(
+	possiblySource: Source<T, A, E>
+): StateInterface<T, A, E> {
 	let instance = possiblySource.inst;
 	if (!instance) {
 		throw new Error("Incompatible Source object.");
@@ -406,19 +406,19 @@ export function readSource<T, E, A extends unknown[]>(
 }
 
 export function createSource<T, E = unknown, A extends unknown[] = unknown[]>(
-	props: CreateSourceObject<T, E, A>
-): Source<T, E, A>;
+	props: CreateSourceObject<T, A, E>
+): Source<T, A, E>;
 export function createSource<T, E = unknown, A extends unknown[] = unknown[]>(
 	key: string,
-	producer?: Producer<T, E, A> | undefined | null,
-	config?: ProducerConfig<T, E, A>
-): Source<T, E, A>;
+	producer?: Producer<T, A, E> | undefined | null,
+	config?: ProducerConfig<T, A, E>
+): Source<T, A, E>;
 export function createSource<T, E = unknown, A extends unknown[] = unknown[]>(
-	props: string | CreateSourceObject<T, E, A>,
-	maybeProducer?: Producer<T, E, A> | undefined | null,
-	maybeConfig?: ProducerConfig<T, E, A>
-): Source<T, E, A> {
-	let instance: StateInterface<T, E, A>;
+	props: string | CreateSourceObject<T, A, E>,
+	maybeProducer?: Producer<T, A, E> | undefined | null,
+	maybeConfig?: ProducerConfig<T, A, E>
+): Source<T, A, E> {
+	let instance: StateInterface<T, A, E>;
 
 	if (typeof props === "object") {
 		let { key, producer, config } = props;

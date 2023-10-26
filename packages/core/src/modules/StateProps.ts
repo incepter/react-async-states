@@ -10,18 +10,18 @@ import { __DEV__, emptyArray, isFunction } from "../utils";
 import { pending, Status } from "../enums";
 import { isAlteringState, startEmitting, stopEmitting } from "./StateUpdate";
 
-export function createProps<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>,
+export function createProps<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>,
 	indicators: RunIndicators,
 	payload: unknown,
-	runProps: RUNCProps<T, E, A> | undefined
-): ProducerProps<T, E, A> {
+	runProps: RUNCProps<T, A, E> | undefined
+): ProducerProps<T, A, E> {
 	let lastSuccess = instance.lastSuccess;
 	let getState = instance.actions.getState;
 	let args = (runProps?.args || emptyArray) as A;
 
 	let controller = new AbortController();
-	let producerProps: ProducerProps<T, E, A> = {
+	let producerProps: ProducerProps<T, A, E> = {
 		emit,
 		args,
 		abort,
@@ -44,7 +44,7 @@ export function createProps<T, E, A extends unknown[]>(
 	return producerProps;
 
 	function emit(
-		updater: T | StateFunctionUpdater<T, E, A>,
+		updater: T | StateFunctionUpdater<T, A, E>,
 		status?: Status
 	): void {
 		if (indicators.cleared) {

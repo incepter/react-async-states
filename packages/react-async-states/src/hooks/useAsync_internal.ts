@@ -2,9 +2,16 @@ import * as React from "react";
 import { HydrationContext } from "../hydration/context";
 import { parseConfig } from "./modules/HookResolveConfig";
 import {
+	ConfigWithKeyWithoutSelector,
+	ConfigWithKeyWithSelector,
+	ConfigWithProducerWithoutSelector,
+	ConfigWithProducerWithSelector,
+	ConfigWithSourceWithoutSelector,
+	ConfigWithSourceWithSelector,
 	LegacyHookReturn,
 	MixedConfig,
 	PartialUseAsyncStateConfiguration,
+	UseAsyncState,
 } from "./types";
 import {
 	autoRunAndSubscribeEvents,
@@ -12,13 +19,15 @@ import {
 	commit,
 	useRetainInstance,
 } from "./modules/HookSubscription";
+import { Producer, Source, State } from "async-states";
+import { emptyArray, freeze } from "../shared";
 
 // this is the main hook, useAsyncState previously
-export function useAsync_internal<T, E, A extends unknown[], S>(
-	options: MixedConfig<T, E, A, S>,
+export function useAsync_internal<T, A extends unknown[], E, S>(
+	options: MixedConfig<T, A, E, S>,
 	deps: unknown[],
-	overrides?: PartialUseAsyncStateConfiguration<T, E, A, S>
-): LegacyHookReturn<T, E, A, S> {
+	overrides?: PartialUseAsyncStateConfiguration<T, A, E, S> | null
+): LegacyHookReturn<T, A, E, S> {
 	// only parse the configuration when deps change
 	// this process will yield the instance to subscribe to, along with
 	// the combined config (options)
@@ -55,5 +64,3 @@ export function useAsync_internal<T, E, A extends unknown[], S>(
 	// the returned priority is obviously for the alternate
 	return (alternate || subscription).return;
 }
-
-

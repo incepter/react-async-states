@@ -1,7 +1,7 @@
 import * as React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { mockDateNow } from "../utils/setup";
-import { useAsync } from "../../useAsync";
+import { useAsync } from "../../hooks/useAsync_export";
 import { createSource } from "async-states";
 import { flushPromises } from "../utils/test-utils";
 import { getSource, ProducerProps } from "async-states";

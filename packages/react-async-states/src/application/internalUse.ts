@@ -2,12 +2,12 @@ import { Source, Status, SuccessState } from "async-states";
 import { UseConfig } from "../types.internal";
 import { __DEV__, emptyArray } from "../shared";
 import { useCallerName } from "../helpers/useCallerName";
-import { useAsync_internal } from "../hooks/useAsync";
+import { useAsync_internal } from "../hooks/useAsync_internal";
 import { __DEV__setHookCallerName } from "../hooks/modules/HookSubscription";
 
-export default function internalUse<T, E, A extends unknown[]>(
-	source: Source<T, E, A>,
-	options?: UseConfig<T, E, A>,
+export default function internalUse<T, A extends unknown[], E>(
+	source: Source<T, A, E>,
+	options?: UseConfig<T, A, E>,
 	deps: any[] = emptyArray
 ): T {
 	if (__DEV__) {

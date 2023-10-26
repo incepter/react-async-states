@@ -24,9 +24,9 @@ import devtools from "../devtools/Devtools";
 import { StateBuilder } from "../helpers/StateBuilder";
 import { startAlteringState, stopAlteringState } from "./StateUpdate";
 
-export function runcInstance<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>,
-	props?: RUNCProps<T, E, A>
+export function runcInstance<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>,
+	props?: RUNCProps<T, A, E>
 ) {
 	let config = instance.config;
 
@@ -46,10 +46,10 @@ export function runcInstance<T, E, A extends unknown[]>(
 	);
 }
 
-function scheduleDelayedRun<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>,
+function scheduleDelayedRun<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>,
 	durationMs: number,
-	props?: RUNCProps<T, E, A>
+	props?: RUNCProps<T, A, E>
 ): AbortFn {
 	let abortCallback: AbortFn | null = null;
 
@@ -72,11 +72,11 @@ function scheduleDelayedRun<T, E, A extends unknown[]>(
 	};
 }
 
-function runInstanceWithEffects<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>,
+function runInstanceWithEffects<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>,
 	effect: RunEffect,
 	durationMs: number,
-	props?: RUNCProps<T, E, A>
+	props?: RUNCProps<T, A, E>
 ): AbortFn {
 	switch (effect) {
 		case "delay":
@@ -122,9 +122,9 @@ function cleanInstancePendingStateBeforeImmediateRun(
 	instance.currentAbort = undefined;
 }
 
-function replaceStateBecauseNoProducerProvided<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>,
-	props?: RUNCProps<T, E, A>
+function replaceStateBecauseNoProducerProvided<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>,
+	props?: RUNCProps<T, A, E>
 ) {
 	let args = (props?.args || emptyArray) as A;
 
@@ -138,9 +138,9 @@ function replaceStateBecauseNoProducerProvided<T, E, A extends unknown[]>(
 	return noop;
 }
 
-function replaceStateAndBailoutRunFromCachedState<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>,
-	cachedState: CachedState<T, E, A>
+function replaceStateAndBailoutRunFromCachedState<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>,
+	cachedState: CachedState<T, A, E>
 ) {
 	let actualState = instance.state;
 	let nextState = cachedState.state;
@@ -152,10 +152,10 @@ function replaceStateAndBailoutRunFromCachedState<T, E, A extends unknown[]>(
 	}
 }
 
-export function runInstanceImmediately<T, E, A extends unknown[]>(
-	instance: StateInterface<T, E, A>,
+export function runInstanceImmediately<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>,
 	payload: unknown,
-	props?: RUNCProps<T, E, A>
+	props?: RUNCProps<T, A, E>
 ): AbortFn {
 	// when there is no producer attached to the instance, skip everything
 	// and replace state immediately. This will skip cache too.
@@ -244,14 +244,14 @@ export function runInstanceImmediately<T, E, A extends unknown[]>(
 		data: T | E,
 		status: Status.success | Status.error,
 		savedProps: ProducerSavedProps<T, A>,
-		callbacks?: ProducerCallbacks<T, E, A>
+		callbacks?: ProducerCallbacks<T, A, E>
 	) {
 		let state = freeze({
 			status,
 			data,
 			props: savedProps,
 			timestamp: now(),
-		} as SuccessState<T, A> | ErrorState<T, E, A>);
+		} as SuccessState<T, A> | ErrorState<T, A, E>);
 		instance.actions.replaceState(state, true, callbacks);
 	}
 }

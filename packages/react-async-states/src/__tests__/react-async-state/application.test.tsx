@@ -12,15 +12,15 @@ let userSearch = async () => Promise.resolve({ id: 15, name: "incepter" });
 
 let testShape = {
 	auth: {
-		current: api<User, Error, []>({
+		current: api<User, [], Error>({
 			eager: true,
 			producer: userSearch,
 			config: { runEffect: "debounce" },
 		}),
 	},
 	users: {
-		search: api<User, Error, [string]>(),
-		findOne: api<User, Error, [string]>(),
+		search: api<User, [string], Error>(),
+		findOne: api<User, [string], Error>(),
 	},
 };
 
@@ -35,8 +35,8 @@ describe("createApplication abstraction tests", () => {
 
 	it("should create the application with correct types", () => {
 		let app = createApplication<typeof testShape>(testShape);
-		let authCurrent: Token<User, Error, []> = app.auth.current;
-		let searchToken: Token<User, Error, [string]> = app.users.search;
+		let authCurrent: Token<User, [], Error> = app.auth.current;
+		let searchToken: Token<User, [string], Error> = app.users.search;
 	});
 
 	it("should throw if used without being injected", () => {

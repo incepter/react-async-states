@@ -17,30 +17,30 @@ function state<T, A extends unknown[]>(
 	props: ProducerSavedProps<T, A> | null,
 	timestamp: number
 ): InitialState<T, A>;
-function state<T, E, A extends unknown[]>(
+function state<T, A extends unknown[], E>(
 	status: Status.pending,
 	data: null,
 	props: ProducerSavedProps<T, A> | null,
 	timestamp: number
-): PendingState<T, E, A>;
+): PendingState<T, A, E>;
 function state<T, A extends unknown[]>(
 	status: Status.success,
 	data: T,
 	props: ProducerSavedProps<T, A> | null,
 	timestamp: number
 ): SuccessState<T, A>;
-function state<T, E, A extends unknown[]>(
+function state<T, A extends unknown[], E>(
 	status: Status.error,
 	data: E,
 	props: ProducerSavedProps<T, A> | null,
 	timestamp: number
-): ErrorState<T, E, A>;
+): ErrorState<T, A, E>;
 function state<T, E, R, A extends unknown[]>(
 	status,
 	data,
 	props: ProducerSavedProps<T, A> | null,
 	timestamp: number
-): State<T, E, A> {
+): State<T, A, E> {
 	// @ts-ignore
 	return {
 		status,
@@ -60,8 +60,8 @@ export const StateBuilder = freeze({
 	error<T, E, R, A extends unknown[]>(
 		data: E,
 		props: ProducerSavedProps<T, A> | null
-	): ErrorState<T, E, A> {
-		return freeze(state<T, E, A>(error, data, props, now()));
+	): ErrorState<T, A, E> {
+		return freeze(state<T, A, E>(error, data, props, now()));
 	},
 	success<T, A extends unknown[]>(
 		data: T,
@@ -69,11 +69,11 @@ export const StateBuilder = freeze({
 	): SuccessState<T, A> {
 		return freeze(state<T, A>(success, data, props, now()));
 	},
-	pending<T, E, A extends unknown[]>(
-		prev: PendingPreviousState<T, E, A>,
+	pending<T, A extends unknown[], E>(
+		prev: PendingPreviousState<T, A, E>,
 		props: ProducerSavedProps<T, A> | null
-	): PendingState<T, E, A> {
-		let pendingState = state<T, E, A>(pending, null, props, now());
+	): PendingState<T, A, E> {
+		let pendingState = state<T, A, E>(pending, null, props, now());
 		pendingState.prev = prev;
 		return freeze(pendingState);
 	},
