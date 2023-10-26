@@ -1,9 +1,9 @@
-import {noop} from "../../helpers/core";
+import { noop } from "../../helpers/core";
 
-import {createSource} from "../../AsyncState";
+import { createSource } from "../../AsyncState";
 
 describe("source utils", () => {
-	const source = createSource<number, any>("test-source", null, {
+	const source = createSource<number, [number], any>("test-source", null, {
 		initialValue: 0,
 	});
 
@@ -21,7 +21,7 @@ describe("source utils", () => {
 	it("should run a source lane", () => {
 		const abort = source.getLane("test-lane").run(3);
 		expect(source.getLane("test-lane").getState().data).toBe(3);
-    expect(abort).toBe(noop);
+		expect(abort).toBe(noop);
 	});
 	it("should runp a source lane", async () => {
 		const state = await source.getLane("test-lane").runp(4);
