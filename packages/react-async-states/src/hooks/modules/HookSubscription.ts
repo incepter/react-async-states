@@ -51,9 +51,8 @@ function createSubscription<T, E, A extends unknown[], S>(
 	// events (a single variable, but may be an array)
 	// and every time you call onChange it overrides this value
 	// sure, it receives the previous events as argument if function
-	let changeEvents: HookChangeEvents<T, E, A> | undefined = undefined;
-	let subscribeEvents: UseAsyncStateEventSubscribe<T, E, A> | undefined =
-		undefined;
+	let changeEvents: HookChangeEvents<T, E, A> | null = null;
+	let subscribeEvents: UseAsyncStateEventSubscribe<T, E, A> | null = null;
 
 	let subscriptionWithoutReturn: SubscriptionWithoutReturn<T, E, A, S> = {
 		deps,
@@ -66,6 +65,9 @@ function createSubscription<T, E, A extends unknown[], S>(
 		onChange,
 		onSubscribe,
 		alternate: null,
+
+		changeEvents,
+		subscribeEvents,
 
 		// used in dev mode
 		at: currentlyRenderingComponentName,
@@ -122,7 +124,7 @@ function createSubscription<T, E, A extends unknown[], S>(
 
 	function onSubscribe(
 		newEvents:
-			| ((prevEvents?: UseAsyncStateEventSubscribe<T, E, A>) => void)
+			| UseAsyncStateEventSubscribeFunction<T, E, A>
 			| UseAsyncStateEventSubscribe<T, E, A>
 	) {
 		if (isFunction(newEvents)) {
@@ -323,6 +325,17 @@ export function autoRunAndSubscribeEvents<T, E, A extends unknown[], S>(
 		}
 	}
 
+	let subscriptionSubscribeEvents = subscription.subscribeEvents;
+	if (subscriptionSubscribeEvents) {
+		let unsubscribeFromEvents = invokeSubscribeEvents(
+			currentInstance,
+			subscriptionSubscribeEvents
+		);
+		if (unsubscribeFromEvents) {
+			cleanups = cleanups.concat(unsubscribeFromEvents);
+		}
+	}
+
 	// now, we will run the subscription. In order to run, all these conditions
 	// should be met:
 	// 1. lazy = false in the configuration
@@ -364,6 +377,10 @@ function onStateChange<T, E, A extends unknown[], S>(
 	let changeEvents = currentConfig.events?.change;
 	if (changeEvents) {
 		invokeChangeEvents(currentInstance, changeEvents);
+	}
+	let subscriptionChangeEvents = subscription.changeEvents;
+	if (subscriptionChangeEvents) {
+		invokeChangeEvents(currentInstance, subscriptionChangeEvents);
 	}
 
 	let actualVersion = currentInstance.version;

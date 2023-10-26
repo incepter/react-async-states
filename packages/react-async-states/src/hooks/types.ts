@@ -182,7 +182,7 @@ export type UseAsyncStateEventSubscribe<T, E, A extends unknown[]> =
 	| ((props: SubscribeEventProps<T, E, A>) => CleanupFn)
 	| ((props: SubscribeEventProps<T, E, A>) => CleanupFn)[];
 export type UseAsyncStateEventSubscribeFunction<T, E, A extends unknown[]> = (
-	prevEvents?: UseAsyncStateEventSubscribe<T, E, A>
+	prevEvents: UseAsyncStateEventSubscribe<T, E, A> | null
 ) => UseAsyncStateEventSubscribe<T, E, A>;
 export type UseAsyncStateEvents<T, E, A extends unknown[]> = {
 	change?: UseAsyncStateEventFn<T, E, A> | UseAsyncStateEventFn<T, E, A>[];
@@ -232,13 +232,13 @@ interface BaseHooksReturn<T, E, A extends unknown[], S = State<T, E, A>> {
 
 	onChange(
 		events:
-			| ((prevEvents?: HookChangeEvents<T, E, A>) => void)
+			| ((prevEvents: HookChangeEvents<T, E, A> | null) => void)
 			| HookChangeEvents<T, E, A>
 	): void;
 
 	onSubscribe(
 		events:
-			| ((prevEvents?: UseAsyncStateEventSubscribe<T, E, A>) => void)
+			| ((prevEvents: UseAsyncStateEventSubscribe<T, E, A> | null) => void)
 			| UseAsyncStateEventSubscribe<T, E, A>
 	): void;
 }
@@ -294,7 +294,7 @@ export type HookChangeEvents<T, E, A extends unknown[]> =
 	| UseAsyncStateEventFn<T, E, A>[];
 
 export type HookChangeEventsFunction<T, E, A extends unknown[]> = (
-	prev?: HookChangeEvents<T, E, A>
+	prev: HookChangeEvents<T, E, A> | null
 ) => HookChangeEvents<T, E, A>;
 
 export interface HookSubscription<T, E, A extends unknown[], S>
@@ -302,15 +302,17 @@ export interface HookSubscription<T, E, A extends unknown[], S>
 	alternate: SubscriptionAlternate<T, E, A, S> | null;
 	read(suspend?: boolean, throwError?: boolean): S;
 
+	changeEvents: HookChangeEvents<T, E, A> | null;
+	subscribeEvents: UseAsyncStateEventSubscribe<T, E, A> | null;
 	onChange(
 		events:
-			| ((prevEvents?: HookChangeEvents<T, E, A>) => void)
+			| ((prevEvents: HookChangeEvents<T, E, A> | null) => void)
 			| HookChangeEvents<T, E, A>
 	): void;
 
 	onSubscribe(
 		events:
-			| ((prevEvents?: UseAsyncStateEventSubscribe<T, E, A>) => void)
+			| ((prevEvents: UseAsyncStateEventSubscribe<T, E, A> | null) => void)
 			| UseAsyncStateEventSubscribe<T, E, A>
 	): void;
 }
