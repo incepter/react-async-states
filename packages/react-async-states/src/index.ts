@@ -1,21 +1,16 @@
-export { useSource } from "./useSource";
-
-export { useProducer } from "./useProducer";
-
 export { useAsync } from "./useAsync";
 
 export { useAsyncState } from "./useAsyncState";
 
 export {
 	createSource,
+	getSource,
 	Status,
 	requestContext,
 	createContext,
 	getContext,
 	terminateContext,
 } from "async-states";
-
-export { mapFlags } from "./shared/mapFlags";
 
 export { default as use } from "./application/internalUse";
 
@@ -72,7 +67,6 @@ export type {
 	UseAsyncState,
 	UseAsyncStateType,
 	UseAsyncStateConfiguration,
-	SelectorKeysArg,
 	SubscribeEventProps,
 	UseAsyncStateEvents,
 	UseAsyncStateEventFn,
