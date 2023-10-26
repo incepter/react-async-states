@@ -28,14 +28,32 @@ export function useAsync_internal<T, E, A extends unknown[], S>(
 		deps
 	);
 
+	// here, we will create a subscription from this component
+	// to this state instance. refer to HookSubscription type.
 	let subscription = useRetainInstance(instance, config, deps);
+	// the alternate is similar to React alternate object that's
+	// created for every render and every fiber. It represents the
+	// work in progress essential information that will be flushed
+	// at the commit phase. It is important not to touch anything during
+	// render and port everything to the commit phase.
+	// a "null" alternate means that the render was bailed out.
 	let alternate = beginRenderSubscription(subscription, config, deps);
 
-	// this effect will be executed each time the state changes
-	// it will flush the new render information
+	// this first effect will flush the alternate's properties inside
+	// the subscription, such as the current return, the parsed config...
+	// it is important to perform this work every time the alternate changes.
+	// if your state changes often, this effect may be executed everytime.
 	React.useLayoutEffect(() => commit(subscription, alternate), [alternate]);
-	// this effect will be executed everytime the dependencies change
+	// this second effect which is governed by the user's dependencies will:
+	// - subscribe to the state instance for changes
+	// - invoke onSubscribe events
+	// - run the state instance
 	React.useLayoutEffect(() => autoRunAndSubscribeEvents(subscription), deps);
 
+	// the alternate may be null when we render the first time or when we bail out
+	// the render afterward.
+	// the returned priority is obviously for the alternate
 	return (alternate || subscription).return;
 }
+
+
