@@ -114,7 +114,9 @@ function UserDetails(props) {
 	console.log("render for", alias, "completed");
 	const { data } = result;
 	if (result.isPending) {
-		return `Pending for props (${userId}), and optimistic args (${result.state.props.args[0]})`;
+		return (
+			<span>{`Pending for props (${userId}), and optimistic args (${result.state.props.args[0]})`}</span>
+		);
 	}
 	return <UserDetailsImpl data={data} />;
 }
@@ -205,7 +207,7 @@ function EffectsDemo() {
 		state,
 		error,
 		source: { runc },
-	} = useAsync<any, Error, [string]>({
+	} = useAsync<any, [string], Error>({
 		key: "user-d",
 		runEffect: "debounce",
 		runEffectDurationMs: 400,

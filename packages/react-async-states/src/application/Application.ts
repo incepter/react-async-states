@@ -159,7 +159,7 @@ function buildDefaultJT<T, A extends unknown[], E>(): { fn: ExtendedFn<T, A, E> 
   return defaultJT as { fn: ExtendedFn<T, A, E> }
 }
 
-export function api<T, A extends unknown[], E>(
+export function api<T, A extends unknown[] = [], E = Error>(
   props?: Omit<Api<T, A, E>, "fn">
 ): Api<T, A, E> {
   return Object.assign({}, props, buildDefaultJT<T, A, E>())
