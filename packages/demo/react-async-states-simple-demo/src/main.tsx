@@ -206,6 +206,7 @@ function EffectsDemo() {
 	let {
 		state,
 		error,
+		isPending,
 		source: { runc },
 	} = useAsync<any, [string], Error>({
 		key: "user-d",
@@ -235,8 +236,10 @@ function EffectsDemo() {
 			return API.get(`/users/${props.args[0]}`, { signal: props.signal });
 		},
 	});
-	console.log("hhhh", state.data);
 	let dataToDisplay = error ? error.toString?.() : state.data.data;
+	if (isPending) {
+		state;
+	}
 	return (
 		<div className="App">
 			<input

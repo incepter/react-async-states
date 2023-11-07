@@ -2,6 +2,8 @@ import {
 	AbortFn,
 	CacheConfig,
 	CachedState,
+	ErrorState,
+	InitialState,
 	LastSuccessSavedState,
 	PendingState,
 	Producer,
@@ -11,6 +13,7 @@ import {
 	State,
 	StateInterface,
 	Status,
+	SuccessState,
 } from "async-states";
 
 export interface BaseUseAsyncState<
@@ -215,7 +218,6 @@ export interface UseAsyncStateType<
 }
 
 interface BaseHooksReturn<T, A extends unknown[], E, S = State<T, A, E>> {
-	state: S; // backward compatibility
 	source: Source<T, A, E>;
 	lastSuccess: LastSuccessSavedState<T, A>;
 	read(suspend?: boolean, throwError?: boolean): S;
@@ -235,42 +237,54 @@ interface BaseHooksReturn<T, A extends unknown[], E, S = State<T, A, E>> {
 
 export interface HookReturnInitial<T, A extends unknown[], E, S>
 	extends BaseHooksReturn<T, A, E, S> {
+	state: InitialState<T, A>;
+
 	isError: false;
 	isInitial: true;
 	isSuccess: false;
 	isPending: false;
 
-	data: T | undefined;
+	data: S;
+	error: null;
 }
 
 export interface HookReturnSuccess<T, A extends unknown[], E, S>
 	extends BaseHooksReturn<T, A, E, S> {
+	state: SuccessState<T, A>;
+
 	isError: false;
 	isInitial: false;
 	isSuccess: true;
 	isPending: false;
 
-	data: T;
+	data: S;
+	error: null;
 }
 
 export interface HookReturnError<T, A extends unknown[], E, S>
 	extends BaseHooksReturn<T, A, E, S> {
+	state: ErrorState<T, A, E>;
+
 	isError: true;
 	isInitial: false;
 	isSuccess: false;
 	isPending: false;
 
+	data: S;
 	error: E;
 }
 
 export interface HookReturnPending<T, A extends unknown[], E, S>
 	extends BaseHooksReturn<T, A, E, S> {
-	rawState: PendingState<T, A, E>;
+	state: PendingState<T, A, E>;
 
 	isError: false;
 	isPending: true;
 	isInitial: false;
 	isSuccess: false;
+
+	data: S;
+	error: E | null;
 }
 
 export type LegacyHookReturn<T, A extends unknown[], E, S = State<T, A, E>> =

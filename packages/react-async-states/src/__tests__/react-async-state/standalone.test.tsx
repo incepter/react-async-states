@@ -12,7 +12,7 @@ describe("should do basic subscription to an async state", () => {
 			function Component() {
 				const {
 					source: { run, setState },
-					state,
+					data,
 				} = useAsync({
 					producer(props: ProducerProps<number, [number], any>) {
 						return props.args[0];
@@ -22,11 +22,11 @@ describe("should do basic subscription to an async state", () => {
 				});
 
 				function increment() {
-					run(state + 1);
+					run(data + 1);
 				}
 
 				function decrement() {
-					run(state - 1);
+					run(data - 1);
 				}
 
 				function incrementReplaceState() {
@@ -51,7 +51,7 @@ describe("should do basic subscription to an async state", () => {
 						<button data-testid="decrement-r" onClick={decrementReplaceState}>
 							decrement
 						</button>
-						<span data-testid="result">{state}</span>
+						<span data-testid="result">{data}</span>
 					</div>
 				);
 			}
