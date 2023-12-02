@@ -1,5 +1,5 @@
 import * as React from "react";
-import { HydrationContext } from "../hydration/context";
+import { Context } from "../hydration/context";
 import { parseConfig } from "./modules/HookResolveConfig";
 import {
 	LegacyHookReturn,
@@ -22,7 +22,7 @@ export function useAsync_internal<T, A extends unknown[], E, S>(
 	// only parse the configuration when deps change
 	// this process will yield the instance to subscribe to, along with
 	// the combined config (options)
-	let currentContext = React.useContext(HydrationContext);
+	let currentContext = React.useContext(Context);
 	let { instance, config } = React.useMemo(
 		() => parseConfig(currentContext, options, overrides),
 		deps

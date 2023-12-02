@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createContext } from "async-states";
-import { HydrationContext, HydrationProps, isServer } from "./context";
+import { Context, HydrationProps, isServer } from "./context";
 import HydrationServer from "./HydrationServer";
 import HydrationDom from "./HydrationDom";
 
@@ -16,19 +16,19 @@ export default function Hydration({
 
 	// automatically reuse parent context when there is
 	let contextToUse = context;
-	let parentHydrationContext = React.useContext(HydrationContext);
+	let parentHydrationContext = React.useContext(Context);
 	if (parentHydrationContext !== null && !contextToUse) {
 		contextToUse = parentHydrationContext;
 	}
 
 	createContext(contextToUse);
 	return (
-		<HydrationContext.Provider value={contextToUse}>
+		<Context.Provider value={contextToUse}>
 			{!isServer && <HydrationDom id={id} context={contextToUse} />}
 			{isServer && (
 				<HydrationServer id={id} context={contextToUse} exclude={exclude} />
 			)}
 			{children}
-		</HydrationContext.Provider>
+		</Context.Provider>
 	);
 }
