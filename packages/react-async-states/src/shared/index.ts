@@ -1,6 +1,6 @@
 export const __DEV__ = process.env.NODE_ENV !== "production";
 
-export function isFunction(fn): fn is Function {
+export function isFunction(fn: any): fn is Function {
   return typeof fn === "function";
 }
 

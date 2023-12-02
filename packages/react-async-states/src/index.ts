@@ -14,8 +14,6 @@ export { default as use } from "./application/internalUse";
 
 export { default as Provider } from "./provider/Provider";
 
-export { useExecutionContext } from "./provider/context";
-
 export { createApplication, api } from "./application/Application";
 
 export type {

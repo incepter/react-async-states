@@ -126,13 +126,12 @@ function replaceStateBecauseNoProducerProvided<T, A extends unknown[], E>(
 	instance: StateInterface<T, A, E>,
 	props?: RUNCProps<T, A, E>
 ) {
-	let args = (props?.args || emptyArray) as A;
+	let args = (props?.args ?? emptyArray) as A;
 
 	// keep these for readability
-	let newStateData = args[0];
-	let newStateStatus = args[1];
+	let newStateData = args[0] as T;
+	let newStateStatus = args[1] as Status;
 
-	// @ts-expect-error this is obviously unsafe and cannot be typed
 	instance.actions.setState(newStateData, newStateStatus, props);
 
 	return noop;
