@@ -1,6 +1,6 @@
 import * as React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { useAsync } from "../../useAsync";
+import { useAsync } from "../../hooks/useAsync_export";
 
 describe("should add static payload to async state", () => {
 	it("should add payload to standalone subscription ", async () => {
@@ -15,10 +15,8 @@ describe("should add static payload to async state", () => {
 		function Component() {
 			const {
 				source: { run },
-				devFlags,
 				state,
-				uniqueId,
-			} = useAsync<number, any, any, any>({
+			} = useAsync<number, [number], any>({
 				initialValue: 0,
 				payload: {
 					salt: 5,
@@ -27,7 +25,7 @@ describe("should add static payload to async state", () => {
 			});
 
 			function increment() {
-				run(state.data + 1);
+				run(state.data! + 1);
 			}
 
 			return (
@@ -35,7 +33,6 @@ describe("should add static payload to async state", () => {
 					<button data-testid="increment" onClick={increment}>
 						increment
 					</button>
-					<span data-testid="mode">{JSON.stringify(devFlags)}</span>
 					<span data-testid="result">{state.data}</span>
 				</div>
 			);
@@ -51,7 +48,6 @@ describe("should add static payload to async state", () => {
 
 		const incrementBtn = screen.getByTestId("increment");
 		// then
-		expect(screen.getByTestId("mode").innerHTML).toEqual('["CONFIG_OBJECT"]');
 
 		// +1
 		fireEvent.click(incrementBtn);

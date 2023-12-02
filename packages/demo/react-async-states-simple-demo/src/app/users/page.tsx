@@ -1,11 +1,10 @@
 import * as React from "react";
 import { app } from "../app";
 import { API } from "../api";
-import { bindAbort } from "../../utils";
 import { Link, Outlet, useLocation } from "react-router-dom";
 
 app.users.search.inject(async (props) => {
-	let signal = bindAbort(props);
+	let signal = props.signal;
 	return (await API.get(`users${props.args[0]}`, { signal })).data;
 });
 

@@ -1,25 +1,21 @@
-import {Source, Status, SuccessState} from "async-states";
-import {UseConfig} from "../types.internal";
-import {__DEV__, emptyArray} from "../shared";
-import {useCallerName} from "../helpers/useCallerName";
-import {useInternalAsyncState} from "../useInternalAsyncState";
+import { Source, SuccessState } from "async-states";
+import { UseConfig } from "../types.internal";
+import { __DEV__, emptyArray } from "../shared";
+import { useCallerName } from "../helpers/useCallerName";
+import { useAsync_internal } from "../hooks/useAsync_internal";
+import { __DEV__setHookCallerName } from "../hooks/modules/HookSubscription";
 
-export default function internalUse<T, E, R, A extends unknown[]>(
-  source: Source<T, E, R, A>,
-  options?: UseConfig<T, E, R, A>,
-  deps: any[] = emptyArray,
+export default function internalUse<T, A extends unknown[], E>(
+	source: Source<T, A, E>,
+	options?: UseConfig<T, A, E>,
+	deps: any[] = emptyArray
 ): T {
-  let caller;
-  if (__DEV__) {
-    caller = useCallerName(5);
-  }
+	if (__DEV__) {
+		__DEV__setHookCallerName(useCallerName(5));
+	}
+	let config = options ? { ...options, source } : source;
+	let { read, lastSuccess } = useAsync_internal(config, deps);
+	read(true, true); // suspends only when initial, throws E in Error
 
-  let config = options ? {...options, source} : source
-  let {read, state, lastSuccess} = useInternalAsyncState(caller, config, deps);
-  read("initial", true) // suspends only when initial, throws E in Error
-  if (state.status === Status.aborted) {
-    throw state
-  }
-
-  return (lastSuccess as SuccessState<T, any>)!.data
+	return (lastSuccess as SuccessState<T, any>)!.data;
 }

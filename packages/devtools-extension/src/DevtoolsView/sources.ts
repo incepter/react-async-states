@@ -42,10 +42,10 @@ function devtoolsInfoProducer(props) {
 export type InstanceDetails = {
   key?: string,
   journal?: any[],
-  state?: State<any, any, any, any>,
-  lastSuccess?: State<any, any, any, any>,
-  previousState?: State<any, any, any, any>,
-  config?: ProducerConfig<any, any, any, any>,
+  state?: State<any, any, any>,
+  lastSuccess?: State<any, any, any>,
+  previousState?: State<any, any, any>,
+  config?: ProducerConfig<any, any, any>,
   subscriptions?: any[],
   cache: any,
 }
@@ -59,7 +59,7 @@ export let currentView = createSource<string | null>("current-view", null, {
   hideFromDevtools: true
 });
 
-function instanceDetailsProducer(props: ProducerProps<InstanceDetails | null, any, any, any[]>) {
+function instanceDetailsProducer(props: ProducerProps<InstanceDetails | null, any[], any>) {
   let {data: port} = gatewaySource.getState();
   if (!port) {
     throw new Error("Couldn't know port, this is a bug");
@@ -146,7 +146,7 @@ function gatewayProducer(props) {
       case DevtoolsEvent.setAsyncState: {
 
         let uniqueIdString = `${message.uniqueId}`;
-        instanceDetails.getLaneSource(uniqueIdString).setState(payload);
+        instanceDetails.getLane(uniqueIdString).setState(payload);
 
         // let shapeData = shapeSource.getState().data;
         // let nextShape = {...shapeData};
@@ -200,7 +200,7 @@ function applyPartialUpdate(message) {
 
   const {eventType} = message.payload;
   let uniqueId = message.uniqueId;
-  let currentSource = instanceDetails.getLaneSource(`${uniqueId}`);
+  let currentSource = instanceDetails.getLane(`${uniqueId}`);
   switch (eventType) {
     case DevtoolsJournalEvent.run: {
       let currentDetails = (currentSource.getState().data || {}) as InstanceDetails;

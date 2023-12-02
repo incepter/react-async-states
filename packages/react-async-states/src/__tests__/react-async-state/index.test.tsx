@@ -77,17 +77,20 @@ describe("should run producer", () => {
 						lazy: false,
 					}}
 				>
-					{({ state, source }) => (
-						<div>
-							<Component
-								run={(value) => {
-									source.mergePayload({ userId: value });
-									source.run();
-								}}
-							/>
-							<span data-testid="result">{state.data}</span>
-						</div>
-					)}
+					{({ state, source }) => {
+						// console.log('hahahahaha', state);
+						return (
+							<div>
+								<Component
+									run={(value) => {
+										source.mergePayload({ userId: value });
+										source.run();
+									}}
+								/>
+								<span data-testid="result">{state.data}</span>
+							</div>
+						)
+					}}
 				</AsyncStateComponent>
 			);
 		}
@@ -124,7 +127,7 @@ describe("should run producer", () => {
 		// given
 		jest.useFakeTimers();
 		let globalMeter = 0;
-		const throttledSource = createSource<number, any, any, [number]>(
+		const throttledSource = createSource<number, any, [number]>(
 			"throttled",
 			(props) => {
 				return new Promise((resolve) => {
@@ -132,7 +135,7 @@ describe("should run producer", () => {
 					props.onAbort(() => clearTimeout(id));
 				});
 			},
-			{ runEffect: RunEffect.throttle, runEffectDurationMs: 100 }
+			{ runEffect: "throttle", runEffectDurationMs: 100 }
 		);
 
 		function Test() {
@@ -179,7 +182,7 @@ describe("should run producer", () => {
 		// given
 		jest.useFakeTimers();
 		let globalMeter = 0;
-		const debouncedSource = createSource<number, any, any, number[]>(
+		const debouncedSource = createSource<number, any, number[]>(
 			"debounced",
 			(props) => {
 				return new Promise((resolve) => {
@@ -187,7 +190,7 @@ describe("should run producer", () => {
 					props.onAbort(() => clearTimeout(id));
 				});
 			},
-			{ runEffect: RunEffect.debounce, runEffectDurationMs: 100 }
+			{ runEffect: "debounce", runEffectDurationMs: 100 }
 		);
 
 		function Test() {

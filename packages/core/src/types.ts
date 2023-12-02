@@ -1,510 +1,452 @@
-import {RunEffect, Status} from "./enums";
+import { RunEffect, Status } from "./enums";
 
-export type ProducerWrapperInput<T, E, R, A extends unknown[]> = {
-  setState: StateUpdater<T, E, R, A>,
-  instance?: StateInterface<T, E, R, A>,
-  setSuspender(p: Promise<T>): void,
-  replaceState(newState: State<T, E, R, A>, notify?: boolean, callbacks?: ProducerCallbacks<T, E, R, A>),
-  getProducer(): Producer<T, E, R, A> | undefined | null,
+export type ProducerWrapperInput<T, A extends unknown[], E> = {
+	setState: StateUpdater<T, A, E>;
+	instance?: StateInterface<T, A, E>;
+	setSuspender(p: Promise<T>): void;
+	replaceState(
+		newState: State<T, A, E>,
+		notify?: boolean,
+		callbacks?: ProducerCallbacks<T, A, E>
+	): void;
+	getProducer(): Producer<T, A, E> | undefined | null;
+};
+
+export interface BaseSource<T, A extends unknown[], E> {
+	// identity
+	key: string;
+	uniqueId: number;
+	readonly inst: StateInterface<T, A, E>;
+
+	getVersion(): number;
+
+	getPayload(): Record<string, unknown>;
+
+	mergePayload(partialPayload?: Record<string, unknown>): void;
+
+	// state
+	getState(): State<T, A, E>;
+
+	// todo: overload this!!!!
+	setState(
+		updater: StateFunctionUpdater<T, A, E> | T,
+		status?: Status,
+		callbacks?: ProducerCallbacks<T, A, E>
+	): void;
+
+	replaceState(
+		newState: State<T, A, E>,
+		notify?: boolean,
+		callbacks?: ProducerCallbacks<T, A, E>
+	): void;
+
+	// subscriptions
+	subscribe(cb: (s: State<T, A, E>) => void): AbortFn;
+
+	subscribe(subProps: AsyncStateSubscribeProps<T, A, E>): AbortFn;
+
+	subscribe(
+		argv: ((s: State<T, A, E>) => void) | AsyncStateSubscribeProps<T, A, E>
+	): AbortFn;
+
+	// producer
+	replay(): AbortFn;
+
+	abort(reason?: any): void;
+
+	replaceProducer(newProducer: Producer<T, A, E> | null): void;
+
+	// cache
+	invalidateCache(cacheKey?: string): void;
+
+	replaceCache(cacheKey: string, cache: CachedState<T, A, E>): void;
+
+	patchConfig(partialConfig?: Partial<ProducerConfig<T, A, E>>): void;
+
+	getConfig(): ProducerConfig<T, A, E>;
+
+	on(
+		eventType: InstanceChangeEvent,
+		eventHandler: InstanceChangeEventHandlerType<T, A, E>
+	): () => void;
+
+	on(
+		eventType: InstanceDisposeEvent,
+		eventHandler: InstanceDisposeEventHandlerType<T, A, E>
+	): () => void;
+
+	on(
+		eventType: InstanceCacheChangeEvent,
+		eventHandler: InstanceCacheChangeEventHandlerType<T, A, E>
+	): () => void;
+
+	dispose(): boolean;
 }
 
-export interface BaseSource<T, E, R, A extends unknown[]> {
-  // identity
-  key: string,
-  uniqueId: number,
-
-  getVersion(): number,
-
-  getPayload(): Record<string, unknown>,
-
-  mergePayload(partialPayload?: Record<string, unknown>),
-
-  // state
-  getState(): State<T, E, R, A>,
-
-  // todo: overload this!!!!
-  setState(updater: StateFunctionUpdater<T, E, R, A> | T, status?: Status, callbacks?: ProducerCallbacks<T, E, R, A>): void;
-
-  // subscriptions
-  subscribe(cb: (s: State<T, E, R, A>) => void): AbortFn<R>
-
-  subscribe(subProps: AsyncStateSubscribeProps<T, E, R, A>): AbortFn<R>
-
-  subscribe(argv: ((s: State<T, E, R, A>) => void) | AsyncStateSubscribeProps<T, E, R, A>): AbortFn<R>
-
-  // producer
-  replay(): AbortFn<R>,
-
-  abort(reason?: R): void,
-
-  replaceProducer(newProducer: Producer<T, E, R, A> | undefined),
-
-  // cache
-  invalidateCache(cacheKey?: string): void,
-
-  replaceCache(cacheKey: string, cache: CachedState<T, E, R, A>): void,
-
-  patchConfig(partialConfig?: Partial<ProducerConfig<T, E, R, A>>),
-
-  getConfig(): ProducerConfig<T, E, R, A>,
-
-  on(
-    eventType: InstanceChangeEvent,
-    eventHandler: InstanceChangeEventHandlerType<T, E, R, A>
-  ): (() => void),
-
-  on(
-    eventType: InstanceDisposeEvent,
-    eventHandler: InstanceDisposeEventHandlerType<T, E, R, A>
-  ): (() => void),
-
-  on(
-    eventType: InstanceCacheChangeEvent,
-    eventHandler: InstanceCacheChangeEventHandlerType<T, E, R, A>
-  ): (() => void),
-
-}
-
-export type InstanceEventHandlerType<T, E, R, A extends unknown[]> =
-  InstanceChangeEventHandlerType<T, E, R, A>
-  |
-  InstanceDisposeEventHandlerType<T, E, R, A>
-  |
-  InstanceCacheChangeEventHandlerType<T, E, R, A>;
-export type StateChangeEventHandler<T, E, R, A extends unknown[]> =
-  ((newState: State<T, E, R, A>) => void)
-  |
-  InstanceChangeEventObject<T, E, R, A>;
-export type InstanceChangeEventObject<T, E, R, A extends unknown[]> = {
-  status: Status
-  handler: ((newState: State<T, E, R, A>) => void),
-}
-export type InstanceChangeEventHandlerType<T, E, R, A extends unknown[]> =
-  StateChangeEventHandler<T, E, R, A>
-  | StateChangeEventHandler<T, E, R, A>[];
-export type InstanceDisposeEventHandlerType<T, E, R, A extends unknown[]> =
-  (() => void)
-  | (() => void)[];
-export type InstanceCacheChangeEventHandlerType<T, E, R, A extends unknown[]> =
-  ((cache: Record<string, CachedState<T, E, R, A>> | null | undefined) => void)
-  | ((cache: Record<string, CachedState<T, E, R, A>> | null | undefined) => void)[];
+export type InstanceEventHandlerType<T, A extends unknown[], E> =
+	| InstanceChangeEventHandlerType<T, A, E>
+	| InstanceDisposeEventHandlerType<T, A, E>
+	| InstanceCacheChangeEventHandlerType<T, A, E>;
+export type StateChangeEventHandler<T, A extends unknown[], E> =
+	| ((newState: State<T, A, E>) => void)
+	| InstanceChangeEventObject<T, A, E>;
+export type InstanceChangeEventObject<T, A extends unknown[], E> = {
+	status: Status;
+	handler: (newState: State<T, A, E>) => void;
+};
+export type InstanceChangeEventHandlerType<T, A extends unknown[], E> =
+	| StateChangeEventHandler<T, A, E>
+	| StateChangeEventHandler<T, A, E>[];
+export type InstanceDisposeEventHandlerType<T, A extends unknown[], E> =
+	| (() => void)
+	| (() => void)[];
+export type InstanceCacheChangeEventHandlerType<T, A extends unknown[], E> =
+	| ((cache: Record<string, CachedState<T, A, E>> | null | undefined) => void)
+	| ((
+			cache: Record<string, CachedState<T, A, E>> | null | undefined
+	  ) => void)[];
 export type InstanceChangeEvent = "change";
 export type InstanceDisposeEvent = "dispose";
 export type InstanceCacheChangeEvent = "cache-change";
-export type InstanceEventType = InstanceChangeEvent |
-  InstanceDisposeEvent |
-  InstanceCacheChangeEvent;
-export type AsyncStateSubscribeProps<T, E, R, A extends unknown[]> = {
-  key?: string,
-  flags?: number,
-  cb(s: State<T, E, R, A>): void,
-}
-export type InstanceEvents<T, E, R, A extends unknown[]> = {
-  change?: Record<number, InstanceChangeEventHandlerType<T, E, R, A>>,
-  dispose?: Record<number, InstanceDisposeEventHandlerType<T, E, R, A>>,
-  ['cache-change']?: Record<number, InstanceCacheChangeEventHandlerType<T, E, R, A>>,
-}
+export type InstanceEventType =
+	| InstanceChangeEvent
+	| InstanceDisposeEvent
+	| InstanceCacheChangeEvent;
+export type AsyncStateSubscribeProps<T, A extends unknown[], E> = {
+	key?: string;
+	flags?: number;
+	cb(s: State<T, A, E>): void;
+};
+export type InstanceEvents<T, A extends unknown[], E> = {
+	change?: Record<number, InstanceChangeEventHandlerType<T, A, E>>;
+	dispose?: Record<number, InstanceDisposeEventHandlerType<T, A, E>>;
+	["cache-change"]?: Record<
+		number,
+		InstanceCacheChangeEventHandlerType<T, A, E>
+	>;
+};
 
-export type HydrationData<T, E, R, A extends unknown[]> = {
-  state: State<T, E, R, A>,
-  payload: Record<string, unknown>,
-  latestRun?: RunTask<T, E, R, A> | null,
-}
+export type HydrationData<T, A extends unknown[], E> = {
+	state: State<T, A, E>;
+	payload: Record<string, unknown>;
+	latestRun: RunTask<T, A, E> | null;
+};
 
-export interface StateInterface<T, E, R, A extends unknown[]> extends BaseSource<T, E, R, A> {
-  // identity
-  version: number,
-  _source: Source<T, E, R, A>,
-  config: ProducerConfig<T, E, R, A>,
-  payload?: Record<string, unknown> | null,
+export interface StateInterface<T, A extends unknown[], E> {
+	// identity
+	key: string;
+	version: number;
+	uniqueId: number;
+	actions: Source<T, A, E>;
+	config: ProducerConfig<T, A, E>;
+	payload: Record<string, any> | null;
 
-  // state
-  state: State<T, E, R, A>,
-  lastSuccess: LastSuccessSavedState<T, A>,
+	// state
+	state: State<T, A, E>;
+	lastSuccess: LastSuccessSavedState<T, A>;
 
-  queue?: UpdateQueue<T, E, R, A>,
-  flushing?: boolean,
-  replaceState(newState: State<T, E, R, A>, notify?: boolean, callbacks?: ProducerCallbacks<T, E, R, A>): void,
+	pendingUpdate: PendingUpdate | null;
+	pendingTimeout: PendingTimeout | null;
 
-  // subscriptions
-  subsIndex?: number;
-  subscriptions?: Record<number, StateSubscription<T, E, R, A>> | null,
+	queue: UpdateQueue<T, A, E> | null;
 
-  // producer
-  promise?: Promise<T>,
-  _producer: Producer<T, E, R, A> | undefined | null,
-  pool: PoolInterface;
+	// subscriptions
+	subsIndex: number | null;
+	subscriptions: Record<number, StateSubscription<T, A, E>> | null;
 
-  request?: Request,
+	// producer
+	promise: Promise<T> | null;
+	fn: Producer<T, A, E> | null;
+	readonly ctx: LibraryContext;
 
-  isEmitting?: boolean;
-  willUpdate?: boolean;
+	latestRun: RunTask<T, A, E> | null;
+	currentAbort: AbortFn | null;
 
-  latestRun?: RunTask<T, E, R, A> | null;
-  currentAbort?: AbortFn<R>;
+	// lanes and forks
+	parent: StateInterface<T, A, E> | null;
+	lanes: Record<string, StateInterface<T, A, E>> | null;
 
-  // lanes and forks
-  forksIndex?: number,
-  parent?: StateInterface<T, E, R, A> | null,
-  lanes?: Record<string, StateInterface<T, E, R, A>> | null,
+	// cache
+	cache: Record<string, CachedState<T, A, E>> | null;
 
-  // cache
-  cache?: Record<string, CachedState<T, E, R, A>> | null,
-
-  events?: InstanceEvents<T, E, R, A>;
-  eventsIndex?: number,
-  // dev properties
-  journal?: any[], // for devtools, dev only
-
-  // methods & overrides
-  dispose(): boolean,
-
-  hasLane(laneKey: string): boolean,
-
-  getLane(laneKey?: string): StateInterface<T, E, R, A>,
-
-  fork(forkConfig?: ForkConfig): StateInterface<T, E, R, A>,
-
-  // lanes and forks
-  removeLane(laneKey?: string): boolean,
-
-  getLane(laneKey?: string): BaseSource<T, E, R, A>,
-
-  fork(forkConfig?: ForkConfig): BaseSource<T, E, R, A>,
-
-  run(
-    ...args: A
-  ): AbortFn<R>,
-
-  runp(
-    ...args: A
-  ): Promise<State<T, E, R, A>>,
-
-  runc(
-    props?: RUNCProps<T, E, R, A>
-  ): AbortFn<R>,
-
+	events: InstanceEvents<T, A, E> | null;
+	eventsIndex: number | null;
+	// dev properties
+	journal?: any[]; // for devtools, dev only
 }
 
-export interface RUNCProps<T, E, R, A extends unknown[]> extends ProducerCallbacks<T, E, R, A> {
-  args?: A,
+export interface RUNCProps<T, A extends unknown[], E>
+	extends ProducerCallbacks<T, A, E> {
+	args?: A;
 }
 
-export type LastSuccessSavedState<T, A extends unknown[]> = InitialState<T, A> | SuccessState<T, A>;
+export type LastSuccessSavedState<T, A extends unknown[]> =
+	| InitialState<T, A>
+	| SuccessState<T, A>;
 
 export interface BaseState<T, A extends unknown[]> {
-  data: T,
-  status: Status,
-  timestamp: number,
-  props?: ProducerSavedProps<T, A> | null,
+	data: T;
+	status: Status;
+	timestamp: number;
+	props?: ProducerSavedProps<T, A> | null;
 }
 
 export type SuccessState<T, A extends unknown[]> = {
-  data: T,
-  timestamp: number,
-  status: Status.success,
-  props: ProducerSavedProps<T, A>,
-}
-export type ErrorState<T, E, A extends unknown[]> = {
-  data: E,
-  timestamp: number,
-  status: Status.error,
-  props: ProducerSavedProps<T, A>,
-}
-export type PendingState<T, A extends unknown[]> = {
-  data: null,
-  timestamp: number,
-  status: Status.pending,
-  props: ProducerSavedProps<T, A>,
-}
+	data: T;
+	timestamp: number;
+	status: Status.success;
+	props: ProducerSavedProps<T, A>;
+};
+export type ErrorState<T, A extends unknown[], E> = {
+	data: E;
+	timestamp: number;
+	status: Status.error;
+	props: ProducerSavedProps<T, A>;
+};
+export type PendingState<T, A extends unknown[], E> = {
+	data: null;
+	timestamp: number;
+	status: Status.pending;
+	props: ProducerSavedProps<T, A>;
+
+	prev: PendingPreviousState<T, A, E>;
+};
+
+export type PendingPreviousState<T, A extends unknown[], E> =
+	| InitialState<T, A>
+	| SuccessState<T, A>
+	| ErrorState<T, A, E>;
+
 export type InitialState<T, A extends unknown[]> = {
-  timestamp: number,
-  data: T | undefined,
-  status: Status.initial,
-  props: ProducerSavedProps<T, A> | null,
-}
-export type AbortedState<T, E, R, A extends unknown[]> = {
-  data: R,
-  timestamp: number,
-  status: Status.aborted,
-  props: ProducerSavedProps<T, A>,
-}
-export type State<T, E, R, A extends unknown[]> = InitialState<T, A> |
-  PendingState<T, A> |
-  AbortedState<T, E, R, A> |
-  SuccessState<T, A> |
-  ErrorState<T, E, A>
-export type AbortFn<R = unknown> = ((reason?: R) => void) | undefined;
-export type OnAbortFn<R = unknown> = (cb?: ((reason?: R) => void)) => void;
+	timestamp: number;
+	data: T | undefined;
+	status: Status.initial;
+	props: ProducerSavedProps<T, A> | null;
+};
 
-export interface ProducerProps<T, E, R, A extends unknown[]> extends ProducerEffects {
-  abort: AbortFn<R>,
-  onAbort: OnAbortFn,
-  emit: StateUpdater<T, E, R, A>,
+export type State<T, A extends unknown[], E> =
+	| InitialState<T, A>
+	| PendingState<T, A, E>
+	| SuccessState<T, A>
+	| ErrorState<T, A, E>;
+export type AbortFn = ((reason?: any) => void) | undefined;
+export type OnAbortFn<R = unknown> = (cb?: (reason?: R) => void) => void;
 
-  args: A,
-  payload: Record<string, unknown>,
-  lastSuccess: LastSuccessSavedState<T, A>,
-  isAborted: () => boolean,
+export interface ProducerProps<T, A extends unknown[] = [], E = Error>
+	extends ProducerEffects {
+	abort: AbortFn;
+	onAbort: OnAbortFn;
+	emit: StateUpdater<T, A, E>;
 
-  getState: () => State<T, E, R, A>,
+	args: A;
+	payload: Record<string, unknown>;
+	lastSuccess: LastSuccessSavedState<T, A>;
+	isAborted: () => boolean;
+
+	getState: () => State<T, A, E>;
+
+	signal: AbortSignal;
 }
 
 export type RunIndicators = {
-  index: number,
-  done: boolean,
-  cleared: boolean,
-  aborted: boolean,
-}
-export type ProducerCallbacks<T, E, R, A extends unknown[]> = {
-  onError?(errorState: ErrorState<T, E, A>),
-  onSuccess?(successState: SuccessState<T, A>),
-  onAborted?(aborted: AbortedState<T, E, R, A>),
-}
-export type ProducerSavedProps<T, A extends unknown[]> = {
-  args?: A,
-  payload?: Record<string, unknown> | null,
-}
-export type Producer<T, E, R, A extends unknown[]> =
-  ((props: ProducerProps<T, E, R, A>) => (T | Promise<T> | Generator<any, T, any>));
-export type ProducerFunction<T, E, R, A extends unknown[]> = (
-  props: ProducerProps<T, E, R, A>,
-  runIndicators: RunIndicators,
-  callbacks?: ProducerCallbacks<T, E, R, A>,
-) => AbortFn<R>;
-export type ProducerConfig<T, E, R, A extends unknown[]> = {
-  skipPendingStatus?: boolean,
-  initialValue?: T | ((cache?: Record<string, CachedState<T, E, R, A>>) => T),
-  cacheConfig?: CacheConfig<T, E, R, A>,
-  runEffectDurationMs?: number,
-  runEffect?: RunEffect,
-  keepPendingForMs?: number,
-  skipPendingDelayMs?: number,
-  resetStateOnDispose?: boolean,
-  context?: unknown,
-
-  pool?: string,
-
-  // dev only
-  hideFromDevtools?: boolean,
-  retryConfig?: RetryConfig<T, E, R, A>,
-}
-
-export type RetryConfig<T, E, R, A extends unknown[]> = {
-  enabled: boolean,
-  maxAttempts?: number,
-  backoff?: number | ((attemptIndex:number, error: E) => number),
-  retry?: boolean | ((attemptIndex:number, error: E) => boolean)
-}
-
-export type StateFunctionUpdater<T, E, R, A extends unknown[]> = (updater: State<T, E, R, A>) => T;
-export type StateUpdater<T, E, R, A extends unknown[]> = (updater: StateFunctionUpdater<T, E, R, A> | T, status?: Status, callbacks?: ProducerCallbacks<T, E, R, A>) => void;
-
-export type CreateSourceObject<T, E, R, A extends unknown[]> = {
-  key: string,
-  config?: ProducerConfig<T, E, R, A>,
-  producer?: Producer<T, E, R, A> | null,
-}
-
-export type CreateSourceType = {
-  <T, E, R, A extends unknown[]>(props: CreateSourceObject<T, E, R, A>): Source<T, E, R, A>,
-  <T, E, R, A extends unknown[]>(
-    key: string,
-    producer?: Producer<T, E, R, A> | undefined | null,
-    config?: ProducerConfig<T, E, R, A>,
-  ): Source<T, E, R, A>,
-  <T, E, R, A extends unknown[]>(
-    props: string | CreateSourceObject<T, E, R, A>,
-    maybeProducer?: Producer<T, E, R, A> | undefined | null,
-    maybeConfig?: ProducerConfig<T, E, R, A>,
-  ): Source<T, E, R, A>,
-}
-
-export type SourcesType = {
-  <T, E, R, A extends unknown[]>(): Source<T, E, R, A>,
-  for: CreateSourceType,
-  of<T, E, R, A extends unknown[]>(key: string, pool?: string, context?: unknown),
-}
-
-export interface Source<T, E, R, A extends unknown[]> extends BaseSource<T, E, R, A> {
-  run(...args: A): AbortFn<R>,
-
-  runp(...args: A): Promise<State<T, E, R, A>>,
-
-  runc(props: RUNCProps<T, E, R, A>): AbortFn<R>,
-
-  hasLane(laneKey: string): boolean,
-
-  removeLane(laneKey?: string): boolean,
-
-  getLaneSource(laneKey?: string): Source<T, E, R, A>,
-
-  getAllLanes(): Source<T, E, R, A>[],
-}
-
-export type RunTask<T, E, R, A extends unknown[]> = {
-  args: A,
-  payload: Record<string, unknown>,
-}
-export type StateSubscription<T, E, R, A extends unknown[]> = {
-  cleanup: () => void,
-  props: AsyncStateSubscribeProps<T, E, R, A>
+	index: number;
+	done: boolean;
+	cleared: boolean;
+	aborted: boolean;
 };
-export type OnCacheLoadProps<T, E, R, A extends unknown[]> = {
-  cache: Record<string, CachedState<T, E, R, A>>,
-  setState(
-    newValue: T | StateFunctionUpdater<T, E, R, A>, status?: Status): void
-}
-export type CacheConfig<T, E, R, A extends unknown[]> = {
-  enabled: boolean,
-  getDeadline?(currentState: State<T, E, R, A>): number,
-  hash?(args: A | undefined, payload: Record<string, unknown> | null | undefined): string,
 
-  persist?(cache: Record<string, CachedState<T, E, R, A>>): void,
-  load?(): Record<string, CachedState<T, E, R, A>> | Promise<Record<string, CachedState<T, E, R, A>>>,
+export type ProducerCallbacks<T, A extends unknown[], E> = {
+	onError?(errorState: ErrorState<T, A, E>): void;
+	onSuccess?(successState: SuccessState<T, A>): void;
+};
 
-  onCacheLoad?({cache, setState}: OnCacheLoadProps<T, E, R, A>): void,
+export type ProducerSavedProps<T, A extends unknown[]> = {
+	args?: A;
+	payload?: Record<string, unknown> | null;
+};
+
+export type Producer<T, A extends unknown[] = [], E = Error> = (
+	props: ProducerProps<T, A, E>
+) => T | Promise<T> | Generator<any, T, any>;
+
+export type ProducerFunction<T, A extends unknown[], E> = (
+	props: ProducerProps<T, A, E>,
+	runIndicators: RunIndicators,
+	callbacks?: ProducerCallbacks<T, A, E>
+) => AbortFn;
+export type ProducerConfig<T, A extends unknown[], E> = {
+	skipPendingStatus?: boolean;
+	initialValue?:
+		| T
+		| ((cache: Record<string, CachedState<T, A, E>> | null) => T);
+	cacheConfig?: CacheConfig<T, A, E>;
+	runEffectDurationMs?: number;
+	runEffect?: RunEffect;
+	keepPendingForMs?: number;
+	skipPendingDelayMs?: number;
+	resetStateOnDispose?: boolean;
+	context?: unknown;
+
+	// dev only
+	hideFromDevtools?: boolean;
+	retryConfig?: RetryConfig<T, A, E>;
+};
+
+export type RetryConfig<T, A extends unknown[], E> = {
+	enabled: boolean;
+	maxAttempts?: number;
+	backoff?: number | ((attemptIndex: number, error: E) => number);
+	retry?: boolean | ((attemptIndex: number, error: E) => boolean);
+};
+
+export type StateFunctionUpdater<T, A extends unknown[], E> = (
+	updater: State<T, A, E>
+) => T;
+export type StateUpdater<T, A extends unknown[], E> = (
+	updater: StateFunctionUpdater<T, A, E> | T,
+	status?: Status,
+	callbacks?: ProducerCallbacks<T, A, E>
+) => void;
+
+export type CreateSourceObject<T, A extends unknown[], E> = {
+	key: string;
+	config?: ProducerConfig<T, A, E>;
+	producer?: Producer<T, A, E> | null;
+};
+
+export interface Source<T, A extends unknown[], E> extends BaseSource<T, A, E> {
+	run(...args: A): AbortFn;
+
+	runp(...args: A): Promise<State<T, A, E>>;
+
+	runc(props: RUNCProps<T, A, E>): AbortFn;
+
+	hasLane(laneKey: string): boolean;
+
+	removeLane(laneKey?: string): boolean;
+
+	getLane(laneKey?: string): Source<T, A, E>;
+
+	getAllLanes(): Source<T, A, E>[];
 }
-export type CachedState<T, E, R, A extends unknown[]> = {
-  state: State<T, E, R, A>,
-  addedAt: number,
-  deadline: number,
-}
+
+export type RunTask<T, A extends unknown[], E> = {
+	args: A;
+	payload: Record<string, unknown>;
+};
+export type StateSubscription<T, A extends unknown[], E> = {
+	cleanup: () => void;
+	props: AsyncStateSubscribeProps<T, A, E>;
+};
+export type OnCacheLoadProps<T, A extends unknown[], E> = {
+	cache: Record<string, CachedState<T, A, E>>;
+	setState(newValue: T | StateFunctionUpdater<T, A, E>, status?: Status): void;
+};
+export type CacheConfig<T, A extends unknown[], E> = {
+	enabled: boolean;
+	getDeadline?(currentState: State<T, A, E>): number;
+	hash?(
+		args: A | undefined,
+		payload: Record<string, unknown> | null | undefined
+	): string;
+
+	persist?(cache: Record<string, CachedState<T, A, E>>): void;
+	load?():
+		| Record<string, CachedState<T, A, E>>
+		| Promise<Record<string, CachedState<T, A, E>>>;
+
+	onCacheLoad?({ cache, setState }: OnCacheLoadProps<T, A, E>): void;
+};
+export type CachedState<T, A extends unknown[], E> = {
+	state: State<T, A, E>;
+	addedAt: number;
+	deadline: number;
+};
 
 export interface StateBuilderInterface {
-  initial: <T, A extends unknown[]> (initialValue: T) => InitialState<T, A>,
-  pending: <T, A extends unknown[]>(props: ProducerSavedProps<T, A>) => PendingState<T, A>,
-  success: <T, A extends unknown[]>(data: T, props: ProducerSavedProps<T, A> | null) => SuccessState<T, A>,
-  error: <T, E, A extends unknown[]>(data: E, props: ProducerSavedProps<T, A>) => ErrorState<T, E, A>,
-  aborted: <T, E, R, A extends unknown[]>(
-    reason: R | undefined, props: ProducerSavedProps<T, A>) => AbortedState<T, E, R, A>,
+	initial: <T, A extends unknown[]>(initialValue: T) => InitialState<T, A>;
+	pending: <T, A extends unknown[], E>(
+		prev: PendingPreviousState<T, A, E>,
+		props: ProducerSavedProps<T, A>
+	) => PendingState<T, A, E>;
+	success: <T, A extends unknown[]>(
+		data: T,
+		props: ProducerSavedProps<T, A> | null
+	) => SuccessState<T, A>;
+	error: <T, A extends unknown[], E>(
+		data: E,
+		props: ProducerSavedProps<T, A>
+	) => ErrorState<T, A, E>;
 }
 
-export type ForkConfig = {
-  key?: string,
-  keepState?: boolean,
-  keepCache?: boolean,
-}
-export type AsyncStateKeyOrSource<T, E, R, A extends unknown[]> =
-  string
-  | Source<T, E, R, A>;
+export type AsyncStateKeyOrSource<T, A extends unknown[], E> =
+	| string
+	| Source<T, A, E>;
 
+export interface ProducerEffects {}
 
-export type EffectsRunType<T, E, R, A extends unknown[]> = (
-  input: ProducerRunInput<T, E, R, A>, config: ProducerRunConfig | null,
-  ...args: A
-) => AbortFn<R>
-
-export type EffectsRunpType <T, E, R, A extends unknown[]> = (
-  input: ProducerRunInput<T, E, R, A>, config: ProducerRunConfig | null,
-  ...args: A
-) => Promise<State<T, E, R, A>> | undefined
-export type EffectsSelectType <T, E, R, A extends unknown[]> = (
-  input: AsyncStateKeyOrSource<T, E, R, A>,
-  lane?: string
-) => State<T, E, R, A> | undefined
-export interface ProducerEffects {
-
-  run: <T, E, R, A extends unknown[]>(
-    input: ProducerRunInput<T, E, R, A>, config: ProducerRunConfig | null,
-    ...args: A
-  ) => AbortFn<R>,
-
-  runp: <T, E, R, A extends unknown[]>(
-    input: ProducerRunInput<T, E, R, A>, config: ProducerRunConfig | null,
-    ...args: A
-  ) => Promise<State<T, E, R, A>> | undefined,
-
-  select: <T, E, R, A extends unknown[]>(
-    input: AsyncStateKeyOrSource<T, E, R, A>,
-    lane?: string
-  ) => State<T, E, R, A> | undefined,
-}
-
-export type ProducerRunInput<T, E, R, A extends unknown[]> =
-  AsyncStateKeyOrSource<T, E, R, A>
-  | Producer<T, E, R, A>;
+export type ProducerRunInput<T, A extends unknown[], E> =
+	| AsyncStateKeyOrSource<T, A, E>
+	| Producer<T, A, E>;
 export type ProducerRunConfig = {
-  lane?: string,
-  fork?: boolean,
-  payload?: Record<string, unknown> | null,
-  pool?: string,
+	lane?: string;
+	fork?: boolean;
+	payload?: Record<string, unknown> | null;
 };
-export type PendingTimeout = { id: ReturnType<typeof setTimeout>, startDate: number };
-export type PendingUpdate = { timeoutId: ReturnType<typeof setTimeout>, callback(): void };
-export type AsyncStatePools = Record<string, PoolInterface>;
-export type WatchCallback<T, E, R, A extends unknown[]> = (
-  value: StateInterface<T, E, R, A> | null, key: string) => void;
+export type PendingTimeout = {
+	id: ReturnType<typeof setTimeout>;
+	at: number;
+};
+export type PendingUpdate = {
+	id: ReturnType<typeof setTimeout>;
+	callback(): void;
+};
 
-export interface PoolInterface {
-  name: string,
-  simpleName: string,
-  version: { version: string, copyright: string },
+export type SetStateUpdateQueue<T, A extends unknown[], E> = {
+	id?: ReturnType<typeof setTimeout>;
+	kind: 0;
+	data: State<T, A, E>;
+	next: UpdateQueue<T, A, E> | null;
+	callbacks?: ProducerCallbacks<T, A, E>;
+};
 
-  mergePayload(payload: Record<string, unknown>): void,
+export type ReplaceStateUpdateQueue<T, A extends unknown[], E> = {
+	id?: ReturnType<typeof setTimeout>;
+	kind: 1;
+	data: {
+		status?: Status;
+		data: T | StateFunctionUpdater<T, A, E>;
+	};
+	next: UpdateQueue<T, A, E> | null;
+	callbacks?: ProducerCallbacks<T, A, E>;
+};
 
-  instances: Map<string, StateInterface<any, any, any, any>>,
+export type UpdateQueue<T, A extends unknown[], E> =
+	| ReplaceStateUpdateQueue<T, A, E>
+	| SetStateUpdateQueue<T, A, E>;
 
-  watch<T, E, R, A extends unknown[]>(key: string, value: WatchCallback<T, E, R, A>): AbortFn<R>,
+export type OnSettled<T, A extends unknown[], E> = {
+	(
+		data: T,
+		status: Status.success,
+		savedProps: ProducerSavedProps<T, A>,
+		callbacks?: ProducerCallbacks<T, A, E>
+	): void;
+	(
+		data: E,
+		status: Status.error,
+		savedProps: ProducerSavedProps<T, A>,
+		callbacks?: ProducerCallbacks<T, A, E>
+	): void;
+};
 
-  listen<T, E, R, A extends unknown[]>(cb: WatchCallback<T, E, R, A>): AbortFn<R>,
+export type LibraryContext = {
+	ctx: any;
+	version: { version: string; copyright: string };
 
-  set<T, E, R, A extends unknown[]>(key: string, instance: StateInterface<T, E, R, A>): void,
+	remove(key: string): boolean;
+	get(key: string): StateInterface<any, any, any> | undefined;
+	set(key: string, inst: StateInterface<any, any, any>): void;
 
-  context: LibraryPoolsContext,
-}
-
-export type LibraryPoolsContext = {
-  context: unknown,
-  pools: AsyncStatePools,
-  poolInUse: PoolInterface,
-  enableDiscovery(name?: string): void,
-  setDefaultPool(name: string): Promise<void>,
-  getOrCreatePool(name?: string): PoolInterface,
-}
-
-
-export type SetStateUpdateQueue<T, E, R, A extends unknown[]> = {
-  id?: ReturnType<typeof setTimeout>
-  kind: 0,
-  data: State<T, E, R, A>,
-  next: UpdateQueue<T, E, R, A> | null,
-  callbacks?: ProducerCallbacks<T, E, R, A>
-}
-
-export type ReplaceStateUpdateQueue<T, E, R, A extends unknown[]> = {
-  id?: ReturnType<typeof setTimeout>
-  kind: 1,
-  data: {
-    status?: Status,
-    data: T | StateFunctionUpdater<T, E, R, A>,
-  },
-  next: UpdateQueue<T, E, R, A> | null,
-  callbacks?: ProducerCallbacks<T, E, R, A>,
-}
-
-export type UpdateQueue<T, E, R, A extends unknown[]> =
-  ReplaceStateUpdateQueue<T, E, R, A>
-  | SetStateUpdateQueue<T, E, R, A>
-
-export type OnSettled<T, E, R, A extends unknown[]> = {
-  (
-    data: T, status: Status.success, savedProps: ProducerSavedProps<T, A>,
-    callbacks?: ProducerCallbacks<T, E, R, A>
-  ): void,
-  (
-    data: E, status: Status.error, savedProps: ProducerSavedProps<T, A>,
-    callbacks?: ProducerCallbacks<T, E, R, A>
-  ): void,
-}
-export type CreatePropsConfig<T, E, R, A extends unknown[]> = {
-  args: A,
-  context: LibraryPoolsContext,
-  payload: Record<string, unknown>,
-  indicators: RunIndicators,
-  lastSuccess: LastSuccessSavedState<T, A>,
-  getState: () => State<T, E, R, A>,
-  onEmit: (updater: T | StateFunctionUpdater<T, E, R, A>, status?: Status) => void,
-  onAborted: (reason?: R) => void,
-  onCleared: () => void
-}
+	getAll(): StateInterface<any, any, any>[];
+};

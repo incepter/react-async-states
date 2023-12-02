@@ -18,7 +18,7 @@ import React, { Suspense, useTransition } from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
 import { API } from "./app/api";
-import { useAsync, useFiber } from "state-fiber/src";
+import { useAsync } from "react-async-states";
 import { CachedStateList } from "state-fiber/src/core/_types";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement, {}).render(
@@ -63,10 +63,10 @@ function App() {
 			<Buttons setId={setId} />
 			<SuspenseBoundary fallback="boundary 1 fallback" color="red">
 				<UserDetails alias="1" useHook={useAsync} userId={userId} />
-				<UserDetails alias="2" useHook={useFiber} userId={userId} />
+				<UserDetails alias="2" useHook={useAsync} userId={userId} />
 			</SuspenseBoundary>
 			<hr />
-			<UserDetails alias="3" useHook={useFiber} userId={userId} />
+			<UserDetails alias="3" useHook={useAsync} userId={userId} />
 			<br />
 			<hr />
 		</div>
@@ -114,7 +114,9 @@ function UserDetails(props) {
 	console.log("render for", alias, "completed");
 	const { data } = result;
 	if (result.isPending) {
-		return `Pending for props (${userId}), and optimistic args (${result.state.props.args[0]})`;
+		return (
+			<span>{`Pending for props (${userId}), and optimistic args (${result.state.props.args[0]})`}</span>
+		);
 	}
 	return <UserDetailsImpl data={data} />;
 }
@@ -205,24 +207,24 @@ function EffectsDemo() {
 		state,
 		error,
 		source: { runc },
-	} = useFiber<any, [string], Error, never>({
+	} = useAsync<any, [string], Error>({
 		key: "user-d",
-		// effect: "debounce",
-		// effectDurationMs: 400,
-		// keepPendingForMs: 400,
-		// skipPendingDelayMs: 400,
+		runEffect: "debounce",
+		runEffectDurationMs: 400,
+		keepPendingForMs: 400,
+		skipPendingDelayMs: 400,
 		cacheConfig: {
-			enabled: false,
+			enabled: true,
 			hash(args): string {
-				return args[0] + "";
+				return args?.[0] + "";
 			},
-			deadline: (s) => 20000,
+			getDeadline: (s) => 20000,
 			persist(cache) {
-				localStorage.setItem("__test__2", JSON.stringify(cache));
+				localStorage.setItem("__test__23", JSON.stringify(cache));
 			},
 			load() {
 				console.log("loading");
-				return JSON.parse(localStorage.getItem("__test__2") || "{}");
+				return JSON.parse(localStorage.getItem("__test__23") || "{}");
 			},
 		},
 		producer(props): Promise<{ id: number; username: string }> {
@@ -233,7 +235,7 @@ function EffectsDemo() {
 			return API.get(`/users/${props.args[0]}`, { signal: props.signal });
 		},
 	});
-	console.log("hhhh", state.data);
+
 	let dataToDisplay = error ? error.toString?.() : state.data?.data;
 	return (
 		<div className="App">

@@ -1,6 +1,6 @@
 import * as React from "react";
 import {act, render, screen} from "@testing-library/react";
-import {useAsync} from "../../useAsync";
+import {useAsync} from "../../hooks/useAsync_export";
 import {Status} from "async-states";
 
 describe('should auto run async state', () => {
@@ -40,7 +40,9 @@ describe('should auto run async state', () => {
     function producer(props): Promise<number> {
       return new Promise<number>((resolve => {
         let id = setTimeout(() => resolve(props.payload.content), 100);
-        props.onAbort(() => clearTimeout(id));
+        props.onAbort(() => {
+          clearTimeout(id);
+        });
       }));
     }
 

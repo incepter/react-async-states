@@ -1,19 +1,19 @@
 import * as React from "react";
 import { render, screen } from "@testing-library/react";
-import Hydration from "../../../hydration/Hydration";
-import { createContext, createSource, requestContext } from "async-states";
+import Provider from "../../../provider/Provider";
+import { createContext, createSource } from "async-states";
 import { mockDateNow } from "../../utils/setup";
 import AsyncStateComponent from "../../utils/AsyncStateComponent";
 
 mockDateNow();
-jest.mock("../../../hydration/context", () => {
+jest.mock("../../../Provider/context", () => {
 	return {
-		...jest.requireActual("../../../hydration/context"),
+		...jest.requireActual("../../../Provider/context"),
 		isServer: true,
 	};
 });
 describe("should hydrate async states", () => {
-	it("should perform basic hydration", async () => {
+	it("should perform basic Provider", async () => {
 		// given
 		let ctx = {};
 		createContext(ctx);
@@ -21,9 +21,9 @@ describe("should hydrate async states", () => {
 		function Test() {
 			return (
 				<div data-testid="parent">
-					<Hydration id="test" context={ctx}>
+					<Provider id="test" context={ctx}>
 						<AsyncStateComponent config={src} />
-					</Hydration>
+					</Provider>
 				</div>
 			);
 		}
@@ -35,10 +35,10 @@ describe("should hydrate async states", () => {
 			</React.StrictMode>
 		);
 		expect(screen.getByTestId("parent").innerHTML).toEqual(
-			'<script id="test">window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"ASYNC-STATES-default-POOL__INSTANCE__counter":{"state":{"status":"initial","data":0,"props":null,"timestamp":1487076708000},"payload":{}}})</script>'
+			'<script id="test">window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__counter":{"state":{"status":"initial","data":0,"props":null,"timestamp":1487076708000},"latestRun":null,"payload":{}}})</script>'
 		);
 	});
-	it("should perform basic hydration when status did succeed", async () => {
+	it("should perform basic Provider when status did succeed", async () => {
 		// given
 		let ctx = {};
 		createContext(ctx);
@@ -47,9 +47,9 @@ describe("should hydrate async states", () => {
 		function Test() {
 			return (
 				<div data-testid="parent">
-					<Hydration id="test" context={ctx}>
+					<Provider id="test" context={ctx}>
 						<AsyncStateComponent config={src} />
-					</Hydration>
+					</Provider>
 				</div>
 			);
 		}
@@ -61,16 +61,16 @@ describe("should hydrate async states", () => {
 			</React.StrictMode>
 		);
 		expect(screen.getByTestId("parent").innerHTML).toEqual(
-			'<script id="test">window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"ASYNC-STATES-default-POOL__INSTANCE__state-1":{"state":{"status":"success","data":42,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"payload":{}}})</script>'
+			'<script id="test">window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__state-1":{"state":{"status":"success","data":42,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"latestRun":null,"payload":{}}})</script>'
 		);
 	});
-	it("should exclude instance from hydration by key", async () => {
+	it("should exclude instance from Provider by key", async () => {
 		// given
 		let ctx = {};
 		function Test() {
 			return (
 				<div data-testid="parent">
-					<Hydration
+					<Provider
 						id="test"
 						exclude={(key) => key === "counter2"}
 						context={ctx}
@@ -78,7 +78,7 @@ describe("should hydrate async states", () => {
 						<AsyncStateComponent
 							config={{ key: "counter2", initialValue: 0 }}
 						/>
-					</Hydration>
+					</Provider>
 				</div>
 			);
 		}
@@ -91,7 +91,7 @@ describe("should hydrate async states", () => {
 		);
 		expect(screen.getByTestId("parent").innerHTML).toEqual("");
 	});
-	it("should exclude instance from hydration by state value", async () => {
+	it("should exclude instance from Provider by state value", async () => {
 		// given
 		let ctx = {};
 		createContext(ctx);
@@ -106,14 +106,14 @@ describe("should hydrate async states", () => {
 		function Test() {
 			return (
 				<div data-testid="parent">
-					<Hydration
+					<Provider
 						id="test"
 						exclude={(key, state) => state.data === 99}
 						context={ctx}
 					>
 						<AsyncStateComponent config={src} />
 						<AsyncStateComponent config={src2} />
-					</Hydration>
+					</Provider>
 				</div>
 			);
 		}
@@ -125,7 +125,7 @@ describe("should hydrate async states", () => {
 			</React.StrictMode>
 		);
 		expect(screen.getByTestId("parent").innerHTML).toEqual(
-			'<script id="test">window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"ASYNC-STATES-default-POOL__INSTANCE__counter2":{"state":{"status":"initial","data":14,"props":null,"timestamp":1487076708000},"payload":{}}})</script>'
+			'<script id="test">window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__counter2":{"state":{"status":"initial","data":14,"props":null,"timestamp":1487076708000},"latestRun":null,"payload":{}}})</script>'
 		);
 	});
 });

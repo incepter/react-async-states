@@ -1,6 +1,6 @@
 import * as React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { useAsync } from "../../useAsync";
+import { useAsync } from "../../hooks/useAsync_export";
 import { createSource, Status } from "async-states";
 
 describe("useAsync - events", () => {
@@ -10,7 +10,7 @@ describe("useAsync - events", () => {
 		const mockedFn = jest.fn();
 		const mockedFn2 = jest.fn();
 		const mockedFn3 = jest.fn();
-		const counterSource = createSource<number, any, any, any[]>(
+		const counterSource = createSource<number, any, any[]>(
 			"counter",
 			null,
 			{ initialValue: 0 }
@@ -18,8 +18,7 @@ describe("useAsync - events", () => {
 
 		function Component({ subKey }: { subKey: string }) {
 			const {
-				key,
-				source: { run },
+				source: { key, run },
 				state,
 			} = useAsync({
 				source: counterSource,

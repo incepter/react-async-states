@@ -1,15 +1,15 @@
 import * as React from "react";
 import { render, fireEvent, screen } from "@testing-library/react";
-import { Sources } from "async-states";
-import Hydration from "../../../hydration/Hydration";
+import { getSource } from "async-states";
+import Provider from "../../../provider/Provider";
 import AsyncStateComponent from "../../utils/AsyncStateComponent";
-import {flushPromises} from "../../utils/test-utils";
-import {mockDateNow} from "../../utils/setup";
+import { flushPromises } from "../../utils/test-utils";
+import { mockDateNow } from "../../utils/setup";
 
 mockDateNow();
-jest.mock("../../../hydration/context", () => {
+jest.mock("../../../provider/context", () => {
 	return {
-		...jest.requireActual("../../../hydration/context"),
+		...jest.requireActual("../../../provider/context"),
 		isServer: false,
 	};
 });
@@ -23,20 +23,20 @@ function BootHydration({ data }: { data: string }) {
 }
 
 describe("should hydrate async states", () => {
-	it("should perform basic hydration", async () => {
+	it("should perform basic Provider", async () => {
 		// given
 		let ctx = {};
 		let hydrationScript =
-			'window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"ASYNC-STATES-default-POOL__INSTANCE__state-1":{"state":{"status":"success","data":42,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"payload":{}}})';
+			'window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__state-1":{"state":{"status":"success","data":42,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"payload":{}}})';
 
 		function Test() {
 			return (
 				<div data-testid="parent">
-					<Hydration id="test" context={ctx}>
+					<Provider id="test" context={ctx}>
 						<BootHydration data={hydrationScript} />
 						<AsyncStateComponent config={{ key: "state-1" }} />
 						<AsyncStateComponent config={{ key: "state-2" }} />
-					</Hydration>
+					</Provider>
 				</div>
 			);
 		}
@@ -48,10 +48,10 @@ describe("should hydrate async states", () => {
 			</React.StrictMode>
 		);
 
-		let src = Sources.of("state-1", undefined, ctx);
+		let src = getSource("state-1", ctx)!;
 		expect(src.getState().status).toBe("success");
 		expect(src.getState().data).toBe(42);
-		let src2 = Sources.of("state-2", undefined, ctx);
+		let src2 = getSource("state-2", ctx)!;
 		expect(src2.getState().status).toBe("initial");
 		expect(src2.getState().data).toBe(undefined);
 	});
@@ -59,7 +59,7 @@ describe("should hydrate async states", () => {
 		// given
 		let ctx = {};
 		let hydrationScript =
-			'window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"ASYNC-STATES-default-POOL__INSTANCE__state-1":{"state":{"status":"success","data":42,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"payload":{}}})';
+			'window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__state-1":{"state":{"status":"success","data":42,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"payload":{}}})';
 
 		function Wrapper({ children }) {
 			let [visible, setVisible] = React.useState(false);
@@ -76,16 +76,16 @@ describe("should hydrate async states", () => {
 		function Test() {
 			return (
 				<div data-testid="parent">
-					<Hydration id="test" context={ctx}>
+					<Provider id="test" context={ctx}>
 						<BootHydration data={hydrationScript} />
 						<AsyncStateComponent config={{ key: "state-1" }} />
 						<AsyncStateComponent config={{ key: "state-2" }} />
 						<Wrapper>
-							<Hydration id="test" context={ctx}>
-								<BootHydration data='window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"ASYNC-STATES-default-POOL__INSTANCE__state-1":{"state":{"status":"success","data":43,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"payload":{}}})' />
-							</Hydration>
+							<Provider id="test" context={ctx}>
+								<BootHydration data='window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__state-1":{"state":{"status":"success","data":43,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"payload":{}}})' />
+							</Provider>
 						</Wrapper>
-					</Hydration>
+					</Provider>
 				</div>
 			);
 		}
@@ -96,7 +96,7 @@ describe("should hydrate async states", () => {
 				<Test />
 			</React.StrictMode>
 		);
-		let src = Sources.of("state-1", undefined, ctx);
+		let src = getSource("state-1", ctx)!;
 		expect(src.getState().status).toBe("success");
 		expect(src.getState().data).toBe(42);
 		fireEvent.click(screen.getByTestId("toggle"));

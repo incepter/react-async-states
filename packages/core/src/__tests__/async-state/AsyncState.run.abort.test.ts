@@ -20,7 +20,7 @@ describe('AsyncState - run - abort', () => {
 
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
-    myAsyncState.subscribe({cb: subscription});
+    myAsyncState.actions.subscribe({cb: subscription});
     // then
     // should have initial status
     expect(myAsyncState.state).toEqual({
@@ -30,7 +30,7 @@ describe('AsyncState - run - abort', () => {
       status: Status.initial,
     });
 
-    const abort = myAsyncState.run();
+    const abort = myAsyncState.actions.run();
 
     await jest.advanceTimersByTime(50);
 
@@ -40,6 +40,12 @@ describe('AsyncState - run - abort', () => {
       props: {
         args: [],
         payload: {}
+      },
+      prev: {
+        data: null,
+        props: null,
+        status: "initial",
+        timestamp: TESTS_TS,
       },
       data: null,
       timestamp: TESTS_TS,
@@ -50,36 +56,22 @@ describe('AsyncState - run - abort', () => {
     abort!("reason");
 
     expect(subscription).toHaveBeenCalledTimes(1);
-    expect(subscription).toHaveBeenCalledWith({
-      props: {
-        args: [],
-        payload: {}
-      },
-      data: "reason", timestamp: TESTS_TS,
-      status: Status.aborted,
-    });
 
     expect(myAsyncState.state).toEqual({
-      props: {
-        args: [],
-        payload: {}
-      },
+      data: null,
+      props: null,
       timestamp: TESTS_TS,
-      data: "reason",
-      status: Status.aborted,
+      status: Status.initial,
     });
 
     await jest.advanceTimersByTime(50);
 
     // async state should be in success state with data
     expect(myAsyncState.state).toEqual({
-      props: {
-        args: [],
-        payload: {}
-      },
+      props: null,
       timestamp: TESTS_TS,
-      status: Status.aborted,
-      data: "reason",
+      status: Status.initial,
+      data: null,
     });
   });
 
@@ -92,16 +84,16 @@ describe('AsyncState - run - abort', () => {
 
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
-    myAsyncState.subscribe({cb: subscription});
+    myAsyncState.actions.subscribe({cb: subscription});
     // then
 
-    const abort = myAsyncState.run();
+    const abort = myAsyncState.actions.run();
 
     await jest.advanceTimersByTime(50);
 
     subscription.mockClear();
     abort!("reason");
-    expect(subscription.mock.calls[0][0].status).toBe(Status.aborted);
+    expect(subscription.mock.calls[0][0].status).toBe(Status.initial);
 
     // now, let's check that a second call to the abort function does not update state or subscribers
     subscription.mockClear();
@@ -115,13 +107,10 @@ describe('AsyncState - run - abort', () => {
 
     // async state should be in success state with data
     expect(myAsyncState.state).toEqual({
-      props: {
-        args: [],
-        payload: {},
-      },
+      props: null,
       timestamp: TESTS_TS,
-      status: Status.aborted,
-      data: "reason",
+      status: Status.initial,
+      data: null,
     });
   });
   it('should bailout aborted state when it will be running again', async () => {
@@ -134,10 +123,10 @@ describe('AsyncState - run - abort', () => {
     // when
     let myAsyncState = new AsyncState(key, producer, myConfig);
 
-    myAsyncState.subscribe({cb: subscription});
+    myAsyncState.actions.subscribe({cb: subscription});
     // then
 
-    myAsyncState.run();
+    myAsyncState.actions.run();
 
     await jest.advanceTimersByTime(50);
 
@@ -145,7 +134,7 @@ describe('AsyncState - run - abort', () => {
 
     // rerun while pending should interrupt previous
     subscription.mockClear();
-    myAsyncState.run();
+    myAsyncState.actions.run();
 
     expect(subscription.mock.calls[0][0].status).toBe(Status.pending);
 

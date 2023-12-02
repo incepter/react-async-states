@@ -1,5 +1,6 @@
-import {createSource} from "../../AsyncState";
 import {isSource} from "../../helpers/isSource";
+
+import {createSource} from "../../AsyncState";
 
 describe('isSource', () => {
   it('should return true for real sources', () => {

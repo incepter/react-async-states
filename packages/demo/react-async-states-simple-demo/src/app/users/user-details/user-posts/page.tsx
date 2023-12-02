@@ -1,11 +1,10 @@
 import {useParams} from "react-router-dom";
 import {app} from "../../../app";
-import {bindAbort} from "../../../../utils";
 import {API} from "../../../api";
 
 app.users.findUserPosts.inject(
   async (props) => {
-    let signal = bindAbort(props);
+    let signal = props.signal;
     return (await API.get(`users/${props.args[0]}/posts`, {signal})).data
   },
   {
