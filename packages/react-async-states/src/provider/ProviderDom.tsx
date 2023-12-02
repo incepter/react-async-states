@@ -1,6 +1,6 @@
 import React from "react";
-import { HydrationData, requestContext, StateInterface } from "async-states";
-import { ProviderProps } from "./context";
+import { HydrationData, LibraryContext, StateInterface } from "async-states";
+import { InternalProviderDomProps } from "./context";
 
 declare global {
 	interface Window {
@@ -11,8 +11,10 @@ declare global {
 	}
 }
 
-export default function ProviderDom({ id, context }: ProviderProps) {
-	let currentContext = requestContext(context);
+export default function ProviderDom({
+	id,
+	context,
+}: Readonly<InternalProviderDomProps>) {
 	let existingHtml = React.useRef<string | null>(null);
 
 	if (!existingHtml.current) {
@@ -22,19 +24,23 @@ export default function ProviderDom({ id, context }: ProviderProps) {
 		}
 	}
 
-	React.useEffect(() => hydrateContext(currentContext), [context]);
+	React.useEffect(() => hydrateContext(context), [context]);
 
-	return existingHtml.current ? (
-		<script
-			id={id}
-			dangerouslySetInnerHTML={{
-				__html: existingHtml.current,
-			}}
-		></script>
-	) : null;
+	let currentScript = existingHtml.current;
+
+	if (currentScript !== null) {
+		return (
+			<script
+				id={id}
+				dangerouslySetInnerHTML={{ __html: currentScript }}
+			></script>
+		);
+	}
+
+	return null;
 }
 
-function hydrateContext(currentContext: any) {
+function hydrateContext(currentContext: LibraryContext) {
 	let allHydrationData = window.__ASYNC_STATES_HYDRATION_DATA__;
 
 	// nothing to do
@@ -46,7 +52,7 @@ function hydrateContext(currentContext: any) {
 	for (let [hydrationId, hydrationData] of Object.entries(allHydrationData)) {
 		let { key } = parseInstanceHydratedData(hydrationId);
 		if (key) {
-			let instance: StateInterface<any, any, any> = currentContext.get(key);
+			let instance: StateInterface<any, any, any> = currentContext.get(key)!;
 			if (instance) {
 				instance.state = hydrationData.state;
 				instance.payload = hydrationData.payload;

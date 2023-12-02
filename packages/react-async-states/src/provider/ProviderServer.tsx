@@ -1,16 +1,18 @@
 import React from "react";
-import { StateInterface, HydrationData, requestContext } from "async-states";
-import { ProviderProps } from "./context";
+import { StateInterface, HydrationData, LibraryContext } from "async-states";
+import { InternalProviderServerProps, ProviderProps } from "./context";
 
 export default function ProviderServer({
 	id,
 	context,
 	exclude,
-}: ProviderProps) {
+}: Readonly<InternalProviderServerProps>) {
 	let hydrationData = buildHydrationData(context, exclude);
+
 	if (!hydrationData) {
 		return null;
 	}
+
 	return (
 		<script
 			id={id}
@@ -20,7 +22,7 @@ export default function ProviderServer({
 }
 
 function buildHydrationData(
-	context: any,
+	context: LibraryContext,
 	exclude?: ProviderProps["exclude"]
 ): string | null {
 	let states = buildHydrationDataForAllContextPools(context, exclude);
@@ -52,10 +54,9 @@ function shouldExcludeInstanceFromHydration(
 }
 
 function buildHydrationDataForAllContextPools(
-	context: any,
+	execContext: LibraryContext,
 	exclude?: ProviderProps["exclude"]
 ): Record<string, HydrationData<unknown, unknown[], unknown>> {
-	let execContext = requestContext(context);
 	let result = {} as Record<string, HydrationData<unknown, unknown[], unknown>>;
 
 	let allInstancesInContext = execContext.getAll();
