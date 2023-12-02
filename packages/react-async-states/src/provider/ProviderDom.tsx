@@ -1,6 +1,6 @@
 import React from "react";
 import { HydrationData, requestContext, StateInterface } from "async-states";
-import { HydrationProps } from "./context";
+import { ProviderProps } from "./context";
 
 declare global {
 	interface Window {
@@ -11,16 +11,19 @@ declare global {
 	}
 }
 
-export default function HydrationDom({ id, context }: HydrationProps) {
-	let existingHtml = React.useRef<string | null>();
+export default function ProviderDom({ id, context }: ProviderProps) {
 	let currentContext = requestContext(context);
+	let existingHtml = React.useRef<string | null>(null);
 
 	if (!existingHtml.current) {
 		let existingContainer = document.getElementById(id);
-		existingHtml.current = existingContainer && existingContainer.innerHTML;
+		if (existingContainer) {
+			existingHtml.current = existingContainer.innerHTML;
+		}
 	}
 
 	React.useEffect(() => hydrateContext(currentContext), [context]);
+
 	return existingHtml.current ? (
 		<script
 			id={id}
@@ -62,7 +65,7 @@ function parseInstanceHydratedData(hydrationId: string): {
 	let key: string | undefined = undefined;
 
 	if (hydrationId) {
-		let matches = hydrationId.match(/__INSTANCE__(.*$)/);
+		let matches = RegExp(/__INSTANCE__(.*$)/).exec(hydrationId);
 		if (matches) {
 			key = matches[1];
 		}

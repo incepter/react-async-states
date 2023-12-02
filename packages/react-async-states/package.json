@@ -17,6 +17,7 @@
     "start": "pnpm dev",
     "prebuild": "pnpm test && rimraf dist",
     "build": "pnpm clean:dist && rollup -c rollup/rollup.config.js",
+    "check": "pnpm test && pnpm build",
     "dev": "pnpm clean:dist && rollup -c rollup/rollup.config.dev.js -w"
   },
   "peerDependencies": {

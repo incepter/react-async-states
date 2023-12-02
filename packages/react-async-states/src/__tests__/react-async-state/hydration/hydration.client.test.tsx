@@ -1,15 +1,15 @@
 import * as React from "react";
 import { render, fireEvent, screen } from "@testing-library/react";
 import { getSource } from "async-states";
-import Hydration from "../../../hydration/Hydration";
+import Provider from "../../../provider/Provider";
 import AsyncStateComponent from "../../utils/AsyncStateComponent";
 import { flushPromises } from "../../utils/test-utils";
 import { mockDateNow } from "../../utils/setup";
 
 mockDateNow();
-jest.mock("../../../hydration/context", () => {
+jest.mock("../../../provider/context", () => {
 	return {
-		...jest.requireActual("../../../hydration/context"),
+		...jest.requireActual("../../../provider/context"),
 		isServer: false,
 	};
 });
@@ -23,7 +23,7 @@ function BootHydration({ data }: { data: string }) {
 }
 
 describe("should hydrate async states", () => {
-	it("should perform basic hydration", async () => {
+	it("should perform basic Provider", async () => {
 		// given
 		let ctx = {};
 		let hydrationScript =
@@ -32,11 +32,11 @@ describe("should hydrate async states", () => {
 		function Test() {
 			return (
 				<div data-testid="parent">
-					<Hydration id="test" context={ctx}>
+					<Provider id="test" context={ctx}>
 						<BootHydration data={hydrationScript} />
 						<AsyncStateComponent config={{ key: "state-1" }} />
 						<AsyncStateComponent config={{ key: "state-2" }} />
-					</Hydration>
+					</Provider>
 				</div>
 			);
 		}
@@ -76,16 +76,16 @@ describe("should hydrate async states", () => {
 		function Test() {
 			return (
 				<div data-testid="parent">
-					<Hydration id="test" context={ctx}>
+					<Provider id="test" context={ctx}>
 						<BootHydration data={hydrationScript} />
 						<AsyncStateComponent config={{ key: "state-1" }} />
 						<AsyncStateComponent config={{ key: "state-2" }} />
 						<Wrapper>
-							<Hydration id="test" context={ctx}>
+							<Provider id="test" context={ctx}>
 								<BootHydration data='window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__state-1":{"state":{"status":"success","data":43,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"payload":{}}})' />
-							</Hydration>
+							</Provider>
 						</Wrapper>
-					</Hydration>
+					</Provider>
 				</div>
 			);
 		}

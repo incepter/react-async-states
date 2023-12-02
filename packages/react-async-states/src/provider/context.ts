@@ -5,13 +5,13 @@ import { __DEV__ } from "../shared";
 export let Context = React.createContext<any>(null);
 
 export function useExecutionContext(probablyContext?: any): LibraryContext {
-	let currentHydrationContext = React.useContext(Context);
+	let currentContext = React.useContext(Context);
 
 	if (probablyContext) {
 		return probablyContext;
 	}
 
-	if (!currentHydrationContext && isServer) {
+	if (!currentContext && isServer) {
 		if (__DEV__) {
 			console.error(
 				"[Warning] async-states requires in a server like " +
@@ -22,21 +22,21 @@ export function useExecutionContext(probablyContext?: any): LibraryContext {
 					"<Provider id='some-id'>{children}</Provider>."
 			);
 		}
-		throw new Error("HydrationContext not found in the server.");
+		throw new Error("Provider not found in the server.");
 	}
 
-	if (!currentHydrationContext) {
+	if (!currentContext) {
 		return requestContext(null);
 	}
 
-	return requestContext(currentHydrationContext);
+	return requestContext(currentContext);
 }
 
 export let maybeWindow = typeof window !== "undefined" ? window : undefined;
 export let isServer =
 	typeof maybeWindow === "undefined" || "Deno" in maybeWindow;
 
-export type HydrationProps = {
+export type ProviderProps = {
 	id: string;
 	context?: any;
 	exclude?:

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Context } from "../hydration/context";
+import { Context } from "../provider/context";
 import { parseConfig } from "./modules/HookResolveConfig";
 import {
 	LegacyHookReturn,
