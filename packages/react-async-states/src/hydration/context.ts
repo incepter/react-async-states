@@ -1,7 +1,8 @@
 import * as React from "react";
 import { State, requestContext, LibraryContext } from "async-states";
+import { __DEV__ } from "../shared";
 
-export let HydrationContext = React.createContext<any | null>(null);
+export let HydrationContext = React.createContext<any>(null);
 
 export function useExecutionContext(probablyContext?: any): LibraryContext {
 	let currentHydrationContext = React.useContext(HydrationContext);
@@ -11,6 +12,16 @@ export function useExecutionContext(probablyContext?: any): LibraryContext {
 	}
 
 	if (!currentHydrationContext && isServer) {
+		if (__DEV__) {
+			console.error(
+				"[Warning] async-states requires in a server like " +
+					"environment a context per request to avoid leaking states " +
+					"accidentally. To solve this issue, you should:\n\n" +
+					"import { Provider } from 'react-async-states' and add it in your " +
+					"tree like this: \n" +
+					"<Provider id='some-id'>{children}</Provider>."
+			);
+		}
 		throw new Error("HydrationContext not found in the server.");
 	}
 
@@ -23,7 +34,7 @@ export function useExecutionContext(probablyContext?: any): LibraryContext {
 
 export let maybeWindow = typeof window !== "undefined" ? window : undefined;
 export let isServer =
-	!maybeWindow || !maybeWindow.document || !maybeWindow.document.createComment;
+	typeof maybeWindow === "undefined" || "Deno" in maybeWindow;
 
 export type HydrationProps = {
 	id: string;

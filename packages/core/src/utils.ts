@@ -3,9 +3,8 @@ import { ProducerProps, ProducerSavedProps } from "./types";
 export let __DEV__ = process.env.NODE_ENV !== "production";
 export let maybeWindow = typeof window !== "undefined" ? window : undefined;
 export let isServer =
-	typeof maybeWindow === "undefined" ||
-	!maybeWindow.document ||
-	!maybeWindow.document.createElement;
+	typeof maybeWindow === "undefined" || "Deno" in maybeWindow;
+
 export let emptyArray = [];
 
 export function defaultHash<A extends unknown[]>(
