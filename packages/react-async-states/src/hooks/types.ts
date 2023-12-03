@@ -332,4 +332,9 @@ export interface SubscriptionAlternate<T, A extends unknown[], E, S> {
 
 	// dev mode properties
 	at?: string | null;
+	__DEV__?: {
+		didWarn: boolean;
+		didUseState: boolean;
+		spiedReturn: LegacyHookReturn<T, A, E, S>;
+	};
 }
