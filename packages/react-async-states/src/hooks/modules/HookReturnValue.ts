@@ -67,8 +67,8 @@ export function createLegacyInitialReturn<T, A extends unknown[], E, S>(
 		isSuccess: false,
 
 		error: null,
-		state: currentState,
-		data: selectedState,
+		state: selectedState,
+		data: currentState.data ?? null,
 		lastSuccess: instance.lastSuccess,
 
 		read: subscription.read,
@@ -101,8 +101,8 @@ export function createLegacySuccessReturn<T, A extends unknown[], E, S>(
 		isSuccess: true,
 
 		error: null,
-		data: selectedState,
-		state: currentState,
+		state: selectedState,
+		data: currentState.data,
 		lastSuccess: instance.lastSuccess,
 
 		read: subscription.read,
@@ -134,9 +134,9 @@ export function createLegacyErrorReturn<T, A extends unknown[], E, S>(
 		isPending: false,
 		isSuccess: false,
 
-		data: selectedState,
-		state: currentState,
+		state: selectedState,
 		error: currentState.data,
+		data: lastSuccess.data ?? null,
 		lastSuccess: instance.lastSuccess,
 
 		read: subscription.read,
@@ -157,11 +157,7 @@ export function createLegacyPendingReturn<T, A extends unknown[], E, S>(
 	let selectedState: S;
 	if (config.selector) {
 		// selector receives a "non-pending" state
-		selectedState = config.selector(
-			previousState,
-			lastSuccess,
-			instance.cache
-		);
+		selectedState = config.selector(previousState, lastSuccess, instance.cache);
 	} else {
 		selectedState = currentState as S;
 	}
@@ -174,8 +170,8 @@ export function createLegacyPendingReturn<T, A extends unknown[], E, S>(
 		isInitial: false,
 		isSuccess: false,
 
-		data: selectedState,
-		state: currentState,
+		state: selectedState,
+		data: lastSuccess.data ?? null,
 		lastSuccess: instance.lastSuccess,
 		error: previousState.status === "error" ? previousState.data : null,
 

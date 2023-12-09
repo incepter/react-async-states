@@ -109,7 +109,7 @@ function createSubscription<T, A extends unknown[], E, S>(
 			throw currentReturn.error;
 		}
 
-		return currentReturn.data;
+		return currentReturn.state;
 	}
 
 	function onChange(
@@ -196,7 +196,7 @@ export function beginRenderSubscription<T, A extends unknown[], E, S>(
 		let newSelectedValue = pendingSelector(state, lastSuccess, cache);
 
 		// this means that the selected value did change
-		if (!comparingFunction(subscription.return.data, newSelectedValue)) {
+		if (!comparingFunction(subscription.return.state, newSelectedValue)) {
 			// todo: this will recalculate the selected state, make it not
 			alternate.return = createSubscriptionLegacyReturn(
 				subscription,

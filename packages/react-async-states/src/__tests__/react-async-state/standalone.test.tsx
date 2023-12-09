@@ -22,11 +22,11 @@ describe("should do basic subscription to an async state", () => {
 				});
 
 				function increment() {
-					run(data + 1);
+					run(data! + 1);
 				}
 
 				function decrement() {
-					run(data - 1);
+					run(data! - 1);
 				}
 
 				function incrementReplaceState() {

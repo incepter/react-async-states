@@ -28,6 +28,7 @@ describe("subscribe to lane and operate on it", () => {
 
 	function Runner() {
 		const {
+			state, // silence a warning in dev of not using state
 			source: { run },
 		} = useAsync(async function (props) {
 			getSource("counters")!.getLane("counter-1").run();

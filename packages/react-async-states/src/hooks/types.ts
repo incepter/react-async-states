@@ -2,10 +2,7 @@ import {
 	AbortFn,
 	CacheConfig,
 	CachedState,
-	ErrorState,
-	InitialState,
 	LastSuccessSavedState,
-	PendingState,
 	Producer,
 	ProducerConfig,
 	RunEffect,
@@ -13,29 +10,7 @@ import {
 	State,
 	StateInterface,
 	Status,
-	SuccessState,
 } from "async-states";
-
-export interface BaseUseAsyncState<
-	T,
-	A extends unknown[],
-	E,
-	S = State<T, A, E>
-> {
-	source: Source<T, A, E>;
-
-	onChange(
-		events:
-			| ((prevEvents?: HookChangeEvents<T, A, E>) => void)
-			| HookChangeEvents<T, A, E>
-	): void;
-
-	onSubscribe(
-		events:
-			| ((prevEvents?: UseAsyncStateEventSubscribe<T, A, E>) => void)
-			| UseAsyncStateEventSubscribe<T, A, E>
-	): void;
-}
 
 export type UseAsyncState<
 	T,
@@ -237,53 +212,53 @@ interface BaseHooksReturn<T, A extends unknown[], E, S = State<T, A, E>> {
 
 export interface HookReturnInitial<T, A extends unknown[], E, S>
 	extends BaseHooksReturn<T, A, E, S> {
-	state: InitialState<T, A>;
+	state: S;
 
 	isError: false;
 	isInitial: true;
 	isSuccess: false;
 	isPending: false;
 
-	data: S;
 	error: null;
+	data: T | null;
 }
 
 export interface HookReturnSuccess<T, A extends unknown[], E, S>
 	extends BaseHooksReturn<T, A, E, S> {
-	state: SuccessState<T, A>;
+	state: S;
 
 	isError: false;
 	isInitial: false;
 	isSuccess: true;
 	isPending: false;
 
-	data: S;
+	data: T;
 	error: null;
 }
 
 export interface HookReturnError<T, A extends unknown[], E, S>
 	extends BaseHooksReturn<T, A, E, S> {
-	state: ErrorState<T, A, E>;
+	state: S;
 
 	isError: true;
 	isInitial: false;
 	isSuccess: false;
 	isPending: false;
 
-	data: S;
 	error: E;
+	data: T | null;
 }
 
 export interface HookReturnPending<T, A extends unknown[], E, S>
 	extends BaseHooksReturn<T, A, E, S> {
-	state: PendingState<T, A, E>;
+	state: S;
 
 	isError: false;
 	isPending: true;
 	isInitial: false;
 	isSuccess: false;
 
-	data: S;
+	data: T | null;
 	error: E | null;
 }
 
@@ -292,6 +267,10 @@ export type LegacyHookReturn<T, A extends unknown[], E, S = State<T, A, E>> =
 	| HookReturnPending<T, A, E, S>
 	| HookReturnSuccess<T, A, E, S>
 	| HookReturnError<T, A, E, S>;
+
+export type ModernHookReturn<T, A extends unknown[], E, S = State<T, A, E>> =
+	| HookReturnInitial<T, A, E, S>
+	| HookReturnSuccess<T, A, E, S>;
 
 export type HookChangeEvents<T, A extends unknown[], E> =
 	| UseAsyncStateEventFn<T, A, E>
