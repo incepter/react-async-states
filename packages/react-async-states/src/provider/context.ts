@@ -1,7 +1,7 @@
 import * as React from "react";
 import { LibraryContext, State } from "async-states";
 
-export let Context = React.createContext<any>(null);
+export let Context = React.createContext<LibraryContext | null>(null);
 
 export let maybeWindow = typeof window !== "undefined" ? window : undefined;
 export let isServer =

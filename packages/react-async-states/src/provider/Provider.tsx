@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createContext } from "async-states";
+import { createContext, LibraryContext } from "async-states";
 import { Context, ProviderProps, isServer } from "./context";
 import ProviderServer from "./ProviderServer";
 import ProviderDom from "./ProviderDom";
@@ -7,24 +7,29 @@ import ProviderDom from "./ProviderDom";
 // the context prop is a non-null object that can be used as a key for WeakMap
 export default function Provider({
 	id,
-	context,
 	exclude,
 	children,
+	context: contextArg,
 }: Readonly<ProviderProps>) {
 	if (!id) {
 		throw new Error("Please give a unique id to Provider!");
 	}
 
-	// automatically reuse parent context when there is
-	let contextArg = context;
-	let parentProvider = React.useContext(Context);
-	if (parentProvider !== null && !contextArg) {
-		contextArg = parentProvider;
-	}
+	// automatically reuse parent context when there is and no 'context' object
+	// is provided
+	let parentLibraryProvider = React.useContext(Context);
 
 	// this object gets recomputed in the implementation providers, to avoid that
 	// we reference it and pass it as prop
-	let libraryContextObject = createContext(contextArg);
+	let libraryContextObject: LibraryContext;
+	if (parentLibraryProvider !== null && !contextArg) {
+		libraryContextObject = parentLibraryProvider;
+	} else {
+		if (!contextArg && isServer) {
+			contextArg = {};
+		}
+		libraryContextObject = createContext(contextArg ?? null);
+	}
 
 	// for further context provider optimization involving bailing out the render
 	// when the children reference stays the same, we will memoize it.
@@ -60,6 +65,8 @@ export default function Provider({
 	// bail out and skip the children render and only propagates the context
 	// change.
 	return (
-		<Context.Provider value={contextArg}>{memoizedChildren}</Context.Provider>
+		<Context.Provider value={libraryContextObject}>
+			{memoizedChildren}
+		</Context.Provider>
 	);
 }

@@ -8,14 +8,13 @@ import {
 } from "./types";
 import {
 	__DEV__setHookCallerName,
-	__DEV__spyOnStateUsage, __DEV__warnInDevAboutUnusedState,
 	autoRunAndSubscribeEvents,
 	beginRenderSubscription,
 	commit,
 	useRetainInstance,
 } from "./modules/HookSubscription";
-import {__DEV__} from "../shared";
-import {useCallerName} from "../helpers/useCallerName";
+import { __DEV__ } from "../shared";
+import { useCallerName } from "../helpers/useCallerName";
 
 // this is the main hook, useAsyncState previously
 export function useAsync_internal<T, A extends unknown[], E, S>(
@@ -61,11 +60,6 @@ export function useAsync_internal<T, A extends unknown[], E, S>(
 	// the render afterward.
 	// the returned priority is obviously for the alternate
 	let returnedSubscription = alternate ?? subscription;
-
-	if (__DEV__) {
-		__DEV__spyOnStateUsage(returnedSubscription);
-		__DEV__warnInDevAboutUnusedState(returnedSubscription);
-	}
 
 	return returnedSubscription.return;
 }
