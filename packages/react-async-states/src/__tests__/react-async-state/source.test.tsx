@@ -12,7 +12,8 @@ describe("should subscribe to a module level source object", () => {
 		});
 
 		function Controls() {
-			useAsync(source);
+			// unused state to silence a warning in dev
+			let { state } = useAsync(source);
 
 			return (
 				<div>

@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "types": ["node", "jest"],
+    "types": ["node", "jest", "react"],
     "paths": {
       "tslib": ["node_modules/tslib"]
     },

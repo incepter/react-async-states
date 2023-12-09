@@ -109,7 +109,7 @@ function createSubscription<T, A extends unknown[], E, S>(
 			throw currentReturn.error;
 		}
 
-		return currentReturn.data;
+		return currentReturn.state;
 	}
 
 	function onChange(
@@ -196,7 +196,7 @@ export function beginRenderSubscription<T, A extends unknown[], E, S>(
 		let newSelectedValue = pendingSelector(state, lastSuccess, cache);
 
 		// this means that the selected value did change
-		if (!comparingFunction(subscription.return.data, newSelectedValue)) {
+		if (!comparingFunction(subscription.return.state, newSelectedValue)) {
 			// todo: this will recalculate the selected state, make it not
 			alternate.return = createSubscriptionLegacyReturn(
 				subscription,
@@ -511,4 +511,85 @@ export function __DEV__setHookCallerName(name: string | undefined) {
 
 export function __DEV__unsetHookCallerName() {
 	currentlyRenderingComponentName = null;
+}
+
+export function __DEV__spyOnStateUsage(
+	sub: SubscriptionAlternate<any, any, any, any>
+) {
+	if (__DEV__) {
+		let didSpy = true;
+		if (!sub.__DEV__) {
+			didSpy = false;
+			sub.__DEV__ = {
+				didWarn: false,
+				didUseState: false,
+				spiedReturn: sub.return,
+			};
+		}
+		let devSpy = sub.__DEV__;
+		let returnedValue = sub.return;
+
+		if (didSpy && returnedValue === devSpy.spiedReturn) {
+			// we are already spying over this return value
+			return;
+		}
+
+		let clonedReturn = { ...returnedValue };
+
+		let read = clonedReturn.read;
+		let state = clonedReturn.state;
+		let lastSuccess = clonedReturn.state;
+
+		Object.defineProperty(clonedReturn, "state", {
+			get: function () {
+				sub.__DEV__!.didUseState = true;
+				return state;
+			},
+			enumerable: true,
+		});
+		Object.defineProperty(clonedReturn, "lastSuccess", {
+			get: function () {
+				devSpy.didUseState = true;
+				return lastSuccess;
+			},
+			enumerable: true,
+		});
+		// consider read as a way to get the state too
+		Object.defineProperty(clonedReturn, "read", {
+			get: function () {
+				devSpy.didUseState = true;
+				return read;
+			},
+			enumerable: true,
+		});
+
+		Object.freeze(clonedReturn);
+
+		sub.return = clonedReturn;
+		devSpy.spiedReturn = clonedReturn;
+	}
+}
+
+export function __DEV__warnInDevAboutUnusedState(
+	sub: SubscriptionAlternate<any, any, any, any>
+) {
+	if (__DEV__) {
+		React.useLayoutEffect(() => {
+			let devSpy = sub.__DEV__;
+			if (!devSpy) {
+				return;
+			}
+
+			if (!devSpy.didUseState && !devSpy.didWarn) {
+				devSpy.didWarn = true;
+				console.error(
+					`[Warning] - useAsyncStates called in ${sub.at} without ` +
+						"using the state, lastSuccess or read properties. You can use the source " +
+						"directly if it is global scoped or via createSource. You are mostly" +
+						" using the hook to get the run or another function while performing" +
+						" a subscription. This is not recommended and not useful."
+				);
+			}
+		}, [sub.return]);
+	}
 }
