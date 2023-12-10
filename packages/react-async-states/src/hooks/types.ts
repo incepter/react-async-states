@@ -110,11 +110,6 @@ export type UseAsyncStateConfiguration<
 		| ((cache: Record<string, CachedState<T, A, E>> | null) => T);
 
 	context?: unknown;
-
-	/**
-	 * @deprecated useAsyncState 'concurrent' option is deprecated. it will have
-	 * a new
-	 */
 	concurrent?: boolean;
 
 	lazy?: boolean;
