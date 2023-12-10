@@ -4,7 +4,7 @@
   "author": "incepter",
   "sideEffects": false,
   "name": "async-states",
-  "version": "2.0.0-alpha-4",
+  "version": "2.0.0-alpha-5",
   "main": "dist/umd/index",
   "types": "dist/es/index",
   "module": "dist/es/src/index",

@@ -10,10 +10,10 @@
   },
   "dependencies": {
     "state-fiber": "workspace:^0.0.0",
-    "async-states": "workspace:^2.0.0-alpha-4",
+    "async-states": "workspace:^2.0.0-alpha-5",
     "axios": "^1.3.4",
     "react": "canary",
-    "react-async-states": "workspace:^2.0.0-alpha-4",
+    "react-async-states": "workspace:^2.0.0-alpha-5",
     "react-dom": "canary",
     "react-router-dom": "6.10.0"
   },
