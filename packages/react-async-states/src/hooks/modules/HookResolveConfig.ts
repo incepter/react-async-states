@@ -125,8 +125,11 @@ function resolveFromObjectConfig<T, A extends unknown[], E>(
 	parsedConfiguration: PartialUseAsyncStateConfiguration<T, A, E, any>
 ): StateInterface<T, A, E> {
 	let { key, producer } = parsedConfiguration;
+
 	if (!key) {
 		key = nextKey();
+		// anonymous states won't be stored in the context for easier GC
+		parsedConfiguration.storeInContext = false;
 	}
 	let existingInstance = executionContext.get(key);
 
@@ -159,8 +162,11 @@ function resolveFromFunctionConfig<T, A extends unknown[], E>(
 	parsedConfiguration: PartialUseAsyncStateConfiguration<T, A, E, any>
 ): StateInterface<T, A, E> {
 	let key = nextKey();
+
+	// anonymous states won't be stored in the context for easier GC
+	parsedConfiguration.storeInContext = false;
 	// todo: reuse instance from previous render
-	return createSource(key, parsedConfiguration.producer!, parsedConfiguration)
+	return createSource(key, parsedConfiguration.producer, parsedConfiguration)
 		.inst;
 }
 
