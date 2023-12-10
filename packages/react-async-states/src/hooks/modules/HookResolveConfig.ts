@@ -127,6 +127,7 @@ function resolveFromObjectConfig<T, A extends unknown[], E>(
 	let { key, producer } = parsedConfiguration;
 
 	if (!key) {
+		requireAKeyInTheServer();
 		key = nextKey();
 		// anonymous states won't be stored in the context for easier GC
 		parsedConfiguration.storeInContext = false;
@@ -161,6 +162,7 @@ function resolveFromStringConfig<T, A extends unknown[], E>(
 function resolveFromFunctionConfig<T, A extends unknown[], E>(
 	parsedConfiguration: PartialUseAsyncStateConfiguration<T, A, E, any>
 ): StateInterface<T, A, E> {
+	requireAKeyInTheServer();
 	let key = nextKey();
 
 	// anonymous states won't be stored in the context for easier GC
@@ -179,10 +181,7 @@ function requireAnExecContextInServer(
 	// - not in server
 	// - we are in a Library Context provider tree (and not using a source)
 	// - the provided config is not an object (then, we will attach to parent provider)
-	if (
-		!isServer ||
-		typeof mixedConfig !== "object"
-	) {
+	if (!isServer || typeof mixedConfig !== "object") {
 		return;
 	}
 
@@ -217,4 +216,11 @@ function requireAnExecContextInServer(
 				"The request object should be unique to every request to perform isolation."
 		);
 	}
+}
+
+function requireAKeyInTheServer() {
+	if (!isServer) {
+		return;
+	}
+	throw new Error("A key is required in the server to avoid hydration issues.");
 }

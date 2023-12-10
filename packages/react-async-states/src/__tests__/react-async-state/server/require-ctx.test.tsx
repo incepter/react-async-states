@@ -120,4 +120,30 @@ describe("context in the server", () => {
 
 		console.error = originalConsoleError;
 	});
+	it("should throw when no key is provided in the server", async () => {
+		let originalConsoleError = console.error;
+		console.error = jest.fn();
+
+		// given
+		function Test() {
+			return (
+				<div data-testid="parent">
+					<Provider id="test-test">
+						<AsyncStateComponent config={{}} />
+					</Provider>
+				</div>
+			);
+		}
+
+		// when
+		expect(() => {
+			render(
+				<React.StrictMode>
+					<Test />
+				</React.StrictMode>
+			);
+		}).toThrow("A key is required in the server to avoid hydration issues.");
+
+		console.error = originalConsoleError;
+	});
 });
