@@ -93,6 +93,8 @@ export type UseAsyncStateConfiguration<
 	S = State<T, A, E>
 > = {
 	key?: string;
+	storeInContext?: boolean;
+
 	lane?: string;
 	source?: Source<T, A, E>;
 	producer?: Producer<T, A, E>;
@@ -316,4 +318,26 @@ export interface SubscriptionAlternate<T, A extends unknown[], E, S> {
 		didUseState: boolean;
 		spiedReturn: LegacyHookReturn<T, A, E, S>;
 	};
+}
+
+// useData will suspend initially to get data, otherwise it will give the
+// previously existing data.
+// if initialValue is provided, it won't suspend and just return it
+// no cache by default unless provided by the source or options
+// let [count, {setState}] = useData({ key: "count", initialValue: 0 })
+type UseDataReturn<TData, TArgs extends unknown[], TError> = [TData, {
+	isPending: boolean;
+	error: TError | null;
+	source: Source<TData, TArgs, TError>
+}]
+
+// no suspending unless read is called in userland
+// will automatically refetch data after a state time is elapsed
+// will automatically refetch on window focus and stale data
+interface UseQueryReturn<TData, TArgs extends unknown[], TError>
+	extends Omit<BaseHooksReturn<TData, TArgs, TError>, "lastSuccess"> {
+	isPending: boolean;
+
+	data: TData | null;
+	error: TError | null;
 }

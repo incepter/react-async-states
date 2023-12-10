@@ -58,7 +58,7 @@ import { initializeInstance } from "./modules/StateInitialization";
 export class AsyncState<T, A extends unknown[], E>
 	implements StateInterface<T, A, E>
 {
-	readonly ctx: LibraryContext;
+	readonly ctx: LibraryContext | null;
 
 	// used only in __DEV__ mode
 	journal?: any[];
@@ -99,32 +99,39 @@ export class AsyncState<T, A extends unknown[], E>
 		producer: Producer<T, A, E> | undefined | null,
 		config?: ProducerConfig<T, A, E>
 	) {
-		// fallback to globalContext (null)
-		let context = config?.context || null;
-		let libraryContext = requestContext(context);
-		let existingInstance = libraryContext.get(key);
+		let instanceConfig: ProducerConfig<T, A, E> = shallowClone(config);
 
-		// when an instance with the same key exists, reuse it
-		if (existingInstance) {
-			existingInstance.actions.patchConfig(config);
-			existingInstance.actions.replaceProducer(producer || null);
+		if (instanceConfig.storeInContext !== false) {
+			// fallback to globalContext (null)
+			let context = config?.context || null;
+			let libraryContext = requestContext(context);
+			let existingInstance = libraryContext.get(key);
 
-			return existingInstance;
+			// when an instance with the same key exists, reuse it
+			if (existingInstance) {
+				existingInstance.actions.patchConfig(config);
+				existingInstance.actions.replaceProducer(producer || null);
+
+				return existingInstance;
+			}
+
+			// start recording journal events early before end of creation
+			if (__DEV__) {
+				this.journal = [];
+			}
+
+			this.ctx = libraryContext;
+			libraryContext.set(key, this);
+		} else {
+			this.ctx = null;
 		}
-
-		// start recording journal events early before end of creation
-		if (__DEV__) {
-			this.journal = [];
-		}
-		libraryContext.set(key, this);
 
 		this.key = key;
-		this.ctx = libraryContext;
-		this.fn = producer ?? null;
-		this.uniqueId = nextUniqueId();
-		this.config = shallowClone(config);
-		this.actions = new StateSource(this);
 
+		this.fn = producer ?? null;
+		this.config = instanceConfig;
+		this.uniqueId = nextUniqueId();
+		this.actions = new StateSource(this);
 		this.lanes = null;
 		this.queue = null;
 		this.cache = null;
@@ -308,8 +315,6 @@ export class StateSource<T, A extends unknown[], E> implements Source<T, A, E> {
 
 		newLane.parent = instance;
 		instance.lanes[laneKey] = newLane;
-
-		// console.log("created shit", instance.lanes);
 
 		return newLane.actions;
 	}

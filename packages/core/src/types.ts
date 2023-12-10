@@ -157,7 +157,7 @@ export interface StateInterface<T, A extends unknown[], E> {
 	// producer
 	promise: Promise<T> | null;
 	fn: Producer<T, A, E> | null;
-	readonly ctx: LibraryContext;
+	readonly ctx: LibraryContext | null;
 
 	latestRun: RunTask<T, A, E> | null;
 	currentAbort: AbortFn | null;
@@ -290,6 +290,7 @@ export type ProducerConfig<T, A extends unknown[], E> = {
 	// dev only
 	hideFromDevtools?: boolean;
 	retryConfig?: RetryConfig<T, A, E>;
+	storeInContext?: boolean;
 };
 
 export type RetryConfig<T, A extends unknown[], E> = {

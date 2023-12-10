@@ -119,7 +119,7 @@ importers:
         specifier: 18.0.11
         version: 18.0.11
       async-states:
-        specifier: workspace:^2.0.0-alpha-3
+        specifier: workspace:^2.0.0-alpha-4
         version: link:../../core
       autoprefixer:
         specifier: 10.4.14
@@ -143,7 +143,7 @@ importers:
         specifier: 18.2.0
         version: 18.2.0
       react-async-states:
-        specifier: workspace:^2.0.0-alpha-3
+        specifier: workspace:^2.0.0-alpha-4
         version: link:../../react-async-states
       react-dom:
         specifier: 18.2.0
@@ -162,7 +162,7 @@ importers:
   packages/demo/react-async-states-simple-demo:
     dependencies:
       async-states:
-        specifier: workspace:^2.0.0-alpha-3
+        specifier: workspace:^2.0.0-alpha-4
         version: link:../../core
       axios:
         specifier: ^1.3.4
@@ -171,7 +171,7 @@ importers:
         specifier: canary
         version: 18.3.0-canary-9f4fbec5f-20230717
       react-async-states:
-        specifier: workspace:^2.0.0-alpha-3
+        specifier: workspace:^2.0.0-alpha-4
         version: link:../../react-async-states
       react-dom:
         specifier: canary
@@ -230,10 +230,10 @@ importers:
         specifier: ^2.2.0
         version: 2.2.0(vite@3.2.5)
       async-states:
-        specifier: workspace:^2.0.0-alpha-3
+        specifier: workspace:^2.0.0-alpha-4
         version: link:../core
       react-async-states:
-        specifier: workspace:^2.0.0-alpha-3
+        specifier: workspace:^2.0.0-alpha-4
         version: link:../react-async-states
       rollup-plugin-copy:
         specifier: ^3.4.0
@@ -348,7 +348,7 @@ importers:
         specifier: 18.0.25
         version: 18.0.25
       async-states:
-        specifier: workspace:^2.0.0-alpha-3
+        specifier: workspace:^2.0.0-alpha-4
         version: link:../core
       babel-jest:
         specifier: ^29.3.1
@@ -472,7 +472,7 @@ importers:
         specifier: 18.0.25
         version: 18.0.25
       async-states:
-        specifier: workspace:^2.0.0-alpha-3
+        specifier: workspace:^2.0.0-alpha-4
         version: link:../core
       babel-jest:
         specifier: ^29.3.1
@@ -502,7 +502,7 @@ importers:
         specifier: ^29.3.1
         version: 29.3.1
       react-async-states:
-        specifier: workspace:^2.0.0-alpha-3
+        specifier: workspace:^2.0.0-alpha-4
         version: link:../react-async-states
       react-test-renderer:
         specifier: 18.2.0
