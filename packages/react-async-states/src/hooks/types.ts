@@ -191,7 +191,6 @@ export interface UseAsyncStateType<
 
 interface BaseHooksReturn<T, A extends unknown[], E, S = State<T, A, E>> {
 	source: Source<T, A, E>;
-	lastSuccess: LastSuccessSavedState<T, A>;
 	read(suspend?: boolean, throwError?: boolean): S;
 
 	onChange(
@@ -309,9 +308,8 @@ export interface SubscriptionAlternate<T, A extends unknown[], E, S> {
 	// dev mode properties
 	at?: string | null;
 	__DEV__?: {
-		didWarn: boolean;
-		didUseState: boolean;
-		spiedReturn: LegacyHookReturn<T, A, E, S>;
+		didAddLastSuccessGetter: boolean;
+		didWarnAboutLastSuccessUsage: boolean;
 	};
 }
 
