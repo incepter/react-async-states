@@ -174,7 +174,7 @@ const {run} = useAsyncState({
     // run cache hash is the username passed to the producer, this allows to
     // have cached entries such as: `incepter` : { state: {data}}
     hash: (args) => args[0],
-    getDeadline: (state) => state.data.maxAge || Infinity,
+    timeout: (state) => state.data.maxAge || Infinity,
   }
 });
 
