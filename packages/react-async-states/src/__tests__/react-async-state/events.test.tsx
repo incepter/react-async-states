@@ -10,11 +10,9 @@ describe("useAsync - events", () => {
 		const mockedFn = jest.fn();
 		const mockedFn2 = jest.fn();
 		const mockedFn3 = jest.fn();
-		const counterSource = createSource<number, any, any[]>(
-			"counter",
-			null,
-			{ initialValue: 0 }
-		);
+		const counterSource = createSource<number, any, any[]>("counter", null, {
+			initialValue: 0,
+		});
 
 		function Component({ subKey }: { subKey: string }) {
 			const {
@@ -92,5 +90,31 @@ describe("useAsync - events", () => {
 		expect(mockedFn).toHaveBeenCalled();
 		expect(mockedFn2).not.toHaveBeenCalled();
 		expect(mockedFn3).toHaveBeenCalled();
+	});
+	it("should invoke onChange event added on render", async () => {
+		// given
+		let spy = jest.fn();
+		const source = createSource<number, any, any[]>("test-2", null, {
+			initialValue: 0,
+		});
+
+		function Component() {
+			const { onChange } = useAsync(source);
+			onChange([({ state: newState }) => spy(newState.data)]);
+			return null;
+		}
+
+		// when
+		render(
+			<React.StrictMode>
+				<Component />
+			</React.StrictMode>
+		);
+
+		act(() => {
+			source.setState(2);
+		});
+		expect(spy).toHaveBeenCalledTimes(1);
+		expect(spy).toHaveBeenCalledWith(2);
 	});
 });
