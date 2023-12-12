@@ -66,8 +66,12 @@ function createSubscription<T, A extends unknown[], E, S>(
 		onSubscribe,
 		alternate: null,
 
-		changeEvents,
-		subscribeEvents,
+		get changeEvents() {
+			return changeEvents;
+		},
+		get subscribeEvents() {
+			return subscribeEvents;
+		},
 
 		// used in dev mode
 		at: currentlyRenderingComponentName,
