@@ -25,8 +25,6 @@ export function createSubscriptionLegacyReturn<T, A extends unknown[], E, S>(
 
 	switch (currentStatus) {
 		case "initial": {
-			// when config is lazy, this means we will run synchronously in the
-			// layout effect phase. so we will prepare an optimistic pending state
 			return createLegacyInitialReturn(subscription, config);
 		}
 		case "pending": {
