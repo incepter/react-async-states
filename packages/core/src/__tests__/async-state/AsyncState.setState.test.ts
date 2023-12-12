@@ -1,4 +1,4 @@
-import { AsyncState, StateBuilder, Status } from "../..";
+import { AsyncState } from "../..";
 import { timeout } from "./test-utils";
 import { mockDateNow, TESTS_TS } from "../utils/setup";
 import { pending } from "../../enums";
@@ -27,8 +27,13 @@ describe("AsyncState - setState", () => {
 		if (current.status === pending) {
 			current = current.prev;
 		}
-		let newState = StateBuilder.pending(current, {});
-		myAsyncState.actions.replaceState(newState);
+		myAsyncState.actions.replaceState({
+			status: "pending",
+			data: null,
+			timestamp: Date.now(),
+			prev: current,
+			props: {},
+		});
 		// then
 		let expectedState = {
 			props: {},
@@ -40,7 +45,7 @@ describe("AsyncState - setState", () => {
 				timestamp: TESTS_TS,
 			},
 			timestamp: TESTS_TS,
-			status: Status.pending,
+			status: "pending",
 		};
 		expect(myAsyncState.state).toEqual(expectedState);
 
@@ -50,7 +55,15 @@ describe("AsyncState - setState", () => {
 	it("should update state and do not notify subscribers", async () => {
 		let lastSuccess = myAsyncState.lastSuccess;
 
-		myAsyncState.actions.replaceState(StateBuilder.success({}, null), false);
+		myAsyncState.actions.replaceState(
+			{
+				status: "success",
+				data: {},
+				props: {},
+				timestamp: Date.now(),
+			},
+			false
+		);
 		// then
 		expect(subscription).not.toHaveBeenCalled();
 	});

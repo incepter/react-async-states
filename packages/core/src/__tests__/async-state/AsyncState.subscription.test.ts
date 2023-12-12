@@ -41,7 +41,7 @@ describe("AsyncState - subscriptions", () => {
 					},
 					data: null,
 					timestamp: TESTS_TS,
-					status: Status.pending,
+					status: "pending",
 				},
 			],
 			[
@@ -52,7 +52,7 @@ describe("AsyncState - subscriptions", () => {
 					},
 					data: "Some Value",
 					timestamp: TESTS_TS,
-					status: Status.success,
+					status: "success",
 				},
 			],
 		]);
@@ -62,7 +62,7 @@ describe("AsyncState - subscriptions", () => {
 				args: [],
 				payload: {},
 			},
-			status: Status.success,
+			status: "success",
 			data: "Some Value",
 			timestamp: TESTS_TS,
 		});
@@ -99,7 +99,7 @@ describe("AsyncState - subscriptions", () => {
 						timestamp: TESTS_TS,
 					},
 					data: null,
-					status: Status.pending,
+					status: "pending",
 					timestamp: TESTS_TS,
 				},
 			],
@@ -107,7 +107,7 @@ describe("AsyncState - subscriptions", () => {
 		expect(subscriptionFn).toHaveBeenCalledTimes(1);
 		expect(myAsyncState.state).toEqual({
 			props: null,
-			status: Status.initial,
+			status: "initial",
 			data: null,
 			timestamp: TESTS_TS,
 		});
@@ -137,7 +137,7 @@ describe("AsyncState - subscriptions", () => {
 				args: [],
 				payload: {},
 			},
-			status: Status.success,
+			status: "success",
 			data: "Some Value",
 			timestamp: TESTS_TS,
 		});

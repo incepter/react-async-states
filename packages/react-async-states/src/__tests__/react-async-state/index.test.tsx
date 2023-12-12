@@ -160,7 +160,7 @@ describe("should run producer", () => {
 				<Test />
 			</React.StrictMode>
 		);
-		expect(screen.getByTestId("status").innerHTML).toEqual(Status.initial);
+		expect(screen.getByTestId("status").innerHTML).toEqual("initial");
 		expect(screen.getByTestId("result").innerHTML).toEqual("");
 
 		// then
@@ -169,13 +169,13 @@ describe("should run producer", () => {
 			fireEvent.click(screen.getByTestId("run")); // 2
 		});
 
-		expect(screen.getByTestId("status").innerHTML).toEqual(Status.initial); // fires after 100ms
+		expect(screen.getByTestId("status").innerHTML).toEqual("initial"); // fires after 100ms
 
 		await act(async () => {
 			await jest.advanceTimersByTime(200);
 		});
 
-		expect(screen.getByTestId("status").innerHTML).toEqual(Status.success);
+		expect(screen.getByTestId("status").innerHTML).toEqual("success");
 		expect(screen.getByTestId("result").innerHTML).toEqual("1");
 	});
 	it("should run in debounce mode", async () => {
@@ -223,13 +223,13 @@ describe("should run producer", () => {
 			fireEvent.click(screen.getByTestId("run")); // 3
 		});
 
-		expect(screen.getByTestId("status").innerHTML).toEqual(Status.initial); // fires after 100 millis
+		expect(screen.getByTestId("status").innerHTML).toEqual("initial"); // fires after 100 millis
 
 		await act(async () => {
 			await jest.advanceTimersByTime(200);
 		});
 
-		expect(screen.getByTestId("status").innerHTML).toEqual(Status.success);
+		expect(screen.getByTestId("status").innerHTML).toEqual("success");
 		expect(screen.getByTestId("result").innerHTML).toEqual("3");
 	});
 });

@@ -1,12 +1,10 @@
 export { useAsyncState, useAsync } from "./hooks/useAsync_export";
 
 export {
-	createSource,
 	getSource,
-	Status,
+	createSource,
 	requestContext,
 	createContext,
-	getContext,
 	terminateContext,
 } from "async-states";
 
@@ -27,6 +25,7 @@ export type {
 
 export type {
 	State,
+	Status,
 	Source,
 	Producer,
 	RunEffect,
@@ -53,7 +52,6 @@ export type {
 	OnCacheLoadProps,
 	StateFunctionUpdater,
 	ProducerWrapperInput,
-	StateBuilderInterface,
 } from "async-states";
 
 export type {

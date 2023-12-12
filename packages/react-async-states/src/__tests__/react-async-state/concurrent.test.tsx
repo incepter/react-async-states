@@ -14,7 +14,7 @@ describe("useAsync with concurrent", () => {
 				key: "test-success",
 				producer: () => new Promise<number>((res) => res(15)),
 			});
-			if (state.status !== Status.success) {
+			if (state.status !== "success") {
 				throw new Error("Illegal state");
 			}
 
@@ -46,7 +46,7 @@ describe("useAsync with concurrent", () => {
 				producer: () => new Promise<any>((_, rej) => rej(17)),
 			});
 
-			if (state.status !== Status.error) {
+			if (state.status !== "error") {
 				throw new Error("Illegal state");
 			}
 

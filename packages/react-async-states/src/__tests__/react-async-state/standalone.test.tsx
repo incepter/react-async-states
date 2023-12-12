@@ -116,7 +116,7 @@ describe("should do basic subscription to an async state", () => {
 				run(data - 1);
 			}
 
-			const isPending = status === Status.pending;
+			const isPending = status === "pending";
 			return (
 				<div>
 					<button data-testid="increment" onClick={increment}>
@@ -151,7 +151,7 @@ describe("should do basic subscription to an async state", () => {
 			fireEvent.click(incrementBtn);
 		});
 		// pending state is now skipped!
-		expect(screen.getByTestId("status").innerHTML).toEqual(Status.initial);
+		expect(screen.getByTestId("status").innerHTML).toEqual("initial");
 		expect(screen.getByTestId("result").innerHTML).toEqual("0");
 		expect(screen.getByTestId("pending").innerHTML).toEqual("");
 
@@ -160,7 +160,7 @@ describe("should do basic subscription to an async state", () => {
 		});
 
 		// pending state is now !!
-		expect(screen.getByTestId("status").innerHTML).toEqual(Status.pending);
+		expect(screen.getByTestId("status").innerHTML).toEqual("pending");
 		expect(screen.getByTestId("result").innerHTML).toEqual("");
 		expect(screen.getByTestId("pending").innerHTML).toEqual(pendingText);
 
@@ -168,7 +168,7 @@ describe("should do basic subscription to an async state", () => {
 			await jest.advanceTimersByTime(10);
 		});
 
-		expect(screen.getByTestId("status").innerHTML).toEqual(Status.success);
+		expect(screen.getByTestId("status").innerHTML).toEqual("success");
 		expect(screen.getByTestId("result").innerHTML).toEqual("1");
 		expect(screen.getByTestId("pending").innerHTML).toEqual("");
 	});

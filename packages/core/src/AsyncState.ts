@@ -66,8 +66,8 @@ export class AsyncState<T, A extends unknown[], E>
 	// this contains all methods, such as getState, setState and so on
 	actions: Source<T, A, E>;
 
+	id: number;
 	key: string;
-	uniqueId: number;
 	version: number = 0;
 	config: ProducerConfig<T, A, E>;
 	payload: Record<string, any> | null;
@@ -104,9 +104,13 @@ export class AsyncState<T, A extends unknown[], E>
 			// @ts-expect-error: getDeadline no longer exists
 			if (instanceConfig.cacheConfig?.getDeadline !== undefined) {
 				// @ts-ignore
-				console.error("[Warning][async state] getDeadline is deprecated in" +
-					"favor of 'timeout' with the same signature, and supports now numbers. " +
-					"state with key " + key + " has a cacheConfig.getDeadline configured");
+				console.error(
+					"[Warning][async state] getDeadline is deprecated in" +
+						"favor of 'timeout' with the same signature, and supports now numbers. " +
+						"state with key " +
+						key +
+						" has a cacheConfig.getDeadline configured"
+				);
 			}
 		}
 
@@ -136,11 +140,11 @@ export class AsyncState<T, A extends unknown[], E>
 		}
 
 		this.key = key;
-
+		this.id = nextUniqueId();
 		this.fn = producer ?? null;
 		this.config = instanceConfig;
-		this.uniqueId = nextUniqueId();
 		this.actions = new StateSource(this);
+
 		this.lanes = null;
 		this.queue = null;
 		this.cache = null;
@@ -175,7 +179,7 @@ export class StateSource<T, A extends unknown[], E> implements Source<T, A, E> {
 	constructor(instance: StateInterface<T, A, E>) {
 		this.inst = instance;
 		this.key = instance.key;
-		this.uniqueId = instance.uniqueId;
+		this.uniqueId = instance.id;
 
 		this.on = this.on.bind(this);
 		this.run = this.run.bind(this);
@@ -407,16 +411,6 @@ export function getSource<T, A extends unknown[], E>(
 ): Source<T, A, E> | undefined {
 	let executionContext = requestContext(context || null);
 	return executionContext.get(key)?.actions;
-}
-
-export function readSource<T, A extends unknown[], E>(
-	possiblySource: Source<T, A, E>
-): StateInterface<T, A, E> {
-	let instance = possiblySource.inst;
-	if (!instance) {
-		throw new Error("Incompatible Source object.");
-	}
-	return instance;
 }
 
 export function createSource<T, A extends unknown[] = [], E = Error>(

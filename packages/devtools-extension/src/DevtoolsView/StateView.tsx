@@ -280,7 +280,7 @@ function ChangeState({ uniqueId, displayKey }) {
 	let [open, setOpen] = React.useState(false);
 	let [isJson, setIsJson] = React.useState(true);
 	let [data, setData] = React.useState<string | null>("");
-	let [status, setStatus] = React.useState(Status.success);
+	let [status, setStatus] = React.useState("success");
 
 	return (
 		<>
@@ -351,7 +351,7 @@ function ChangeState({ uniqueId, displayKey }) {
 								onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
 									const value = e.target.value as Status;
 									setStatus(value);
-									if (value === Status.pending) {
+									if (value === "pending") {
 										setData(null);
 									}
 								}}
@@ -360,7 +360,7 @@ function ChangeState({ uniqueId, displayKey }) {
 									<option value={t}>{t}</option>
 								))}
 							</select>
-							{status !== Status.pending && (
+							{status !== "pending" && (
 								<section
 									style={{
 										padding: "4px 0px",

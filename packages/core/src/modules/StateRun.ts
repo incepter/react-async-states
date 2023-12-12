@@ -1,7 +1,7 @@
 import {
 	AbortFn,
 	CachedState,
-	ErrorState,
+	ErrorState, PendingState,
 	ProducerCallbacks,
 	ProducerSavedProps,
 	RUNCProps,
@@ -21,7 +21,6 @@ import {
 import { createProps } from "./StateProps";
 import { run } from "../wrapper";
 import devtools from "../devtools/Devtools";
-import { StateBuilder } from "../helpers/StateBuilder";
 import { startAlteringState, stopAlteringState } from "./StateUpdate";
 
 export function runcInstance<T, A extends unknown[], E>(
@@ -224,10 +223,14 @@ export function runInstanceImmediately<T, A extends unknown[], E>(
 		if (currentState.status === pending) {
 			currentState = currentState.prev;
 		}
-		let pendingState = StateBuilder.pending(
-			currentState,
-			cloneProducerProps(producerProps)
-		);
+		let savedProps = cloneProducerProps(producerProps);
+		let pendingState: PendingState<T, A, E> = {
+			data: null,
+			timestamp: now(),
+			props: savedProps,
+			prev: currentState,
+			status: "pending" as const,
+		};
 		instance.actions.replaceState(pendingState, true, props);
 
 		stopAlteringState(wasAltering);
@@ -241,7 +244,7 @@ export function runInstanceImmediately<T, A extends unknown[], E>(
 
 	function onSettled(
 		data: T | E,
-		status: Status.success | Status.error,
+		status: "success" | "error",
 		savedProps: ProducerSavedProps<T, A>,
 		callbacks?: ProducerCallbacks<T, A, E>
 	) {

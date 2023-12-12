@@ -136,7 +136,7 @@ export interface StateInterface<T, A extends unknown[], E> {
 	// identity
 	key: string;
 	version: number;
-	uniqueId: number;
+	id: number;
 	actions: Source<T, A, E>;
 	config: ProducerConfig<T, A, E>;
 	payload: Record<string, any> | null;
@@ -194,19 +194,19 @@ export interface BaseState<T, A extends unknown[]> {
 export type SuccessState<T, A extends unknown[]> = {
 	data: T;
 	timestamp: number;
-	status: Status.success;
+	status: "success";
 	props: ProducerSavedProps<T, A>;
 };
 export type ErrorState<T, A extends unknown[], E> = {
 	data: E;
 	timestamp: number;
-	status: Status.error;
+	status: "error";
 	props: ProducerSavedProps<T, A>;
 };
 export type PendingState<T, A extends unknown[], E> = {
 	data: null;
 	timestamp: number;
-	status: Status.pending;
+	status: "pending";
 	props: ProducerSavedProps<T, A>;
 
 	prev: PendingPreviousState<T, A, E>;
@@ -220,7 +220,7 @@ export type PendingPreviousState<T, A extends unknown[], E> =
 export type InitialState<T, A extends unknown[]> = {
 	timestamp: number;
 	data: T | undefined;
-	status: Status.initial;
+	status: "initial";
 	props: ProducerSavedProps<T, A> | null;
 };
 
@@ -368,22 +368,6 @@ export type CachedState<T, A extends unknown[], E> = {
 	id?: ReturnType<typeof setTimeout>;
 };
 
-export interface StateBuilderInterface {
-	initial: <T, A extends unknown[]>(initialValue: T) => InitialState<T, A>;
-	pending: <T, A extends unknown[], E>(
-		prev: PendingPreviousState<T, A, E>,
-		props: ProducerSavedProps<T, A>
-	) => PendingState<T, A, E>;
-	success: <T, A extends unknown[]>(
-		data: T,
-		props: ProducerSavedProps<T, A> | null
-	) => SuccessState<T, A>;
-	error: <T, A extends unknown[], E>(
-		data: E,
-		props: ProducerSavedProps<T, A>
-	) => ErrorState<T, A, E>;
-}
-
 export type AsyncStateKeyOrSource<T, A extends unknown[], E> =
 	| string
 	| Source<T, A, E>;
@@ -433,13 +417,13 @@ export type UpdateQueue<T, A extends unknown[], E> =
 export type OnSettled<T, A extends unknown[], E> = {
 	(
 		data: T,
-		status: Status.success,
+		status: "success",
 		savedProps: ProducerSavedProps<T, A>,
 		callbacks?: ProducerCallbacks<T, A, E>
 	): void;
 	(
 		data: E,
-		status: Status.error,
+		status: "error",
 		savedProps: ProducerSavedProps<T, A>,
 		callbacks?: ProducerCallbacks<T, A, E>
 	): void;
@@ -454,4 +438,5 @@ export type LibraryContext = {
 	set(key: string, inst: StateInterface<any, any, any>): void;
 
 	getAll(): StateInterface<any, any, any>[];
+	terminate(): void;
 };

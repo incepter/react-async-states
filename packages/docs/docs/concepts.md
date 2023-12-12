@@ -52,16 +52,16 @@ function loginProducer(
 }
 
 let {state, runc} = useAsyncState(producer);
-if (state.status === Status.initial) {
+if (state.status === "initial") {
   let data = state.data; // type of data: User | undefined
 }
-if (state.status === Status.pending) {
+if (state.status === "pending") {
   let data = state.data; // type of data: null
 }
-if (state.status === Status.success) {
+if (state.status === "success") {
   let data = state.data; // type of data: User
 }
-if (state.status === Status.error) {
+if (state.status === "error") {
   let data = state.data; // type of data: Error
 }
 if (state.status === Status.aborted) {

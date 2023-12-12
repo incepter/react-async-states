@@ -17,7 +17,7 @@ function DevModeApp({ alias }) {
 		source,
 		lazy: false,
 		autoRunArgs: [++meter],
-		condition: (actualState) => actualState.status === Status.initial,
+		condition: (actualState) => actualState.status === "initial",
 	});
 	return (
 		<button onClick={() => source.setState((old) => old.data + 1)}>

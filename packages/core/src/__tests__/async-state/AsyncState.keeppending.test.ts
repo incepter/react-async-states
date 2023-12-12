@@ -17,13 +17,13 @@ describe("AsyncState - keepPending", () => {
 		let instance = new AsyncState(key, producer, myConfig);
 
 		// then
-		expect(instance.state.status).toBe(Status.initial);
+		expect(instance.state.status).toBe("initial");
 		instance.actions.run();
-		expect(instance.state.status).toBe(Status.pending);
+		expect(instance.state.status).toBe("pending");
 		await jest.advanceTimersByTime(150); // producer resolves after 100
-		expect(instance.state.status).toBe(Status.pending); // keepPending retains this
+		expect(instance.state.status).toBe("pending"); // keepPending retains this
 		await jest.advanceTimersByTime(50);
-		expect(instance.state.status).toBe(Status.success);
+		expect(instance.state.status).toBe("success");
 	});
 	it("should keep pending status and stack statuses updates", async () => {
 		// given
@@ -40,16 +40,16 @@ describe("AsyncState - keepPending", () => {
 		instance.actions.run();
 		await jest.advanceTimersByTime(50); // producer resolves after 100
 		instance.actions.abort();
-		expect(instance.state.status).toBe(Status.pending);
+		expect(instance.state.status).toBe("pending");
 
 		await jest.advanceTimersByTime(150);
-		expect(instance.state.status).toBe(Status.initial); // keepPending retains this
+		expect(instance.state.status).toBe("initial"); // keepPending retains this
 
 		// then
 		instance.actions.run();
 		await jest.advanceTimersByTime(50); // producer resolves after 100
 		instance.actions.setState(1);
-		expect(instance.state.status).toBe(Status.pending);
+		expect(instance.state.status).toBe("pending");
 
 		await jest.advanceTimersByTime(150);
 		expect(instance.state.data).toBe(1);
@@ -59,7 +59,7 @@ describe("AsyncState - keepPending", () => {
 		await jest.advanceTimersByTime(50); // producer resolves after 100
 		instance.actions.setState(2);
 		instance.actions.setState((prev) => prev.data + 1);
-		expect(instance.state.status).toBe(Status.pending);
+		expect(instance.state.status).toBe("pending");
 
 		await jest.advanceTimersByTime(150);
 		expect(instance.state.data).toBe(3);
@@ -83,17 +83,17 @@ describe("AsyncState - keepPending", () => {
 		instance.actions.setState(2);
 		instance.actions.run();
 		instance.actions.setState(3);
-		expect(instance.state.status).toBe(Status.pending);
+		expect(instance.state.status).toBe("pending");
 
 		await jest.advanceTimersByTime(150);
 		expect(instance.state.data).toBe(3);
-		expect(instance.state.status).toBe(Status.success);
+		expect(instance.state.status).toBe("success");
 
 		let spyCalls = spy.mock.calls;
 		expect(spyCalls.length).toBe(3);
-		expect(spyCalls[0][0].status).toBe(Status.pending);
+		expect(spyCalls[0][0].status).toBe("pending");
 		expect(spyCalls[1][0].data).toBe(2);
-		expect(spyCalls[2][0].status).toBe(Status.success);
+		expect(spyCalls[2][0].status).toBe("success");
 	});
 	it("should discard the update queue on dispose", async () => {
 		// given
@@ -114,7 +114,7 @@ describe("AsyncState - keepPending", () => {
 
 		await jest.advanceTimersByTime(150);
 		expect(instance.state.data).toBe(1);
-		expect(instance.state.status).toBe(Status.initial);
+		expect(instance.state.status).toBe("initial");
 	});
 	it("should work correctly with skipPendingStatus -- step into pending", async () => {
 		// given
@@ -132,12 +132,12 @@ describe("AsyncState - keepPending", () => {
 		// then
 		instance.actions.run();
 		await jest.advanceTimersByTime(250); // producer resolves after 300
-		expect(instance.state.status).toBe(Status.pending);
+		expect(instance.state.status).toBe("pending");
 		await jest.advanceTimersByTime(200);
-		expect(instance.state.status).toBe(Status.pending);
+		expect(instance.state.status).toBe("pending");
 
 		await jest.advanceTimersByTime(400);
-		expect(instance.state.status).toBe(Status.success);
+		expect(instance.state.status).toBe("success");
 	});
 	it("should abort execute abort on sequenced runs", async () => {
 		// given
@@ -157,9 +157,9 @@ describe("AsyncState - keepPending", () => {
 		// then
 		instance.actions.run();
 		await jest.advanceTimersByTime(250); // producer resolves after 300
-		expect(instance.state.status).toBe(Status.pending);
+		expect(instance.state.status).toBe("pending");
 		instance.actions.run();
-		expect(instance.state.status).toBe(Status.pending);
+		expect(instance.state.status).toBe("pending");
 	});
 	it("should work normally with run callbacks", async () => {
 		// given
@@ -180,10 +180,10 @@ describe("AsyncState - keepPending", () => {
 		});
 		await jest.advanceTimersByTime(60);
 
-		expect(instance.state.status).toBe(Status.pending);
+		expect(instance.state.status).toBe("pending");
 		expect(onSuccess).not.toHaveBeenCalled();
 		await jest.advanceTimersByTime(40);
-		expect(instance.state.status).toBe(Status.success);
+		expect(instance.state.status).toBe("success");
 		expect(onSuccess).toHaveBeenCalled();
 	});
 });

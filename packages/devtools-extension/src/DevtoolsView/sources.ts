@@ -32,7 +32,7 @@ function devtoolsInfoProducer(props) {
   port.postMessage(DevtoolsMessagesBuilder.getKeys(!!dev));
 
   let id = setTimeout(() => {
-    props.emit("Timeout", Status.error);
+    props.emit("Timeout", "error");
   }, 3000);
   props.onAbort(() => clearTimeout(id));
 

@@ -1,4 +1,5 @@
 import {
+	InitialState,
 	ProducerCallbacks,
 	State,
 	StateFunctionUpdater,
@@ -9,10 +10,9 @@ import { pending, Status, success } from "../enums";
 import { notifySubscribers } from "./StateSubscription";
 import { __DEV__, cloneProducerProps, isFunction } from "../utils";
 import devtools from "../devtools/Devtools";
-import { freeze, shallowClone } from "../helpers/core";
+import { freeze, now, shallowClone } from "../helpers/core";
 import { invokeChangeCallbacks, invokeInstanceEvents } from "./StateEvent";
 import { hasCacheEnabled, saveCacheAfterSuccessfulUpdate } from "./StateCache";
-import { StateBuilder } from "../helpers/StateBuilder";
 
 let isCurrentlyEmitting = false;
 let isCurrentlyAlteringState = false;
@@ -79,7 +79,7 @@ export function enqueueUpdate<T, A extends unknown[], E>(
 export function enqueueSetState<T, A extends unknown[], E>(
 	instance: StateInterface<T, A, E>,
 	newValue: T | StateFunctionUpdater<T, A, E>,
-	status = success,
+	status: Status = success,
 	callbacks?: ProducerCallbacks<T, A, E>
 ) {
 	let update: UpdateQueue<T, A, E> = {
@@ -261,9 +261,6 @@ export function setInstanceState<T, A extends unknown[], E>(
 	status: Status = success,
 	callbacks?: ProducerCallbacks<T, A, E>
 ) {
-	if (!StateBuilder[status]) {
-		throw new Error(`Unknown status ('${status}')`);
-	}
 	if (instance.queue) {
 		enqueueSetState(instance, newValue, status, callbacks);
 		return;
@@ -288,12 +285,27 @@ export function setInstanceState<T, A extends unknown[], E>(
 		payload: shallowClone(instance.payload),
 	});
 	if (__DEV__) devtools.emitReplaceState(instance, savedProps);
-	// @ts-ignore
-	let newState = StateBuilder[status](effectiveValue, savedProps) as State<
-		T,
-		A,
-		E
-	>;
+
+	let newState = {
+		status,
+		timestamp: now(),
+		props: savedProps,
+		data: effectiveValue,
+	} as State<T, A, E>;
+
+	// if the next state has a pending status, we need to populate the prev
+	// property, we take the previous state, if it was also pending, take
+	// its prev and set it as previous.
+	if (newState.status === "pending") {
+		let previousState = instance.state;
+		if (previousState.status === "pending") {
+			previousState = previousState.prev;
+		}
+		if (previousState) {
+			newState.prev = previousState;
+		}
+	}
+
 	instance.actions.replaceState(newState, true, callbacks);
 	stopAlteringState(wasAlteringState);
 }
@@ -318,9 +330,13 @@ export function disposeInstance<T, A extends unknown[], E>(
 	if (isFunction(initialState)) {
 		initialState = initialState(instance.cache);
 	}
-	const newState: State<T, A, E> = StateBuilder.initial<T, A>(
-		initialState as T
-	);
+	const newState: InitialState<T, A> = {
+		props: null,
+		timestamp: now(),
+		data: initialState,
+		status: "initial" as const,
+	};
+
 	instance.actions.replaceState(newState);
 	if (__DEV__) devtools.emitDispose(instance);
 

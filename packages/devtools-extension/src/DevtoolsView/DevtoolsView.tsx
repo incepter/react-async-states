@@ -21,15 +21,15 @@ export default function DevtoolsView({
   let {state} = useAsyncState.auto(devtoolsInfo);
   let {status, data} = state;
 
-  if (status === Status.pending || (status === Status.success && !data.connected)) {
+  if (status === "pending" || (status === "success" && !data.connected)) {
     return <span>Trying to connect...</span>;
   }
 
-  if (status === Status.success) {
+  if (status === "success") {
     return <ConnectedDevtools/>
   }
 
-  if (status === Status.error) {
+  if (status === "error") {
     console.error(data);
     return <span>It doesn't seem that you are using the library</span>
   }
