@@ -316,9 +316,13 @@ export function autoRunAndSubscribeEvents<T, A extends unknown[], E, S>(
 	let committedState = currentInstance.state;
 	// perform the subscription to the instance here
 	let onStateChangeCallback = onStateChange<T, A, E, S>;
-	let subscriptionKey = __DEV__
-		? resolveSubscriptionKey(subscription)
-		: undefined;
+
+	// when the subscription key is provided, take it.
+	// otherwise, in dev take the component name
+	let subscriptionKey =
+		subscription.config.subscriptionKey ?? __DEV__
+			? resolveSubscriptionKey(subscription)
+			: undefined;
 
 	let unsubscribeFromInstance = instanceActions.subscribe({
 		key: subscriptionKey,
@@ -355,9 +359,10 @@ export function autoRunAndSubscribeEvents<T, A extends unknown[], E, S>(
 	// 2. condition() is true
 	// 3. dependencies did change
 	// 4. concurrent isn't enabled (it will run on render)
-	let shouldRun = shouldRunSubscription(currentInstance, currentConfig);
-
-	if (shouldRun && !currentConfig.concurrent) {
+	if (
+		!currentConfig.concurrent &&
+		shouldRunSubscription(currentInstance, currentConfig)
+	) {
 		let autoRunArgs = (currentConfig.autoRunArgs || []) as A;
 		let thisRunAbort: AbortFn = currentInstance.actions.run.apply(
 			null,
@@ -397,7 +402,6 @@ function onStateChange<T, A extends unknown[], E, S>(
 	}
 
 	let actualVersion = currentInstance.version;
-	let committedVersion = subscription.version;
 
 	// when we detect that this state is mismatching what was rendered
 	// then we need to force the render and computation
@@ -408,16 +412,6 @@ function onStateChange<T, A extends unknown[], E, S>(
 
 	// this will happen if we consume the latest cached state
 	if (committedState === newState) {
-		return;
-	}
-
-	// when showing optimistic pending state and then a state change occurs
-	// with a pending status and the difference in version is 1, then we will
-	// bail out.
-	let isShowingOptimistic =
-		currentInstance.state.status !== "pending" && currentReturn.isPending;
-
-	if (actualVersion === committedVersion + 1 && isShowingOptimistic) {
 		return;
 	}
 
