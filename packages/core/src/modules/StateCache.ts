@@ -113,7 +113,7 @@ export function saveCacheAfterSuccessfulUpdate<T, A extends unknown[], E>(
 	let runHash = hashFunction(props?.args, props?.payload);
 
 	if (topLevelParent.cache[runHash]?.state !== state) {
-		let deadline = getStateDeadline(state, cacheConfig?.getDeadline);
+		let deadline = getStateDeadline(state, cacheConfig?.timeout);
 
 		let cachedState = topLevelParent.cache[runHash] = {
 			deadline,
@@ -121,7 +121,8 @@ export function saveCacheAfterSuccessfulUpdate<T, A extends unknown[], E>(
 			addedAt: Date.now(),
 		} as CachedState<T, A, E>;
 
-		if (cacheConfig?.auto) {
+		// avoid infinity deadline timeouts
+		if (cacheConfig?.auto && Number.isFinite(deadline)) {
 			// after this deadline is elapsed, we would removed the cached entry
 			// from the cache: only if it has the same reference.
 			// because invalidateCache or replaceCache may have been called in
@@ -181,18 +182,22 @@ export function saveCacheAfterSuccessfulUpdate<T, A extends unknown[], E>(
 
 function getStateDeadline<T, A extends unknown[], E>(
 	state: SuccessState<T, A>,
-	getDeadline?: (currentState: State<T, A, E>) => number
+	timeout?: ((currentState: State<T, A, E>) => number) | number
 ) {
+	// fast path for numbers
+	if (timeout && !isFunction(timeout)) {
+		return timeout;
+	}
 	let { data } = state;
 	let deadline = Infinity;
-	if (!getDeadline && data && hasHeadersSet((data as any).headers)) {
+	if (!timeout && data && hasHeadersSet((data as any).headers)) {
 		let maybeMaxAge = readCacheControlMaxAgeHeader((data as any).headers);
 		if (maybeMaxAge && maybeMaxAge > 0) {
 			deadline = maybeMaxAge;
 		}
 	}
-	if (isFunction(getDeadline)) {
-		deadline = getDeadline(state);
+	if (isFunction(timeout)) {
+		deadline = timeout(state);
 	}
 	return deadline;
 }

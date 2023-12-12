@@ -345,7 +345,7 @@ export type OnCacheLoadProps<T, A extends unknown[], E> = {
 };
 export type CacheConfig<T, A extends unknown[], E> = {
 	enabled: boolean;
-	getDeadline?(currentState: State<T, A, E>): number;
+	timeout?: ((currentState: State<T, A, E>) => number) | number;
 	hash?(
 		args: A | undefined,
 		payload: Record<string, unknown> | null | undefined
