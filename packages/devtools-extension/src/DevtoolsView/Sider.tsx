@@ -95,8 +95,6 @@ function getBackgroundColorFromStatus(status: Status | undefined) {
 			return "#EB6774";
 		case "initial":
 			return "#DEDEDE";
-		case Status.aborted:
-			return "#787878";
 		case "pending":
 			return "#5B95DB";
 		case "success":
@@ -112,8 +110,6 @@ function getColorFromStatus(status: Status | undefined) {
 			return "white";
 		case "initial":
 			return "black";
-		case Status.aborted:
-			return "white";
 		case "pending":
 			return "white";
 		case "success":

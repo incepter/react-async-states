@@ -356,9 +356,10 @@ function ChangeState({ uniqueId, displayKey }) {
 									}
 								}}
 							>
-								{Object.values(Status as Record<string, string>).map((t) => (
-									<option value={t}>{t}</option>
-								))}
+								<option value="initial">initial</option>
+								<option value="pending">pending</option>
+								<option value="success">success</option>
+								<option value="error">error</option>
 							</select>
 							{status !== "pending" && (
 								<section
