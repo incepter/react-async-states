@@ -100,6 +100,15 @@ export class AsyncState<T, A extends unknown[], E>
 		config?: ProducerConfig<T, A, E>
 	) {
 		let instanceConfig: ProducerConfig<T, A, E> = shallowClone(config);
+		if (__DEV__) {
+			// @ts-expect-error: getDeadline no longer exists
+			if (instanceConfig.cacheConfig?.getDeadline !== undefined) {
+				// @ts-ignore
+				console.error("[Warning][async state] getDeadline is deprecated in" +
+					"favor of 'timeout' with the same signature, and supports now numbers. " +
+					"state with key " + key + " has a cacheConfig.getDeadline configured");
+			}
+		}
 
 		if (instanceConfig.storeInContext !== false) {
 			// fallback to globalContext (null)

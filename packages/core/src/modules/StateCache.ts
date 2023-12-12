@@ -109,22 +109,71 @@ export function saveCacheAfterSuccessfulUpdate<T, A extends unknown[], E>(
 		topLevelParent.cache = {};
 	}
 
-	let hashFunction = (cacheConfig && cacheConfig.hash) || defaultHash;
+	let hashFunction = cacheConfig?.hash || defaultHash;
 	let runHash = hashFunction(props?.args, props?.payload);
 
 	if (topLevelParent.cache[runHash]?.state !== state) {
-		let deadline = getStateDeadline(state, cacheConfig?.getDeadline);
-		topLevelParent.cache[runHash] = {
+		let deadline = getStateDeadline(state, cacheConfig?.timeout);
+
+		let cachedState = topLevelParent.cache[runHash] = {
 			deadline,
 			state: state,
 			addedAt: Date.now(),
-		};
+		} as CachedState<T, A, E>;
 
-		if (
-			topLevelParent.config.cacheConfig &&
-			isFunction(topLevelParent.config.cacheConfig.persist)
-		) {
-			topLevelParent.config.cacheConfig.persist(topLevelParent.cache);
+		// avoid infinity deadline timeouts
+		if (cacheConfig?.auto && Number.isFinite(deadline)) {
+			// after this deadline is elapsed, we would removed the cached entry
+			// from the cache: only if it has the same reference.
+			// because invalidateCache or replaceCache may have been called in
+			// between.
+			let id = setTimeout(() => {
+				let topLevelParentCache = topLevelParent.cache;
+				if (!topLevelParentCache) {
+					return;
+				}
+
+				let currentCacheAtHash = topLevelParentCache[runHash];
+				if (!currentCacheAtHash) {
+					return;
+				}
+
+				if (id !== currentCacheAtHash.id) {
+					// this means that this cached state's id changed, probably due
+					// to some unknown error, such as persisting the cache, running
+					// and forcing loading it again.
+					return;
+				}
+
+
+				delete topLevelParentCache[runHash];
+
+				// only refresh the cached state if:
+				// - we have subscriptions
+				// - it is the latest state
+				if (
+					instance.subscriptions &&
+					Object.keys(instance.subscriptions).length
+				) {
+					// re-run only when the current state is the same as the cached one
+					// or else, when the user will want it, it won't find it in the cache
+					// and thus it will request it again.
+					if (instance.state === state) {
+						// being the latest state, means that it we are not pending, nor
+						// error, which means there has been no runs in between. so we will
+						// use replay.
+						// an alternative would be taking args and payload from the state
+						// and invoking the run again. if the replay is proved to cause
+						// issues, we will use the other alternative
+						instance.actions.replay();
+					}
+				}
+			}, deadline);
+			cachedState.id = id;
+		}
+
+		if (cacheConfig && isFunction(cacheConfig.persist)) {
+			cacheConfig.persist(topLevelParent.cache);
 		}
 
 		spreadCacheChangeOnLanes(topLevelParent);
@@ -133,18 +182,22 @@ export function saveCacheAfterSuccessfulUpdate<T, A extends unknown[], E>(
 
 function getStateDeadline<T, A extends unknown[], E>(
 	state: SuccessState<T, A>,
-	getDeadline?: (currentState: State<T, A, E>) => number
+	timeout?: ((currentState: State<T, A, E>) => number) | number
 ) {
+	// fast path for numbers
+	if (timeout && !isFunction(timeout)) {
+		return timeout;
+	}
 	let { data } = state;
 	let deadline = Infinity;
-	if (!getDeadline && data && hasHeadersSet((data as any).headers)) {
+	if (!timeout && data && hasHeadersSet((data as any).headers)) {
 		let maybeMaxAge = readCacheControlMaxAgeHeader((data as any).headers);
 		if (maybeMaxAge && maybeMaxAge > 0) {
 			deadline = maybeMaxAge;
 		}
 	}
-	if (isFunction(getDeadline)) {
-		deadline = getDeadline(state);
+	if (isFunction(timeout)) {
+		deadline = timeout(state);
 	}
 	return deadline;
 }

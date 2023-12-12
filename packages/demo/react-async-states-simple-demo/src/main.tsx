@@ -19,7 +19,6 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import { API } from "./app/api";
 import { useAsync } from "react-async-states";
-import { CachedStateList } from "state-fiber/src/core/_types";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement, {}).render(
 	<React.StrictMode>
@@ -218,7 +217,7 @@ function EffectsDemo() {
 			hash(args): string {
 				return args?.[0] + "";
 			},
-			getDeadline: (s) => 20000,
+			timeout: 20000,
 			persist(cache) {
 				localStorage.setItem("__test__23", JSON.stringify(cache));
 			},

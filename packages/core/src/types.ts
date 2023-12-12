@@ -345,11 +345,12 @@ export type OnCacheLoadProps<T, A extends unknown[], E> = {
 };
 export type CacheConfig<T, A extends unknown[], E> = {
 	enabled: boolean;
-	getDeadline?(currentState: State<T, A, E>): number;
+	timeout?: ((currentState: State<T, A, E>) => number) | number;
 	hash?(
 		args: A | undefined,
 		payload: Record<string, unknown> | null | undefined
 	): string;
+	auto?: boolean;
 
 	persist?(cache: Record<string, CachedState<T, A, E>>): void;
 	load?():
@@ -362,6 +363,9 @@ export type CachedState<T, A extends unknown[], E> = {
 	state: State<T, A, E>;
 	addedAt: number;
 	deadline: number;
+
+	// when auto refresh is enabled, we store it in this id
+	id?: ReturnType<typeof setTimeout>;
 };
 
 export interface StateBuilderInterface {

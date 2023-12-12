@@ -4,7 +4,7 @@
   "author": "incepter",
   "sideEffects": false,
   "name": "async-states",
-  "version": "2.0.0-alpha-6",
+  "version": "2.0.0-alpha-7",
   "main": "dist/umd/index",
   "types": "dist/es/index",
   "module": "dist/es/src/index",
@@ -48,6 +48,7 @@
     "test:cov": "cross-env CI=1 jest test --coverage",
     "clean:dist": "rimraf dist",
     "start": "pnpm dev",
+    "check": "pnpm test && pnpm build",
     "prebuild": "pnpm test && rimraf dist",
     "build": "pnpm clean:dist && rollup -c rollup/rollup.config.js",
     "dev": "pnpm clean:dist && rollup -c rollup/rollup.config.dev.js -w"
