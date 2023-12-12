@@ -114,6 +114,8 @@ export class AsyncState<T, A extends unknown[], E>
 			}
 		}
 
+		// this means that the instance won't be stored in the LibraryContext
+		// object, will be mostly used with anonymous instances
 		if (instanceConfig.storeInContext !== false) {
 			// fallback to globalContext (null)
 			let context = config?.context || null;
