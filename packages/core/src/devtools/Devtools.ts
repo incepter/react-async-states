@@ -228,7 +228,7 @@ function createDevtools(): DevtoolsInterface {
 							eventId: message.payload.eventId,
 						},
 						type: message.type,
-						uniqueId: message.uniqueId || message.payload.uniqueId,
+						uniqueId: message.id || message.payload.id,
 					},
 					"*"
 				);
@@ -246,14 +246,14 @@ function createDevtools(): DevtoolsInterface {
 		}
 		emit({
 			source,
-			uniqueId: asyncState.uniqueId,
+			uniqueId: asyncState.id,
 			payload: {
 				key: asyncState.key,
 				cache: asyncState.cache,
 				state: asyncState.state,
 				config: asyncState.config,
 				journal: asyncState.journal,
-				uniqueId: asyncState.uniqueId,
+				uniqueId: asyncState.id,
 				lastSuccess: asyncState.lastSuccess,
 				subscriptions: (asyncState.subscriptions
 					? Object.values(asyncState.subscriptions)
@@ -261,14 +261,14 @@ function createDevtools(): DevtoolsInterface {
 				).map(mapSubscriptionToDevtools),
 				lanes: asyncState.lanes
 					? Object.keys(asyncState.lanes).map((key) => ({
-							uniqueId: asyncState.lanes![key].uniqueId,
+							uniqueId: asyncState.lanes![key].id,
 							key,
 					  }))
 					: [],
 				parent: asyncState.parent
 					? {
 							key: asyncState.parent?.key,
-							uniqueId: asyncState.parent?.uniqueId,
+							uniqueId: asyncState.parent?.id,
 					  }
 					: null,
 			},
@@ -286,7 +286,7 @@ function createDevtools(): DevtoolsInterface {
 		asyncState.journal.push({
 			key: asyncState.key,
 			eventId: ++journalEventsId,
-			uniqueId: asyncState.uniqueId,
+			uniqueId: asyncState.id,
 
 			eventType: evt.type,
 			eventDate: Date.now(),
@@ -310,7 +310,7 @@ function createDevtools(): DevtoolsInterface {
 		if (isServer || asyncState.config.hideFromDevtools) {
 			return;
 		}
-		keys[`${asyncState.uniqueId}`] = asyncState.key;
+		keys[`${asyncState.id}`] = asyncState.key;
 		emitKeys();
 		emitJournalEvent(asyncState, {
 			type: DevtoolsJournalEvent.creation,
@@ -336,10 +336,10 @@ function createDevtools(): DevtoolsInterface {
 		if (!connected) {
 			return;
 		}
-		emitPartialSync(asyncState.uniqueId, {
+		emitPartialSync(asyncState.id, {
 			key: asyncState.key,
 			eventId: journalEventsId,
-			uniqueId: asyncState.uniqueId,
+			uniqueId: asyncState.id,
 
 			eventType: evt.type,
 			eventDate: Date.now(),
@@ -368,10 +368,10 @@ function createDevtools(): DevtoolsInterface {
 		if (!connected) {
 			return;
 		}
-		emitPartialSync(asyncState.uniqueId, {
+		emitPartialSync(asyncState.id, {
 			key: asyncState.key,
 			eventId: journalEventsId,
-			uniqueId: asyncState.uniqueId,
+			uniqueId: asyncState.id,
 
 			eventType: evt.type,
 			eventDate: Date.now(),
@@ -392,10 +392,10 @@ function createDevtools(): DevtoolsInterface {
 		if (!connected) {
 			return;
 		}
-		emitPartialSync(asyncState.uniqueId, {
+		emitPartialSync(asyncState.id, {
 			key: asyncState.key,
 			eventId: journalEventsId,
-			uniqueId: asyncState.uniqueId,
+			uniqueId: asyncState.id,
 
 			eventType: evt.type,
 			eventDate: Date.now(),
@@ -416,10 +416,10 @@ function createDevtools(): DevtoolsInterface {
 		if (!connected) {
 			return;
 		}
-		emitPartialSync(asyncState.uniqueId, {
+		emitPartialSync(asyncState.id, {
 			key: asyncState.key,
 			eventId: journalEventsId,
-			uniqueId: asyncState.uniqueId,
+			uniqueId: asyncState.id,
 
 			eventType: evt.type,
 			eventDate: Date.now(),
@@ -440,10 +440,10 @@ function createDevtools(): DevtoolsInterface {
 		if (!connected) {
 			return;
 		}
-		emitPartialSync(asyncState.uniqueId, {
+		emitPartialSync(asyncState.id, {
 			key: asyncState.key,
 			eventId: journalEventsId,
-			uniqueId: asyncState.uniqueId,
+			uniqueId: asyncState.id,
 
 			eventType: evt.type,
 			eventDate: Date.now(),
@@ -462,7 +462,7 @@ function createDevtools(): DevtoolsInterface {
 			},
 			type: DevtoolsJournalEvent.dispose,
 		});
-		delete retainedInstances[asyncState.uniqueId];
+		delete retainedInstances[asyncState.id];
 	}
 
 	function emitSubscription(asyncState: StateInterface<any, any, any>, subKey) {
@@ -482,10 +482,10 @@ function createDevtools(): DevtoolsInterface {
 		if (!connected) {
 			return;
 		}
-		emitPartialSync(asyncState.uniqueId, {
+		emitPartialSync(asyncState.id, {
 			key: asyncState.key,
 			eventId: journalEventsId,
-			uniqueId: asyncState.uniqueId,
+			uniqueId: asyncState.id,
 
 			eventType: evt.type,
 			eventDate: Date.now(),
@@ -506,10 +506,10 @@ function createDevtools(): DevtoolsInterface {
 			type: DevtoolsJournalEvent.unsubscription,
 		};
 		emitJournalEvent(asyncState, evt);
-		emitPartialSync(asyncState.uniqueId, {
+		emitPartialSync(asyncState.id, {
 			key: asyncState.key,
 			eventId: journalEventsId,
-			uniqueId: asyncState.uniqueId,
+			uniqueId: asyncState.id,
 
 			eventType: evt.type,
 			eventDate: Date.now(),
@@ -531,10 +531,10 @@ function createDevtools(): DevtoolsInterface {
 			type: DevtoolsJournalEvent.update,
 		};
 		emitJournalEvent(asyncState, evt);
-		emitPartialSync(asyncState.uniqueId, {
+		emitPartialSync(asyncState.id, {
 			key: asyncState.key,
 			eventId: journalEventsId,
-			uniqueId: asyncState.uniqueId,
+			uniqueId: asyncState.id,
 
 			eventType: evt.type,
 			eventDate: Date.now(),
@@ -548,7 +548,7 @@ function createDevtools(): DevtoolsInterface {
 		}
 		retainStateInstance(asyncState);
 		currentUpdate = {
-			uniqueId: asyncState.uniqueId,
+			uniqueId: asyncState.id,
 			oldState: Object.assign({}, asyncState.state),
 		};
 	}
@@ -561,7 +561,7 @@ function createDevtools(): DevtoolsInterface {
 		) {
 			return;
 		}
-		const uniqueId = message.data.uniqueId;
+		const uniqueId = message.data.id;
 		if (uniqueId && !retainedInstances[uniqueId]) {
 			console.warn(
 				`Devtools tried to communicate with a non retained state instance with uniqueId ${uniqueId}`
@@ -584,13 +584,13 @@ function createDevtools(): DevtoolsInterface {
 			return;
 		}
 
-		if (retainedInstances.hasOwnProperty(asyncState.uniqueId)) {
+		if (retainedInstances.hasOwnProperty(asyncState.id)) {
 			return;
 		}
 
-		const { uniqueId } = asyncState;
+		const { id } = asyncState;
 
-		retainedInstances[uniqueId] = asyncState;
+		retainedInstances[id] = asyncState;
 	}
 }
 

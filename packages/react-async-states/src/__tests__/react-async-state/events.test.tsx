@@ -25,11 +25,11 @@ describe("useAsync - events", () => {
 						mockedFn,
 						{
 							handler: mockedFn2,
-							status: Status.success,
+							status: "success",
 						},
 						{
 							handler: mockedFn3,
-							status: Status.error,
+							status: "error",
 						},
 					],
 				},
@@ -45,7 +45,7 @@ describe("useAsync - events", () => {
 					</button>
 					<button
 						data-testid={`force-error-${key}`}
-						onClick={() => run(0, Status.error)}
+						onClick={() => run(0, "error")}
 					>
 						run error
 					</button>

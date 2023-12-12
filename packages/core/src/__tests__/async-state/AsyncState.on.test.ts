@@ -11,7 +11,7 @@ describe('instance.on events', () => {
 
     // when
     let removeFirst = source.on("change", first);
-    let removeSecond = source.on("change", [{status: Status.success, handler: second}, third]);
+    let removeSecond = source.on("change", [{status: "success", handler: second}, third]);
 
     source.setState(1);
     // then
@@ -25,7 +25,7 @@ describe('instance.on events', () => {
     third.mockClear();
     second.mockClear();
     // then
-    source.setState(1, Status.error);
+    source.setState(1, "error");
     expect(first).toHaveBeenCalledTimes(1);
     expect(first.mock.calls[0][0].data).toBe(1);
     expect(second).not.toHaveBeenCalled();
@@ -36,7 +36,7 @@ describe('instance.on events', () => {
     second.mockClear();
     // then
     removeFirst();
-    source.setState(2, Status.success);
+    source.setState(2, "success");
     expect(first).not.toHaveBeenCalled();
     expect(second).toHaveBeenCalledTimes(1);
     expect(second.mock.calls[0][0].data).toBe(2);
@@ -47,7 +47,7 @@ describe('instance.on events', () => {
     second.mockClear();
     // then
     removeSecond();
-    source.setState(3, Status.success);
+    source.setState(3, "success");
     expect(first).not.toHaveBeenCalled();
     expect(second).not.toHaveBeenCalled();
     expect(third).not.toHaveBeenCalled();

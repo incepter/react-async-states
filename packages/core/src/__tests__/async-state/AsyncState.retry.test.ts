@@ -24,14 +24,14 @@ describe("AsyncState - retry", () => {
 
 		// when
 		let instance = new AsyncState(key, producer, config);
-		instance.actions.on("change", { status: Status.error, handler: spy });
+		instance.actions.on("change", { status: "error", handler: spy });
 
 		// then
 		instance.actions.run();
 		await jest.advanceTimersByTime(1);
 		await flushPromises();
 
-		expect(instance.state.status).toBe(Status.error);
+		expect(instance.state.status).toBe("error");
 		expect(instance.state.data).toBe(15);
 
 		expect(retry).toHaveBeenCalledTimes(3); // third time it be > maxRetries
@@ -74,7 +74,7 @@ describe("AsyncState - retry", () => {
 		await jest.advanceTimersByTime(50);
 		await flushPromises();
 
-		expect(instance.state.status).toBe(Status.pending);
+		expect(instance.state.status).toBe("pending");
 		expect(retry).toHaveBeenCalledTimes(1);
 		expect(retry.mock.calls[0][0]).toBe(1);
 		expect(retry.mock.calls[0][1]).toBe(5); // error thrown
@@ -82,7 +82,7 @@ describe("AsyncState - retry", () => {
 		await jest.advanceTimersByTime(60); // backoff = 10 + 50 of timeout producer
 		await flushPromises();
 
-		expect(instance.state.status).toBe(Status.pending);
+		expect(instance.state.status).toBe("pending");
 		expect(retry).toHaveBeenCalledTimes(2);
 		expect(retry.mock.calls[1][0]).toBe(2);
 		expect(retry.mock.calls[1][1]).toBe(5); // error thrown
@@ -90,7 +90,7 @@ describe("AsyncState - retry", () => {
 		await jest.advanceTimersByTime(60); // backoff = 10 + 50 of timeout producer
 		await flushPromises();
 
-		expect(instance.state.status).toBe(Status.pending);
+		expect(instance.state.status).toBe("pending");
 		expect(retry).toHaveBeenCalledTimes(3);
 		expect(retry.mock.calls[2][0]).toBe(3);
 		expect(retry.mock.calls[2][1]).toBe(5); // error thrown
@@ -100,7 +100,7 @@ describe("AsyncState - retry", () => {
 
 		retry.mockClear();
 		expect(instance.state.data).toBe(0);
-		expect(instance.state.status).toBe(Status.success);
+		expect(instance.state.status).toBe("success");
 		expect(retry).not.toHaveBeenCalled();
 	});
 });

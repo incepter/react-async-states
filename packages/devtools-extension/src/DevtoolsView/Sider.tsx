@@ -13,7 +13,7 @@ export default function Sider() {
 	let { state } = useAsync(instancesList);
 	// console.log('this is sider', useAsync(shapeSource).state.data);
 
-	if (state.status !== Status.success) {
+	if (state.status !== "success") {
 		return null;
 	}
 
@@ -91,15 +91,13 @@ const InstanceGroupDetails = React.memo<{
 
 function getBackgroundColorFromStatus(status: Status | undefined) {
 	switch (status) {
-		case Status.error:
+		case "error":
 			return "#EB6774";
-		case Status.initial:
+		case "initial":
 			return "#DEDEDE";
-		case Status.aborted:
-			return "#787878";
-		case Status.pending:
+		case "pending":
 			return "#5B95DB";
-		case Status.success:
+		case "success":
 			return "#17A449";
 		default:
 			return undefined;
@@ -108,15 +106,13 @@ function getBackgroundColorFromStatus(status: Status | undefined) {
 
 function getColorFromStatus(status: Status | undefined) {
 	switch (status) {
-		case Status.error:
+		case "error":
 			return "white";
-		case Status.initial:
+		case "initial":
 			return "black";
-		case Status.aborted:
+		case "pending":
 			return "white";
-		case Status.pending:
-			return "white";
-		case Status.success:
+		case "success":
 			return "white";
 		default:
 			return undefined;

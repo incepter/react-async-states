@@ -74,7 +74,7 @@ describe('should auto run async state', () => {
     )
 
     expect(screen.getByTestId("status").innerHTML)
-      .toEqual(Status.pending);
+      .toEqual("pending");
 
     await act(async () => {
       await jest.advanceTimersByTime(100);
@@ -82,7 +82,7 @@ describe('should auto run async state', () => {
 
     // then
     expect(screen.getByTestId("status").innerHTML)
-      .toEqual(Status.success);
+      .toEqual("success");
 
     expect(screen.getByTestId("result").innerHTML).toEqual("Hello");
     expect(mockedProducer.mock.calls[0][0].payload).toEqual({content: "Hello"});

@@ -23,7 +23,7 @@ describe("AsyncState - run", () => {
 			props: null,
 			data: null,
 			timestamp: TESTS_TS,
-			status: Status.initial,
+			status: "initial",
 		});
 
 		myAsyncState.actions.run();
@@ -41,7 +41,7 @@ describe("AsyncState - run", () => {
 			},
 			data: null,
 			timestamp: TESTS_TS,
-			status: Status.pending,
+			status: "pending",
 		});
 
 		await jest.advanceTimersByTime(50);
@@ -59,7 +59,7 @@ describe("AsyncState - run", () => {
 			},
 			data: null,
 			timestamp: TESTS_TS,
-			status: Status.pending,
+			status: "pending",
 		});
 
 		await jest.advanceTimersByTime(50);
@@ -70,7 +70,7 @@ describe("AsyncState - run", () => {
 				payload: {},
 			},
 			timestamp: TESTS_TS,
-			status: Status.success,
+			status: "success",
 			data: [{ id: 1, description: "value" }],
 		});
 	});
@@ -94,7 +94,7 @@ describe("AsyncState - run", () => {
 				payload: {},
 			},
 			timestamp: TESTS_TS,
-			status: Status.error,
+			status: "error",
 			data: "Some Error",
 		});
 	});

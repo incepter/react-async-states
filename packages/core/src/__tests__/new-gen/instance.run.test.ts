@@ -30,7 +30,7 @@ describe("AsyncState instance run", () => {
 			data: 17,
 			props: { args: [17] },
 			timestamp: Date.now(),
-			status: Status.success,
+			status: "success",
 		});
 		expect(instance.pendingUpdate).toBe(null);
 	});

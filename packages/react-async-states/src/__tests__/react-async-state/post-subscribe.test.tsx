@@ -88,7 +88,7 @@ describe("should post subscribe", () => {
 			);
 			expect(mocked).toHaveBeenCalledTimes(2); // 1 strict mode
 			expect(mocked).toHaveBeenCalledWith({
-				status: Status.initial,
+				status: "initial",
 				timestamp: TESTS_TS,
 				props: null,
 				data: 0,
@@ -110,7 +110,7 @@ describe("should post subscribe", () => {
 				await jest.advanceTimersByTime(9);
 			});
 
-			expect(screen.getByTestId("status").innerHTML).toEqual(Status.pending);
+			expect(screen.getByTestId("status").innerHTML).toEqual("pending");
 
 			onAbort.mockClear();
 			act(() => {

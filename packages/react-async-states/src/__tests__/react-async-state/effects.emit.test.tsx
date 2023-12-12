@@ -140,7 +140,7 @@ describe("should emit from producer", () => {
 		});
 		expect(abortFn).toHaveBeenCalledTimes(2); // 1 strict mode
 		expect(abortFn).toHaveBeenCalledWith("tt");
-		expect(screen.getByTestId("status").innerHTML).toEqual(Status.success);
+		expect(screen.getByTestId("status").innerHTML).toEqual("success");
 
 		await act(async () => {
 			await jest.advanceTimersByTime(100);

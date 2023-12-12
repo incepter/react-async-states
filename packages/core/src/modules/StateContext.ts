@@ -1,13 +1,13 @@
-import { freeze } from "../helpers/core";
-import { LibraryContext, StateInterface } from "../types";
-import { version } from "../../package.json";
+import {freeze} from "../helpers/core";
+import {LibraryContext, StateInterface} from "../types";
+import {version} from "../../package.json";
 
 let libraryVersion = freeze({
 	version,
 	copyright: "Incepter",
 });
 
-let contexts = new WeakMap();
+let contexts = new WeakMap<Object, LibraryContext>();
 let globalContextKey = freeze({});
 let globalContext = createContext(globalContextKey);
 
@@ -30,6 +30,9 @@ function createNewContext(arg: any): LibraryContext {
 		getAll() {
 			return [...instances.values()];
 		},
+		terminate() {
+			instances = new Map<string, StateInterface<any, any, any>>();
+		}
 	});
 }
 
@@ -78,6 +81,13 @@ export function terminateContext(arg: any): boolean {
 		return false;
 	}
 
+	let desiredContext = contexts.get(arg);
+	if (!desiredContext) {
+		return false;
+	}
+
+	// this will un-reference all instances from the context
+	desiredContext.terminate();
 	return contexts.delete(arg);
 }
 

@@ -380,7 +380,7 @@ function syncSelector(state: State<T>): S {
 // error boundary
 function errorBoundarySelector(state: State<T>): S {
   // assuming you have an error boundary
-  if (state.status === Status.error) {
+  if (state.status === "error") {
     throw state.data;
   }
   return state;
@@ -388,7 +388,7 @@ function errorBoundarySelector(state: State<T>): S {
 
 // this selector gives the last success data
 function keepPreviousDataSelector(state: State<T>, lastSuccess): S {
-  if (state.status === Status.pending) {
+  if (state.status === "pending") {
     return {
       ...state,
       data: lastSuccess.data,
@@ -409,8 +409,8 @@ function errorBoundarySelector(state, lastSuccess, cache): S {
 function lazyDeveloperSelector(state: State<T>) {
   return {
     ...state,
-    isError: state.status === Status.error,
-    isPending: state.status === Status.pending,
+    isError: state.status === "error",
+    isPending: state.status === "pending",
     isWeird: false,
     ...
   }

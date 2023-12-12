@@ -1,7 +1,6 @@
 import { maybeWindow } from "../../utils";
 import { AsyncState, createSource, getSource } from "../../AsyncState";
 import { mockDateNow } from "../utils/setup";
-import { Status } from "../../enums";
 import { expect } from "@jest/globals";
 
 mockDateNow();
@@ -46,7 +45,7 @@ describe("AsyncState instance creation", () => {
 							deadline: Date.now() + 1000,
 							state: {
 								timestamp: Date.now(),
-								status: Status.success,
+								status: "success",
 								data: 55,
 								props: { args: [55] },
 							},
@@ -56,7 +55,7 @@ describe("AsyncState instance creation", () => {
 							deadline: Date.now() + 1000,
 							state: {
 								timestamp: Date.now(),
-								status: Status.success,
+								status: "success",
 								data: 66,
 								props: { args: [66] },
 							},
@@ -111,13 +110,6 @@ describe("AsyncState instance creation", () => {
 	it("should return main instance on getLane", () => {
 		let instance = new AsyncState("state-6", null);
 		expect(instance.actions.getLane()).toBe(instance.actions);
-	});
-	it("should throw when attempting to force a non existing status", () => {
-		let instance = new AsyncState("state-7", null, { initialValue: 1 });
-		// @ts-ignore
-		expect(() => instance.actions.setState(15, "unknown")).toThrow(
-			"Unknown status ('unknown')"
-		);
 	});
 	it("should return all lanes", () => {
 		let instance = new AsyncState("state-8", null);

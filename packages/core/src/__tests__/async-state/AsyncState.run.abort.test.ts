@@ -27,7 +27,7 @@ describe('AsyncState - run - abort', () => {
       props: null,
       data: null,
       timestamp: TESTS_TS,
-      status: Status.initial,
+      status: "initial",
     });
 
     const abort = myAsyncState.actions.run();
@@ -49,7 +49,7 @@ describe('AsyncState - run - abort', () => {
       },
       data: null,
       timestamp: TESTS_TS,
-      status: Status.pending,
+      status: "pending",
     });
 
     subscription.mockClear();
@@ -61,7 +61,7 @@ describe('AsyncState - run - abort', () => {
       data: null,
       props: null,
       timestamp: TESTS_TS,
-      status: Status.initial,
+      status: "initial",
     });
 
     await jest.advanceTimersByTime(50);
@@ -70,7 +70,7 @@ describe('AsyncState - run - abort', () => {
     expect(myAsyncState.state).toEqual({
       props: null,
       timestamp: TESTS_TS,
-      status: Status.initial,
+      status: "initial",
       data: null,
     });
   });
@@ -93,7 +93,7 @@ describe('AsyncState - run - abort', () => {
 
     subscription.mockClear();
     abort!("reason");
-    expect(subscription.mock.calls[0][0].status).toBe(Status.initial);
+    expect(subscription.mock.calls[0][0].status).toBe("initial");
 
     // now, let's check that a second call to the abort function does not update state or subscribers
     subscription.mockClear();
@@ -109,7 +109,7 @@ describe('AsyncState - run - abort', () => {
     expect(myAsyncState.state).toEqual({
       props: null,
       timestamp: TESTS_TS,
-      status: Status.initial,
+      status: "initial",
       data: null,
     });
   });
@@ -130,13 +130,13 @@ describe('AsyncState - run - abort', () => {
 
     await jest.advanceTimersByTime(50);
 
-    expect(myAsyncState.state.status).toBe(Status.pending);
+    expect(myAsyncState.state.status).toBe("pending");
 
     // rerun while pending should interrupt previous
     subscription.mockClear();
     myAsyncState.actions.run();
 
-    expect(subscription.mock.calls[0][0].status).toBe(Status.pending);
+    expect(subscription.mock.calls[0][0].status).toBe("pending");
 
     expect(subscription).toHaveBeenCalledTimes(1);
 
@@ -150,7 +150,7 @@ describe('AsyncState - run - abort', () => {
         payload: {}
       },
       timestamp: TESTS_TS,
-      status: Status.success,
+      status: "success",
       data: "value",
     });
   });

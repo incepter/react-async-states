@@ -3,7 +3,7 @@ import { loadCache } from "./StateCache";
 import { attemptHydratedState } from "./StateHydration";
 import { pending, success } from "../enums";
 import { isFunction } from "../utils";
-import { StateBuilder } from "../helpers/StateBuilder";
+import { now } from "../helpers/core";
 
 export function initializeInstance<T, A extends unknown[], E>(
 	instance: StateInterface<T, A, E>
@@ -24,9 +24,14 @@ export function initializeInstance<T, A extends unknown[], E>(
 			let initialData = isFunction(initializer)
 				? initializer(instance.cache)
 				: initializer;
-			instance.lastSuccess = StateBuilder.initial(
-				initialData
-			) as LastSuccessSavedState<T, A>;
+
+			instance.lastSuccess = {
+				props: null,
+				timestamp: now(),
+				data: initialData,
+				status: "initial" as const,
+			};
+
 			if (maybeHydratedState.state.status === pending) {
 				instance.promise = new Promise(() => {});
 			}
@@ -37,7 +42,12 @@ export function initializeInstance<T, A extends unknown[], E>(
 			? initializer(instance.cache)
 			: (initializer as T);
 
-		let initialState = StateBuilder.initial<T, A>(initialData);
+		let initialState = {
+			props: null,
+			timestamp: now(),
+			data: initialData,
+			status: "initial" as const,
+		};
 
 		instance.state = initialState;
 		instance.lastSuccess = initialState as LastSuccessSavedState<T, A>;

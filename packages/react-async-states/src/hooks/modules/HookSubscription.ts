@@ -264,7 +264,23 @@ function reconcileInstance<T, A extends unknown[], E, S>(
 	// patch the given config and the new producer if provided and different
 	// we might be able to iterate over properties and re-assign only the ones
 	// that changed and are supported.
-	instanceActions.patchConfig(currentConfig);
+	// the patched config may contain the following properties
+	// - source
+	// - payload
+	// - events
+	// and other properties that can be retrieved from hooks usage and others
+	// so we are tearing them apart before merging
+	// todo: find a better way to remove these properties
+	let configToPatch = {
+		...currentConfig,
+		lazy: undefined,
+		events: undefined,
+		source: undefined,
+		payload: undefined,
+		concurrent: undefined,
+		autoRunArgs: undefined,
+	}
+	instanceActions.patchConfig(configToPatch);
 	if (currentConfig.payload) {
 		instanceActions.mergePayload(currentConfig.payload);
 	}
