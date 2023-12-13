@@ -233,14 +233,12 @@ interface BaseHooksReturn<T, A extends unknown[], E, S = State<T, A, E>> {
 	read(suspend?: boolean, throwError?: boolean): S;
 
 	onChange(
-		events:
-			| ((prevEvents: HookChangeEvents<T, A, E> | null) => void)
-			| HookChangeEvents<T, A, E>
+		events: HookChangeEventsFunction<T, A, E> | HookChangeEvents<T, A, E>
 	): void;
 
 	onSubscribe(
 		events:
-			| ((prevEvents: UseAsyncStateEventSubscribe<T, A, E> | null) => void)
+			| UseAsyncStateEventSubscribeFunction<T, A, E>
 			| UseAsyncStateEventSubscribe<T, A, E>
 	): void;
 }
