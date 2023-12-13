@@ -1,6 +1,6 @@
 import { Producer, State } from "async-states";
 
-import { EqualityFn, UseAsyncStateEvents, useSelector } from "./hooks/types";
+import { EqualityFn, UseAsyncStateEvents, UseSelector } from "./hooks/types";
 
 export type {
 	Source,
@@ -24,7 +24,7 @@ export type UseConfig<T, A extends unknown[], E, S = State<T, A, E>> = {
 	autoRunArgs?: A;
 	areEqual?: EqualityFn<S>;
 	subscriptionKey?: string;
-	selector?: useSelector<T, A, E, S>;
+	selector?: UseSelector<T, A, E, S>;
 	events?: UseAsyncStateEvents<T, A, E>;
 
 	condition?:
@@ -41,7 +41,7 @@ export type UseConfig<T, A extends unknown[], E, S = State<T, A, E>> = {
 export type {
 	CleanupFn,
 	PartialUseAsyncConfig,
-	useSelector,
+	UseSelector,
 	SubscribeEventProps,
 	UseAsyncStateEvents,
 	UseAsyncStateEventSubscribe,
