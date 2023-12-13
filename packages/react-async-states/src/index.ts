@@ -59,12 +59,11 @@ export type {
 	UseConfig,
 	MixedConfig,
 	UseAsyncState,
-	UseAsyncStateType,
 	UseAsyncStateConfiguration,
 	SubscribeEventProps,
 	UseAsyncStateEvents,
 	UseAsyncStateEventFn,
-	UseAsyncStateEventProps,
+	UseAsyncChangeEventProps,
 	UseAsyncStateChangeEvent,
 	UseAsyncStateChangeEventHandler,
 } from "./types.internal";

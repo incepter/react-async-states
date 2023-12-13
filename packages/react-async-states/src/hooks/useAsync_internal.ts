@@ -4,7 +4,7 @@ import { parseConfig } from "./modules/HookResolveConfig";
 import {
 	LegacyHookReturn,
 	MixedConfig,
-	PartialUseAsyncStateConfiguration,
+	PartialUseAsyncConfig,
 } from "./types";
 import {
 	__DEV__setHookCallerName,
@@ -20,7 +20,7 @@ import { useCallerName } from "../helpers/useCallerName";
 export function useAsync_internal<T, A extends unknown[], E, S>(
 	options: MixedConfig<T, A, E, S>,
 	deps: unknown[],
-	overrides?: PartialUseAsyncStateConfiguration<T, A, E, S> | null
+	overrides?: PartialUseAsyncConfig<T, A, E, S> | null
 ): LegacyHookReturn<T, A, E, S> {
 	// only parse the configuration when deps change
 	// this process will yield the instance to subscribe to, along with

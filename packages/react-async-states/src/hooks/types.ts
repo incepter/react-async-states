@@ -2,14 +2,17 @@ import {
 	AbortFn,
 	CacheConfig,
 	CachedState,
+	ErrorState,
+	InitialState,
 	LastSuccessSavedState,
+	PendingState,
 	Producer,
 	ProducerConfig,
 	RunEffect,
 	Source,
 	State,
 	StateInterface,
-	Status,
+	SuccessState,
 } from "async-states";
 
 export type UseAsyncState<
@@ -129,65 +132,101 @@ export type UseAsyncStateConfiguration<
 	// dev only
 	hideFromDevtools?: boolean;
 };
-export type UseAsyncStateEventProps<T, A extends unknown[], E> = {
-	state: State<T, A, E>;
+
+export type UseAsyncChangeEventProps<T, A extends unknown[], E> =
+	| UseAsyncStateEventPropsInitial<T, A, E>
+	| UseAsyncStateEventPropsPending<T, A, E>
+	| UseAsyncStateEventPropsSuccess<T, A, E>
+	| UseAsyncStateEventPropsError<T, A, E>;
+
+export type UseAsyncStateEventPropsInitial<T, A extends unknown[], E> = {
+	state: InitialState<T, A>;
 	source: Source<T, A, E>;
 };
-export type UseAsyncStateChangeEventHandler<T, A extends unknown[], E> = (
-	props: UseAsyncStateEventProps<T, A, E>
-) => void;
-export type UseAsyncStateEventFn<T, A extends unknown[], E> =
-	| UseAsyncStateChangeEvent<T, A, E>
-	| UseAsyncStateChangeEventHandler<T, A, E>;
-export type UseAsyncStateChangeEvent<T, A extends unknown[], E> = {
-	status: Status;
-	handler: UseAsyncStateChangeEventHandler<T, A, E>;
+export type UseAsyncStateEventPropsPending<T, A extends unknown[], E> = {
+	state: PendingState<T, A, E>;
+	source: Source<T, A, E>;
 };
-export type UseAsyncStateEventSubscribe<T, A extends unknown[], E> =
-	| ((props: SubscribeEventProps<T, A, E>) => CleanupFn)
-	| ((props: SubscribeEventProps<T, A, E>) => CleanupFn)[];
-export type UseAsyncStateEventSubscribeFunction<T, A extends unknown[], E> = (
-	prevEvents: UseAsyncStateEventSubscribe<T, A, E> | null
-) => UseAsyncStateEventSubscribe<T, A, E>;
+export type UseAsyncStateEventPropsSuccess<T, A extends unknown[], E> = {
+	state: SuccessState<T, A>;
+	source: Source<T, A, E>;
+};
+export type UseAsyncStateEventPropsError<T, A extends unknown[], E> = {
+	state: ErrorState<T, A, E>;
+	source: Source<T, A, E>;
+};
+
 export type UseAsyncStateEvents<T, A extends unknown[], E> = {
 	change?: UseAsyncStateEventFn<T, A, E> | UseAsyncStateEventFn<T, A, E>[];
 	subscribe?: UseAsyncStateEventSubscribe<T, A, E>;
 };
+
+export type UseAsyncStateChangeEventHandler<T, A extends unknown[], E> =
+	| UseAsyncChangeEventInitial<T, A, E>
+	| UseAsyncChangeEventSuccess<T, A, E>
+	| UseAsyncChangeEventPending<T, A, E>
+	| UseAsyncStateChangeEventHandlerError<T, A, E>;
+
+export type UseAsyncChangeEventInitial<T, A extends unknown[], E> = (
+	props: UseAsyncStateEventPropsInitial<T, A, E>
+) => void;
+export type UseAsyncChangeEventSuccess<T, A extends unknown[], E> = (
+	props: UseAsyncStateEventPropsSuccess<T, A, E>
+) => void;
+export type UseAsyncChangeEventPending<T, A extends unknown[], E> = (
+	props: UseAsyncStateEventPropsPending<T, A, E>
+) => void;
+export type UseAsyncStateChangeEventHandlerError<T, A extends unknown[], E> = (
+	props: UseAsyncStateEventPropsError<T, A, E>
+) => void;
+
+export type UseAsyncStateEventFn<T, A extends unknown[], E> =
+	| UseAsyncStateChangeEvent<T, A, E>
+	| UseAsyncStateChangeEventHandler<T, A, E>;
+
+export type UseAsyncStateChangeEvent<T, A extends unknown[], E> =
+	| UseAsyncStateChangeEventInitial<T, A, E>
+	| UseAsyncStateChangeEventPending<T, A, E>
+	| UseAsyncStateChangeEventSuccess<T, A, E>
+	| UseAsyncStateChangeEventError<T, A, E>;
+
+export type UseAsyncStateChangeEventInitial<T, A extends unknown[], E> = {
+	status: "initial";
+	handler: UseAsyncChangeEventInitial<T, A, E>;
+};
+export type UseAsyncStateChangeEventPending<T, A extends unknown[], E> = {
+	status: "pending";
+	handler: UseAsyncChangeEventPending<T, A, E>;
+};
+export type UseAsyncStateChangeEventSuccess<T, A extends unknown[], E> = {
+	status: "success";
+	handler: UseAsyncChangeEventSuccess<T, A, E>;
+};
+export type UseAsyncStateChangeEventError<T, A extends unknown[], E> = {
+	status: "error";
+	handler: UseAsyncStateChangeEventHandlerError<T, A, E>;
+};
+
+export type UseAsyncStateEventSubscribe<T, A extends unknown[], E> =
+	| ((props: SubscribeEventProps<T, A, E>) => CleanupFn)
+	| ((props: SubscribeEventProps<T, A, E>) => CleanupFn)[];
+
+export type UseAsyncStateEventSubscribeFunction<T, A extends unknown[], E> = (
+	prevEvents: UseAsyncStateEventSubscribe<T, A, E> | null
+) => UseAsyncStateEventSubscribe<T, A, E>;
+
 export type SubscribeEventProps<T, A extends unknown[], E> = Source<T, A, E>;
 export type useSelector<T, A extends unknown[], E, S> = (
 	currentState: State<T, A, E>,
 	lastSuccess: LastSuccessSavedState<T, A>,
 	cache: { [id: string]: CachedState<T, A, E> } | null
 ) => S;
-export type PartialUseAsyncStateConfiguration<
-	T,
-	A extends unknown[],
-	E,
-	S
-> = Partial<UseAsyncStateConfiguration<T, A, E, S>>;
+
+export type PartialUseAsyncConfig<T, A extends unknown[], E, S> = Partial<
+	UseAsyncStateConfiguration<T, A, E, S>
+>;
+
 export type CleanupFn = AbortFn | (() => void) | undefined;
-
-export interface UseAsyncStateType<
-	T,
-	A extends unknown[],
-	E,
-	S = State<T, A, E>
-> {
-	(
-		subscriptionConfig: MixedConfig<T, A, E, S>,
-		dependencies?: unknown[]
-	): UseAsyncState<T, A, E, S>;
-
-	auto(
-		subscriptionConfig: MixedConfig<T, A, E, S>,
-		dependencies?: unknown[]
-	): UseAsyncState<T, A, E, S>;
-
-	lazy(
-		subscriptionConfig: MixedConfig<T, A, E, S>,
-		dependencies?: unknown[]
-	): UseAsyncState<T, A, E, S>;
-}
 
 interface BaseHooksReturn<T, A extends unknown[], E, S = State<T, A, E>> {
 	source: Source<T, A, E>;
@@ -264,10 +303,6 @@ export type LegacyHookReturn<T, A extends unknown[], E, S = State<T, A, E>> =
 	| HookReturnSuccess<T, A, E, S>
 	| HookReturnError<T, A, E, S>;
 
-export type ModernHookReturn<T, A extends unknown[], E, S = State<T, A, E>> =
-	| HookReturnInitial<T, A, E, S>
-	| HookReturnSuccess<T, A, E, S>;
-
 export type HookChangeEvents<T, A extends unknown[], E> =
 	| UseAsyncStateEventFn<T, A, E>
 	| UseAsyncStateEventFn<T, A, E>[];
@@ -303,7 +338,7 @@ export interface SubscriptionAlternate<T, A extends unknown[], E, S> {
 	return: LegacyHookReturn<T, A, E, S>;
 	update: React.Dispatch<React.SetStateAction<number>>;
 
-	config: PartialUseAsyncStateConfiguration<T, A, E, S>;
+	config: PartialUseAsyncConfig<T, A, E, S>;
 
 	// dev mode properties
 	at?: string | null;
@@ -318,11 +353,14 @@ export interface SubscriptionAlternate<T, A extends unknown[], E, S> {
 // if initialValue is provided, it won't suspend and just return it
 // no cache by default unless provided by the source or options
 // let [count, {setState}] = useData({ key: "count", initialValue: 0 })
-type UseDataReturn<TData, TArgs extends unknown[], TError> = [TData, {
-	isPending: boolean;
-	error: TError | null;
-	source: Source<TData, TArgs, TError>
-}]
+type UseDataReturn<TData, TArgs extends unknown[], TError> = [
+	TData,
+	{
+		isPending: boolean;
+		error: TError | null;
+		source: Source<TData, TArgs, TError>;
+	}
+];
 
 // no suspending unless read is called in userland
 // will automatically refetch data after a state time is elapsed

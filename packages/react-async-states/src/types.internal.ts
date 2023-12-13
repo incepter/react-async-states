@@ -39,9 +39,8 @@ export type UseConfig<T, A extends unknown[], E, S = State<T, A, E>> = {
 };
 
 export type {
-	UseAsyncStateType,
 	CleanupFn,
-	PartialUseAsyncStateConfiguration,
+	PartialUseAsyncConfig,
 	useSelector,
 	SubscribeEventProps,
 	UseAsyncStateEvents,
@@ -49,7 +48,6 @@ export type {
 	UseAsyncStateChangeEvent,
 	UseAsyncStateEventFn,
 	UseAsyncStateChangeEventHandler,
-	UseAsyncStateEventProps,
 	UseAsyncStateConfiguration,
 	MixedConfig,
 	ConfigWithProducerWithoutSelector,
@@ -61,4 +59,5 @@ export type {
 	BaseConfig,
 	EqualityFn,
 	UseAsyncState,
+	UseAsyncChangeEventProps
 } from "./hooks/types";

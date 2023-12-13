@@ -5,7 +5,7 @@ import {
 	HookReturnSuccess,
 	HookSubscription,
 	LegacyHookReturn,
-	PartialUseAsyncStateConfiguration,
+	PartialUseAsyncConfig,
 } from "../types";
 import { __DEV__, freeze } from "../../shared";
 import {
@@ -19,7 +19,7 @@ import {
 
 export function createSubscriptionLegacyReturn<T, A extends unknown[], E, S>(
 	subscription: HookSubscription<T, A, E, S>,
-	config: PartialUseAsyncStateConfiguration<T, A, E, S>
+	config: PartialUseAsyncConfig<T, A, E, S>
 ): LegacyHookReturn<T, A, E, S> {
 	let currentStatus = subscription.instance.state.status;
 
@@ -44,7 +44,7 @@ export function createSubscriptionLegacyReturn<T, A extends unknown[], E, S>(
 
 export function createLegacyInitialReturn<T, A extends unknown[], E, S>(
 	subscription: HookSubscription<T, A, E, S>,
-	config: PartialUseAsyncStateConfiguration<T, A, E, S>
+	config: PartialUseAsyncConfig<T, A, E, S>
 ): HookReturnInitial<T, A, E, S> {
 	let instance = subscription.instance;
 	let selectedState: S;
@@ -83,7 +83,7 @@ export function createLegacyInitialReturn<T, A extends unknown[], E, S>(
 
 export function createLegacySuccessReturn<T, A extends unknown[], E, S>(
 	subscription: HookSubscription<T, A, E, S>,
-	config: PartialUseAsyncStateConfiguration<T, A, E, S>
+	config: PartialUseAsyncConfig<T, A, E, S>
 ): HookReturnSuccess<T, A, E, S> {
 	let instance = subscription.instance;
 	let selectedState: S;
@@ -122,7 +122,7 @@ export function createLegacySuccessReturn<T, A extends unknown[], E, S>(
 
 export function createLegacyErrorReturn<T, A extends unknown[], E, S>(
 	subscription: HookSubscription<T, A, E, S>,
-	config: PartialUseAsyncStateConfiguration<T, A, E, S>
+	config: PartialUseAsyncConfig<T, A, E, S>
 ): HookReturnError<T, A, E, S> {
 	let instance = subscription.instance;
 	let selectedState: S;
@@ -196,7 +196,7 @@ function addLastSuccessDeprecationWarning(
 
 export function createLegacyPendingReturn<T, A extends unknown[], E, S>(
 	subscription: HookSubscription<T, A, E, S>,
-	config: PartialUseAsyncStateConfiguration<T, A, E, S>
+	config: PartialUseAsyncConfig<T, A, E, S>
 ): HookReturnPending<T, A, E, S> {
 	let instance = subscription.instance;
 	let lastSuccess = instance.lastSuccess;

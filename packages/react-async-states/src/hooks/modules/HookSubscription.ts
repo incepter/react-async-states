@@ -4,9 +4,10 @@ import {
 	HookChangeEvents,
 	HookChangeEventsFunction,
 	HookSubscription,
-	PartialUseAsyncStateConfiguration,
+	PartialUseAsyncConfig,
 	SubscribeEventProps,
 	SubscriptionAlternate,
+	UseAsyncChangeEventProps,
 	UseAsyncStateEventFn,
 	UseAsyncStateEventSubscribe,
 	UseAsyncStateEventSubscribeFunction,
@@ -20,7 +21,7 @@ import { AbortFn, State, StateInterface } from "async-states";
 
 export function useRetainInstance<T, A extends unknown[], E, S>(
 	instance: StateInterface<T, A, E>,
-	config: PartialUseAsyncStateConfiguration<T, A, E, S>,
+	config: PartialUseAsyncConfig<T, A, E, S>,
 	deps: unknown[]
 ): HookSubscription<T, A, E, S> {
 	// ⚠️⚠️⚠️
@@ -44,7 +45,7 @@ type SubscriptionWithoutReturn<T, A extends unknown[], E, S> = Omit<
 function createSubscription<T, A extends unknown[], E, S>(
 	instance: StateInterface<T, A, E>,
 	update: React.Dispatch<React.SetStateAction<number>>,
-	config: PartialUseAsyncStateConfiguration<T, A, E, S>,
+	config: PartialUseAsyncConfig<T, A, E, S>,
 	deps: unknown[]
 ) {
 	// these properties are to store the single onChange or onSubscribe
@@ -149,7 +150,7 @@ function createSubscription<T, A extends unknown[], E, S>(
 
 export function beginRenderSubscription<T, A extends unknown[], E, S>(
 	subscription: HookSubscription<T, A, E, S>,
-	newConfig: PartialUseAsyncStateConfiguration<T, A, E, S>,
+	newConfig: PartialUseAsyncConfig<T, A, E, S>,
 	deps: unknown[]
 ): SubscriptionAlternate<T, A, E, S> | null {
 	let instance = subscription.instance;
@@ -256,7 +257,7 @@ export function commit<T, A extends unknown[], E, S>(
 
 function reconcileInstance<T, A extends unknown[], E, S>(
 	instance: StateInterface<T, A, E>,
-	currentConfig: PartialUseAsyncStateConfiguration<T, A, E, S>
+	currentConfig: PartialUseAsyncConfig<T, A, E, S>
 ) {
 	let instanceActions = instance.actions;
 
@@ -279,7 +280,7 @@ function reconcileInstance<T, A extends unknown[], E, S>(
 		payload: undefined,
 		concurrent: undefined,
 		autoRunArgs: undefined,
-	}
+	};
 	instanceActions.patchConfig(configToPatch);
 	if (currentConfig.payload) {
 		instanceActions.mergePayload(currentConfig.payload);
@@ -453,7 +454,7 @@ function onStateChange<T, A extends unknown[], E, S>(
 
 function shouldRunSubscription<T, A extends unknown[], E, S>(
 	instance: StateInterface<T, A, E>,
-	config: PartialUseAsyncStateConfiguration<T, A, E, S>
+	config: PartialUseAsyncConfig<T, A, E, S>
 ) {
 	if (config.lazy === false) {
 		let condition = config.condition;
@@ -485,15 +486,22 @@ export function invokeChangeEvents<T, A extends unknown[], E>(
 		? events
 		: [events];
 
-	const eventProps = { state: nextState, source: instance.actions };
+	const eventProps = {
+		state: nextState,
+		source: instance.actions,
+	} as UseAsyncChangeEventProps<T, A, E>;
 
 	changeHandlers.forEach((event) => {
 		if (typeof event === "object") {
 			const { handler, status } = event;
 			if (!status || nextState.status === status) {
+				// @ts-expect-error: it is extremely difficult to satisfy typescript
+				// here without a switch case and treat each status a part
 				handler(eventProps);
 			}
 		} else {
+			// @ts-expect-error: it is extremely difficult to satisfy typescript
+			// here without a switch case and treat each status a part
 			event(eventProps);
 		}
 	});
