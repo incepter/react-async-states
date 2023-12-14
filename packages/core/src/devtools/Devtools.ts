@@ -559,7 +559,7 @@ function createDevtools(): DevtoolsInterface {
 		) {
 			return;
 		}
-		const uniqueId = message.data.id;
+		const uniqueId = message.data.uniqueId;
 		if (uniqueId && !retainedInstances[uniqueId]) {
 			console.warn(
 				`Devtools tried to communicate with a non retained state instance with uniqueId ${uniqueId}`
@@ -599,24 +599,6 @@ function mapSubscriptionToDevtools(sub: StateSubscription<any, any, any>) {
 		flags: sub.props.flags,
 		// devFlags: mapFlags(sub.props.flags || 0),
 	};
-}
-
-/* istanbul ignore next */
-function getSubscriptionOrigin(origin?: number) {
-	switch (`${origin}`) {
-		case "1":
-			return "useAsyncState";
-		case "2":
-			return "useSource";
-		case "3":
-			return "useProducer";
-		case "4":
-			return "useSelector";
-		case undefined:
-			return "undefined";
-		default:
-			return "unknown";
-	}
 }
 
 let DEVTOOLS = createDevtools();
