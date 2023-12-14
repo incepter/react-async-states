@@ -26,8 +26,8 @@ The library can work with the following modes:
 - Allows abstractions on top of it
 - ...
 
-#### <ins>Easy to use and Minimal API (`useAsyncState`).</ins>
-The library has one main hook: `useAsyncState` which allows the creation,
+#### <ins>Easy to use and Minimal API (`useAsync`).</ins>
+The main hook of the library: `useAsync` allows the creation,
 subscription and manipulation of the desired state.
 [Here is a sneak peek](/docs/api/the-whole-api#useasyncstate)
 at this hook's full API.
@@ -35,7 +35,7 @@ at this hook's full API.
 The hooks signature is pretty familiar: a configuration and dependencies.
 
 ```typescript
-useAsyncState(create, deps);
+useAsync(create, deps);
 ```
 
 #### <ins>Tiny, no dependencies and targets all environments</ins>
@@ -119,7 +119,7 @@ variables.
 ```tsx
 import { useAsync } from "react-async-states";
 
-const { source: { run } } = useAsyncState({
+const { source: { run } } = useAsync({
   producer: searchUserByName,
   
   // debounce runs for 300ms
@@ -147,7 +147,7 @@ import { useAsync } from "react-async-states";
 
 // note that the whole configuration object does not depend on render
 // and can be moved to module level static object.
-const { source: { run } } = useAsyncState({
+const { source: { run } } = useAsync({
   producer: searchUserByName,
   
   // debounce runs for 300ms
