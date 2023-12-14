@@ -17,7 +17,7 @@ import {
 	selectWholeState,
 } from "./HookReturnValue";
 import { __DEV__, isArray, isFunction } from "../../shared";
-import { AbortFn, State, StateInterface } from "async-states";
+import { AbortFn, ProducerConfig, State, StateInterface } from "async-states";
 
 export function useRetainInstance<T, A extends unknown[], E, S>(
 	instance: StateInterface<T, A, E>,
@@ -103,10 +103,16 @@ function createSubscription<T, A extends unknown[], E, S>(
 					reconcileInstance(instance, config);
 
 					let runArgs = (config.autoRunArgs || []) as A;
-					// runp guarantees returning a promise
+					// run is used than runp because it may be synchronous, so the run
+					// would resolve immediately.
+					// This is dangerous since it may do some side effects, but the user
+					// should be careful with that. Anyways, runp will run the producer
+					// too, so the side effects are applied either ways
+					// If the run results in a pending state, it will throw next
 					throw instance.actions.runp.apply(null, runArgs);
 				}
-			} else if (currentStatus === "pending") {
+			}
+			if (currentStatus === "pending") {
 				throw instance.promise!;
 			}
 		}
@@ -265,22 +271,7 @@ function reconcileInstance<T, A extends unknown[], E, S>(
 	// patch the given config and the new producer if provided and different
 	// we might be able to iterate over properties and re-assign only the ones
 	// that changed and are supported.
-	// the patched config may contain the following properties
-	// - source
-	// - payload
-	// - events
-	// and other properties that can be retrieved from hooks usage and others
-	// so we are tearing them apart before merging
-	// todo: find a better way to remove these properties
-	let configToPatch = {
-		...currentConfig,
-		lazy: undefined,
-		events: undefined,
-		source: undefined,
-		payload: undefined,
-		concurrent: undefined,
-		autoRunArgs: undefined,
-	};
+	let configToPatch = removeHookConfigToPatchToSource(currentConfig);
 	instanceActions.patchConfig(configToPatch);
 	if (currentConfig.payload) {
 		instanceActions.mergePayload(currentConfig.payload);
@@ -291,6 +282,27 @@ function reconcileInstance<T, A extends unknown[], E, S>(
 	if (pendingProducer !== undefined && pendingProducer !== currentProducer) {
 		instanceActions.replaceProducer(pendingProducer);
 	}
+}
+
+function removeHookConfigToPatchToSource<T, A extends unknown[], E, S>(
+	currentConfig: PartialUseAsyncConfig<T, A, E, S>
+): ProducerConfig<T, A, E> {
+	// the patched config may contain the following properties
+	// - source
+	// - payload
+	// - events
+	// and other properties that can be retrieved from hooks usage and others
+	// so we are tearing them apart before merging
+	let output = {...currentConfig};
+
+	delete output.lazy;
+	delete output.events;
+	delete output.source;
+	delete output.payload;
+	delete output.concurrent;
+	delete output.autoRunArgs;
+
+	return output;
 }
 
 // this will detect whether the returned value from the hook doesn't match
@@ -526,7 +538,7 @@ export function invokeSubscribeEvents<T, A extends unknown[], E>(
 // dev mode helpers
 let currentlyRenderingComponentName: string | null = null;
 export function __DEV__setHookCallerName(name: string | undefined) {
-	if (name) {
+	if (name && !currentlyRenderingComponentName) {
 		currentlyRenderingComponentName = name;
 	}
 }

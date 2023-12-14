@@ -8,14 +8,14 @@ describe("useAsync with concurrent", () => {
 	it("should suspend on initial and pending status and go to success", async () => {
 		jest.useFakeTimers();
 		function Component() {
-			const { state } = useAsync({
+			const { state, source } = useAsync({
 				lazy: false,
 				concurrent: true,
 				key: "test-success",
 				producer: () => new Promise<number>((res) => res(15)),
 			});
 			if (state.status !== "success") {
-				throw new Error("Illegal state");
+				throw new Error(`Illegal state ${state.status}`);
 			}
 
 			return <span data-testid="data">{state.data}</span>;
@@ -47,7 +47,7 @@ describe("useAsync with concurrent", () => {
 			});
 
 			if (state.status !== "error") {
-				throw new Error("Illegal state");
+				throw new Error(`Illegal state ${state.status}`);
 			}
 
 			return <span data-testid="data">{state.data}</span>;

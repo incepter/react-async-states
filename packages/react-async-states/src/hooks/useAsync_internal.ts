@@ -1,20 +1,13 @@
 import * as React from "react";
 import { Context } from "../provider/context";
 import { parseConfig } from "./modules/HookResolveConfig";
+import { LegacyHookReturn, MixedConfig, PartialUseAsyncConfig } from "./types";
 import {
-	LegacyHookReturn,
-	MixedConfig,
-	PartialUseAsyncConfig,
-} from "./types";
-import {
-	__DEV__setHookCallerName,
 	autoRunAndSubscribeEvents,
 	beginRenderSubscription,
 	commit,
 	useRetainInstance,
 } from "./modules/HookSubscription";
-import { __DEV__ } from "../shared";
-import { useCallerName } from "../helpers/useCallerName";
 
 // this is the main hook, useAsyncState previously
 export function useAsync_internal<T, A extends unknown[], E, S>(
@@ -31,9 +24,6 @@ export function useAsync_internal<T, A extends unknown[], E, S>(
 		deps
 	);
 
-	if (__DEV__) {
-		__DEV__setHookCallerName(useCallerName(4));
-	}
 	// here, we will create a subscription from this component
 	// to this state instance. refer to HookSubscription type.
 	let subscription = useRetainInstance(instance, config, deps);

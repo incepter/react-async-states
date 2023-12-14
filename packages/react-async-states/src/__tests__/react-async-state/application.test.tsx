@@ -34,7 +34,7 @@ describe("createApplication abstraction tests", () => {
 	});
 
 	it("should create the application with correct types", () => {
-		let app = createApplication<typeof testShape>(testShape);
+		let app = createApplication<typeof testShape>(testShape, {});
 		let authCurrent: Token<User, [], Error> = app.auth.current;
 		let searchToken: Token<User, [string], Error> = app.users.search;
 	});
@@ -43,7 +43,7 @@ describe("createApplication abstraction tests", () => {
 		let expectedThrownErrorMessage =
 			"Must call app.users.search.inject(producer)" +
 			" before calling app.users.search() or app.users.search.use()";
-		let app = createApplication<typeof testShape>(testShape);
+		let app = createApplication<typeof testShape>(testShape, {});
 		expect(() => app.users.search()).toThrow(expectedThrownErrorMessage);
 		expect(() => app.users.search.use()).toThrow(expectedThrownErrorMessage);
 		expect(() => app.users.search.useAsyncState()).toThrow(
@@ -56,7 +56,7 @@ describe("createApplication abstraction tests", () => {
 	});
 
 	it("should be able to inject producer and configuration and then not throw", () => {
-		let app = createApplication<typeof testShape>(testShape);
+		let app = createApplication<typeof testShape>(testShape, {});
 
 		// should throw because it isn't injected yet
 		expect(() => app.users.search()).toThrow(
@@ -64,20 +64,21 @@ describe("createApplication abstraction tests", () => {
 				" before calling app.users.search() or app.users.search.use()"
 		);
 		app.users.search.inject(userSearch, { skipPendingDelayMs: 400 });
-		expect(app.users.search().getConfig()).toEqual({ skipPendingDelayMs: 400 });
+		expect(app.users.search().getConfig()).toEqual({
+			context: {},
+			skipPendingDelayMs: 400,
+		});
 	});
 	it("should reuse the same instance when injecting several times", () => {
-		let app = createApplication<typeof testShape>(testShape);
+		let app = createApplication<typeof testShape>(testShape, {});
 
 		let src = app.users.search.inject(userSearch)();
 		let src2 = app.users.search.inject(userSearch)();
 		expect(src).toBe(src2);
 	});
 	it("should subscribe to a created api in component using use (auto run)", async () => {
-		let app = createApplication<typeof testShape>(testShape);
+		let app = createApplication<typeof testShape>(testShape, {});
 		app.users.search.inject(userSearch);
-		// @ts-expect-error state type is User, not null! forcing it to test
-		app.users.search().setState(null, "initial");
 
 		function Component() {
 			let data = app.users.search.use({
@@ -99,7 +100,7 @@ describe("createApplication abstraction tests", () => {
 		expect(screen.getByTestId("data").innerHTML).toBe("incepter");
 	});
 	it("should subscribe to a created api in component using useAsyncState", async () => {
-		let app = createApplication<typeof testShape>(testShape);
+		let app = createApplication<typeof testShape>(testShape, {});
 
 		function Component() {
 			let { state } = app.users.findOne.inject(userSearch).useAsyncState();

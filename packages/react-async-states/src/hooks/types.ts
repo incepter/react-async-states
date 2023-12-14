@@ -47,7 +47,7 @@ export interface BaseConfig<T, A extends unknown[], E>
 
 export interface ConfigWithKeyWithSelector<T, A extends unknown[], E, S>
 	extends ConfigWithKeyWithoutSelector<T, A, E> {
-	selector: useSelector<T, A, E, S>;
+	selector: UseSelector<T, A, E, S>;
 	areEqual?: EqualityFn<S>;
 }
 
@@ -58,7 +58,7 @@ export interface ConfigWithKeyWithoutSelector<T, A extends unknown[], E>
 
 export interface ConfigWithSourceWithSelector<T, A extends unknown[], E, S>
 	extends ConfigWithSourceWithoutSelector<T, A, E> {
-	selector: useSelector<T, A, E, S>;
+	selector: UseSelector<T, A, E, S>;
 	areEqual?: EqualityFn<S>;
 }
 
@@ -69,7 +69,7 @@ export interface ConfigWithSourceWithoutSelector<T, A extends unknown[], E>
 
 export interface ConfigWithProducerWithSelector<T, A extends unknown[], E, S>
 	extends ConfigWithProducerWithoutSelector<T, A, E> {
-	selector: useSelector<T, A, E, S>;
+	selector: UseSelector<T, A, E, S>;
 	areEqual?: EqualityFn<S>;
 }
 
@@ -126,7 +126,7 @@ export type UseAsyncStateConfiguration<
 		  ) => boolean);
 	areEqual: EqualityFn<S>;
 	subscriptionKey?: string;
-	selector?: useSelector<T, A, E, S>;
+	selector?: UseSelector<T, A, E, S>;
 	events?: UseAsyncStateEvents<T, A, E>;
 
 	// dev only
@@ -216,7 +216,7 @@ export type UseAsyncStateEventSubscribeFunction<T, A extends unknown[], E> = (
 ) => UseAsyncStateEventSubscribe<T, A, E>;
 
 export type SubscribeEventProps<T, A extends unknown[], E> = Source<T, A, E>;
-export type useSelector<T, A extends unknown[], E, S> = (
+export type UseSelector<T, A extends unknown[], E, S> = (
 	currentState: State<T, A, E>,
 	lastSuccess: LastSuccessSavedState<T, A>,
 	cache: { [id: string]: CachedState<T, A, E> } | null
@@ -301,6 +301,10 @@ export type LegacyHookReturn<T, A extends unknown[], E, S = State<T, A, E>> =
 	| HookReturnSuccess<T, A, E, S>
 	| HookReturnError<T, A, E, S>;
 
+export type ModernHookReturn<T, A extends unknown[], E, S = State<T, A, E>> =
+	| HookReturnInitial<T, A, E, S>
+	| HookReturnSuccess<T, A, E, S>;
+
 export type HookChangeEvents<T, A extends unknown[], E> =
 	| UseAsyncStateEventFn<T, A, E>
 	| UseAsyncStateEventFn<T, A, E>[];
@@ -364,7 +368,7 @@ type UseDataReturn<TData, TArgs extends unknown[], TError> = [
 // will automatically refetch data after a state time is elapsed
 // will automatically refetch on window focus and stale data
 interface UseQueryReturn<TData, TArgs extends unknown[], TError>
-	extends Omit<BaseHooksReturn<TData, TArgs, TError>, "lastSuccess"> {
+	extends BaseHooksReturn<TData, TArgs, TError> {
 	isPending: boolean;
 
 	data: TData | null;

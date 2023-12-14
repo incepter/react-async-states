@@ -8,9 +8,11 @@ import {
 	MixedConfig,
 	UseAsyncState,
 } from "./types";
-import { emptyArray, freeze } from "../shared";
+import { __DEV__, emptyArray, freeze } from "../shared";
 import { useAsync_internal } from "./useAsync_internal";
 import { Producer, Source, State } from "async-states";
+import { __DEV__setHookCallerName } from "./modules/HookSubscription";
+import { useCallerName } from "../helpers/useCallerName";
 
 // now we should overload and construct the exported part of this hook
 // the main usage that we should overload
@@ -77,25 +79,28 @@ function useAsync_export<T, A extends unknown[], E, S>(
 	config: MixedConfig<T, A, E, S>,
 	deps: unknown[] = emptyArray
 ): UseAsyncState<T, A, E, S> {
+	if (__DEV__) {
+		__DEV__setHookCallerName(useCallerName(3));
+	}
 	return useAsync_internal(config, deps);
-}
-
-function useAuto<T, A extends unknown[], E, S>(
-	config: MixedConfig<T, A, E, S>,
-	deps: unknown[] = emptyArray
-) {
-	// this override will be restored to null inside useAsync_export()
-	return useAsync_internal(config, deps, getAutoRunOverride());
 }
 
 // we avoid creating this object everytime, so it is created on-demand
 // and then reused when necessary
 let autoRunOverride: { lazy: false } | null = null;
-function getAutoRunOverride() {
+
+function useAuto<T, A extends unknown[], E, S>(
+	config: MixedConfig<T, A, E, S>,
+	deps: unknown[] = emptyArray
+) {
+	if (__DEV__) {
+		__DEV__setHookCallerName(useCallerName(3));
+	}
 	if (!autoRunOverride) {
 		autoRunOverride = { lazy: false };
 	}
-	return autoRunOverride;
+	// this override will be restored to null inside useAsync_export()
+	return useAsync_internal(config, deps, autoRunOverride);
 }
 
 // keep these types here next to useAsync_export
@@ -120,5 +125,5 @@ type UseAsyncType = {
 useAsync_export.auto = useAuto;
 export const useAsync: UseAsyncType = freeze(useAsync_export);
 
-// keep this export for historical reasons
+// keep this for historical reasons
 export const useAsyncState = useAsync;

@@ -161,7 +161,6 @@ const JournalDisplay = function JournalDisplay({
 	let allLogs = journal ?? [];
 	let [selectedTypes, setSelectedTypes] = React.useState(initialSelectedEvents);
 
-	console.log("memo stuff", journal, selectedTypes);
 	let filteredData = React.useMemo(() => {
 		return (
 			allLogs?.filter((t) => selectedTypes.includes(t.eventType)) ?? []
