@@ -265,9 +265,9 @@ export type ProducerSavedProps<T, A extends unknown[]> = {
 	payload?: Record<string, unknown> | null;
 };
 
-export type Producer<T, A extends unknown[] = [], E = Error> = (
-	props: ProducerProps<T, A, E>
-) => T | Promise<T> | Generator<any, T, any>;
+export type Producer<TData, TArgs extends unknown[] = [], TError = Error> = (
+	props: ProducerProps<TData, TArgs, TError>
+) => TData | Promise<TData> | Generator<any, TData, any>;
 
 export type ProducerFunction<T, A extends unknown[], E> = (
 	props: ProducerProps<T, A, E>,

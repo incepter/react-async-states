@@ -5,29 +5,19 @@ sidebar_label: First steps
 
 # First steps
 
-This library aims to manage states in general, but its power resides when using
-asynchronous ones.
-
-This section should let you get your hands dirty with the library, we will be
-using `axios` in our examples.
-
-We will be building an application for users management, but we will go
-incrementally, so you can have an overall idea on how the library is flexible
-and its way of state management.
-
 In this section you will learn how to deal with the following using the library:
 
-- Manually trigger data fetch
+- Manually trigger data fetching
 - Trigger data fetching based on dependencies
 - Search while typing (+ concurrency & debounce)
 - URL based automatic data fetching (via the query string)
 
-The following examples are using `useAsyncState` hook.
+The following examples are using the `useAsync` hook.
 
-You can think of its signature like
+Its signature is like this:
 
-```typescript
-function useAsyncState(config, dependencies = []) {
+```tsx
+function useAsync(options, dependencies = []) {
   // ...
 }
 ```
@@ -38,19 +28,12 @@ function useAsyncState(config, dependencies = []) {
 
 The following snippet should get you started to the library:
 
-import Tabs from '@theme/Tabs'; import TabItem from '@theme/TabItem';
-
-
 ```tsx
 import axios from "axios";
-import {
-  useAsyncState,
-  UseAsyncState,
-  ProducerProps
-} from "react-async-states";
+import { useAsync, ProducerProps } from "react-async-states";
 
 const API = axios.create({
-  baseURL: "https://jsonplaceholder.typicode.com"
+  baseURL: "https://jsonplaceholder.typicode.com",
 });
 
 type User = {
@@ -59,25 +42,24 @@ type User = {
   name: string;
 };
 
-async function fetchUsers(props: ProducerProps<User[], Error, undefined, never>): Promise<User[]> {
-  const controller = new AbortController();
-  props.onAbort(() => controller.abort());
-
-  const usersResponse = await API.get("/users", {signal: controller.signal});
-  return usersResponse.data;
+async function fetchUsers({ signal }: ProducerProps<User[]>) {
+  // artificially delayed by 500ms
+  await new Promise((res) => setTimeout(res, 500));
+  return await API.get("/users", { signal }).then(({ data }) => data);
 }
 
 export default function App() {
-  const {state, run} = useAsyncState(fetchUsers);
-  const {status, data} = state;
+  const { data, isPending, source } = useAsync(fetchUsers);
 
   return (
     <div className="App">
-      <button onClick={() => run()}>Fetch users</button>
-      <h3>Status is: {status}</h3>
-      {status === "success" && (
+      <button disabled={isPending} onClick={() => source.run()}>
+        Fetch users {isPending && "..."}
+      </button>
+      {data && (
         <ul>
-          {data.map((user) => (
+          <summary>Users list:</summary>
+          {data.map((user: User) => (
             <li key={user.id}>{user.name}</li>
           ))}
         </ul>
@@ -94,7 +76,7 @@ Here is a codesandbox demo with the previous code snippet:
 
 <iframe style={{width: '100%', height: '500px', border: 0, borderRadius: 4,
 overflow: 'hidden'}}
-src="https://codesandbox.io/embed/react-typescript-forked-8i2sib?fontsize=14&hidenavigation=1&theme=dark"
+src="https://codesandbox.io/embed/27hr97?view=editor+%2B+preview&module=%2Fsrc%2FApp.tsx&hidenavigation=1"
 allow="accelerometer; ambient-light-sensor; camera; encrypted-media;
 geolocation; gyroscope; hid; microphone; midi; payment; usb; vr;
 xr-spatial-tracking"
@@ -104,39 +86,48 @@ allow-same-origin allow-scripts"
 
 </details>
 
-This example was chosen on purpose so it may be familiar to you if you already
-know `react-query` or any other library using the same paradigm.
-
 ### Make it automatic on mount
 
-Let's take a close look at how we used the `useAsyncState` hook in the previous
-example:
+There are two ways to achieve this:
+
+- use the `useAsync` hook with a configuration object while passing the
+  `producer: fetchUsers` and `lazy: false` properties.
+- use the `useAsync.auto(fetchUsers)` hook which adds the `lazy: false` for you.
+
+We used useAsync as follows in the previous example:
 
 ```typescript
-const {state, run} = useAsyncState(fetchUsers);
-```
+const result = useAsync(fetchUsers);
 
-This is equivalent to its base version:
-
-```typescript
-const {state, run} = useAsyncState({
-  // highlight-next-line
+// this is the same as:
+const result = useAsync({
   producer: fetchUsers,
 });
 ```
 
-The base way to `useAsyncState` hook is the use a configuration object. If
-sometimes your use case is basic, the library supported some shortcuts.
+To make it automatic on component mount:
 
-To make it run automatically on mount, let's mark it as `lazy: false`:
+```typescript
+const result = useAsync({
+  // highlight-next-line
+  lazy: false,
+  // highlight-next-line
+  producer: fetchUsers,
+});
 
-See it here:
+// this is the same as:
+// highlight-next-line
+const result = useAsync.auto(fetchUsers);
+
+```
+
+See it here using the `useAsync.auto` variant:
 <details>
 <summary>Fetching users list automatically on mount codesandbox demo</summary>
 
 <iframe style={{width: '100%', height: '500px', border: 0, borderRadius: 4,
 overflow: 'hidden'}}
-src="https://codesandbox.io/embed/react-typescript-forked-ycq7xf?fontsize=14&hidenavigation=1&theme=dark"
+src="https://codesandbox.io/embed/v72ddx?view=Editor+%2B+Preview&module=%2Fsrc%2FApp.tsx"
 allow="accelerometer; ambient-light-sensor; camera; encrypted-media;
 geolocation; gyroscope; hid; microphone; midi; payment; usb; vr;
 xr-spatial-tracking"
@@ -146,70 +137,76 @@ allow-same-origin allow-scripts"
 
 </details>
 
+:::tip
+Notice how nothing used by the `useAsync` hook depend on the component render.
+
+A simple:
+```tsx
+useAsync.auto(producer);
+```
+:::
 
 ## Fetching the user details
+
+Now, let's try to use variables from the component render phase.
+
+First, let's make it ugly by storing a `React.State` variable then pass it
+to `useAsync`. Then, let's eliminate the used state variable.
+
 ### React to dependencies with condition
 
 Now, let's fetch the user details when typing his id.
 
 This time, we will be:
 
-- Storing the `userId` in a state variable using react's `useState`.
-- Pass the userId to our `producer` in the `payload`.
-- Only fetch if the userId is `truthy`.
+- Storing the `userId` in a state variable using React `useState` hook.
+- Pass the userId to our `producer` in the `args` for proper typing.
+- Only fetch if the userId is not empty and not `0`.
 - Fetch everytime the `userId` changes.
 - Abort the previous call if a second is done while `pending`.
 
 Here is a full working example:
 
-
 ```tsx
-async function fetchUser(props: ProducerProps<User>): Promise<User> {
-  const controller = new AbortController();
-  props.onAbort(() => controller.abort());
 
-  const {userId} = props.payload;
-
-  const usersResponse = await API.get("/users/" + userId, {
-    signal: controller.signal
-  });
-  return usersResponse.data;
+async function fetchUserDetails({
+  signal,
+  args: [userId],
+}: ProducerProps<User, [string]>) {
+  // artificially delayed by 500ms
+  await new Promise((res) => setTimeout(res, 500));
+  return await API.get(`/users/${userId}`, { signal }).then(({ data }) => data);
 }
 
 export default function App() {
-  const [userId, setUserId] = React.useState("");
-  const {state} = useAsyncState(
+  const [userId, setUserId] = useState("");
+  const { data, isPending, error } = useAsync.auto(
     {
-      lazy: false,
       condition: !!userId,
-      producer: fetchUser,
-      payload: {
-        userId
-      }
+      autoRunArgs: [userId],
+      producer: fetchUserDetails,
     },
     [userId]
   );
-  const {status, data, props} = state;
 
   return (
     <div className="App">
-      <input onChange={(e) => setUserId(e.target.value)}/>
-      <h3>Status is: {status}</h3>
-      {status === "success" && (
+      <input placeholder="userId" onChange={(e) => setUserId(e.target.value)} />
+      {isPending && "Loading..."}
+      {data && (
         <details open>
           <pre>{JSON.stringify(data, null, 4)}</pre>
         </details>
       )}
-      {status === "error" && (
+      {error && (
         <div>
-          error while retrieving user with id: {props?.payload.userId}
-          <pre>{data.toString()}</pre>
+          error while retrieving user details
+          <pre>{error.toString()}</pre>
         </div>
       )}
     </div>
   );
 }
-
 ```
 
 Try it here, notice the cancellation of previous requests, also, you can remove
@@ -221,7 +218,67 @@ observe the consistency in the UI.
 
 <iframe style={{width: '100%', height: '500px', border: 0, borderRadius: 4,
 overflow: 'hidden'}}
-src="https://codesandbox.io/embed/react-typescript-forked-qr44ti?fontsize=14&hidenavigation=1&theme=dark"
+src="https://codesandbox.io/embed/cjmlnw?view=Editor+%2B+Preview&module=%2Fsrc%2FApp.tsx"
+allow="accelerometer; ambient-light-sensor; camera; encrypted-media;
+geolocation; gyroscope; hid; microphone; midi; payment; usb; vr;
+xr-spatial-tracking"
+sandbox="allow-forms allow-modals allow-popups allow-presentation
+allow-same-origin allow-scripts"
+/>
+
+</details>
+
+### Eliminate the previous state variable
+
+Let's now use the `run` function from the `source` to fully eliminate any
+component render variable or additional state:
+
+```tsx
+
+async function fetchUserDetails({
+  signal,
+  args: [userId],
+}: ProducerProps<User, [string]>) {
+  if (!userId) {
+    throw new Error("User Id is required");
+  }
+  return await API.get(`/users/${userId}`, { signal }).then(({ data }) => data);
+}
+
+export default function App() {
+  const { data, isPending, isSuccess, isError, error, source } =
+    useAsync(fetchUserDetails);
+
+  return (
+    <div className="App">
+      <input
+        placeholder="userId"
+        onChange={(e) => source.run(e.target.value)}
+      />
+      {isPending && "Loading..."}
+      {isSuccess && (
+        <details open>
+          <pre>{JSON.stringify(data, null, 4)}</pre>
+        </details>
+      )}
+      {isError && (
+        <div>
+          error while retrieving user details
+          <pre>{error.toString()}</pre>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+
+<details>
+<summary>Load user details as you type</summary>
+
+<iframe style={{width: '100%', height: '500px', border: 0, borderRadius: 4,
+overflow: 'hidden'}}
+src="https://codesandbox.io/embed/cjmlnw?view=Editor+%2B+Preview&module=%2Fsrc%2FApp.tsx"
 allow="accelerometer; ambient-light-sensor; camera; encrypted-media;
 geolocation; gyroscope; hid; microphone; midi; payment; usb; vr;
 xr-spatial-tracking"
@@ -233,34 +290,57 @@ allow-same-origin allow-scripts"
 
 ### Debounce search while typing
 
-If we look at the previous example, we run a fetch request whenever the user
-types something (and we ignore empty string).
+- We will slow down all requests by 500ms
+- We will debounce by 400ms, so fetch will occur only after we hang on typing
+- We will use the `state` property from the `useAsync` result to show extra
+  information.
 
-Now, let's debounce the run by `400ms`:
-
-That's all we need to do it:
+:::note
+In `useAsync` result:
+- `state` refers to the current state.
+- `data` refers to the last success data.
+- `state.data` is `data` when `state.status` is `success`.
+:::
 
 ```tsx
 // ...
-export default function App() {
-  const [userId, setUserId] = React.useState("");
-  const {state} = useAsyncState(
-    {
-      lazy: false,
-      condition: !!userId,
-      producer: fetchUser,
-      // highlight-next-line
-      runEffect: "debounce",
-      // highlight-next-line
-      runEffectDurationMs: 400,
-      payload: {
-        userId
-      }
-    },
-    [userId]
+function App() {
+  const { state, source } = useAsync({
+    key: "user-details",
+    producer: fetchUserDetails,
+    // pass this args to the producer
+
+    // apply this effect to runs
+    // highlight-next-line
+    runEffect: "debounce",
+    // this is the effect duration
+    // highlight-next-line
+    runEffectDurationMs: 400,
+  });
+
+  return (
+    <div className="App">
+      <input
+        placeholder="userId"
+        onChange={(e) => source.run(e.target.value)}
+      />
+      {state.status === "pending" &&
+        "Loading user with Id: " + state.props.args![0]}
+      {state.status === "success" && (
+        <details open>
+          <pre>{JSON.stringify(state.data, null, 4)}</pre>
+        </details>
+      )}
+      {state.status === "error" && (
+        <div>
+          error while retrieving user details
+          <pre>{state.data.toString()}</pre>
+        </div>
+      )}
+    </div>
   );
-  // ...
 }
+
 
 ```
 
@@ -271,7 +351,7 @@ Try it here:
 
 <iframe style={{width: '100%', height: '500px', border: 0, borderRadius: 4,
 overflow: 'hidden'}}
-src="https://codesandbox.io/embed/react-typescript-forked-r2qd8q?fontsize=14&hidenavigation=1&theme=dark"
+src="https://codesandbox.io/embed/xtfvjx?view=Editor+%2B+Preview&module=%2Fsrc%2FApp.tsx"
 allow="accelerometer; ambient-light-sensor; camera; encrypted-media;
 geolocation; gyroscope; hid; microphone; midi; payment; usb; vr;
 xr-spatial-tracking"
@@ -280,157 +360,25 @@ allow-same-origin allow-scripts"
 />
 
 </details>
-
-:::tip
-The `run` function supports passing parameters to the `producer`, received as `args`.
-
-Let's edit the previous example and get rid of the state variable:
-
-```tsx
-
-async function fetchUser(props: ProducerProps<User>): Promise<User> {
-  const controller = new AbortController();
-  props.onAbort(() => controller.abort());
-
-  // highlight-next-line
-  const [userId] = props.args;
-
-  const usersResponse = await API.get("/users/" + userId, {
-    signal: controller.signal
-  });
-  return usersResponse.data;
-}
-
-export default function App() {
-  const { run, state } = useAsyncState({
-    lazy: true,
-    producer: fetchUser,
-    runEffect: "debounce",
-    runEffectDurationMs: 400
-  });
-  const { status, data, props } = state;
-
-  return (
-    <div className="App">
-      <input onChange={(e) => run(e.target.value)} />
-      <h3>Status is: {status}</h3>
-      {status === "success" && (
-        <details open>
-          <pre>{JSON.stringify(data, null, 4)}</pre>
-        </details>
-      )}
-      {status === "error" && (
-        <div>
-          error while retrieving user with id: {props?.payload.userId}
-          <pre>{data.toString()}</pre>
-        </div>
-      )}
-    </div>
-  );
-}
-
-```
-
-See it here:
-
-<details>
-<summary>run with userId codesandbox demo</summary>
-
-<iframe style={{width: '100%', height: '500px', border: 0, borderRadius: 4,
-overflow: 'hidden'}}
-src="https://codesandbox.io/embed/react-typescript-forked-dz0knu?fontsize=14&hidenavigation=1&theme=dark"
-allow="accelerometer; ambient-light-sensor; camera; encrypted-media;
-geolocation; gyroscope; hid; microphone; midi; payment; usb; vr;
-xr-spatial-tracking"
-sandbox="allow-forms allow-modals allow-popups allow-presentation
-allow-same-origin allow-scripts"
-/>
-
-</details>
-
-
-Notice that we removed the state variable and also the payload and the dependency
-array.
-
-The library's default dependencies are an empty array.
-:::
 
 :::note
-If you take a close look at how we used `useAsyncState` in the previous example,
+If you take a close look at how we used `useState` in the previous example,
 you'd see that our producer does not depend from any closure related to
 the component render:
 it can safely be moved to module level.
 ```typescript
 const searchUserConfig = {
-  lazy: true,
   producer: fetchUser,
   runEffect: "debounce",
   runEffectDurationMs: 400
 };
 
 export default function App() {
-  const {run, state} = useAsyncState(searchUserConfig);
-  const {status, data, props} = state;
-  // the rest
+  const { source, state } = useState(searchUserConfig);
+  // ... the rest
 }
 ```
 :::
-
-### React to URL change
-
-Now, rather than writing the user id and reacting to a state variable, let's
-grab the `userId` from the url and navigate when the typed value changes.
-
-```tsx
-// highlit-next-line
-const {userId} = useParams();
-const {state} = useAsyncState(
-  {
-    lazy: false,
-    condition: !!userId,
-    producer: fetchUser,
-    payload: {
-      userId
-    }
-  },
-  [userId]
-);
-const {status, data, props} = state;
-
-
-// AND
-
-const navigate = useNavigate();
-
-function onChange(e) {
-  const id = e.target.value;
-  if (id) {
-    navigate(`/users/${id}`);
-  }
-}
-<input onChange={onChange} />;
-
-```
-
-See it in action here:
-
-
-<details>
-<summary>Read userId from the URL codesandbox demo</summary>
-
-<iframe style={{width: '100%', height: '500px', border: 0, borderRadius: 4,
-overflow: 'hidden'}}
-src="https://codesandbox.io/embed/react-typescript-forked-w9v2ss?fontsize=14&hidenavigation=1&theme=dark"
-allow="accelerometer; ambient-light-sensor; camera; encrypted-media;
-geolocation; gyroscope; hid; microphone; midi; payment; usb; vr;
-xr-spatial-tracking"
-sandbox="allow-forms allow-modals allow-popups allow-presentation
-allow-same-origin allow-scripts"
-/>
-
-</details>
-
-
 
 ### Skip the pending state if request is so fast
 
@@ -439,35 +387,23 @@ To skip the pending state, the `skipPendingDelayMs` is used.
 It means that when state turns to pending, and then changes under that delay,
 the pending update shall be skipped.
 
+This makes your app feels synchronous.
+
 ```tsx
-// highlit-next-line
-const {userId} = useParams();
-const {state} = useAsyncState(
-  {
-    lazy: false,
-    condition: !!userId,
-    producer: fetchUser,
-    skipPendingDelayMs: 400,
-    payload: {
-      userId
-    }
-  },
-  [userId]
-);
-const {status, data, props} = state;
-
-
-// AND
-
-const navigate = useNavigate();
-
-function onChange(e) {
-  const id = e.target.value;
-  if (id) {
-    navigate(`/users/${id}`);
-  }
-}
-<input onChange={onChange} />;
+const { state, source } = useAsync({
+  key: "user-details",
+  producer: fetchUserDetails,
+  // pass this args to the producer
+  
+  // apply this effect to runs
+  runEffect: "debounce",
+  // this is the effect duration
+  runEffectDurationMs: 400,
+  
+  // skip the pending status when the request is too fast
+  // highlight-next-line
+  skipPendingDelayMs: 300,
+});
 
 ```
 
@@ -480,7 +416,7 @@ that the experience feels instantaneous.
 
 <iframe style={{width: '100%', height: '500px', border: 0, borderRadius: 4,
 overflow: 'hidden'}}
-src="https://codesandbox.io/embed/react-typescript-forked-dphucp?fontsize=14&hidenavigation=1&theme=dark"
+src="https://codesandbox.io/embed/qywx53?view=Editor+%2B+Preview&module=%2Fsrc%2FApp.tsx"
 allow="accelerometer; ambient-light-sensor; camera; encrypted-media;
 geolocation; gyroscope; hid; microphone; midi; payment; usb; vr;
 xr-spatial-tracking"
