@@ -96,19 +96,17 @@ function createDevtools(): DevtoolsInterface {
 		if (message.data) {
 			if (message.data.type === DevtoolsRequest.init) {
 				connect();
-				maybeWindow &&
-					maybeWindow.addEventListener(
-						"message",
-						devtoolsInstancesCommandsListener
-					);
+				maybeWindow?.addEventListener(
+					"message",
+					devtoolsInstancesCommandsListener
+				);
 			}
 			if (message.data.type === DevtoolsRequest.disconnect) {
 				disconnect();
-				maybeWindow &&
-					maybeWindow.removeEventListener(
-						"message",
-						devtoolsInstancesCommandsListener
-					);
+				maybeWindow?.removeEventListener(
+					"message",
+					devtoolsInstancesCommandsListener
+				);
 			}
 			if (message.data.type === DevtoolsRequest.getKeys) {
 				emitKeys();
@@ -117,7 +115,7 @@ function createDevtools(): DevtoolsInterface {
 	}
 
 	if (!isServer) {
-		maybeWindow && maybeWindow.addEventListener("message", listener);
+		maybeWindow?.addEventListener("message", listener);
 	}
 
 	return {

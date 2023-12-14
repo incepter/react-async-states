@@ -12,7 +12,7 @@ import {
 import {
 	BaseConfig,
 	MixedConfig,
-	PartialUseAsyncStateConfiguration,
+	PartialUseAsyncConfig,
 } from "../types";
 import { isServer } from "../../provider/context";
 
@@ -22,13 +22,13 @@ import { isServer } from "../../provider/context";
 export function parseConfig<T, A extends unknown[], E, S = State<T, A, E>>(
 	currentLibContext: LibraryContext | null,
 	mixedConfig: MixedConfig<T, A, E, S>,
-	overrides?: PartialUseAsyncStateConfiguration<T, A, E, S> | null
+	overrides?: PartialUseAsyncConfig<T, A, E, S> | null
 ) {
 	requireAnExecContextInServer(currentLibContext, mixedConfig);
 
 	let executionContext: LibraryContext;
 	let instance: StateInterface<T, A, E>;
-	let parsedConfiguration: PartialUseAsyncStateConfiguration<T, A, E, S>;
+	let parsedConfiguration: PartialUseAsyncConfig<T, A, E, S>;
 
 	switch (typeof mixedConfig) {
 		// the user provided an object configuration or a Source
@@ -122,7 +122,7 @@ export function parseConfig<T, A extends unknown[], E, S = State<T, A, E>>(
 // - cases when it contains { source } should be supported before calling this
 function resolveFromObjectConfig<T, A extends unknown[], E>(
 	executionContext: LibraryContext,
-	parsedConfiguration: PartialUseAsyncStateConfiguration<T, A, E, any>
+	parsedConfiguration: PartialUseAsyncConfig<T, A, E, any>
 ): StateInterface<T, A, E> {
 	let { key, producer } = parsedConfiguration;
 
@@ -146,7 +146,7 @@ function resolveFromObjectConfig<T, A extends unknown[], E>(
 // the user provided a string to useAsync(key, deps)
 function resolveFromStringConfig<T, A extends unknown[], E>(
 	executionContext: LibraryContext,
-	parsedConfiguration: PartialUseAsyncStateConfiguration<T, A, E, any>
+	parsedConfiguration: PartialUseAsyncConfig<T, A, E, any>
 ): StateInterface<T, A, E> {
 	// key should never be undefined in this path
 	let key = parsedConfiguration.key!;
@@ -160,7 +160,7 @@ function resolveFromStringConfig<T, A extends unknown[], E>(
 }
 
 function resolveFromFunctionConfig<T, A extends unknown[], E>(
-	parsedConfiguration: PartialUseAsyncStateConfiguration<T, A, E, any>
+	parsedConfiguration: PartialUseAsyncConfig<T, A, E, any>
 ): StateInterface<T, A, E> {
 	requireAKeyInTheServer();
 	let key = nextKey();
