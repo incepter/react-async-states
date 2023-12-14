@@ -67,12 +67,12 @@ export function createApplication<Shape extends AppShape>(
         T[api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? E : never
       >
     }
+    let ctxArg = contextArgToUse ?? null;
+    createContext(ctxArg);
 
     result[resourceName] = freeze(apis.reduce((
       apiResult, apiName: keyof typeof resource) => {
       let api = resource[apiName]
-      let ctxArg = contextArgToUse ?? null;
-      createContext(ctxArg);
       apiResult[apiName] = freeze(createToken(resourceName, apiName, api, ctxArg));
       return apiResult
     }, {} as ResourceType<typeof resource>))
