@@ -1,3 +1,4 @@
+export { useData } from "./hooks/useData_export";
 export { useAsyncState, useAsync } from "./hooks/useAsync_export";
 
 export {
