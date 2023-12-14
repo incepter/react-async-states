@@ -17,7 +17,7 @@ import {
 	selectWholeState,
 } from "./HookReturnValue";
 import { __DEV__, isArray, isFunction } from "../../shared";
-import { AbortFn, State, StateInterface } from "async-states";
+import { AbortFn, ProducerConfig, State, StateInterface } from "async-states";
 
 export function useRetainInstance<T, A extends unknown[], E, S>(
 	instance: StateInterface<T, A, E>,
@@ -271,22 +271,7 @@ function reconcileInstance<T, A extends unknown[], E, S>(
 	// patch the given config and the new producer if provided and different
 	// we might be able to iterate over properties and re-assign only the ones
 	// that changed and are supported.
-	// the patched config may contain the following properties
-	// - source
-	// - payload
-	// - events
-	// and other properties that can be retrieved from hooks usage and others
-	// so we are tearing them apart before merging
-	// todo: find a better way to remove these properties
-	let configToPatch = {
-		...currentConfig,
-		lazy: undefined,
-		events: undefined,
-		source: undefined,
-		payload: undefined,
-		concurrent: undefined,
-		autoRunArgs: undefined,
-	};
+	let configToPatch = removeHookConfigToPatchToSource(currentConfig);
 	instanceActions.patchConfig(configToPatch);
 	if (currentConfig.payload) {
 		instanceActions.mergePayload(currentConfig.payload);
@@ -297,6 +282,27 @@ function reconcileInstance<T, A extends unknown[], E, S>(
 	if (pendingProducer !== undefined && pendingProducer !== currentProducer) {
 		instanceActions.replaceProducer(pendingProducer);
 	}
+}
+
+function removeHookConfigToPatchToSource<T, A extends unknown[], E, S>(
+	currentConfig: PartialUseAsyncConfig<T, A, E, S>
+): ProducerConfig<T, A, E> {
+	// the patched config may contain the following properties
+	// - source
+	// - payload
+	// - events
+	// and other properties that can be retrieved from hooks usage and others
+	// so we are tearing them apart before merging
+	let output = {...currentConfig};
+
+	delete output.lazy;
+	delete output.events;
+	delete output.source;
+	delete output.payload;
+	delete output.concurrent;
+	delete output.autoRunArgs;
+
+	return output;
 }
 
 // this will detect whether the returned value from the hook doesn't match
