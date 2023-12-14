@@ -1,16 +1,11 @@
-import type {
-  Producer,
-  ProducerConfig,
-  Source,
-  State,
-} from "async-states"
-import {createSource,} from "async-states";
-import {__DEV__} from "../shared";
+import type {Producer, ProducerConfig, Source, State,} from "async-states"
+import {createContext, createSource} from "async-states";
+import {__DEV__, assign} from "../shared";
 import {useCallerName} from "../helpers/useCallerName";
 import {UseAsyncState, UseConfig} from "../types.internal";
 import internalUse from "./internalUse";
-import {useAsync_internal} from "../hooks/useAsync_internal";
 import {__DEV__setHookCallerName} from "../hooks/modules/HookSubscription";
+import {useAsync} from "../hooks/useAsync_export";
 
 let freeze = Object.freeze
 
@@ -54,6 +49,7 @@ export type Application<T extends AppShape> = {
 
 export function createApplication<Shape extends AppShape>(
   shape: ApplicationEntry<Shape>,
+  contextArgToUse?: object,
 ): Application<Shape> {
 
   let resources = Object.keys(shape)
@@ -75,7 +71,9 @@ export function createApplication<Shape extends AppShape>(
     result[resourceName] = freeze(apis.reduce((
       apiResult, apiName: keyof typeof resource) => {
       let api = resource[apiName]
-      apiResult[apiName] = freeze(createToken(resourceName, apiName, api))
+      let ctxArg = contextArgToUse ?? null;
+      createContext(ctxArg);
+      apiResult[apiName] = freeze(createToken(resourceName, apiName, api, ctxArg));
       return apiResult
     }, {} as ResourceType<typeof resource>))
 
@@ -93,7 +91,8 @@ function createToken<
     K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? T : never,
     K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? A : never,
     K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? E : never
-  >
+  >,
+  contextArgToUse: object | null
 ): Token<
   K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? T : never,
   K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? A : never,
@@ -110,7 +109,11 @@ function createToken<
 
   // eagerly create the apiSource
   if (api.eager) {
-    apiSource = createSource(name, api.producer, api.config) as Source<T, A, E>
+    let apiConfig = api.config;
+    if (contextArgToUse !== null) {
+      apiConfig = assign({}, apiConfig, {context: contextArgToUse});
+    }
+    apiSource = createSource(name, api.producer, apiConfig) as Source<T, A, E>
   }
 
 
@@ -129,7 +132,11 @@ function createToken<
     config?: ProducerConfig<T, A, E>
   ): TokenType {
     if (!apiSource) {
-      apiSource = createSource(name, fn, config);
+      let apiConfig = config;
+      if (contextArgToUse !== null) {
+        apiConfig = assign({}, apiConfig, {context: contextArgToUse});
+      }
+      apiSource = createSource(name, fn, apiConfig);
     } else {
       apiSource.replaceProducer(fn || null)
       apiSource.patchConfig(config)
@@ -144,12 +151,12 @@ function createToken<
     ensureSourceIsDefined(apiSource, resourceName, apiName);
 
     if (__DEV__) {
-      __DEV__setHookCallerName(useCallerName(4));
+      __DEV__setHookCallerName(useCallerName(3));
     }
 
     let source = token();
     let realConfig = config ? {...config, source} : source;
-    return useAsync_internal(realConfig, deps || []);
+    return useAsync(realConfig, deps || []);
   }
 }
 
@@ -203,6 +210,10 @@ function createR18Use<T, A extends unknown[], E>(
   ) {
     let source = getSource();
     ensureSourceIsDefined(source, resourceName, apiName);
+
+    if (__DEV__) {
+      __DEV__setHookCallerName(useCallerName(3));
+    }
 
     return internalUse(source, config, deps);
   }

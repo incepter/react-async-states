@@ -301,6 +301,10 @@ export type LegacyHookReturn<T, A extends unknown[], E, S = State<T, A, E>> =
 	| HookReturnSuccess<T, A, E, S>
 	| HookReturnError<T, A, E, S>;
 
+export type ModernHookReturn<T, A extends unknown[], E, S = State<T, A, E>> =
+	| HookReturnInitial<T, A, E, S>
+	| HookReturnSuccess<T, A, E, S>;
+
 export type HookChangeEvents<T, A extends unknown[], E> =
 	| UseAsyncStateEventFn<T, A, E>
 	| UseAsyncStateEventFn<T, A, E>[];

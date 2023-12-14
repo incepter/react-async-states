@@ -109,7 +109,7 @@ function createSubscription<T, A extends unknown[], E, S>(
 					// should be careful with that. Anyways, runp will run the producer
 					// too, so the side effects are applied either ways
 					// If the run results in a pending state, it will throw next
-					instance.actions.run.apply(null, runArgs);
+					throw instance.actions.runp.apply(null, runArgs);
 				}
 			}
 			if (currentStatus === "pending") {
@@ -532,7 +532,7 @@ export function invokeSubscribeEvents<T, A extends unknown[], E>(
 // dev mode helpers
 let currentlyRenderingComponentName: string | null = null;
 export function __DEV__setHookCallerName(name: string | undefined) {
-	if (name) {
+	if (name && !currentlyRenderingComponentName) {
 		currentlyRenderingComponentName = name;
 	}
 }

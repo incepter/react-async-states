@@ -11,7 +11,7 @@ export default function internalUse<T, A extends unknown[], E>(
 	deps: any[] = emptyArray
 ): T {
 	if (__DEV__) {
-		__DEV__setHookCallerName(useCallerName(5));
+		__DEV__setHookCallerName(useCallerName(3));
 	}
 	let config = options ? { ...options, source } : source;
 	let { read, data } = useAsync_internal(config, deps);
