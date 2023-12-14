@@ -301,6 +301,10 @@ export type LegacyHookReturn<T, A extends unknown[], E, S = State<T, A, E>> =
 	| HookReturnSuccess<T, A, E, S>
 	| HookReturnError<T, A, E, S>;
 
+export type ModernHookReturn<T, A extends unknown[], E, S = State<T, A, E>> =
+	| HookReturnInitial<T, A, E, S>
+	| HookReturnSuccess<T, A, E, S>;
+
 export type HookChangeEvents<T, A extends unknown[], E> =
 	| UseAsyncStateEventFn<T, A, E>
 	| UseAsyncStateEventFn<T, A, E>[];
@@ -364,7 +368,7 @@ type UseDataReturn<TData, TArgs extends unknown[], TError> = [
 // will automatically refetch data after a state time is elapsed
 // will automatically refetch on window focus and stale data
 interface UseQueryReturn<TData, TArgs extends unknown[], TError>
-	extends Omit<BaseHooksReturn<TData, TArgs, TError>, "lastSuccess"> {
+	extends BaseHooksReturn<TData, TArgs, TError> {
 	isPending: boolean;
 
 	data: TData | null;

@@ -103,10 +103,16 @@ function createSubscription<T, A extends unknown[], E, S>(
 					reconcileInstance(instance, config);
 
 					let runArgs = (config.autoRunArgs || []) as A;
-					// runp guarantees returning a promise
-					throw instance.actions.runp.apply(null, runArgs);
+					// run is used than runp because it may be synchronous, so the run
+					// would resolve immediately.
+					// This is dangerous since it may do some side effects, but the user
+					// should be careful with that. Anyways, runp will run the producer
+					// too, so the side effects are applied either ways
+					// If the run results in a pending state, it will throw next
+					instance.actions.run.apply(null, runArgs);
 				}
-			} else if (currentStatus === "pending") {
+			}
+			if (currentStatus === "pending") {
 				throw instance.promise!;
 			}
 		}

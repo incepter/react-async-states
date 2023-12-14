@@ -4,6 +4,7 @@ import { parseConfig } from "./modules/HookResolveConfig";
 import {
 	LegacyHookReturn,
 	MixedConfig,
+	ModernHookReturn,
 	PartialUseAsyncConfig,
 } from "./types";
 import {
@@ -31,9 +32,6 @@ export function useAsync_internal<T, A extends unknown[], E, S>(
 		deps
 	);
 
-	if (__DEV__) {
-		__DEV__setHookCallerName(useCallerName(4));
-	}
 	// here, we will create a subscription from this component
 	// to this state instance. refer to HookSubscription type.
 	let subscription = useRetainInstance(instance, config, deps);
