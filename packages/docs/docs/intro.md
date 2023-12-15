@@ -29,8 +29,6 @@ The library can work with the following modes:
 #### <ins>Easy to use and Minimal API (`useAsync`).</ins>
 The main hook of the library: `useAsync` allows the creation,
 subscription and manipulation of the desired state.
-[Here is a sneak peek](/docs/api/the-whole-api#useasyncstate)
-at this hook's full API.
 
 The hooks signature is pretty familiar: a configuration and dependencies.
 
