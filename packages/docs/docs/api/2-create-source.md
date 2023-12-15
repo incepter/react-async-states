@@ -3,95 +3,378 @@ sidebar_position: 2
 sidebar_label: Create source
 ---
 # createSource
-`createSource` is a utility provided by the library that creates instances
-of shared states.
 
-If used at a module level, it will give you a state that is accessible from
-all over your application.
+`createSource` is a function that creates shared states.
+It accepts three parameters:
 
-The source object has the following properties:
+| Property        | Type                      | Description                         |
+|-----------------|---------------------------|-------------------------------------|
+| `key`           | `string`                  | The unique identifier of the state  |
+| `producer`      | `Producer<T, A, E>`       | Returns the state value of type `T` |
+| `configuration` | `ProducerConfig<T, A, E>` | The configuration of the state      |
 
-| Property          | Type                                                              | Description                                                                                   |
-|-------------------|-------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
-| `key`             | `string`                                                          | the provided key of the state instance                                                        |
-| `uniqueId`        | `uniqueId`                                                        | the instance's unique Id (auto incremented)                                                   |
-| `getState`        | `() => State<T, E, R>`                                            | returns the current state of the source object                                                |
-| `setState`        | `(data: T or (prev: State<T, E, R>) => T, status?: Status): void` | replaces the current state with the value or the provided updater function                    |
-| `run`             | `(...args: any[]) => AbortFn`                                     | runs the producer with given parameters and return the abort function                         |
-| `runp`            | `(...args: any[]) => Promise<T> or undefined`                     | runs the producer with given parameters and return a promise for resolve                      |
-| `runc`            | `({ args: any[], onSuccess, onError, onAborted) => AbortFn`       | runs the producer with given parameters and callbacks for resolve, returns the abort function |
-| `replay`          | `() => AbortFn`                                                   | replays the latest run and return the abort function                                          |
-| `abort`           | `(reason?: R) => void`                                            | aborts the current run if pending or clears the onAbort registered callbacks                  |
-| `replaceProducer` | `(producer) => void`                                              | replaces the producer attached with the state                                                 |
-| `getLaneSource`   | `(lane: string) => Source`                                        | returns a `source` object for the given lane                                                  |
-| `removeLane`      | `(lane: string) => boolean`                                       | returns a lanes source                                                                        |
-| `invalidateCache` | `(cacheKey?: string) => boolean`                                  | invalidates the given cache by key or the whole cache                                         |
-| `replaceCache`    | `(key: string, cached: CachedState) => void`                      | replaces a cache entry                                                                        |
-| `mergePayload`    | `(partialPayload: Record<string, any>) => void`                   | merges a partial payload inside the payload detained by the state                             |
-| `subscribe`       | `(cb) => Unsubscribe()`                                           | subscribes to state updates                                                                   |
-| `getConfig`       | `() => ProducerConfig`                                            | returns the current configuration of the state                                                |
-| `patchConfig`     | `(config: Partial<ProducerConfig>) => void`                       | patches the configuration with the given partial one                                          |
+## Signature
+
+`createSource` is defined and used as follows:
+
+```tsx
+export function createSource<T, A extends unknown[] = [], E = Error>(
+  key: string,
+  producer?: Producer<T, A, E> | undefined | null,
+  config?: ProducerConfig<T, A, E>
+): Source<T, A, E>;
 
 
-```typescript
-import {createSource, useAsyncState, useRun} from "react-async-states";
+let counter = createSource("counter", null, { initialValue: 0 });
+let userDetails = createSource("user-details", fetchUserDetailsProducer, {
+  runEffect: "debounce",
+  runEffectDurationMs: 300,
+  skipPendingDelayMs: 200,
+  // ... other config we'll see in a few
+});
 
-const connectedUser = createSource("principal", getUserProducer);
-
-// later, at any part of the app
-useAsyncState(connectedUser);
-// or
-useAsyncState({source: connectedUser, ...otherConfig});
-
-// and you can even controle it like this:
-const run = useRun();
-// from anywhere down in the tree:
-run(connectedUser, ...args);
-// or simply:
-connectedUser.run(...args);
-
-// or even from inside another producer:
-props.run(connectedUser, {payload: { userId: 5 }, fork: true,})
-
-// notice that you can define this producer in a way that get's a user
-// and when nothing provided can fallback to the current user.
-// later, you can re-use a fork of it while providing the user id.
-async function getUserProducer(props) {
-  // ... setup
-  const userId = props.payload?.userId ?? "me";
-  // ... return fetch
-}
 ```
 
-`createSource` accepts three parameters:
+### key
+The key is a plain string and unique identifier of the state.
 
-| Property        | Type                | Description                              |
-|-----------------|---------------------|------------------------------------------|
-| `key`           | `string`            | The unique identifier of the async state |
-| `producer`      | `Producer<T, E, R>` | Returns the state value of type `T`      |
-| `configuration` | `ProducerConfig`    | The configuration of the state           |
+Giving the same key to multiple times to createSource will return the same
+source object.
 
-The supported configuration is:
+### producer
+The producer was detailed in [the previous section](/docs/api/producer-function).
+## Configuration
 
-| Property              | Type                                                         | Description                                                                                                                                                                                           |
-|-----------------------|--------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `initialValue`        | `T or  ((cache: Record<string, CachedState<T, E, R>>) => T)` | The initial value or the initializer of the state (status = `initial`), the initializer receives the cache as unique parameter                                                                        |
-| `runEffect`           | `oneOf('debounce', 'throttle', undefined)`                   | An effect to apply when running the producer, can be used to debounce or throttle                                                                                                                     |
-| `runEffectDurationMs` | `number > 0`, `undefined`                                    | The debounce/throttle duration                                                                                                                                                                        |
-| `resetStateOnDispose` | `boolean`                                                    | Whether to reset the state to its initial state when all subscribers unsubscribe or to keep it. Default to `false`.                                                                                   |
-| `skipPendingDelayMs`  | `number > 0` or `undefined`                                  | The duration under which a state update with a pending status may be skipped. The component in this case won't render with a pending status if it gets updated to something else under that duration. |
-| `keepPendingForMs`    | `number > 0` or `undefined`                                  | Once you step in a pending status, it will stay in pending state for this duration. This is supported to push the user experience to newer challenges                                                 |
-| `skipPendingStatus`   | `boolean`                                                    | Entirely disable the pending status of this state. this state won't step into a pending status                                                                                                        |
-| `cacheConfig`         | `CacheConfig<T, E, R>`                                       | The cache config                                                                                                                                                                                      |
-| `hideFromDevtools`    | `boolean`                                                    | Hide this state from the devtools                                                                                                                                                                     |
+The whole configuration is optional.
 
-Where the supported cache config is:
+### `initialValue`
 
-| Property      | Type                                                              | Description                                                                      |
-|---------------|-------------------------------------------------------------------|----------------------------------------------------------------------------------|
-| `enabled`     | `boolean`                                                         | Whether to enable cache or not                                                   |
-| `hash`        | `(args?: any[], payload?: Record<string, any> or null) => string` | a function to calculate a hash for a producer run (from args and payload)        |
-| `getDeadline` | `(currentState: State<T, E, R>) => number`                        | returns the deadline after which the cache is invalid                            |
-| `load`        | `() => {[id: string]: CachedState<T, E, R>}`                      | loads the cached data when the async state instance is created                   |
-| `persist`     | `(cache: {[id: string]: CachedState<T, E, R>}) => void`           | a function to persist the whole cache, called when state is updated to success   |
-| `onCacheLoad` | `onCacheLoad?({cache, setState}): void`                           | a callback called when the cache loads, useful when asynchronously loading cache |
+```tsx
+// T = TData, A = TArgs, E = TError
+type typeOfInitialValue = T | ((cache: Record<string, CachedState<T, A, E>> | null) => T)
+```
+
+The initial value held by the state when status is `initial`.
+
+It can be also a function that allows you to initialize the state from the cache.
+More on cache later.
+
+### `runEffect`
+```tsx
+type RunEffect = "debounce" | "throttle";
+```
+
+The effect to apply when running the producer.
+It is either `debounce` or `throttle`.
+
+:::note
+The run effect isn't applied if `runEffectDurationMs` isn't given or is `0`.
+:::
+
+### `runEffectDurationMs`
+```tsx
+type runEffectDurationMs = number;
+```
+The `runEffect` duration in milliseconds.
+### `skipPendingDelayMs`
+```tsx
+type skipPendingDelayMs = number;
+```
+The delay in `ms` under which the transition to `pending` state is skipped.
+This comes in handy when you the request may be very fast and you don't want
+to show a pending indicator if so.
+### `keepPendingForMs`
+```tsx
+type skipPendingDelayMs = number;
+```
+This is the reserve of the previous property, if you enter the `pending` state,
+it prevents any further updates until this delay is passed, to avoid showing the
+pending indicator for few milliseconds for example.
+
+It reads as: If you enter the pending state, stay in it at least for this value.
+### `skipPendingStatus`
+```tsx
+type skipPendingStatus = boolean;
+```
+This will prevent your state to have a pending state at all.
+### `cacheConfig`
+```tsx
+type CacheConfig<T, A extends unknown[], E> = {
+  enabled: boolean;
+  timeout?: ((currentState: State<T, A, E>) => number) | number;
+  hash?(
+    args: A | undefined,
+    payload: Record<string, unknown> | null | undefined
+  ): string;
+  auto?: boolean;
+  persist?(cache: Record<string, CachedState<T, A, E>>): void;
+  load?():
+    | Record<string, CachedState<T, A, E>>
+    | Promise<Record<string, CachedState<T, A, E>>>;
+  onCacheLoad?({ cache, setState }: OnCacheLoadProps<T, A, E>): void;
+}
+```
+The library supports caching state values, but it is opt-in and not
+enabled by default.
+#### `enabled`
+Will enable cache for this state.
+#### `timeout`
+The duration under which the cached state is considered still valid.
+
+If this value is omitted, first, the library will check if you have a
+`cache-control` header with a `max-age` defined. If present it will be used.
+Or else, `Infinity` is used.
+#### `auto`
+Indicates that we should automatically re-run the producer to get a new value
+after timeout is elapsed.
+:::note
+- `auto` doesn't work with `Initity`.
+- `auto` will remove the cached state from cache.
+- `auto` will only run again if the removed cached state is the current state.
+:::
+#### `hash`
+Each cached state is identified by a `string` hash that's computed by this
+function. If omitted, it is calculated automatically like this:
+
+```tsx
+export function defaultHash<A extends unknown[]>(
+	args: A | undefined,
+	payload: Record<string, unknown> | null | undefined
+): string {
+	return JSON.stringify({ args, payload });
+}
+```
+#### `persist`
+Called everytime a new cache entry is added or removed. Its purpose is to allow
+you to persist the cache then load it later. In local storage for example.
+#### `load`
+Loads the cache when the state is constructed
+#### `onCacheLoad`
+A callback fired when the cache is loaded.
+### `retryConfig`
+When running the producer and it fails, you can retry it.
+```tsx
+type RetryConfig<T, A extends unknown[], E> = {
+  enabled: boolean;
+  maxAttempts?: number;
+  backoff?: number | ((attemptIndex: number, error: E) => number);
+  retry?: boolean | ((attemptIndex: number, error: E) => boolean);
+};
+```
+#### `enabled`
+Opt into retry, this is not enabled by default.
+#### `maxAttempts`
+Defines the max retries to perform per run.
+#### `backoff`
+The backoff between retries.
+#### `retry`
+A boolean or a function that receives the current attempt count and the error
+and returns whether we should retry or not.
+### `resetStateOnDispose`
+```tsx
+type resetStateOnDispose = boolean;
+```
+The `dispose` event is when all subscribers unsubscribe from a state.
+
+If this property is `true`, the state will be altered to its initial value.
+### `context`
+This is a plain object, it should be a valid `WeakMap` key.
+
+To perform isolation and allowing to have multiple states with the same key,
+in the server for example, the `context` api comes in.
+
+When provided, the state will be created and only visible to that `context`.
+
+### `storeInContext`
+If this is provided and is `false`, the state instance won't be stored in its
+context.
+
+### `hideFromDevtools`
+Defines whether to show this state in the devtools or not.
+
+## The `Source`
+
+The resulting object from `createSource` has the following shape:
+
+### `key`
+The used key to create the state.
+### `uniqueId`
+Each state has a unique id defining it. This is an auto incremented number.
+### `getState`
+returns the current state.
+### `setState`
+Will alter the state to the desired value with the given status.
+The updater can be either a value or a function that will receive the current
+state.
+```tsx
+setState(
+  updater: StateFunctionUpdater<T, A, E> | T,
+  status?: Status,
+  callbacks?: ProducerCallbacks<T, A, E>
+): void;
+```
+
+### `getVersion`
+The library implements an optimistic lock internally via a value that is
+auto-incremented each time the state changes.
+
+```tsx
+getVersion(): number;
+```
+
+### `run`
+Allows you to run the `producer` with the given args.
+
+It returns a function that will abort the related run.
+```tsx
+run(...args: TArgs): AbortFn;
+```
+### `runc`
+
+```tsx
+runc(
+  props: {
+    args?: TArgs,
+    onSuccess?(successState: SuccessState<TData, TArgs>): void;
+    onError?(errorState: ErrorState<TData, TArgs, TError>): void;
+  }
+): AbortFn;
+```
+
+Will run the producer with the given `args` and executed the given callbacks.
+
+It returns a function that will abort the related run.
+
+### `runp`
+```tsx
+runp(...args: A): Promise<State<TData, TArgs, TError>>;
+```
+
+Similar to `run`, but returns a Promise to resolve.
+
+This promise resolves even if the producer throws, and gives you a state with
+error status in this case.
+### `replay`
+```tsx
+replay(): AbortFn;
+```
+Will run again using the latest `args` and `payload`.
+
+### `abort`
+```tsx
+abort(reason?: any): void;
+```
+Will call any registered abort callbacks from the latest run.
+
+If a run is pending, it will be aborted and the previous state is restored.
+### `replaceProducer`
+```tsx
+replaceProducer(newProducer: Producer<T, A, E> | null): void;
+```
+Allows you to replace the producer of a state.
+### `getConfig`
+```tsx
+getConfig(): ProducerConfig<T, A, E>;
+```
+Returns the current config held by the state instance.
+### `patchConfig`
+```tsx
+patchConfig(partialConfig?: Partial<ProducerConfig<T, A, E>>): void;
+```
+Allows you to partially add config to the defined state.
+### `getPayload`
+The payload is a mutable area inside the state that's accessible anytime,
+anywhere and by all subscribers.
+```tsx
+getPayload(): Record<string, unknown>;
+```
+Returns the payload object. If not defined, it will be initialized by an empty
+object then returned.
+### `mergePayload`
+```tsx
+mergePayload(partialPayload?: Record<string, unknown>): void;
+```
+Adds the given payload to the existing payload inside the instance.
+### `subscribe`
+```tsx
+subscribe(cb: (s: State<T, A, E>) => void): UnsubscribeFn;
+```
+Allows you to subscribe to state updates in this state.
+
+:::note
+If you are using hooks, you won't need this.
+:::
+### `invalidateCache`
+```tsx
+invalidateCache(cacheKey?: string): void;
+```
+Will invalidate an entry from the cache by its key.
+
+It the cache key is omitted, the whole cache is removed.
+### `replaceCache`
+```tsx
+replaceCache(cacheKey: string, cache: CachedState<T, A, E>): void;
+
+type CachedState<T, A extends unknown[], E> = {
+  state: State<T, A, E>;
+  addedAt: number;
+  deadline: number;
+  // when auto refresh is enabled, we store its timeoutid in this
+  id?: ReturnType<typeof setTimeout>;
+};
+```
+Replaces a single cache entry.
+### `on`
+```tsx
+on(
+  eventType: InstanceChangeEvent,
+  eventHandler: InstanceChangeEventHandlerType<T, A, E>
+): () => void;
+on(
+  eventType: InstanceDisposeEvent,
+  eventHandler: InstanceDisposeEventHandlerType<T, A, E>
+): () => void;
+on(
+  eventType: InstanceCacheChangeEvent,
+  eventHandler: InstanceCacheChangeEventHandlerType<T, A, E>
+): () => void;
+```
+Allows you to register events for this state instance.
+
+The supported events are:
+- `change`: When the state value changes, you receive the new state.
+- `cache-change`: When a cache entry changes, you receive the whole cache.
+- `dispose`: When disposing the instance occurs.
+### `dispose`
+```tsx
+dispose(): boolean;
+```
+### `getLane`
+`lane`s are `Source` objects attached to the same state instance. They share
+the same `cache`.
+```tsx
+getLane(laneKey?: string): Source<T, A, E>;
+```
+
+If the request lane doesn't exist, it is created and returned.
+:::warning
+The `lane` source's key should be considered as unique too, because it will be
+attached to the same context and uses the same config.
+
+If an state with the same lane key already exists, it is returned.
+:::
+### `hasLane`
+```tsx
+hasLane(laneKey: string): boolean;
+```
+Returns true if the source has a lane with that key.
+### `removeLane`
+```tsx
+removeLane(laneKey?: string): boolean;
+```
+Will detach the lane from its parent.
+### `getAllLanes`
+```tsx
+getAllLanes(): Source<T, A, E>[];
+```
+Will return all the lanes attached to the source.

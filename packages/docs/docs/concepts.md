@@ -4,110 +4,72 @@ sidebar_label: Concepts
 ---
 # Concepts and definitions
 
-The library gives you a piece of state in the memory and gives you full control
-over it.
+The library gives you a piece of state in the memory and allows you to have
+full control over it from all over your application.
+
+In this section, we will see the major concepts that are used.
+Mainly, there are three that you should be aware of:
+
+- The state: How the library stores it internally
+- The producer: The function that gives the state succeeded data
+- The source object: How to interact and and manipulate the state from anywhere
 
 ## The state
-The library's state value is composed of four properties:
+The library's state value is composed of four properties, and has three
+typescript generic parameters:
 
-| Property    | Type                                    | Description                                                      |
-|-------------|-----------------------------------------|------------------------------------------------------------------|
-| `data`      | `T`                                     | The returned data from the `producer function`                   |
-| `status`    | `initial,pending,success,error,aborted` | The status of the state                                          |
-| `props`     | `ProducerProps`                         | The argument object that the producer was ran with (the `props`) |
-| `timestamp` | `number`                                | the time (`Date.now()`) where the state was constructed          |
-
-Using typescript, the state has 4 generic types for now:
-
-````typescript
-type State<TData, TError, TReason, TArgs> = {}
-````
+```tsx
+type State<TData, TArgs extends unknown[] = [], TError = Error> = { ... }
+```
 Where:
 - `TData`: Refers to the type of the data when `success`
+- `TArgs`: Refers to the type of the `args` that we will use to run the function
 - `TError`: Refers to the type of the Error when `error`
-- `TReason`: Refers to the type of the Abort reason when `aborted`
-- `TArgs`: Refers to the type of the `args` that we will use to run our producer.
 
-:::note
-- The `data` property has a `null` value when `pending`
-- The type of the state goes along with the status:
+And here are the properties composing the `state`:
 
-The following example declares a producer that will perform the login of our user,
-while:
-- In case of success, the type is `User`
-- In case of pending, data is `null`
-- In case of error, the type is `Error`
-- In case of aborted, the type is `"Timeout"`
-- In case of initial, the type is `User | undefined`
-```typescript
-type User = { username: string, password: string };
-
-function loginProducer(
-  props: ProducerProps<User, Error, "Timeout", [string, string]>
-): Promise<User> {
-  if (!props.args[0]) throw new Error("username is required");
-  // let id = setTimeout(() => props.abort("Timeout"), 15000)
-  // props.onAbort(() => clearTimeout(id))
-  return login({username: props.args[0], password: props.args[0]})
-}
-
-let {state, runc} = useAsyncState(producer);
-if (state.status === "initial") {
-  let data = state.data; // type of data: User | undefined
-}
-if (state.status === "pending") {
-  let data = state.data; // type of data: null
-}
-if (state.status === "success") {
-  let data = state.data; // type of data: User
-}
-if (state.status === "error") {
-  let data = state.data; // type of data: Error
-}
-if (state.status === Status.aborted) {
-  let data = state.data; // type of data: "Timeout"
-}
-
-runc({
-  onSuccess(state) {
-    let {data, status} = state; // <- data type is User, status is success
-  },
-  onError(state) {
-    let {data, status} = state; // <- data type is Error, status is error
-  },
-  onAborted(state) {
-    let {data, status} = state; // <- data type is "Timeout", status is aborted
-  },
-});
-```
-:::
+| Property    | Type                                  | Description                                              |
+|-------------|---------------------------------------|----------------------------------------------------------|
+| `data`      | `T`                                   | The returned data from your function                     |
+| `status`    | `initial`,`pending`,`success`,`error` | The current status of the state, that goes with the data |
+| `props`     | `ProducerProps`                       | The `args` and `payload` that led to this state          |
+| `timestamp` | `number`                              | the time (`Date.now()`) where the state was constructed  |
 
 ## The producer
-The producer function is a javascript function, and it is responsible for
-returning the state's `data`.
+The producer is the function associated to our state that will be responsible
+for giving us the succeeded data. It is optional, but you will provide it most
+of the time, especially for all async flows.
+
+
+Straight from the codebase, here is the definition of a producer:
 
 ```typescript
-// T: data type, E: error type, R: abort reason type, A type of props.args
-export type Producer<T, E, R, A extends unknown[]> =
-        ((props: ProducerProps<T, E, R, A>) => (T | Promise<T> | Generator<any, T, any>));
+export type Producer<TData, TArgs extends unknown[] = [], TError = Error> = (
+	props: ProducerProps<TData, TArgs, TError>
+) => TData | Promise<TData> | Generator<any, TData, any>;
 ```
 
 It may be:
-- A regular function returning a `Promise` or `thenable` object.
-- A regular function returning a value (reducers, async reducers, mixed...).
-- An asynchronous function with `async/await` syntax.
-- A `generator` (sagas...).
-- `undefined` to replace the state synchronously any time with the desired value.
+- Any synchronous function returning a value
+- Any async function: using the `async/await` syntax, or returning a `promise`
+- A `generator`, either synchronous or asynchronous.
+- Not defined. Yes, you can have no producer at all. In this case, you will be
+  using `setState` to set the state directly and immediately.
+
+The producer's props is an object containing many information such as:
+- `args`: The arguments that it was ran with
+- `signal`: an Abort signal used to pass directly to fetch or axios to easily
+  support cancellations.
+- `onAbort`: Allows you to register abort callbacks
+- `getState`: In case of living producers, such as the ones that connect
+  to websockets or so, this comes handy to append to the previous state etc.
+
+And other properties that we will see later.
 
 :::note
-1- The library supports synchronous states as well.
-
-If the producer function returns a value besides a `Promise` or a `Generator`,
-it is considered synchronous and pass directly to `success` or `error` state.
-
-2- The producer's execution is wrapped inside try catch block, so any thrown
-error will be received as state with `error` status:
-```javascript
+The producer's execution is wrapped inside try catch block, so any thrown
+error will be received as `state` with `error` status:
+```tsx
 state = {
   data: e,// the catched error
   status: "error",
@@ -125,15 +87,16 @@ property, or via `createSource`.
 It is a token having all the necessary methods to have full control over
 the state with its linked producer.
 
-[Here is a quick](/docs/api/the-whole-api#createsource)
-overview of this source object.
+This object has many methods, some of them are:
+- `run(...args)` allows you to run your producer
+- `getState()` gives you the current state
+- `setState(value, status?)` allows you to set the state to any value
+- `subscribe(cb)` allows you to manually subscribe to this state. You won't
+  use this API much.
+- `runc({ args, onSuccess, onError })` allows you to trigger a run with
+  callbacks to that specific run. I call them: per-run-callbacks. They remove
+  the issue that you may had with other libraries when you define some callbacks
+  in the used hook, then use many instances of that component, resulting in 
+  the callbacks triggering several times.
 
-### How my app will look like with the library:
-In general, here how you will be using the library:
-
-- First you define your producer function (aka: reducer, saga, thunk...)
-  and give it its unique name. This function shall
-  receive a powerful single argument object called the `props` (or `argv`).
-  This function may take any of the supported forms.
-- Later, from any point in your app, you can use `useAsyncState(key)`
-  or `useSelector(key)` to get the state based on your needs.
+And so many other properties.
