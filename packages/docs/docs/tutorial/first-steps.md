@@ -76,7 +76,7 @@ Here is a codesandbox demo with the previous code snippet:
 
 <iframe style={{width: '100%', height: '500px', border: 0, borderRadius: 4,
 overflow: 'hidden'}}
-src="https://codesandbox.io/embed/27hr97?view=editor+%2B+preview&module=%2Fsrc%2FApp.tsx&hidenavigation=1"
+src="https://codesandbox.io/embed/s84vjc?view=Editor+%2B+Preview&module=%2Fsrc%2FApp.tsx"
 allow="accelerometer; ambient-light-sensor; camera; encrypted-media;
 geolocation; gyroscope; hid; microphone; midi; payment; usb; vr;
 xr-spatial-tracking"
