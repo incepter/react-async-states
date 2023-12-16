@@ -214,6 +214,58 @@ setState(
 ): void;
 ```
 
+:::note
+When you provide a `function` updater to `setState`, it is given the current
+state.
+:::
+
+:::warning
+Although `setState` gives you the previous state object as a whole, it expects
+you to return `only the value`.
+
+The second parameter allows you to pass the `status` if needed.
+
+`setState` is used internally by the library and from the devtools to allow you
+to go to any desired state. It is kept for backward compatibility and historical
+reasons.
+:::
+
+:::tip
+If you only need the previous `successful data` and you will be setting ti to a
+`success` state, use `useData` and not `useState`.
+:::
+
+The implication on the difference between `setState` and `setData` are:
+- You need to check on the state status in `setState` 
+- You need to take the `data` property.
+
+
+```tsx
+let source = createSource("count", null, { initialValue: 0 }):
+
+source.setState(prevState => (prevState.data ?? 0) + 1});
+
+```
+
+### `setData`
+`setData` will change the state to a `success` state with the desired value.
+```tsx
+setState(
+  updater: T | ((prevData: T | null) => T);
+): void;
+```
+
+:::note
+When you provide a `function` updater to `setData`, it is given the latest
+succeeded data, the initial data if status is initial and this value is provided,
+or else it is given `null`.
+:::
+```tsx
+let source = createSource("count", null, { initialValue: 0 }):
+
+source.setData(prev => prev! + 1);
+
+```
 ### `getVersion`
 The library implements an optimistic lock internally via a value that is
 auto-incremented each time the state changes.
