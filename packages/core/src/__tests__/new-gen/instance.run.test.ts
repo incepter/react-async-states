@@ -3,6 +3,7 @@ import { mockDateNow } from "../utils/setup";
 import { Status } from "../../enums";
 import { expect } from "@jest/globals";
 import { flushPromises } from "../utils/test-utils";
+import { replaceInstanceState } from "../../modules/StateUpdate";
 
 // @ts-ignore
 jest.useFakeTimers("modern");
@@ -26,7 +27,7 @@ describe("AsyncState instance run", () => {
 		expect(newTimeoutId).not.toBe(timeoutId);
 		expect(instance.state.status).toBe("initial"); // still skipping
 
-		instance.actions.replaceState({
+		replaceInstanceState(instance, {
 			data: 17,
 			props: { args: [17] },
 			timestamp: Date.now(),

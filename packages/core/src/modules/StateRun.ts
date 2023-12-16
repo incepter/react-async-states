@@ -1,7 +1,8 @@
 import {
 	AbortFn,
 	CachedState,
-	ErrorState, PendingState,
+	ErrorState,
+	PendingState,
 	ProducerCallbacks,
 	ProducerSavedProps,
 	RUNCProps,
@@ -21,7 +22,11 @@ import {
 import { createProps } from "./StateProps";
 import { run } from "../wrapper";
 import devtools from "../devtools/Devtools";
-import { startAlteringState, stopAlteringState } from "./StateUpdate";
+import {
+	replaceInstanceState,
+	startAlteringState,
+	stopAlteringState,
+} from "./StateUpdate";
 
 export function runcInstance<T, A extends unknown[], E>(
 	instance: StateInterface<T, A, E>,
@@ -146,7 +151,8 @@ function replaceStateAndBailoutRunFromCachedState<T, A extends unknown[], E>(
 	// this means that the current state reference isn't the same
 	if (actualState !== nextState) {
 		// this sets the new state and notifies subscriptions
-		instance.actions.replaceState(nextState);
+		// true for notifying
+		replaceInstanceState(instance, nextState, true);
 	}
 }
 
@@ -163,10 +169,10 @@ export function runInstanceImmediately<T, A extends unknown[], E>(
 
 	let wasAltering = startAlteringState();
 
-	// the pendingUpdate has always a "pending" status, it is delayed because
+	// the pendingUpdate has always a pending status, it is delayed because
 	// of the config.skipPendingDelayMs configuration option.
 	let hasPendingUpdate = instance.pendingUpdate !== null;
-	let isCurrentlyPending = instance.state.status === "pending";
+	let isCurrentlyPending = instance.state.status === pending;
 
 	if (isCurrentlyPending || hasPendingUpdate) {
 		cleanInstancePendingStateBeforeImmediateRun(instance);
@@ -229,10 +235,10 @@ export function runInstanceImmediately<T, A extends unknown[], E>(
 			timestamp: now(),
 			props: savedProps,
 			prev: currentState,
-			status: "pending" as const,
+			status: pending,
 		};
-		instance.actions.replaceState(pendingState, true, props);
 
+		replaceInstanceState(instance, pendingState, true, props);
 		stopAlteringState(wasAltering);
 		return producerProps.abort;
 	} else if (__DEV__) {
@@ -254,6 +260,6 @@ export function runInstanceImmediately<T, A extends unknown[], E>(
 			props: savedProps,
 			timestamp: now(),
 		} as SuccessState<T, A> | ErrorState<T, A, E>);
-		instance.actions.replaceState(state, true, callbacks);
+		replaceInstanceState(instance, state, true, callbacks);
 	}
 }

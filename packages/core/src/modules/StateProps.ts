@@ -8,7 +8,12 @@ import {
 } from "../types";
 import { __DEV__, emptyArray, isFunction } from "../utils";
 import { pending, Status } from "../enums";
-import { isAlteringState, startEmitting, stopEmitting } from "./StateUpdate";
+import {
+	isAlteringState,
+	replaceInstanceState,
+	startEmitting,
+	stopEmitting
+} from "./StateUpdate";
 
 export function createProps<T, A extends unknown[], E>(
 	instance: StateInterface<T, A, E>,
@@ -81,7 +86,7 @@ export function createProps<T, A extends unknown[], E>(
 			// the state right next.
 			let isCurrentlyAlteringState = isAlteringState();
 			if (!isCurrentlyAlteringState) {
-				instance.actions.replaceState(currentState, true, runProps);
+				replaceInstanceState(instance, currentState, true, runProps);
 			}
 		}
 

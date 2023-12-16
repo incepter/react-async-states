@@ -1,12 +1,13 @@
 import {
 	InitialState,
 	ProducerCallbacks,
+	ReplaceStateUpdateQueue,
 	State,
 	StateFunctionUpdater,
 	StateInterface,
 	UpdateQueue,
 } from "../types";
-import { pending, Status, success } from "../enums";
+import {initial, pending, Status, success} from "../enums";
 import { notifySubscribers } from "./StateSubscription";
 import { __DEV__, cloneProducerProps, isFunction } from "../utils";
 import devtools from "../devtools/Devtools";
@@ -52,17 +53,10 @@ export function getQueueTail<T, A extends unknown[], E>(
 	return current;
 }
 
-export function enqueueUpdate<T, A extends unknown[], E>(
+function addToQueueAndEnsureItsScheduled<T, A extends unknown[], E>(
 	instance: StateInterface<T, A, E>,
-	newState: State<T, A, E>,
-	callbacks?: ProducerCallbacks<T, A, E>
+	update: UpdateQueue<T, A, E>
 ) {
-	let update: UpdateQueue<T, A, E> = {
-		callbacks,
-		data: newState,
-		kind: 0,
-		next: null,
-	};
 	if (!instance.queue) {
 		instance.queue = update;
 	} else {
@@ -74,6 +68,20 @@ export function enqueueUpdate<T, A extends unknown[], E>(
 	}
 
 	ensureQueueIsScheduled(instance);
+}
+
+export function enqueueUpdate<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>,
+	newState: State<T, A, E>,
+	callbacks?: ProducerCallbacks<T, A, E>
+) {
+	let update: UpdateQueue<T, A, E> = {
+		callbacks,
+		data: newState,
+		kind: 0,
+		next: null,
+	};
+	addToQueueAndEnsureItsScheduled(instance, update);
 }
 
 export function enqueueSetState<T, A extends unknown[], E>(
@@ -88,17 +96,20 @@ export function enqueueSetState<T, A extends unknown[], E>(
 		data: { data: newValue, status },
 		next: null,
 	};
-	if (!instance.queue) {
-		instance.queue = update;
-	} else {
-		let tail = getQueueTail(instance);
-		if (!tail) {
-			return;
-		}
-		tail.next = update;
-	}
+	addToQueueAndEnsureItsScheduled(instance, update);
+}
 
-	ensureQueueIsScheduled(instance);
+export function enqueueSetData<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>,
+	newValue: T | ((prev: T | null) => T)
+) {
+	let update: UpdateQueue<T, A, E> = {
+		kind: 2,
+		data: newValue,
+
+		next: null,
+	};
+	addToQueueAndEnsureItsScheduled(instance, update);
 }
 
 export function ensureQueueIsScheduled<T, A extends unknown[], E>(
@@ -130,35 +141,50 @@ export function flushUpdateQueue<T, A extends unknown[], E>(
 	}
 
 	let current: UpdateQueue<T, A, E> | null = instance.queue;
-
 	instance.queue = null;
 
 	let prevIsFlushing = isCurrentlyFlushingAQueue;
 	isCurrentlyFlushingAQueue = true;
 
 	while (current !== null) {
-		let {
-			data: { status },
-			callbacks,
-		} = current;
-		let canBailoutPendingStatus = status === pending && current.next !== null;
+		// when we encounter a pending state that's not the last one
+		// we can safely skip it an process the next update
+		let canBailoutPendingStatus =
+			current.kind !== 2 && // 2 is for setData
+			current.data.status === pending &&
+			current.next !== null;
 
-		if (canBailoutPendingStatus) {
-			current = current.next;
-		} else {
-			if (current.kind === 0) {
-				instance.actions.replaceState(current.data, undefined, callbacks);
+		// so we will only process the updates that we can't skip from the queue
+		if (!canBailoutPendingStatus) {
+			switch (current.kind) {
+				// there update came from setState(value, status)
+				case 0: {
+					let { data, callbacks } = current;
+					replaceInstanceState(instance, data, false, callbacks);
+					break;
+				}
+				// there update came from replaceState(newWholeState)
+				case 1: {
+					let { status, data } = current.data;
+					setInstanceState(instance, data, status, current.callbacks);
+					break;
+				}
+				// there update came from setData(value)
+				case 2: {
+					isCurrentSetStateSettingData = true;
+					setInstanceState(instance, current.data, success);
+					isCurrentSetStateSettingData = false;
+					break;
+				}
 			}
-			if (current.kind === 1) {
-				let {
-					data: { data, status },
-				} = current;
-				instance.actions.setState(data, status, callbacks);
-			}
-			current = current.next;
 		}
+
+		current = current.next;
 	}
+
 	isCurrentlyFlushingAQueue = prevIsFlushing;
+
+	// always notify after a state update
 	notifySubscribers(instance);
 }
 
@@ -224,17 +250,17 @@ export function replaceInstanceState<T, A extends unknown[], E>(
 
 	if (
 		isPending &&
-		instance.config.skipPendingDelayMs &&
+		config.skipPendingDelayMs &&
 		isFunction(setTimeout) &&
-		instance.config.skipPendingDelayMs > 0
+		config.skipPendingDelayMs > 0
 	) {
 		scheduleDelayedPendingUpdate(instance, newState, notify);
 		return;
 	}
 
 	if (__DEV__) devtools.startUpdate(instance);
-	instance.state = newState;
 	instance.version += 1;
+	instance.state = newState;
 	invokeChangeCallbacks(newState, callbacks);
 	invokeInstanceEvents(instance, "change");
 	if (__DEV__) devtools.emitUpdate(instance);
@@ -255,14 +281,30 @@ export function replaceInstanceState<T, A extends unknown[], E>(
 	}
 }
 
+let isCurrentSetStateSettingData = false;
+export function setInstanceData<T, A extends unknown[], E>(
+	instance: StateInterface<T, A, E>,
+	newValue: T | ((prev: T | null) => T)
+) {
+	isCurrentSetStateSettingData = true;
+	setInstanceState(instance, newValue);
+}
+
 export function setInstanceState<T, A extends unknown[], E>(
 	instance: StateInterface<T, A, E>,
-	newValue: T | StateFunctionUpdater<T, A, E>,
+	newValue: T | StateFunctionUpdater<T, A, E> | ((prev: T | null) => T),
 	status: Status = success,
 	callbacks?: ProducerCallbacks<T, A, E>
 ) {
 	if (instance.queue) {
-		enqueueSetState(instance, newValue, status, callbacks);
+		if (isCurrentSetStateSettingData) {
+			let update = newValue as T | ((prev: T | null) => T);
+			enqueueSetData(instance, update);
+			isCurrentSetStateSettingData = false;
+			return;
+		}
+		let update = newValue as T | StateFunctionUpdater<T, A, E>;
+		enqueueSetState(instance, update, status, callbacks);
 		return;
 	}
 
@@ -278,7 +320,18 @@ export function setInstanceState<T, A extends unknown[], E>(
 
 	let effectiveValue = newValue;
 	if (isFunction(newValue)) {
-		effectiveValue = newValue(instance.state);
+		// there two possible ways to update the state by updater:
+		// 1. the legacy setState(prevState => newData);
+		// 2. the new setData(prevData => newData);
+		// To avoid duplicating this whole function, a module level variable
+		// was introduced to distinguish between both of them
+		// this variable is set to true when the call occurs from setData
+		if (isCurrentSetStateSettingData) {
+			let update = newValue as (prev: T | null) => T;
+			effectiveValue = update(instance.lastSuccess.data ?? null);
+		} else {
+			effectiveValue = newValue(instance.state);
+		}
 	}
 	const savedProps = cloneProducerProps<T, A, E>({
 		args: [effectiveValue] as A,
@@ -296,9 +349,9 @@ export function setInstanceState<T, A extends unknown[], E>(
 	// if the next state has a pending status, we need to populate the prev
 	// property, we take the previous state, if it was also pending, take
 	// its prev and set it as previous.
-	if (newState.status === "pending") {
+	if (newState.status === pending) {
 		let previousState = instance.state;
-		if (previousState.status === "pending") {
+		if (previousState.status === pending) {
 			previousState = previousState.prev;
 		}
 		if (previousState) {
@@ -306,7 +359,7 @@ export function setInstanceState<T, A extends unknown[], E>(
 		}
 	}
 
-	instance.actions.replaceState(newState, true, callbacks);
+	replaceInstanceState(instance, newState, true, callbacks);
 	stopAlteringState(wasAlteringState);
 }
 
@@ -334,13 +387,14 @@ export function disposeInstance<T, A extends unknown[], E>(
 		props: null,
 		timestamp: now(),
 		data: initialState,
-		status: "initial" as const,
+		status: initial,
 	};
 
-	instance.actions.replaceState(newState);
+	replaceInstanceState(instance, newState);
 	if (__DEV__) devtools.emitDispose(instance);
 
 	stopAlteringState(wasAltering);
 	invokeInstanceEvents(instance, "dispose");
+
 	return true;
 }

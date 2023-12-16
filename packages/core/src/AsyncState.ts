@@ -42,6 +42,7 @@ import {
 import {
 	disposeInstance,
 	replaceInstanceState,
+	setInstanceData,
 	setInstanceState,
 } from "./modules/StateUpdate";
 import {
@@ -191,6 +192,7 @@ export class StateSource<T, A extends unknown[], E> implements Source<T, A, E> {
 		this.replay = this.replay.bind(this);
 		this.hasLane = this.hasLane.bind(this);
 		this.getState = this.getState.bind(this);
+		this.setData = this.setData.bind(this);
 		this.setState = this.setState.bind(this);
 		this.getConfig = this.getConfig.bind(this);
 		this.subscribe = this.subscribe.bind(this);
@@ -203,6 +205,30 @@ export class StateSource<T, A extends unknown[], E> implements Source<T, A, E> {
 		this.getLane = this.getLane.bind(this);
 		this.invalidateCache = this.invalidateCache.bind(this);
 		this.replaceProducer = this.replaceProducer.bind(this);
+	}
+
+	getState(): State<T, A, E> {
+		return this.inst.state;
+	}
+
+	replaceState(
+		newState: State<T, A, E>,
+		notify: boolean = true,
+		callbacks?: ProducerCallbacks<T, A, E>
+	): void {
+		replaceInstanceState(this.inst, newState, notify, callbacks);
+	}
+
+	setState(
+		newValue: T | StateFunctionUpdater<T, A, E>,
+		status: Status = success,
+		callbacks?: ProducerCallbacks<T, A, E>
+	): void {
+		setInstanceState(this.inst, newValue, status, callbacks);
+	}
+
+	setData(newData: T | ((prev: T | null) => T)): void {
+		setInstanceData(this.inst, newData);
 	}
 
 	on(
@@ -338,10 +364,6 @@ export class StateSource<T, A extends unknown[], E> implements Source<T, A, E> {
 		return this.inst.version;
 	}
 
-	getState(): State<T, A, E> {
-		return this.inst.state;
-	}
-
 	getConfig(): ProducerConfig<T, A, E> {
 		return this.inst.config;
 	}
@@ -380,22 +402,6 @@ export class StateSource<T, A extends unknown[], E> implements Source<T, A, E> {
 		argv: ((s: State<T, A, E>) => void) | AsyncStateSubscribeProps<T, A, E>
 	): AbortFn {
 		return subscribeToInstance(this.inst, argv);
-	}
-
-	replaceState(
-		newState: State<T, A, E>,
-		notify: boolean = true,
-		callbacks?: ProducerCallbacks<T, A, E>
-	): void {
-		replaceInstanceState(this.inst, newState, notify, callbacks);
-	}
-
-	setState(
-		newValue: T | StateFunctionUpdater<T, A, E>,
-		status: Status = success,
-		callbacks?: ProducerCallbacks<T, A, E>
-	): void {
-		setInstanceState(this.inst, newValue, status, callbacks);
 	}
 
 	getAllLanes() {
