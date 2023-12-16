@@ -2,6 +2,7 @@ import { AsyncState } from "../..";
 import { timeout } from "./test-utils";
 import { mockDateNow, TESTS_TS } from "../utils/setup";
 import { pending } from "../../enums";
+import { replaceInstanceState } from "../../modules/StateUpdate";
 
 // @ts-ignore
 jest.useFakeTimers("modern");
@@ -27,7 +28,7 @@ describe("AsyncState - setState", () => {
 		if (current.status === pending) {
 			current = current.prev;
 		}
-		myAsyncState.actions.replaceState({
+		replaceInstanceState(myAsyncState, {
 			status: "pending",
 			data: null,
 			timestamp: Date.now(),
@@ -55,7 +56,8 @@ describe("AsyncState - setState", () => {
 	it("should update state and do not notify subscribers", async () => {
 		let lastSuccess = myAsyncState.lastSuccess;
 
-		myAsyncState.actions.replaceState(
+		replaceInstanceState(
+			myAsyncState,
 			{
 				status: "success",
 				data: {},

@@ -34,6 +34,8 @@ export interface BaseSource<T, A extends unknown[], E> {
 		callbacks?: ProducerCallbacks<T, A, E>
 	): void;
 
+	setData(newData: T | ((prevData: T | null) => T)): void;
+
 	replaceState(
 		newState: State<T, A, E>,
 		notify?: boolean,
@@ -303,6 +305,10 @@ export type RetryConfig<T, A extends unknown[], E> = {
 export type StateFunctionUpdater<T, A extends unknown[], E> = (
 	updater: State<T, A, E>
 ) => T;
+
+export type DataUpdater<T, A extends unknown[], E> = (
+	updater: State<T, A, E>
+) => T;
 export type StateUpdater<T, A extends unknown[], E> = (
 	updater: StateFunctionUpdater<T, A, E> | T,
 	status?: Status,
@@ -393,15 +399,22 @@ export type PendingUpdate = {
 
 export type SetStateUpdateQueue<T, A extends unknown[], E> = {
 	id?: ReturnType<typeof setTimeout>;
-	kind: 0;
+	kind: 0; // instance.setState()
 	data: State<T, A, E>;
 	next: UpdateQueue<T, A, E> | null;
 	callbacks?: ProducerCallbacks<T, A, E>;
 };
+export type SetDataUpdateQueue<T, A extends unknown[], E> = {
+	id?: ReturnType<typeof setTimeout>;
+	kind: 2; // instance.setData()
+	data: T | ((prev: T | null) => T);
+
+	next: UpdateQueue<T, A, E> | null;
+};
 
 export type ReplaceStateUpdateQueue<T, A extends unknown[], E> = {
 	id?: ReturnType<typeof setTimeout>;
-	kind: 1;
+	kind: 1; // instance.replaceState()
 	data: {
 		status?: Status;
 		data: T | StateFunctionUpdater<T, A, E>;
@@ -412,7 +425,8 @@ export type ReplaceStateUpdateQueue<T, A extends unknown[], E> = {
 
 export type UpdateQueue<T, A extends unknown[], E> =
 	| ReplaceStateUpdateQueue<T, A, E>
-	| SetStateUpdateQueue<T, A, E>;
+	| SetStateUpdateQueue<T, A, E>
+	| SetDataUpdateQueue<T, A, E>;
 
 export type OnSettled<T, A extends unknown[], E> = {
 	(
