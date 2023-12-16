@@ -7,7 +7,7 @@ import {
 	StateInterface,
 	UpdateQueue,
 } from "../types";
-import { pending, Status, success } from "../enums";
+import {initial, pending, Status, success} from "../enums";
 import { notifySubscribers } from "./StateSubscription";
 import { __DEV__, cloneProducerProps, isFunction } from "../utils";
 import devtools from "../devtools/Devtools";
@@ -349,9 +349,9 @@ export function setInstanceState<T, A extends unknown[], E>(
 	// if the next state has a pending status, we need to populate the prev
 	// property, we take the previous state, if it was also pending, take
 	// its prev and set it as previous.
-	if (newState.status === "pending") {
+	if (newState.status === pending) {
 		let previousState = instance.state;
-		if (previousState.status === "pending") {
+		if (previousState.status === pending) {
 			previousState = previousState.prev;
 		}
 		if (previousState) {
@@ -387,7 +387,7 @@ export function disposeInstance<T, A extends unknown[], E>(
 		props: null,
 		timestamp: now(),
 		data: initialState,
-		status: "initial" as const,
+		status: initial,
 	};
 
 	replaceInstanceState(instance, newState);

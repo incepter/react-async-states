@@ -1,7 +1,8 @@
 import {
 	AbortFn,
 	CachedState,
-	ErrorState, PendingState,
+	ErrorState,
+	PendingState,
 	ProducerCallbacks,
 	ProducerSavedProps,
 	RUNCProps,
@@ -24,7 +25,7 @@ import devtools from "../devtools/Devtools";
 import {
 	replaceInstanceState,
 	startAlteringState,
-	stopAlteringState
+	stopAlteringState,
 } from "./StateUpdate";
 
 export function runcInstance<T, A extends unknown[], E>(
@@ -168,10 +169,10 @@ export function runInstanceImmediately<T, A extends unknown[], E>(
 
 	let wasAltering = startAlteringState();
 
-	// the pendingUpdate has always a "pending" status, it is delayed because
+	// the pendingUpdate has always a pending status, it is delayed because
 	// of the config.skipPendingDelayMs configuration option.
 	let hasPendingUpdate = instance.pendingUpdate !== null;
-	let isCurrentlyPending = instance.state.status === "pending";
+	let isCurrentlyPending = instance.state.status === pending;
 
 	if (isCurrentlyPending || hasPendingUpdate) {
 		cleanInstancePendingStateBeforeImmediateRun(instance);

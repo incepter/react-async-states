@@ -1,7 +1,7 @@
 import { LastSuccessSavedState, StateInterface } from "../types";
 import { loadCache } from "./StateCache";
 import { attemptHydratedState } from "./StateHydration";
-import { pending, success } from "../enums";
+import {initial, pending, success} from "../enums";
 import { isFunction } from "../utils";
 import { now } from "../helpers/core";
 
@@ -29,7 +29,7 @@ export function initializeInstance<T, A extends unknown[], E>(
 				props: null,
 				timestamp: now(),
 				data: initialData,
-				status: "initial" as const,
+				status: initial,
 			};
 
 			if (maybeHydratedState.state.status === pending) {
@@ -46,7 +46,7 @@ export function initializeInstance<T, A extends unknown[], E>(
 			props: null,
 			timestamp: now(),
 			data: initialData,
-			status: "initial" as const,
+			status: initial,
 		};
 
 		instance.state = initialState;
