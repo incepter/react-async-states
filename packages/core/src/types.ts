@@ -236,7 +236,7 @@ export type OnAbortFn<R = unknown> = (cb?: (reason?: R) => void) => void;
 
 export interface ProducerProps<T, A extends unknown[] = [], E = Error>
 	extends ProducerEffects {
-	abort: AbortFn;
+	abort: (reason?: any) => void;
 	onAbort: OnAbortFn;
 	emit: StateUpdater<T, A, E>;
 

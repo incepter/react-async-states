@@ -1,157 +1,227 @@
-import {rejectionTimeout, timeout} from "./test-utils";
-import {mockDateNow, TESTS_TS} from "../utils/setup";
-import {
-  AsyncState,
-  Status
-} from "../..";
+import { rejectionTimeout, timeout } from "./test-utils";
+import { mockDateNow, TESTS_TS } from "../utils/setup";
+import { AsyncState, ProducerProps, Status } from "../..";
+import { expect } from "@jest/globals";
+import { flushPromises } from "../utils/test-utils";
 
 // @ts-ignore
 jest.useFakeTimers("modern");
 mockDateNow();
 
-describe('AsyncState - run - abort', () => {
+describe("AsyncState - run - abort", () => {
+	it("should abort while pending and check state did not update after supposed resolve", async () => {
+		// given
+		let key = "simulated-1";
+		let producer = timeout(100, [{ id: 1, description: "value" }]);
+		let myConfig = { initialValue: null };
+		let subscription = jest.fn();
 
-  it('should abort while pending and check state did not update after supposed resolve', async () => {
-    // given
-    let key = "simulated-1";
-    let producer = timeout(100, [{id: 1, description: "value"}]);
-    let myConfig = {initialValue: null};
-    let subscription = jest.fn();
+		// when
+		let myAsyncState = new AsyncState(key, producer, myConfig);
+		myAsyncState.actions.subscribe({ cb: subscription });
+		// then
+		// should have initial status
+		expect(myAsyncState.state).toEqual({
+			props: null,
+			data: null,
+			timestamp: TESTS_TS,
+			status: "initial",
+		});
 
-    // when
-    let myAsyncState = new AsyncState(key, producer, myConfig);
-    myAsyncState.actions.subscribe({cb: subscription});
-    // then
-    // should have initial status
-    expect(myAsyncState.state).toEqual({
-      props: null,
-      data: null,
-      timestamp: TESTS_TS,
-      status: "initial",
-    });
+		const abort = myAsyncState.actions.run();
 
-    const abort = myAsyncState.actions.run();
+		await jest.advanceTimersByTime(50);
 
-    await jest.advanceTimersByTime(50);
+		expect(subscription).toHaveBeenCalledTimes(1);
+		expect(subscription).toHaveBeenCalledWith({
+			props: {
+				args: [],
+				payload: {},
+			},
+			prev: {
+				data: null,
+				props: null,
+				status: "initial",
+				timestamp: TESTS_TS,
+			},
+			data: null,
+			timestamp: TESTS_TS,
+			status: "pending",
+		});
 
+		subscription.mockClear();
+		abort!("reason");
 
-    expect(subscription).toHaveBeenCalledTimes(1);
-    expect(subscription).toHaveBeenCalledWith({
-      props: {
-        args: [],
-        payload: {}
-      },
-      prev: {
-        data: null,
-        props: null,
-        status: "initial",
-        timestamp: TESTS_TS,
-      },
-      data: null,
-      timestamp: TESTS_TS,
-      status: "pending",
-    });
+		expect(subscription).toHaveBeenCalledTimes(1);
 
-    subscription.mockClear();
-    abort!("reason");
+		expect(myAsyncState.state).toEqual({
+			data: null,
+			props: null,
+			timestamp: TESTS_TS,
+			status: "initial",
+		});
 
-    expect(subscription).toHaveBeenCalledTimes(1);
+		await jest.advanceTimersByTime(50);
 
-    expect(myAsyncState.state).toEqual({
-      data: null,
-      props: null,
-      timestamp: TESTS_TS,
-      status: "initial",
-    });
+		// async state should be in success state with data
+		expect(myAsyncState.state).toEqual({
+			props: null,
+			timestamp: TESTS_TS,
+			status: "initial",
+			data: null,
+		});
+	});
 
-    await jest.advanceTimersByTime(50);
+	it("should abort while pending and check state did not update after supposed rejection", async () => {
+		// given
+		let key = "simulated-2";
+		let producer = rejectionTimeout(100, "reason");
+		let myConfig = { initialValue: null };
+		let subscription = jest.fn();
 
-    // async state should be in success state with data
-    expect(myAsyncState.state).toEqual({
-      props: null,
-      timestamp: TESTS_TS,
-      status: "initial",
-      data: null,
-    });
-  });
+		// when
+		let myAsyncState = new AsyncState(key, producer, myConfig);
+		myAsyncState.actions.subscribe({ cb: subscription });
+		// then
 
-  it('should abort while pending and check state did not update after supposed rejection', async () => {
-    // given
-    let key = "simulated-2";
-    let producer = rejectionTimeout(100, "reason");
-    let myConfig = {initialValue: null};
-    let subscription = jest.fn();
+		const abort = myAsyncState.actions.run();
 
-    // when
-    let myAsyncState = new AsyncState(key, producer, myConfig);
-    myAsyncState.actions.subscribe({cb: subscription});
-    // then
+		await jest.advanceTimersByTime(50);
 
-    const abort = myAsyncState.actions.run();
+		subscription.mockClear();
+		abort!("reason");
+		expect(subscription.mock.calls[0][0].status).toBe("initial");
 
-    await jest.advanceTimersByTime(50);
+		// now, let's check that a second call to the abort function does not update state or subscribers
+		subscription.mockClear();
+		let currentStateReference = myAsyncState.state;
+		abort!("whatever is ignored");
+		expect(myAsyncState.state).toBe(currentStateReference);
 
-    subscription.mockClear();
-    abort!("reason");
-    expect(subscription.mock.calls[0][0].status).toBe("initial");
+		expect(subscription).not.toHaveBeenCalled();
 
-    // now, let's check that a second call to the abort function does not update state or subscribers
-    subscription.mockClear();
-    let currentStateReference = myAsyncState.state;
-    abort!("whatever is ignored");
-    expect(myAsyncState.state).toBe(currentStateReference);
+		await jest.advanceTimersByTime(50);
 
-    expect(subscription).not.toHaveBeenCalled();
+		// async state should be in success state with data
+		expect(myAsyncState.state).toEqual({
+			props: null,
+			timestamp: TESTS_TS,
+			status: "initial",
+			data: null,
+		});
+	});
+	it("should bailout aborted state when it will be running again", async () => {
+		// given
+		let key = "simulated-3";
+		let producer = timeout(100, "value");
+		let myConfig = { initialValue: null };
+		let subscription = jest.fn();
 
-    await jest.advanceTimersByTime(50);
+		// when
+		let myAsyncState = new AsyncState(key, producer, myConfig);
 
-    // async state should be in success state with data
-    expect(myAsyncState.state).toEqual({
-      props: null,
-      timestamp: TESTS_TS,
-      status: "initial",
-      data: null,
-    });
-  });
-  it('should bailout aborted state when it will be running again', async () => {
-    // given
-    let key = "simulated-3";
-    let producer = timeout(100, "value");
-    let myConfig = {initialValue: null};
-    let subscription = jest.fn();
+		myAsyncState.actions.subscribe({ cb: subscription });
+		// then
 
-    // when
-    let myAsyncState = new AsyncState(key, producer, myConfig);
+		myAsyncState.actions.run();
 
-    myAsyncState.actions.subscribe({cb: subscription});
-    // then
+		await jest.advanceTimersByTime(50);
 
-    myAsyncState.actions.run();
+		expect(myAsyncState.state.status).toBe("pending");
 
-    await jest.advanceTimersByTime(50);
+		// rerun while pending should interrupt previous
+		subscription.mockClear();
+		myAsyncState.actions.run();
 
-    expect(myAsyncState.state.status).toBe("pending");
+		expect(subscription.mock.calls[0][0].status).toBe("pending");
 
-    // rerun while pending should interrupt previous
-    subscription.mockClear();
-    myAsyncState.actions.run();
+		expect(subscription).toHaveBeenCalledTimes(1);
 
-    expect(subscription.mock.calls[0][0].status).toBe("pending");
+		await jest.advanceTimersByTime(100);
 
-    expect(subscription).toHaveBeenCalledTimes(1);
+		// async state should be in success state with data
+		expect(myAsyncState.state).toEqual({
+			props: {
+				args: [],
+				payload: {},
+			},
+			timestamp: TESTS_TS,
+			status: "success",
+			data: "value",
+		});
+	});
+	it("should not change state if abort is called in a sync producer", () => {
+		function producer(props: ProducerProps<number, [number]>) {
+			let [target] = props.args;
+			if (target === 1) {
+				props.abort();
+			}
 
+			return target;
+		}
 
-    await jest.advanceTimersByTime(100);
+		let inst = new AsyncState("test-1", producer);
+		inst.actions.run(2);
+		let currentState = inst.state;
+		expect(currentState.data).toBe(2);
 
-    // async state should be in success state with data
-    expect(myAsyncState.state).toEqual({
-      props: {
-        args: [],
-        payload: {}
-      },
-      timestamp: TESTS_TS,
-      status: "success",
-      data: "value",
-    });
-  });
+		inst.actions.run(1);
+		expect(currentState).toBe(inst.state);
+	});
+	it("should not change state if abort is called in an async producer", async () => {
+		async function producer(props: ProducerProps<number, [number]>) {
+			let [target] = props.args;
+			if (target === 1) {
+				props.abort();
+			}
+
+			return new Promise<number>((res) => setTimeout(() => res(target), 100));
+		}
+
+		let inst = new AsyncState("test-2", producer);
+		inst.actions.run(2);
+
+    jest.advanceTimersByTime(100);
+		await flushPromises();
+		let currentState = inst.state;
+		expect(currentState.data).toBe(2);
+
+		inst.actions.run(1);
+		expect(inst.state.data).toBe(2);
+		expect(inst.state.status).toBe("success");
+    jest.advanceTimersByTime(100);
+    await flushPromises();
+		expect(currentState).toBe(inst.state);
+	});
+	it("should not do anything if abort is called after resolve", async () => {
+    let spy = jest.fn()
+		async function producer(props: ProducerProps<number, [number]>) {
+			let [target] = props.args;
+			if (target === 1) {
+        setTimeout(() => {
+          spy();
+          props.abort();
+        }, 101)
+			}
+
+			return new Promise<number>((res) => setTimeout(() => res(target), 100));
+		}
+
+		let inst = new AsyncState("test-3", producer);
+		inst.actions.run(2);
+
+    jest.advanceTimersByTime(100);
+		await flushPromises();
+		let currentState = inst.state;
+		expect(currentState.data).toBe(2);
+
+		inst.actions.run(1);
+    jest.advanceTimersByTime(100);
+    await flushPromises();
+		expect(inst.state.data).toBe(1);
+		expect(inst.state.status).toBe("success");
+    jest.advanceTimersByTime(10);
+    await flushPromises();
+    expect(spy).toHaveBeenCalledTimes(1);
+	});
 });
