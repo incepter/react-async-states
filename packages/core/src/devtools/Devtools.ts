@@ -178,14 +178,14 @@ function createDevtools(): DevtoolsInterface {
 			return !val || typeof val !== "object"
 				? val
 				: ((a = Array.isArray(val)),
-				  JSON.stringify(val, function (k, v) {
+					JSON.stringify(val, function (k, v) {
 						if (a || depth > 0) {
 							if (!k) return (a = Array.isArray(v)), (val = v);
 							!o && (o = a ? [] : {});
 							o[k] = _build(k, v, a ? depth : depth - 1);
 						}
-				  }),
-				  o || (a ? [] : {}));
+					}),
+					o || (a ? [] : {}));
 		}
 
 		return JSON.stringify(_build("", val, depth));
@@ -261,13 +261,13 @@ function createDevtools(): DevtoolsInterface {
 					? Object.keys(asyncState.lanes).map((key) => ({
 							uniqueId: asyncState.lanes![key].id,
 							key,
-					  }))
+						}))
 					: [],
 				parent: asyncState.parent
 					? {
 							key: asyncState.parent?.key,
 							uniqueId: asyncState.parent?.id,
-					  }
+						}
 					: null,
 			},
 			type: DevtoolsEvent.setAsyncState,
