@@ -470,7 +470,7 @@ function shouldRunSubscription<T, A extends unknown[], E, S>(
 ) {
 	if (config.lazy === false) {
 		let condition = config.condition;
-		if (condition === undefined || condition) {
+		if (condition === undefined || condition === true) {
 			return true;
 		} else if (isFunction(condition)) {
 			let autoRunArgs = (config.autoRunArgs || []) as A;
