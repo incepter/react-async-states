@@ -202,10 +202,10 @@ export function scheduleDelayedPendingUpdate<T, A extends unknown[], E>(
 		instance.pendingUpdate = null;
 		instance.version += 1;
 		invokeInstanceEvents(instance, "change");
-		if (__DEV__) devtools.emitUpdate(instance);
+		if (__DEV__) devtools.emitUpdate(instance, false);
 
 		if (notify) {
-			notifySubscribers(instance as StateInterface<T, A, E>);
+			notifySubscribers(instance);
 		}
 	}
 
@@ -263,7 +263,7 @@ export function replaceInstanceState<T, A extends unknown[], E>(
 	instance.state = newState;
 	invokeChangeCallbacks(newState, callbacks);
 	invokeInstanceEvents(instance, "change");
-	if (__DEV__) devtools.emitUpdate(instance);
+	if (__DEV__) devtools.emitUpdate(instance, false);
 
 	if (instance.state.status === success) {
 		instance.lastSuccess = instance.state;
@@ -286,8 +286,10 @@ export function setInstanceData<T, A extends unknown[], E>(
 	instance: StateInterface<T, A, E>,
 	newValue: T | ((prev: T | null) => T)
 ) {
+	let previouslySettingData = isCurrentSetStateSettingData;
 	isCurrentSetStateSettingData = true;
 	setInstanceState(instance, newValue);
+	isCurrentSetStateSettingData = previouslySettingData;
 }
 
 export function setInstanceState<T, A extends unknown[], E>(
@@ -337,7 +339,7 @@ export function setInstanceState<T, A extends unknown[], E>(
 		args: [effectiveValue] as A,
 		payload: shallowClone(instance.payload),
 	});
-	if (__DEV__) devtools.emitReplaceState(instance, savedProps);
+	if (__DEV__) devtools.emitUpdate(instance, true);
 
 	let newState = {
 		status,

@@ -28,7 +28,9 @@ function DevModeApp({ alias }) {
 
 function intevalProducer(props) {
 	let id = setInterval(() => {
-		props.emit((old) => old.data + 1);
+		props.emit((old) => {
+			return old.data + 1;
+		});
 	}, props.payload.delay);
 	props.onAbort(() => clearInterval(id));
 

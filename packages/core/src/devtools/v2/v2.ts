@@ -57,34 +57,42 @@ class LibraryDevtools implements DevtoolsAgent {
 	}
 
 	emitCreation(instance: AnyInstance): void {
+		if (instance.config.hideFromDevtools) return;
 		this.listeners.forEach((listener) => listener.emitCreation(instance));
 	}
 
 	emitDispose(instance: AnyInstance): void {
+		if (instance.config.hideFromDevtools) return;
 		this.listeners.forEach((listener) => listener.emitDispose(instance));
 	}
 
 	emitInstance(instance: AnyInstance): void {
+		if (instance.config.hideFromDevtools) return;
 		this.listeners.forEach((listener) => listener.emitInstance(instance));
 	}
 
 	emitRun(instance: AnyInstance, cache: boolean): void {
+		if (instance.config.hideFromDevtools) return;
 		this.listeners.forEach((listener) => listener.emitRun(instance, cache));
 	}
 
 	emitSub(instance: AnyInstance, key: string): void {
+		if (instance.config.hideFromDevtools) return;
 		this.listeners.forEach((listener) => listener.emitSub(instance, key));
 	}
 
 	emitUnsub(instance: AnyInstance, key: string): void {
+		if (instance.config.hideFromDevtools) return;
 		this.listeners.forEach((listener) => listener.emitUnsub(instance, key));
 	}
 
 	startUpdate(instance: AnyInstance): void {
+		if (instance.config.hideFromDevtools) return;
 		this.listeners.forEach((listener) => listener.startUpdate(instance));
 	}
 
 	emitUpdate(instance: AnyInstance, replace: boolean): void {
+		if (instance.config.hideFromDevtools) return;
 		this.listeners.forEach((listener) =>
 			listener.emitUpdate(instance, replace)
 		);

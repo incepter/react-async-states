@@ -1,8 +1,11 @@
-import { AnyInstance, devtools, DevtoolsAgent } from "./v2";
-import { Status } from "../../enums";
-import { StateInterface } from "../../types";
-import { AsyncState } from "../../AsyncState";
-import { now } from "../../helpers/core";
+import { devtools } from "async-states/dist/es/src/devtools/v2/v2";
+import type {
+	AnyInstance,
+	DevtoolsAgent,
+} from "async-states/dist/es/src/devtools/v2/v2";
+import type { Status } from "async-states/dist/es/src/enums";
+import type { StateInterface } from "async-states/dist/es/types";
+import { AsyncState } from "async-states/dist/es/src/AsyncState";
 
 export type SingleInstanceInfo = {
 	id: number;
@@ -15,14 +18,18 @@ export type SingleInstanceInfo = {
 
 export type InstancesInfo = Record<number, SingleInstanceInfo>;
 
-export class NpmLibraryDevtoolsClient implements DevtoolsAgent {
+interface NpmDevtoolsAgent extends DevtoolsAgent {
+	readonly info: StateInterface<InstancesInfo, never, Error>;
+}
+
+export class NpmLibraryDevtoolsClient implements NpmDevtoolsAgent {
 	// on creation, we will retain the created instance, only if connected
 	// if not connected and the devtools comes in after many instances were
 	// created, there is a chance they won't be visible until an event occurs
 	// to them.
 	// on dispose, always remove the state, the client can then either remove
 	// it entirely or mark is as disposed/removed
-	private readonly ids: Record<number, AnyInstance>;
+	private readonly ids: Record<number, AnyInstance> = {};
 
 	// to represent the UI for the devtools, we would need the following states:
 	// - the sidebar representation: the id, key, current status, ctx and count
@@ -30,7 +37,7 @@ export class NpmLibraryDevtoolsClient implements DevtoolsAgent {
 	//   single state initially. If this becomes irrelevant, we'll split them
 	// - the currently displayed state
 
-	private readonly info: StateInterface<InstancesInfo, never, Error>;
+	readonly info: StateInterface<InstancesInfo, never, Error>;
 
 	private currentUpdatePreviousState: any = null;
 
@@ -53,12 +60,14 @@ export class NpmLibraryDevtoolsClient implements DevtoolsAgent {
 			hideFromDevtools: true,
 		});
 	}
-	connect(listener: DevtoolsAgent): void {
+	connect(): void {
 		devtools.connect(this);
 	}
 
-	disconnect(listener: DevtoolsAgent): void {
+	disconnect(): void {
 		devtools.disconnect(this);
+		// reset everything
+		// this.info.actions.setData({});
 	}
 
 	emitCreation(instance: AnyInstance): void {
@@ -82,7 +91,7 @@ export class NpmLibraryDevtoolsClient implements DevtoolsAgent {
 		this.ensureInstanceIsRetained(instance);
 		let latestRun = instance.latestRun!;
 		addToJournal(instance, {
-			at: now(),
+			at: Date.now(),
 			type: "run",
 			payload: {
 				cache,
@@ -95,7 +104,7 @@ export class NpmLibraryDevtoolsClient implements DevtoolsAgent {
 	emitSub(instance: AnyInstance, key: string): void {
 		this.ensureInstanceIsRetained(instance);
 		addToJournal(instance, {
-			at: now(),
+			at: Date.now(),
 			payload: key,
 			type: "subscription",
 		});
@@ -107,7 +116,7 @@ export class NpmLibraryDevtoolsClient implements DevtoolsAgent {
 	emitUnsub(instance: AnyInstance, key: string): void {
 		this.ensureInstanceIsRetained(instance);
 		addToJournal(instance, {
-			at: now(),
+			at: Date.now(),
 			payload: key,
 			type: "unsubscription",
 		});
@@ -122,12 +131,13 @@ export class NpmLibraryDevtoolsClient implements DevtoolsAgent {
 	}
 
 	emitUpdate(instance: AnyInstance, replace: boolean): void {
+		// console.log("received update", instance.id, this.ids);
 		this.ensureInstanceIsRetained(instance);
 		let nextState = instance.state;
 		let previousState = this.currentUpdatePreviousState;
 
 		addToJournal(instance, {
-			at: now(),
+			at: Date.now(),
 			type: "update",
 			payload: {
 				replace,
@@ -138,16 +148,43 @@ export class NpmLibraryDevtoolsClient implements DevtoolsAgent {
 		this.currentUpdatePreviousState = null;
 
 		let nextStatus = nextState.status;
-		this.updateInfo(instance.id, "status", nextStatus);
+		let currentData = this.info.lastSuccess.data!;
+		let currentInstanceInfo = currentData[instance.id];
+		if (currentInstanceInfo.status !== nextStatus) {
+			this.updateInfo(instance.id, "status", nextStatus);
+		}
 	}
 
 	private ensureInstanceIsRetained(instance: AnyInstance) {
 		this.ids[instance.id] = instance;
 		let currentData = this.info.lastSuccess.data!;
+		// console.log("ensuring", instance.id, currentData);
+
 		if (!currentData[instance.id]) {
-			// todo: add this state instance to info
+			this.info.actions.setData((prev) => {
+				let prevData = prev!;
+
+				let subCount = 0;
+				if (instance.subscriptions) {
+					subCount = Object.keys(instance.subscriptions).length;
+				}
+				return {
+					...prevData,
+					[instance.id]: {
+						subCount,
+						disposed: false,
+						id: instance.id,
+						key: instance.key,
+						context: String(instance.ctx),
+						status: instance.state.status,
+					},
+				};
+			});
 		} else {
-			// todo: set as non disposed and update status and subs count
+			let currentInstanceInfo = currentData[instance.id];
+			if (currentInstanceInfo.disposed) {
+				this.updateInfo(instance.id, "disposed", false);
+			}
 		}
 	}
 	private updateInfo<Prop extends keyof SingleInstanceInfo>(

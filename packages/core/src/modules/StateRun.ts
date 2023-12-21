@@ -152,6 +152,7 @@ function replaceStateAndBailoutRunFromCachedState<T, A extends unknown[], E>(
 	if (actualState !== nextState) {
 		// this sets the new state and notifies subscriptions
 		// true for notifying
+		// todo: update latest run
 		replaceInstanceState(instance, nextState, true);
 	}
 }
@@ -192,6 +193,7 @@ export function runInstanceImmediately<T, A extends unknown[], E>(
 		// only use a cached entry if not expired
 		if (cachedState && !didCachedStateExpire(cachedState)) {
 			replaceStateAndBailoutRunFromCachedState(instance, cachedState);
+			if (__DEV__) devtools.emitRun(instance, true);
 			return;
 		}
 		// this means that the cache entry was expired, we need to removed it
@@ -221,8 +223,7 @@ export function runInstanceImmediately<T, A extends unknown[], E>(
 
 	if (runResult) {
 		// Promise<T>
-		if (__DEV__)
-			devtools.emitRunPromise(instance, cloneProducerProps(producerProps));
+		if (__DEV__) devtools.emitRun(instance, false);
 
 		instance.promise = runResult;
 		let currentState = instance.state;
@@ -242,7 +243,7 @@ export function runInstanceImmediately<T, A extends unknown[], E>(
 		stopAlteringState(wasAltering);
 		return producerProps.abort;
 	} else if (__DEV__) {
-		devtools.emitRunSync(instance, cloneProducerProps(producerProps));
+		devtools.emitRun(instance, false);
 	}
 
 	stopAlteringState(wasAltering);

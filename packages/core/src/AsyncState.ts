@@ -168,9 +168,7 @@ export class AsyncState<T, A extends unknown[], E>
 		// it was moved from here for simplicity and keep the constructor readable
 		initializeInstance(this);
 
-		if (__DEV__) {
-			devtools.emitCreation(this);
-		}
+		if (__DEV__) devtools.emitCreation(this);
 	}
 }
 
