@@ -1,8 +1,5 @@
+import type { DevtoolsAgent } from "async-states/dist/es/src/devtools/v2/v2";
 import { devtools } from "async-states/dist/es/src/devtools/v2/v2";
-import type {
-	AnyInstance,
-	DevtoolsAgent,
-} from "async-states/dist/es/src/devtools/v2/v2";
 import type { Status } from "async-states/dist/es/src/enums";
 import type { StateInterface } from "async-states/dist/es/types";
 import { AsyncState } from "async-states/dist/es/src/AsyncState";
@@ -10,15 +7,16 @@ import { AsyncState } from "async-states/dist/es/src/AsyncState";
 export type SingleInstanceInfo = {
 	id: number;
 	key: string;
-	context: any;
 	status: Status;
 	subCount: number;
 	disposed: boolean;
 };
 
+export type AnyInstance = StateInterface<any, any, any>;
 export type InstancesInfo = Record<number, SingleInstanceInfo>;
 
-interface NpmDevtoolsAgent extends DevtoolsAgent {
+export interface NpmDevtoolsAgent extends DevtoolsAgent {
+	readonly ids: Record<number, AnyInstance>;
 	readonly info: StateInterface<InstancesInfo, never, Error>;
 }
 
@@ -27,9 +25,7 @@ export class NpmLibraryDevtoolsClient implements NpmDevtoolsAgent {
 	// if not connected and the devtools comes in after many instances were
 	// created, there is a chance they won't be visible until an event occurs
 	// to them.
-	// on dispose, always remove the state, the client can then either remove
-	// it entirely or mark is as disposed/removed
-	private readonly ids: Record<number, AnyInstance> = {};
+	readonly ids: Record<number, AnyInstance> = {};
 
 	// to represent the UI for the devtools, we would need the following states:
 	// - the sidebar representation: the id, key, current status, ctx and count
@@ -67,7 +63,7 @@ export class NpmLibraryDevtoolsClient implements NpmDevtoolsAgent {
 	disconnect(): void {
 		devtools.disconnect(this);
 		// reset everything
-		// this.info.actions.setData({});
+		this.info.actions.setData({});
 	}
 
 	emitCreation(instance: AnyInstance): void {
@@ -131,7 +127,6 @@ export class NpmLibraryDevtoolsClient implements NpmDevtoolsAgent {
 	}
 
 	emitUpdate(instance: AnyInstance, replace: boolean): void {
-		// console.log("received update", instance.id, this.ids);
 		this.ensureInstanceIsRetained(instance);
 		let nextState = instance.state;
 		let previousState = this.currentUpdatePreviousState;
@@ -155,10 +150,43 @@ export class NpmLibraryDevtoolsClient implements NpmDevtoolsAgent {
 		}
 	}
 
+	onConnect(instances: AnyInstance[]): void {
+		let newData: Record<number, SingleInstanceInfo> = {};
+		for (let instance of instances) {
+			if (instance.config.hideFromDevtools) {
+				continue;
+			}
+			let id = instance.id;
+			if (!this.ids[id]) {
+				this.ids[id] = instance;
+			}
+			let subCount = 0;
+			if (instance.subscriptions) {
+				subCount = Object.keys(instance.subscriptions).length;
+			}
+			newData[id] = {
+				id: id,
+				key: instance.key,
+				status: instance.state.status,
+				subCount,
+				disposed: false,
+			};
+		}
+
+		this.info.actions.setData(newData);
+	}
+
+	captureContext() {
+		throw new Error("The devtools client doesn't have captureContext.");
+	}
+
+	releaseContext() {
+		throw new Error("The devtools client doesn't have releaseContext.");
+	}
+
 	private ensureInstanceIsRetained(instance: AnyInstance) {
 		this.ids[instance.id] = instance;
 		let currentData = this.info.lastSuccess.data!;
-		// console.log("ensuring", instance.id, currentData);
 
 		if (!currentData[instance.id]) {
 			this.info.actions.setData((prev) => {
@@ -175,7 +203,6 @@ export class NpmLibraryDevtoolsClient implements NpmDevtoolsAgent {
 						disposed: false,
 						id: instance.id,
 						key: instance.key,
-						context: String(instance.ctx),
 						status: instance.state.status,
 					},
 				};

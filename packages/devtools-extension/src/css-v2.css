@@ -1,0 +1,64 @@
+.asd-i-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 250px;
+    padding: 0;
+}
+.asd-i-item {
+    border: none;
+    height: 32px;
+    cursor: pointer;
+	position: relative;
+    padding: 4px 8px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+}
+.asd-i-item:active {
+    opacity: 0.8;
+}
+.asd-i-name {
+}
+.asd-i-badge {
+	position: absolute;
+	top: -6px;
+	right: -6px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    padding: 4px;
+    width: 12px;
+    height: 12px;
+    display: flex;
+    color: white;
+    align-items: center;
+    justify-content: center;
+}
+.asd-i-item-error {
+    color: white;
+	background-color: #eb6774;
+}
+.asd-i-item-initial {
+    color: black;
+	background-color: #dedede;
+}
+.asd-i-item-pending {
+    color: white;
+	background-color: #5b95db;
+}
+.asd-i-item-success {
+	color: white;
+	background-color: #17a449;
+}
+
+.asd-root {
+    border: 1px solid red;
+}
+.asd-side {
+    width: 250px;
+    border: 1px solid red;
+}
+.asd-view {
+    border: 1px solid red;
+    width: calc(100% - 250px);
+}

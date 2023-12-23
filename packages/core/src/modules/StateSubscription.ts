@@ -38,9 +38,7 @@ export function subscribeToInstance<T, A extends unknown[], E>(
 		delete instance.subscriptions![subscriptionKey!];
 		if (__DEV__) devtools.emitUnsub(instance, subscriptionKey!);
 		if (instance.config.resetStateOnDispose) {
-			if (Object.values(instance.subscriptions!).length === 0) {
-				instance.actions.dispose();
-			}
+			instance.actions.dispose();
 		}
 	}
 
