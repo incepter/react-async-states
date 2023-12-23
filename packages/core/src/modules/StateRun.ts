@@ -242,12 +242,12 @@ export function runInstanceImmediately<T, A extends unknown[], E>(
 		replaceInstanceState(instance, pendingState, true, props);
 		stopAlteringState(wasAltering);
 		return producerProps.abort;
-	} else if (__DEV__) {
-		devtools.emitRun(instance, false);
 	}
 
+	if (__DEV__) devtools.emitRun(instance, false);
+
 	stopAlteringState(wasAltering);
-	return noop;
+	return producerProps.abort;
 
 	function onSettled(
 		data: T | E,

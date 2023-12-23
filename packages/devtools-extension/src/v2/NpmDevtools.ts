@@ -79,7 +79,9 @@ export class NpmLibraryDevtoolsClient implements NpmDevtoolsAgent {
 	}
 
 	emitCreation(instance: AnyInstance): void {
-		this.ensureInstanceIsRetained(instance);
+		if (instance.config.storeInContext !== false) {
+			this.ensureInstanceIsRetained(instance);
+		}
 	}
 
 	emitDispose(instance: AnyInstance): void {
@@ -122,15 +124,28 @@ export class NpmLibraryDevtoolsClient implements NpmDevtoolsAgent {
 	}
 
 	emitUnsub(instance: AnyInstance, key: string): void {
-		this.ensureInstanceIsRetained(instance);
-		addToJournal(instance, {
-			at: Date.now(),
-			payload: key,
-			type: "unsubscription",
-		});
+		let subCount = countSubscriptions(instance);
 
-		let currentSubscriptionsCount = countSubscriptions(instance);
-		this.updateInfo(instance.id, "subCount", currentSubscriptionsCount);
+		// when the instance is standalone and there is no more subscriptions
+		// we remove it from the info and from the ids
+		if (subCount === 0 && instance.config.storeInContext === false) {
+			this.info.actions.setData((prev) => {
+				let prevData = { ...prev! };
+				delete prevData[instance.id];
+				return prevData;
+			});
+			if (this.current.lastSuccess.data === instance) {
+				this.current.actions.setData(null);
+			}
+		} else {
+			this.ensureInstanceIsRetained(instance);
+			addToJournal(instance, {
+				at: Date.now(),
+				payload: key,
+				type: "unsubscription",
+			});
+			this.updateInfo(instance.id, "subCount", subCount);
+		}
 	}
 
 	startUpdate(instance: AnyInstance): void {

@@ -65,6 +65,40 @@ export default function DevModeAppExp() {
 			<DevModeApp alias="random" />
 			<hr />
 			<Interval alias="interval-demo" delay={3000} />
+			<hr />
+			<Conditional />
 		</>
 	);
+}
+
+function Conditional() {
+	let [visible, setVisible] = React.useState(false);
+
+	return (
+		<>
+			<button onClick={() => setVisible((prev) => !prev)}>Toggle</button>
+			{visible && <Standalone />}
+		</>
+	);
+}
+
+function standaloneInterval(props) {
+	let id = setInterval(() => {
+		props.emit((old) => {
+			return old.data + 1;
+		});
+	}, props.payload.delay);
+	props.onAbort(() => clearInterval(id));
+
+	return props.lastSuccess.data;
+}
+
+function Standalone() {
+	let { data } = useAsync.auto({
+		initialValue: 0,
+		payload: { delay: 3000 },
+		producer: standaloneInterval,
+	});
+
+	return <span>data: {String(data)}</span>;
 }
