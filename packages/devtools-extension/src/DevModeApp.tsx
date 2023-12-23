@@ -16,6 +16,44 @@ let source = createSource<number, [number], any>("devmodeapp", null, {
 	initialValue: 0,
 });
 
+createSource("toto-1");
+createSource("toto-10");
+createSource("toto-100");
+createSource("toto-1000");
+createSource("toto-10000");
+createSource("toto-100000");
+createSource("toto-1900000");
+createSource("toto-1222222");
+createSource("toto-12222222");
+createSource("toto-333333333");
+createSource("toto-1444444444", null, {
+	initialValue: {
+		a: {
+			very: {
+				long: {
+					object: {
+						to: {
+							test: {
+								scrolling: {
+									overflow: {
+										auto: {
+											on: {
+												y: {
+													axis: true,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+});
+
 function DevModeApp({ alias }) {
 	const { state } = useAsync({
 		source,

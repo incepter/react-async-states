@@ -1,49 +1,58 @@
 .asd-i-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-width: 250px;
-    padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	max-width: 250px;
+	padding: 0;
 }
 .asd-i-item {
-    border: none;
-    height: 32px;
-    cursor: pointer;
+	border: none;
+	height: 32px;
+	cursor: pointer;
 	position: relative;
-    padding: 4px 8px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
+	padding: 4px 8px;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+}
+.asd-i-item-filter {
+	border: none;
+	height: 20px;
+	padding: 4px 8px;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
 }
 .asd-i-item:active {
-    opacity: 0.8;
+	opacity: 0.8;
 }
 .asd-i-name {
 }
 .asd-i-badge {
 	position: absolute;
-	top: -6px;
-	right: -6px;
-    background-color: rgba(0, 0, 0, 0.7);
-    border-radius: 50%;
-    padding: 4px;
-    width: 12px;
-    height: 12px;
-    display: flex;
-    color: white;
-    align-items: center;
-    justify-content: center;
+	top: -4px;
+	right: -4px;
+	background-color: rgba(0, 0, 0, 0.9);
+	border-radius: 50%;
+	padding: 4px;
+	font-size: 8px;
+	width: 8px;
+	height: 8px;
+	display: flex;
+	color: white;
+	align-items: center;
+	justify-content: center;
 }
 .asd-i-item-error {
-    color: white;
+	color: white;
 	background-color: #eb6774;
 }
 .asd-i-item-initial {
-    color: black;
+	color: black;
 	background-color: #dedede;
 }
 .asd-i-item-pending {
-    color: white;
+	color: white;
 	background-color: #5b95db;
 }
 .asd-i-item-success {
@@ -52,14 +61,49 @@
 }
 
 .asd-root {
-    border: 1px solid red;
-    display: flex;
+	padding-top: 4px;
+	display: flex;
+	background-color: #242424;
+	color: white;
+	position: absolute;
+	height: 50vh;
+	top: 50%;
+	width: 100%;
+	z-index: 99999999;
 }
 .asd-side {
-    width: 250px;
-    border: 1px solid red;
+	width: 250px;
+	padding: 4px;
+	border-right: 1px dashed white;
 }
 .asd-view {
-    border: 1px solid red;
-    width: calc(100% - 250px);
+	padding: 4px;
+	width: calc(100% - 250px);
+}
+.asd-i-current {
+	text-decoration: underline;
+}
+
+.scroll-y-auto {
+	overflow-y: auto;
+	text-shadow: 0 0 black;
+	transition: color 0.3s ease;
+	color: transparent;
+}
+
+.scroll-y-auto::-webkit-scrollbar {
+	width: 8px;
+	border: 1px solid transparent;
+}
+
+.scroll-y-auto::-webkit-scrollbar-track {
+	background-color: transparent;
+	border-radius: 0;
+}
+
+.scroll-y-auto::-webkit-scrollbar-thumb {
+	box-shadow: inset 0 0 0 10px;
+    color: #8c8c8c;
+	border-radius: 8px;
+	background-clip: padding-box;
 }
