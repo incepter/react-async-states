@@ -53,6 +53,7 @@
 
 .asd-root {
     border: 1px solid red;
+    display: flex;
 }
 .asd-side {
     width: 250px;

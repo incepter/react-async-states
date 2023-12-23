@@ -3,6 +3,7 @@ import { devtools } from "async-states/dist/es/src/devtools/v2/v2";
 import type { Status } from "async-states/dist/es/src/enums";
 import type { StateInterface } from "async-states/dist/es/types";
 import { AsyncState } from "async-states/dist/es/src/AsyncState";
+import { devtoolsSubscriptionKey } from "./constants";
 
 export type SingleInstanceInfo = {
 	id: number;
@@ -18,6 +19,9 @@ export type InstancesInfo = Record<number, SingleInstanceInfo>;
 export interface NpmDevtoolsAgent extends DevtoolsAgent {
 	readonly ids: Record<number, AnyInstance>;
 	readonly info: StateInterface<InstancesInfo, never, Error>;
+	readonly current: StateInterface<AnyInstance | null, never, Error>;
+
+	setCurrentInstance(instanceId: number): void;
 }
 
 export class NpmLibraryDevtoolsClient implements NpmDevtoolsAgent {
@@ -31,31 +35,39 @@ export class NpmLibraryDevtoolsClient implements NpmDevtoolsAgent {
 	// - the sidebar representation: the id, key, current status, ctx and count
 	//   of subscribers in a given state instance. we'll group all of them into a
 	//   single state initially. If this becomes irrelevant, we'll split them
-	// - the currently displayed state
+	// - the currently displayed state instance
 
 	readonly info: StateInterface<InstancesInfo, never, Error>;
+	readonly current: StateInterface<AnyInstance | null, never, Error>;
 
 	private currentUpdatePreviousState: any = null;
 
 	constructor() {
 		this.connect = this.connect.bind(this);
-		this.disconnect = this.disconnect.bind(this);
-		this.emitCreation = this.emitCreation.bind(this);
-		this.emitDispose = this.emitDispose.bind(this);
-		this.emitInstance = this.emitInstance.bind(this);
 		this.emitRun = this.emitRun.bind(this);
 		this.emitSub = this.emitSub.bind(this);
 		this.emitUnsub = this.emitUnsub.bind(this);
-		this.startUpdate = this.startUpdate.bind(this);
+		this.disconnect = this.disconnect.bind(this);
 		this.emitUpdate = this.emitUpdate.bind(this);
-		this.ensureInstanceIsRetained = this.ensureInstanceIsRetained.bind(this);
 		this.updateInfo = this.updateInfo.bind(this);
+		this.startUpdate = this.startUpdate.bind(this);
+		this.emitDispose = this.emitDispose.bind(this);
+		this.emitCreation = this.emitCreation.bind(this);
+		this.emitInstance = this.emitInstance.bind(this);
+		this.setCurrentInstance = this.setCurrentInstance.bind(this);
+		this.ensureInstanceIsRetained = this.ensureInstanceIsRetained.bind(this);
 		this.info = new AsyncState("devtools-states-info", null, {
 			initialValue: {},
 			storeInContext: false,
 			hideFromDevtools: true,
 		});
+		this.current = new AsyncState("devtools-current-instance", null, {
+			initialValue: null,
+			storeInContext: false,
+			hideFromDevtools: true,
+		});
 	}
+
 	connect(): void {
 		devtools.connect(this);
 	}
@@ -105,7 +117,7 @@ export class NpmLibraryDevtoolsClient implements NpmDevtoolsAgent {
 			type: "subscription",
 		});
 
-		let currentSubscriptionsCount = Object.keys(instance.subscriptions!).length;
+		let currentSubscriptionsCount = countSubscriptions(instance);
 		this.updateInfo(instance.id, "subCount", currentSubscriptionsCount);
 	}
 
@@ -117,7 +129,7 @@ export class NpmLibraryDevtoolsClient implements NpmDevtoolsAgent {
 			type: "unsubscription",
 		});
 
-		let currentSubscriptionsCount = Object.keys(instance.subscriptions!).length;
+		let currentSubscriptionsCount = countSubscriptions(instance);
 		this.updateInfo(instance.id, "subCount", currentSubscriptionsCount);
 	}
 
@@ -160,10 +172,7 @@ export class NpmLibraryDevtoolsClient implements NpmDevtoolsAgent {
 			if (!this.ids[id]) {
 				this.ids[id] = instance;
 			}
-			let subCount = 0;
-			if (instance.subscriptions) {
-				subCount = Object.keys(instance.subscriptions).length;
-			}
+			let subCount = countSubscriptions(instance);
 			newData[id] = {
 				id: id,
 				key: instance.key,
@@ -184,6 +193,15 @@ export class NpmLibraryDevtoolsClient implements NpmDevtoolsAgent {
 		throw new Error("The devtools client doesn't have releaseContext.");
 	}
 
+	setCurrentInstance(instanceId: number): void {
+		let instance = this.ids[instanceId];
+		if (instance) {
+			this.current.actions.setData(instance);
+		} else {
+			console.log(`Couldn't find instance with id ${instanceId}`);
+		}
+	}
+
 	private ensureInstanceIsRetained(instance: AnyInstance) {
 		this.ids[instance.id] = instance;
 		let currentData = this.info.lastSuccess.data!;
@@ -191,11 +209,7 @@ export class NpmLibraryDevtoolsClient implements NpmDevtoolsAgent {
 		if (!currentData[instance.id]) {
 			this.info.actions.setData((prev) => {
 				let prevData = prev!;
-
-				let subCount = 0;
-				if (instance.subscriptions) {
-					subCount = Object.keys(instance.subscriptions).length;
-				}
+				let subCount = countSubscriptions(instance);
 				return {
 					...prevData,
 					[instance.id]: {
@@ -257,6 +271,21 @@ type JournalEvent = {
 	// unsub: sub key
 	payload: any;
 };
+
+function countSubscriptions(instance: AnyInstance) {
+	let subscriptions = instance.subscriptions;
+	if (!subscriptions) {
+		return 0;
+	}
+	let subKeys = Object.keys(subscriptions);
+	let subCount = subKeys.length;
+
+	if (subKeys.some((t) => t.startsWith(devtoolsSubscriptionKey))) {
+		return subCount - 1;
+	}
+
+	return subCount;
+}
 
 function addToJournal(instance: AnyInstance, event: JournalEvent) {
 	if (!instance.journal) {
