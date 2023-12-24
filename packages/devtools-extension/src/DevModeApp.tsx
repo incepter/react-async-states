@@ -136,7 +136,7 @@ function UserDetails() {
 		key: "users-list",
 		producer: fetchUsers,
 		cacheConfig: {
-			auto: true,
+			// auto: true,
 			timeout: 5000,
 			enabled: true,
 			hash: () => "list",
