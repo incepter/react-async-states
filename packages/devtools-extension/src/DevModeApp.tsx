@@ -1,5 +1,6 @@
 import * as React from "react";
-import { createSource, useAsync, Status } from "react-async-states";
+import { createSource, useAsync } from "react-async-states";
+import { ProducerProps } from "async-states";
 
 let src = createSource<number>("test-2", null, { initialValue: 0 });
 let src2 = createSource<number>("test-1", null, { initialValue: 0 })
@@ -70,9 +71,14 @@ function DevModeApp({ alias }) {
 
 function intevalProducer(props) {
 	let id = setInterval(() => {
-		props.emit((old) => {
-			return old.data + 1;
-		});
+		let current = props.getState();
+		if (current.data === 3) {
+			props.emit(new Error("Error artificial"), "error");
+		} else {
+			props.emit((old) => {
+				return (Number(old.data) || 0) + 1;
+			});
+		}
 	}, props.payload.delay);
 	props.onAbort(() => clearInterval(id));
 
@@ -90,7 +96,7 @@ function Interval({ alias, delay }) {
 	const { state } = useAsync.auto({ source, payload: { delay } }, [delay]);
 	return (
 		<button onClick={() => source.setState((old) => old.data + 1)}>
-			Interval {alias} - {state.data}
+			Interval {alias} - {String(state.data)}
 		</button>
 	);
 }
@@ -102,10 +108,55 @@ export default function DevModeAppExp() {
 			<hr />
 			<DevModeApp alias="random" />
 			<hr />
-			<Interval alias="interval-demo" delay={3000} />
+			<Interval alias="interval-demo" delay={1000} />
 			<hr />
 			<Conditional />
+			<hr />
+			<UserDetails />
 		</>
+	);
+}
+
+type User = {
+	id: number;
+	email: string;
+	name: string;
+};
+
+async function fetchUsers({ signal }: ProducerProps<User[]>) {
+	// artificially delayed by 500ms
+	await new Promise((res) => setTimeout(res, 1000));
+	return await fetch("https://jsonplaceholder.typicode.com/users", {
+		signal,
+	}).then((res) => res.json());
+}
+
+function UserDetails() {
+	const { data, isPending, source } = useAsync.auto({
+		key: "users-list",
+		producer: fetchUsers,
+		cacheConfig: {
+			auto: true,
+			timeout: 5000,
+			enabled: true,
+			hash: () => "list",
+		},
+	});
+
+	return (
+		<div className="App">
+			<button disabled={isPending} onClick={() => source.run()}>
+				Fetch users {isPending && "..."}
+			</button>
+			{data && (
+				<ul>
+					<summary>Users list:</summary>
+					{data.map((user: User) => (
+						<li key={user.id}>{user.name}</li>
+					))}
+				</ul>
+			)}
+		</div>
 	);
 }
 

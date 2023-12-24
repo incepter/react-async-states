@@ -129,3 +129,46 @@
 	border-radius: 8px;
 	background-clip: padding-box;
 }
+.asd-d-root {
+	gap: 8px;
+	display: flex;
+	flex-direction: column;
+}
+
+.asd-d-h {
+	display: flex;
+	flex-direction: row;
+	color: white;
+	gap: 8px;
+	align-items: center;
+}
+
+.asd-d-h button {
+	border: none;
+	cursor: pointer;
+	height: 28px;
+	font-size: 16px;
+	border-radius: 8px;
+	padding: 4px 8px;
+	display: flex;
+	align-items: center;
+	background-color: #646cff;
+	color: white;
+}
+.asd-d-h span {
+	font-family: Arial;
+}
+
+.asd-d-h-b-active {
+	text-decoration: underline;
+}
+
+.asd-d-d {
+	display: flex;
+	gap: 8px;
+}
+.asd-d-d > .react-json-view {
+	flex: 1;
+	padding: 8px;
+	border-radius: 8px;
+}
