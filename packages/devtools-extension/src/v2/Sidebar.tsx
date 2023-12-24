@@ -1,49 +1,54 @@
 import * as React from "react";
 import { useDevtoolsAgent } from "./Context";
 import { NpmDevtoolsAgent, SingleInstanceInfo } from "./NpmDevtools";
-import { useAsync, useData } from "react-async-states";
-import { ProducerProps } from "async-states";
-
-function filterInstancesByKey(
-	props: ProducerProps<SingleInstanceInfo[], [SingleInstanceInfo[], string]>
-) {
-	let [instances, query] = props.args;
-
-	return instances.filter((t) =>
-		t.key.toLowerCase().includes(query.toLowerCase())
-	);
-}
+import { useData } from "react-async-states";
 
 export function DevtoolsSideBar() {
 	let devtools = useDevtoolsAgent();
+	let [query, setQuery] = React.useState("");
 	let { data } = useData(devtools.info.actions);
 	let { data: currentInstance } = useData(devtools.current.actions);
 
-	// let {
-	// 	data: filteredInstances,
-	// 	source: { run },
-	// } = useAsync(
-	// 	{
-	// 		storeInContext: false,
-	// 		hideFromDevtools: true,
-	// 		runEffect: "debounce",
-	// 		runEffectDurationMs: 300,
-	// 		key: "filtered-instances",
-	// 		producer: filterInstancesByKey,
-	// 		initialValue: () => Object.values(data!),
-	// 	},
-	// 	[]
-	// );
+	let filteredInstances = React.useMemo(
+		() =>
+			Object.values(data!).filter((t) =>
+				t.key.toLowerCase().includes(query.toLowerCase())
+			),
+		[data, query]
+	);
 
 	return (
 		<aside>
 			<section className="asd-i-list">
-				{/*<input*/}
-				{/*	placeholder="filter by key"*/}
-				{/*	className="asd-i-item-filter"*/}
-				{/*	onChange={(e) => run(Object.values(data), e.target.value)}*/}
-				{/*/>*/}
-				{Object.values(data!).map((instance) => (
+				<form
+					className="asd-filter-form"
+					onSubmit={(e) => {
+						e.preventDefault();
+						setQuery(e.currentTarget.elements["query"].value.trim());
+					}}
+				>
+					<input
+						name="query"
+						placeholder="filter by key"
+						className="asd-i-item-filter"
+					/>
+					<button type="submit">✔️</button>
+					{query !== "" && <div className="asd-filtered"></div>}
+					{query !== "" && (
+						<button
+							type="submit"
+							title={`applied search: '${query}'`}
+							onClick={(e) => {
+								setQuery("");
+								e.currentTarget.form.elements["query"].value = "";
+							}}
+						>
+							✖️
+						</button>
+					)}
+				</form>
+
+				{filteredInstances.map((instance) => (
 					<MemoizedInstanceInfo
 						{...instance}
 						agent={devtools}
