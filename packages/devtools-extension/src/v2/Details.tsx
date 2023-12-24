@@ -58,7 +58,11 @@ function InstanceDetails({ instance }: { instance: AnyInstance }) {
 				<ViewsButtons views={views} setViews={setViews} />
 			</div>
 			{views.changeState && (
-				<ChangeState key={instance.id} instance={instance} />
+				<ChangeState
+					key={instance.id}
+					instance={instance}
+					close={() => setViews((prev) => ({ ...prev, changeState: false }))}
+				/>
 			)}
 			<div className="asd-d-d">
 				{views.state && <MemoizedStateView instance={instance} />}
@@ -185,8 +189,10 @@ const MemoizedCache = React.memo(function MemoizedCache({
 });
 
 const ChangeState = React.memo(function ChangeState({
+	close,
 	instance,
 }: {
+	close: () => void;
 	instance: AnyInstance;
 }) {
 	let [status, setStatus] = React.useState<Status>("success");
