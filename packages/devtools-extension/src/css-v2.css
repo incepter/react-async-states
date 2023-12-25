@@ -52,24 +52,24 @@
 	align-items: center;
 }
 .asd-i-item-filter {
-	height: 32px;
-	padding: 0px 8px;
-	border-radius: 8px;
-	display: flex;
 	flex: 1;
+	min-width: 0;
+	height: 32px;
 	outline: none;
-	align-items: center;
+	padding: 0 8px;
+	border-radius: 8px;
 	border: 1px solid var(--asd-color);
 	color: var(--asd-contorl-color);
 }
 .asd-filter-form button {
-	border: none;
 	cursor: pointer;
 	font-size: 10px;
 	border-radius: 8px;
 	height: 32px;
 	width: 32px;
 	background-color: #dedede;
+	color: white;
+	border: 1px solid var(--asd-color);
 }
 .asd-filtered {
 	top: -2px;
@@ -126,24 +126,24 @@
 	text-decoration: underline;
 }
 
-.scroll-y-auto {
+.asc-s-y-auto {
 	overflow-y: auto;
 	text-shadow: 0 0 black;
 	transition: color 0.3s ease;
 	color: transparent;
 }
 
-.scroll-y-auto::-webkit-scrollbar {
+.asc-s-y-auto::-webkit-scrollbar {
 	width: 8px;
 	border: 1px solid transparent;
 }
 
-.scroll-y-auto::-webkit-scrollbar-track {
+.asc-s-y-auto::-webkit-scrollbar-track {
 	background-color: transparent;
 	border-radius: 0;
 }
 
-.scroll-y-auto::-webkit-scrollbar-thumb {
+.asc-s-y-auto::-webkit-scrollbar-thumb {
 	box-shadow: inset 0 0 0 10px;
 	color: #8c8c8c;
 	border-radius: 8px;
@@ -219,6 +219,7 @@
 }
 
 .asd-c-s-root > div > textarea {
+	padding: 4px;
 	outline: none;
 	border-radius: 8px;
 	color: var(--asd-contorl-color);

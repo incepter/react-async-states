@@ -200,7 +200,9 @@ const ChangeState = React.memo(function ChangeState({
 
 	let previousJournalOptions = instance.journal
 		.map((t, id) => ({ ev: t, id }))
-		?.filter((t) => t.ev.type === "update" && !!t.ev.payload.next.data);
+		?.filter(
+			(t) => t.ev.type === "update" && t.ev.payload.next.data !== undefined
+		);
 	let hasPreviousData = previousJournalOptions.length > 0;
 	React.useEffect(() => {
 		if (instance.lastSuccess.data) {
@@ -247,20 +249,13 @@ const ChangeState = React.memo(function ChangeState({
 								}
 							}}
 						>
-							<option value="">
-								-- select --
-							</option>
-							{instance.journal
-								.map((t, id) => ({ ev: t, id }))
-								?.filter(
-									(t) => t.ev.type === "update" && !!t.ev.payload.next.data
-								)
-								.map((ev) => (
-									<option key={ev.id} value={ev.id}>
-										{ev.ev.payload.next.status}--
-										{stringifyData(ev.ev.payload.next.data)}
-									</option>
-								))}
+							<option value="">-- select --</option>
+							{previousJournalOptions.map((ev) => (
+								<option key={ev.id} value={ev.id}>
+									{ev.ev.payload.next.status}--
+									{stringifyData(ev.ev.payload.next.data)}
+								</option>
+							))}
 						</select>
 					</details>
 				</div>
