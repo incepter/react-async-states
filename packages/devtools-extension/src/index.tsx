@@ -1,5 +1,1 @@
-export {
-  AutoConfiguredDevtools,
-  autoConfigureDevtools,
-  DevtoolsView
-} from "./DevtoolsView";
+export { Devtools, autoConfigureDevtools } from "./v2";

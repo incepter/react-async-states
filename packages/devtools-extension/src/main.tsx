@@ -4,32 +4,22 @@ import "./index.css";
 import "./css-v2.css";
 import DevModeApp from "./DevModeApp";
 import { __DEV__ } from "./utils";
-import { DevtoolsLayout } from "./v2/Layout";
-import { DevtoolsSideBar } from "./v2/Sidebar";
-import { CurrentInstanceDetails } from "./v2/Details";
+import { autoConfigureDevtools, Devtools } from "./v2";
 
-// autoConfigureDevtools({ open: true });
+autoConfigureDevtools({ open: true });
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
 	<React.StrictMode>
 		<div style={{ height: "100vh" }}>
+			<DevModeApp />
 			{__DEV__ && (
 				<>
-					<DevModeApp />
+					{/*<Devtools initiallyOpen />*/}
 					<hr />
 				</>
 			)}
 			{/*<AutoConfiguredDevtools/>*/}
-			<DevtoolsV2 />
+			{/*<DevtoolsV2 />*/}
 		</div>
 	</React.StrictMode>
 );
-
-function DevtoolsV2() {
-	return (
-		<DevtoolsLayout
-			sidebar={<DevtoolsSideBar />}
-			details={<CurrentInstanceDetails />}
-		/>
-	);
-}
