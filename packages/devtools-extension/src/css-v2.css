@@ -1,3 +1,6 @@
+#async-states-devtools * {
+}
+
 .asd-i-list {
 	display: flex;
 	flex-direction: column;
@@ -17,8 +20,8 @@
 }
 .asd-i-item-filter {
 	border: none;
-	height: 20px;
-	padding: 4px 8px;
+	height: 32px;
+	padding: 0px 8px;
 	border-radius: 8px;
 	display: flex;
 	flex: 1;
@@ -30,6 +33,9 @@
 	cursor: pointer;
 	font-size: 10px;
 	border-radius: 8px;
+	height: 32px;
+	width: 32px;
+	background-color: #dedede;
 }
 .asd-filtered {
 	top: -2px;
@@ -56,8 +62,8 @@
 	right: -4px;
 	background-color: rgba(0, 0, 0, 0.9);
 	border-radius: 50%;
-	padding: 4px;
-	font-size: 8px;
+	padding: 6px;
+	font-size: 10px;
 	width: 8px;
 	height: 8px;
 	display: flex;
@@ -196,6 +202,7 @@
 }
 
 .asd-c-s-root > div > textarea {
+	outline: none;
 	border-radius: 8px;
 }
 
