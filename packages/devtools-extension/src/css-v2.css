@@ -1,6 +1,39 @@
-#async-states-devtools * {
+:root {
+	--asd-bg: #242424;
+	--asd-color: #F5F5F5;
+	--asd-border: transparent;
+	--asd-contorl-color: black;
+	--asd-resizer-bg: black;
 }
 
+@media (prefers-color-scheme: light) {
+	:root {
+		--asd-bg: #F5F5F5;
+		--asd-color: #242424;
+		--asd-border: #242424;
+		--asd-contorl-color: black;
+		--asd-resizer-bg: black;
+	}
+}
+
+.asd-root {
+	padding-top: 4px;
+	display: flex;
+	background-color: var(--asd-bg);
+	color: var(--asd-color);
+	height: 100%;
+	width: 100%;
+	z-index: 99999999;
+}
+.asd-side {
+	width: 250px;
+	padding: 4px;
+	border-right: 1px dashed var(--asd-color);
+}
+.asd-view {
+	padding: 4px;
+	width: calc(100% - 250px);
+}
 .asd-i-list {
 	display: flex;
 	flex-direction: column;
@@ -9,7 +42,7 @@
 	padding: 0;
 }
 .asd-i-item {
-	border: none;
+	border: 1px solid var(--asd-border);
 	height: 32px;
 	cursor: pointer;
 	position: relative;
@@ -19,7 +52,6 @@
 	align-items: center;
 }
 .asd-i-item-filter {
-	border: none;
 	height: 32px;
 	padding: 0px 8px;
 	border-radius: 8px;
@@ -27,6 +59,8 @@
 	flex: 1;
 	outline: none;
 	align-items: center;
+	border: 1px solid var(--asd-color);
+	color: var(--asd-contorl-color);
 }
 .asd-filter-form button {
 	border: none;
@@ -88,24 +122,6 @@
 	background-color: #17a449;
 }
 
-.asd-root {
-	padding-top: 4px;
-	display: flex;
-	background-color: #242424;
-	color: white;
-	height: 100%;
-	width: 100%;
-	z-index: 99999999;
-}
-.asd-side {
-	width: 250px;
-	padding: 4px;
-	border-right: 1px dashed white;
-}
-.asd-view {
-	padding: 4px;
-	width: calc(100% - 250px);
-}
 .asd-i-current {
 	text-decoration: underline;
 }
@@ -143,7 +159,7 @@
 	width: 100%;
 	display: flex;
 	flex-direction: row;
-	color: white;
+	color: var(--asd-color);
 	gap: 8px;
 	align-items: center;
 }
@@ -189,7 +205,7 @@
 }
 
 .asd-c-s-root > div {
-	color: white;
+	color: var(--asd-color);
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
@@ -199,17 +215,20 @@
 	outline: none;
 	height: 24px;
 	border-radius: 8px;
+	color: var(--asd-contorl-color);
 }
 
 .asd-c-s-root > div > textarea {
 	outline: none;
 	border-radius: 8px;
+	color: var(--asd-contorl-color);
 }
 
 .asd-c-s-prev {
 	width: 100%;
 	height: 24px;
 	border-radius: 8px;
+	color: var(--asd-contorl-color);
 }
 
 .asd-c-s-btn {
@@ -226,4 +245,15 @@
 }
 .asd-c-s-a {
 	margin-top: 8px;
+}
+
+.resizer {
+	z-index: 9999;
+	position: absolute;
+	top: 0;
+	width: 100%;
+	height: 4px;
+	background-color: var(--asd-resizer-bg);
+	cursor: row-resize;
+	transition: all 200ms ease;
 }
