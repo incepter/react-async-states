@@ -1,8 +1,5 @@
-import type { DevtoolsAgent } from "async-states/dist/es/src/devtools/v2/v2";
-import { devtools } from "async-states/dist/es/src/devtools/v2/v2";
-import type { Status } from "async-states/dist/es/src/enums";
-import type { StateInterface } from "async-states/dist/es/types";
-import { AsyncState } from "async-states/dist/es/src/AsyncState";
+import type { DevtoolsAgent, StateInterface, Status } from "async-states";
+import { AsyncState, devtools } from "async-states";
 import { devtoolsSubscriptionKey } from "./constants";
 
 export type SingleInstanceInfo = {

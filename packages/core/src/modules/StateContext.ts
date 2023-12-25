@@ -2,7 +2,7 @@ import { freeze } from "../helpers/core";
 import { LibraryContext, StateInterface } from "../types";
 import { version } from "../../package.json";
 import { __DEV__ } from "../utils";
-import { devtools } from "../devtools/v2/v2";
+import devtools from "../devtools/Devtools";
 
 let libraryVersion = freeze({
 	version,

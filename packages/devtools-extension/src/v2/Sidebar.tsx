@@ -6,7 +6,7 @@ import { useData } from "react-async-states";
 export function DevtoolsSideBar() {
 	let devtools = useDevtoolsAgent();
 	let [query, setQuery] = React.useState("");
-	let { data } = useData(devtools.info.actions);
+	let { data, state } = useData(devtools.info.actions);
 	let { data: currentInstance } = useData(devtools.current.actions);
 
 	let filteredInstances = React.useMemo(
