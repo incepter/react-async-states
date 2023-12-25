@@ -196,12 +196,18 @@ const ChangeState = React.memo(function ChangeState({
 	instance: AnyInstance;
 }) {
 	let [status, setStatus] = React.useState<Status>("success");
-	let [data, setData] = React.useState<any>("");
+	let textAreaRef = React.useRef<HTMLTextAreaElement>();
 
 	let previousJournalOptions = instance.journal
 		.map((t, id) => ({ ev: t, id }))
 		?.filter((t) => t.ev.type === "update" && !!t.ev.payload.next.data);
 	let hasPreviousData = previousJournalOptions.length > 0;
+	React.useEffect(() => {
+		if (instance.lastSuccess.data) {
+			textAreaRef.current.value = stringifyData(instance.lastSuccess.data);
+		}
+	}, [instance]);
+
 	return (
 		<div className="asd-c-s-root">
 			<div>
@@ -217,11 +223,7 @@ const ChangeState = React.memo(function ChangeState({
 			</div>
 			<div>
 				<label>Data (JSON)</label>
-				<textarea
-					rows={4}
-					value={data}
-					onChange={(e) => setData(e.target.value)}
-				></textarea>
+				<textarea rows={8} ref={textAreaRef}></textarea>
 			</div>
 
 			{hasPreviousData && (
@@ -229,21 +231,25 @@ const ChangeState = React.memo(function ChangeState({
 					<details open>
 						<summary>Fill from previous state</summary>
 						<select
-							defaultValue="aa"
+							defaultValue=""
 							className="asd-c-s-prev"
 							onChange={(e) => {
 								let id = +e.target.value;
 								let target = instance.journal![id];
 								if (id > 0 && target) {
 									try {
-										setData(JSON.stringify(target.payload.next.data));
+										textAreaRef.current.value = stringifyData(
+											target.payload.next.data
+										);
 									} catch (e) {
 										console.log("Cannot stringify state", e);
 									}
 								}
 							}}
 						>
-							<option></option>
+							<option value="">
+								-- select --
+							</option>
 							{instance.journal
 								.map((t, id) => ({ ev: t, id }))
 								?.filter(
@@ -259,15 +265,15 @@ const ChangeState = React.memo(function ChangeState({
 					</details>
 				</div>
 			)}
-			<div>
+			<div className="asd-c-s-a" style={{ flexDirection: "row" }}>
 				<button
 					className="asd-c-s-btn"
 					onClick={() => {
-						let dataToUse = JSON.parse(data);
+						let dataToUse = JSON.parse(textAreaRef.current.value);
 						instance.actions.setState(dataToUse, status);
 					}}
 				>
-					Change
+					Set State
 				</button>
 				<button
 					className="asd-c-s-btn"
@@ -277,6 +283,9 @@ const ChangeState = React.memo(function ChangeState({
 				>
 					Set pending
 				</button>
+				<button className="asd-c-s-btn" onClick={() => close()}>
+					Close
+				</button>
 			</div>
 		</div>
 	);
@@ -284,7 +293,7 @@ const ChangeState = React.memo(function ChangeState({
 
 function stringifyData(data: any): string {
 	try {
-		return JSON.stringify(data);
+		return JSON.stringify(data, null, 2);
 	} catch (e) {
 		return "Error stringifying data";
 	}
