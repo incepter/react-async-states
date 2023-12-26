@@ -1,21 +1,13 @@
-import {__DEV__} from "./utils";
+import { __DEV__ } from "./utils";
 
-export function DevtoolsViewLib() {
-  if (!__DEV__) {
-    return null;
-  }
+export function Devtools() {
+	if (!__DEV__) {
+		return null;
+	}
 }
-
-
-export function AutoConfiguredDevtools() {
-  if (!__DEV__) {
-    return null;
-  }
-}
-
 
 export function autoConfigureDevtools(props?: { open?: boolean }) {
-  if (!__DEV__) {
-    return;
-  }
+	if (!__DEV__) {
+		return;
+	}
 }

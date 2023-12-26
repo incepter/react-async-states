@@ -36,17 +36,15 @@ export function subscribeToInstance<T, A extends unknown[], E>(
 
 	function cleanup() {
 		delete instance.subscriptions![subscriptionKey!];
-		if (__DEV__) devtools.emitUnsubscription(instance, subscriptionKey!);
+		if (__DEV__) devtools.emitUnsub(instance, subscriptionKey!);
 		if (instance.config.resetStateOnDispose) {
-			if (Object.values(instance.subscriptions!).length === 0) {
-				instance.actions.dispose();
-			}
+			instance.actions.dispose();
 		}
 	}
 
 	instance.subscriptions[subscriptionKey] = { props, cleanup };
 
-	if (__DEV__) devtools.emitSubscription(instance, subscriptionKey);
+	if (__DEV__) devtools.emitSub(instance, subscriptionKey);
 	return cleanup;
 }
 export function subscribeToInstanceEvent<T, A extends unknown[], E>(

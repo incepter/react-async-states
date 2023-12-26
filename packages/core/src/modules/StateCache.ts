@@ -147,6 +147,7 @@ export function saveCacheAfterSuccessfulUpdate<T, A extends unknown[], E>(
 
 
 				delete topLevelParentCache[runHash];
+				// todo: dispatch cache change event
 
 				// only refresh the cached state if:
 				// - we have subscriptions

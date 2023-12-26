@@ -1,6 +1,8 @@
-import {freeze} from "../helpers/core";
-import {LibraryContext, StateInterface} from "../types";
-import {version} from "../../package.json";
+import { freeze } from "../helpers/core";
+import { LibraryContext, StateInterface } from "../types";
+import { version } from "../../package.json";
+import { __DEV__ } from "../utils";
+import devtools from "../devtools/Devtools";
 
 let libraryVersion = freeze({
 	version,
@@ -14,7 +16,7 @@ let globalContext = createContext(globalContextKey);
 function createNewContext(arg: any): LibraryContext {
 	let instances = new Map<string, StateInterface<any, any, any>>();
 
-	return freeze({
+	let createdContext = freeze({
 		ctx: arg,
 		version: libraryVersion,
 
@@ -32,8 +34,10 @@ function createNewContext(arg: any): LibraryContext {
 		},
 		terminate() {
 			instances = new Map<string, StateInterface<any, any, any>>();
-		}
+		},
 	});
+	if (__DEV__) devtools.captureContext(createdContext);
+	return createdContext;
 }
 
 export function createContext(arg: any): LibraryContext {
@@ -88,6 +92,7 @@ export function terminateContext(arg: any): boolean {
 
 	// this will un-reference all instances from the context
 	desiredContext.terminate();
+	if (__DEV__) devtools.releaseContext(desiredContext);
 	return contexts.delete(arg);
 }
 

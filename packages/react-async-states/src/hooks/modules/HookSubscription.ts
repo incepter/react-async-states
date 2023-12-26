@@ -301,6 +301,7 @@ function removeHookConfigToPatchToSource<T, A extends unknown[], E, S>(
 	delete output.payload;
 	delete output.concurrent;
 	delete output.autoRunArgs;
+	delete output.subscriptionKey;
 
 	return output;
 }
