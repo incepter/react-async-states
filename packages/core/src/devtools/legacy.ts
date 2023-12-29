@@ -40,30 +40,30 @@ interface DevtoolsInterface {
     subscriptionKey: string
   );
 
-  emitRunSync<T, A extends unknown[], E>(
-    instance: StateInterface<T, A, E>,
-    props: ProducerSavedProps<T, A>
+  emitRunSync<TData, TArgs extends unknown[], TError>(
+    instance: StateInterface<TData, TArgs, TError>,
+    props: ProducerSavedProps<TData, TArgs>
   ): void;
 
-  emitRunPromise<T, A extends unknown[], E>(
-    instance: StateInterface<T, A, E>,
-    props: ProducerSavedProps<T, A>
+  emitRunPromise<TData, TArgs extends unknown[], TError>(
+    instance: StateInterface<TData, TArgs, TError>,
+    props: ProducerSavedProps<TData, TArgs>
   ): void;
 
-  emitRunGenerator<T, A extends unknown[], E>(
-    instance: StateInterface<T, A, E>,
-    props: ProducerSavedProps<T, A>
+  emitRunGenerator<TData, TArgs extends unknown[], TError>(
+    instance: StateInterface<TData, TArgs, TError>,
+    props: ProducerSavedProps<TData, TArgs>
   ): void;
 
-  emitReplaceState<T, A extends unknown[], E>(
-    instance: StateInterface<T, A, E>,
-    props: ProducerSavedProps<T, A>
+  emitReplaceState<TData, TArgs extends unknown[], TError>(
+    instance: StateInterface<TData, TArgs, TError>,
+    props: ProducerSavedProps<TData, TArgs>
   ): void;
 
-  emitRunConsumedFromCache<T, A extends unknown[], E>(
-    instance: StateInterface<T, A, E>,
+  emitRunConsumedFromCache<TData, TArgs extends unknown[], TError>(
+    instance: StateInterface<TData, TArgs, TError>,
     payload: Record<string, any> | undefined | null,
-    args: A
+    args: TArgs
   ): void;
 }
 
@@ -185,7 +185,7 @@ function createDevtools(): DevtoolsInterface {
               o[k] = _build(k, v, a ? depth : depth - 1);
             }
           }),
-        o || (a ? [] : {}));
+          o || (a ? [] : {}));
     }
 
     return JSON.stringify(_build("", val, depth));
@@ -254,20 +254,20 @@ function createDevtools(): DevtoolsInterface {
         uniqueId: asyncState.id,
         lastSuccess: asyncState.lastSuccess,
         subscriptions: (asyncState.subscriptions
-            ? Object.values(asyncState.subscriptions)
-            : []
+          ? Object.values(asyncState.subscriptions)
+          : []
         ).map(mapSubscriptionToDevtools),
         lanes: asyncState.lanes
           ? Object.keys(asyncState.lanes).map((key) => ({
-            uniqueId: asyncState.lanes![key].id,
-            key,
-          }))
+              uniqueId: asyncState.lanes![key].id,
+              key,
+            }))
           : [],
         parent: asyncState.parent
           ? {
-            key: asyncState.parent?.key,
-            uniqueId: asyncState.parent?.id,
-          }
+              key: asyncState.parent?.key,
+              uniqueId: asyncState.parent?.id,
+            }
           : null,
       },
       type: DevtoolsEvent.setAsyncState,

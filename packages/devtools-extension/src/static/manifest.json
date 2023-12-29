@@ -1,11 +1,11 @@
 {
-  "manifest_version" : 3,
-  "name" : "React Async States Dev Tools",
-  "version" : "0.1",
-  "description" : "Developer tools for react-async-states",
-  "author" : "INCEPTER",
+  "manifest_version": 3,
+  "name": "React Async States Dev Tools",
+  "version": "0.1",
+  "description": "Developer tools for react-async-states",
+  "author": "INCEPTER",
 
-  "devtools_page" : "index.html",
+  "devtools_page": "index.html",
 
   "background": {
     "service_worker": "background.js"
@@ -15,12 +15,8 @@
   },
   "content_scripts": [
     {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "contentScript.js"
-      ],
+      "matches": ["<all_urls>"],
+      "js": ["contentScript.js"],
       "run_at": "document_start"
     }
   ]

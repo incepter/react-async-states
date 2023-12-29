@@ -1,6 +1,6 @@
 export function mockDateNow() {
   beforeEach(() => {
-    dateNowSpy = jest.spyOn(Date, 'now').mockImplementation(() => TESTS_TS);
+    dateNowSpy = jest.spyOn(Date, "now").mockImplementation(() => TESTS_TS);
   });
 
   afterEach(() => {

@@ -1,7 +1,7 @@
-import {defineConfig} from 'vite'
-import copy from 'rollup-plugin-copy'
-import react from '@vitejs/plugin-react'
-import vitePluginImp from 'vite-plugin-imp'
+import { defineConfig } from "vite";
+import copy from "rollup-plugin-copy";
+import react from "@vitejs/plugin-react";
+import vitePluginImp from "vite-plugin-imp";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -18,13 +18,13 @@ export default defineConfig({
     }),
     // @ts-ignore
     copy({
-      hook: 'closeBundle',
+      hook: "closeBundle",
       targets: [
         {
-          dest: 'dist/',
+          dest: "dist/",
           src: `src/static/*`,
         },
-      ]
+      ],
     }),
   ],
   css: {
@@ -35,9 +35,6 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: [
-      {find: /^~/, replacement: ""},
-    ],
+    alias: [{ find: /^~/, replacement: "" }],
   },
 });
-

@@ -1,31 +1,37 @@
-import dts from 'vite-plugin-dts'
-import {defineConfig} from 'vite'
-import replace from '@rollup/plugin-replace'
+import dts from "vite-plugin-dts";
+import { defineConfig } from "vite";
+import replace from "@rollup/plugin-replace";
 
-import react from '@vitejs/plugin-react'
-import vitePluginImp from 'vite-plugin-imp'
+import react from "@vitejs/plugin-react";
+import vitePluginImp from "vite-plugin-imp";
 
 // https://vitejs.dev/config/
 export default defineConfig({
   build: {
     minify: false,
     lib: {
-      name: 'Devtools',
-      entry: 'src/index.tsx',
-      formats: ['es', 'umd'],
-      fileName: 'index.development'
+      name: "Devtools",
+      entry: "src/index.tsx",
+      formats: ["es", "umd"],
+      fileName: "index.development",
     },
     rollupOptions: {
-      external: ['react', 'react/jsx-runtime', 'react-dom', 'react-async-states', 'async-states'],
+      external: [
+        "react",
+        "react/jsx-runtime",
+        "react-dom",
+        "react-async-states",
+        "async-states",
+      ],
       output: {
         globals: {
-          react: 'React',
-          'react-dom': 'ReactDOM',
-          'async-states': 'AsyncStates',
-          'react/jsx-runtime': 'jsxRuntime',
-          'react-async-states': 'ReactAsyncStates',
-        }
-      }
+          react: "React",
+          "react-dom": "ReactDOM",
+          "async-states": "AsyncStates",
+          "react/jsx-runtime": "jsxRuntime",
+          "react-async-states": "ReactAsyncStates",
+        },
+      },
     },
   },
 
@@ -50,8 +56,6 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: [
-      {find: /^~/, replacement: ""},
-    ],
+    alias: [{ find: /^~/, replacement: "" }],
   },
-})
+});

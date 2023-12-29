@@ -1,55 +1,69 @@
-import { LastSuccessSavedState, StateInterface } from "../types";
+import {
+  LastSuccessSavedState,
+  ProducerSavedProps,
+  StateInterface,
+} from "../types";
 import { loadCache } from "./StateCache";
 import { attemptHydratedState } from "./StateHydration";
-import {initial, pending, success} from "../enums";
+import { initial, pending, success } from "../enums";
 import { isFunction } from "../utils";
-import { now } from "../helpers/core";
+import { now, shallowClone } from "../helpers/core";
 
-export function initializeInstance<T, A extends unknown[], E>(
-	instance: StateInterface<T, A, E>
+export function initializeInstance<TData, TArgs extends unknown[], TError>(
+  instance: StateInterface<TData, TArgs, TError>
 ) {
-	loadCache(instance);
+  loadCache(instance);
 
-	let maybeHydratedState = attemptHydratedState<T, A, E>(instance.key);
+  let maybeHydratedState = attemptHydratedState<TData, TArgs, TError>(
+    instance.key
+  );
 
-	if (maybeHydratedState) {
-		instance.state = maybeHydratedState.state;
-		instance.payload = maybeHydratedState.payload;
-		instance.latestRun = maybeHydratedState.latestRun;
+  if (maybeHydratedState) {
+    instance.state = maybeHydratedState.state;
+    instance.payload = maybeHydratedState.payload;
+    instance.latestRun = maybeHydratedState.latestRun;
 
-		if (instance.state.status === success) {
-			instance.lastSuccess = instance.state;
-		} else {
-			let initializer = instance.config.initialValue;
-			let initialData = isFunction(initializer)
-				? initializer(instance.cache)
-				: initializer;
+    if (instance.state.status === success) {
+      instance.lastSuccess = instance.state;
+    } else {
+      let initializer = instance.config.initialValue;
+      let initialData = isFunction(initializer)
+        ? initializer(instance.cache)
+        : initializer;
 
-			instance.lastSuccess = {
-				props: null,
-				timestamp: now(),
-				data: initialData,
-				status: initial,
-			};
+      let savedInitialProps = {
+        args: [initialData],
+        payload: shallowClone(instance.payload),
+      } as ProducerSavedProps<TData, TArgs>;
+      instance.lastSuccess = {
+        status: initial,
+        data: initialData,
+        timestamp: now(),
+        props: savedInitialProps,
+      };
 
-			if (maybeHydratedState.state.status === pending) {
-				instance.promise = new Promise(() => {});
-			}
-		}
-	} else {
-		let initializer = instance.config.initialValue;
-		let initialData = isFunction(initializer)
-			? initializer(instance.cache)
-			: (initializer as T);
+      if (maybeHydratedState.state.status === pending) {
+        instance.promise = new Promise(() => {});
+      }
+    }
+  } else {
+    let initializer = instance.config.initialValue;
+    let initialData = isFunction(initializer)
+      ? initializer(instance.cache)
+      : (initializer as TData);
 
-		let initialState = {
-			props: null,
-			timestamp: now(),
-			data: initialData,
-			status: initial,
-		};
+    let savedInitialProps = {
+      args: [initialData],
+      payload: shallowClone(instance.payload),
+    } as ProducerSavedProps<TData, TArgs>;
+    let initialState = {
+      status: initial,
+      data: initialData,
+      timestamp: now(),
+      props: savedInitialProps,
+    };
 
-		instance.state = initialState;
-		instance.lastSuccess = initialState as LastSuccessSavedState<T, A>;
-	}
+    instance.state = initialState;
+    instance.lastSuccess = initialState as LastSuccessSavedState<TData, TArgs>;
+  }
 }

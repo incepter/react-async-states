@@ -7,212 +7,212 @@ import { createSource } from "async-states";
 mockDateNow();
 
 describe("subscribe to lane and operate on it", () => {
-	let intervalIds: ReturnType<typeof setInterval>[] = [];
-	afterEach(() => {
-		intervalIds.forEach((id) => clearInterval(id));
-		intervalIds = [];
-	});
+  let intervalIds: ReturnType<typeof setInterval>[] = [];
+  afterEach(() => {
+    intervalIds.forEach((id) => clearInterval(id));
+    intervalIds = [];
+  });
 
-	function countersProducer(props) {
-		let intervalId = setInterval(() => props.emit((old) => old.data + 1), 1000);
-		intervalIds.push(intervalId);
-		props.onAbort(() => clearInterval(intervalId));
-		return props.lastSuccess.data;
-	}
+  function countersProducer(props) {
+    let intervalId = setInterval(() => props.emit((old) => old.data + 1), 1000);
+    intervalIds.push(intervalId);
+    props.onAbort(() => clearInterval(intervalId));
+    return props.lastSuccess.data;
+  }
 
-	const countersSource = createSource("counters", countersProducer, {
-		initialValue: 0,
-	});
+  const countersSource = createSource("counters", countersProducer, {
+    initialValue: 0,
+  });
 
-	function LanesIntervalDemo() {
-		return (
-			<div>
-				<CounterSub />
-				<CounterSub alias="1" />
-				<CounterSub counterKey="counter-3" />
-				<CounterSub counterKey="counter-4" />
-				<CounterSub counterKey="counter-2-extra" />
-				<CounterSub alias="1" counterKey="counter-1" />
-				<CounterSub alias="2" counterKey="counter-2" />
-			</div>
-		);
-	}
+  function LanesIntervalDemo() {
+    return (
+      <div>
+        <CounterSub />
+        <CounterSub alias="1" />
+        <CounterSub counterKey="counter-3" />
+        <CounterSub counterKey="counter-4" />
+        <CounterSub counterKey="counter-2-extra" />
+        <CounterSub alias="1" counterKey="counter-1" />
+        <CounterSub alias="2" counterKey="counter-2" />
+      </div>
+    );
+  }
 
-	function CounterSub({ counterKey = "default", alias = "default" }) {
-		const {
-			state: { data },
-			source: { run },
-		} = useAsync({
-			lane: counterKey,
-			subscriptionKey: alias,
-			source: countersSource,
-		});
-		let formattedData = `counter-${counterKey}-${alias}-${data}`;
+  function CounterSub({ counterKey = "default", alias = "default" }) {
+    const {
+      state: { data },
+      source: { run },
+    } = useAsync({
+      lane: counterKey,
+      subscriptionKey: alias,
+      source: countersSource,
+    });
+    let formattedData = `counter-${counterKey}-${alias}-${data}`;
 
-		return (
-			<div>
-				<button
-					data-testid={`counter-sub-${counterKey}-${alias}-run`}
-					onClick={() => run()}
-				>
-					Run
-				</button>
-				<span data-testid={`counter-sub-${counterKey}-${alias}-data`}>
-					{formattedData}
-				</span>
-			</div>
-		);
-	}
+    return (
+      <div>
+        <button
+          data-testid={`counter-sub-${counterKey}-${alias}-run`}
+          onClick={() => run()}
+        >
+          Run
+        </button>
+        <span data-testid={`counter-sub-${counterKey}-${alias}-data`}>
+          {formattedData}
+        </span>
+      </div>
+    );
+  }
 
-	it("should subscribe to lane and operate on it", async () => {
-		// given
-		jest.useFakeTimers();
-		// when
-		render(
-			<React.StrictMode>
-				<LanesIntervalDemo />
-			</React.StrictMode>
-		);
+  it("should subscribe to lane and operate on it", async () => {
+    // given
+    jest.useFakeTimers();
+    // when
+    render(
+      <React.StrictMode>
+        <LanesIntervalDemo />
+      </React.StrictMode>
+    );
 
-		// then
-		// counter-{counterKey}-{alias}-{data}
-		expect(
-			screen.getByTestId("counter-sub-default-default-data").innerHTML
-		).toEqual("counter-default-default-0");
-		expect(screen.getByTestId("counter-sub-default-1-data").innerHTML).toEqual(
-			"counter-default-1-0"
-		);
-		expect(
-			screen.getByTestId("counter-sub-counter-3-default-data").innerHTML
-		).toEqual("counter-counter-3-default-0");
-		expect(
-			screen.getByTestId("counter-sub-counter-4-default-data").innerHTML
-		).toEqual("counter-counter-4-default-0");
-		expect(
-			screen.getByTestId("counter-sub-counter-1-1-data").innerHTML
-		).toEqual("counter-counter-1-1-0");
-		expect(
-			screen.getByTestId("counter-sub-counter-2-2-data").innerHTML
-		).toEqual("counter-counter-2-2-0");
+    // then
+    // counter-{counterKey}-{alias}-{data}
+    expect(
+      screen.getByTestId("counter-sub-default-default-data").innerHTML
+    ).toEqual("counter-default-default-0");
+    expect(screen.getByTestId("counter-sub-default-1-data").innerHTML).toEqual(
+      "counter-default-1-0"
+    );
+    expect(
+      screen.getByTestId("counter-sub-counter-3-default-data").innerHTML
+    ).toEqual("counter-counter-3-default-0");
+    expect(
+      screen.getByTestId("counter-sub-counter-4-default-data").innerHTML
+    ).toEqual("counter-counter-4-default-0");
+    expect(
+      screen.getByTestId("counter-sub-counter-1-1-data").innerHTML
+    ).toEqual("counter-counter-1-1-0");
+    expect(
+      screen.getByTestId("counter-sub-counter-2-2-data").innerHTML
+    ).toEqual("counter-counter-2-2-0");
 
-		const runDefaultCounter = screen.getByTestId(
-			"counter-sub-default-default-run"
-		);
-		const runCounter1 = screen.getByTestId("counter-sub-counter-1-1-run");
+    const runDefaultCounter = screen.getByTestId(
+      "counter-sub-default-default-run"
+    );
+    const runCounter1 = screen.getByTestId("counter-sub-counter-1-1-run");
 
-		// then
-		act(() => {
-			fireEvent.click(runDefaultCounter);
-		});
+    // then
+    act(() => {
+      fireEvent.click(runDefaultCounter);
+    });
 
-		await act(async () => {
-			await jest.advanceTimersByTime(1000);
-		});
+    await act(async () => {
+      await jest.advanceTimersByTime(1000);
+    });
 
-		// then
-		// counter-{counterKey}-{alias}-{data}
-		expect(
-			screen.getByTestId("counter-sub-default-default-data").innerHTML
-		).toEqual("counter-default-default-1");
-		expect(screen.getByTestId("counter-sub-default-1-data").innerHTML).toEqual(
-			"counter-default-1-1"
-		);
-		expect(
-			screen.getByTestId("counter-sub-counter-1-1-data").innerHTML
-		).toEqual("counter-counter-1-1-0"); // was not ran
-		expect(
-			screen.getByTestId("counter-sub-counter-2-2-data").innerHTML
-		).toEqual("counter-counter-2-2-0");
+    // then
+    // counter-{counterKey}-{alias}-{data}
+    expect(
+      screen.getByTestId("counter-sub-default-default-data").innerHTML
+    ).toEqual("counter-default-default-1");
+    expect(screen.getByTestId("counter-sub-default-1-data").innerHTML).toEqual(
+      "counter-default-1-1"
+    );
+    expect(
+      screen.getByTestId("counter-sub-counter-1-1-data").innerHTML
+    ).toEqual("counter-counter-1-1-0"); // was not ran
+    expect(
+      screen.getByTestId("counter-sub-counter-2-2-data").innerHTML
+    ).toEqual("counter-counter-2-2-0");
 
-		act(() => {
-			fireEvent.click(runCounter1);
-		});
+    act(() => {
+      fireEvent.click(runCounter1);
+    });
 
-		await act(async () => {
-			await jest.advanceTimersByTime(3000);
-		});
+    await act(async () => {
+      await jest.advanceTimersByTime(3000);
+    });
 
-		// then
-		// counter-{counterKey}-{alias}-{data}
-		expect(
-			screen.getByTestId("counter-sub-default-default-data").innerHTML
-		).toEqual("counter-default-default-4");
-		expect(screen.getByTestId("counter-sub-default-1-data").innerHTML).toEqual(
-			"counter-default-1-4"
-		);
-		expect(
-			screen.getByTestId("counter-sub-counter-1-1-data").innerHTML
-		).toEqual("counter-counter-1-1-3");
-		expect(
-			screen.getByTestId("counter-sub-counter-2-2-data").innerHTML
-		).toEqual("counter-counter-2-2-0");
-		expect(
-			screen.getByTestId("counter-sub-counter-3-default-data").innerHTML
-		).toEqual("counter-counter-3-default-0"); // not ran
-		expect(
-			screen.getByTestId("counter-sub-counter-4-default-data").innerHTML
-		).toEqual("counter-counter-4-default-0"); // not ran
+    // then
+    // counter-{counterKey}-{alias}-{data}
+    expect(
+      screen.getByTestId("counter-sub-default-default-data").innerHTML
+    ).toEqual("counter-default-default-4");
+    expect(screen.getByTestId("counter-sub-default-1-data").innerHTML).toEqual(
+      "counter-default-1-4"
+    );
+    expect(
+      screen.getByTestId("counter-sub-counter-1-1-data").innerHTML
+    ).toEqual("counter-counter-1-1-3");
+    expect(
+      screen.getByTestId("counter-sub-counter-2-2-data").innerHTML
+    ).toEqual("counter-counter-2-2-0");
+    expect(
+      screen.getByTestId("counter-sub-counter-3-default-data").innerHTML
+    ).toEqual("counter-counter-3-default-0"); // not ran
+    expect(
+      screen.getByTestId("counter-sub-counter-4-default-data").innerHTML
+    ).toEqual("counter-counter-4-default-0"); // not ran
 
-		// now, let's run counter-3
+    // now, let's run counter-3
 
-		act(() => {
-			countersSource.getLane("counter-3").run();
-		});
+    act(() => {
+      countersSource.getLane("counter-3").run();
+    });
 
-		await act(async () => {
-			await jest.advanceTimersByTime(1000);
-		});
+    await act(async () => {
+      await jest.advanceTimersByTime(1000);
+    });
 
-		// counter-{counterKey}-{alias}-{data}
-		expect(
-			screen.getByTestId("counter-sub-counter-3-default-data").innerHTML
-		).toEqual("counter-counter-3-default-1");
-		expect(
-			screen.getByTestId("counter-sub-counter-4-default-data").innerHTML
-		).toEqual("counter-counter-4-default-0");
+    // counter-{counterKey}-{alias}-{data}
+    expect(
+      screen.getByTestId("counter-sub-counter-3-default-data").innerHTML
+    ).toEqual("counter-counter-3-default-1");
+    expect(
+      screen.getByTestId("counter-sub-counter-4-default-data").innerHTML
+    ).toEqual("counter-counter-4-default-0");
 
-		act(() => {
-			countersSource.getLane("counter-4").run();
-		});
+    act(() => {
+      countersSource.getLane("counter-4").run();
+    });
 
-		await act(async () => {
-			await jest.advanceTimersByTime(1000);
-		});
+    await act(async () => {
+      await jest.advanceTimersByTime(1000);
+    });
 
-		// counter-{counterKey}-{alias}-{data}
-		expect(
-			screen.getByTestId("counter-sub-counter-3-default-data").innerHTML
-		).toEqual("counter-counter-3-default-2");
-		expect(
-			screen.getByTestId("counter-sub-counter-4-default-data").innerHTML
-		).toEqual("counter-counter-4-default-1");
+    // counter-{counterKey}-{alias}-{data}
+    expect(
+      screen.getByTestId("counter-sub-counter-3-default-data").innerHTML
+    ).toEqual("counter-counter-3-default-2");
+    expect(
+      screen.getByTestId("counter-sub-counter-4-default-data").innerHTML
+    ).toEqual("counter-counter-4-default-1");
 
-		// now let's run lanes from producers
+    // now let's run lanes from producers
 
-		// counter-{counterKey}-{alias}-{data}
-		expect(
-			screen.getByTestId("counter-sub-counter-2-2-data").innerHTML
-		).toEqual("counter-counter-2-2-0");
-		expect(
-			screen.getByTestId("counter-sub-counter-2-extra-default-data").innerHTML
-		).toEqual("counter-counter-2-extra-default-0");
-		act(() => {
-			createSource("temporary-will-run-counter-2", async function (props) {
-				countersSource.getLane("counter-2-extra").run();
-				countersSource.getLane("counter-2").runp();
-			}).run();
-		});
+    // counter-{counterKey}-{alias}-{data}
+    expect(
+      screen.getByTestId("counter-sub-counter-2-2-data").innerHTML
+    ).toEqual("counter-counter-2-2-0");
+    expect(
+      screen.getByTestId("counter-sub-counter-2-extra-default-data").innerHTML
+    ).toEqual("counter-counter-2-extra-default-0");
+    act(() => {
+      createSource("temporary-will-run-counter-2", async function (props) {
+        countersSource.getLane("counter-2-extra").run();
+        countersSource.getLane("counter-2").runp();
+      }).run();
+    });
 
-		await act(async () => {
-			await jest.advanceTimersByTime(1000);
-		});
+    await act(async () => {
+      await jest.advanceTimersByTime(1000);
+    });
 
-		// counter-{counterKey}-{alias}-{data}
-		expect(
-			screen.getByTestId("counter-sub-counter-2-2-data").innerHTML
-		).toEqual("counter-counter-2-2-1");
-		expect(
-			screen.getByTestId("counter-sub-counter-2-extra-default-data").innerHTML
-		).toEqual("counter-counter-2-extra-default-1");
-	});
+    // counter-{counterKey}-{alias}-{data}
+    expect(
+      screen.getByTestId("counter-sub-counter-2-2-data").innerHTML
+    ).toEqual("counter-counter-2-2-1");
+    expect(
+      screen.getByTestId("counter-sub-counter-2-extra-default-data").innerHTML
+    ).toEqual("counter-counter-2-extra-default-1");
+  });
 });

@@ -1,8 +1,8 @@
 import { Source } from "../types";
 import { StateSource } from "../AsyncState";
 
-export function isSource<T, A extends unknown[], E>(
-	maybeSource: any
-): maybeSource is Source<T, A, E> {
-	return maybeSource instanceof StateSource;
+export function isSource<TData, TArgs extends unknown[], TError>(
+  maybeSource: any
+): maybeSource is Source<TData, TArgs, TError> {
+  return maybeSource instanceof StateSource;
 }

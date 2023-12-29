@@ -12,37 +12,37 @@ let freeze = Object.freeze
 type TX = {}
 export let JT: TX = {} as const
 
-export type DefaultFn<D, A extends unknown[], E> = Producer<D, A, E>
-export type ExtendedFn<D, A extends unknown[], E> =
-  DefaultFn<D, A, E>
+export type DefaultFn<D, TArgs extends unknown[], TError> = Producer<D, TArgs, TError>
+export type ExtendedFn<D, TArgs extends unknown[], TError> =
+  DefaultFn<D, TArgs, TError>
   | typeof JT
 
-export interface Api<T extends unknown, A extends unknown[], E extends unknown> {
+export interface Api<TData extends unknown, TArgs extends unknown[], TError extends unknown> {
 
-  fn: ExtendedFn<T, A, E>,
+  fn: ExtendedFn<TData, TArgs, TError>,
   eager?: boolean,
-  producer?: Producer<T, A, E>,
-  config?: ProducerConfig<T, A, E>
+  producer?: Producer<TData, TArgs, TError>,
+  config?: ProducerConfig<TData, TArgs, TError>
 }
 
 type AppShape = Record<string, Record<string, any>>
 
-export type ApplicationEntry<T extends AppShape> = {
-  [resource in keyof T]: {
-    [api in keyof T[resource]]: Api<
-      T[resource][api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? T : never,
-      T[resource][api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? A : never,
-      T[resource][api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? E : never
+export type ApplicationEntry<S extends AppShape> = {
+  [resource in keyof S]: {
+    [api in keyof S[resource]]: Api<
+      S[resource][api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? T : never,
+      S[resource][api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? A : never,
+      S[resource][api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? E : never
     >
   }
 }
 
-export type Application<T extends AppShape> = {
-  [resource in keyof T]: {
-    [api in keyof T[resource]]: Token<
-      T[resource][api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? T : never,
-      T[resource][api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? A : never,
-      T[resource][api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? E : never
+export type Application<S extends AppShape> = {
+  [resource in keyof S]: {
+    [api in keyof S[resource]]: Token<
+      S[resource][api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? T : never,
+      S[resource][api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? A : never,
+      S[resource][api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? E : never
     >
   }
 }
@@ -98,13 +98,13 @@ function createToken<
   K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? A : never,
   K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? E : never
 > {
-  type T = K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? T : never
-  type E = K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? E : never
-  type A = K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? A : never
+  type TData = K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? T : never
+  type TError = K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? E : never
+  type TArgs = K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? A : never
 
-  type TokenType = Token<T, A, E>
+  type TokenType = Token<TData, TArgs, TError>
 
-  let apiSource: Source<T, A, E> | null = null
+  let apiSource: Source<TData, TArgs, TError> | null = null
   let name = `app__${String(resourceName)}_${String(apiName)}__`
 
   // eagerly create the apiSource
@@ -113,7 +113,7 @@ function createToken<
     if (contextArgToUse !== null) {
       apiConfig = assign({}, apiConfig, {context: contextArgToUse});
     }
-    apiSource = createSource(name, api.producer, apiConfig) as Source<T, A, E>
+    apiSource = createSource(name, api.producer, apiConfig) as Source<TData, TArgs, TError>
   }
 
 
@@ -122,14 +122,14 @@ function createToken<
   token.use = createR18Use(() => apiSource!, resourceName, apiName);
   return token;
 
-  function token(): Source<T, A, E> {
+  function token(): Source<TData, TArgs, TError> {
     ensureSourceIsDefined(apiSource, resourceName, apiName);
     return apiSource!;
   }
 
   function inject(
-    fn: Producer<T, A, E> | null,
-    config?: ProducerConfig<T, A, E>
+    fn: Producer<TData, TArgs, TError> | null,
+    config?: ProducerConfig<TData, TArgs, TError>
   ): TokenType {
     if (!apiSource) {
       let apiConfig = config;
@@ -144,10 +144,10 @@ function createToken<
     return token
   }
 
-  function useHook<S = State<T, A, E>>(
-    config?: UseConfig<T, A, E, S>,
+  function useHook<S = State<TData, TArgs, TError>>(
+    config?: UseConfig<TData, TArgs, TError, S>,
     deps?: unknown[]
-  ): UseAsyncState<T, A, E, S> {
+  ): UseAsyncState<TData, TArgs, TError, S> {
     ensureSourceIsDefined(apiSource, resourceName, apiName);
 
     if (__DEV__) {
@@ -162,30 +162,30 @@ function createToken<
 
 let defaultJT = {fn: JT}
 
-function buildDefaultJT<T, A extends unknown[], E>(): { fn: ExtendedFn<T, A, E> } {
-  return defaultJT as { fn: ExtendedFn<T, A, E> }
+function buildDefaultJT<TData, TArgs extends unknown[], TError>(): { fn: ExtendedFn<TData, TArgs, TError> } {
+  return defaultJT as { fn: ExtendedFn<TData, TArgs, TError> }
 }
 
-export function api<T, A extends unknown[] = [], E = Error>(
-  props?: Omit<Api<T, A, E>, "fn">
-): Api<T, A, E> {
-  return Object.assign({}, props, buildDefaultJT<T, A, E>())
+export function api<TData, TArgs extends unknown[] = [], TError = Error>(
+  props?: Omit<Api<TData, TArgs, TError>, "fn">
+): Api<TData, TArgs, TError> {
+  return Object.assign({}, props, buildDefaultJT<TData, TArgs, TError>())
 }
 
-export type Token<T, A extends unknown[], E> = {
-  (): Source<T, A, E>,
+export type Token<TData, TArgs extends unknown[], TError> = {
+  (): Source<TData, TArgs, TError>,
   inject(
-    fn: Producer<T, A, E>,
-    config?: ProducerConfig<T, A, E>
-  ): Token<T, A, E>
+    fn: Producer<TData, TArgs, TError>,
+    config?: ProducerConfig<TData, TArgs, TError>
+  ): Token<TData, TArgs, TError>
   use(
-    config?: UseConfig<T, A, E>,
+    config?: UseConfig<TData, TArgs, TError>,
     deps?: any[]
-  ): T,
-  useAsyncState<S = State<T, A, E>>(
-    config?: UseConfig<T, A, E, S>,
+  ): TData,
+  useAsyncState<S = State<TData, TArgs, TError>>(
+    config?: UseConfig<TData, TArgs, TError, S>,
     deps?: any[]
-  ): UseAsyncState<T, A, E, S>
+  ): UseAsyncState<TData, TArgs, TError, S>
 }
 
 function ensureSourceIsDefined(source, resourceName, resourceApi) {
@@ -195,17 +195,17 @@ function ensureSourceIsDefined(source, resourceName, resourceApi) {
   }
 }
 
-function createR18Use<T, A extends unknown[], E>(
-  getSource: () => Source<T, A, E>,
+function createR18Use<TData, TArgs extends unknown[], TError>(
+  getSource: () => Source<TData, TArgs, TError>,
   resourceName: string | symbol | number,
   apiName: string | symbol | number
 ): ((
-  config?: UseConfig<T, A, E, State<T, A, E>>,
+  config?: UseConfig<TData, TArgs, TError, State<TData, TArgs, TError>>,
   deps?: any[]
-) => T) {
+) => TData) {
 
   return function useImpl(
-    config?: UseConfig<T, A, E>,
+    config?: UseConfig<TData, TArgs, TError>,
     deps?: any[]
   ) {
     let source = getSource();

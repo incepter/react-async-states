@@ -1,232 +1,257 @@
 import {
-	HookReturnError,
-	HookReturnInitial,
-	HookReturnPending,
-	HookReturnSuccess,
-	HookSubscription,
-	LegacyHookReturn,
-	PartialUseAsyncConfig,
-	UseSelector,
+  HookReturnError,
+  HookReturnInitial,
+  HookReturnPending,
+  HookReturnSuccess,
+  HookSubscription,
+  LegacyHookReturn,
+  PartialUseAsyncConfig,
+  UseSelector,
 } from "../types";
 import { __DEV__, freeze } from "../../shared";
 import {
-	ErrorState,
-	InitialState,
-	LastSuccessSavedState,
-	PendingState,
-	State,
-	StateInterface,
-	SuccessState,
+  ErrorState,
+  InitialState,
+  LastSuccessSavedState,
+  PendingState,
+  State,
+  StateInterface,
+  SuccessState,
 } from "async-states";
 
-export function createSubscriptionLegacyReturn<T, A extends unknown[], E, S>(
-	subscription: HookSubscription<T, A, E, S>,
-	config: PartialUseAsyncConfig<T, A, E, S>
-): LegacyHookReturn<T, A, E, S> {
-	let currentStatus = subscription.instance.state.status;
+export function createSubscriptionLegacyReturn<
+  TData,
+  TArgs extends unknown[],
+  TError,
+  S,
+>(
+  subscription: HookSubscription<TData, TArgs, TError, S>,
+  config: PartialUseAsyncConfig<TData, TArgs, TError, S>
+): LegacyHookReturn<TData, TArgs, TError, S> {
+  let currentStatus = subscription.instance.state.status;
 
-	switch (currentStatus) {
-		case "initial": {
-			return createLegacyInitialReturn(subscription, config);
-		}
-		case "pending": {
-			return createLegacyPendingReturn(subscription, config);
-		}
-		case "success": {
-			return createLegacySuccessReturn(subscription, config);
-		}
-		case "error": {
-			return createLegacyErrorReturn(subscription, config);
-		}
-		default: {
-			throw new Error("Unknown status " + String(currentStatus));
-		}
-	}
+  switch (currentStatus) {
+    case "initial": {
+      return createLegacyInitialReturn(subscription, config);
+    }
+    case "pending": {
+      return createLegacyPendingReturn(subscription, config);
+    }
+    case "success": {
+      return createLegacySuccessReturn(subscription, config);
+    }
+    case "error": {
+      return createLegacyErrorReturn(subscription, config);
+    }
+    default: {
+      throw new Error("Unknown status " + String(currentStatus));
+    }
+  }
 }
 
-function selectState<T, A extends unknown[], E, S>(
-	instance: StateInterface<T, A, E>,
-	selector?: UseSelector<T, A, E, S>
+function selectState<TData, TArgs extends unknown[], TError, S>(
+  instance: StateInterface<TData, TArgs, TError>,
+  selector?: UseSelector<TData, TArgs, TError, S>
 ): S {
-	let { state: currentState, lastSuccess, cache } = instance;
-	if (selector) {
-		return selector(currentState, lastSuccess, cache);
-	} else {
-		return currentState as S;
-	}
+  let { state: currentState, lastSuccess, cache } = instance;
+  if (selector) {
+    return selector(currentState, lastSuccess, cache);
+  } else {
+    return currentState as S;
+  }
 }
 
-export function createLegacyInitialReturn<T, A extends unknown[], E, S>(
-	subscription: HookSubscription<T, A, E, S>,
-	config: PartialUseAsyncConfig<T, A, E, S>
-): HookReturnInitial<T, A, E, S> {
-	let instance = subscription.instance;
-	let currentState = instance.state as InitialState<T, A>;
-	let selectedState = selectState(instance, config.selector);
+export function createLegacyInitialReturn<
+  TData,
+  TArgs extends unknown[],
+  TError,
+  S,
+>(
+  subscription: HookSubscription<TData, TArgs, TError, S>,
+  config: PartialUseAsyncConfig<TData, TArgs, TError, S>
+): HookReturnInitial<TData, TArgs, TError, S> {
+  let instance = subscription.instance;
+  let currentState = instance.state as InitialState<TData, TArgs>;
+  let selectedState = selectState(instance, config.selector);
 
-	let result = {
-		source: instance.actions,
+  let result = {
+    source: instance.actions,
 
-		isError: false,
-		isInitial: true,
-		isPending: false,
-		isSuccess: false,
+    isError: false,
+    isInitial: true,
+    isPending: false,
+    isSuccess: false,
 
-		error: null,
-		state: selectedState,
-		data: currentState.data ?? null,
+    error: null,
+    state: selectedState,
+    data: currentState.data ?? null,
 
-		read: subscription.read,
-		onChange: subscription.onChange,
-		onSubscribe: subscription.onSubscribe,
-	} as const;
+    read: subscription.read,
+    onChange: subscription.onChange,
+    onSubscribe: subscription.onSubscribe,
+  } as const;
 
-	if (__DEV__) {
-		let lastSuccess = instance.lastSuccess;
-		addLastSuccessDeprecationWarning(subscription, result, lastSuccess);
-	}
+  if (__DEV__) {
+    let lastSuccess = instance.lastSuccess;
+    addLastSuccessDeprecationWarning(subscription, result, lastSuccess);
+  }
 
-	return freeze(result);
+  return freeze(result);
 }
 
-export function createLegacySuccessReturn<T, A extends unknown[], E, S>(
-	subscription: HookSubscription<T, A, E, S>,
-	config: PartialUseAsyncConfig<T, A, E, S>
-): HookReturnSuccess<T, A, E, S> {
-	let instance = subscription.instance;
-	let currentState = instance.state as SuccessState<T, A>;
-	let selectedState = selectState(instance, config.selector);
+export function createLegacySuccessReturn<
+  TData,
+  TArgs extends unknown[],
+  TError,
+  S,
+>(
+  subscription: HookSubscription<TData, TArgs, TError, S>,
+  config: PartialUseAsyncConfig<TData, TArgs, TError, S>
+): HookReturnSuccess<TData, TArgs, TError, S> {
+  let instance = subscription.instance;
+  let currentState = instance.state as SuccessState<TData, TArgs>;
+  let selectedState = selectState(instance, config.selector);
 
-	let result = {
-		source: instance.actions,
+  let result = {
+    source: instance.actions,
 
-		isError: false,
-		isInitial: false,
-		isPending: false,
-		isSuccess: true,
+    isError: false,
+    isInitial: false,
+    isPending: false,
+    isSuccess: true,
 
-		error: null,
-		state: selectedState,
-		data: currentState.data,
+    error: null,
+    state: selectedState,
+    data: currentState.data,
 
-		read: subscription.read,
-		onChange: subscription.onChange,
-		onSubscribe: subscription.onSubscribe,
-	} as const;
+    read: subscription.read,
+    onChange: subscription.onChange,
+    onSubscribe: subscription.onSubscribe,
+  } as const;
 
-	if (__DEV__) {
-		let lastSuccess = instance.lastSuccess;
-		addLastSuccessDeprecationWarning(subscription, result, lastSuccess);
-	}
+  if (__DEV__) {
+    let lastSuccess = instance.lastSuccess;
+    addLastSuccessDeprecationWarning(subscription, result, lastSuccess);
+  }
 
-	return freeze(result);
+  return freeze(result);
 }
 
-export function createLegacyErrorReturn<T, A extends unknown[], E, S>(
-	subscription: HookSubscription<T, A, E, S>,
-	config: PartialUseAsyncConfig<T, A, E, S>
-): HookReturnError<T, A, E, S> {
-	let instance = subscription.instance;
-	let lastSuccess = instance.lastSuccess;
-	let currentState = instance.state as ErrorState<T, A, E>;
-	let selectedState = selectState(instance, config.selector);
+export function createLegacyErrorReturn<
+  TData,
+  TArgs extends unknown[],
+  TError,
+  S,
+>(
+  subscription: HookSubscription<TData, TArgs, TError, S>,
+  config: PartialUseAsyncConfig<TData, TArgs, TError, S>
+): HookReturnError<TData, TArgs, TError, S> {
+  let instance = subscription.instance;
+  let lastSuccess = instance.lastSuccess;
+  let currentState = instance.state as ErrorState<TData, TArgs, TError>;
+  let selectedState = selectState(instance, config.selector);
 
-	let result = {
-		source: instance.actions,
+  let result = {
+    source: instance.actions,
 
-		isError: true,
-		isInitial: false,
-		isPending: false,
-		isSuccess: false,
+    isError: true,
+    isInitial: false,
+    isPending: false,
+    isSuccess: false,
 
-		state: selectedState,
-		error: currentState.data,
-		data: lastSuccess.data ?? null,
+    state: selectedState,
+    error: currentState.data,
+    data: lastSuccess.data ?? null,
 
-		read: subscription.read,
-		onChange: subscription.onChange,
-		onSubscribe: subscription.onSubscribe,
-	} as const;
+    read: subscription.read,
+    onChange: subscription.onChange,
+    onSubscribe: subscription.onSubscribe,
+  } as const;
 
-	if (__DEV__) {
-		let lastSuccess = instance.lastSuccess;
-		addLastSuccessDeprecationWarning(subscription, result, lastSuccess);
-	}
+  if (__DEV__) {
+    let lastSuccess = instance.lastSuccess;
+    addLastSuccessDeprecationWarning(subscription, result, lastSuccess);
+  }
 
-	return freeze(result);
+  return freeze(result);
 }
 
-export function createLegacyPendingReturn<T, A extends unknown[], E, S>(
-	subscription: HookSubscription<T, A, E, S>,
-	config: PartialUseAsyncConfig<T, A, E, S>
-): HookReturnPending<T, A, E, S> {
-	let instance = subscription.instance;
-	let lastSuccess = instance.lastSuccess;
-	let currentState = instance.state as PendingState<T, A, E>;
-	let previousState = currentState.prev;
-	let selectedState = selectState(instance, config.selector);
+export function createLegacyPendingReturn<
+  TData,
+  TArgs extends unknown[],
+  TError,
+  S,
+>(
+  subscription: HookSubscription<TData, TArgs, TError, S>,
+  config: PartialUseAsyncConfig<TData, TArgs, TError, S>
+): HookReturnPending<TData, TArgs, TError, S> {
+  let instance = subscription.instance;
+  let lastSuccess = instance.lastSuccess;
+  let currentState = instance.state as PendingState<TData, TArgs, TError>;
+  let previousState = currentState.prev;
+  let selectedState = selectState(instance, config.selector);
 
-	let result = {
-		source: instance.actions,
+  let result = {
+    source: instance.actions,
 
-		isError: false,
-		isPending: true,
-		isInitial: false,
-		isSuccess: false,
+    isError: false,
+    isPending: true,
+    isInitial: false,
+    isSuccess: false,
 
-		state: selectedState,
-		data: lastSuccess.data ?? null,
-		error: previousState.status === "error" ? previousState.data : null,
+    state: selectedState,
+    data: lastSuccess.data ?? null,
+    error: previousState.status === "error" ? previousState.data : null,
 
-		read: subscription.read,
-		onChange: subscription.onChange,
-		onSubscribe: subscription.onSubscribe,
-	} as const;
+    read: subscription.read,
+    onChange: subscription.onChange,
+    onSubscribe: subscription.onSubscribe,
+  } as const;
 
-	if (__DEV__) {
-		addLastSuccessDeprecationWarning(subscription, result, lastSuccess);
-	}
+  if (__DEV__) {
+    addLastSuccessDeprecationWarning(subscription, result, lastSuccess);
+  }
 
-	return freeze(result);
+  return freeze(result);
 }
 
-export function selectWholeState<T, A extends unknown[], E, S>(
-	state: State<T, A, E>
+export function selectWholeState<TData, TArgs extends unknown[], TError, S>(
+  state: State<TData, TArgs, TError>
 ): S {
-	return state as S;
+  return state as S;
 }
 
 function addLastSuccessDeprecationWarning(
-	subscription: HookSubscription<any, any, any, any>,
-	result: LegacyHookReturn<any, any, any, any>,
-	lastSuccess: LastSuccessSavedState<any, any>
+  subscription: HookSubscription<any, any, any, any>,
+  result: LegacyHookReturn<any, any, any, any>,
+  lastSuccess: LastSuccessSavedState<any, any>
 ) {
-	if (__DEV__) {
-		let devSpy = subscription.__DEV__;
-		if (!devSpy) {
-			subscription.__DEV__ = devSpy = {
-				didAddLastSuccessGetter: false,
-				didWarnAboutLastSuccessUsage: false,
-			};
-		}
-		if (!devSpy.didAddLastSuccessGetter) {
-			devSpy.didAddLastSuccessGetter = true;
-			Object.defineProperty(result, "lastSuccess", {
-				get() {
-					if (!devSpy!.didWarnAboutLastSuccessUsage) {
-						devSpy!.didWarnAboutLastSuccessUsage = true;
+  if (__DEV__) {
+    let devSpy = subscription.__DEV__;
+    if (!devSpy) {
+      subscription.__DEV__ = devSpy = {
+        didAddLastSuccessGetter: false,
+        didWarnAboutLastSuccessUsage: false,
+      };
+    }
+    if (!devSpy.didAddLastSuccessGetter) {
+      devSpy.didAddLastSuccessGetter = true;
+      Object.defineProperty(result, "lastSuccess", {
+        get() {
+          if (!devSpy!.didWarnAboutLastSuccessUsage) {
+            devSpy!.didWarnAboutLastSuccessUsage = true;
 
-						console.error(
-							"[Warning]: lastSuccess is deprecated in favor of " +
-								"useAsync().data. In practice, we only use the data attribute" +
-								"from the lastSuccess. Used in component: " +
-								subscription.at
-						);
-					}
+            console.error(
+              "[Warning]: lastSuccess is deprecated in favor of " +
+                "useAsync().data. In practice, we only use the data attribute" +
+                "from the lastSuccess. Used in component: " +
+                subscription.at
+            );
+          }
 
-					return lastSuccess;
-				},
-			});
-		}
-	}
+          return lastSuccess;
+        },
+      });
+    }
+  }
 }

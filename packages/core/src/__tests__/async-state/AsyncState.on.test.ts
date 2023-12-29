@@ -1,8 +1,8 @@
-import {createSource, Status} from "../..";
-import {expect} from "@jest/globals";
+import { createSource, Status } from "../..";
+import { expect } from "@jest/globals";
 
-describe('instance.on events', () => {
-  it('should register multiple change events', () => {
+describe("instance.on events", () => {
+  it("should register multiple change events", () => {
     // given
     let first = jest.fn();
     let second = jest.fn();
@@ -11,7 +11,10 @@ describe('instance.on events', () => {
 
     // when
     let removeFirst = source.on("change", first);
-    let removeSecond = source.on("change", [{status: "success", handler: second}, third]);
+    let removeSecond = source.on("change", [
+      { status: "success", handler: second },
+      third,
+    ]);
 
     source.setState(1);
     // then
@@ -52,9 +55,11 @@ describe('instance.on events', () => {
     expect(second).not.toHaveBeenCalled();
     expect(third).not.toHaveBeenCalled();
   });
-  it('should register multiple dispose events', () => {
+  it("should register multiple dispose events", () => {
     // given
-    let source = createSource("on-dispose-tests", null, {resetStateOnDispose: true});
+    let source = createSource("on-dispose-tests", null, {
+      resetStateOnDispose: true,
+    });
     let first = jest.fn();
     let second = jest.fn();
     // when
