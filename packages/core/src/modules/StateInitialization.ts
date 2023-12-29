@@ -9,12 +9,12 @@ import { initial, pending, success } from "../enums";
 import { isFunction } from "../utils";
 import { now, shallowClone } from "../helpers/core";
 
-export function initializeInstance<TData, TArgs extends unknown[], E>(
-  instance: StateInterface<TData, TArgs, E>
+export function initializeInstance<TData, TArgs extends unknown[], TError>(
+  instance: StateInterface<TData, TArgs, TError>
 ) {
   loadCache(instance);
 
-  let maybeHydratedState = attemptHydratedState<TData, TArgs, E>(instance.key);
+  let maybeHydratedState = attemptHydratedState<TData, TArgs, TError>(instance.key);
 
   if (maybeHydratedState) {
     instance.state = maybeHydratedState.state;

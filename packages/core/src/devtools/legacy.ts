@@ -40,28 +40,28 @@ interface DevtoolsInterface {
     subscriptionKey: string
   );
 
-  emitRunSync<TData, TArgs extends unknown[], E>(
-    instance: StateInterface<TData, TArgs, E>,
+  emitRunSync<TData, TArgs extends unknown[], TError>(
+    instance: StateInterface<TData, TArgs, TError>,
     props: ProducerSavedProps<TData, TArgs>
   ): void;
 
-  emitRunPromise<TData, TArgs extends unknown[], E>(
-    instance: StateInterface<TData, TArgs, E>,
+  emitRunPromise<TData, TArgs extends unknown[], TError>(
+    instance: StateInterface<TData, TArgs, TError>,
     props: ProducerSavedProps<TData, TArgs>
   ): void;
 
-  emitRunGenerator<TData, TArgs extends unknown[], E>(
-    instance: StateInterface<TData, TArgs, E>,
+  emitRunGenerator<TData, TArgs extends unknown[], TError>(
+    instance: StateInterface<TData, TArgs, TError>,
     props: ProducerSavedProps<TData, TArgs>
   ): void;
 
-  emitReplaceState<TData, TArgs extends unknown[], E>(
-    instance: StateInterface<TData, TArgs, E>,
+  emitReplaceState<TData, TArgs extends unknown[], TError>(
+    instance: StateInterface<TData, TArgs, TError>,
     props: ProducerSavedProps<TData, TArgs>
   ): void;
 
-  emitRunConsumedFromCache<TData, TArgs extends unknown[], E>(
-    instance: StateInterface<TData, TArgs, E>,
+  emitRunConsumedFromCache<TData, TArgs extends unknown[], TError>(
+    instance: StateInterface<TData, TArgs, TError>,
     payload: Record<string, any> | undefined | null,
     args: TArgs
   ): void;

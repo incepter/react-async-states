@@ -9,9 +9,9 @@ import { error, success } from "../enums";
 import { isArray } from "../helpers/core";
 import { isFunction } from "../utils";
 
-export function invokeChangeCallbacks<TData, TArgs extends unknown[], E>(
-  state: State<TData, TArgs, E>,
-  callbacks: ProducerCallbacks<TData, TArgs, E> | undefined
+export function invokeChangeCallbacks<TData, TArgs extends unknown[], TError>(
+  state: State<TData, TArgs, TError>,
+  callbacks: ProducerCallbacks<TData, TArgs, TError> | undefined
 ) {
   if (!callbacks) {
     return;
@@ -25,9 +25,9 @@ export function invokeChangeCallbacks<TData, TArgs extends unknown[], E>(
   }
 }
 
-export function invokeSingleChangeEvent<TData, TArgs extends unknown[], E>(
-  state: State<TData, TArgs, E>,
-  event: StateChangeEventHandler<TData, TArgs, E>
+export function invokeSingleChangeEvent<TData, TArgs extends unknown[], TError>(
+  state: State<TData, TArgs, TError>,
+  event: StateChangeEventHandler<TData, TArgs, TError>
 ) {
   if (isFunction(event)) {
     event(state);
@@ -36,8 +36,8 @@ export function invokeSingleChangeEvent<TData, TArgs extends unknown[], E>(
   }
 }
 
-export function invokeInstanceEvents<TData, TArgs extends unknown[], E>(
-  instance: StateInterface<TData, TArgs, E>,
+export function invokeInstanceEvents<TData, TArgs extends unknown[], TError>(
+  instance: StateInterface<TData, TArgs, TError>,
   type: InstanceEventType
 ) {
   let events = instance.events;

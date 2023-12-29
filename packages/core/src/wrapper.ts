@@ -14,13 +14,13 @@ import {
 } from "./utils";
 import { error as errorStatus, success } from "./enums";
 
-export function run<TData, TArgs extends unknown[], E>(
-  producer: Producer<TData, TArgs, E>,
-  props: ProducerProps<TData, TArgs, E>,
+export function run<TData, TArgs extends unknown[], TError>(
+  producer: Producer<TData, TArgs, TError>,
+  props: ProducerProps<TData, TArgs, TError>,
   indicators: RunIndicators,
-  onSettled: OnSettled<TData, TArgs, E>,
-  retryConfig?: RetryConfig<TData, TArgs, E>,
-  callbacks?: ProducerCallbacks<TData, TArgs, E>
+  onSettled: OnSettled<TData, TArgs, TError>,
+  retryConfig?: RetryConfig<TData, TArgs, TError>,
+  callbacks?: ProducerCallbacks<TData, TArgs, TError>
 ): Promise<TData> | undefined {
   let pendingPromise: Promise<TData>;
   let executionValue;
@@ -37,7 +37,7 @@ export function run<TData, TArgs extends unknown[], E>(
     if (indicators.aborted) {
       return;
     }
-    onFail(e as E);
+    onFail(e as TError);
     return;
   }
 
@@ -47,7 +47,7 @@ export function run<TData, TArgs extends unknown[], E>(
       // generatorResult is either {done: boolean, value: TData} or a Promise<TData>
       generatorResult = stepGenerator(executionValue, props, indicators);
     } catch (e) {
-      onFail(e as E);
+      onFail(e as TError);
       return;
     }
     if (generatorResult.done) {
@@ -75,7 +75,7 @@ export function run<TData, TArgs extends unknown[], E>(
     return data;
   }
 
-  function onFail(error: E) {
+  function onFail(error: TError) {
     if (indicators.aborted) {
       return;
     }
@@ -102,10 +102,10 @@ export function run<TData, TArgs extends unknown[], E>(
   }
 }
 
-function shouldRetry<TData, TArgs extends unknown[], E>(
+function shouldRetry<TData, TArgs extends unknown[], TError>(
   attempt: number,
-  retryConfig: RetryConfig<TData, TArgs, E>,
-  error: E
+  retryConfig: RetryConfig<TData, TArgs, TError>,
+  error: TError
 ): boolean {
   let { retry, maxAttempts } = retryConfig;
   let canRetry = !!maxAttempts && attempt <= maxAttempts;
@@ -117,14 +117,14 @@ function shouldRetry<TData, TArgs extends unknown[], E>(
   return canRetry && shouldRetry;
 }
 
-function getRetryBackoff<TData, TArgs extends unknown[], E>(
+function getRetryBackoff<TData, TArgs extends unknown[], TError>(
   attempt: number,
-  retryConfig: RetryConfig<TData, TArgs, E>,
-  error: E
+  retryConfig: RetryConfig<TData, TArgs, TError>,
+  error: TError
 ): number {
   let { backoff } = retryConfig;
   if (isFunction(backoff)) {
-    return (backoff as (attemptIndex: number, error: E) => number)(
+    return (backoff as (attemptIndex: number, error: TError) => number)(
       attempt,
       error
     );
