@@ -443,7 +443,7 @@ A boolean that's true if the current state is with `error` status.
 ```tsx
 data: TData | null;
 ```
-This property is always of type `TData` if the status is `success`. It mat be
+This property is always of type `TData` if the status is `success`. It may be
 null if `status` is:
 - `initial` and no `initialValue` was provided.
 - `pending` and success was registered before.
