@@ -185,7 +185,7 @@ function createDevtools(): DevtoolsInterface {
               o[k] = _build(k, v, a ? depth : depth - 1);
             }
           }),
-        o || (a ? [] : {}));
+          o || (a ? [] : {}));
     }
 
     return JSON.stringify(_build("", val, depth));
@@ -254,20 +254,20 @@ function createDevtools(): DevtoolsInterface {
         uniqueId: asyncState.id,
         lastSuccess: asyncState.lastSuccess,
         subscriptions: (asyncState.subscriptions
-            ? Object.values(asyncState.subscriptions)
-            : []
+          ? Object.values(asyncState.subscriptions)
+          : []
         ).map(mapSubscriptionToDevtools),
         lanes: asyncState.lanes
           ? Object.keys(asyncState.lanes).map((key) => ({
-            uniqueId: asyncState.lanes![key].id,
-            key,
-          }))
+              uniqueId: asyncState.lanes![key].id,
+              key,
+            }))
           : [],
         parent: asyncState.parent
           ? {
-            key: asyncState.parent?.key,
-            uniqueId: asyncState.parent?.id,
-          }
+              key: asyncState.parent?.key,
+              uniqueId: asyncState.parent?.id,
+            }
           : null,
       },
       type: DevtoolsEvent.setAsyncState,
