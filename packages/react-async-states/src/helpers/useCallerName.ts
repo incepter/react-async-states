@@ -1,5 +1,5 @@
 import * as React from "react";
-import {__DEV__} from "../shared";
+import { __DEV__ } from "../shared";
 
 export function computeCallerName(level = 3): undefined | string {
   const stack = new Error().stack?.toString();
@@ -16,7 +16,7 @@ export function computeCallerName(level = 3): undefined | string {
     levelsCount += 1;
   }
 
-  return match?.[1]
+  return match?.[1];
 }
 
 export function useCallerName(level: number): string | undefined {

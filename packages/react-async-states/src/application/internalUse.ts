@@ -6,16 +6,16 @@ import { useAsync_internal } from "../hooks/useAsync_internal";
 import { __DEV__setHookCallerName } from "../hooks/modules/HookSubscription";
 
 export default function internalUse<T, A extends unknown[], E>(
-	source: Source<T, A, E>,
-	options?: UseConfig<T, A, E>,
-	deps: any[] = emptyArray
+  source: Source<T, A, E>,
+  options?: UseConfig<T, A, E>,
+  deps: any[] = emptyArray
 ): T {
-	if (__DEV__) {
-		__DEV__setHookCallerName(useCallerName(3));
-	}
-	let config = options ? { ...options, source } : source;
-	let { read, data } = useAsync_internal(config, deps);
-	read(true, true); // suspends only when initial, throws E in Error
+  if (__DEV__) {
+    __DEV__setHookCallerName(useCallerName(3));
+  }
+  let config = options ? { ...options, source } : source;
+  let { read, data } = useAsync_internal(config, deps);
+  read(true, true); // suspends only when initial, throws E in Error
 
-	return data!;
+  return data!;
 }
