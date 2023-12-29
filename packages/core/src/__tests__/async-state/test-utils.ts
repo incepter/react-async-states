@@ -1,8 +1,8 @@
-// @ts-ignore
 export const timeout =
-  <T = any>(delay, ...value) =>
+  <TData = any>(delay, ...value) =>
   () =>
-    new Promise<T>((res) => setTimeout(() => res(...value), delay));
+    // @ts-ignore
+    new Promise<TData>((res) => setTimeout(() => res(...value), delay));
 
 export const rejectionTimeout =
   (delay, ...value) =>
@@ -12,7 +12,3 @@ export const rejectionTimeout =
         rej(...value);
       }, delay)
     );
-
-export function spyOnConsole(consoleMethod) {
-  return jest.spyOn(console, consoleMethod);
-}

@@ -28,9 +28,9 @@ import {
   stopAlteringState,
 } from "./StateUpdate";
 
-export function runcInstance<T, A extends unknown[], E>(
-  instance: StateInterface<T, A, E>,
-  props?: RUNCProps<T, A, E>
+export function runcInstance<TData, A extends unknown[], E>(
+  instance: StateInterface<TData, A, E>,
+  props?: RUNCProps<TData, A, E>
 ) {
   let config = instance.config;
 
@@ -50,10 +50,10 @@ export function runcInstance<T, A extends unknown[], E>(
   );
 }
 
-function scheduleDelayedRun<T, A extends unknown[], E>(
-  instance: StateInterface<T, A, E>,
+function scheduleDelayedRun<TData, A extends unknown[], E>(
+  instance: StateInterface<TData, A, E>,
   durationMs: number,
-  props?: RUNCProps<T, A, E>
+  props?: RUNCProps<TData, A, E>
 ): AbortFn {
   let abortCallback: AbortFn | null = null;
 
@@ -76,11 +76,11 @@ function scheduleDelayedRun<T, A extends unknown[], E>(
   };
 }
 
-function runInstanceWithEffects<T, A extends unknown[], E>(
-  instance: StateInterface<T, A, E>,
+function runInstanceWithEffects<TData, A extends unknown[], E>(
+  instance: StateInterface<TData, A, E>,
   effect: RunEffect,
   durationMs: number,
-  props?: RUNCProps<T, A, E>
+  props?: RUNCProps<TData, A, E>
 ): AbortFn {
   switch (effect) {
     case "delay":
@@ -126,14 +126,14 @@ function cleanInstancePendingStateBeforeImmediateRun(
   instance.currentAbort = undefined;
 }
 
-function replaceStateBecauseNoProducerProvided<T, A extends unknown[], E>(
-  instance: StateInterface<T, A, E>,
-  props?: RUNCProps<T, A, E>
+function replaceStateBecauseNoProducerProvided<TData, A extends unknown[], E>(
+  instance: StateInterface<TData, A, E>,
+  props?: RUNCProps<TData, A, E>
 ) {
   let args = (props?.args ?? emptyArray) as A;
 
   // keep these for readability
-  let newStateData = args[0] as T;
+  let newStateData = args[0] as TData;
   let newStateStatus = args[1] as Status;
 
   instance.actions.setState(newStateData, newStateStatus, props);
@@ -141,9 +141,9 @@ function replaceStateBecauseNoProducerProvided<T, A extends unknown[], E>(
   return noop;
 }
 
-function replaceStateAndBailoutRunFromCachedState<T, A extends unknown[], E>(
-  instance: StateInterface<T, A, E>,
-  cachedState: CachedState<T, A, E>
+function replaceStateAndBailoutRunFromCachedState<TData, A extends unknown[], E>(
+  instance: StateInterface<TData, A, E>,
+  cachedState: CachedState<TData, A, E>
 ) {
   let actualState = instance.state;
   let nextState = cachedState.state;
@@ -157,10 +157,10 @@ function replaceStateAndBailoutRunFromCachedState<T, A extends unknown[], E>(
   }
 }
 
-export function runInstanceImmediately<T, A extends unknown[], E>(
-  instance: StateInterface<T, A, E>,
+export function runInstanceImmediately<TData, A extends unknown[], E>(
+  instance: StateInterface<TData, A, E>,
   payload: unknown,
-  props?: RUNCProps<T, A, E>
+  props?: RUNCProps<TData, A, E>
 ): AbortFn {
   // when there is no producer attached to the instance, skip everything
   // and replace state immediately. This will skip cache too.
@@ -222,7 +222,7 @@ export function runInstanceImmediately<T, A extends unknown[], E>(
   );
 
   if (runResult) {
-    // Promise<T>
+    // Promise<TData>
     if (__DEV__) devtools.emitRun(instance, false);
 
     instance.promise = runResult;
@@ -231,7 +231,7 @@ export function runInstanceImmediately<T, A extends unknown[], E>(
       currentState = currentState.prev;
     }
     let savedProps = cloneProducerProps(producerProps);
-    let pendingState: PendingState<T, A, E> = {
+    let pendingState: PendingState<TData, A, E> = {
       data: null,
       timestamp: now(),
       props: savedProps,
@@ -250,17 +250,17 @@ export function runInstanceImmediately<T, A extends unknown[], E>(
   return producerProps.abort;
 
   function onSettled(
-    data: T | E,
+    data: TData | E,
     status: "success" | "error",
-    savedProps: ProducerSavedProps<T, A>,
-    callbacks?: ProducerCallbacks<T, A, E>
+    savedProps: ProducerSavedProps<TData, A>,
+    callbacks?: ProducerCallbacks<TData, A, E>
   ) {
     let state = freeze({
       status,
       data,
       props: savedProps,
       timestamp: now(),
-    } as SuccessState<T, A> | ErrorState<T, A, E>);
+    } as SuccessState<TData, A> | ErrorState<TData, A, E>);
     replaceInstanceState(instance, state, true, callbacks);
   }
 }

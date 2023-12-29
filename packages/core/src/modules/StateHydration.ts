@@ -8,15 +8,15 @@ export const attemptHydratedState = isServer
   : attemptHydratedStateDOM;
 
 // unused parameters to keep the same exported signature
-export function attemptHydratedStateServer<T, A extends unknown[], E>(
+export function attemptHydratedStateServer<TData, A extends unknown[], E>(
   _key: string
-): HydrationData<T, A, E> | null {
+): HydrationData<TData, A, E> | null {
   return null;
 }
 
-export function attemptHydratedStateDOM<T, A extends unknown[], E>(
+export function attemptHydratedStateDOM<TData, A extends unknown[], E>(
   key: string
-): HydrationData<T, A, E> | null {
+): HydrationData<TData, A, E> | null {
   if (!maybeWindow || !maybeWindow[HYDRATION_DATA_KEY]) {
     return null;
   }
@@ -34,5 +34,5 @@ export function attemptHydratedStateDOM<T, A extends unknown[], E>(
     delete maybeWindow[HYDRATION_DATA_KEY];
   }
 
-  return maybeState as HydrationData<T, A, E>;
+  return maybeState as HydrationData<TData, A, E>;
 }

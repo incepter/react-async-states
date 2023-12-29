@@ -14,15 +14,15 @@ import {
 } from "./utils";
 import { error as errorStatus, success } from "./enums";
 
-export function run<T, A extends unknown[], E>(
-  producer: Producer<T, A, E>,
-  props: ProducerProps<T, A, E>,
+export function run<TData, A extends unknown[], E>(
+  producer: Producer<TData, A, E>,
+  props: ProducerProps<TData, A, E>,
   indicators: RunIndicators,
-  onSettled: OnSettled<T, A, E>,
-  retryConfig?: RetryConfig<T, A, E>,
-  callbacks?: ProducerCallbacks<T, A, E>
-): Promise<T> | undefined {
-  let pendingPromise: Promise<T>;
+  onSettled: OnSettled<TData, A, E>,
+  retryConfig?: RetryConfig<TData, A, E>,
+  callbacks?: ProducerCallbacks<TData, A, E>
+): Promise<TData> | undefined {
+  let pendingPromise: Promise<TData>;
   let executionValue;
 
   try {
@@ -41,10 +41,10 @@ export function run<T, A extends unknown[], E>(
     return;
   }
 
-  if (isGenerator<T>(executionValue)) {
+  if (isGenerator<TData>(executionValue)) {
     let generatorResult;
     try {
-      // generatorResult is either {done: boolean, value: T} or a Promise<T>
+      // generatorResult is either {done: boolean, value: TData} or a Promise<TData>
       generatorResult = stepGenerator(executionValue, props, indicators);
     } catch (e) {
       onFail(e as E);
@@ -67,7 +67,7 @@ export function run<T, A extends unknown[], E>(
   // @ts-ignore
   return pendingPromise.then(onSuccess, onFail);
 
-  function onSuccess(data: T): T {
+  function onSuccess(data: TData): TData {
     if (!indicators.aborted) {
       indicators.done = true;
       onSettled(data, success, cloneProducerProps(props), callbacks);
@@ -102,9 +102,9 @@ export function run<T, A extends unknown[], E>(
   }
 }
 
-function shouldRetry<T, A extends unknown[], E>(
+function shouldRetry<TData, A extends unknown[], E>(
   attempt: number,
-  retryConfig: RetryConfig<T, A, E>,
+  retryConfig: RetryConfig<TData, A, E>,
   error: E
 ): boolean {
   let { retry, maxAttempts } = retryConfig;
@@ -117,9 +117,9 @@ function shouldRetry<T, A extends unknown[], E>(
   return canRetry && shouldRetry;
 }
 
-function getRetryBackoff<T, A extends unknown[], E>(
+function getRetryBackoff<TData, A extends unknown[], E>(
   attempt: number,
-  retryConfig: RetryConfig<T, A, E>,
+  retryConfig: RetryConfig<TData, A, E>,
   error: E
 ): number {
   let { backoff } = retryConfig;
@@ -132,11 +132,11 @@ function getRetryBackoff<T, A extends unknown[], E>(
   return (backoff as number) || 0;
 }
 
-function stepGenerator<T>(
-  generatorInstance: Generator<any, T, any>,
+function stepGenerator<TData>(
+  generatorInstance: Generator<any, TData, any>,
   props,
   indicators
-): { done: true; value: T } | Promise<T> {
+): { done: true; value: TData } | Promise<TData> {
   let generator = generatorInstance.next();
 
   while (!generator.done && !isPromise(generator.value)) {

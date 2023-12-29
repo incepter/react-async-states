@@ -10,15 +10,15 @@ import { defaultHash, emptyArray, isFunction, isPromise } from "../utils";
 import { now } from "../helpers/core";
 import { invokeInstanceEvents } from "./StateEvent";
 
-export function hasCacheEnabled<T, A extends unknown[], E>(
-  instance: StateInterface<T, A, E>
+export function hasCacheEnabled<TData, A extends unknown[], E>(
+  instance: StateInterface<TData, A, E>
 ): boolean {
   return !!instance.config.cacheConfig?.enabled;
 }
 
-export function getTopLevelParent<T, A extends unknown[], E>(
-  base: StateInterface<T, A, E>
-): StateInterface<T, A, E> {
+export function getTopLevelParent<TData, A extends unknown[], E>(
+  base: StateInterface<TData, A, E>
+): StateInterface<TData, A, E> {
   let current = base;
   while (current.parent) {
     current = current.parent;
@@ -37,17 +37,17 @@ export function computeRunHash(
   return hashFunction(args, payload as any);
 }
 
-export function getCachedState<T, A extends unknown[], E>(
-  instance: StateInterface<T, A, E>,
+export function getCachedState<TData, A extends unknown[], E>(
+  instance: StateInterface<TData, A, E>,
   hash: string
-): CachedState<T, A, E> | undefined {
+): CachedState<TData, A, E> | undefined {
   let topLevelParent = getTopLevelParent(instance);
 
   return topLevelParent.cache?.[hash];
 }
 
-export function removeCachedStateAndSpreadOnLanes<T, A extends unknown[], E>(
-  instance: StateInterface<T, A, E>,
+export function removeCachedStateAndSpreadOnLanes<TData, A extends unknown[], E>(
+  instance: StateInterface<TData, A, E>,
   hash: string
 ): void {
   let topLevelParent = getTopLevelParent(instance);
@@ -59,8 +59,8 @@ export function removeCachedStateAndSpreadOnLanes<T, A extends unknown[], E>(
   persistAndSpreadCache(topLevelParent);
 }
 
-export function persistAndSpreadCache<T, A extends unknown[], E>(
-  topLevelParent: StateInterface<T, A, E>
+export function persistAndSpreadCache<TData, A extends unknown[], E>(
+  topLevelParent: StateInterface<TData, A, E>
 ): void {
   if (
     topLevelParent.cache &&
@@ -77,8 +77,8 @@ export function didCachedStateExpire(cachedState: CachedState<any, any, any>) {
   return addedAt + deadline < now();
 }
 
-export function spreadCacheChangeOnLanes<T, A extends unknown[], E>(
-  topLevelParent: StateInterface<T, A, E>
+export function spreadCacheChangeOnLanes<TData, A extends unknown[], E>(
+  topLevelParent: StateInterface<TData, A, E>
 ) {
   invokeInstanceEvents(topLevelParent, "cache-change");
   if (!topLevelParent.lanes) {
@@ -95,14 +95,14 @@ export function hasHeadersSet(headers: any): headers is Headers {
   return headers && isFunction(headers.get);
 }
 
-export function saveCacheAfterSuccessfulUpdate<T, A extends unknown[], E>(
-  instance: StateInterface<T, A, E>
+export function saveCacheAfterSuccessfulUpdate<TData, A extends unknown[], E>(
+  instance: StateInterface<TData, A, E>
 ) {
-  let topLevelParent: StateInterface<T, A, E> = getTopLevelParent(instance);
+  let topLevelParent: StateInterface<TData, A, E> = getTopLevelParent(instance);
   let {
     config: { cacheConfig },
   } = topLevelParent;
-  let state = instance.state as SuccessState<T, A>;
+  let state = instance.state as SuccessState<TData, A>;
   let { props } = state;
 
   if (!topLevelParent.cache) {
@@ -119,7 +119,7 @@ export function saveCacheAfterSuccessfulUpdate<T, A extends unknown[], E>(
       deadline,
       state: state,
       addedAt: Date.now(),
-    } as CachedState<T, A, E>);
+    } as CachedState<TData, A, E>);
 
     // avoid infinity deadline timeouts
     if (cacheConfig?.auto && Number.isFinite(deadline)) {
@@ -180,9 +180,9 @@ export function saveCacheAfterSuccessfulUpdate<T, A extends unknown[], E>(
   }
 }
 
-function getStateDeadline<T, A extends unknown[], E>(
-  state: SuccessState<T, A>,
-  timeout?: ((currentState: State<T, A, E>) => number) | number
+function getStateDeadline<TData, A extends unknown[], E>(
+  state: SuccessState<TData, A>,
+  timeout?: ((currentState: State<TData, A, E>) => number) | number
 ) {
   // fast path for numbers
   if (timeout && !isFunction(timeout)) {
@@ -211,8 +211,8 @@ function readCacheControlMaxAgeHeader(headers: Headers): number | undefined {
   }
 }
 
-export function loadCache<T, A extends unknown[], E>(
-  instance: StateInterface<T, A, E>
+export function loadCache<TData, A extends unknown[], E>(
+  instance: StateInterface<TData, A, E>
 ) {
   if (
     !hasCacheEnabled(instance) ||
@@ -223,7 +223,7 @@ export function loadCache<T, A extends unknown[], E>(
 
   // inherit cache from the parent if exists!
   if (instance.parent) {
-    let topLevelParent: StateInterface<T, A, E> = getTopLevelParent(instance);
+    let topLevelParent: StateInterface<TData, A, E> = getTopLevelParent(instance);
     instance.cache = topLevelParent.cache;
     return;
   }
@@ -237,25 +237,25 @@ export function loadCache<T, A extends unknown[], E>(
   if (isPromise(loadedCache)) {
     waitForAsyncCache(
       instance,
-      loadedCache as Promise<Record<string, CachedState<T, A, E>>>
+      loadedCache as Promise<Record<string, CachedState<TData, A, E>>>
     );
   } else {
-    resolveCache(instance, loadedCache as Record<string, CachedState<T, A, E>>);
+    resolveCache(instance, loadedCache as Record<string, CachedState<TData, A, E>>);
   }
 }
 
-function waitForAsyncCache<T, A extends unknown[], E>(
-  instance: StateInterface<T, A, E>,
-  promise: Promise<Record<string, CachedState<T, A, E>>>
+function waitForAsyncCache<TData, A extends unknown[], E>(
+  instance: StateInterface<TData, A, E>,
+  promise: Promise<Record<string, CachedState<TData, A, E>>>
 ) {
   promise.then((asyncCache) => {
     resolveCache(instance, asyncCache);
   });
 }
 
-function resolveCache<T, A extends unknown[], E>(
-  instance: StateInterface<T, A, E>,
-  resolvedCache: Record<string, CachedState<T, A, E>>
+function resolveCache<TData, A extends unknown[], E>(
+  instance: StateInterface<TData, A, E>,
+  resolvedCache: Record<string, CachedState<TData, A, E>>
 ) {
   instance.cache = resolvedCache;
   const cacheConfig = instance.config.cacheConfig;
