@@ -126,7 +126,11 @@ function cleanInstancePendingStateBeforeImmediateRun(
   instance.currentAbort = undefined;
 }
 
-function replaceStateBecauseNoProducerProvided<TData, TArgs extends unknown[], TError>(
+function replaceStateBecauseNoProducerProvided<
+  TData,
+  TArgs extends unknown[],
+  TError,
+>(
   instance: StateInterface<TData, TArgs, TError>,
   props?: RUNCProps<TData, TArgs, TError>
 ) {
@@ -141,7 +145,11 @@ function replaceStateBecauseNoProducerProvided<TData, TArgs extends unknown[], T
   return noop;
 }
 
-function replaceStateAndBailoutRunFromCachedState<TData, TArgs extends unknown[], TError>(
+function replaceStateAndBailoutRunFromCachedState<
+  TData,
+  TArgs extends unknown[],
+  TError,
+>(
   instance: StateInterface<TData, TArgs, TError>,
   cachedState: CachedState<TData, TArgs, TError>
 ) {

@@ -1,4 +1,8 @@
-export function timeoutToUse<TData>(delay, resolveValue: TData, setId): Promise<TData> {
+export function timeoutToUse<TData>(
+  delay,
+  resolveValue: TData,
+  setId
+): Promise<TData> {
   return new Promise((resolve) => {
     const id = setTimeout(() => {
       resolve(resolveValue);

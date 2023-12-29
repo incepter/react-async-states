@@ -46,10 +46,11 @@ export function getCachedState<TData, TArgs extends unknown[], TError>(
   return topLevelParent.cache?.[hash];
 }
 
-export function removeCachedStateAndSpreadOnLanes<TData, TArgs extends unknown[], TError>(
-  instance: StateInterface<TData, TArgs, TError>,
-  hash: string
-): void {
+export function removeCachedStateAndSpreadOnLanes<
+  TData,
+  TArgs extends unknown[],
+  TError,
+>(instance: StateInterface<TData, TArgs, TError>, hash: string): void {
   let topLevelParent = getTopLevelParent(instance);
   if (!topLevelParent.cache) {
     return;
@@ -77,9 +78,11 @@ export function didCachedStateExpire(cachedState: CachedState<any, any, any>) {
   return addedAt + deadline < now();
 }
 
-export function spreadCacheChangeOnLanes<TData, TArgs extends unknown[], TError>(
-  topLevelParent: StateInterface<TData, TArgs, TError>
-) {
+export function spreadCacheChangeOnLanes<
+  TData,
+  TArgs extends unknown[],
+  TError,
+>(topLevelParent: StateInterface<TData, TArgs, TError>) {
   invokeInstanceEvents(topLevelParent, "cache-change");
   if (!topLevelParent.lanes) {
     return;
@@ -95,10 +98,13 @@ export function hasHeadersSet(headers: any): headers is Headers {
   return headers && isFunction(headers.get);
 }
 
-export function saveCacheAfterSuccessfulUpdate<TData, TArgs extends unknown[], TError>(
-  instance: StateInterface<TData, TArgs, TError>
-) {
-  let topLevelParent: StateInterface<TData, TArgs, TError> = getTopLevelParent(instance);
+export function saveCacheAfterSuccessfulUpdate<
+  TData,
+  TArgs extends unknown[],
+  TError,
+>(instance: StateInterface<TData, TArgs, TError>) {
+  let topLevelParent: StateInterface<TData, TArgs, TError> =
+    getTopLevelParent(instance);
   let {
     config: { cacheConfig },
   } = topLevelParent;
@@ -223,7 +229,8 @@ export function loadCache<TData, TArgs extends unknown[], TError>(
 
   // inherit cache from the parent if exists!
   if (instance.parent) {
-    let topLevelParent: StateInterface<TData, TArgs, TError> = getTopLevelParent(instance);
+    let topLevelParent: StateInterface<TData, TArgs, TError> =
+      getTopLevelParent(instance);
     instance.cache = topLevelParent.cache;
     return;
   }
@@ -240,7 +247,10 @@ export function loadCache<TData, TArgs extends unknown[], TError>(
       loadedCache as Promise<Record<string, CachedState<TData, TArgs, TError>>>
     );
   } else {
-    resolveCache(instance, loadedCache as Record<string, CachedState<TData, TArgs, TError>>);
+    resolveCache(
+      instance,
+      loadedCache as Record<string, CachedState<TData, TArgs, TError>>
+    );
   }
 }
 

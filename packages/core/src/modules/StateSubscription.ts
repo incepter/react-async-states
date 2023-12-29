@@ -11,7 +11,9 @@ import devtools from "../devtools/Devtools";
 
 export function subscribeToInstance<TData, TArgs extends unknown[], TError>(
   instance: StateInterface<TData, TArgs, TError>,
-  options: ((s: State<TData, TArgs, TError>) => void) | AsyncStateSubscribeProps<TData, TArgs, TError>
+  options:
+    | ((s: State<TData, TArgs, TError>) => void)
+    | AsyncStateSubscribeProps<TData, TArgs, TError>
 ) {
   let props = isFunction(options) ? { cb: options } : options;
 
@@ -47,7 +49,11 @@ export function subscribeToInstance<TData, TArgs extends unknown[], TError>(
   if (__DEV__) devtools.emitSub(instance, subscriptionKey);
   return cleanup;
 }
-export function subscribeToInstanceEvent<TData, TArgs extends unknown[], TError>(
+export function subscribeToInstanceEvent<
+  TData,
+  TArgs extends unknown[],
+  TError,
+>(
   instance: StateInterface<TData, TArgs, TError>,
   eventType: InstanceEventType,
   eventHandler: InstanceEventHandlerType<TData, TArgs, TError>

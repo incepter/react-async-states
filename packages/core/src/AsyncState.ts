@@ -100,7 +100,8 @@ export class AsyncState<TData, TArgs extends unknown[], TError>
     producer: Producer<TData, TArgs, TError> | undefined | null,
     config?: ProducerConfig<TData, TArgs, TError>
   ) {
-    let instanceConfig: ProducerConfig<TData, TArgs, TError> = shallowClone(config);
+    let instanceConfig: ProducerConfig<TData, TArgs, TError> =
+      shallowClone(config);
     if (__DEV__) {
       // @ts-expect-error: getDeadline no longer exists
       if (instanceConfig.cacheConfig?.getDeadline !== undefined) {
@@ -172,7 +173,9 @@ export class AsyncState<TData, TArgs extends unknown[], TError>
   }
 }
 
-export class StateSource<TData, TArgs extends unknown[], TError> implements Source<TData, TArgs, TError> {
+export class StateSource<TData, TArgs extends unknown[], TError>
+  implements Source<TData, TArgs, TError>
+{
   key: string;
   uniqueId: number;
   readonly inst: StateInterface<TData, TArgs, TError>;
@@ -254,7 +257,9 @@ export class StateSource<TData, TArgs extends unknown[], TError> implements Sour
 
   runp(...args: TArgs) {
     let instance = this.inst;
-    return new Promise<State<TData, TArgs, TError>>(function runpInstance(resolve) {
+    return new Promise<State<TData, TArgs, TError>>(function runpInstance(
+      resolve
+    ) {
       let runcProps: RUNCProps<TData, TArgs, TError> = {
         args,
         onError: resolve,
@@ -304,7 +309,10 @@ export class StateSource<TData, TArgs extends unknown[], TError> implements Sour
     }
   }
 
-  replaceCache(cacheKey: string, cache: CachedState<TData, TArgs, TError>): void {
+  replaceCache(
+    cacheKey: string,
+    cache: CachedState<TData, TArgs, TError>
+  ): void {
     let instance = this.inst;
     if (!hasCacheEnabled(instance)) {
       return;
@@ -397,7 +405,9 @@ export class StateSource<TData, TArgs extends unknown[], TError> implements Sour
   subscribe(cb: (s: State<TData, TArgs, TError>) => void): AbortFn;
   subscribe(subProps: AsyncStateSubscribeProps<TData, TArgs, TError>): AbortFn;
   subscribe(
-    argv: ((s: State<TData, TArgs, TError>) => void) | AsyncStateSubscribeProps<TData, TArgs, TError>
+    argv:
+      | ((s: State<TData, TArgs, TError>) => void)
+      | AsyncStateSubscribeProps<TData, TArgs, TError>
   ): AbortFn {
     return subscribeToInstance(this.inst, argv);
   }
@@ -419,15 +429,27 @@ export function getSource<TData, TArgs extends unknown[], TError>(
   return executionContext.get(key)?.actions;
 }
 
-export function createSource<TData, TArgs extends unknown[] = [], TError = Error>(
+export function createSource<
+  TData,
+  TArgs extends unknown[] = [],
+  TError = Error,
+>(
   props: CreateSourceObject<TData, TArgs, TError>
 ): Source<TData, TArgs, TError>;
-export function createSource<TData, TArgs extends unknown[] = [], TError = Error>(
+export function createSource<
+  TData,
+  TArgs extends unknown[] = [],
+  TError = Error,
+>(
   key: string,
   producer?: Producer<TData, TArgs, TError> | undefined | null,
   config?: ProducerConfig<TData, TArgs, TError>
 ): Source<TData, TArgs, TError>;
-export function createSource<TData, TArgs extends unknown[] = [], TError = Error>(
+export function createSource<
+  TData,
+  TArgs extends unknown[] = [],
+  TError = Error,
+>(
   props: string | CreateSourceObject<TData, TArgs, TError>,
   maybeProducer?: Producer<TData, TArgs, TError> | undefined | null,
   maybeConfig?: ProducerConfig<TData, TArgs, TError>

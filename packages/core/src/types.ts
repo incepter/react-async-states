@@ -36,7 +36,9 @@ export interface BaseSource<TData, TArgs extends unknown[], TError> {
   subscribe(subProps: AsyncStateSubscribeProps<TData, TArgs, TError>): AbortFn;
 
   subscribe(
-    argv: ((s: State<TData, TArgs, TError>) => void) | AsyncStateSubscribeProps<TData, TArgs, TError>
+    argv:
+      | ((s: State<TData, TArgs, TError>) => void)
+      | AsyncStateSubscribeProps<TData, TArgs, TError>
   ): AbortFn;
 
   // producer
@@ -49,9 +51,14 @@ export interface BaseSource<TData, TArgs extends unknown[], TError> {
   // cache
   invalidateCache(cacheKey?: string): void;
 
-  replaceCache(cacheKey: string, cache: CachedState<TData, TArgs, TError>): void;
+  replaceCache(
+    cacheKey: string,
+    cache: CachedState<TData, TArgs, TError>
+  ): void;
 
-  patchConfig(partialConfig?: Partial<ProducerConfig<TData, TArgs, TError>>): void;
+  patchConfig(
+    partialConfig?: Partial<ProducerConfig<TData, TArgs, TError>>
+  ): void;
 
   getConfig(): ProducerConfig<TData, TArgs, TError>;
 
@@ -80,20 +87,42 @@ export type InstanceEventHandlerType<TData, TArgs extends unknown[], TError> =
 export type StateChangeEventHandler<TData, TArgs extends unknown[], TError> =
   | ((newState: State<TData, TArgs, TError>) => void)
   | InstanceChangeEventObject<TData, TArgs, TError>;
-export type InstanceChangeEventObject<TData, TArgs extends unknown[], TError> = {
+export type InstanceChangeEventObject<
+  TData,
+  TArgs extends unknown[],
+  TError,
+> = {
   status: Status;
   handler: (newState: State<TData, TArgs, TError>) => void;
 };
-export type InstanceChangeEventHandlerType<TData, TArgs extends unknown[], TError> =
+export type InstanceChangeEventHandlerType<
+  TData,
+  TArgs extends unknown[],
+  TError,
+> =
   | StateChangeEventHandler<TData, TArgs, TError>
   | StateChangeEventHandler<TData, TArgs, TError>[];
-export type InstanceDisposeEventHandlerType<TData, TArgs extends unknown[], TError> =
-  | (() => void)
-  | (() => void)[];
-export type InstanceCacheChangeEventHandlerType<TData, TArgs extends unknown[], TError> =
-  | ((cache: Record<string, CachedState<TData, TArgs, TError>> | null | undefined) => void)
+export type InstanceDisposeEventHandlerType<
+  TData,
+  TArgs extends unknown[],
+  TError,
+> = (() => void) | (() => void)[];
+export type InstanceCacheChangeEventHandlerType<
+  TData,
+  TArgs extends unknown[],
+  TError,
+> =
   | ((
-      cache: Record<string, CachedState<TData, TArgs, TError>> | null | undefined
+      cache:
+        | Record<string, CachedState<TData, TArgs, TError>>
+        | null
+        | undefined
+    ) => void)
+  | ((
+      cache:
+        | Record<string, CachedState<TData, TArgs, TError>>
+        | null
+        | undefined
     ) => void)[];
 export type InstanceChangeEvent = "change";
 export type InstanceDisposeEvent = "dispose";
@@ -109,7 +138,10 @@ export type AsyncStateSubscribeProps<TData, TArgs extends unknown[], TError> = {
 };
 export type InstanceEvents<TData, TArgs extends unknown[], TError> = {
   change?: Record<number, InstanceChangeEventHandlerType<TData, TArgs, TError>>;
-  dispose?: Record<number, InstanceDisposeEventHandlerType<TData, TArgs, TError>>;
+  dispose?: Record<
+    number,
+    InstanceDisposeEventHandlerType<TData, TArgs, TError>
+  >;
   ["cache-change"]?: Record<
     number,
     InstanceCacheChangeEventHandlerType<TData, TArgs, TError>
@@ -222,7 +254,11 @@ export type State<TData, TArgs extends unknown[], TError> =
 export type AbortFn = ((reason?: any) => void) | undefined;
 export type OnAbortFn<R = unknown> = (cb?: (reason?: R) => void) => void;
 
-export interface ProducerProps<TData, TArgs extends unknown[] = [], TError = Error> {
+export interface ProducerProps<
+  TData,
+  TArgs extends unknown[] = [],
+  TError = Error,
+> {
   onAbort: OnAbortFn;
   isAborted: () => boolean;
   abort: (reason?: any) => void;
@@ -267,7 +303,9 @@ export type ProducerConfig<TData, TArgs extends unknown[], TError> = {
   skipPendingStatus?: boolean;
   initialValue?:
     | TData
-    | ((cache: Record<string, CachedState<TData, TArgs, TError>> | null) => TData);
+    | ((
+        cache: Record<string, CachedState<TData, TArgs, TError>> | null
+      ) => TData);
   cacheConfig?: CacheConfig<TData, TArgs, TError>;
   runEffectDurationMs?: number;
   runEffect?: RunEffect;
@@ -305,7 +343,8 @@ export type CreateSourceObject<TData, TArgs extends unknown[], TError> = {
   producer?: Producer<TData, TArgs, TError> | null;
 };
 
-export interface Source<TData, TArgs extends unknown[], TError> extends BaseSource<TData, TArgs, TError> {
+export interface Source<TData, TArgs extends unknown[], TError>
+  extends BaseSource<TData, TArgs, TError> {
   run(...args: TArgs): AbortFn;
 
   runp(...args: TArgs): Promise<State<TData, TArgs, TError>>;

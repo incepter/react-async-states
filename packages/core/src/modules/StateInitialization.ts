@@ -14,7 +14,9 @@ export function initializeInstance<TData, TArgs extends unknown[], TError>(
 ) {
   loadCache(instance);
 
-  let maybeHydratedState = attemptHydratedState<TData, TArgs, TError>(instance.key);
+  let maybeHydratedState = attemptHydratedState<TData, TArgs, TError>(
+    instance.key
+  );
 
   if (maybeHydratedState) {
     instance.state = maybeHydratedState.state;

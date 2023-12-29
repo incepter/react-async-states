@@ -55,7 +55,11 @@ export function getQueueTail<TData, TArgs extends unknown[], TError>(
   return current;
 }
 
-function addToQueueAndEnsureItsScheduled<TData, TArgs extends unknown[], TError>(
+function addToQueueAndEnsureItsScheduled<
+  TData,
+  TArgs extends unknown[],
+  TError,
+>(
   instance: StateInterface<TData, TArgs, TError>,
   update: UpdateQueue<TData, TArgs, TError>
 ) {
@@ -190,7 +194,11 @@ export function flushUpdateQueue<TData, TArgs extends unknown[], TError>(
   notifySubscribers(instance);
 }
 
-export function scheduleDelayedPendingUpdate<TData, TArgs extends unknown[], TError>(
+export function scheduleDelayedPendingUpdate<
+  TData,
+  TArgs extends unknown[],
+  TError,
+>(
   instance: StateInterface<TData, TArgs, TError>,
   newState: State<TData, TArgs, TError>,
   notify: boolean
@@ -296,7 +304,10 @@ export function setInstanceData<TData, TArgs extends unknown[], TError>(
 
 export function setInstanceState<TData, TArgs extends unknown[], TError>(
   instance: StateInterface<TData, TArgs, TError>,
-  newValue: TData | StateFunctionUpdater<TData, TArgs, TError> | ((prev: TData | null) => TData),
+  newValue:
+    | TData
+    | StateFunctionUpdater<TData, TArgs, TError>
+    | ((prev: TData | null) => TData),
   status: Status = success,
   callbacks?: ProducerCallbacks<TData, TArgs, TError>
 ) {
@@ -346,7 +357,9 @@ export function setInstanceState<TData, TArgs extends unknown[], TError>(
     payload: shallowClone(instance.payload),
   } as ProducerProps<TData, TArgs, TError>;
 
-  const savedProps = cloneProducerProps<TData, TArgs, TError>(partialProducerProps);
+  const savedProps = cloneProducerProps<TData, TArgs, TError>(
+    partialProducerProps
+  );
 
   let newState = {
     status,

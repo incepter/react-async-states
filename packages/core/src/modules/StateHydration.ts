@@ -8,9 +8,11 @@ export const attemptHydratedState = isServer
   : attemptHydratedStateDOM;
 
 // unused parameters to keep the same exported signature
-export function attemptHydratedStateServer<TData, TArgs extends unknown[], TError>(
-  _key: string
-): HydrationData<TData, TArgs, TError> | null {
+export function attemptHydratedStateServer<
+  TData,
+  TArgs extends unknown[],
+  TError,
+>(_key: string): HydrationData<TData, TArgs, TError> | null {
   return null;
 }
 
