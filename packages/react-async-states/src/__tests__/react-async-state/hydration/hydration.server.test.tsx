@@ -35,7 +35,7 @@ describe("should hydrate async states", () => {
 			</React.StrictMode>
 		);
 		expect(screen.getByTestId("parent").innerHTML).toEqual(
-			'<script id="test">window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__counter":{"state":{"props":null,"timestamp":1487076708000,"data":0,"status":"initial"},"latestRun":null,"payload":{}}})</script>'
+			'<script id="test">window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__counter":{"state":{"status":"initial","data":0,"timestamp":1487076708000,"props":{"args":[0],"payload":{}}},"latestRun":null,"payload":{}}})</script>'
 		);
 	});
 	it("should perform basic Provider when status did succeed", async () => {
@@ -125,7 +125,7 @@ describe("should hydrate async states", () => {
 			</React.StrictMode>
 		);
 		expect(screen.getByTestId("parent").innerHTML).toEqual(
-			'<script id="test">window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__counter2":{"state":{"props":null,"timestamp":1487076708000,"data":14,"status":"initial"},"latestRun":null,"payload":{}}})</script>'
+			'<script id="test">window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__counter2":{"state":{"status":"initial","data":14,"timestamp":1487076708000,"props":{"args":[14],"payload":{}}},"latestRun":null,"payload":{}}})</script>'
 		);
 	});
 });

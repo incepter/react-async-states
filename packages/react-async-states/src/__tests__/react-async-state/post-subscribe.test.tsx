@@ -90,7 +90,10 @@ describe("should post subscribe", () => {
 			expect(mocked).toHaveBeenCalledWith({
 				status: "initial",
 				timestamp: TESTS_TS,
-				props: null,
+				props: {
+					args: [0],
+					payload: {},
+				},
 				data: 0,
 			});
 			expect(producer).toHaveBeenCalledTimes(2); // 1 strict mode
