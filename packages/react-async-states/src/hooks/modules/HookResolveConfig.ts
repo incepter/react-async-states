@@ -15,28 +15,28 @@ import { isServer } from "../../provider/context";
 // the goal of this function is to retrieve the following objects:
 // - a configuration object to use { key, producer, source, lazy ... }
 // - the state instance
-export function parseConfig<TData, A extends unknown[], E, S = State<TData, A, E>>(
+export function parseConfig<TData, TArgs extends unknown[], TError, S = State<TData, TArgs, TError>>(
   currentLibContext: LibraryContext | null,
-  mixedConfig: MixedConfig<TData, A, E, S>,
-  overrides?: PartialUseAsyncConfig<TData, A, E, S> | null
+  mixedConfig: MixedConfig<TData, TArgs, TError, S>,
+  overrides?: PartialUseAsyncConfig<TData, TArgs, TError, S> | null
 ) {
   requireAnExecContextInServer(currentLibContext, mixedConfig);
 
   let executionContext: LibraryContext;
-  let instance: StateInterface<TData, A, E>;
-  let parsedConfiguration: PartialUseAsyncConfig<TData, A, E, S>;
+  let instance: StateInterface<TData, TArgs, TError>;
+  let parsedConfiguration: PartialUseAsyncConfig<TData, TArgs, TError, S>;
 
   switch (typeof mixedConfig) {
     // the user provided an object configuration or a Source
     case "object": {
-      if (isSource<TData, A, E>(mixedConfig)) {
+      if (isSource<TData, TArgs, TError>(mixedConfig)) {
         instance = mixedConfig.inst;
         parsedConfiguration = assign({}, overrides, { source: mixedConfig });
         break;
       }
 
-      let baseConfig = mixedConfig as BaseConfig<TData, A, E>;
-      if (baseConfig.source && isSource<TData, A, E>(baseConfig.source)) {
+      let baseConfig = mixedConfig as BaseConfig<TData, TArgs, TError>;
+      if (baseConfig.source && isSource<TData, TArgs, TError>(baseConfig.source)) {
         let realSource = baseConfig.source.getLane(baseConfig.lane);
         instance = realSource.inst;
         parsedConfiguration = assign({}, baseConfig, overrides, {
@@ -116,10 +116,10 @@ export function parseConfig<TData, A extends unknown[], E, S = State<TData, A, E
 // - it is not a source
 // - the user provided a configuration object (not through overrides)
 // - cases when it contains { source } should be supported before calling this
-function resolveFromObjectConfig<TData, A extends unknown[], E>(
+function resolveFromObjectConfig<TData, TArgs extends unknown[], TError>(
   executionContext: LibraryContext,
-  parsedConfiguration: PartialUseAsyncConfig<TData, A, E, any>
-): StateInterface<TData, A, E> {
+  parsedConfiguration: PartialUseAsyncConfig<TData, TArgs, TError, any>
+): StateInterface<TData, TArgs, TError> {
   let { key, producer } = parsedConfiguration;
 
   if (!key) {
@@ -140,10 +140,10 @@ function resolveFromObjectConfig<TData, A extends unknown[], E>(
 }
 
 // the user provided a string to useAsync(key, deps)
-function resolveFromStringConfig<TData, A extends unknown[], E>(
+function resolveFromStringConfig<TData, TArgs extends unknown[], TError>(
   executionContext: LibraryContext,
-  parsedConfiguration: PartialUseAsyncConfig<TData, A, E, any>
-): StateInterface<TData, A, E> {
+  parsedConfiguration: PartialUseAsyncConfig<TData, TArgs, TError, any>
+): StateInterface<TData, TArgs, TError> {
   // key should never be undefined in this path
   let key = parsedConfiguration.key!;
   let existingInstance = executionContext.get(key);
@@ -155,9 +155,9 @@ function resolveFromStringConfig<TData, A extends unknown[], E>(
   return createSource(key, null, parsedConfiguration).inst;
 }
 
-function resolveFromFunctionConfig<TData, A extends unknown[], E>(
-  parsedConfiguration: PartialUseAsyncConfig<TData, A, E, any>
-): StateInterface<TData, A, E> {
+function resolveFromFunctionConfig<TData, TArgs extends unknown[], TError>(
+  parsedConfiguration: PartialUseAsyncConfig<TData, TArgs, TError, any>
+): StateInterface<TData, TArgs, TError> {
   requireAKeyInTheServer();
   let key = nextKey();
 

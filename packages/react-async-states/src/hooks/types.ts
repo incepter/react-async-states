@@ -17,235 +17,235 @@ import {
 
 export type UseAsyncState<
   TData,
-  A extends unknown[] = unknown[],
-  E = unknown,
-  S = State<TData, A, E>,
-> = LegacyHookReturn<TData, A, E, S>;
+  TArgs extends unknown[] = unknown[],
+  TError = Error,
+  S = State<TData, TArgs, TError>,
+> = LegacyHookReturn<TData, TArgs, TError, S>;
 
 export type EqualityFn<TData> = (prev: TData, next: TData) => boolean;
 
-export interface BaseConfig<TData, A extends unknown[], E>
-  extends ProducerConfig<TData, A, E> {
+export interface BaseConfig<TData, TArgs extends unknown[], TError>
+  extends ProducerConfig<TData, TArgs, TError> {
   key?: string;
   lane?: string;
   concurrent?: boolean;
-  source?: Source<TData, A, E>;
-  autoRunArgs?: A;
-  producer?: Producer<TData, A, E>;
+  source?: Source<TData, TArgs, TError>;
+  autoRunArgs?: TArgs;
+  producer?: Producer<TData, TArgs, TError>;
   subscriptionKey?: string;
   payload?: Record<string, unknown>;
-  events?: UseAsyncStateEvents<TData, A, E>;
+  events?: UseAsyncStateEvents<TData, TArgs, TError>;
 
   lazy?: boolean;
   condition?:
     | boolean
     | ((
-        state: State<TData, A, E>,
-        args?: A,
+        state: State<TData, TArgs, TError>,
+        args?: TArgs,
         payload?: Record<string, unknown> | null
       ) => boolean);
 }
 
-export interface ConfigWithKeyWithSelector<TData, A extends unknown[], E, S>
-  extends ConfigWithKeyWithoutSelector<TData, A, E> {
-  selector: UseSelector<TData, A, E, S>;
+export interface ConfigWithKeyWithSelector<TData, TArgs extends unknown[], TError, S>
+  extends ConfigWithKeyWithoutSelector<TData, TArgs, TError> {
+  selector: UseSelector<TData, TArgs, TError, S>;
   areEqual?: EqualityFn<S>;
 }
 
-export interface ConfigWithKeyWithoutSelector<TData, A extends unknown[], E>
-  extends BaseConfig<TData, A, E> {
+export interface ConfigWithKeyWithoutSelector<TData, TArgs extends unknown[], TError>
+  extends BaseConfig<TData, TArgs, TError> {
   key: string;
 }
 
-export interface ConfigWithSourceWithSelector<TData, A extends unknown[], E, S>
-  extends ConfigWithSourceWithoutSelector<TData, A, E> {
-  selector: UseSelector<TData, A, E, S>;
+export interface ConfigWithSourceWithSelector<TData, TArgs extends unknown[], TError, S>
+  extends ConfigWithSourceWithoutSelector<TData, TArgs, TError> {
+  selector: UseSelector<TData, TArgs, TError, S>;
   areEqual?: EqualityFn<S>;
 }
 
-export interface ConfigWithSourceWithoutSelector<TData, A extends unknown[], E>
-  extends BaseConfig<TData, A, E> {
-  source: Source<TData, A, E>;
+export interface ConfigWithSourceWithoutSelector<TData, TArgs extends unknown[], TError>
+  extends BaseConfig<TData, TArgs, TError> {
+  source: Source<TData, TArgs, TError>;
 }
 
-export interface ConfigWithProducerWithSelector<TData, A extends unknown[], E, S>
-  extends ConfigWithProducerWithoutSelector<TData, A, E> {
-  selector: UseSelector<TData, A, E, S>;
+export interface ConfigWithProducerWithSelector<TData, TArgs extends unknown[], TError, S>
+  extends ConfigWithProducerWithoutSelector<TData, TArgs, TError> {
+  selector: UseSelector<TData, TArgs, TError, S>;
   areEqual?: EqualityFn<S>;
 }
 
-export interface ConfigWithProducerWithoutSelector<TData, A extends unknown[], E>
-  extends BaseConfig<TData, A, E> {
-  producer?: Producer<TData, A, E>;
+export interface ConfigWithProducerWithoutSelector<TData, TArgs extends unknown[], TError>
+  extends BaseConfig<TData, TArgs, TError> {
+  producer?: Producer<TData, TArgs, TError>;
 }
 
-export type MixedConfig<TData, A extends unknown[], E, S = State<TData, A, E>> =
+export type MixedConfig<TData, TArgs extends unknown[], TError, S = State<TData, TArgs, TError>> =
   | string
   | undefined
-  | Source<TData, A, E>
-  | Producer<TData, A, E>
-  | ConfigWithKeyWithSelector<TData, A, E, S>
-  | ConfigWithKeyWithoutSelector<TData, A, E>
-  | ConfigWithSourceWithSelector<TData, A, E, S>
-  | ConfigWithSourceWithoutSelector<TData, A, E>
-  | ConfigWithProducerWithSelector<TData, A, E, S>
-  | ConfigWithProducerWithoutSelector<TData, A, E>;
+  | Source<TData, TArgs, TError>
+  | Producer<TData, TArgs, TError>
+  | ConfigWithKeyWithSelector<TData, TArgs, TError, S>
+  | ConfigWithKeyWithoutSelector<TData, TArgs, TError>
+  | ConfigWithSourceWithSelector<TData, TArgs, TError, S>
+  | ConfigWithSourceWithoutSelector<TData, TArgs, TError>
+  | ConfigWithProducerWithSelector<TData, TArgs, TError, S>
+  | ConfigWithProducerWithoutSelector<TData, TArgs, TError>;
 export type UseAsyncStateConfiguration<
   TData,
-  A extends unknown[],
-  E,
-  S = State<TData, A, E>,
+  TArgs extends unknown[],
+  TError,
+  S = State<TData, TArgs, TError>,
 > = {
   key?: string;
   storeInContext?: boolean;
 
   lane?: string;
-  source?: Source<TData, A, E>;
-  producer?: Producer<TData, A, E>;
+  source?: Source<TData, TArgs, TError>;
+  producer?: Producer<TData, TArgs, TError>;
   skipPendingDelayMs?: number;
   skipPendingStatus?: boolean;
-  cacheConfig?: CacheConfig<TData, A, E>;
+  cacheConfig?: CacheConfig<TData, TArgs, TError>;
   runEffectDurationMs?: number;
   resetStateOnDispose?: boolean;
   payload?: Record<string, unknown>;
   runEffect?: RunEffect;
   initialValue?:
     | TData
-    | ((cache: Record<string, CachedState<TData, A, E>> | null) => TData);
+    | ((cache: Record<string, CachedState<TData, TArgs, TError>> | null) => TData);
 
   context?: unknown;
   concurrent?: boolean;
 
   lazy?: boolean;
-  autoRunArgs?: A;
+  autoRunArgs?: TArgs;
   condition?:
     | boolean
     | ((
-        state: State<TData, A, E>,
-        args: A,
+        state: State<TData, TArgs, TError>,
+        args: TArgs,
         payload: Record<string, unknown>
       ) => boolean);
   areEqual: EqualityFn<S>;
   subscriptionKey?: string;
-  selector?: UseSelector<TData, A, E, S>;
-  events?: UseAsyncStateEvents<TData, A, E>;
+  selector?: UseSelector<TData, TArgs, TError, S>;
+  events?: UseAsyncStateEvents<TData, TArgs, TError>;
 
   // dev only
   hideFromDevtools?: boolean;
 };
 
-export type UseAsyncChangeEventProps<TData, A extends unknown[], E> =
-  | UseAsyncStateEventPropsInitial<TData, A, E>
-  | UseAsyncStateEventPropsPending<TData, A, E>
-  | UseAsyncStateEventPropsSuccess<TData, A, E>
-  | UseAsyncStateEventPropsError<TData, A, E>;
+export type UseAsyncChangeEventProps<TData, TArgs extends unknown[], TError> =
+  | UseAsyncStateEventPropsInitial<TData, TArgs, TError>
+  | UseAsyncStateEventPropsPending<TData, TArgs, TError>
+  | UseAsyncStateEventPropsSuccess<TData, TArgs, TError>
+  | UseAsyncStateEventPropsError<TData, TArgs, TError>;
 
-export type UseAsyncStateEventPropsInitial<TData, A extends unknown[], E> = {
-  state: InitialState<TData, A>;
-  source: Source<TData, A, E>;
+export type UseAsyncStateEventPropsInitial<TData, TArgs extends unknown[], TError> = {
+  state: InitialState<TData, TArgs>;
+  source: Source<TData, TArgs, TError>;
 };
-export type UseAsyncStateEventPropsPending<TData, A extends unknown[], E> = {
-  state: PendingState<TData, A, E>;
-  source: Source<TData, A, E>;
+export type UseAsyncStateEventPropsPending<TData, TArgs extends unknown[], TError> = {
+  state: PendingState<TData, TArgs, TError>;
+  source: Source<TData, TArgs, TError>;
 };
-export type UseAsyncStateEventPropsSuccess<TData, A extends unknown[], E> = {
-  state: SuccessState<TData, A>;
-  source: Source<TData, A, E>;
+export type UseAsyncStateEventPropsSuccess<TData, TArgs extends unknown[], TError> = {
+  state: SuccessState<TData, TArgs>;
+  source: Source<TData, TArgs, TError>;
 };
-export type UseAsyncStateEventPropsError<TData, A extends unknown[], E> = {
-  state: ErrorState<TData, A, E>;
-  source: Source<TData, A, E>;
-};
-
-export type UseAsyncStateEvents<TData, A extends unknown[], E> = {
-  change?: UseAsyncStateEventFn<TData, A, E> | UseAsyncStateEventFn<TData, A, E>[];
-  subscribe?: UseAsyncStateEventSubscribe<TData, A, E>;
+export type UseAsyncStateEventPropsError<TData, TArgs extends unknown[], TError> = {
+  state: ErrorState<TData, TArgs, TError>;
+  source: Source<TData, TArgs, TError>;
 };
 
-export type UseAsyncStateChangeEventHandler<TData, A extends unknown[], E> =
-  | UseAsyncChangeEventInitial<TData, A, E>
-  | UseAsyncChangeEventSuccess<TData, A, E>
-  | UseAsyncChangeEventPending<TData, A, E>
-  | UseAsyncStateChangeEventHandlerError<TData, A, E>;
+export type UseAsyncStateEvents<TData, TArgs extends unknown[], TError> = {
+  change?: UseAsyncStateEventFn<TData, TArgs, TError> | UseAsyncStateEventFn<TData, TArgs, TError>[];
+  subscribe?: UseAsyncStateEventSubscribe<TData, TArgs, TError>;
+};
 
-export type UseAsyncChangeEventInitial<TData, A extends unknown[], E> = (
-  props: UseAsyncStateEventPropsInitial<TData, A, E>
+export type UseAsyncStateChangeEventHandler<TData, TArgs extends unknown[], TError> =
+  | UseAsyncChangeEventInitial<TData, TArgs, TError>
+  | UseAsyncChangeEventSuccess<TData, TArgs, TError>
+  | UseAsyncChangeEventPending<TData, TArgs, TError>
+  | UseAsyncStateChangeEventHandlerError<TData, TArgs, TError>;
+
+export type UseAsyncChangeEventInitial<TData, TArgs extends unknown[], TError> = (
+  props: UseAsyncStateEventPropsInitial<TData, TArgs, TError>
 ) => void;
-export type UseAsyncChangeEventSuccess<TData, A extends unknown[], E> = (
-  props: UseAsyncStateEventPropsSuccess<TData, A, E>
+export type UseAsyncChangeEventSuccess<TData, TArgs extends unknown[], TError> = (
+  props: UseAsyncStateEventPropsSuccess<TData, TArgs, TError>
 ) => void;
-export type UseAsyncChangeEventPending<TData, A extends unknown[], E> = (
-  props: UseAsyncStateEventPropsPending<TData, A, E>
+export type UseAsyncChangeEventPending<TData, TArgs extends unknown[], TError> = (
+  props: UseAsyncStateEventPropsPending<TData, TArgs, TError>
 ) => void;
-export type UseAsyncStateChangeEventHandlerError<TData, A extends unknown[], E> = (
-  props: UseAsyncStateEventPropsError<TData, A, E>
+export type UseAsyncStateChangeEventHandlerError<TData, TArgs extends unknown[], TError> = (
+  props: UseAsyncStateEventPropsError<TData, TArgs, TError>
 ) => void;
 
-export type UseAsyncStateEventFn<TData, A extends unknown[], E> =
-  | UseAsyncStateChangeEvent<TData, A, E>
-  | UseAsyncStateChangeEventHandler<TData, A, E>;
+export type UseAsyncStateEventFn<TData, TArgs extends unknown[], TError> =
+  | UseAsyncStateChangeEvent<TData, TArgs, TError>
+  | UseAsyncStateChangeEventHandler<TData, TArgs, TError>;
 
-export type UseAsyncStateChangeEvent<TData, A extends unknown[], E> =
-  | UseAsyncStateChangeEventInitial<TData, A, E>
-  | UseAsyncStateChangeEventPending<TData, A, E>
-  | UseAsyncStateChangeEventSuccess<TData, A, E>
-  | UseAsyncStateChangeEventError<TData, A, E>;
+export type UseAsyncStateChangeEvent<TData, TArgs extends unknown[], TError> =
+  | UseAsyncStateChangeEventInitial<TData, TArgs, TError>
+  | UseAsyncStateChangeEventPending<TData, TArgs, TError>
+  | UseAsyncStateChangeEventSuccess<TData, TArgs, TError>
+  | UseAsyncStateChangeEventError<TData, TArgs, TError>;
 
-export type UseAsyncStateChangeEventInitial<TData, A extends unknown[], E> = {
+export type UseAsyncStateChangeEventInitial<TData, TArgs extends unknown[], TError> = {
   status: "initial";
-  handler: UseAsyncChangeEventInitial<TData, A, E>;
+  handler: UseAsyncChangeEventInitial<TData, TArgs, TError>;
 };
-export type UseAsyncStateChangeEventPending<TData, A extends unknown[], E> = {
+export type UseAsyncStateChangeEventPending<TData, TArgs extends unknown[], TError> = {
   status: "pending";
-  handler: UseAsyncChangeEventPending<TData, A, E>;
+  handler: UseAsyncChangeEventPending<TData, TArgs, TError>;
 };
-export type UseAsyncStateChangeEventSuccess<TData, A extends unknown[], E> = {
+export type UseAsyncStateChangeEventSuccess<TData, TArgs extends unknown[], TError> = {
   status: "success";
-  handler: UseAsyncChangeEventSuccess<TData, A, E>;
+  handler: UseAsyncChangeEventSuccess<TData, TArgs, TError>;
 };
-export type UseAsyncStateChangeEventError<TData, A extends unknown[], E> = {
+export type UseAsyncStateChangeEventError<TData, TArgs extends unknown[], TError> = {
   status: "error";
-  handler: UseAsyncStateChangeEventHandlerError<TData, A, E>;
+  handler: UseAsyncStateChangeEventHandlerError<TData, TArgs, TError>;
 };
 
-export type UseAsyncStateEventSubscribe<TData, A extends unknown[], E> =
-  | ((props: SubscribeEventProps<TData, A, E>) => CleanupFn)
-  | ((props: SubscribeEventProps<TData, A, E>) => CleanupFn)[];
+export type UseAsyncStateEventSubscribe<TData, TArgs extends unknown[], TError> =
+  | ((props: SubscribeEventProps<TData, TArgs, TError>) => CleanupFn)
+  | ((props: SubscribeEventProps<TData, TArgs, TError>) => CleanupFn)[];
 
-export type UseAsyncStateEventSubscribeFunction<TData, A extends unknown[], E> = (
-  prevEvents: UseAsyncStateEventSubscribe<TData, A, E> | null
-) => UseAsyncStateEventSubscribe<TData, A, E>;
+export type UseAsyncStateEventSubscribeFunction<TData, TArgs extends unknown[], TError> = (
+  prevEvents: UseAsyncStateEventSubscribe<TData, TArgs, TError> | null
+) => UseAsyncStateEventSubscribe<TData, TArgs, TError>;
 
-export type SubscribeEventProps<TData, A extends unknown[], E> = Source<TData, A, E>;
-export type UseSelector<TData, A extends unknown[], E, S> = (
-  currentState: State<TData, A, E>,
-  lastSuccess: LastSuccessSavedState<TData, A>,
-  cache: { [id: string]: CachedState<TData, A, E> } | null
+export type SubscribeEventProps<TData, TArgs extends unknown[], TError> = Source<TData, TArgs, TError>;
+export type UseSelector<TData, TArgs extends unknown[], TError, S> = (
+  currentState: State<TData, TArgs, TError>,
+  lastSuccess: LastSuccessSavedState<TData, TArgs>,
+  cache: { [id: string]: CachedState<TData, TArgs, TError> } | null
 ) => S;
 
-export type PartialUseAsyncConfig<TData, A extends unknown[], E, S> = Partial<
-  UseAsyncStateConfiguration<TData, A, E, S>
+export type PartialUseAsyncConfig<TData, TArgs extends unknown[], TError, S> = Partial<
+  UseAsyncStateConfiguration<TData, TArgs, TError, S>
 >;
 
 export type CleanupFn = AbortFn | (() => void) | undefined;
 
-interface BaseHooksReturn<TData, A extends unknown[], E, S = State<TData, A, E>> {
-  source: Source<TData, A, E>;
+interface BaseHooksReturn<TData, TArgs extends unknown[], TError, S = State<TData, TArgs, TError>> {
+  source: Source<TData, TArgs, TError>;
   read(suspend?: boolean, throwError?: boolean): S;
 
   onChange(
-    events: HookChangeEventsFunction<TData, A, E> | HookChangeEvents<TData, A, E>
+    events: HookChangeEventsFunction<TData, TArgs, TError> | HookChangeEvents<TData, TArgs, TError>
   ): void;
 
   onSubscribe(
     events:
-      | UseAsyncStateEventSubscribeFunction<TData, A, E>
-      | UseAsyncStateEventSubscribe<TData, A, E>
+      | UseAsyncStateEventSubscribeFunction<TData, TArgs, TError>
+      | UseAsyncStateEventSubscribe<TData, TArgs, TError>
   ): void;
 }
 
-export interface HookReturnInitial<TData, A extends unknown[], E, S>
-  extends BaseHooksReturn<TData, A, E, S> {
+export interface HookReturnInitial<TData, TArgs extends unknown[], TError, S>
+  extends BaseHooksReturn<TData, TArgs, TError, S> {
   state: S;
 
   isError: false;
@@ -257,8 +257,8 @@ export interface HookReturnInitial<TData, A extends unknown[], E, S>
   data: TData | null;
 }
 
-export interface HookReturnSuccess<TData, A extends unknown[], E, S>
-  extends BaseHooksReturn<TData, A, E, S> {
+export interface HookReturnSuccess<TData, TArgs extends unknown[], TError, S>
+  extends BaseHooksReturn<TData, TArgs, TError, S> {
   state: S;
 
   isError: false;
@@ -270,8 +270,8 @@ export interface HookReturnSuccess<TData, A extends unknown[], E, S>
   error: null;
 }
 
-export interface HookReturnError<TData, A extends unknown[], E, S>
-  extends BaseHooksReturn<TData, A, E, S> {
+export interface HookReturnError<TData, TArgs extends unknown[], TError, S>
+  extends BaseHooksReturn<TData, TArgs, TError, S> {
   state: S;
 
   isError: true;
@@ -279,12 +279,12 @@ export interface HookReturnError<TData, A extends unknown[], E, S>
   isSuccess: false;
   isPending: false;
 
-  error: E;
+  error: TError;
   data: TData | null;
 }
 
-export interface HookReturnPending<TData, A extends unknown[], E, S>
-  extends BaseHooksReturn<TData, A, E, S> {
+export interface HookReturnPending<TData, TArgs extends unknown[], TError, S>
+  extends BaseHooksReturn<TData, TArgs, TError, S> {
   state: S;
 
   isError: false;
@@ -293,55 +293,55 @@ export interface HookReturnPending<TData, A extends unknown[], E, S>
   isSuccess: false;
 
   data: TData | null;
-  error: E | null;
+  error: TError | null;
 }
 
-export type LegacyHookReturn<TData, A extends unknown[], E, S = State<TData, A, E>> =
-  | HookReturnInitial<TData, A, E, S>
-  | HookReturnPending<TData, A, E, S>
-  | HookReturnSuccess<TData, A, E, S>
-  | HookReturnError<TData, A, E, S>;
+export type LegacyHookReturn<TData, TArgs extends unknown[], TError, S = State<TData, TArgs, TError>> =
+  | HookReturnInitial<TData, TArgs, TError, S>
+  | HookReturnPending<TData, TArgs, TError, S>
+  | HookReturnSuccess<TData, TArgs, TError, S>
+  | HookReturnError<TData, TArgs, TError, S>;
 
-export type ModernHookReturn<TData, A extends unknown[], E, S = State<TData, A, E>> =
-  | HookReturnInitial<TData, A, E, S>
-  | HookReturnSuccess<TData, A, E, S>;
+export type ModernHookReturn<TData, TArgs extends unknown[], TError, S = State<TData, TArgs, TError>> =
+  | HookReturnInitial<TData, TArgs, TError, S>
+  | HookReturnSuccess<TData, TArgs, TError, S>;
 
-export type HookChangeEvents<TData, A extends unknown[], E> =
-  | UseAsyncStateEventFn<TData, A, E>
-  | UseAsyncStateEventFn<TData, A, E>[];
+export type HookChangeEvents<TData, TArgs extends unknown[], TError> =
+  | UseAsyncStateEventFn<TData, TArgs, TError>
+  | UseAsyncStateEventFn<TData, TArgs, TError>[];
 
-export type HookChangeEventsFunction<TData, A extends unknown[], E> = (
-  prev: HookChangeEvents<TData, A, E> | null
-) => HookChangeEvents<TData, A, E>;
+export type HookChangeEventsFunction<TData, TArgs extends unknown[], TError> = (
+  prev: HookChangeEvents<TData, TArgs, TError> | null
+) => HookChangeEvents<TData, TArgs, TError>;
 
-export interface HookSubscription<TData, A extends unknown[], E, S>
-  extends SubscriptionAlternate<TData, A, E, S> {
-  alternate: SubscriptionAlternate<TData, A, E, S> | null;
+export interface HookSubscription<TData, TArgs extends unknown[], TError, S>
+  extends SubscriptionAlternate<TData, TArgs, TError, S> {
+  alternate: SubscriptionAlternate<TData, TArgs, TError, S> | null;
   read(suspend?: boolean, throwError?: boolean): S;
 
-  changeEvents: HookChangeEvents<TData, A, E> | null;
-  subscribeEvents: UseAsyncStateEventSubscribe<TData, A, E> | null;
+  changeEvents: HookChangeEvents<TData, TArgs, TError> | null;
+  subscribeEvents: UseAsyncStateEventSubscribe<TData, TArgs, TError> | null;
   onChange(
     events:
-      | ((prevEvents: HookChangeEvents<TData, A, E> | null) => void)
-      | HookChangeEvents<TData, A, E>
+      | ((prevEvents: HookChangeEvents<TData, TArgs, TError> | null) => void)
+      | HookChangeEvents<TData, TArgs, TError>
   ): void;
 
   onSubscribe(
     events:
-      | ((prevEvents: UseAsyncStateEventSubscribe<TData, A, E> | null) => void)
-      | UseAsyncStateEventSubscribe<TData, A, E>
+      | ((prevEvents: UseAsyncStateEventSubscribe<TData, TArgs, TError> | null) => void)
+      | UseAsyncStateEventSubscribe<TData, TArgs, TError>
   ): void;
 }
 
-export interface SubscriptionAlternate<TData, A extends unknown[], E, S> {
+export interface SubscriptionAlternate<TData, TArgs extends unknown[], TError, S> {
   deps: unknown[];
   version: number;
-  instance: StateInterface<TData, A, E>;
-  return: LegacyHookReturn<TData, A, E, S>;
+  instance: StateInterface<TData, TArgs, TError>;
+  return: LegacyHookReturn<TData, TArgs, TError, S>;
   update: React.Dispatch<React.SetStateAction<number>>;
 
-  config: PartialUseAsyncConfig<TData, A, E, S>;
+  config: PartialUseAsyncConfig<TData, TArgs, TError, S>;
 
   // dev mode properties
   at?: string | null;

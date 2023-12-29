@@ -7,16 +7,16 @@ const defaultDeps = [];
 
 export default function AsyncStateComponent<
   TData,
-  E = any,
-  A extends unknown[] = unknown[],
-  S = State<TData, A, E>,
+  TError = any,
+  TArgs extends unknown[] = unknown[],
+  S = State<TData, TArgs, TError>,
 >({
   config,
   children,
   dependencies = defaultDeps,
 }: {
-  config: MixedConfig<TData, A, E, S>;
-  children?: (props: UseAsyncState<TData, A, E, S>) => React.ReactNode;
+  config: MixedConfig<TData, TArgs, TError, S>;
+  children?: (props: UseAsyncState<TData, TArgs, TError, S>) => React.ReactNode;
   dependencies?: any[];
 }): any {
   if (children && typeof children !== "function") {

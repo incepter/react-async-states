@@ -5,9 +5,9 @@ import { useCallerName } from "../helpers/useCallerName";
 import { useAsync_internal } from "../hooks/useAsync_internal";
 import { __DEV__setHookCallerName } from "../hooks/modules/HookSubscription";
 
-export default function internalUse<TData, A extends unknown[], E>(
-  source: Source<TData, A, E>,
-  options?: UseConfig<TData, A, E>,
+export default function internalUse<TData, TArgs extends unknown[], TError>(
+  source: Source<TData, TArgs, TError>,
+  options?: UseConfig<TData, TArgs, TError>,
   deps: any[] = emptyArray
 ): TData {
   if (__DEV__) {

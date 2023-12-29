@@ -34,51 +34,51 @@ import { useCallerName } from "../helpers/useCallerName";
 // - useAsync.auto(...same) : inject a lazy: false configuration override
 // - useAsync.lazy(...same) : forces the lazy: true configuration
 //region useAsyncOverloads
-function useAsync_export<TData, A extends unknown[], E>(
+function useAsync_export<TData, TArgs extends unknown[], TError>(
   config: string,
   deps?: unknown[]
-): UseAsyncState<TData, A, E>;
-function useAsync_export<TData, A extends unknown[], E>(
-  config: Source<TData, A, E>,
+): UseAsyncState<TData, TArgs, TError>;
+function useAsync_export<TData, TArgs extends unknown[], TError>(
+  config: Source<TData, TArgs, TError>,
   deps?: unknown[]
-): UseAsyncState<TData, A, E>;
-function useAsync_export<TData, A extends unknown[], E>(
-  config: Producer<TData, A, E>,
+): UseAsyncState<TData, TArgs, TError>;
+function useAsync_export<TData, TArgs extends unknown[], TError>(
+  config: Producer<TData, TArgs, TError>,
   deps?: unknown[]
-): UseAsyncState<TData, A, E>;
-function useAsync_export<TData, A extends unknown[], E, S>(
-  config: ConfigWithKeyWithSelector<TData, A, E, S>,
+): UseAsyncState<TData, TArgs, TError>;
+function useAsync_export<TData, TArgs extends unknown[], TError, S>(
+  config: ConfigWithKeyWithSelector<TData, TArgs, TError, S>,
   deps?: unknown[]
-): UseAsyncState<TData, A, E, S>;
-function useAsync_export<TData, A extends unknown[], E>(
-  config: ConfigWithKeyWithoutSelector<TData, A, E>,
+): UseAsyncState<TData, TArgs, TError, S>;
+function useAsync_export<TData, TArgs extends unknown[], TError>(
+  config: ConfigWithKeyWithoutSelector<TData, TArgs, TError>,
   deps?: unknown[]
-): UseAsyncState<TData, A, E>;
-function useAsync_export<TData, A extends unknown[], E, S>(
-  config: ConfigWithSourceWithSelector<TData, A, E, S>,
+): UseAsyncState<TData, TArgs, TError>;
+function useAsync_export<TData, TArgs extends unknown[], TError, S>(
+  config: ConfigWithSourceWithSelector<TData, TArgs, TError, S>,
   deps?: unknown[]
-): UseAsyncState<TData, A, E, S>;
-function useAsync_export<TData, A extends unknown[], E>(
-  config: ConfigWithSourceWithoutSelector<TData, A, E>,
+): UseAsyncState<TData, TArgs, TError, S>;
+function useAsync_export<TData, TArgs extends unknown[], TError>(
+  config: ConfigWithSourceWithoutSelector<TData, TArgs, TError>,
   deps?: unknown[]
-): UseAsyncState<TData, A, E>;
-function useAsync_export<TData, A extends unknown[], E, S>(
-  config: ConfigWithProducerWithSelector<TData, A, E, S>,
+): UseAsyncState<TData, TArgs, TError>;
+function useAsync_export<TData, TArgs extends unknown[], TError, S>(
+  config: ConfigWithProducerWithSelector<TData, TArgs, TError, S>,
   deps?: unknown[]
-): UseAsyncState<TData, A, E, S>;
-function useAsync_export<TData, A extends unknown[], E>(
-  config: ConfigWithProducerWithoutSelector<TData, A, E>,
+): UseAsyncState<TData, TArgs, TError, S>;
+function useAsync_export<TData, TArgs extends unknown[], TError>(
+  config: ConfigWithProducerWithoutSelector<TData, TArgs, TError>,
   deps?: unknown[]
-): UseAsyncState<TData, A, E>;
-function useAsync_export<TData, A extends unknown[], E, S>(
-  config: MixedConfig<TData, A, E, S>,
+): UseAsyncState<TData, TArgs, TError>;
+function useAsync_export<TData, TArgs extends unknown[], TError, S>(
+  config: MixedConfig<TData, TArgs, TError, S>,
   deps?: unknown[]
-): UseAsyncState<TData, A, E, S>;
+): UseAsyncState<TData, TArgs, TError, S>;
 //endregion
-function useAsync_export<TData, A extends unknown[], E, S>(
-  config: MixedConfig<TData, A, E, S>,
+function useAsync_export<TData, TArgs extends unknown[], TError, S>(
+  config: MixedConfig<TData, TArgs, TError, S>,
   deps: unknown[] = emptyArray
-): UseAsyncState<TData, A, E, S> {
+): UseAsyncState<TData, TArgs, TError, S> {
   if (__DEV__) {
     __DEV__setHookCallerName(useCallerName(3));
   }
@@ -89,8 +89,8 @@ function useAsync_export<TData, A extends unknown[], E, S>(
 // and then reused when necessary
 let autoRunOverride: { lazy: false } | null = null;
 
-function useAuto<TData, A extends unknown[], E, S>(
-  config: MixedConfig<TData, A, E, S>,
+function useAuto<TData, TArgs extends unknown[], TError, S>(
+  config: MixedConfig<TData, TArgs, TError, S>,
   deps: unknown[] = emptyArray
 ) {
   if (__DEV__) {
@@ -104,22 +104,22 @@ function useAuto<TData, A extends unknown[], E, S>(
 }
 
 // keep these types here next to useAsync_export
-type UseAsyncReturn<TData, A extends unknown[], E, S> = ReturnType<
-  typeof useAsync_export<TData, A, E, S>
+type UseAsyncReturn<TData, TArgs extends unknown[], TError, S> = ReturnType<
+  typeof useAsync_export<TData, TArgs, TError, S>
 >;
 
-type UseAsyncParams<TData, A extends unknown[], E, S> = Parameters<
-  typeof useAsync_export<TData, A, E, S>
+type UseAsyncParams<TData, TArgs extends unknown[], TError, S> = Parameters<
+  typeof useAsync_export<TData, TArgs, TError, S>
 >;
 
 type UseAsyncType = {
-  <TData, A extends unknown[] = [], E = Error, S = State<TData, A, E>>(
-    ...args: UseAsyncParams<TData, A, E, S>
-  ): UseAsyncReturn<TData, A, E, S>;
+  <TData, TArgs extends unknown[] = [], TError = Error, S = State<TData, TArgs, TError>>(
+    ...args: UseAsyncParams<TData, TArgs, TError, S>
+  ): UseAsyncReturn<TData, TArgs, TError, S>;
 
-  auto<TData, A extends unknown[] = [], E = Error, S = State<TData, A, E>>(
-    ...args: UseAsyncParams<TData, A, E, S>
-  ): UseAsyncReturn<TData, A, E, S>;
+  auto<TData, TArgs extends unknown[] = [], TError = Error, S = State<TData, TArgs, TError>>(
+    ...args: UseAsyncParams<TData, TArgs, TError, S>
+  ): UseAsyncReturn<TData, TArgs, TError, S>;
 };
 
 useAsync_export.auto = useAuto;

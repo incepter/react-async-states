@@ -10,11 +10,11 @@ import {
 } from "./modules/HookSubscription";
 
 // this is the main hook, useAsyncState previously
-export function useAsync_internal<TData, A extends unknown[], E, S>(
-  options: MixedConfig<TData, A, E, S>,
+export function useAsync_internal<TData, TArgs extends unknown[], TError, S>(
+  options: MixedConfig<TData, TArgs, TError, S>,
   deps: unknown[],
-  overrides?: PartialUseAsyncConfig<TData, A, E, S> | null
-): LegacyHookReturn<TData, A, E, S> {
+  overrides?: PartialUseAsyncConfig<TData, TArgs, TError, S> | null
+): LegacyHookReturn<TData, TArgs, TError, S> {
   // only parse the configuration when deps change
   // this process will yield the instance to subscribe to, along with
   // the combined config (options)
