@@ -19,10 +19,10 @@ import {
   SuccessState,
 } from "async-states";
 
-export function createSubscriptionLegacyReturn<T, A extends unknown[], E, S>(
-  subscription: HookSubscription<T, A, E, S>,
-  config: PartialUseAsyncConfig<T, A, E, S>
-): LegacyHookReturn<T, A, E, S> {
+export function createSubscriptionLegacyReturn<TData, A extends unknown[], E, S>(
+  subscription: HookSubscription<TData, A, E, S>,
+  config: PartialUseAsyncConfig<TData, A, E, S>
+): LegacyHookReturn<TData, A, E, S> {
   let currentStatus = subscription.instance.state.status;
 
   switch (currentStatus) {
@@ -44,9 +44,9 @@ export function createSubscriptionLegacyReturn<T, A extends unknown[], E, S>(
   }
 }
 
-function selectState<T, A extends unknown[], E, S>(
-  instance: StateInterface<T, A, E>,
-  selector?: UseSelector<T, A, E, S>
+function selectState<TData, A extends unknown[], E, S>(
+  instance: StateInterface<TData, A, E>,
+  selector?: UseSelector<TData, A, E, S>
 ): S {
   let { state: currentState, lastSuccess, cache } = instance;
   if (selector) {
@@ -56,12 +56,12 @@ function selectState<T, A extends unknown[], E, S>(
   }
 }
 
-export function createLegacyInitialReturn<T, A extends unknown[], E, S>(
-  subscription: HookSubscription<T, A, E, S>,
-  config: PartialUseAsyncConfig<T, A, E, S>
-): HookReturnInitial<T, A, E, S> {
+export function createLegacyInitialReturn<TData, A extends unknown[], E, S>(
+  subscription: HookSubscription<TData, A, E, S>,
+  config: PartialUseAsyncConfig<TData, A, E, S>
+): HookReturnInitial<TData, A, E, S> {
   let instance = subscription.instance;
-  let currentState = instance.state as InitialState<T, A>;
+  let currentState = instance.state as InitialState<TData, A>;
   let selectedState = selectState(instance, config.selector);
 
   let result = {
@@ -89,12 +89,12 @@ export function createLegacyInitialReturn<T, A extends unknown[], E, S>(
   return freeze(result);
 }
 
-export function createLegacySuccessReturn<T, A extends unknown[], E, S>(
-  subscription: HookSubscription<T, A, E, S>,
-  config: PartialUseAsyncConfig<T, A, E, S>
-): HookReturnSuccess<T, A, E, S> {
+export function createLegacySuccessReturn<TData, A extends unknown[], E, S>(
+  subscription: HookSubscription<TData, A, E, S>,
+  config: PartialUseAsyncConfig<TData, A, E, S>
+): HookReturnSuccess<TData, A, E, S> {
   let instance = subscription.instance;
-  let currentState = instance.state as SuccessState<T, A>;
+  let currentState = instance.state as SuccessState<TData, A>;
   let selectedState = selectState(instance, config.selector);
 
   let result = {
@@ -122,13 +122,13 @@ export function createLegacySuccessReturn<T, A extends unknown[], E, S>(
   return freeze(result);
 }
 
-export function createLegacyErrorReturn<T, A extends unknown[], E, S>(
-  subscription: HookSubscription<T, A, E, S>,
-  config: PartialUseAsyncConfig<T, A, E, S>
-): HookReturnError<T, A, E, S> {
+export function createLegacyErrorReturn<TData, A extends unknown[], E, S>(
+  subscription: HookSubscription<TData, A, E, S>,
+  config: PartialUseAsyncConfig<TData, A, E, S>
+): HookReturnError<TData, A, E, S> {
   let instance = subscription.instance;
   let lastSuccess = instance.lastSuccess;
-  let currentState = instance.state as ErrorState<T, A, E>;
+  let currentState = instance.state as ErrorState<TData, A, E>;
   let selectedState = selectState(instance, config.selector);
 
   let result = {
@@ -156,13 +156,13 @@ export function createLegacyErrorReturn<T, A extends unknown[], E, S>(
   return freeze(result);
 }
 
-export function createLegacyPendingReturn<T, A extends unknown[], E, S>(
-  subscription: HookSubscription<T, A, E, S>,
-  config: PartialUseAsyncConfig<T, A, E, S>
-): HookReturnPending<T, A, E, S> {
+export function createLegacyPendingReturn<TData, A extends unknown[], E, S>(
+  subscription: HookSubscription<TData, A, E, S>,
+  config: PartialUseAsyncConfig<TData, A, E, S>
+): HookReturnPending<TData, A, E, S> {
   let instance = subscription.instance;
   let lastSuccess = instance.lastSuccess;
-  let currentState = instance.state as PendingState<T, A, E>;
+  let currentState = instance.state as PendingState<TData, A, E>;
   let previousState = currentState.prev;
   let selectedState = selectState(instance, config.selector);
 
@@ -190,8 +190,8 @@ export function createLegacyPendingReturn<T, A extends unknown[], E, S>(
   return freeze(result);
 }
 
-export function selectWholeState<T, A extends unknown[], E, S>(
-  state: State<T, A, E>
+export function selectWholeState<TData, A extends unknown[], E, S>(
+  state: State<TData, A, E>
 ): S {
   return state as S;
 }

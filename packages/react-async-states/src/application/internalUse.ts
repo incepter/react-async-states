@@ -5,11 +5,11 @@ import { useCallerName } from "../helpers/useCallerName";
 import { useAsync_internal } from "../hooks/useAsync_internal";
 import { __DEV__setHookCallerName } from "../hooks/modules/HookSubscription";
 
-export default function internalUse<T, A extends unknown[], E>(
-  source: Source<T, A, E>,
-  options?: UseConfig<T, A, E>,
+export default function internalUse<TData, A extends unknown[], E>(
+  source: Source<TData, A, E>,
+  options?: UseConfig<TData, A, E>,
   deps: any[] = emptyArray
-): T {
+): TData {
   if (__DEV__) {
     __DEV__setHookCallerName(useCallerName(3));
   }

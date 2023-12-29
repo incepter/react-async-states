@@ -30,51 +30,51 @@ import { useData_internal } from "./useData_internal";
 // so, let's make enough overloads
 
 //region useDataOverloads
-export function useData<T, A extends unknown[], E>(
+export function useData<TData, A extends unknown[], E>(
   config: string,
   deps?: unknown[]
-): ModernHookReturn<T, A, E>;
-export function useData<T, A extends unknown[], E>(
-  config: Source<T, A, E>,
+): ModernHookReturn<TData, A, E>;
+export function useData<TData, A extends unknown[], E>(
+  config: Source<TData, A, E>,
   deps?: unknown[]
-): ModernHookReturn<T, A, E>;
-export function useData<T, A extends unknown[], E>(
-  config: Producer<T, A, E>,
+): ModernHookReturn<TData, A, E>;
+export function useData<TData, A extends unknown[], E>(
+  config: Producer<TData, A, E>,
   deps?: unknown[]
-): ModernHookReturn<T, A, E>;
-export function useData<T, A extends unknown[], E, S>(
-  config: ConfigWithKeyWithSelector<T, A, E, S>,
+): ModernHookReturn<TData, A, E>;
+export function useData<TData, A extends unknown[], E, S>(
+  config: ConfigWithKeyWithSelector<TData, A, E, S>,
   deps?: unknown[]
-): ModernHookReturn<T, A, E, S>;
-export function useData<T, A extends unknown[], E>(
-  config: ConfigWithKeyWithoutSelector<T, A, E>,
+): ModernHookReturn<TData, A, E, S>;
+export function useData<TData, A extends unknown[], E>(
+  config: ConfigWithKeyWithoutSelector<TData, A, E>,
   deps?: unknown[]
-): ModernHookReturn<T, A, E>;
-export function useData<T, A extends unknown[], E, S>(
-  config: ConfigWithSourceWithSelector<T, A, E, S>,
+): ModernHookReturn<TData, A, E>;
+export function useData<TData, A extends unknown[], E, S>(
+  config: ConfigWithSourceWithSelector<TData, A, E, S>,
   deps?: unknown[]
-): ModernHookReturn<T, A, E, S>;
-export function useData<T, A extends unknown[], E>(
-  config: ConfigWithSourceWithoutSelector<T, A, E>,
+): ModernHookReturn<TData, A, E, S>;
+export function useData<TData, A extends unknown[], E>(
+  config: ConfigWithSourceWithoutSelector<TData, A, E>,
   deps?: unknown[]
-): ModernHookReturn<T, A, E>;
-export function useData<T, A extends unknown[], E, S>(
-  config: ConfigWithProducerWithSelector<T, A, E, S>,
+): ModernHookReturn<TData, A, E>;
+export function useData<TData, A extends unknown[], E, S>(
+  config: ConfigWithProducerWithSelector<TData, A, E, S>,
   deps?: unknown[]
-): ModernHookReturn<T, A, E, S>;
-export function useData<T, A extends unknown[], E>(
-  config: ConfigWithProducerWithoutSelector<T, A, E>,
+): ModernHookReturn<TData, A, E, S>;
+export function useData<TData, A extends unknown[], E>(
+  config: ConfigWithProducerWithoutSelector<TData, A, E>,
   deps?: unknown[]
-): ModernHookReturn<T, A, E>;
-export function useData<T, A extends unknown[], E, S>(
-  config: MixedConfig<T, A, E, S>,
+): ModernHookReturn<TData, A, E>;
+export function useData<TData, A extends unknown[], E, S>(
+  config: MixedConfig<TData, A, E, S>,
   deps?: unknown[]
-): ModernHookReturn<T, A, E, S>;
+): ModernHookReturn<TData, A, E, S>;
 //endregion
-export function useData<T, A extends unknown[], E, S>(
-  config: MixedConfig<T, A, E, S>,
+export function useData<TData, A extends unknown[], E, S>(
+  config: MixedConfig<TData, A, E, S>,
   deps: unknown[] = emptyArray
-): ModernHookReturn<T, A, E, S> {
+): ModernHookReturn<TData, A, E, S> {
   if (__DEV__) {
     __DEV__setHookCallerName(useCallerName(3));
   }

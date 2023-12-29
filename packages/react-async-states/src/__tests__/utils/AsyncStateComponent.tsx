@@ -6,17 +6,17 @@ import { MixedConfig, UseAsyncState } from "../../hooks/types";
 const defaultDeps = [];
 
 export default function AsyncStateComponent<
-  T,
+  TData,
   E = any,
   A extends unknown[] = unknown[],
-  S = State<T, A, E>,
+  S = State<TData, A, E>,
 >({
   config,
   children,
   dependencies = defaultDeps,
 }: {
-  config: MixedConfig<T, A, E, S>;
-  children?: (props: UseAsyncState<T, A, E, S>) => React.ReactNode;
+  config: MixedConfig<TData, A, E, S>;
+  children?: (props: UseAsyncState<TData, A, E, S>) => React.ReactNode;
   dependencies?: any[];
 }): any {
   if (children && typeof children !== "function") {

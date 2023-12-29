@@ -15,22 +15,22 @@ export type {
   SuccessState,
 } from "async-states";
 
-export type UseConfig<T, A extends unknown[], E, S = State<T, A, E>> = {
+export type UseConfig<TData, A extends unknown[], E, S = State<TData, A, E>> = {
   lane?: string;
-  producer?: Producer<T, A, E>;
+  producer?: Producer<TData, A, E>;
   payload?: Record<string, unknown>;
 
   lazy?: boolean;
   autoRunArgs?: A;
   areEqual?: EqualityFn<S>;
   subscriptionKey?: string;
-  selector?: UseSelector<T, A, E, S>;
-  events?: UseAsyncStateEvents<T, A, E>;
+  selector?: UseSelector<TData, A, E, S>;
+  events?: UseAsyncStateEvents<TData, A, E>;
 
   condition?:
     | boolean
     | ((
-        state: State<T, A, E>,
+        state: State<TData, A, E>,
         args?: A,
         payload?: Record<string, unknown> | null
       ) => boolean);
