@@ -19,7 +19,12 @@ import {
   SuccessState,
 } from "async-states";
 
-export function createSubscriptionLegacyReturn<TData, TArgs extends unknown[], TError, S>(
+export function createSubscriptionLegacyReturn<
+  TData,
+  TArgs extends unknown[],
+  TError,
+  S,
+>(
   subscription: HookSubscription<TData, TArgs, TError, S>,
   config: PartialUseAsyncConfig<TData, TArgs, TError, S>
 ): LegacyHookReturn<TData, TArgs, TError, S> {
@@ -56,7 +61,12 @@ function selectState<TData, TArgs extends unknown[], TError, S>(
   }
 }
 
-export function createLegacyInitialReturn<TData, TArgs extends unknown[], TError, S>(
+export function createLegacyInitialReturn<
+  TData,
+  TArgs extends unknown[],
+  TError,
+  S,
+>(
   subscription: HookSubscription<TData, TArgs, TError, S>,
   config: PartialUseAsyncConfig<TData, TArgs, TError, S>
 ): HookReturnInitial<TData, TArgs, TError, S> {
@@ -89,7 +99,12 @@ export function createLegacyInitialReturn<TData, TArgs extends unknown[], TError
   return freeze(result);
 }
 
-export function createLegacySuccessReturn<TData, TArgs extends unknown[], TError, S>(
+export function createLegacySuccessReturn<
+  TData,
+  TArgs extends unknown[],
+  TError,
+  S,
+>(
   subscription: HookSubscription<TData, TArgs, TError, S>,
   config: PartialUseAsyncConfig<TData, TArgs, TError, S>
 ): HookReturnSuccess<TData, TArgs, TError, S> {
@@ -122,7 +137,12 @@ export function createLegacySuccessReturn<TData, TArgs extends unknown[], TError
   return freeze(result);
 }
 
-export function createLegacyErrorReturn<TData, TArgs extends unknown[], TError, S>(
+export function createLegacyErrorReturn<
+  TData,
+  TArgs extends unknown[],
+  TError,
+  S,
+>(
   subscription: HookSubscription<TData, TArgs, TError, S>,
   config: PartialUseAsyncConfig<TData, TArgs, TError, S>
 ): HookReturnError<TData, TArgs, TError, S> {
@@ -156,7 +176,12 @@ export function createLegacyErrorReturn<TData, TArgs extends unknown[], TError, 
   return freeze(result);
 }
 
-export function createLegacyPendingReturn<TData, TArgs extends unknown[], TError, S>(
+export function createLegacyPendingReturn<
+  TData,
+  TArgs extends unknown[],
+  TError,
+  S,
+>(
   subscription: HookSubscription<TData, TArgs, TError, S>,
   config: PartialUseAsyncConfig<TData, TArgs, TError, S>
 ): HookReturnPending<TData, TArgs, TError, S> {

@@ -113,11 +113,21 @@ type UseAsyncParams<TData, TArgs extends unknown[], TError, S> = Parameters<
 >;
 
 type UseAsyncType = {
-  <TData, TArgs extends unknown[] = [], TError = Error, S = State<TData, TArgs, TError>>(
+  <
+    TData,
+    TArgs extends unknown[] = [],
+    TError = Error,
+    S = State<TData, TArgs, TError>,
+  >(
     ...args: UseAsyncParams<TData, TArgs, TError, S>
   ): UseAsyncReturn<TData, TArgs, TError, S>;
 
-  auto<TData, TArgs extends unknown[] = [], TError = Error, S = State<TData, TArgs, TError>>(
+  auto<
+    TData,
+    TArgs extends unknown[] = [],
+    TError = Error,
+    S = State<TData, TArgs, TError>,
+  >(
     ...args: UseAsyncParams<TData, TArgs, TError, S>
   ): UseAsyncReturn<TData, TArgs, TError, S>;
 };

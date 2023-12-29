@@ -37,10 +37,12 @@ export function useRetainInstance<TData, TArgs extends unknown[], TError, S>(
   );
 }
 
-type SubscriptionWithoutReturn<TData, TArgs extends unknown[], TError, S> = Omit<
-  HookSubscription<TData, TArgs, TError, S>,
-  "return"
->;
+type SubscriptionWithoutReturn<
+  TData,
+  TArgs extends unknown[],
+  TError,
+  S,
+> = Omit<HookSubscription<TData, TArgs, TError, S>, "return">;
 
 function createSubscription<TData, TArgs extends unknown[], TError, S>(
   instance: StateInterface<TData, TArgs, TError>,
@@ -53,9 +55,18 @@ function createSubscription<TData, TArgs extends unknown[], TError, S>(
   // and every time you call onChange it overrides this value
   // sure, it receives the previous events as argument if function
   let changeEvents: HookChangeEvents<TData, TArgs, TError> | null = null;
-  let subscribeEvents: UseAsyncStateEventSubscribe<TData, TArgs, TError> | null = null;
+  let subscribeEvents: UseAsyncStateEventSubscribe<
+    TData,
+    TArgs,
+    TError
+  > | null = null;
 
-  let subscriptionWithoutReturn: SubscriptionWithoutReturn<TData, TArgs, TError, S> = {
+  let subscriptionWithoutReturn: SubscriptionWithoutReturn<
+    TData,
+    TArgs,
+    TError,
+    S
+  > = {
     deps,
     config,
     update,
@@ -78,7 +89,12 @@ function createSubscription<TData, TArgs extends unknown[], TError, S>(
     at: currentlyRenderingComponentName,
   };
 
-  let subscription = subscriptionWithoutReturn as HookSubscription<TData, TArgs, TError, S>;
+  let subscription = subscriptionWithoutReturn as HookSubscription<
+    TData,
+    TArgs,
+    TError,
+    S
+  >;
   subscription.return = createSubscriptionLegacyReturn(subscription, config);
 
   return subscription;
@@ -124,7 +140,9 @@ function createSubscription<TData, TArgs extends unknown[], TError, S>(
   }
 
   function onChange(
-    newEvents: HookChangeEventsFunction<TData, TArgs, TError> | HookChangeEvents<TData, TArgs, TError>
+    newEvents:
+      | HookChangeEventsFunction<TData, TArgs, TError>
+      | HookChangeEvents<TData, TArgs, TError>
   ) {
     if (isFunction(newEvents)) {
       let events = newEvents as HookChangeEventsFunction<TData, TArgs, TError>;
@@ -143,18 +161,31 @@ function createSubscription<TData, TArgs extends unknown[], TError, S>(
       | UseAsyncStateEventSubscribe<TData, TArgs, TError>
   ) {
     if (isFunction(newEvents)) {
-      let events = newEvents as UseAsyncStateEventSubscribeFunction<TData, TArgs, TError>;
+      let events = newEvents as UseAsyncStateEventSubscribeFunction<
+        TData,
+        TArgs,
+        TError
+      >;
       let maybeEvents = events(subscribeEvents);
       if (maybeEvents) {
         subscribeEvents = maybeEvents;
       }
     } else if (newEvents) {
-      subscribeEvents = newEvents as UseAsyncStateEventSubscribe<TData, TArgs, TError>;
+      subscribeEvents = newEvents as UseAsyncStateEventSubscribe<
+        TData,
+        TArgs,
+        TError
+      >;
     }
   }
 }
 
-export function beginRenderSubscription<TData, TArgs extends unknown[], TError, S>(
+export function beginRenderSubscription<
+  TData,
+  TArgs extends unknown[],
+  TError,
+  S,
+>(
   subscription: HookSubscription<TData, TArgs, TError, S>,
   newConfig: PartialUseAsyncConfig<TData, TArgs, TError, S>,
   deps: unknown[]
@@ -220,9 +251,12 @@ export function beginRenderSubscription<TData, TArgs extends unknown[], TError, 
   return alternate;
 }
 
-export function completeRenderSubscription<TData, TArgs extends unknown[], TError, S>(
-  subscription: HookSubscription<TData, TArgs, TError, S>
-): void {
+export function completeRenderSubscription<
+  TData,
+  TArgs extends unknown[],
+  TError,
+  S,
+>(subscription: HookSubscription<TData, TArgs, TError, S>): void {
   if (__DEV__) {
     __DEV__unsetHookCallerName();
   }
@@ -284,7 +318,12 @@ function reconcileInstance<TData, TArgs extends unknown[], TError, S>(
   }
 }
 
-function removeHookConfigToPatchToSource<TData, TArgs extends unknown[], TError, S>(
+function removeHookConfigToPatchToSource<
+  TData,
+  TArgs extends unknown[],
+  TError,
+  S,
+>(
   currentConfig: PartialUseAsyncConfig<TData, TArgs, TError, S>
 ): ProducerConfig<TData, TArgs, TError> {
   // the patched config may contain the following properties
@@ -339,9 +378,12 @@ function resolveSubscriptionKey<TData, TArgs extends unknown[], TError, S>(
   return `${key}-${(subscription.instance.subsIndex || 0) + 1}`;
 }
 
-export function autoRunAndSubscribeEvents<TData, TArgs extends unknown[], TError, S>(
-  subscription: HookSubscription<TData, TArgs, TError, S>
-) {
+export function autoRunAndSubscribeEvents<
+  TData,
+  TArgs extends unknown[],
+  TError,
+  S,
+>(subscription: HookSubscription<TData, TArgs, TError, S>) {
   let currentConfig = subscription.config;
   let currentInstance = subscription.instance;
   let instanceActions = currentInstance.actions;
@@ -492,10 +534,14 @@ export function forceComponentUpdate(prev: number) {
 
 export function invokeChangeEvents<TData, TArgs extends unknown[], TError>(
   instance: StateInterface<TData, TArgs, TError>,
-  events: UseAsyncStateEventFn<TData, TArgs, TError> | UseAsyncStateEventFn<TData, TArgs, TError>[]
+  events:
+    | UseAsyncStateEventFn<TData, TArgs, TError>
+    | UseAsyncStateEventFn<TData, TArgs, TError>[]
 ) {
   let nextState = instance.state;
-  const changeHandlers: UseAsyncStateEventFn<TData, TArgs, TError>[] = isArray(events)
+  const changeHandlers: UseAsyncStateEventFn<TData, TArgs, TError>[] = isArray(
+    events
+  )
     ? events
     : [events];
 
@@ -530,8 +576,9 @@ export function invokeSubscribeEvents<TData, TArgs extends unknown[], TError>(
 
   let eventProps: SubscribeEventProps<TData, TArgs, TError> = instance.actions;
 
-  let handlers: ((props: SubscribeEventProps<TData, TArgs, TError>) => CleanupFn)[] =
-    isArray(events) ? events : [events];
+  let handlers: ((
+    props: SubscribeEventProps<TData, TArgs, TError>
+  ) => CleanupFn)[] = isArray(events) ? events : [events];
 
   return handlers.map((handler) => handler(eventProps));
 }

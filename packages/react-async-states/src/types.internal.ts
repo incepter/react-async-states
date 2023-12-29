@@ -15,7 +15,12 @@ export type {
   SuccessState,
 } from "async-states";
 
-export type UseConfig<TData, TArgs extends unknown[], TError, S = State<TData, TArgs, TError>> = {
+export type UseConfig<
+  TData,
+  TArgs extends unknown[],
+  TError,
+  S = State<TData, TArgs, TError>,
+> = {
   lane?: string;
   producer?: Producer<TData, TArgs, TError>;
   payload?: Record<string, unknown>;

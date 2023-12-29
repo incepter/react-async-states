@@ -15,7 +15,12 @@ import { isServer } from "../../provider/context";
 // the goal of this function is to retrieve the following objects:
 // - a configuration object to use { key, producer, source, lazy ... }
 // - the state instance
-export function parseConfig<TData, TArgs extends unknown[], TError, S = State<TData, TArgs, TError>>(
+export function parseConfig<
+  TData,
+  TArgs extends unknown[],
+  TError,
+  S = State<TData, TArgs, TError>,
+>(
   currentLibContext: LibraryContext | null,
   mixedConfig: MixedConfig<TData, TArgs, TError, S>,
   overrides?: PartialUseAsyncConfig<TData, TArgs, TError, S> | null
@@ -36,7 +41,10 @@ export function parseConfig<TData, TArgs extends unknown[], TError, S = State<TD
       }
 
       let baseConfig = mixedConfig as BaseConfig<TData, TArgs, TError>;
-      if (baseConfig.source && isSource<TData, TArgs, TError>(baseConfig.source)) {
+      if (
+        baseConfig.source &&
+        isSource<TData, TArgs, TError>(baseConfig.source)
+      ) {
         let realSource = baseConfig.source.getLane(baseConfig.lane);
         instance = realSource.inst;
         parsedConfiguration = assign({}, baseConfig, overrides, {
