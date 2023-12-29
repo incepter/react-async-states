@@ -1,6 +1,7 @@
 import * as React from "react";
 import { act, render, screen } from "@testing-library/react";
-import { createApplication2, Api } from "../../application/application2";
+import type { Api } from "../../application/types2";
+import { createApplication2 } from "../../application/application2";
 import { flushPromises } from "../utils/test-utils";
 
 type User = {

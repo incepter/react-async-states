@@ -1,43 +1,25 @@
-import { UseAsyncState, UseConfig } from "../types.internal";
+import { UseConfig } from "../types.internal";
 import { __DEV__, assign, emptyArray } from "../shared";
 import { __DEV__setHookCallerName } from "../hooks/modules/HookSubscription";
 import { useCallerName } from "../helpers/useCallerName";
 import { useData_internal } from "../hooks/useData_internal";
 import { useAsync_internal } from "../hooks/useAsync_internal";
 import {
+  createContext,
   createSource,
   Producer,
   ProducerConfig,
   Source,
-  State,
-  createContext,
 } from "async-states";
-import { LegacyHookReturn, ModernHookReturn } from "../hooks/types";
-
-export type Api<TData, TArgs extends unknown[] = [], TError = Error> = {
-  (): Source<TData, TArgs, TError>;
-  define(
-    fn: Producer<TData, TArgs, TError>,
-    config?: ProducerConfig<TData, TArgs, TError>
-  ): Api<TData, TArgs, TError>;
-  useData<S = State<TData, TArgs, TError>>(
-    config?: UseConfig<TData, TArgs, TError, S>,
-    deps?: any[]
-  ): ModernHookReturn<TData, TArgs, TError, S>;
-  useAsync<S = State<TData, TArgs, TError>>(
-    config?: UseConfig<TData, TArgs, TError, S>,
-    deps?: any[]
-  ): LegacyHookReturn<TData, TArgs, TError, S>;
-};
-type AnyApi = Api<any, any, any>;
-type AppShape = Record<string, Record<string, AnyApi>>;
-
-type App<TApp extends AppShape> = {
-  [resource in keyof TApp]: Resource<TApp[resource]>;
-};
-type Resource<TResource extends Record<string, AnyApi>> = {
-  [api in keyof TResource]: TResource[api];
-};
+import {
+  Api,
+  App,
+  AppShape,
+  InferArgs,
+  InferData,
+  InferError,
+  Resource,
+} from "./types2";
 
 export function createApplication2<TApp extends AppShape>(
   initialShape?: any,
@@ -75,7 +57,7 @@ function createResource<TApp extends AppShape, TRes extends keyof App<TApp>>(
   let resource: Partial<Resource<TApp[TRes]>> = {};
 
   return new Proxy(resource as Resource<TApp[TRes]>, {
-    get(target: Resource<TApp[TRes]>, property: string): any {
+    get(_target: Resource<TApp[TRes]>, property: string): any {
       let apiName = property as keyof App<TApp>[TRes];
 
       let exitingApi = resource[property];
@@ -104,7 +86,6 @@ function createApi<
   apiName: TApi,
   context?: object
 ): TApp[TRes][typeof apiName] {
-  // ): App<TApp>[TRes][typeof apiName] {
   type TData = InferData<TApp, TRes, TApi>;
   type TArgs = InferArgs<TApp, TRes, TApi>;
   type TError = InferError<TApp, TRes, TApi>;
@@ -170,23 +151,3 @@ function useAsyncForApp<TData, TArgs extends unknown[], TError>(
 
   return useAsync_internal(source, deps || emptyArray, config);
 }
-
-type InferData<
-  TApp extends AppShape,
-  TRes extends keyof App<TApp>,
-  TApi extends keyof App<TApp>[TRes],
-> = TApp[TRes][TApi] extends Api<infer T, any, any> ? T : never;
-
-type InferArgs<
-  TApp extends AppShape,
-  TRes extends keyof App<TApp>,
-  TApi extends keyof App<TApp>[TRes],
-> = App<TApp>[TRes][TApi] extends Api<any, infer A extends unknown[]>
-  ? A
-  : never;
-
-type InferError<
-  TApp extends AppShape,
-  TRes extends keyof App<TApp>,
-  TApi extends keyof App<TApp>[TRes],
-> = App<TApp>[TRes][TApi] extends Api<any, any, infer E> ? E : never;
