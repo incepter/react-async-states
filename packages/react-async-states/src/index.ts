@@ -52,7 +52,6 @@ export type {
   UseConfig,
   MixedConfig,
   UseAsyncState,
-  UseAsyncStateConfiguration,
   SubscribeEventProps,
   UseAsyncStateEvents,
   UseAsyncStateEventFn,
