@@ -20,7 +20,7 @@ describe("AsyncState - run", () => {
 		// then
 		// should have initial status
 		expect(myAsyncState.state).toEqual({
-			props: null,
+			props: { args: [null], payload: {} },
 			data: null,
 			timestamp: TESTS_TS,
 			status: "initial",
@@ -34,8 +34,8 @@ describe("AsyncState - run", () => {
 				payload: {},
 			},
 			prev: {
+				props: { args: [null], payload: {} },
 				data: null,
-				props: null,
 				status: "initial",
 				timestamp: 1487076708000,
 			},
@@ -53,7 +53,10 @@ describe("AsyncState - run", () => {
 			},
 			prev: {
 				data: null,
-				props: null,
+				props: {
+					args: [null],
+					payload: {},
+				},
 				status: "initial",
 				timestamp: TESTS_TS,
 			},

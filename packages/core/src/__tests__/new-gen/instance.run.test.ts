@@ -1,6 +1,5 @@
 import { AsyncState } from "../../AsyncState";
 import { mockDateNow } from "../utils/setup";
-import { Status } from "../../enums";
 import { expect } from "@jest/globals";
 import { flushPromises } from "../utils/test-utils";
 import { replaceInstanceState } from "../../modules/StateUpdate";
@@ -29,7 +28,7 @@ describe("AsyncState instance run", () => {
 
 		replaceInstanceState(instance, {
 			data: 17,
-			props: { args: [17] },
+			props: { args: [17], payload: {} },
 			timestamp: Date.now(),
 			status: "success",
 		});

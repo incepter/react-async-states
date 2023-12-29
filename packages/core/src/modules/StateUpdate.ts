@@ -1,13 +1,15 @@
 import {
 	InitialState,
 	ProducerCallbacks,
+	ProducerProps,
+	ProducerSavedProps,
 	ReplaceStateUpdateQueue,
 	State,
 	StateFunctionUpdater,
 	StateInterface,
 	UpdateQueue,
 } from "../types";
-import {initial, pending, Status, success} from "../enums";
+import { initial, pending, Status, success } from "../enums";
 import { notifySubscribers } from "./StateSubscription";
 import { __DEV__, cloneProducerProps, isFunction } from "../utils";
 import devtools from "../devtools/Devtools";
@@ -335,11 +337,16 @@ export function setInstanceState<T, A extends unknown[], E>(
 			effectiveValue = newValue(instance.state);
 		}
 	}
-	const savedProps = cloneProducerProps<T, A, E>({
+
+	// setting state from this path passes without props as a direct call to
+	// setState; which means there are no "props", but we only care about
+	// args and payload, so we hack it here like this
+	let partialProducerProps = {
 		args: [effectiveValue] as A,
 		payload: shallowClone(instance.payload),
-	});
-	if (__DEV__) devtools.emitUpdate(instance, true);
+	} as ProducerProps<T, A, E>;
+
+	const savedProps = cloneProducerProps<T, A, E>(partialProducerProps);
 
 	let newState = {
 		status,
@@ -385,11 +392,17 @@ export function disposeInstance<T, A extends unknown[], E>(
 	if (isFunction(initialState)) {
 		initialState = initialState(instance.cache);
 	}
+
+	let initialSavedProps = {
+		args: [initialState as T],
+		payload: shallowClone(instance.payload),
+	} as ProducerSavedProps<T, A>;
+
 	const newState: InitialState<T, A> = {
-		props: null,
+		status: initial,
 		timestamp: now(),
 		data: initialState,
-		status: initial,
+		props: initialSavedProps,
 	};
 
 	replaceInstanceState(instance, newState);

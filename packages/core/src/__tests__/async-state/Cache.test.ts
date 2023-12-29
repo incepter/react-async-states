@@ -28,7 +28,7 @@ describe("async state cache", () => {
 				state: {
 					data: 1,
 					timestamp: 122,
-					props: { args: [1] },
+					props: { args: [1], payload: {} },
 					status: "success",
 				},
 				addedAt: 123,
@@ -75,7 +75,7 @@ describe("async state cache", () => {
 				state: {
 					data: 1,
 					timestamp: 122,
-					props: { args: [1] },
+					props: { args: [1], payload: {} },
 					status: "success",
 				},
 				addedAt: 123,
@@ -89,8 +89,8 @@ describe("async state cache", () => {
 			cacheConfig: {
 				load,
 				enabled: true,
-				onCacheLoad({ cache, setState }) {
-					setState(cache[`1`].state.data);
+				onCacheLoad({ cache, source }) {
+					source.setState(cache[`1`].state.data);
 				},
 			},
 		});
@@ -106,7 +106,7 @@ describe("async state cache", () => {
 				state: {
 					data: 1,
 					timestamp: 122,
-					props: { args: [1] },
+					props: { args: [1], payload: {} },
 					status: "success",
 				},
 				addedAt: 123,
@@ -116,7 +116,7 @@ describe("async state cache", () => {
 				state: {
 					data: 1,
 					timestamp: 122,
-					props: { args: [1] },
+					props: { args: [1], payload: {} },
 					status: "success",
 				},
 				addedAt: 123,

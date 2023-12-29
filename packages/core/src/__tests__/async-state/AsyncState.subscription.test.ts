@@ -35,7 +35,10 @@ describe("AsyncState - subscriptions", () => {
 					},
 					prev: {
 						data: null,
-						props: null,
+						props: {
+							args: [null],
+							payload: {},
+						},
 						status: "initial",
 						timestamp: 1487076708000,
 					},
@@ -94,7 +97,10 @@ describe("AsyncState - subscriptions", () => {
 					},
 					prev: {
 						data: null,
-						props: null,
+						props: {
+							args: [null],
+							payload: {},
+						},
 						status: "initial",
 						timestamp: TESTS_TS,
 					},
@@ -106,7 +112,10 @@ describe("AsyncState - subscriptions", () => {
 		]);
 		expect(subscriptionFn).toHaveBeenCalledTimes(1);
 		expect(myAsyncState.state).toEqual({
-			props: null,
+			props: {
+				args: [null],
+				payload: {},
+			},
 			status: "initial",
 			data: null,
 			timestamp: TESTS_TS,

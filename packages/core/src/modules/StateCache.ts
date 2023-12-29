@@ -31,8 +31,8 @@ export function computeRunHash(
 	props?: RUNCProps<any, any, any>,
 	hashFn?: CacheConfig<any, any, any>["hash"]
 ): string {
-	let hashFunction = hashFn || defaultHash;
-	let args = (props && props.args) || emptyArray;
+	let args = props?.args || emptyArray;
+	let hashFunction = hashFn ?? defaultHash;
 
 	return hashFunction(args, payload as any);
 }
@@ -115,11 +115,11 @@ export function saveCacheAfterSuccessfulUpdate<T, A extends unknown[], E>(
 	if (topLevelParent.cache[runHash]?.state !== state) {
 		let deadline = getStateDeadline(state, cacheConfig?.timeout);
 
-		let cachedState = topLevelParent.cache[runHash] = {
+		let cachedState = (topLevelParent.cache[runHash] = {
 			deadline,
 			state: state,
 			addedAt: Date.now(),
-		} as CachedState<T, A, E>;
+		} as CachedState<T, A, E>);
 
 		// avoid infinity deadline timeouts
 		if (cacheConfig?.auto && Number.isFinite(deadline)) {
@@ -144,7 +144,6 @@ export function saveCacheAfterSuccessfulUpdate<T, A extends unknown[], E>(
 					// and forcing loading it again.
 					return;
 				}
-
 
 				delete topLevelParentCache[runHash];
 				// todo: dispatch cache change event
@@ -264,7 +263,7 @@ function resolveCache<T, A extends unknown[], E>(
 	if (isFunction(cacheConfig!.onCacheLoad)) {
 		cacheConfig!.onCacheLoad({
 			cache: instance.cache,
-			setState: instance.actions.setState,
+			source: instance.actions,
 		});
 	}
 }

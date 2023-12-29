@@ -14,24 +14,24 @@ export function defaultHash<A extends unknown[]>(
 	return JSON.stringify({ args, payload });
 }
 
-export function isPromise(candidate) {
+export function isPromise(candidate: any) {
 	return !!candidate && isFunction(candidate.then);
 }
 
 export function isGenerator<T = unknown>(
-	candidate
+	candidate: any
 ): candidate is Generator<any, T, any> {
 	return (
 		!!candidate && isFunction(candidate.next) && isFunction(candidate.throw)
 	);
 }
 
-export function isFunction(fn): fn is Function {
+export function isFunction(fn: any): fn is Function {
 	return typeof fn === "function";
 }
 
 export function cloneProducerProps<T, A extends unknown[], E>(
-	props: Partial<ProducerProps<T, A, E>>
+	props: ProducerProps<T, A, E>
 ): ProducerSavedProps<T, A> {
 	return {
 		args: props.args,

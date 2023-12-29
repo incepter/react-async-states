@@ -33,15 +33,18 @@ describe("AsyncState - setState", () => {
 			data: null,
 			timestamp: Date.now(),
 			prev: current,
-			props: {},
+			props: { args: [], payload: {} },
 		});
 		// then
 		let expectedState = {
-			props: {},
+			props: { args: [], payload: {} },
 			data: null,
 			prev: {
 				data: null,
-				props: null,
+				props: {
+					args: [null],
+					payload: {},
+				},
 				status: "initial",
 				timestamp: TESTS_TS,
 			},
@@ -61,7 +64,7 @@ describe("AsyncState - setState", () => {
 			{
 				status: "success",
 				data: {},
-				props: {},
+				props: { args: [], payload: {} },
 				timestamp: Date.now(),
 			},
 			false

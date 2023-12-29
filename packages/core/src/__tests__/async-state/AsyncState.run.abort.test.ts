@@ -22,7 +22,10 @@ describe("AsyncState - run - abort", () => {
 		// then
 		// should have initial status
 		expect(myAsyncState.state).toEqual({
-			props: null,
+			props: {
+				args: [null],
+				payload: {},
+			},
 			data: null,
 			timestamp: TESTS_TS,
 			status: "initial",
@@ -40,7 +43,10 @@ describe("AsyncState - run - abort", () => {
 			},
 			prev: {
 				data: null,
-				props: null,
+				props: {
+					args: [null],
+					payload: {},
+				},
 				status: "initial",
 				timestamp: TESTS_TS,
 			},
@@ -56,7 +62,10 @@ describe("AsyncState - run - abort", () => {
 
 		expect(myAsyncState.state).toEqual({
 			data: null,
-			props: null,
+			props: {
+				args: [null],
+				payload: {},
+			},
 			timestamp: TESTS_TS,
 			status: "initial",
 		});
@@ -65,7 +74,10 @@ describe("AsyncState - run - abort", () => {
 
 		// async state should be in success state with data
 		expect(myAsyncState.state).toEqual({
-			props: null,
+			props: {
+				args: [null],
+				payload: {},
+			},
 			timestamp: TESTS_TS,
 			status: "initial",
 			data: null,
@@ -104,7 +116,10 @@ describe("AsyncState - run - abort", () => {
 
 		// async state should be in success state with data
 		expect(myAsyncState.state).toEqual({
-			props: null,
+			props: {
+				args: [null],
+				payload: {},
+			},
 			timestamp: TESTS_TS,
 			status: "initial",
 			data: null,

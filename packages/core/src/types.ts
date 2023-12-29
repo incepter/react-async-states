@@ -1,17 +1,5 @@
 import { RunEffect, Status } from "./enums";
 
-export type ProducerWrapperInput<T, A extends unknown[], E> = {
-	setState: StateUpdater<T, A, E>;
-	instance?: StateInterface<T, A, E>;
-	setSuspender(p: Promise<T>): void;
-	replaceState(
-		newState: State<T, A, E>,
-		notify?: boolean,
-		callbacks?: ProducerCallbacks<T, A, E>
-	): void;
-	getProducer(): Producer<T, A, E> | undefined | null;
-};
-
 export interface BaseSource<T, A extends unknown[], E> {
 	// identity
 	key: string;
@@ -190,7 +178,7 @@ export interface BaseState<T, A extends unknown[]> {
 	data: T;
 	status: Status;
 	timestamp: number;
-	props?: ProducerSavedProps<T, A> | null;
+	props: ProducerSavedProps<T, A>;
 }
 
 export type SuccessState<T, A extends unknown[]> = {
@@ -223,7 +211,7 @@ export type InitialState<T, A extends unknown[]> = {
 	timestamp: number;
 	data: T | undefined;
 	status: "initial";
-	props: ProducerSavedProps<T, A> | null;
+	props: ProducerSavedProps<T, A>;
 };
 
 export type State<T, A extends unknown[], E> =
@@ -234,20 +222,18 @@ export type State<T, A extends unknown[], E> =
 export type AbortFn = ((reason?: any) => void) | undefined;
 export type OnAbortFn<R = unknown> = (cb?: (reason?: R) => void) => void;
 
-export interface ProducerProps<T, A extends unknown[] = [], E = Error>
-	extends ProducerEffects {
-	abort: (reason?: any) => void;
+export interface ProducerProps<T, A extends unknown[] = [], E = Error> {
 	onAbort: OnAbortFn;
-	emit: StateUpdater<T, A, E>;
+	isAborted: () => boolean;
+	abort: (reason?: any) => void;
 
 	args: A;
+	signal: AbortSignal;
 	payload: Record<string, unknown>;
 	lastSuccess: LastSuccessSavedState<T, A>;
-	isAborted: () => boolean;
 
+	emit: StateUpdater<T, A, E>;
 	getState: () => State<T, A, E>;
-
-	signal: AbortSignal;
 }
 
 export type RunIndicators = {
@@ -263,8 +249,8 @@ export type ProducerCallbacks<T, A extends unknown[], E> = {
 };
 
 export type ProducerSavedProps<T, A extends unknown[]> = {
-	args?: A;
-	payload?: Record<string, unknown> | null;
+	args: A;
+	payload: Record<string, unknown> | null;
 };
 
 export type Producer<TData, TArgs extends unknown[] = [], TError = Error> = (
@@ -276,6 +262,7 @@ export type ProducerFunction<T, A extends unknown[], E> = (
 	runIndicators: RunIndicators,
 	callbacks?: ProducerCallbacks<T, A, E>
 ) => AbortFn;
+
 export type ProducerConfig<T, A extends unknown[], E> = {
 	skipPendingStatus?: boolean;
 	initialValue?:
@@ -306,9 +293,6 @@ export type StateFunctionUpdater<T, A extends unknown[], E> = (
 	updater: State<T, A, E>
 ) => T;
 
-export type DataUpdater<T, A extends unknown[], E> = (
-	updater: State<T, A, E>
-) => T;
 export type StateUpdater<T, A extends unknown[], E> = (
 	updater: StateFunctionUpdater<T, A, E> | T,
 	status?: Status,
@@ -347,7 +331,7 @@ export type StateSubscription<T, A extends unknown[], E> = {
 };
 export type OnCacheLoadProps<T, A extends unknown[], E> = {
 	cache: Record<string, CachedState<T, A, E>>;
-	setState(newValue: T | StateFunctionUpdater<T, A, E>, status?: Status): void;
+	source: Source<T, A, E>;
 };
 export type CacheConfig<T, A extends unknown[], E> = {
 	enabled: boolean;
@@ -363,8 +347,9 @@ export type CacheConfig<T, A extends unknown[], E> = {
 		| Record<string, CachedState<T, A, E>>
 		| Promise<Record<string, CachedState<T, A, E>>>;
 
-	onCacheLoad?({ cache, setState }: OnCacheLoadProps<T, A, E>): void;
+	onCacheLoad?({ cache, source }: OnCacheLoadProps<T, A, E>): void;
 };
+
 export type CachedState<T, A extends unknown[], E> = {
 	state: State<T, A, E>;
 	addedAt: number;
@@ -374,24 +359,11 @@ export type CachedState<T, A extends unknown[], E> = {
 	id?: ReturnType<typeof setTimeout>;
 };
 
-export type AsyncStateKeyOrSource<T, A extends unknown[], E> =
-	| string
-	| Source<T, A, E>;
-
-export interface ProducerEffects {}
-
-export type ProducerRunInput<T, A extends unknown[], E> =
-	| AsyncStateKeyOrSource<T, A, E>
-	| Producer<T, A, E>;
-export type ProducerRunConfig = {
-	lane?: string;
-	fork?: boolean;
-	payload?: Record<string, unknown> | null;
-};
 export type PendingTimeout = {
 	id: ReturnType<typeof setTimeout>;
 	at: number;
 };
+
 export type PendingUpdate = {
 	id: ReturnType<typeof setTimeout>;
 	callback(): void;
@@ -404,6 +376,7 @@ export type SetStateUpdateQueue<T, A extends unknown[], E> = {
 	next: UpdateQueue<T, A, E> | null;
 	callbacks?: ProducerCallbacks<T, A, E>;
 };
+
 export type SetDataUpdateQueue<T, A extends unknown[], E> = {
 	id?: ReturnType<typeof setTimeout>;
 	kind: 2; // instance.setData()
@@ -445,12 +418,11 @@ export type OnSettled<T, A extends unknown[], E> = {
 
 export type LibraryContext = {
 	ctx: any;
+	terminate(): void;
 	version: { version: string; copyright: string };
 
 	remove(key: string): boolean;
+	getAll(): StateInterface<any, any, any>[];
 	get(key: string): StateInterface<any, any, any> | undefined;
 	set(key: string, inst: StateInterface<any, any, any>): void;
-
-	getAll(): StateInterface<any, any, any>[];
-	terminate(): void;
 };

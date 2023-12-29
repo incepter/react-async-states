@@ -47,7 +47,7 @@ describe("AsyncState instance creation", () => {
 								timestamp: Date.now(),
 								status: "success",
 								data: 55,
-								props: { args: [55] },
+								props: { args: [55], payload: {} },
 							},
 						},
 						stateHash2: {
@@ -57,7 +57,7 @@ describe("AsyncState instance creation", () => {
 								timestamp: Date.now(),
 								status: "success",
 								data: 66,
-								props: { args: [66] },
+								props: { args: [66], payload: {} },
 							},
 						},
 					};

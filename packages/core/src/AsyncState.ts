@@ -270,7 +270,7 @@ export class StateSource<T, A extends unknown[], E> implements Source<T, A, E> {
 		return runcInstance(instance, props);
 	}
 
-	abort(reason: any | undefined = undefined) {
+	abort(reason: any = undefined) {
 		let abortFn = this.inst.currentAbort;
 		if (isFunction(abortFn)) {
 			abortFn(reason);
