@@ -9,17 +9,17 @@ import { autoConfigureDevtools, Devtools } from "./v2";
 autoConfigureDevtools({ open: true });
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-	<React.StrictMode>
-		<div style={{ height: "100vh" }}>
-			<DevModeApp />
-			{__DEV__ && (
-				<>
-					{/*<Devtools initiallyOpen />*/}
-					<hr />
-				</>
-			)}
-			{/*<AutoConfiguredDevtools/>*/}
-			{/*<DevtoolsV2 />*/}
-		</div>
-	</React.StrictMode>
+  <React.StrictMode>
+    <div style={{ height: "100vh" }}>
+      <DevModeApp />
+      {__DEV__ && (
+        <>
+          {/*<Devtools initiallyOpen />*/}
+          <hr />
+        </>
+      )}
+      {/*<AutoConfiguredDevtools/>*/}
+      {/*<DevtoolsV2 />*/}
+    </div>
+  </React.StrictMode>
 );

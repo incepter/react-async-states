@@ -1,30 +1,36 @@
-import {defineConfig} from 'vite'
-import copy from 'rollup-plugin-copy'
-import replace from '@rollup/plugin-replace'
+import { defineConfig } from "vite";
+import copy from "rollup-plugin-copy";
+import replace from "@rollup/plugin-replace";
 
-import react from '@vitejs/plugin-react'
-import vitePluginImp from 'vite-plugin-imp'
+import react from "@vitejs/plugin-react";
+import vitePluginImp from "vite-plugin-imp";
 
 // https://vitejs.dev/config/
 export default defineConfig({
   build: {
     emptyOutDir: false,
     lib: {
-      name: 'Devtools',
-      formats: ['es', 'umd'],
-      entry: 'src/lib-entry.tsx',
-      fileName: 'index.production'
+      name: "Devtools",
+      formats: ["es", "umd"],
+      entry: "src/lib-entry.tsx",
+      fileName: "index.production",
     },
     rollupOptions: {
-      external: ['react', 'react/jsx-runtime', 'react-dom', 'react-async-states', 'async-states'],
+      external: [
+        "react",
+        "react/jsx-runtime",
+        "react-dom",
+        "react-async-states",
+        "async-states",
+      ],
       output: {
         globals: {
-          react: 'React',
-          'react-dom': 'ReactDOM',
-          'async-states': 'AsyncStates',
-          'react/jsx-runtime': 'jsxRuntime',
-          'react-async-states': 'ReactAsyncStates',
-        }
+          react: "React",
+          "react-dom": "ReactDOM",
+          "async-states": "AsyncStates",
+          "react/jsx-runtime": "jsxRuntime",
+          "react-async-states": "ReactAsyncStates",
+        },
       },
     },
   },
@@ -42,17 +48,17 @@ export default defineConfig({
     }),
     replace({
       preventAssignment: true,
-      values: {"process.env.NODE_ENV": JSON.stringify("production")},
+      values: { "process.env.NODE_ENV": JSON.stringify("production") },
     }),
 
     copy({
       targets: [
         {
-          dest: 'dist',
-          rename: 'index.umd.js',
-          src: 'src/index-prod.js',
+          dest: "dist",
+          rename: "index.umd.js",
+          src: "src/index-prod.js",
         },
-      ]
+      ],
     }),
   ],
   css: {
@@ -63,8 +69,6 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: [
-      {find: /^~/, replacement: ""},
-    ],
+    alias: [{ find: /^~/, replacement: "" }],
   },
-})
+});

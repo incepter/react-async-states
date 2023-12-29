@@ -1,11 +1,11 @@
 chrome.runtime.onMessage.addListener(onMessageFromContentScript); // content-script -> background (here) -> devtools
 chrome.runtime.onConnect.addListener(onDevtoolsConnect);
 
-
 let ports = {};
 
 function onMessageFromContentScript(message, sender) {
-  const port = sender.tab && sender.tab.id !== undefined && ports[sender.tab.id];
+  const port =
+    sender.tab && sender.tab.id !== undefined && ports[sender.tab.id];
   if (port) {
     port.postMessage(message);
   }
@@ -43,17 +43,16 @@ function onDevtoolsConnect(port) {
   }
 }
 
-chrome.runtime.onInstalled.addListener(detail => {
+chrome.runtime.onInstalled.addListener((detail) => {
   console.log("On Installed", detail);
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-
-  console.log('extension updated!', tabId, changeInfo, tab);
+  console.log("extension updated!", tabId, changeInfo, tab);
   if (changeInfo.status === "complete") {
     chrome.tabs.sendMessage(tabId, {
       type: "init",
-      source: "async-states-devtools-panel"
+      source: "async-states-devtools-panel",
     });
   }
 });

@@ -3,24 +3,28 @@ This is the devtools for [react-async-states](https://github.com/incepter/react-
 It is still experimental and in alpha phase.
 
 Usage:
+
 ```tsx
 import DevtoolsView from "async-states-devtools";
 
 // then embed anywhere in your tree:
-<DevtoolsView />
+<DevtoolsView />;
 ```
+
 or
+
 ```tsx
-import {AutoConfiguredDevtools} from "async-states-devtools";
+import { AutoConfiguredDevtools } from "async-states-devtools";
 
 // embed this devtools anywhere
-<AutoConfiguredDevtools />
-
+<AutoConfiguredDevtools />;
 ```
+
 or
+
 ```tsx
-import {autoConfigureDevtools} from "async-states-devtools";
-  
+import { autoConfigureDevtools } from "async-states-devtools";
+
 // or just let magic happen by itself
 autoConfigureDevtools();
 ```

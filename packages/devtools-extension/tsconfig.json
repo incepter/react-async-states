@@ -19,8 +19,6 @@
     "noImplicitAny": false
   },
   "include": ["src"],
-  "exclude": [
-    "src/index-prod.js"
-  ],
+  "exclude": ["src/index-prod.js"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
