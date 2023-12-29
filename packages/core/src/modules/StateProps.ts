@@ -15,18 +15,18 @@ import {
   stopEmitting,
 } from "./StateUpdate";
 
-export function createProps<TData, A extends unknown[], E>(
-  instance: StateInterface<TData, A, E>,
+export function createProps<TData, TArgs extends unknown[], E>(
+  instance: StateInterface<TData, TArgs, E>,
   indicators: RunIndicators,
   payload: unknown,
-  runProps: RUNCProps<TData, A, E> | undefined
-): ProducerProps<TData, A, E> {
+  runProps: RUNCProps<TData, TArgs, E> | undefined
+): ProducerProps<TData, TArgs, E> {
   let lastSuccess = instance.lastSuccess;
   let getState = instance.actions.getState;
-  let args = (runProps?.args || emptyArray) as A;
+  let args = (runProps?.args || emptyArray) as TArgs;
 
   let controller = new AbortController();
-  let producerProps: ProducerProps<TData, A, E> = {
+  let producerProps: ProducerProps<TData, TArgs, E> = {
     emit,
     args,
     abort,
@@ -49,7 +49,7 @@ export function createProps<TData, A extends unknown[], E>(
   return producerProps;
 
   function emit(
-    updater: TData | StateFunctionUpdater<TData, A, E>,
+    updater: TData | StateFunctionUpdater<TData, TArgs, E>,
     status?: Status
   ): void {
     if (indicators.cleared) {

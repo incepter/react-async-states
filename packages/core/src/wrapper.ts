@@ -14,13 +14,13 @@ import {
 } from "./utils";
 import { error as errorStatus, success } from "./enums";
 
-export function run<TData, A extends unknown[], E>(
-  producer: Producer<TData, A, E>,
-  props: ProducerProps<TData, A, E>,
+export function run<TData, TArgs extends unknown[], E>(
+  producer: Producer<TData, TArgs, E>,
+  props: ProducerProps<TData, TArgs, E>,
   indicators: RunIndicators,
-  onSettled: OnSettled<TData, A, E>,
-  retryConfig?: RetryConfig<TData, A, E>,
-  callbacks?: ProducerCallbacks<TData, A, E>
+  onSettled: OnSettled<TData, TArgs, E>,
+  retryConfig?: RetryConfig<TData, TArgs, E>,
+  callbacks?: ProducerCallbacks<TData, TArgs, E>
 ): Promise<TData> | undefined {
   let pendingPromise: Promise<TData>;
   let executionValue;
@@ -102,9 +102,9 @@ export function run<TData, A extends unknown[], E>(
   }
 }
 
-function shouldRetry<TData, A extends unknown[], E>(
+function shouldRetry<TData, TArgs extends unknown[], E>(
   attempt: number,
-  retryConfig: RetryConfig<TData, A, E>,
+  retryConfig: RetryConfig<TData, TArgs, E>,
   error: E
 ): boolean {
   let { retry, maxAttempts } = retryConfig;
@@ -117,9 +117,9 @@ function shouldRetry<TData, A extends unknown[], E>(
   return canRetry && shouldRetry;
 }
 
-function getRetryBackoff<TData, A extends unknown[], E>(
+function getRetryBackoff<TData, TArgs extends unknown[], E>(
   attempt: number,
-  retryConfig: RetryConfig<TData, A, E>,
+  retryConfig: RetryConfig<TData, TArgs, E>,
   error: E
 ): number {
   let { backoff } = retryConfig;

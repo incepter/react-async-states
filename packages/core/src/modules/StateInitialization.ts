@@ -9,12 +9,12 @@ import { initial, pending, success } from "../enums";
 import { isFunction } from "../utils";
 import { now, shallowClone } from "../helpers/core";
 
-export function initializeInstance<TData, A extends unknown[], E>(
-  instance: StateInterface<TData, A, E>
+export function initializeInstance<TData, TArgs extends unknown[], E>(
+  instance: StateInterface<TData, TArgs, E>
 ) {
   loadCache(instance);
 
-  let maybeHydratedState = attemptHydratedState<TData, A, E>(instance.key);
+  let maybeHydratedState = attemptHydratedState<TData, TArgs, E>(instance.key);
 
   if (maybeHydratedState) {
     instance.state = maybeHydratedState.state;
@@ -32,7 +32,7 @@ export function initializeInstance<TData, A extends unknown[], E>(
       let savedInitialProps = {
         args: [initialData],
         payload: shallowClone(instance.payload),
-      } as ProducerSavedProps<TData, A>;
+      } as ProducerSavedProps<TData, TArgs>;
       instance.lastSuccess = {
         status: initial,
         data: initialData,
@@ -53,7 +53,7 @@ export function initializeInstance<TData, A extends unknown[], E>(
     let savedInitialProps = {
       args: [initialData],
       payload: shallowClone(instance.payload),
-    } as ProducerSavedProps<TData, A>;
+    } as ProducerSavedProps<TData, TArgs>;
     let initialState = {
       status: initial,
       data: initialData,
@@ -62,6 +62,6 @@ export function initializeInstance<TData, A extends unknown[], E>(
     };
 
     instance.state = initialState;
-    instance.lastSuccess = initialState as LastSuccessSavedState<TData, A>;
+    instance.lastSuccess = initialState as LastSuccessSavedState<TData, TArgs>;
   }
 }

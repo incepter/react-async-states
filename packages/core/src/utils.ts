@@ -7,8 +7,8 @@ export let isServer =
 
 export let emptyArray = [];
 
-export function defaultHash<A extends unknown[]>(
-  args: A | undefined,
+export function defaultHash<TArgs extends unknown[]>(
+  args: TArgs | undefined,
   payload: Record<string, unknown> | null | undefined
 ): string {
   return JSON.stringify({ args, payload });
@@ -30,9 +30,9 @@ export function isFunction(fn: any): fn is Function {
   return typeof fn === "function";
 }
 
-export function cloneProducerProps<TData, A extends unknown[], E>(
-  props: ProducerProps<TData, A, E>
-): ProducerSavedProps<TData, A> {
+export function cloneProducerProps<TData, TArgs extends unknown[], E>(
+  props: ProducerProps<TData, TArgs, E>
+): ProducerSavedProps<TData, TArgs> {
   return {
     args: props.args,
     payload: props.payload,

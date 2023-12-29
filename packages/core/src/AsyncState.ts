@@ -56,8 +56,8 @@ import { initializeInstance } from "./modules/StateInitialization";
 // it is referenced by its 'key' or name.
 // when a state with the same name exists, it is returned instead of creating
 // a new one.
-export class AsyncState<TData, A extends unknown[], E>
-  implements StateInterface<TData, A, E>
+export class AsyncState<TData, TArgs extends unknown[], E>
+  implements StateInterface<TData, TArgs, E>
 {
   readonly ctx: LibraryContext | null;
 
@@ -65,42 +65,42 @@ export class AsyncState<TData, A extends unknown[], E>
   journal?: any[];
 
   // this contains all methods, such as getState, setState and so on
-  actions: Source<TData, A, E>;
+  actions: Source<TData, TArgs, E>;
 
   id: number;
   key: string;
   version: number = 0;
-  config: ProducerConfig<TData, A, E>;
+  config: ProducerConfig<TData, TArgs, E>;
   payload: Record<string, any> | null;
-  cache: Record<string, CachedState<TData, A, E>> | null;
+  cache: Record<string, CachedState<TData, TArgs, E>> | null;
 
-  parent: StateInterface<TData, A, E> | null;
-  lanes: Record<string, StateInterface<TData, A, E>> | null;
+  parent: StateInterface<TData, TArgs, E> | null;
+  lanes: Record<string, StateInterface<TData, TArgs, E>> | null;
 
-  state: State<TData, A, E>;
-  queue: UpdateQueue<TData, A, E> | null;
-  latestRun: RunTask<TData, A, E> | null;
-  lastSuccess: LastSuccessSavedState<TData, A>;
+  state: State<TData, TArgs, E>;
+  queue: UpdateQueue<TData, TArgs, E> | null;
+  latestRun: RunTask<TData, TArgs, E> | null;
+  lastSuccess: LastSuccessSavedState<TData, TArgs>;
 
   promise: Promise<TData> | null;
   currentAbort: AbortFn | null;
-  fn: Producer<TData, A, E> | null;
+  fn: Producer<TData, TArgs, E> | null;
 
   pendingUpdate: PendingUpdate | null;
   pendingTimeout: PendingTimeout | null;
 
   subsIndex: number | null;
-  subscriptions: Record<number, StateSubscription<TData, A, E>> | null;
+  subscriptions: Record<number, StateSubscription<TData, TArgs, E>> | null;
 
   eventsIndex: number | null;
-  events: InstanceEvents<TData, A, E> | null;
+  events: InstanceEvents<TData, TArgs, E> | null;
 
   constructor(
     key: string,
-    producer: Producer<TData, A, E> | undefined | null,
-    config?: ProducerConfig<TData, A, E>
+    producer: Producer<TData, TArgs, E> | undefined | null,
+    config?: ProducerConfig<TData, TArgs, E>
   ) {
-    let instanceConfig: ProducerConfig<TData, A, E> = shallowClone(config);
+    let instanceConfig: ProducerConfig<TData, TArgs, E> = shallowClone(config);
     if (__DEV__) {
       // @ts-expect-error: getDeadline no longer exists
       if (instanceConfig.cacheConfig?.getDeadline !== undefined) {
@@ -172,12 +172,12 @@ export class AsyncState<TData, A extends unknown[], E>
   }
 }
 
-export class StateSource<TData, A extends unknown[], E> implements Source<TData, A, E> {
+export class StateSource<TData, TArgs extends unknown[], E> implements Source<TData, TArgs, E> {
   key: string;
   uniqueId: number;
-  readonly inst: StateInterface<TData, A, E>;
+  readonly inst: StateInterface<TData, TArgs, E>;
 
-  constructor(instance: StateInterface<TData, A, E>) {
+  constructor(instance: StateInterface<TData, TArgs, E>) {
     this.inst = instance;
     this.key = instance.key;
     this.uniqueId = instance.id;
@@ -205,22 +205,22 @@ export class StateSource<TData, A extends unknown[], E> implements Source<TData,
     this.replaceProducer = this.replaceProducer.bind(this);
   }
 
-  getState(): State<TData, A, E> {
+  getState(): State<TData, TArgs, E> {
     return this.inst.state;
   }
 
   replaceState(
-    newState: State<TData, A, E>,
+    newState: State<TData, TArgs, E>,
     notify: boolean = true,
-    callbacks?: ProducerCallbacks<TData, A, E>
+    callbacks?: ProducerCallbacks<TData, TArgs, E>
   ): void {
     replaceInstanceState(this.inst, newState, notify, callbacks);
   }
 
   setState(
-    newValue: TData | StateFunctionUpdater<TData, A, E>,
+    newValue: TData | StateFunctionUpdater<TData, TArgs, E>,
     status: Status = success,
-    callbacks?: ProducerCallbacks<TData, A, E>
+    callbacks?: ProducerCallbacks<TData, TArgs, E>
   ): void {
     setInstanceState(this.inst, newValue, status, callbacks);
   }
@@ -231,31 +231,31 @@ export class StateSource<TData, A extends unknown[], E> implements Source<TData,
 
   on(
     eventType: InstanceChangeEvent,
-    eventHandler: InstanceChangeEventHandlerType<TData, A, E>
+    eventHandler: InstanceChangeEventHandlerType<TData, TArgs, E>
   ): () => void;
   on(
     eventType: InstanceDisposeEvent,
-    eventHandler: InstanceDisposeEventHandlerType<TData, A, E>
+    eventHandler: InstanceDisposeEventHandlerType<TData, TArgs, E>
   ): () => void;
   on(
     eventType: InstanceCacheChangeEvent,
-    eventHandler: InstanceCacheChangeEventHandlerType<TData, A, E>
+    eventHandler: InstanceCacheChangeEventHandlerType<TData, TArgs, E>
   ): () => void;
   on(
     eventType: InstanceEventType,
-    eventHandler: InstanceEventHandlerType<TData, A, E>
+    eventHandler: InstanceEventHandlerType<TData, TArgs, E>
   ): () => void {
     return subscribeToInstanceEvent(this.inst, eventType, eventHandler);
   }
 
-  run(...args: A) {
+  run(...args: TArgs) {
     return this.inst.actions.runc({ args });
   }
 
-  runp(...args: A) {
+  runp(...args: TArgs) {
     let instance = this.inst;
-    return new Promise<State<TData, A, E>>(function runpInstance(resolve) {
-      let runcProps: RUNCProps<TData, A, E> = {
+    return new Promise<State<TData, TArgs, E>>(function runpInstance(resolve) {
+      let runcProps: RUNCProps<TData, TArgs, E> = {
         args,
         onError: resolve,
         onSuccess: resolve,
@@ -265,7 +265,7 @@ export class StateSource<TData, A extends unknown[], E> implements Source<TData,
     });
   }
 
-  runc(props?: RUNCProps<TData, A, E>) {
+  runc(props?: RUNCProps<TData, TArgs, E>) {
     let instance = this.inst;
     return runcInstance(instance, props);
   }
@@ -291,7 +291,7 @@ export class StateSource<TData, A extends unknown[], E> implements Source<TData,
   invalidateCache(cacheKey?: string) {
     let instance = this.inst;
     if (hasCacheEnabled(instance)) {
-      const topLevelParent: StateInterface<TData, A, E> =
+      const topLevelParent: StateInterface<TData, TArgs, E> =
         getTopLevelParent(instance);
 
       if (!cacheKey) {
@@ -304,7 +304,7 @@ export class StateSource<TData, A extends unknown[], E> implements Source<TData,
     }
   }
 
-  replaceCache(cacheKey: string, cache: CachedState<TData, A, E>): void {
+  replaceCache(cacheKey: string, cache: CachedState<TData, TArgs, E>): void {
     let instance = this.inst;
     if (!hasCacheEnabled(instance)) {
       return;
@@ -333,7 +333,7 @@ export class StateSource<TData, A extends unknown[], E> implements Source<TData,
     return delete instance.lanes[laneKey];
   }
 
-  getLane(laneKey?: string): Source<TData, A, E> {
+  getLane(laneKey?: string): Source<TData, TArgs, E> {
     if (!laneKey) {
       return this;
     }
@@ -362,11 +362,11 @@ export class StateSource<TData, A extends unknown[], E> implements Source<TData,
     return this.inst.version;
   }
 
-  getConfig(): ProducerConfig<TData, A, E> {
+  getConfig(): ProducerConfig<TData, TArgs, E> {
     return this.inst.config;
   }
 
-  patchConfig(partialConfig?: Partial<ProducerConfig<TData, A, E>>) {
+  patchConfig(partialConfig?: Partial<ProducerConfig<TData, TArgs, E>>) {
     Object.assign(this.inst.config, partialConfig);
   }
 
@@ -390,14 +390,14 @@ export class StateSource<TData, A extends unknown[], E> implements Source<TData,
     return disposeInstance(this.inst);
   }
 
-  replaceProducer(newProducer: Producer<TData, A, E> | null) {
+  replaceProducer(newProducer: Producer<TData, TArgs, E> | null) {
     this.inst.fn = newProducer;
   }
 
-  subscribe(cb: (s: State<TData, A, E>) => void): AbortFn;
-  subscribe(subProps: AsyncStateSubscribeProps<TData, A, E>): AbortFn;
+  subscribe(cb: (s: State<TData, TArgs, E>) => void): AbortFn;
+  subscribe(subProps: AsyncStateSubscribeProps<TData, TArgs, E>): AbortFn;
   subscribe(
-    argv: ((s: State<TData, A, E>) => void) | AsyncStateSubscribeProps<TData, A, E>
+    argv: ((s: State<TData, TArgs, E>) => void) | AsyncStateSubscribeProps<TData, TArgs, E>
   ): AbortFn {
     return subscribeToInstance(this.inst, argv);
   }
@@ -411,28 +411,28 @@ export class StateSource<TData, A extends unknown[], E> implements Source<TData,
   }
 }
 
-export function getSource<TData, A extends unknown[], E>(
+export function getSource<TData, TArgs extends unknown[], E>(
   key: string,
   context?: unknown
-): Source<TData, A, E> | undefined {
+): Source<TData, TArgs, E> | undefined {
   let executionContext = requestContext(context || null);
   return executionContext.get(key)?.actions;
 }
 
-export function createSource<TData, A extends unknown[] = [], E = Error>(
-  props: CreateSourceObject<TData, A, E>
-): Source<TData, A, E>;
-export function createSource<TData, A extends unknown[] = [], E = Error>(
+export function createSource<TData, TArgs extends unknown[] = [], E = Error>(
+  props: CreateSourceObject<TData, TArgs, E>
+): Source<TData, TArgs, E>;
+export function createSource<TData, TArgs extends unknown[] = [], E = Error>(
   key: string,
-  producer?: Producer<TData, A, E> | undefined | null,
-  config?: ProducerConfig<TData, A, E>
-): Source<TData, A, E>;
-export function createSource<TData, A extends unknown[] = [], E = Error>(
-  props: string | CreateSourceObject<TData, A, E>,
-  maybeProducer?: Producer<TData, A, E> | undefined | null,
-  maybeConfig?: ProducerConfig<TData, A, E>
-): Source<TData, A, E> {
-  let instance: StateInterface<TData, A, E>;
+  producer?: Producer<TData, TArgs, E> | undefined | null,
+  config?: ProducerConfig<TData, TArgs, E>
+): Source<TData, TArgs, E>;
+export function createSource<TData, TArgs extends unknown[] = [], E = Error>(
+  props: string | CreateSourceObject<TData, TArgs, E>,
+  maybeProducer?: Producer<TData, TArgs, E> | undefined | null,
+  maybeConfig?: ProducerConfig<TData, TArgs, E>
+): Source<TData, TArgs, E> {
+  let instance: StateInterface<TData, TArgs, E>;
 
   if (typeof props === "object") {
     let { key, producer, config } = props;

@@ -42,9 +42,9 @@ export function stopAlteringState(restoreToThisValue: boolean) {
   isCurrentlyAlteringState = restoreToThisValue;
 }
 
-export function getQueueTail<TData, A extends unknown[], E>(
-  instance: StateInterface<TData, A, E>
-): UpdateQueue<TData, A, E> | null {
+export function getQueueTail<TData, TArgs extends unknown[], E>(
+  instance: StateInterface<TData, TArgs, E>
+): UpdateQueue<TData, TArgs, E> | null {
   if (!instance.queue) {
     return null;
   }
@@ -55,9 +55,9 @@ export function getQueueTail<TData, A extends unknown[], E>(
   return current;
 }
 
-function addToQueueAndEnsureItsScheduled<TData, A extends unknown[], E>(
-  instance: StateInterface<TData, A, E>,
-  update: UpdateQueue<TData, A, E>
+function addToQueueAndEnsureItsScheduled<TData, TArgs extends unknown[], E>(
+  instance: StateInterface<TData, TArgs, E>,
+  update: UpdateQueue<TData, TArgs, E>
 ) {
   if (!instance.queue) {
     instance.queue = update;
@@ -72,12 +72,12 @@ function addToQueueAndEnsureItsScheduled<TData, A extends unknown[], E>(
   ensureQueueIsScheduled(instance);
 }
 
-export function enqueueUpdate<TData, A extends unknown[], E>(
-  instance: StateInterface<TData, A, E>,
-  newState: State<TData, A, E>,
-  callbacks?: ProducerCallbacks<TData, A, E>
+export function enqueueUpdate<TData, TArgs extends unknown[], E>(
+  instance: StateInterface<TData, TArgs, E>,
+  newState: State<TData, TArgs, E>,
+  callbacks?: ProducerCallbacks<TData, TArgs, E>
 ) {
-  let update: UpdateQueue<TData, A, E> = {
+  let update: UpdateQueue<TData, TArgs, E> = {
     callbacks,
     data: newState,
     kind: 0,
@@ -86,13 +86,13 @@ export function enqueueUpdate<TData, A extends unknown[], E>(
   addToQueueAndEnsureItsScheduled(instance, update);
 }
 
-export function enqueueSetState<TData, A extends unknown[], E>(
-  instance: StateInterface<TData, A, E>,
-  newValue: TData | StateFunctionUpdater<TData, A, E>,
+export function enqueueSetState<TData, TArgs extends unknown[], E>(
+  instance: StateInterface<TData, TArgs, E>,
+  newValue: TData | StateFunctionUpdater<TData, TArgs, E>,
   status: Status = success,
-  callbacks?: ProducerCallbacks<TData, A, E>
+  callbacks?: ProducerCallbacks<TData, TArgs, E>
 ) {
-  let update: UpdateQueue<TData, A, E> = {
+  let update: UpdateQueue<TData, TArgs, E> = {
     callbacks,
     kind: 1,
     data: { data: newValue, status },
@@ -101,11 +101,11 @@ export function enqueueSetState<TData, A extends unknown[], E>(
   addToQueueAndEnsureItsScheduled(instance, update);
 }
 
-export function enqueueSetData<TData, A extends unknown[], E>(
-  instance: StateInterface<TData, A, E>,
+export function enqueueSetData<TData, TArgs extends unknown[], E>(
+  instance: StateInterface<TData, TArgs, E>,
   newValue: TData | ((prev: TData | null) => TData)
 ) {
-  let update: UpdateQueue<TData, A, E> = {
+  let update: UpdateQueue<TData, TArgs, E> = {
     kind: 2,
     data: newValue,
 
@@ -114,13 +114,13 @@ export function enqueueSetData<TData, A extends unknown[], E>(
   addToQueueAndEnsureItsScheduled(instance, update);
 }
 
-export function ensureQueueIsScheduled<TData, A extends unknown[], E>(
-  instance: StateInterface<TData, A, E>
+export function ensureQueueIsScheduled<TData, TArgs extends unknown[], E>(
+  instance: StateInterface<TData, TArgs, E>
 ) {
   if (!instance.queue) {
     return;
   }
-  let queue: UpdateQueue<TData, A, E> = instance.queue;
+  let queue: UpdateQueue<TData, TArgs, E> = instance.queue;
   if (queue.id) {
     return;
   }
@@ -135,14 +135,14 @@ export function ensureQueueIsScheduled<TData, A extends unknown[], E>(
   }
 }
 
-export function flushUpdateQueue<TData, A extends unknown[], E>(
-  instance: StateInterface<TData, A, E>
+export function flushUpdateQueue<TData, TArgs extends unknown[], E>(
+  instance: StateInterface<TData, TArgs, E>
 ) {
   if (!instance.queue) {
     return;
   }
 
-  let current: UpdateQueue<TData, A, E> | null = instance.queue;
+  let current: UpdateQueue<TData, TArgs, E> | null = instance.queue;
   instance.queue = null;
 
   let prevIsFlushing = isCurrentlyFlushingAQueue;
@@ -190,9 +190,9 @@ export function flushUpdateQueue<TData, A extends unknown[], E>(
   notifySubscribers(instance);
 }
 
-export function scheduleDelayedPendingUpdate<TData, A extends unknown[], E>(
-  instance: StateInterface<TData, A, E>,
-  newState: State<TData, A, E>,
+export function scheduleDelayedPendingUpdate<TData, TArgs extends unknown[], E>(
+  instance: StateInterface<TData, TArgs, E>,
+  newState: State<TData, TArgs, E>,
   notify: boolean
 ) {
   function callback() {
@@ -215,11 +215,11 @@ export function scheduleDelayedPendingUpdate<TData, A extends unknown[], E>(
   instance.pendingUpdate = { callback, id: timeoutId };
 }
 
-export function replaceInstanceState<TData, A extends unknown[], E>(
-  instance: StateInterface<TData, A, E>,
-  newState: State<TData, A, E>,
+export function replaceInstanceState<TData, TArgs extends unknown[], E>(
+  instance: StateInterface<TData, TArgs, E>,
+  newState: State<TData, TArgs, E>,
   notify: boolean = true,
-  callbacks?: ProducerCallbacks<TData, A, E>
+  callbacks?: ProducerCallbacks<TData, TArgs, E>
 ) {
   let { config } = instance;
   let isPending = newState.status === pending;
@@ -279,13 +279,13 @@ export function replaceInstanceState<TData, A extends unknown[], E>(
   }
 
   if (notify && !isCurrentlyFlushingAQueue) {
-    notifySubscribers(instance as StateInterface<TData, A, E>);
+    notifySubscribers(instance as StateInterface<TData, TArgs, E>);
   }
 }
 
 let isCurrentSetStateSettingData = false;
-export function setInstanceData<TData, A extends unknown[], E>(
-  instance: StateInterface<TData, A, E>,
+export function setInstanceData<TData, TArgs extends unknown[], E>(
+  instance: StateInterface<TData, TArgs, E>,
   newValue: TData | ((prev: TData | null) => TData)
 ) {
   let previouslySettingData = isCurrentSetStateSettingData;
@@ -294,11 +294,11 @@ export function setInstanceData<TData, A extends unknown[], E>(
   isCurrentSetStateSettingData = previouslySettingData;
 }
 
-export function setInstanceState<TData, A extends unknown[], E>(
-  instance: StateInterface<TData, A, E>,
-  newValue: TData | StateFunctionUpdater<TData, A, E> | ((prev: TData | null) => TData),
+export function setInstanceState<TData, TArgs extends unknown[], E>(
+  instance: StateInterface<TData, TArgs, E>,
+  newValue: TData | StateFunctionUpdater<TData, TArgs, E> | ((prev: TData | null) => TData),
   status: Status = success,
-  callbacks?: ProducerCallbacks<TData, A, E>
+  callbacks?: ProducerCallbacks<TData, TArgs, E>
 ) {
   if (instance.queue) {
     if (isCurrentSetStateSettingData) {
@@ -307,7 +307,7 @@ export function setInstanceState<TData, A extends unknown[], E>(
       isCurrentSetStateSettingData = false;
       return;
     }
-    let update = newValue as TData | StateFunctionUpdater<TData, A, E>;
+    let update = newValue as TData | StateFunctionUpdater<TData, TArgs, E>;
     enqueueSetState(instance, update, status, callbacks);
     return;
   }
@@ -342,18 +342,18 @@ export function setInstanceState<TData, A extends unknown[], E>(
   // setState; which means there are no "props", but we only care about
   // args and payload, so we hack it here like this
   let partialProducerProps = {
-    args: [effectiveValue] as A,
+    args: [effectiveValue] as TArgs,
     payload: shallowClone(instance.payload),
-  } as ProducerProps<TData, A, E>;
+  } as ProducerProps<TData, TArgs, E>;
 
-  const savedProps = cloneProducerProps<TData, A, E>(partialProducerProps);
+  const savedProps = cloneProducerProps<TData, TArgs, E>(partialProducerProps);
 
   let newState = {
     status,
     timestamp: now(),
     props: savedProps,
     data: effectiveValue,
-  } as State<TData, A, E>;
+  } as State<TData, TArgs, E>;
 
   // if the next state has a pending status, we need to populate the prev
   // property, we take the previous state, if it was also pending, take
@@ -372,8 +372,8 @@ export function setInstanceState<TData, A extends unknown[], E>(
   stopAlteringState(wasAlteringState);
 }
 
-export function disposeInstance<TData, A extends unknown[], E>(
-  instance: StateInterface<TData, A, E>
+export function disposeInstance<TData, TArgs extends unknown[], E>(
+  instance: StateInterface<TData, TArgs, E>
 ) {
   if (instance.subscriptions && Object.keys(instance.subscriptions).length) {
     // this means that this state is retained by some subscriptions
@@ -396,9 +396,9 @@ export function disposeInstance<TData, A extends unknown[], E>(
   let initialSavedProps = {
     args: [initialState as TData],
     payload: shallowClone(instance.payload),
-  } as ProducerSavedProps<TData, A>;
+  } as ProducerSavedProps<TData, TArgs>;
 
-  const newState: InitialState<TData, A> = {
+  const newState: InitialState<TData, TArgs> = {
     status: initial,
     timestamp: now(),
     data: initialState,
