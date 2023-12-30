@@ -1,221 +1,174 @@
-import type {Producer, ProducerConfig, Source, State,} from "async-states"
-import {createContext, createSource} from "async-states";
-import {__DEV__, assign} from "../shared";
-import {useCallerName} from "../helpers/useCallerName";
-import {UseAsyncState, UseConfig} from "../types.internal";
-import internalUse from "./internalUse";
-import {__DEV__setHookCallerName} from "../hooks/modules/HookSubscription";
-import {useAsync} from "../hooks/useAsync_export";
+import { UseConfig } from "../types.internal";
+import { __DEV__, assign, emptyArray } from "../shared";
+import { __DEV__setHookCallerName } from "../hooks/modules/HookSubscription";
+import { useCallerName } from "../helpers/useCallerName";
+import { useData_internal } from "../hooks/useData_internal";
+import { useAsync_internal } from "../hooks/useAsync_internal";
+import {
+  createContext,
+  createSource,
+  Producer,
+  ProducerConfig,
+  Source,
+} from "async-states";
+import {
+  Api,
+  App,
+  AppShape,
+  InferArgs,
+  InferData,
+  InferError,
+  Resource,
+} from "./types";
 
-let freeze = Object.freeze
+let didWarnAboutInitialShapeDeprecated = false;
 
-type TX = {}
-export let JT: TX = {} as const
-
-export type DefaultFn<D, TArgs extends unknown[], TError> = Producer<D, TArgs, TError>
-export type ExtendedFn<D, TArgs extends unknown[], TError> =
-  DefaultFn<D, TArgs, TError>
-  | typeof JT
-
-export interface Api<TData extends unknown, TArgs extends unknown[], TError extends unknown> {
-
-  fn: ExtendedFn<TData, TArgs, TError>,
-  eager?: boolean,
-  producer?: Producer<TData, TArgs, TError>,
-  config?: ProducerConfig<TData, TArgs, TError>
-}
-
-type AppShape = Record<string, Record<string, any>>
-
-export type ApplicationEntry<S extends AppShape> = {
-  [resource in keyof S]: {
-    [api in keyof S[resource]]: Api<
-      S[resource][api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? T : never,
-      S[resource][api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? A : never,
-      S[resource][api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? E : never
-    >
-  }
-}
-
-export type Application<S extends AppShape> = {
-  [resource in keyof S]: {
-    [api in keyof S[resource]]: Token<
-      S[resource][api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? T : never,
-      S[resource][api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? A : never,
-      S[resource][api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? E : never
-    >
-  }
-}
-
-export function createApplication<Shape extends AppShape>(
-  shape: ApplicationEntry<Shape>,
-  contextArgToUse?: object,
-): Application<Shape> {
-
-  let resources = Object.keys(shape)
-  return freeze(resources.reduce((
-    result: Application<Shape>,
-    resourceName: keyof ApplicationEntry<Shape>
-  ) => {
-    let resource = shape[resourceName]
-    let apis = Object.keys(resource)
-
-    type ResourceType<T extends typeof resource> = {
-      [api in keyof T]: Token<
-        T[api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? T : never,
-        T[api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? A : never,
-        T[api]["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? E : never
-      >
+export function createApplication<TApp extends AppShape>(
+  initialShape?: any,
+  context?: object
+): App<TApp> {
+  if (__DEV__) {
+    if (initialShape !== undefined && !didWarnAboutInitialShapeDeprecated) {
+      didWarnAboutInitialShapeDeprecated = true;
+      console.error(
+        "createApplication's first argument was removed, it doesn't" +
+        "accept the shape anymore. This was done to avoid creating and " +
+        "maintaining a plain javascript object and only rely on typescript." +
+        "\nAs migration strategy, do this:" +
+        "\n\nimport { createApplication, Api } from 'react-async-states';" +
+        "\n\ntype MyAppType = { resource: { api: Api<TData, TArgs, tError> } };" +
+        "\nconst app = createApplication<MyType>(undefined, context?);" +
+        "\n\nIf you had an eager API, just inline this manually." +
+        "\napp.eagerResource.eagerApi.define(producer, producerConfig);" +
+        "\nOr group them into a single function that initialize all eager APIs" +
+        "\n\nWhen v2 lands, this warning will be removed and createApplication " +
+        "will only accept the optional 'context' parameter.")
     }
-    let ctxArg = contextArgToUse ?? null;
-    createContext(ctxArg);
-
-    result[resourceName] = freeze(apis.reduce((
-      apiResult, apiName: keyof typeof resource) => {
-      let api = resource[apiName]
-      apiResult[apiName] = freeze(createToken(resourceName, apiName, api, ctxArg));
-      return apiResult
-    }, {} as ResourceType<typeof resource>))
-
-    return result
-  }, {} as Application<Shape>))
-}
-
-function createToken<
-  Shape extends AppShape,
-  K extends Shape[keyof Shape][keyof Shape[keyof Shape]]
->(
-  resourceName: keyof Shape,
-  apiName: keyof ApplicationEntry<Shape>[keyof ApplicationEntry<Shape>],
-  api: Api<
-    K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? T : never,
-    K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? A : never,
-    K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? E : never
-  >,
-  contextArgToUse: object | null
-): Token<
-  K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? T : never,
-  K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? A : never,
-  K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? E : never
-> {
-  type TData = K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? T : never
-  type TError = K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? E : never
-  type TArgs = K["fn"] extends ExtendedFn<infer T, infer A extends unknown[], infer E> ? A : never
-
-  type TokenType = Token<TData, TArgs, TError>
-
-  let apiSource: Source<TData, TArgs, TError> | null = null
-  let name = `app__${String(resourceName)}_${String(apiName)}__`
-
-  // eagerly create the apiSource
-  if (api.eager) {
-    let apiConfig = api.config;
-    if (contextArgToUse !== null) {
-      apiConfig = assign({}, apiConfig, {context: contextArgToUse});
-    }
-    apiSource = createSource(name, api.producer, apiConfig) as Source<TData, TArgs, TError>
   }
 
+  let app: Partial<App<TApp>> = {};
 
-  token.inject = inject;
-  token.useAsyncState = useHook;
-  token.use = createR18Use(() => apiSource!, resourceName, apiName);
-  return token;
+  return new Proxy(app as App<TApp>, {
+    get(_: App<TApp>, property: string): any {
+      let resourceName = property as keyof TApp;
 
-  function token(): Source<TData, TArgs, TError> {
-    ensureSourceIsDefined(apiSource, resourceName, apiName);
-    return apiSource!;
-  }
-
-  function inject(
-    fn: Producer<TData, TArgs, TError> | null,
-    config?: ProducerConfig<TData, TArgs, TError>
-  ): TokenType {
-    if (!apiSource) {
-      let apiConfig = config;
-      if (contextArgToUse !== null) {
-        apiConfig = assign({}, apiConfig, {context: contextArgToUse});
+      let existingResource = app[resourceName];
+      if (existingResource) {
+        return existingResource;
       }
-      apiSource = createSource(name, fn, apiConfig);
-    } else {
-      apiSource.replaceProducer(fn || null)
-      apiSource.patchConfig(config)
+
+      if (context) {
+        createContext(context);
+      }
+      let resource = createResource<TApp, typeof resourceName>(
+        resourceName,
+        context
+      );
+
+      app[resourceName] = resource;
+      return resource;
+    },
+  });
+}
+
+function createResource<TApp extends AppShape, TRes extends keyof App<TApp>>(
+  resourceName: TRes,
+  context?: object
+): Resource<App<TApp>[TRes]> {
+  let resource: Partial<Resource<TApp[TRes]>> = {};
+
+  return new Proxy(resource as Resource<TApp[TRes]>, {
+    get(_target: Resource<TApp[TRes]>, property: string): any {
+      let apiName = property as keyof App<TApp>[TRes];
+
+      let exitingApi = resource[property];
+      if (exitingApi) {
+        return exitingApi;
+      }
+
+      let api = createApi<TApp, TRes, typeof apiName>(
+        resourceName,
+        apiName,
+        context
+      );
+
+      resource[apiName] = api;
+      return api;
+    },
+  });
+}
+
+function createApi<
+  TApp extends AppShape,
+  TRes extends keyof App<TApp>,
+  TApi extends keyof App<TApp>[TRes],
+>(
+  resourceName: TRes,
+  apiName: TApi,
+  context?: object
+): TApp[TRes][typeof apiName] {
+  type TData = InferData<TApp, TRes, TApi>;
+  type TArgs = InferArgs<TApp, TRes, TApi>;
+  type TError = InferError<TApp, TRes, TApi>;
+
+  let source: Source<TData, TArgs, TError> | null = null;
+
+  function token() {
+    if (!source) {
+      let path = `app.${String(resourceName)}.${String(apiName)}`;
+      throw new Error(`Call ${path}.define(producer) before using ${path}`);
     }
-    return token
+    return source;
   }
+  token.define = define;
+  token.useData = (useDataForApp<TData, TArgs, TError>).bind(null, token);
+  token.useAsync = (useAsyncForApp<TData, TArgs, TError>).bind(null, token);
 
-  function useHook<S = State<TData, TArgs, TError>>(
-    config?: UseConfig<TData, TArgs, TError, S>,
-    deps?: unknown[]
-  ): UseAsyncState<TData, TArgs, TError, S> {
-    ensureSourceIsDefined(apiSource, resourceName, apiName);
+  return token as TApp[TRes][typeof apiName];
 
-    if (__DEV__) {
-      __DEV__setHookCallerName(useCallerName(3));
-    }
-
-    let source = token();
-    let realConfig = config ? {...config, source} : source;
-    return useAsync(realConfig, deps || []);
-  }
-}
-
-let defaultJT = {fn: JT}
-
-function buildDefaultJT<TData, TArgs extends unknown[], TError>(): { fn: ExtendedFn<TData, TArgs, TError> } {
-  return defaultJT as { fn: ExtendedFn<TData, TArgs, TError> }
-}
-
-export function api<TData, TArgs extends unknown[] = [], TError = Error>(
-  props?: Omit<Api<TData, TArgs, TError>, "fn">
-): Api<TData, TArgs, TError> {
-  return Object.assign({}, props, buildDefaultJT<TData, TArgs, TError>())
-}
-
-export type Token<TData, TArgs extends unknown[], TError> = {
-  (): Source<TData, TArgs, TError>,
-  inject(
-    fn: Producer<TData, TArgs, TError>,
+  function define(
+    producer: Producer<TData, TArgs, TError> | null,
     config?: ProducerConfig<TData, TArgs, TError>
-  ): Token<TData, TArgs, TError>
-  use(
-    config?: UseConfig<TData, TArgs, TError>,
-    deps?: any[]
-  ): TData,
-  useAsyncState<S = State<TData, TArgs, TError>>(
-    config?: UseConfig<TData, TArgs, TError, S>,
-    deps?: any[]
-  ): UseAsyncState<TData, TArgs, TError, S>
-}
-
-function ensureSourceIsDefined(source, resourceName, resourceApi) {
-  if (!source) {
-    let path = `app.${String(resourceName)}.${String(resourceApi)}`
-    throw new Error(`Must call ${path}.inject(producer) before calling ${path}() or ${path}.use()`)
-  }
-}
-
-function createR18Use<TData, TArgs extends unknown[], TError>(
-  getSource: () => Source<TData, TArgs, TError>,
-  resourceName: string | symbol | number,
-  apiName: string | symbol | number
-): ((
-  config?: UseConfig<TData, TArgs, TError, State<TData, TArgs, TError>>,
-  deps?: any[]
-) => TData) {
-
-  return function useImpl(
-    config?: UseConfig<TData, TArgs, TError>,
-    deps?: any[]
   ) {
-    let source = getSource();
-    ensureSourceIsDefined(source, resourceName, apiName);
-
-    if (__DEV__) {
-      __DEV__setHookCallerName(useCallerName(3));
+    if (!source) {
+      let key = `${String(resourceName)}_${String(apiName)}`;
+      let apiConfig = config;
+      if (context !== null) {
+        apiConfig = assign({}, apiConfig, { context });
+      }
+      source = createSource(key, producer, apiConfig);
+    } else {
+      source.replaceProducer(producer);
+      source.patchConfig(config);
     }
+    return token;
+  }
+}
 
-    return internalUse(source, config, deps);
+function useDataForApp<TData, TArgs extends unknown[], TError>(
+  token: Api<TData, TArgs, TError>,
+  config?: UseConfig<TData, TArgs, TError>,
+  deps?: any[]
+) {
+  let source = token();
+
+  if (__DEV__) {
+    __DEV__setHookCallerName(useCallerName(3));
   }
 
+  return useData_internal(source, deps || emptyArray, config);
+}
+
+function useAsyncForApp<TData, TArgs extends unknown[], TError>(
+  token: Api<TData, TArgs, TError>,
+  config?: UseConfig<TData, TArgs, TError>,
+  deps?: any[]
+) {
+  let source = token();
+
+  if (__DEV__) {
+    __DEV__setHookCallerName(useCallerName(3));
+  }
+
+  return useAsync_internal(source, deps || emptyArray, config);
 }
