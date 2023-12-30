@@ -13,6 +13,7 @@ describe("should do basic subscription to an async state", () => {
         const {
           source: { run, setState },
           data,
+          dataProps: { args },
         } = useAsync({
           producer(props: ProducerProps<number, [number], any>) {
             return props.args[0];
@@ -52,6 +53,7 @@ describe("should do basic subscription to an async state", () => {
               decrement
             </button>
             <span data-testid="result">{data}</span>
+            <span data-testid="args">{args[0]}</span>
           </div>
         );
       }
@@ -70,22 +72,27 @@ describe("should do basic subscription to an async state", () => {
       const decrementRBtn = screen.getByTestId("decrement-r");
       // then
       expect(screen.getByTestId("result").innerHTML).toEqual("0");
+      expect(screen.getByTestId("args").innerHTML).toEqual("0");
 
       // +1
       fireEvent.click(incrementBtn);
       expect(screen.getByTestId("result").innerHTML).toEqual("1");
+      expect(screen.getByTestId("args").innerHTML).toEqual("1");
 
       // +1
       fireEvent.click(incrementRBtn);
       expect(screen.getByTestId("result").innerHTML).toEqual("2");
+      expect(screen.getByTestId("args").innerHTML).toEqual("2");
 
       // -1
       fireEvent.click(decrementBtn);
       expect(screen.getByTestId("result").innerHTML).toEqual("1");
+      expect(screen.getByTestId("args").innerHTML).toEqual("1");
 
       // -1
       fireEvent.click(decrementRBtn);
       expect(screen.getByTestId("result").innerHTML).toEqual("0");
+      expect(screen.getByTestId("args").innerHTML).toEqual("0");
     }
   );
 

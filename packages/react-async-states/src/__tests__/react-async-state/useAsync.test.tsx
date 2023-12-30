@@ -10,13 +10,13 @@ describe("useAsync", () => {
     }
 
     function Component() {
-      const { state } = useAsync.auto<number, any, any>({
+      const { data } = useAsync.auto<number, any, any>({
         producer,
         autoRunArgs: [5],
         initialValue: 99,
       });
 
-      return <span data-testid="result">{state.data}</span>;
+      return <span data-testid="result">{data}</span>;
     }
 
     // when
