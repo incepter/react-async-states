@@ -3,8 +3,8 @@ import { render } from "@testing-library/react";
 import { createSource } from "async-states";
 import { useAsync } from "../../../hooks/useAsync_export";
 import { useData } from "../../../hooks/useData_export";
-import internalUse from "../../../application/internalUse";
-import { api, createApplication } from "../../../application/Application";
+import { createApplication } from "../../../application/Application";
+import { Api } from "../../../application/types";
 
 describe("caller name", () => {
   it("useAsync - should correctly report the caller name", async () => {
@@ -13,12 +13,13 @@ describe("caller name", () => {
       initialValue: 0,
     });
 
-    let shape = {
+    type Shape = {
       test: {
-        caller: api<number>({ eager: true, producer: () => 5 }),
-      },
+        caller: Api<number>;
+      };
     };
-    let app = createApplication<typeof shape>(shape);
+    let app = createApplication<Shape>();
+    app.test.caller.define(() => 5);
     let testSource = app.test.caller();
 
     let rendersCount = 0;
@@ -26,10 +27,9 @@ describe("caller name", () => {
     function Test() {
       useData(source);
       useAsync(source);
-      internalUse(source);
       useAsync.auto(source);
-      app.test.caller.use();
-      app.test.caller.useAsyncState();
+      app.test.caller.useData();
+      app.test.caller.useAsync();
 
       rendersCount += 1;
       return null;
@@ -51,7 +51,7 @@ describe("caller name", () => {
       testSource.inst.subscriptions!
     ).map((t) => t.props.key);
 
-    expect(subscriptionKeys.length).toBe(4);
+    expect(subscriptionKeys.length).toBe(3);
     subscriptionKeys.forEach((t) => {
       expect(t!.startsWith("Test-")).toBeTruthy();
     });

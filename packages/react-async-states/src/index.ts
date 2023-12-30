@@ -11,16 +11,11 @@ export {
 
 export { default as Provider } from "./provider/Provider";
 
-export { createApplication, api } from "./application/Application";
+export { createApplication } from "./application/Application";
 
 export type {
   Api,
-  ExtendedFn,
-  Application,
-  DefaultFn,
-  Token,
-  ApplicationEntry,
-} from "./application/Application";
+} from "./application/types";
 
 export type {
   State,
