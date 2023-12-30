@@ -2,7 +2,6 @@ import * as React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useAsync } from "../../hooks/useAsync_export";
 import { flushPromises } from "../utils/test-utils";
-import { Status } from "async-states";
 
 describe("should emit from producer", () => {
   it("should emit after resolve when sync", async () => {

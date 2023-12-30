@@ -21,7 +21,6 @@ export function createProps<TData, TArgs extends unknown[], TError>(
   payload: unknown,
   runProps: RUNCProps<TData, TArgs, TError> | undefined
 ): ProducerProps<TData, TArgs, TError> {
-  let lastSuccess = instance.lastSuccess;
   let getState = instance.actions.getState;
   let args = (runProps?.args || emptyArray) as TArgs;
 
@@ -31,7 +30,6 @@ export function createProps<TData, TArgs extends unknown[], TError>(
     args,
     abort,
     getState,
-    lastSuccess,
     payload: payload as any,
     signal: controller.signal,
     onAbort(callback: AbortFn) {
@@ -44,6 +42,9 @@ export function createProps<TData, TArgs extends unknown[], TError>(
     isAborted() {
       return indicators.aborted;
     },
+    get lastSuccess() {
+      return instance.lastSuccess;
+    }
   };
 
   return producerProps;
