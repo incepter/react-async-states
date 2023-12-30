@@ -1,7 +1,7 @@
 {
   "sideEffects": false,
   "types": "dist/index",
-  "version": "2.0.0-beta-1",
+  "version": "2.0.0-beta-2",
   "main": "dist/index.umd.js",
   "name": "async-states-devtools",
   "module": "dist/index.development.mjs",
@@ -22,12 +22,12 @@
     "react-resizable": "^3.0.4"
   },
   "peerDependencies": {
-    "async-states": "^2.0.0-beta-1",
-    "react-async-states": "^2.0.0-beta-1"
+    "async-states": "^2.0.0-beta-2",
+    "react-async-states": "^2.0.0-beta-2"
   },
   "devDependencies": {
-    "async-states": "workspace:^2.0.0-beta-1",
-    "react-async-states": "workspace:^2.0.0-beta-1",
+    "async-states": "workspace:^2.0.0-beta-2",
+    "react-async-states": "workspace:^2.0.0-beta-2",
     "@rollup/plugin-replace": "^5.0.1",
     "@types/node": "^18.11.9",
     "@types/react": "^18.0.24",

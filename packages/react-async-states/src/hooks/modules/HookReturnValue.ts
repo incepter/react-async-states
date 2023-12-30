@@ -74,7 +74,7 @@ export function createLegacyInitialReturn<
   let currentState = instance.state as InitialState<TData, TArgs>;
   let selectedState = selectState(instance, config.selector);
 
-  let result = {
+  let result: HookReturnInitial<TData, TArgs, TError, S> = {
     source: instance.actions,
 
     isError: false,
@@ -84,12 +84,13 @@ export function createLegacyInitialReturn<
 
     error: null,
     state: selectedState,
+    dataProps: currentState.props,
     data: currentState.data ?? null,
 
     read: subscription.read,
     onChange: subscription.onChange,
     onSubscribe: subscription.onSubscribe,
-  } as const;
+  };
 
   if (__DEV__) {
     let lastSuccess = instance.lastSuccess;
@@ -112,7 +113,7 @@ export function createLegacySuccessReturn<
   let currentState = instance.state as SuccessState<TData, TArgs>;
   let selectedState = selectState(instance, config.selector);
 
-  let result = {
+  let result: HookReturnSuccess<TData, TArgs, TError, S> = {
     source: instance.actions,
 
     isError: false,
@@ -123,11 +124,12 @@ export function createLegacySuccessReturn<
     error: null,
     state: selectedState,
     data: currentState.data,
+    dataProps: currentState.props,
 
     read: subscription.read,
     onChange: subscription.onChange,
     onSubscribe: subscription.onSubscribe,
-  } as const;
+  };
 
   if (__DEV__) {
     let lastSuccess = instance.lastSuccess;
@@ -151,7 +153,7 @@ export function createLegacyErrorReturn<
   let currentState = instance.state as ErrorState<TData, TArgs, TError>;
   let selectedState = selectState(instance, config.selector);
 
-  let result = {
+  let result: HookReturnError<TData, TArgs, TError, S> = {
     source: instance.actions,
 
     isError: true,
@@ -161,12 +163,13 @@ export function createLegacyErrorReturn<
 
     state: selectedState,
     error: currentState.data,
+    dataProps: lastSuccess.props,
     data: lastSuccess.data ?? null,
 
     read: subscription.read,
     onChange: subscription.onChange,
     onSubscribe: subscription.onSubscribe,
-  } as const;
+  };
 
   if (__DEV__) {
     let lastSuccess = instance.lastSuccess;
@@ -191,7 +194,7 @@ export function createLegacyPendingReturn<
   let previousState = currentState.prev;
   let selectedState = selectState(instance, config.selector);
 
-  let result = {
+  let result: HookReturnPending<TData, TArgs, TError, S> = {
     source: instance.actions,
 
     isError: false,
@@ -200,13 +203,14 @@ export function createLegacyPendingReturn<
     isSuccess: false,
 
     state: selectedState,
+    dataProps: lastSuccess.props,
     data: lastSuccess.data ?? null,
     error: previousState.status === "error" ? previousState.data : null,
 
     read: subscription.read,
     onChange: subscription.onChange,
     onSubscribe: subscription.onSubscribe,
-  } as const;
+  };
 
   if (__DEV__) {
     addLastSuccessDeprecationWarning(subscription, result, lastSuccess);

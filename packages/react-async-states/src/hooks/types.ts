@@ -8,6 +8,7 @@ import {
   PendingState,
   Producer,
   ProducerConfig,
+  ProducerSavedProps,
   RunEffect,
   Source,
   State,
@@ -351,6 +352,7 @@ export interface HookReturnInitial<TData, TArgs extends unknown[], TError, S>
 
   error: null;
   data: TData | null;
+  dataProps: ProducerSavedProps<TData, TArgs>;
 }
 
 export interface HookReturnSuccess<TData, TArgs extends unknown[], TError, S>
@@ -362,8 +364,9 @@ export interface HookReturnSuccess<TData, TArgs extends unknown[], TError, S>
   isSuccess: true;
   isPending: false;
 
-  data: TData;
   error: null;
+  data: TData;
+  dataProps: ProducerSavedProps<TData, TArgs>;
 }
 
 export interface HookReturnError<TData, TArgs extends unknown[], TError, S>
@@ -377,6 +380,7 @@ export interface HookReturnError<TData, TArgs extends unknown[], TError, S>
 
   error: TError;
   data: TData | null;
+  dataProps: ProducerSavedProps<TData, TArgs>;
 }
 
 export interface HookReturnPending<TData, TArgs extends unknown[], TError, S>
@@ -388,8 +392,9 @@ export interface HookReturnPending<TData, TArgs extends unknown[], TError, S>
   isInitial: false;
   isSuccess: false;
 
-  data: TData | null;
   error: TError | null;
+  data: TData | null;
+  dataProps: ProducerSavedProps<TData, TArgs>;
 }
 
 export type LegacyHookReturn<
