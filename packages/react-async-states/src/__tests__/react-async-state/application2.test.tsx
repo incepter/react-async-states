@@ -19,13 +19,15 @@ let userSearch = async () => Promise.resolve({ id: 15, name: "incepter" });
 
 type AppShape = {
   auth: {
-    current: Api<User, [], Error>;
+    current: Api<User, []>;
   };
   users: {
-    search: Api<User, [string], Error>;
-    findOne: Api<User, [string], Error>;
+    search: Api<User, [string]>;
+    findOne: Api<User, [string]>;
   };
 };
+
+let eagerShape = {};
 
 describe("createApplication2 abstraction tests", () => {
   let originalConsoleError = console.error;
@@ -43,16 +45,18 @@ describe("createApplication2 abstraction tests", () => {
   });
 
   it("should throw if used without being injected", () => {
-    let errorMessageToThrow =
-      "Call app.users.search.define(producer) before using app.users.search";
+    let errorMsg = (name: string) =>
+      `Call app.${name}.define(producer) before using app.${name}`;
     let app = createApplication2<AppShape>(undefined, {});
-    expect(() => app.users.search()).toThrow(errorMessageToThrow);
-    expect(() => app.users.search.useData()).toThrow(errorMessageToThrow);
-    expect(() => app.users.search.useAsync()).toThrow(errorMessageToThrow);
+    expect(() => app.users.search()).toThrow(errorMsg("users.search"));
+    expect(() => app.users.search.useData()).toThrow("users.search");
+    expect(() => app.users.search.useAsync()).toThrow("users.search");
+    expect(() => app.auth.current.useAsync()).toThrow("auth.current");
     // the following was eager
-    // expect(() => app.auth.current.useAsyncState()).not.toThrow(
-    //   errorMessageToThrow
-    // );
+    app.auth.current.define(userSearch, { runEffect: "debounce" });
+    expect(() => app.auth.current.useAsync()).not.toThrow(
+      errorMsg("auth.current")
+    );
   });
 
   it("should be able to inject producer and configuration and then not throw", () => {
