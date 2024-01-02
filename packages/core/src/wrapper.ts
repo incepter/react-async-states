@@ -5,6 +5,7 @@ import {
   ProducerProps,
   RetryConfig,
   RunIndicators,
+  PromiseLike,
 } from "./types";
 import {
   cloneProducerProps,
@@ -21,8 +22,8 @@ export function run<TData, TArgs extends unknown[], TError>(
   onSettled: OnSettled<TData, TArgs, TError>,
   retryConfig?: RetryConfig<TData, TArgs, TError>,
   callbacks?: ProducerCallbacks<TData, TArgs, TError>
-): Promise<TData> | undefined {
-  let pendingPromise: Promise<TData>;
+): PromiseLike<TData, TError> | undefined {
+  let pendingPromise: PromiseLike<TData, TError>;
   let executionValue;
 
   try {
@@ -64,10 +65,18 @@ export function run<TData, TArgs extends unknown[], TError>(
     return;
   }
 
-  // @ts-ignore
-  return pendingPromise.then(onSuccess, onFail);
+  pendingPromise = pendingPromise.then(onSuccess, onFail) as PromiseLike<
+    TData,
+    TError
+  >;
+  pendingPromise.status = "pending";
+  return pendingPromise;
 
   function onSuccess(data: TData): TData {
+    if (pendingPromise) {
+      pendingPromise.status = "fulfilled";
+      pendingPromise.value = data;
+    }
     if (!indicators.aborted) {
       indicators.done = true;
       onSettled(data, success, cloneProducerProps(props), callbacks);
@@ -76,6 +85,10 @@ export function run<TData, TArgs extends unknown[], TError>(
   }
 
   function onFail(error: TError) {
+    if (pendingPromise) {
+      pendingPromise.status = "rejected";
+      pendingPromise.reason = error;
+    }
     if (indicators.aborted) {
       return;
     }

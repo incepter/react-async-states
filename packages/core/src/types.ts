@@ -154,6 +154,12 @@ export type HydrationData<TData, TArgs extends unknown[], TError> = {
   latestRun: RunTask<TData, TArgs, TError> | null;
 };
 
+export interface PromiseLike<TData, TError> extends Promise<TData> {
+  status: "pending" | "fulfilled" | "rejected";
+  value?: TData;
+  reason?: TError;
+}
+
 export interface StateInterface<TData, TArgs extends unknown[], TError> {
   // identity
   key: string;
@@ -177,7 +183,7 @@ export interface StateInterface<TData, TArgs extends unknown[], TError> {
   subscriptions: Record<number, StateSubscription<TData, TArgs, TError>> | null;
 
   // producer
-  promise: Promise<TData> | null;
+  promise: PromiseLike<TData, TError> | null;
   fn: Producer<TData, TArgs, TError> | null;
   readonly ctx: LibraryContext | null;
 

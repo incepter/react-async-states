@@ -144,6 +144,7 @@ export type UseAsyncStateConfiguration<
 
   context?: unknown;
   concurrent?: boolean;
+  throwError?: boolean;
 
   lazy?: boolean;
   autoRunArgs?: TArgs;
@@ -428,7 +429,12 @@ export type HookChangeEventsFunction<TData, TArgs extends unknown[], TError> = (
 export interface HookSubscription<TData, TArgs extends unknown[], TError, S>
   extends SubscriptionAlternate<TData, TArgs, TError, S> {
   alternate: SubscriptionAlternate<TData, TArgs, TError, S> | null;
-  read(suspend?: boolean, throwError?: boolean): S;
+
+  read(
+    newConfig: PartialUseAsyncConfig<TData, TArgs, TError, S>,
+    suspend?: boolean,
+    throwError?: boolean
+  ): S;
 
   changeEvents: HookChangeEvents<TData, TArgs, TError> | null;
   subscribeEvents: UseAsyncStateEventSubscribe<TData, TArgs, TError> | null;
@@ -445,6 +451,8 @@ export interface HookSubscription<TData, TArgs extends unknown[], TError, S>
         ) => void)
       | UseAsyncStateEventSubscribe<TData, TArgs, TError>
   ): void;
+
+  initial: boolean;
 }
 
 export interface SubscriptionAlternate<

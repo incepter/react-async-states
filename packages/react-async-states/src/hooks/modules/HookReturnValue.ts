@@ -19,12 +19,7 @@ import {
   SuccessState,
 } from "async-states";
 
-export function createSubscriptionLegacyReturn<
-  TData,
-  TArgs extends unknown[],
-  TError,
-  S,
->(
+export function createLegacyReturn<TData, TArgs extends unknown[], TError, S>(
   subscription: HookSubscription<TData, TArgs, TError, S>,
   config: PartialUseAsyncConfig<TData, TArgs, TError, S>
 ): LegacyHookReturn<TData, TArgs, TError, S> {
@@ -87,9 +82,9 @@ export function createLegacyInitialReturn<
     dataProps: currentState.props,
     data: currentState.data ?? null,
 
-    read: subscription.read,
     onChange: subscription.onChange,
     onSubscribe: subscription.onSubscribe,
+    read: subscription.read.bind(null, config),
   };
 
   if (__DEV__) {
@@ -126,9 +121,9 @@ export function createLegacySuccessReturn<
     data: currentState.data,
     dataProps: currentState.props,
 
-    read: subscription.read,
     onChange: subscription.onChange,
     onSubscribe: subscription.onSubscribe,
+    read: subscription.read.bind(null, config),
   };
 
   if (__DEV__) {
@@ -166,9 +161,9 @@ export function createLegacyErrorReturn<
     dataProps: lastSuccess.props,
     data: lastSuccess.data ?? null,
 
-    read: subscription.read,
     onChange: subscription.onChange,
     onSubscribe: subscription.onSubscribe,
+    read: subscription.read.bind(null, config),
   };
 
   if (__DEV__) {
@@ -207,9 +202,9 @@ export function createLegacyPendingReturn<
     data: lastSuccess.data ?? null,
     error: previousState.status === "error" ? previousState.data : null,
 
-    read: subscription.read,
     onChange: subscription.onChange,
     onSubscribe: subscription.onSubscribe,
+    read: subscription.read.bind(null, config),
   };
 
   if (__DEV__) {

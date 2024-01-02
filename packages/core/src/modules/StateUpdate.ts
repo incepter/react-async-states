@@ -282,10 +282,6 @@ export function replaceInstanceState<TData, TArgs extends unknown[], TError>(
     }
   }
 
-  if (!isPending) {
-    instance.promise = null;
-  }
-
   if (notify && !isCurrentlyFlushingAQueue) {
     notifySubscribers(instance as StateInterface<TData, TArgs, TError>);
   }

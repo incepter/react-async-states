@@ -2,6 +2,7 @@ import {
   LastSuccessSavedState,
   ProducerSavedProps,
   StateInterface,
+  PromiseLike,
 } from "../types";
 import { loadCache } from "./StateCache";
 import { attemptHydratedState } from "./StateHydration";
@@ -43,7 +44,9 @@ export function initializeInstance<TData, TArgs extends unknown[], TError>(
       };
 
       if (maybeHydratedState.state.status === pending) {
-        instance.promise = new Promise(() => {});
+        let promise: Promise<TData> = new Promise(() => {});
+        (promise as PromiseLike<TData, TError>).status = pending;
+        instance.promise = (promise as PromiseLike<TData, TError>);
       }
     }
   } else {

@@ -12,6 +12,13 @@ import {
 import { BaseConfig, MixedConfig, PartialUseAsyncConfig } from "../types";
 import { isServer } from "../../provider/context";
 
+let currentOverrides: PartialUseAsyncConfig<any, any, any, any> | null;
+export function setCurrentHookOverrides(
+  overrides: PartialUseAsyncConfig<any, any, any, any> | null
+) {
+  currentOverrides = overrides;
+}
+
 // the goal of this function is to retrieve the following objects:
 // - a configuration object to use { key, producer, source, lazy ... }
 // - the state instance
@@ -36,7 +43,9 @@ export function parseConfig<
     case "object": {
       if (isSource<TData, TArgs, TError>(mixedConfig)) {
         instance = mixedConfig.inst;
-        parsedConfiguration = assign({}, overrides, { source: mixedConfig });
+        parsedConfiguration = assign({}, overrides, currentOverrides, {
+          source: mixedConfig,
+        });
         break;
       }
 
@@ -47,9 +56,13 @@ export function parseConfig<
       ) {
         let realSource = baseConfig.source.getLane(baseConfig.lane);
         instance = realSource.inst;
-        parsedConfiguration = assign({}, baseConfig, overrides, {
-          source: realSource,
-        });
+        parsedConfiguration = assign(
+          {},
+          baseConfig,
+          overrides,
+          currentOverrides
+        );
+        parsedConfiguration.source = realSource;
         break;
       }
 
@@ -62,7 +75,12 @@ export function parseConfig<
       } else {
         executionContext = requestContext(null);
       }
-      parsedConfiguration = assign({}, mixedConfig, overrides);
+      parsedConfiguration = assign(
+        {},
+        mixedConfig,
+        overrides,
+        currentOverrides
+      );
       // the parsed config is created by the library, so okay to mutate it.
       parsedConfiguration.context = executionContext.ctx;
 
@@ -75,8 +93,8 @@ export function parseConfig<
     }
     // the user provided a string key
     case "string": {
-      parsedConfiguration = assign({}, overrides, { key: mixedConfig });
-
+      parsedConfiguration = assign({}, overrides, currentOverrides);
+      parsedConfiguration.key = mixedConfig;
       let nullableExecContext = currentLibContext;
       if (nullableExecContext) {
         executionContext = nullableExecContext;
@@ -91,7 +109,8 @@ export function parseConfig<
     }
     // first, detect the LibraryContext
     case "function": {
-      parsedConfiguration = assign({}, overrides, { producer: mixedConfig });
+      parsedConfiguration = assign({}, overrides, currentOverrides);
+      parsedConfiguration.producer = mixedConfig;
       parsedConfiguration.context = currentLibContext?.ctx ?? null;
 
       instance = resolveFromFunctionConfig(parsedConfiguration);
@@ -99,7 +118,7 @@ export function parseConfig<
     }
 
     default: {
-      parsedConfiguration = assign({}, overrides);
+      parsedConfiguration = assign({}, overrides, currentOverrides);
 
       let nullableExecContext = currentLibContext;
       if (nullableExecContext) {

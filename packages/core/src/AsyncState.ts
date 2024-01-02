@@ -21,6 +21,7 @@ import {
   Producer,
   ProducerCallbacks,
   ProducerConfig,
+  PromiseLike,
   RUNCProps,
   RunTask,
   Source,
@@ -82,7 +83,7 @@ export class AsyncState<TData, TArgs extends unknown[], TError>
   latestRun: RunTask<TData, TArgs, TError> | null;
   lastSuccess: LastSuccessSavedState<TData, TArgs>;
 
-  promise: Promise<TData> | null;
+  promise: PromiseLike<TData, TError> | null;
   currentAbort: AbortFn | null;
   fn: Producer<TData, TArgs, TError> | null;
 

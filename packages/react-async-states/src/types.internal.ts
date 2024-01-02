@@ -21,8 +21,6 @@ export type UseConfig<
   TError,
   S = State<TData, TArgs, TError>,
 > = {
-  lane?: string;
-  producer?: Producer<TData, TArgs, TError>;
   payload?: Record<string, unknown>;
 
   lazy?: boolean;
@@ -39,8 +37,6 @@ export type UseConfig<
         args?: TArgs,
         payload?: Record<string, unknown> | null
       ) => boolean);
-
-  wait?: boolean;
 };
 
 export type {

@@ -189,5 +189,8 @@ function Standalone() {
     producer: standaloneInterval,
   });
 
+  // this to add a subscription on the fly to other states
+  useAsync(source);
+
   return <span>data: {String(data)}</span>;
 }

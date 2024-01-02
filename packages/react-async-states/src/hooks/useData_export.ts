@@ -10,9 +10,9 @@ import {
 } from "./types";
 import { __DEV__, emptyArray } from "../shared";
 import { Producer, Source } from "async-states";
-import { __DEV__setHookCallerName } from "./modules/HookSubscription";
 import { useCallerName } from "../helpers/useCallerName";
 import { useData_internal } from "./useData_internal";
+import { __DEV__setHookCallerName } from "./modules/HookSubscriptionUtils";
 
 // now we should overload and construct the exported part of this hook
 // the main usage that we should overload

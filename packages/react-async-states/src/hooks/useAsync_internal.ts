@@ -2,12 +2,12 @@ import * as React from "react";
 import { Context } from "../provider/context";
 import { parseConfig } from "./modules/HookResolveConfig";
 import { LegacyHookReturn, MixedConfig, PartialUseAsyncConfig } from "./types";
+import { useRetainInstance } from "./modules/HookSubscription";
 import {
   autoRunAndSubscribeEvents,
-  beginRenderSubscription,
   commit,
-  useRetainInstance,
-} from "./modules/HookSubscription";
+} from "./modules/HookSubscriptionCommit";
+import { beginRender } from "./modules/HookSubscriptionRender";
 
 // this is the main hook, useAsyncState previously
 export function useAsync_internal<TData, TArgs extends unknown[], TError, S>(
@@ -33,8 +33,7 @@ export function useAsync_internal<TData, TArgs extends unknown[], TError, S>(
   // at the commit phase. It is important not to touch anything during
   // render and port everything to the commit phase.
   // a "null" alternate means that the render was bailed out.
-  let alternate = beginRenderSubscription(subscription, config, deps);
-
+  let alternate = beginRender(subscription, config, deps);
   // this first effect will flush the alternate's properties inside
   // the subscription, such as the current return, the parsed config...
   // it is important to perform this work every time the alternate changes.
