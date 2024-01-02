@@ -4,46 +4,46 @@
 
 @layer base {
   :root {
-    --color-foreground-primary: 220 56% 12%;
-    --color-foreground-secondary: 214 20% 29%;
+    --color-foreground-primary: 222.2 47.4% 11.2%;
+    --color-foreground-secondary: 215.4 16.3% 46.9%;
 
-    --color-background-default: 360 100% 100%;
+    --color-background-default: 210 40% 98%;
 
     --color-primary-default: 217.2 32.6% 17.5%;
     --color-primary-light: 215.3 25% 26.7%;
     --color-primary-dark: 222.2 47.4% 11.2%;
-    --color-primary-contrast-text: 360 100% 100%;
+    --color-primary-contrast-text: 0 0% 100%;
 
     --color-error-default: 0 72.2% 50.6%;
     --color-error-light: 0 84.2% 60.2%;
     --color-error-dark: 0 73.7% 41.8%;
-    --color-error-contrast-text: 360 100% 100%;
+    --color-error-contrast-text: 0 0% 100%;
 
     --color-warning-default: 32.1 94.6% 43.7%;
     --color-warning-light: 37.7 92.1% 50.2%;
     --color-warning-dark: 26 90.5% 37.1%;
-    --color-warning-contrast-text: 360 100% 100%;
+    --color-warning-contrast-text: 0 0% 100%;
 
     --color-info-default: 221.2 83.2% 53.3%;
     --color-info-light: 217.2 91.2% 59.8%;
     --color-info-dark: 224.3 76.3% 48%;
-    --color-info-contrast-text: 360 100% 100%;
+    --color-info-contrast-text: 0 0% 100%;
 
     --color-success-default: 142.1 76.2% 36.3%;
     --color-success-light: 142.1 70.6% 45.3%;
     --color-success-dark: 142.4 71.8% 29.2%;
-    --color-success-contrast-text: 360 100% 100%;
+    --color-success-contrast-text: 0 0% 100%;
   }
 
   [data-theme="dark"] {
-    --color-foreground-primary: 210 8% 89%;
-    --color-foreground-secondary: 215 11% 64%;
+    --color-foreground-primary: 210 40% 98%;
+    --color-foreground-secondary: 215 20.2% 65.1%;
 
-    --color-background-default: 210 56% 9%;
+    --color-background-default: 222.2 47.4% 11.2%;
 
-    --color-primary-default: 214.3 31.8% 91.4%;
-    --color-primary-light: 210 40% 96.1%;
-    --color-primary-dark: 212.7 26.8% 83.9%;
+    --color-primary-default: 210 40% 96.1%;
+    --color-primary-light: 210 40% 98%;
+    --color-primary-dark: 214.3 31.8% 91.4%;
     --color-primary-contrast-text: 0 0% 0%;
 
     --color-error-default: 0 93.5% 81.8%;
