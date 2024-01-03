@@ -23,7 +23,6 @@ export type {
   CacheConfig,
   OnCacheLoadProps,
   Source,
-  StateUpdater,
   StateFunctionUpdater,
   ProducerConfig,
   ProducerFunction,

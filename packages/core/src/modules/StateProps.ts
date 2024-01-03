@@ -1,5 +1,6 @@
 import {
   AbortFn,
+  ProducerCallbacks,
   ProducerProps,
   RUNCProps,
   RunIndicators,
@@ -7,7 +8,7 @@ import {
   StateInterface,
 } from "../types";
 import { __DEV__, emptyArray, isFunction } from "../utils";
-import { pending, Status } from "../enums";
+import { pending, Status, success } from "../enums";
 import {
   isAlteringState,
   replaceInstanceState,
@@ -21,7 +22,6 @@ export function createProps<TData, TArgs extends unknown[], TError>(
   payload: unknown,
   runProps: RUNCProps<TData, TArgs, TError> | undefined
 ): ProducerProps<TData, TArgs, TError> {
-  let lastSuccess = instance.lastSuccess;
   let getState = instance.actions.getState;
   let args = (runProps?.args || emptyArray) as TArgs;
 
@@ -31,7 +31,6 @@ export function createProps<TData, TArgs extends unknown[], TError>(
     args,
     abort,
     getState,
-    lastSuccess,
     payload: payload as any,
     signal: controller.signal,
     onAbort(callback: AbortFn) {
@@ -44,12 +43,29 @@ export function createProps<TData, TArgs extends unknown[], TError>(
     isAborted() {
       return indicators.aborted;
     },
+    get lastSuccess() {
+      return instance.lastSuccess;
+    },
   };
 
   return producerProps;
 
   function emit(
-    updater: TData | StateFunctionUpdater<TData, TArgs, TError>,
+    value: StateFunctionUpdater<TData, TArgs, TError> | TData,
+    status: "initial"
+  ): void;
+  function emit(value: null, status: "pending"): void;
+  function emit(value: TError, status: "error"): void;
+  function emit(
+    value: StateFunctionUpdater<TData, TArgs, TError> | TData,
+    status?: "success"
+  ): void;
+  function emit(
+    value:
+      | TData
+      | StateFunctionUpdater<TData, TArgs, TError>
+      | null
+      | TError,
     status?: Status
   ): void {
     if (indicators.cleared) {
@@ -66,7 +82,9 @@ export function createProps<TData, TArgs extends unknown[], TError>(
     }
 
     let prevIsEmitting = startEmitting();
-    instance.actions.setState(updater, status, runProps);
+    let newValue = value as unknown as any;
+    let newStatus = status as unknown as any;
+    instance.actions.setState(newValue, newStatus, runProps);
     stopEmitting(prevIsEmitting);
   }
 

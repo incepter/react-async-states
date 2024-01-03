@@ -1,4 +1,4 @@
-import { AsyncState } from "../..";
+import { AsyncState, createSource } from "../..";
 import { timeout } from "./test-utils";
 import { mockDateNow, TESTS_TS } from "../utils/setup";
 import { pending } from "../../enums";
@@ -20,6 +20,44 @@ describe("AsyncState - setState", () => {
 
   beforeEach(() => {
     subscription.mockClear();
+  });
+  it("should perform correct typing on setState", () => {
+    class CustomError extends Error {
+      readonly id: number;
+      constructor(id: number) {
+        super();
+        this.id = id;
+      }
+    }
+    let source = createSource<number, never, CustomError>("test", null, {
+      initialValue: 0,
+    });
+
+    source.setState(5);
+    source.setState(() => 6);
+    source.setState(5, "success");
+    source.setState(() => 6, "success");
+
+    source.setState(5, "initial");
+    source.setState(() => 7, "initial");
+
+    source.setState(null, "pending");
+    source.setState(new CustomError(1), "error");
+
+    // @ts-expect-error
+    source.setState(null, "error");
+    // @ts-expect-error
+    source.setState(new Error(), "error");
+    // @ts-expect-error
+    source.setState(null, "success");
+    // @ts-expect-error
+    source.setState(new Error(), "success");
+    // @ts-expect-error
+    source.setState(new Error(), "initial");
+    // @ts-expect-error
+    source.setState(new Error(), "pending");
+    // @ts-expect-error
+    source.setState(3, "pending");
   });
 
   it("should synchronously mutate the state after setState call and notify subscribers", () => {

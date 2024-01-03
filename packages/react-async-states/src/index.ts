@@ -36,7 +36,6 @@ export type {
   InitialState,
   PendingState,
   SuccessState,
-  StateUpdater,
   StateInterface,
   OnCacheLoadProps,
   StateFunctionUpdater,

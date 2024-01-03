@@ -265,6 +265,7 @@ const ChangeState = React.memo(function ChangeState({
           className="asd-c-s-btn"
           onClick={() => {
             let dataToUse = JSON.parse(textAreaRef.current.value);
+            // @ts-ignore
             instance.actions.setState(dataToUse, status);
           }}
         >

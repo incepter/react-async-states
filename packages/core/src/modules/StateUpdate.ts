@@ -282,10 +282,6 @@ export function replaceInstanceState<TData, TArgs extends unknown[], TError>(
     }
   }
 
-  if (!isPending) {
-    instance.promise = null;
-  }
-
   if (notify && !isCurrentlyFlushingAQueue) {
     notifySubscribers(instance as StateInterface<TData, TArgs, TError>);
   }
@@ -307,7 +303,9 @@ export function setInstanceState<TData, TArgs extends unknown[], TError>(
   newValue:
     | TData
     | StateFunctionUpdater<TData, TArgs, TError>
-    | ((prev: TData | null) => TData),
+    | ((prev: TData | null) => TData)
+    | null
+    | TError,
   status: Status = success,
   callbacks?: ProducerCallbacks<TData, TArgs, TError>
 ) {

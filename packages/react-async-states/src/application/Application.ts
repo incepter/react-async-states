@@ -1,6 +1,5 @@
 import { UseConfig } from "../types.internal";
 import { __DEV__, assign, emptyArray } from "../shared";
-import { __DEV__setHookCallerName } from "../hooks/modules/HookSubscription";
 import { useCallerName } from "../helpers/useCallerName";
 import { useData_internal } from "../hooks/useData_internal";
 import { useAsync_internal } from "../hooks/useAsync_internal";
@@ -20,6 +19,7 @@ import {
   InferError,
   Resource,
 } from "./types";
+import { __DEV__setHookCallerName } from "../hooks/modules/HookSubscriptionUtils";
 
 let didWarnAboutInitialShapeDeprecated = false;
 
@@ -32,17 +32,18 @@ export function createApplication<TApp extends AppShape>(
       didWarnAboutInitialShapeDeprecated = true;
       console.error(
         "createApplication's first argument was removed, it doesn't" +
-        "accept the shape anymore. This was done to avoid creating and " +
-        "maintaining a plain javascript object and only rely on typescript." +
-        "\nAs migration strategy, do this:" +
-        "\n\nimport { createApplication, Api } from 'react-async-states';" +
-        "\n\ntype MyAppType = { resource: { api: Api<TData, TArgs, tError> } };" +
-        "\nconst app = createApplication<MyType>(undefined, context?);" +
-        "\n\nIf you had an eager API, just inline this manually." +
-        "\napp.eagerResource.eagerApi.define(producer, producerConfig);" +
-        "\nOr group them into a single function that initialize all eager APIs" +
-        "\n\nWhen v2 lands, this warning will be removed and createApplication " +
-        "will only accept the optional 'context' parameter.")
+          "accept the shape anymore. This was done to avoid creating and " +
+          "maintaining a plain javascript object and only rely on typescript." +
+          "\nAs migration strategy, do this:" +
+          "\n\nimport { createApplication, Api } from 'react-async-states';" +
+          "\n\ntype MyAppType = { resource: { api: Api<TData, TArgs, tError> } };" +
+          "\nconst app = createApplication<MyType>(undefined, context?);" +
+          "\n\nIf you had an eager API, just inline this manually." +
+          "\napp.eagerResource.eagerApi.define(producer, producerConfig);" +
+          "\nOr group them into a single function that initialize all eager APIs" +
+          "\n\nWhen v2 lands, this warning will be removed and createApplication " +
+          "will only accept the optional 'context' parameter."
+      );
     }
   }
 
