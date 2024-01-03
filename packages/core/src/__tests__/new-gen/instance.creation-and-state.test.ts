@@ -124,7 +124,6 @@ describe("AsyncState instance creation", () => {
 
     let prevConsoleError = console.error;
     console.error = () => {}; // shut warning
-    // @ts-ignore
     expect(getSource("state-9")).toBe(src);
     expect(createSource("state-9")).toBe(src);
     console.error = prevConsoleError;

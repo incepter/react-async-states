@@ -106,7 +106,6 @@ export class AsyncState<TData, TArgs extends unknown[], TError>
     if (__DEV__) {
       // @ts-expect-error: getDeadline no longer exists
       if (instanceConfig.cacheConfig?.getDeadline !== undefined) {
-        // @ts-ignore
         console.error(
           "[Warning][async state] getDeadline is deprecated in" +
             "favor of 'timeout' with the same signature, and supports now numbers. " +
@@ -222,7 +221,31 @@ export class StateSource<TData, TArgs extends unknown[], TError>
   }
 
   setState(
-    newValue: TData | StateFunctionUpdater<TData, TArgs, TError>,
+    noData: StateFunctionUpdater<TData, TArgs, TError> | TData,
+    status: "initial",
+    callbacks?: ProducerCallbacks<TData, TArgs, TError>
+  ): void;
+  setState(
+    noData: null,
+    status: "pending",
+    callbacks?: ProducerCallbacks<TData, TArgs, TError>
+  ): void;
+  setState(
+    error: TError,
+    status: "error",
+    callbacks?: ProducerCallbacks<TData, TArgs, TError>
+  ): void;
+  setState(
+    noData: StateFunctionUpdater<TData, TArgs, TError> | TData,
+    status?: "success",
+    callbacks?: ProducerCallbacks<TData, TArgs, TError>
+  ): void;
+  setState(
+    newValue:
+      | TData
+      | StateFunctionUpdater<TData, TArgs, TError>
+      | null
+      | TError,
     status: Status = success,
     callbacks?: ProducerCallbacks<TData, TArgs, TError>
   ): void {

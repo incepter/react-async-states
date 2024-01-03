@@ -7,7 +7,6 @@ let src2 = createSource<number>("test-1", null, { initialValue: 0 })
   .getLane("test-1-lane")
   .getLane("test-1-lane-lane-nested");
 
-// @ts-ignore
 src.setState(new Error(""), "error");
 src2.setState(null, "pending");
 

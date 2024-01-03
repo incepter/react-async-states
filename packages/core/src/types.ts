@@ -15,10 +15,24 @@ export interface BaseSource<TData, TArgs extends unknown[], TError> {
   // state
   getState(): State<TData, TArgs, TError>;
 
-  // todo: overload this!!!!
   setState(
-    updater: StateFunctionUpdater<TData, TArgs, TError> | TData,
-    status?: Status,
+    value: StateFunctionUpdater<TData, TArgs, TError> | TData,
+    status: "initial",
+    callbacks?: ProducerCallbacks<TData, TArgs, TError>
+  ): void;
+  setState(
+    value: null,
+    status: "pending",
+    callbacks?: ProducerCallbacks<TData, TArgs, TError>
+  ): void;
+  setState(
+    value: TError,
+    status: "error",
+    callbacks?: ProducerCallbacks<TData, TArgs, TError>
+  ): void;
+  setState(
+    value: StateFunctionUpdater<TData, TArgs, TError> | TData,
+    status?: "success",
     callbacks?: ProducerCallbacks<TData, TArgs, TError>
   ): void;
 
@@ -274,7 +288,22 @@ export interface ProducerProps<
   payload: Record<string, unknown>;
   lastSuccess: LastSuccessSavedState<TData, TArgs>;
 
-  emit: StateUpdater<TData, TArgs, TError>;
+  emit(
+    value: StateFunctionUpdater<TData, TArgs, TError> | TData,
+    status: "initial",
+  ): void;
+  emit(
+    value: null,
+    status: "pending",
+  ): void;
+  emit(
+    value: TError,
+    status: "error",
+  ): void;
+  emit(
+    value: StateFunctionUpdater<TData, TArgs, TError> | TData,
+    status?: "success",
+  ): void;
   getState: () => State<TData, TArgs, TError>;
 }
 
@@ -336,12 +365,6 @@ export type RetryConfig<TData, TArgs extends unknown[], TError> = {
 export type StateFunctionUpdater<TData, TArgs extends unknown[], TError> = (
   updater: State<TData, TArgs, TError>
 ) => TData;
-
-export type StateUpdater<TData, TArgs extends unknown[], TError> = (
-  updater: StateFunctionUpdater<TData, TArgs, TError> | TData,
-  status?: Status,
-  callbacks?: ProducerCallbacks<TData, TArgs, TError>
-) => void;
 
 export type CreateSourceObject<TData, TArgs extends unknown[], TError> = {
   key: string;

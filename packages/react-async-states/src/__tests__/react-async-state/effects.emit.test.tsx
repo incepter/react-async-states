@@ -2,6 +2,7 @@ import * as React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useAsync } from "../../hooks/useAsync_export";
 import { flushPromises } from "../utils/test-utils";
+import { Producer } from "async-states";
 
 describe("should emit from producer", () => {
   it("should emit after resolve when sync", async () => {
@@ -187,5 +188,42 @@ describe("should emit from producer", () => {
     );
 
     console.error = globalErrorLog;
+  });
+
+  it("should correctly type emit", () => {
+    class CustomError extends Error {
+      readonly id: number;
+      constructor(id: number) {
+        super();
+        this.id = id;
+      }
+    }
+    const producer: Producer<number, never, CustomError> = ({ emit }) => {
+      emit(5);
+      emit(() => 6);
+      emit(5, "success");
+      emit(() => 6, "success");
+      emit(5, "initial");
+      emit(() => 7, "initial");
+      emit(null, "pending");
+      emit(new CustomError(1), "error");
+
+      // @ts-expect-error
+      emit(null, "error");
+      // @ts-expect-error
+      emit(new Error(), "error");
+      // @ts-expect-error
+      emit(null, "success");
+      // @ts-expect-error
+      emit(new Error(), "success");
+      // @ts-expect-error
+      emit(new Error(), "initial");
+      // @ts-expect-error
+      emit(new Error(), "pending");
+      // @ts-expect-error
+      emit(3, "pending");
+
+      return 1;
+    };
   });
 });

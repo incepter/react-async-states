@@ -28,12 +28,13 @@ describe("instance.on events", () => {
     third.mockClear();
     second.mockClear();
     // then
-    source.setState(1, "error");
+    let error = new Error();
+    source.setState(error, "error");
     expect(first).toHaveBeenCalledTimes(1);
-    expect(first.mock.calls[0][0].data).toBe(1);
+    expect(first.mock.calls[0][0].data).toBe(error);
     expect(second).not.toHaveBeenCalled();
     expect(third).toHaveBeenCalledTimes(1);
-    expect(third.mock.calls[0][0].data).toBe(1);
+    expect(third.mock.calls[0][0].data).toBe(error);
     first.mockClear();
     third.mockClear();
     second.mockClear();

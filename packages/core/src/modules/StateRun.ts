@@ -137,8 +137,10 @@ function replaceStateBecauseNoProducerProvided<
   let args = (props?.args ?? emptyArray) as TArgs;
 
   // keep these for readability
-  let newStateData = args[0] as TData;
-  let newStateStatus = args[1] as Status;
+  // we can't really type these
+  // this is supported for backward compatibility
+  let newStateData = args[0] as unknown as any;
+  let newStateStatus = args[1] as unknown as any;
 
   instance.actions.setState(newStateData, newStateStatus, props);
 

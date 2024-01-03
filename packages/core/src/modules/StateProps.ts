@@ -1,5 +1,6 @@
 import {
   AbortFn,
+  ProducerCallbacks,
   ProducerProps,
   RUNCProps,
   RunIndicators,
@@ -7,7 +8,7 @@ import {
   StateInterface,
 } from "../types";
 import { __DEV__, emptyArray, isFunction } from "../utils";
-import { pending, Status } from "../enums";
+import { pending, Status, success } from "../enums";
 import {
   isAlteringState,
   replaceInstanceState,
@@ -44,13 +45,27 @@ export function createProps<TData, TArgs extends unknown[], TError>(
     },
     get lastSuccess() {
       return instance.lastSuccess;
-    }
+    },
   };
 
   return producerProps;
 
   function emit(
-    updater: TData | StateFunctionUpdater<TData, TArgs, TError>,
+    value: StateFunctionUpdater<TData, TArgs, TError> | TData,
+    status: "initial"
+  ): void;
+  function emit(value: null, status: "pending"): void;
+  function emit(value: TError, status: "error"): void;
+  function emit(
+    value: StateFunctionUpdater<TData, TArgs, TError> | TData,
+    status?: "success"
+  ): void;
+  function emit(
+    value:
+      | TData
+      | StateFunctionUpdater<TData, TArgs, TError>
+      | null
+      | TError,
     status?: Status
   ): void {
     if (indicators.cleared) {
@@ -67,7 +82,9 @@ export function createProps<TData, TArgs extends unknown[], TError>(
     }
 
     let prevIsEmitting = startEmitting();
-    instance.actions.setState(updater, status, runProps);
+    let newValue = value as unknown as any;
+    let newStatus = status as unknown as any;
+    instance.actions.setState(newValue, newStatus, runProps);
     stopEmitting(prevIsEmitting);
   }
 

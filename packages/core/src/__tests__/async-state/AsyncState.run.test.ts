@@ -109,8 +109,6 @@ describe("AsyncState - run", () => {
       let id = setInterval(() => {
         let prevValue = props.lastSuccess.data;
         if (prevValue === undefined) {
-          // @ts-ignore
-          // todo: overload emit and setState for better support
           props.emit(new Error("Illegal"), "error");
           return;
         }
