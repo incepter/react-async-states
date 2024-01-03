@@ -78,13 +78,21 @@ export function completeRender<TData, TArgs extends unknown[], TError, S>(
   }
 
   let { config, alternate } = subscription;
-  let usedReturn = (alternate || subscription).return;
+  let usedSubscription = alternate || subscription;
+  let usedReturn = usedSubscription.return;
+  let usedConfig = usedSubscription.config;
 
-  if (config.concurrent) {
+  if (usedConfig.concurrent) {
     // Reading via "read" may result in running the instance's producer.
     // So, it is important to reconcile before running.
     // Reconciliation is done inside the "read" function and only
     // when we should run.
-    usedReturn.read(true, !!config.throwError);
+    usedReturn.read(true, !!usedConfig.throwError);
+
+    // in case of a render phase run/update, we would need to correct
+    // the returned value
+    if (subscription.instance.version !== usedSubscription.version) {
+      usedSubscription.return = createLegacyReturn(subscription, usedConfig);
+    }
   }
 }

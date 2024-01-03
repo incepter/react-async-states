@@ -172,6 +172,7 @@ export function runInstanceImmediately<TData, TArgs extends unknown[], TError>(
 ): AbortFn {
   // when there is no producer attached to the instance, skip everything
   // and replace state immediately. This will skip cache too.
+  instance.promise = null;
   if (!instance.fn) {
     return replaceStateBecauseNoProducerProvided(instance, props);
   }

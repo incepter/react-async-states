@@ -43,7 +43,7 @@ export function useAsync_internal<TData, TArgs extends unknown[], TError, S>(
   // - subscribe to the state instance for changes
   // - invoke onSubscribe events
   // - run the state instance
-  React.useLayoutEffect(() => autoRunAndSubscribeEvents(subscription), deps);
+  React.useEffect(() => autoRunAndSubscribeEvents(subscription), deps);
 
   // the alternate may be null when we render the first time or when we bail out
   // the render afterward.

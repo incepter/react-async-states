@@ -45,7 +45,7 @@ export type {
   UseSelector,
   SubscribeEventProps,
   UseAsyncStateEvents,
-  UseAsyncStateEventSubscribe,
+  HookSubscribeEvents,
   UseAsyncStateChangeEvent,
   UseAsyncStateEventFn,
   UseAsyncStateChangeEventHandler,

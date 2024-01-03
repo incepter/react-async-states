@@ -2,18 +2,20 @@ import * as React from "react";
 import {
   HookChangeEvents,
   HookChangeEventsFunction,
+  HookSubscribeEvents,
   HookSubscription,
   PartialUseAsyncConfig,
-  UseAsyncStateEventSubscribe,
   UseAsyncStateEventSubscribeFunction,
 } from "../types";
 import { createLegacyReturn } from "./HookReturnValue";
-import { didDepsChange, emptyArray, isFunction } from "../../shared";
+import { isFunction } from "../../shared";
 import { StateInterface } from "async-states";
 import {
   __DEV__getCurrentlyRenderingComponentName,
+  endRenderPhaseRun,
   reconcileInstance,
   shouldRunSubscription,
+  startRenderPhaseRun,
 } from "./HookSubscriptionUtils";
 
 export function useRetainInstance<TData, TArgs extends unknown[], TError, S>(
@@ -52,21 +54,13 @@ export function createSubscription<TData, TArgs extends unknown[], TError, S>(
   // and every time you call onChange it overrides this value
   // sure, it receives the previous events as argument if function
   let changeEvents: HookChangeEvents<TData, TArgs, TError> | null = null;
-  let subscribeEvents: UseAsyncStateEventSubscribe<
-    TData,
-    TArgs,
-    TError
-  > | null = null;
+  let subscribeEvents: HookSubscribeEvents<TData, TArgs, TError> | null = null;
 
-  let subscriptionWithoutReturn: SubscriptionWithoutReturn<
-    TData,
-    TArgs,
-    TError,
-    S
-  > = {
+  let incompleteSub: SubscriptionWithoutReturn<TData, TArgs, TError, S> = {
     deps,
     update,
     instance,
+    cb: null,
     initial: true,
     config: initialConfig,
     version: instance.version,
@@ -86,12 +80,7 @@ export function createSubscription<TData, TArgs extends unknown[], TError, S>(
     at: __DEV__getCurrentlyRenderingComponentName(),
   };
 
-  let subscription = subscriptionWithoutReturn as HookSubscription<
-    TData,
-    TArgs,
-    TError,
-    S
-  >;
+  let subscription = incompleteSub as HookSubscription<TData, TArgs, TError, S>;
 
   subscription.read = (readSubscriptionInConcurrentMode<
     TData,
@@ -121,7 +110,7 @@ export function createSubscription<TData, TArgs extends unknown[], TError, S>(
   function onSubscribe(
     newEvents:
       | UseAsyncStateEventSubscribeFunction<TData, TArgs, TError>
-      | UseAsyncStateEventSubscribe<TData, TArgs, TError>
+      | HookSubscribeEvents<TData, TArgs, TError>
   ) {
     if (isFunction(newEvents)) {
       let events = newEvents as UseAsyncStateEventSubscribeFunction<
@@ -134,11 +123,7 @@ export function createSubscription<TData, TArgs extends unknown[], TError, S>(
         subscribeEvents = maybeEvents;
       }
     } else if (newEvents) {
-      subscribeEvents = newEvents as UseAsyncStateEventSubscribe<
-        TData,
-        TArgs,
-        TError
-      >;
+      subscribeEvents = newEvents as HookSubscribeEvents<TData, TArgs, TError>;
     }
   }
 }
@@ -160,13 +145,11 @@ function readSubscriptionInConcurrentMode<
   suspend?: boolean,
   throwError?: boolean
 ) {
-  // this means we want to suspend and the subscription is fresh (created in
-  // render and hasn't been committed yet, or dependencies changed)
-
   let alternate = subscription.alternate;
   let newConfig = alternate?.config || config;
+  // this means we want to suspend and the subscription is fresh (created in
+  // render and hasn't been committed yet, or dependencies changed)
   if (suspend && (subscription.initial || subscription.config !== newConfig)) {
-    // console.log('deciding', shouldRun, subscription.deps, subscription.alternate?.deps, newConfig.autoRunArgs)
     // this means that's the initial subscription to this state instance
     // either in this path or when deps change, we will need to run again
     // if the condition is truthy
@@ -174,6 +157,7 @@ function readSubscriptionInConcurrentMode<
     let instance = subscription.instance;
 
     let promise = instance.promise;
+    let update = subscription.update;
     let wasSuspending = !!promise && suspendingPromises.has(promise);
     let shouldRun = shouldRunSubscription(subscription, newConfig);
 
@@ -185,8 +169,25 @@ function readSubscriptionInConcurrentMode<
       reconcileInstance(instance, newConfig);
 
       let runArgs = (newConfig.autoRunArgs || []) as TArgs;
+
+      // we mark it as a render phase update so that subscriptions (already
+      // mounted components) won't schedule a render right now, and thus
+      // avoid scheduling a render on a component while rendering another
+      let wasUpdatingOnRender = startRenderPhaseRun();
       instance.actions.run.apply(null, runArgs);
+      endRenderPhaseRun(wasUpdatingOnRender);
+
       promise = instance.promise;
+
+      // this means that the run was sync, in this case, we would need
+      // to notify the previous subscribers to force an update
+      // If the run was aborted from the producer (props.abort()), currentAbort
+      // would be null, and in this case we are there was no run or updates
+      // so we will notify only when currentAbort is not null and the promise
+      // is falsy (resolved sync) (or probably read from cache)
+      if (!promise && instance.currentAbort !== null) {
+        notifyOtherInstanceSubscriptionsInMicrotask(subscription);
+      }
     }
 
     if (promise && promise.status === "pending") {
@@ -202,4 +203,30 @@ function readSubscriptionInConcurrentMode<
   }
 
   return currentReturn.state;
+}
+
+function notifyOtherInstanceSubscriptionsInMicrotask<
+  TData,
+  TArgs extends unknown[],
+  TError,
+  S,
+>(subscription: HookSubscription<TData, TArgs, TError, S>) {
+  let { instance, cb } = subscription;
+  let { subscriptions } = instance;
+
+  let callbacks: Function[] = [];
+  if (subscriptions) {
+    for (let sub of Object.values(subscriptions)) {
+      let subCallback = sub.props.cb;
+      if (subCallback !== cb) {
+        callbacks.push(subCallback);
+      }
+    }
+  }
+
+  if (callbacks.length) {
+    queueMicrotask(() => {
+      callbacks.forEach((callback) => callback(instance.state));
+    });
+  }
 }

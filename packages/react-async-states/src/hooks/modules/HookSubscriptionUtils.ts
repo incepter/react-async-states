@@ -2,6 +2,20 @@ import { HookSubscription, PartialUseAsyncConfig } from "../types";
 import { emptyArray, isFunction } from "../../shared";
 import { ProducerConfig, State, StateInterface } from "async-states";
 
+let isCurrentlyRunningOnRender = false;
+export function startRenderPhaseRun() {
+  let prev = isCurrentlyRunningOnRender;
+  isCurrentlyRunningOnRender = true;
+  return prev;
+}
+export function endRenderPhaseRun(nextValue: boolean) {
+  isCurrentlyRunningOnRender = nextValue;
+}
+
+export function isRenderPhaseRun() {
+  return isCurrentlyRunningOnRender
+}
+
 export function shouldRunSubscription<
   TData,
   TArgs extends unknown[],

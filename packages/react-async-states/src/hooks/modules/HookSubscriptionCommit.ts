@@ -5,13 +5,13 @@ import {
   SubscriptionAlternate,
   UseAsyncChangeEventProps,
   UseAsyncStateEventFn,
-  UseAsyncStateEventSubscribe,
+  HookSubscribeEvents,
 } from "../types";
 import { __DEV__, isArray } from "../../shared";
 import { selectWholeState } from "./HookReturnValue";
 import { AbortFn, State, StateInterface } from "async-states";
 import {
-  forceComponentUpdate,
+  forceComponentUpdate, isRenderPhaseRun,
   reconcileInstance,
   shouldRunSubscription,
 } from "./HookSubscriptionUtils";
@@ -72,9 +72,13 @@ export function autoRunAndSubscribeEvents<
       ? resolveSubscriptionKey(subscription)
       : undefined;
 
+  let callback = onStateChangeCallback.bind(null, subscription, committedState);
+  // we keep track of this callback so can know later which subscription
+  // did a render phase run and update and only notify others in microtask
+  subscription.cb = callback;
   let unsubscribeFromInstance = instanceActions.subscribe({
+    cb: callback,
     key: subscriptionKey,
-    cb: onStateChangeCallback.bind(null, subscription, committedState),
   });
 
   let cleanups: ((() => void) | undefined)[] = [unsubscribeFromInstance];
@@ -135,6 +139,13 @@ function onStateChange<TData, TArgs extends unknown[], TError, S>(
   committedState: State<TData, TArgs, TError>,
   newState: State<TData, TArgs, TError>
 ) {
+  let isRendering = isRenderPhaseRun();
+  // this occurs on concurrent mode when suspending.
+  // no need to do anything, if it was sync for some reason, the commit
+  // will catch a version change and trigger a sync local re-render
+  if (isRendering) {
+    return;
+  }
   let currentReturn = subscription.return;
   let currentConfig = subscription.config;
   let currentInstance = subscription.instance;
@@ -240,7 +251,7 @@ export function invokeChangeEvents<TData, TArgs extends unknown[], TError>(
 
 export function invokeSubscribeEvents<TData, TArgs extends unknown[], TError>(
   instance: StateInterface<TData, TArgs, TError>,
-  events: UseAsyncStateEventSubscribe<TData, TArgs, TError> | undefined
+  events: HookSubscribeEvents<TData, TArgs, TError> | undefined
 ): CleanupFn[] | null {
   if (!events || !instance) {
     return null;

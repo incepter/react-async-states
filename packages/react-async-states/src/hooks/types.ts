@@ -207,7 +207,7 @@ export type UseAsyncStateEvents<TData, TArgs extends unknown[], TError> = {
   change?:
     | UseAsyncStateEventFn<TData, TArgs, TError>
     | UseAsyncStateEventFn<TData, TArgs, TError>[];
-  subscribe?: UseAsyncStateEventSubscribe<TData, TArgs, TError>;
+  subscribe?: HookSubscribeEvents<TData, TArgs, TError>;
 };
 
 export type UseAsyncStateChangeEventHandler<
@@ -284,11 +284,7 @@ export type UseAsyncStateChangeEventError<
   handler: UseAsyncStateChangeEventHandlerError<TData, TArgs, TError>;
 };
 
-export type UseAsyncStateEventSubscribe<
-  TData,
-  TArgs extends unknown[],
-  TError,
-> =
+export type HookSubscribeEvents<TData, TArgs extends unknown[], TError> =
   | ((props: SubscribeEventProps<TData, TArgs, TError>) => CleanupFn)
   | ((props: SubscribeEventProps<TData, TArgs, TError>) => CleanupFn)[];
 
@@ -297,8 +293,8 @@ export type UseAsyncStateEventSubscribeFunction<
   TArgs extends unknown[],
   TError,
 > = (
-  prevEvents: UseAsyncStateEventSubscribe<TData, TArgs, TError> | null
-) => UseAsyncStateEventSubscribe<TData, TArgs, TError>;
+  prevEvents: HookSubscribeEvents<TData, TArgs, TError> | null
+) => HookSubscribeEvents<TData, TArgs, TError>;
 
 export type SubscribeEventProps<
   TData,
@@ -338,7 +334,7 @@ interface BaseHooksReturn<
   onSubscribe(
     events:
       | UseAsyncStateEventSubscribeFunction<TData, TArgs, TError>
-      | UseAsyncStateEventSubscribe<TData, TArgs, TError>
+      | HookSubscribeEvents<TData, TArgs, TError>
   ): void;
 }
 
@@ -428,6 +424,8 @@ export type HookChangeEventsFunction<TData, TArgs extends unknown[], TError> = (
 
 export interface HookSubscription<TData, TArgs extends unknown[], TError, S>
   extends SubscriptionAlternate<TData, TArgs, TError, S> {
+  // this is the callback that will be used as instance.subscribe(cb)
+  cb: any;
   alternate: SubscriptionAlternate<TData, TArgs, TError, S> | null;
 
   read(
@@ -437,7 +435,7 @@ export interface HookSubscription<TData, TArgs extends unknown[], TError, S>
   ): S;
 
   changeEvents: HookChangeEvents<TData, TArgs, TError> | null;
-  subscribeEvents: UseAsyncStateEventSubscribe<TData, TArgs, TError> | null;
+  subscribeEvents: HookSubscribeEvents<TData, TArgs, TError> | null;
   onChange(
     events:
       | ((prevEvents: HookChangeEvents<TData, TArgs, TError> | null) => void)
@@ -446,10 +444,8 @@ export interface HookSubscription<TData, TArgs extends unknown[], TError, S>
 
   onSubscribe(
     events:
-      | ((
-          prevEvents: UseAsyncStateEventSubscribe<TData, TArgs, TError> | null
-        ) => void)
-      | UseAsyncStateEventSubscribe<TData, TArgs, TError>
+      | ((prevEvents: HookSubscribeEvents<TData, TArgs, TError> | null) => void)
+      | HookSubscribeEvents<TData, TArgs, TError>
   ): void;
 
   initial: boolean;
