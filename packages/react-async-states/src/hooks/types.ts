@@ -9,6 +9,7 @@ import {
   Producer,
   ProducerConfig,
   ProducerSavedProps,
+  RetryConfig,
   RunEffect,
   Source,
   State,
@@ -132,6 +133,7 @@ export type UseAsyncStateConfiguration<
   skipPendingDelayMs?: number;
   skipPendingStatus?: boolean;
   cacheConfig?: CacheConfig<TData, TArgs, TError>;
+  retryConfig?: RetryConfig<TData, TArgs, TError>;
   runEffectDurationMs?: number;
   resetStateOnDispose?: boolean;
   payload?: Record<string, unknown>;

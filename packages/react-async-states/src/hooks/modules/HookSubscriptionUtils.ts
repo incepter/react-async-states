@@ -1,5 +1,5 @@
 import { HookSubscription, PartialUseAsyncConfig } from "../types";
-import { emptyArray, isFunction } from "../../shared";
+import { __DEV__, emptyArray, isFunction } from "../../shared";
 import { ProducerConfig, State, StateInterface } from "async-states";
 
 let isCurrentlyRunningOnRender = false;
@@ -13,7 +13,7 @@ export function endRenderPhaseRun(nextValue: boolean) {
 }
 
 export function isRenderPhaseRun() {
-  return isCurrentlyRunningOnRender
+  return isCurrentlyRunningOnRender;
 }
 
 export function shouldRunSubscription<
@@ -128,4 +128,73 @@ export function __DEV__getCurrentlyRenderingComponentName() {
 
 export function __DEV__unsetHookCallerName() {
   currentlyRenderingComponentName = null;
+}
+
+let __DEV__betterSourceConfigProperties: Partial<Record<
+  keyof PartialUseAsyncConfig<any, any, any, any>,
+  true
+>>;
+if (__DEV__) {
+  __DEV__betterSourceConfigProperties = {
+    cacheConfig: true,
+    hideFromDevtools: true,
+    initialValue: true,
+    resetStateOnDispose: true,
+    retryConfig: true,
+    runEffect: true,
+    runEffectDurationMs: true,
+    skipPendingDelayMs: true,
+    skipPendingStatus: true,
+  };
+}
+
+export function __DEV__warnInDevAboutIncompatibleConfig(
+  subscription: HookSubscription<any, any, any, any>
+) {
+  let { config } = subscription;
+  let { source, key, producer } = config;
+  if (source) {
+    if (key) {
+      console.error(
+        getNoEffectPropertyWarning(subscription.at!, "source", "key")
+      );
+      return;
+    }
+    if (producer) {
+      console.error(
+        getNoEffectPropertyWarning(subscription.at!, "source", "producer")
+      );
+      return;
+    }
+    if (config.initialValue) {
+      console.error(
+        getNoEffectPropertyWarning(subscription.at!, "source", "initialValue")
+      );
+      return;
+    }
+
+    for (let prop of Object.keys(config)) {
+      if (__DEV__betterSourceConfigProperties[prop]) {
+        console.error(
+          getSrcConfigPropertyWarning(subscription.at!, "source", prop)
+        );
+        return;
+      }
+    }
+  }
+}
+
+function getNoEffectPropertyWarning(at: string, prop1: string, prop2: string) {
+  return (
+    `[Warning][async-states] Subscription in component ${at} ` +
+    `has a '${prop1}' and '${prop2}' as the same time, '${prop2}' has no effect.`
+  );
+}
+
+function getSrcConfigPropertyWarning(at: string, prop1: string, prop2: string) {
+  return (
+    `[Warning][async-states] Subscription in component ${at} ` +
+    `has a '${prop1}' and '${prop2}' as the same time, '${prop2}' will` +
+    "be flushed into the source config, better move it to the source creation."
+  );
 }
