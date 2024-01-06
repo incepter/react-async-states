@@ -1,5 +1,6 @@
+import { generateColorTokens } from "./lib/colors";
+
 import type { Config } from "tailwindcss";
-import { generateColorTokens } from "./helpers/colors";
 
 const config: Config = {
   content: [
@@ -17,6 +18,9 @@ const config: Config = {
         },
         background: {
           DEFAULT: "hsl(var(--color-background-default) / <alpha-value>)",
+        },
+        neutral: {
+          DEFAULT: "hsl(var(--color-neutral-default) / <alpha-value>)",
         },
         primary: generateColorTokens("primary"),
         secondary: generateColorTokens("secondary"),

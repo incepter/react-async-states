@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import { Ubuntu } from "next/font/google";
 
-import { Layout } from "@/components";
-
+import ControlPanel from "./components/ControlPanel";
+import ProducerRunner from "./components/ProducerRunner";
+import StateTimeline from "./components/StateTimeline";
 import { Providers } from "./providers";
-
 import "@/styles/globals.css";
-
-const { Content, Sider } = Layout;
 
 const ubuntu = Ubuntu({
   weight: ["300", "400", "500", "700"],
@@ -28,10 +26,14 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={ubuntu.className}>
         <Providers>
-          <Layout>
-            <Content>{children}</Content>
-            <Sider>This is the sidebar</Sider>
-          </Layout>
+          <div className="flex h-svh w-svw overflow-hidden">
+            <div className="flex flex-1 flex-col overflow-auto">
+              <ProducerRunner />
+              {children}
+              <StateTimeline />
+            </div>
+            <ControlPanel />
+          </div>
         </Providers>
       </body>
     </html>

@@ -1,6 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 @layer base {
   :root {
@@ -9,9 +9,11 @@
 
     --color-background-default: 210 40% 98%;
 
-    --color-primary-default: 217.2 32.6% 17.5%;
-    --color-primary-light: 215.3 25% 26.7%;
-    --color-primary-dark: 222.2 47.4% 11.2%;
+    --color-neutral-default: 210 40% 96.1%;
+
+    --color-primary-default: 243.4 75.4% 58.6%;
+    --color-primary-light: 238.7 83.5% 66.7%;
+    --color-primary-dark: 244.5 57.9% 50.6%;
     --color-primary-contrast-text: 0 0% 100%;
 
     --color-error-default: 0 72.2% 50.6%;
@@ -41,9 +43,11 @@
 
     --color-background-default: 222.2 47.4% 11.2%;
 
-    --color-primary-default: 210 40% 96.1%;
-    --color-primary-light: 210 40% 98%;
-    --color-primary-dark: 214.3 31.8% 91.4%;
+    --color-neutral-default: 217.2 32.6% 17.5%;
+
+    --color-primary-default: 229.7 93.5% 81.8%;
+    --color-primary-light: 228 96.5% 88.8%;
+    --color-primary-dark: 234.5 89.5% 73.9%;
     --color-primary-contrast-text: 0 0% 0%;
 
     --color-error-default: 0 93.5% 81.8%;
@@ -69,6 +73,10 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground-primary;
   }
