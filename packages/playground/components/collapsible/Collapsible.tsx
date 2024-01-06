@@ -2,19 +2,13 @@
 
 import * as React from "react";
 
-import { clsxm } from "@/lib/utils";
-
 import * as CollapsiblePrimitive from "@radix-ui/react-collapsible";
 
 const Trigger = React.forwardRef<
   React.ElementRef<typeof CollapsiblePrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof CollapsiblePrimitive.Trigger>
->(({ children, className, ...rest }, ref) => (
-  <CollapsiblePrimitive.Trigger
-    className={clsxm("", className)}
-    ref={ref}
-    {...rest}
-  >
+>(({ children, ...rest }, ref) => (
+  <CollapsiblePrimitive.Trigger ref={ref} {...rest}>
     {children}
   </CollapsiblePrimitive.Trigger>
 ));
@@ -23,12 +17,8 @@ Trigger.displayName = CollapsiblePrimitive.Trigger.displayName;
 const Content = React.forwardRef<
   React.ElementRef<typeof CollapsiblePrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof CollapsiblePrimitive.Content>
->(({ children, className, ...rest }, ref) => (
-  <CollapsiblePrimitive.Content
-    className={clsxm("", className)}
-    ref={ref}
-    {...rest}
-  >
+>(({ children, ...rest }, ref) => (
+  <CollapsiblePrimitive.Content ref={ref} {...rest}>
     {children}
   </CollapsiblePrimitive.Content>
 ));
@@ -38,12 +28,10 @@ export interface CollapsibleProps
   extends CollapsiblePrimitive.CollapsibleProps {}
 
 const CollapsibleRoot: React.FC<CollapsibleProps> = (props) => {
-  const { children, className, ...rest } = props;
+  const { children, ...rest } = props;
 
   return (
-    <CollapsiblePrimitive.Root className={clsxm("", className)} {...rest}>
-      {children}
-    </CollapsiblePrimitive.Root>
+    <CollapsiblePrimitive.Root {...rest}>{children}</CollapsiblePrimitive.Root>
   );
 };
 CollapsibleRoot.displayName = CollapsiblePrimitive.Root.displayName;
