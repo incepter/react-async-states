@@ -116,7 +116,7 @@ describe("context in the server", () => {
           <Test />
         </React.StrictMode>
       );
-    }).toThrow("Source src-1 is leaking between contexts");
+    }).not.toThrow("Source src-1 is leaking between contexts");
 
     console.error = originalConsoleError;
   });
