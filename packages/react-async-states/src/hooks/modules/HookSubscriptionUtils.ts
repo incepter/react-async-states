@@ -1,5 +1,5 @@
 import { HookSubscription, PartialUseAsyncConfig } from "../types";
-import { emptyArray, isFunction } from "../../shared";
+import { __DEV__, emptyArray, isFunction } from "../../shared";
 import { ProducerConfig, State, StateInterface } from "async-states";
 
 let isCurrentlyRunningOnRender = false;
@@ -13,7 +13,7 @@ export function endRenderPhaseRun(nextValue: boolean) {
 }
 
 export function isRenderPhaseRun() {
-  return isCurrentlyRunningOnRender
+  return isCurrentlyRunningOnRender;
 }
 
 export function shouldRunSubscription<
@@ -128,4 +128,59 @@ export function __DEV__getCurrentlyRenderingComponentName() {
 
 export function __DEV__unsetHookCallerName() {
   currentlyRenderingComponentName = null;
+}
+
+let __DEV__betterSourceConfigProperties: Partial<
+  Record<keyof PartialUseAsyncConfig<any, any, any, any>, true>
+>;
+if (__DEV__) {
+  __DEV__betterSourceConfigProperties = {
+    runEffect: true,
+    retryConfig: true,
+    cacheConfig: true,
+    initialValue: true,
+    hideFromDevtools: true,
+    skipPendingStatus: true,
+    skipPendingDelayMs: true,
+    resetStateOnDispose: true,
+    runEffectDurationMs: true,
+  };
+}
+
+export function __DEV__warnInDevAboutIncompatibleConfig(
+  subscription: HookSubscription<any, any, any, any>
+) {
+  let { config } = subscription;
+  let { source, key, producer } = config;
+  if (source) {
+    if (key) {
+      console.error(
+        `[Warning][async-states] Subscription in component ${subscription.at} ` +
+        `has a 'source' and 'key' as the same time, 'key' has no effect.`
+      );
+      return;
+    }
+    if (producer) {
+      console.error(
+        `[Warning][async-states] Subscription in component ${subscription.at} ` +
+          `has a 'source' (${source.key}) and 'producer' as the same time,` +
+          ` the source's producer will be replaced.`
+      );
+      return;
+    }
+
+    let configuredProps = Object.keys(config).filter(
+      (t) => config[t] !== undefined && __DEV__betterSourceConfigProperties[t]
+    );
+    if (configuredProps.length) {
+      console.error(
+        `[Warning][async-states] Subscription in component ${subscription.at} ` +
+          `has a 'source' and the following properties '` +
+          configuredProps.join(", ") +
+          "' at the same time. All these props will be flushed into the " +
+          "source config, better move them to the source creation."
+      );
+      return;
+    }
+  }
 }
