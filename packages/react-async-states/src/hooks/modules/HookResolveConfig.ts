@@ -6,6 +6,7 @@ import {
   LibraryContext,
   nextKey,
   requestContext,
+  Source,
   State,
   StateInterface,
 } from "async-states";
@@ -21,6 +22,18 @@ export function setCurrentHookOverrides(
 
 // the goal of this function is to retrieve the following objects:
 // - a configuration object to use { key, producer, source, lazy ... }
+function cloneSourceFromGlobalSourceInTheServer<
+  TData,
+  TArgs extends unknown[],
+  TError,
+>(globalSource: Source<TData, TArgs, TError>, context: object) {
+  let instance = globalSource.inst;
+  let { config, fn, key } = instance;
+  let newConfig = assign({}, config, { context });
+
+  return createSource(key, fn, newConfig);
+}
+
 // - the state instance
 export function parseConfig<
   TData,
@@ -29,59 +42,61 @@ export function parseConfig<
   S = State<TData, TArgs, TError>,
 >(
   currentLibContext: LibraryContext | null,
-  mixedConfig: MixedConfig<TData, TArgs, TError, S>,
+  options: MixedConfig<TData, TArgs, TError, S>,
   overrides?: PartialUseAsyncConfig<TData, TArgs, TError, S> | null
 ) {
-  requireAnExecContextInServer(currentLibContext, mixedConfig);
+  requireAnExecContextInServer(currentLibContext, options);
 
   let executionContext: LibraryContext;
   let instance: StateInterface<TData, TArgs, TError>;
   let parsedConfiguration: PartialUseAsyncConfig<TData, TArgs, TError, S>;
 
-  switch (typeof mixedConfig) {
+  switch (typeof options) {
     // the user provided an object configuration or a Source
+    // In the case of a source, we will detect if it was a global source
+    // (the heuristic to detect that is to check if it belongs to another
+    // context object), if that's the case, a new source will be created
+    // in the current context and used
     case "object": {
-      if (isSource<TData, TArgs, TError>(mixedConfig)) {
-        instance = mixedConfig.inst;
-        parsedConfiguration = assign({}, overrides, currentOverrides, {
-          source: mixedConfig,
-        });
+      if (isSource<TData, TArgs, TError>(options)) {
+        if (isServer) {
+          // requireAnExecContextInServer would throw if nullish
+          let ctx = currentLibContext!.ctx;
+          instance = cloneSourceFromGlobalSourceInTheServer(options, ctx).inst;
+        } else {
+          instance = options.inst;
+        }
+        parsedConfiguration = assign({}, overrides, currentOverrides);
+        parsedConfiguration.source = options;
         break;
       }
 
-      let baseConfig = mixedConfig as BaseConfig<TData, TArgs, TError>;
-      if (
-        baseConfig.source &&
-        isSource<TData, TArgs, TError>(baseConfig.source)
-      ) {
-        let realSource = baseConfig.source.getLane(baseConfig.lane);
+      let config = options as BaseConfig<TData, TArgs, TError>;
+      if (config.source && isSource<TData, TArgs, TError>(config.source)) {
+        let baseSource = config.source;
+        if (isServer) {
+          // requireAnExecContextInServer would throw if nullish
+          let ctx = currentLibContext!.ctx;
+          baseSource = cloneSourceFromGlobalSourceInTheServer(baseSource, ctx);
+        }
+        let realSource = baseSource.getLane(config.lane);
         instance = realSource.inst;
-        parsedConfiguration = assign(
-          {},
-          baseConfig,
-          overrides,
-          currentOverrides
-        );
+        parsedConfiguration = assign({}, config, overrides, currentOverrides);
         parsedConfiguration.source = realSource;
         break;
       }
 
       let nullableExecContext = currentLibContext;
 
-      if (baseConfig.context) {
-        executionContext = createContext(baseConfig.context);
+      if (config.context) {
+        executionContext = createContext(config.context);
       } else if (nullableExecContext) {
         executionContext = nullableExecContext;
       } else {
         executionContext = requestContext(null);
       }
-      parsedConfiguration = assign(
-        {},
-        mixedConfig,
-        overrides,
-        currentOverrides
-      );
-      // the parsed config is created by the library, so okay to mutate it.
+      parsedConfiguration = assign({}, options, overrides, currentOverrides);
+      // parsedConfig is created by the library, so okay to mutate it internally
       parsedConfiguration.context = executionContext.ctx;
 
       if (!executionContext) {
@@ -91,10 +106,12 @@ export function parseConfig<
       instance = resolveFromObjectConfig(executionContext, parsedConfiguration);
       break;
     }
-    // the user provided a string key
+    // this is a string provided to useAsync, that we will lookup the instance
+    // by the given key in the context, if not found it will be created
+    // with the given config and it will stay there
     case "string": {
       parsedConfiguration = assign({}, overrides, currentOverrides);
-      parsedConfiguration.key = mixedConfig;
+      parsedConfiguration.key = options;
       let nullableExecContext = currentLibContext;
       if (nullableExecContext) {
         executionContext = nullableExecContext;
@@ -102,21 +119,25 @@ export function parseConfig<
         executionContext = requestContext(null);
       }
 
-      // the parsed config is created by the library, so okay to mutate it.
+      // parsedConfig is created by the library, so okay to mutate it internally
       parsedConfiguration.context = executionContext.ctx;
       instance = resolveFromStringConfig(executionContext, parsedConfiguration);
       break;
     }
-    // first, detect the LibraryContext
+    // this is a function provided to useAsync, means the state instance
+    // will be removed when the component unmounts and it won't be stored in the
+    // context
     case "function": {
       parsedConfiguration = assign({}, overrides, currentOverrides);
-      parsedConfiguration.producer = mixedConfig;
+
+      parsedConfiguration.producer = options;
       parsedConfiguration.context = currentLibContext?.ctx ?? null;
 
       instance = resolveFromFunctionConfig(parsedConfiguration);
       break;
     }
 
+    // at this point, config is a plain object
     default: {
       parsedConfiguration = assign({}, overrides, currentOverrides);
 
@@ -208,27 +229,11 @@ function requireAnExecContextInServer(
     return;
   }
 
-  if (isSource(mixedConfig)) {
-    let instance = mixedConfig.inst;
-    let ctx = instance.ctx;
-    if (ctx !== parentExecContext) {
-      throw new Error(`Source ${instance.key} is leaking between contexts`);
-    }
-  }
-
-  let baseConfig = mixedConfig as BaseConfig<any, any, any>;
-  if (isSource(baseConfig.source)) {
-    let instance = baseConfig.source.inst;
-    let ctx = instance.ctx;
-    if (ctx !== parentExecContext) {
-      throw new Error(`Source ${instance.key} is leaking between contexts`);
-    }
-  }
-
   if (parentExecContext) {
     return;
   }
 
+  let baseConfig = mixedConfig as BaseConfig<any, any, any>;
   // at this point, we have an object (not a source)
   if (!baseConfig.context) {
     throw new Error(
