@@ -46,6 +46,7 @@ export interface BaseConfig<TData, TArgs extends unknown[], TError>
         args?: TArgs,
         payload?: Record<string, unknown> | null
       ) => boolean);
+  useServerState?: boolean;
 }
 
 export interface ConfigWithKeyWithSelector<
@@ -74,6 +75,7 @@ export interface ConfigWithSourceWithSelector<
 > extends ConfigWithSourceWithoutSelector<TData, TArgs, TError> {
   selector: UseSelector<TData, TArgs, TError, S>;
   areEqual?: EqualityFn<S>;
+  useServerState?: boolean;
 }
 
 export interface ConfigWithSourceWithoutSelector<
@@ -82,6 +84,7 @@ export interface ConfigWithSourceWithoutSelector<
   TError,
 > extends BaseConfig<TData, TArgs, TError> {
   source: Source<TData, TArgs, TError>;
+  useServerState?: boolean;
 }
 
 export interface ConfigWithProducerWithSelector<
@@ -164,6 +167,7 @@ export type UseAsyncStateConfiguration<
 
   // dev only
   hideFromDevtools?: boolean;
+  useServerState?: boolean;
 };
 
 export type UseAsyncChangeEventProps<TData, TArgs extends unknown[], TError> =

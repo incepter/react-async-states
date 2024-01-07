@@ -22,16 +22,27 @@ export function setCurrentHookOverrides(
 
 // the goal of this function is to retrieve the following objects:
 // - a configuration object to use { key, producer, source, lazy ... }
-function cloneSourceFromGlobalSourceInTheServer<
-  TData,
-  TArgs extends unknown[],
-  TError,
->(globalSource: Source<TData, TArgs, TError>, context: object) {
+function cloneSourceTheServer<TData, TArgs extends unknown[], TError>(
+  globalSource: Source<TData, TArgs, TError>,
+  context: object,
+  useGlobalSourceState?: boolean
+) {
   let instance = globalSource.inst;
   let { config, fn, key } = instance;
   let newConfig = assign({}, config, { context });
 
-  return createSource(key, fn, newConfig);
+  let source = createSource(key, fn, newConfig);
+  if (useGlobalSourceState === true) {
+    let newInstance = source.inst;
+    let globalInstance = globalSource.inst;
+
+    // we will clone all relevant things: state, cache, lastRun
+    newInstance.state = globalInstance.state;
+    newInstance.cache = globalInstance.cache;
+    newInstance.latestRun = globalInstance.latestRun;
+  }
+
+  return source;
 }
 
 // - the state instance
@@ -62,7 +73,7 @@ export function parseConfig<
         if (isServer) {
           // requireAnExecContextInServer would throw if nullish
           let ctx = currentLibContext!.ctx;
-          instance = cloneSourceFromGlobalSourceInTheServer(options, ctx).inst;
+          instance = cloneSourceTheServer(options, ctx).inst;
         } else {
           instance = options.inst;
         }
@@ -77,7 +88,8 @@ export function parseConfig<
         if (isServer) {
           // requireAnExecContextInServer would throw if nullish
           let ctx = currentLibContext!.ctx;
-          baseSource = cloneSourceFromGlobalSourceInTheServer(baseSource, ctx);
+          let useServerState = config.useServerState;
+          baseSource = cloneSourceTheServer(baseSource, ctx, useServerState);
         }
         let realSource = baseSource.getLane(config.lane);
         instance = realSource.inst;
