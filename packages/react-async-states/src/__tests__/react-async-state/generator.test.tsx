@@ -1,7 +1,6 @@
 import * as React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useAsync } from "../../hooks/useAsync_export";
-import { Status } from "async-states";
 
 describe("should run async state with generator", () => {
   it("should run sync generator", async () => {

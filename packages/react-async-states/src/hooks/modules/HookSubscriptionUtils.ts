@@ -130,21 +130,20 @@ export function __DEV__unsetHookCallerName() {
   currentlyRenderingComponentName = null;
 }
 
-let __DEV__betterSourceConfigProperties: Partial<Record<
-  keyof PartialUseAsyncConfig<any, any, any, any>,
-  true
->>;
+let __DEV__betterSourceConfigProperties: Partial<
+  Record<keyof PartialUseAsyncConfig<any, any, any, any>, true>
+>;
 if (__DEV__) {
   __DEV__betterSourceConfigProperties = {
-    cacheConfig: true,
-    hideFromDevtools: true,
-    initialValue: true,
-    resetStateOnDispose: true,
-    retryConfig: true,
     runEffect: true,
-    runEffectDurationMs: true,
-    skipPendingDelayMs: true,
+    retryConfig: true,
+    cacheConfig: true,
+    initialValue: true,
+    hideFromDevtools: true,
     skipPendingStatus: true,
+    skipPendingDelayMs: true,
+    resetStateOnDispose: true,
+    runEffectDurationMs: true,
   };
 }
 
@@ -156,45 +155,32 @@ export function __DEV__warnInDevAboutIncompatibleConfig(
   if (source) {
     if (key) {
       console.error(
-        getNoEffectPropertyWarning(subscription.at!, "source", "key")
+        `[Warning][async-states] Subscription in component ${subscription.at} ` +
+        `has a 'source' and 'key' as the same time, 'key' has no effect.`
       );
       return;
     }
     if (producer) {
       console.error(
-        getNoEffectPropertyWarning(subscription.at!, "source", "producer")
-      );
-      return;
-    }
-    if (config.initialValue) {
-      console.error(
-        getNoEffectPropertyWarning(subscription.at!, "source", "initialValue")
+        `[Warning][async-states] Subscription in component ${subscription.at} ` +
+          `has a 'source' (${source.key}) and 'producer' as the same time,` +
+          ` the source's producer will be replaced.`
       );
       return;
     }
 
-    for (let prop of Object.keys(config)) {
-      if (__DEV__betterSourceConfigProperties[prop]) {
-        console.error(
-          getSrcConfigPropertyWarning(subscription.at!, "source", prop)
-        );
-        return;
-      }
+    let configuredProps = Object.keys(config).filter(
+      (t) => config[t] !== undefined && __DEV__betterSourceConfigProperties[t]
+    );
+    if (configuredProps.length) {
+      console.error(
+        `[Warning][async-states] Subscription in component ${subscription.at} ` +
+          `has a 'source' and the following properties '` +
+          configuredProps.join(", ") +
+          "' at the same time. All these props will be flushed into the " +
+          "source config, better move them to the source creation."
+      );
+      return;
     }
   }
-}
-
-function getNoEffectPropertyWarning(at: string, prop1: string, prop2: string) {
-  return (
-    `[Warning][async-states] Subscription in component ${at} ` +
-    `has a '${prop1}' and '${prop2}' as the same time, '${prop2}' has no effect.`
-  );
-}
-
-function getSrcConfigPropertyWarning(at: string, prop1: string, prop2: string) {
-  return (
-    `[Warning][async-states] Subscription in component ${at} ` +
-    `has a '${prop1}' and '${prop2}' as the same time, '${prop2}' will` +
-    "be flushed into the source config, better move it to the source creation."
-  );
 }

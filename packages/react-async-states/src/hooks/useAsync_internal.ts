@@ -8,6 +8,10 @@ import {
   commit,
 } from "./modules/HookSubscriptionCommit";
 import { beginRender } from "./modules/HookSubscriptionRender";
+import {__DEV__} from "../shared";
+import {
+  __DEV__warnInDevAboutIncompatibleConfig
+} from "./modules/HookSubscriptionUtils";
 
 // this is the main hook, useAsyncState previously
 export function useAsync_internal<TData, TArgs extends unknown[], TError, S>(
@@ -27,6 +31,9 @@ export function useAsync_internal<TData, TArgs extends unknown[], TError, S>(
   // here, we will create a subscription from this component
   // to this state instance. refer to HookSubscription type.
   let subscription = useRetainInstance(instance, config, deps);
+  if (__DEV__) {
+    __DEV__warnInDevAboutIncompatibleConfig(subscription);
+  }
   // the alternate is similar to React alternate object that's
   // created for every render and every fiber. It represents the
   // work in progress essential information that will be flushed
