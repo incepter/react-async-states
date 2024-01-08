@@ -1,9 +1,8 @@
 import * as React from "react";
-import { render } from "@testing-library/react";
+import { render, act } from "@testing-library/react";
 import { mockDateNow } from "../../utils/setup";
 import Provider from "../../../provider/Provider";
-import AsyncStateComponent from "../../utils/AsyncStateComponent";
-import { createContext, createSource } from "async-states";
+import { createSource } from "async-states";
 import { useAsync } from "../../../hooks/useAsync_export";
 
 mockDateNow();
@@ -47,7 +46,9 @@ describe("global sources in the server", () => {
       expect(_source).not.toBe(null);
       expect(globalSource).not.toBe(_source);
 
-      _source!.setState(15);
+      act(() => {
+        _source!.setState(15);
+      });
       expect(_source!.getState().data).toBe(15);
       expect(globalSource.getState().data).toBe(9);
     }
@@ -84,7 +85,9 @@ describe("global sources in the server", () => {
       expect(globalSource).not.toBe(_source);
       expect(globalSource.getState()).not.toBe(_source!.getState());
 
-      _source!.setState(20);
+      act(() => {
+        _source!.setState(20);
+      });
       expect(_source!.getState().data).toBe(20);
       expect(globalSource.getState().data).toBe(9);
     }
@@ -131,7 +134,9 @@ describe("global sources in the server", () => {
       expect(newInstance.cache).toBe(globalInstance.cache);
       expect(newInstance.latestRun).toBe(globalInstance.latestRun);
 
-      _source!.setState(20);
+      act(() => {
+        _source!.setState(20);
+      });
       expect(_source!.getState().data).toBe(20);
       expect(localGlobalSource.getState().data).toBe(12);
     }
