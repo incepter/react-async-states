@@ -81,7 +81,7 @@ describe("useAsync().data", () => {
     let source = createSource("test-4", null, { initialValue: 5 });
     // 6 will be ignored for pending state (state.data is null when pending)
     // useAsync.data is lastSuccess.data
-    source.setState(6, "pending");
+    source.setState(null, "pending");
     // given
     function Component() {
       const {
@@ -106,7 +106,7 @@ describe("useAsync().data", () => {
   });
   it("should give data with error status", async () => {
     let source = createSource("test-5", null, { initialValue: 5 });
-    source.setState(7, "error");
+    source.setState(new Error(), "error");
     // given
     function Component() {
       const {

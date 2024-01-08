@@ -76,7 +76,7 @@ describe("dev warnings", () => {
     );
     expect(spy).toHaveBeenCalledWith(
       "[Warning][async-states] Subscription in component Test1 has a 'source' " +
-        "and the following properties: 'initialValue, runEffect, " +
+        "and the following properties 'initialValue, runEffect, " +
         "hideFromDevtools, skipPendingStatus, skipPendingDelayMs, " +
         "runEffectDurationMs, resetStateOnDispose, retryConfig, cacheConfig' " +
         "at the same time. All these props will be flushed into the source " +
