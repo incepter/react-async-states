@@ -1,8 +1,8 @@
 import { useTheme } from "next-themes";
 
-import { useEffect, useState } from "react";
-
 import { ToggleGroup } from "@/components";
+
+import { useIsMounted } from "@/hooks";
 
 import { DesktopIcon, MoonIcon, SunIcon } from "@radix-ui/react-icons";
 
@@ -22,13 +22,8 @@ const themeOptions = [
 ];
 
 export default function ThemeToggleGroup() {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsMounted();
   const { theme, setTheme } = useTheme();
-
-  // Only runs on the client, so now we can safely show the UI
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   if (!mounted) {
     return null;

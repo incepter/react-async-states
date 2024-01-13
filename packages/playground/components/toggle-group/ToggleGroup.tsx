@@ -15,7 +15,7 @@ const Item = React.forwardRef<
 >(({ children, className, ...rest }, ref) => (
   <ToggleGroupPrimitive.Item
     className={clsxm(
-      "transition-colors hover:bg-foreground-primary/5 data-[state='on']:bg-primary/20 data-[state='on']:text-primary",
+      "transition-colors duration-200 hover:bg-foreground-primary/5 data-[state='on']:bg-primary/20 data-[state='on']:text-primary",
       className,
     )}
     ref={ref}

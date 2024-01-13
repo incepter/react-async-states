@@ -28,7 +28,7 @@ const Trigger = React.forwardRef<
 >(({ children, className, ...rest }, ref) => (
   <SelectPrimitive.Trigger
     className={clsxm(
-      "inline-flex h-8 items-center gap-2 border border-foreground-secondary/20 px-2 text-left leading-none text-foreground-secondary placeholder-foreground-secondary hover:border-foreground-secondary/60 focus:border-foreground-secondary focus:outline-none",
+      "inline-flex h-8 items-center gap-2 border border-foreground-secondary/20 px-2 text-left leading-none text-foreground-secondary placeholder-foreground-secondary focus:border-foreground-secondary focus:outline-none hover:enabled:border-foreground-secondary/60 disabled:opacity-70",
       className,
     )}
     ref={ref}

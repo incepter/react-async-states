@@ -12,7 +12,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>((props, ref) => {
   return (
     <input
       className={clsxm(
-        "h-8 gap-2 border border-foreground-secondary/20 bg-transparent px-2 leading-none text-foreground-secondary placeholder-foreground-secondary hover:border-foreground-secondary/60 focus:border-foreground-secondary focus:outline-none",
+        "h-8 gap-2 border border-foreground-secondary/20 bg-transparent px-2 leading-none text-foreground-secondary placeholder-foreground-secondary focus:outline-none hover:enabled:border-foreground-secondary/60 focus:enabled:border-foreground-secondary disabled:opacity-70",
         className,
       )}
       ref={ref}

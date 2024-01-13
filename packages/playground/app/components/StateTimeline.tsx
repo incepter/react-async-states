@@ -1,30 +1,44 @@
 "use client";
 
-import { ToggleGroup, ToggleGroupItemProps } from "@/components";
+import { useEffect, useState } from "react";
+import { Producer, ProducerConfig, State, useAsync } from "react-async-states";
+
+import { Badge, ToggleGroup, ToggleGroupItemProps } from "@/components";
+
+import { getColorForStateStatus } from "@/lib/mapping";
+import { randomKey } from "@/lib/random";
+import { setInstanceStateAndNotifySubscribers } from "@/lib/state";
+import { clsxm } from "@/lib/utils";
+
+import { useCurrentInstance } from "@/hooks";
 
 import { RadiobuttonIcon } from "@radix-ui/react-icons";
 
-type StateRecord = {
-  id: string;
-  timestamp: number;
-};
-
-interface StateRecordToggleItemProps extends ToggleGroupItemProps {
-  record: StateRecord;
+interface StateSnapshot<TData, TArgs extends unknown[], TError> {
+  key: string;
+  state: State<unknown, [], Error>;
+  config: ProducerConfig<TData, TArgs, TError>;
+  producer: Producer<TData, TArgs, TError> | null;
 }
 
-function StateRecordToggleItem({
-  record,
+interface StateSnapshotToggleItemProps extends ToggleGroupItemProps {
+  snapshot: StateSnapshot<any, any, any>;
+}
+
+function StateSnapshotToggleItem({
+  snapshot,
+  className,
   ...props
-}: StateRecordToggleItemProps) {
-  const { timestamp } = record;
+}: StateSnapshotToggleItemProps) {
+  const { state } = snapshot;
 
   return (
-    <ToggleGroup.Item {...props}>
-      <RadiobuttonIcon className="w-5 text-primary" />
+    <ToggleGroup.Item className={clsxm("group", className)} {...props}>
+      <RadiobuttonIcon className="w-5 text-primary group-data-[state='off']:text-foreground-secondary" />
       <span className="whitespace-nowrap text-sm text-foreground-secondary">
-        {new Date(timestamp).toLocaleTimeString()}
+        {new Date(state.timestamp).toLocaleTimeString()}
       </span>
+      <Badge color={getColorForStateStatus(state.status)}>{state.status}</Badge>
     </ToggleGroup.Item>
   );
 }
@@ -33,65 +47,62 @@ function StateRecordToggleItem({
 /*                               Main Component                               */
 /* -------------------------------------------------------------------------- */
 
-const exampleStateRecords = [
-  {
-    id: "1",
-    timestamp: 1704497864344,
-  },
-  {
-    id: "2",
-    timestamp: 1704497861344,
-  },
-  {
-    id: "3",
-    timestamp: 1704497854344,
-  },
-  {
-    id: "4",
-    timestamp: 1704497804344,
-  },
-  {
-    id: "5",
-    timestamp: 170449778344,
-  },
-  {
-    id: "6",
-    timestamp: 1704497714344,
-  },
-  {
-    id: "7",
-    timestamp: 1704497509344,
-  },
-  {
-    id: "8",
-    timestamp: 1704497400344,
-  },
-];
-
 export default function StateTimeline() {
-  // @TODO Some sort of state history visualization.
+  const { instance: currentInstance } = useCurrentInstance();
 
-  const selectedRecord = exampleStateRecords[0];
+  const [selectedSnapshotKey, setSelectedSnapshotKey] = useState<string>();
+  const [snapshots, setSnapshots] = useState<StateSnapshot<any, any, any>[]>(
+    [],
+  );
+
+  useEffect(() => {
+    const unsubscribe = currentInstance.actions.on("change", (newState) => {
+      let snapshot = {
+        key: "stateSnapshot$" + randomKey(),
+        state: newState,
+        config: { ...currentInstance.config },
+        producer: currentInstance.fn,
+      };
+
+      setSnapshots((prev) => [snapshot, ...prev]);
+      setSelectedSnapshotKey(snapshot.key);
+    });
+
+    return unsubscribe;
+  }, [currentInstance]);
+
+  function handleSnapshotToggleItemClick(snapshot: (typeof snapshots)[number]) {
+    setInstanceStateAndNotifySubscribers(currentInstance, snapshot.state);
+  }
+
+  if (snapshots.length === 0) {
+    return null;
+  }
+
+  console.log(currentInstance.config);
 
   return (
     <div className="border-t border-foreground-secondary/20 bg-neutral">
       <ToggleGroup
         type="single"
         className="flex flex-row-reverse overflow-auto"
-        defaultValue={selectedRecord.id}
+        value={selectedSnapshotKey}
+        onValueChange={(value) => {
+          if (value) {
+            setSelectedSnapshotKey(value);
+          }
+        }}
       >
-        {exampleStateRecords.map((record) => (
-          <StateRecordToggleItem
-            value={record.id}
-            className="flex flex-col items-center gap-2 p-4"
-            key={record.id}
-            record={record}
-          >
-            <RadiobuttonIcon className="w-5" />
-            <span className="whitespace-nowrap text-sm text-foreground-secondary">
-              {new Date(record.timestamp).toLocaleTimeString()}
-            </span>
-          </StateRecordToggleItem>
+        {snapshots.map((snapshot) => (
+          <StateSnapshotToggleItem
+            value={snapshot.key}
+            className="flex flex-col items-center gap-2 p-4 duration-[500ms]"
+            key={snapshot.key}
+            snapshot={snapshot}
+            onClick={() => {
+              handleSnapshotToggleItemClick(snapshot);
+            }}
+          />
         ))}
       </ToggleGroup>
     </div>

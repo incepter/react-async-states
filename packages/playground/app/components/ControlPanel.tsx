@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useAsync } from "react-async-states";
 
 import { Collapsible, Switch } from "@/components";
 
@@ -10,21 +11,31 @@ import { clsxm } from "@/lib/utils";
 import ThemeToggleGroup from "./ThemeToggleGroup";
 import {
   CacheControlGroupInputs,
+  PendingControlGroupInputs,
   ProducerControlGroupInputs,
   RunEffectControlGroupInputs,
   SourceControlGroupInputs,
-  TimingControlGroupInputs,
 } from "./group-inputs";
+import { useCurrentInstance } from "@/hooks";
 
 interface ControlGroupProps extends React.ComponentProps<"div"> {
   title: string;
   collapsable?: boolean;
+  onCollapse?: (expanded: boolean) => void;
 }
 
 function ControlGroup(props: ControlGroupProps) {
-  const { title, children, className, collapsable = false, ...rest } = props;
+  const {
+    title,
+    children,
+    className,
+    onCollapse,
+    collapsable,
+    defaultChecked,
+    ...rest
+  } = props;
 
-  const [open, setOpen] = useState(!collapsable);
+  const [open, setOpen] = useState(!collapsable || defaultChecked);
 
   return (
     <Collapsible
@@ -41,15 +52,13 @@ function ControlGroup(props: ControlGroupProps) {
         {collapsable && (
           <Collapsible.Trigger asChild>
             <div>
-              <Switch checked={open} />
+              <Switch onCheckedChange={onCollapse} checked={open} />
             </div>
           </Collapsible.Trigger>
         )}
       </div>
 
-      <Collapsible.Content>
-        <div className="text-xs">{children}</div>
-      </Collapsible.Content>
+      <Collapsible.Content className="text-xs">{children}</Collapsible.Content>
     </Collapsible>
   );
 }
@@ -67,20 +76,74 @@ const controlGroupItems: ControlGroupProps[] = [
     title: "Producer",
     children: <ProducerControlGroupInputs />,
   },
-  {
-    title: "Run effect",
-    children: <RunEffectControlGroupInputs />,
-  },
-  {
-    title: "Timing (ms)",
-    children: <TimingControlGroupInputs />,
-  },
-  {
-    title: "Cache",
-    collapsable: true,
-    children: <CacheControlGroupInputs />,
-  },
 ];
+
+function CacheControlGroup() {
+  const { instance: currentInstance } = useCurrentInstance();
+
+  function handleControlGroupCollapsedChange(expanded: boolean) {
+    currentInstance.actions.patchConfig({
+      cacheConfig: {
+        enabled: expanded,
+      },
+    });
+  }
+
+  return (
+    <ControlGroup
+      collapsable
+      title="Cache"
+      onCollapse={handleControlGroupCollapsedChange}
+      defaultChecked={currentInstance.config.cacheConfig?.enabled}
+    >
+      <CacheControlGroupInputs />
+    </ControlGroup>
+  );
+}
+
+function RunEffectControlGroup() {
+  const { instance: currentInstance } = useCurrentInstance();
+
+  function handleControlGroupCollapsedChange(expanded: boolean) {
+    if (!expanded) {
+      currentInstance.actions.patchConfig({
+        runEffect: undefined,
+      });
+    }
+  }
+
+  return (
+    <ControlGroup
+      collapsable
+      title="Run effect"
+      onCollapse={handleControlGroupCollapsedChange}
+      defaultChecked={!!currentInstance.config.runEffect}
+    >
+      <RunEffectControlGroupInputs />
+    </ControlGroup>
+  );
+}
+
+function PendingControlGroup() {
+  const { instance: currentInstance } = useCurrentInstance();
+
+  function handleControlGroupCollapsedChange(expanded: boolean) {
+    currentInstance.actions.patchConfig({
+      skipPendingStatus: !expanded,
+    });
+  }
+
+  return (
+    <ControlGroup
+      collapsable
+      title="Pending status"
+      defaultChecked={!currentInstance.config.skipPendingStatus}
+      onCollapse={handleControlGroupCollapsedChange}
+    >
+      <PendingControlGroupInputs />
+    </ControlGroup>
+  );
+}
 
 export default function ControlPanel() {
   return (
@@ -96,6 +159,10 @@ export default function ControlPanel() {
           </ControlGroup>
         );
       })}
+
+      <PendingControlGroup />
+      <RunEffectControlGroup />
+      <CacheControlGroup />
     </div>
   );
 }

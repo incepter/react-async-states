@@ -1,16 +1,33 @@
 import * as React from "react";
 
+import { ExternalLinkIcon } from "@radix-ui/react-icons";
+
 interface ItemProps extends React.ComponentProps<"div"> {
   label: string;
+  link?: string;
 }
 
 function Item(props: ItemProps) {
-  const { children, label, ...rest } = props;
+  const { children, label, link, ...rest } = props;
 
   return (
     <div {...rest}>
-      <label className="mb-2 block overflow-hidden text-ellipsis whitespace-nowrap bg-neutral text-foreground-secondary">
-        {label}
+      <label className="mb-2 flex gap-1 overflow-hidden text-ellipsis whitespace-nowrap bg-neutral text-foreground-secondary">
+        <span
+          title={label}
+          className="overflow-hidden text-ellipsis whitespace-nowrap"
+        >
+          {label}
+        </span>
+        {link && (
+          <a
+            className="text-primary hover:text-primary-light active:text-primary-dark"
+            href={link}
+            target="_blank"
+          >
+            <ExternalLinkIcon />
+          </a>
+        )}
       </label>
       {children}
     </div>

@@ -31,7 +31,7 @@ const SwitchRoot: React.FC<SwitchProps> = (props) => {
   return (
     <SwitchPrimitive.Root
       className={clsxm(
-        "relative h-4 w-7 min-w-7 rounded-full bg-black/40 transition-colors ease-in-out focus:outline-none data-[state='checked']:bg-primary",
+        "relative h-4 w-7 min-w-7 rounded-full bg-gray-400 transition-colors ease-in-out focus:outline-none data-[state='checked']:bg-primary",
         className,
       )}
       {...rest}
