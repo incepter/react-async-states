@@ -15,6 +15,24 @@ const ubuntu = Ubuntu({
 export const metadata: Metadata = {
   title: "React Async States - Playground",
   description: "Where you can play with react-async-states features",
+  keywords: [
+    "react",
+    "javascript",
+    "events",
+    "typescript",
+    "react-native",
+    "state-management",
+    "react-dom",
+    "async",
+    "websocket",
+    "cache",
+    "state",
+    "workers",
+    "throttle",
+    "axios",
+    "debounce",
+    "fetch-api",
+  ],
 };
 
 export default function RootLayout({
