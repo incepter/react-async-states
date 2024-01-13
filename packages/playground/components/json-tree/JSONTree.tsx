@@ -55,7 +55,14 @@ const JSONTree = (props: JSONTreeProps) => {
       }
     : theme;
 
-  return <BaseJSONTree theme={overrideTheme} {...rest} />;
+  return (
+    <BaseJSONTree
+      theme={overrideTheme}
+      hideRoot={hideRoot}
+      sortObjectKeys={sortObjectKeys}
+      {...rest}
+    />
+  );
 };
 JSONTree.displayName = "JSONTree";
 

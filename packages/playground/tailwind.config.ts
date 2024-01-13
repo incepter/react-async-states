@@ -10,6 +10,12 @@ const config: Config = {
   ],
   darkMode: ["class", '[data-theme="dark"]'],
   theme: {
+    keyframes: {
+      pulse: {
+        "0%, 100%": { opacity: "1" },
+        "50%": { opacity: ".1" },
+      },
+    },
     extend: {
       colors: {
         foreground: {

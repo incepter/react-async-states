@@ -1,5 +1,7 @@
 import { useTheme } from "next-themes";
 
+import Skeleton from "react-loading-skeleton";
+
 import { ToggleGroup } from "@/components";
 
 import { useIsMounted } from "@/hooks";
@@ -26,7 +28,7 @@ export default function ThemeToggleGroup() {
   const { theme, setTheme } = useTheme();
 
   if (!mounted) {
-    return null;
+    return <Skeleton className="h-8 animate-pulse leading-[inherit]" />;
   }
 
   return (

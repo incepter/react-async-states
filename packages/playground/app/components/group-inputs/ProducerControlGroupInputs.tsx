@@ -1,4 +1,5 @@
 import { createSource, useAsync } from "react-async-states";
+import Skeleton from "react-loading-skeleton";
 
 import { Badge, Form, Input, Select } from "@/components";
 
@@ -28,11 +29,13 @@ export default function ProducerControlGroupInputs() {
 
   return (
     <div className="space-y-2">
-      {isMounted && (
-        <Form.Item
-          label="Function"
-          link="https://incepter.github.io/react-async-states/docs/api/producer-function"
-        >
+      <Form.Item
+        label="Function"
+        link="https://incepter.github.io/react-async-states/docs/api/producer-function"
+      >
+        {!isMounted ? (
+          <Skeleton className="h-8 animate-pulse leading-[inherit]" />
+        ) : (
           <Select
             disabled
             className="w-full"
@@ -51,8 +54,8 @@ export default function ProducerControlGroupInputs() {
               </div>
             </Select.Item>
           </Select>
-        </Form.Item>
-      )}
+        )}
+      </Form.Item>{" "}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(6rem,1fr))] gap-2">
         {argsData?.map((arg, index) => {
           if (typeof arg === "object") {

@@ -10,11 +10,8 @@ export default function ProducerRunner() {
   const { instance: currentInstance } = useCurrentInstance();
 
   function handleRunClick() {
-    console.log(currentInstance.config);
     currentInstance.actions.run({ _page: 1, _limit: 5 });
   }
-
-  console.log("Rendering");
 
   return (
     <div className="flex items-stretch gap-2 border-b border-foreground-secondary/20 bg-neutral p-4 text-sm">
