@@ -30,7 +30,7 @@ const FeatureList = [
     description: (
       <>
         <code>react-async-states</code> allows you to produce state from different forms of functions: regular functions,
-        async/await, generators and promises. This allows to combine synchronous and asynchronous behavior.
+        async/await and promises. This allows to combine synchronous and asynchronous behavior.
       </>
     ),
   },

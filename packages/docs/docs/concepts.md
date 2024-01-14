@@ -46,13 +46,12 @@ Straight from the codebase, here is the definition of a producer:
 ```typescript
 export type Producer<TData, TArgs extends unknown[] = [], TError = Error> = (
 	props: ProducerProps<TData, TArgs, TError>
-) => TData | Promise<TData> | Generator<any, TData, any>;
+) => TData | Promise<TData>
 ```
 
 It may be:
 - Any synchronous function returning a value
 - Any async function: using the `async/await` syntax, or returning a `promise`
-- A `generator`, either synchronous or asynchronous.
 - Not defined. Yes, you can have no producer at all. In this case, you will be
   using `setState` to set the state directly and immediately.
 

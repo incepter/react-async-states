@@ -21,7 +21,7 @@ The library can work with the following modes:
 - Data fetching and/or any form of asynchrony
 - Inside and/or outside `React`
 - With or without `Cache`
-- `Promises`, `async/await` and even `generators` or nothing at all
+- Sync, `Promises`, `async/await` or nothing at all
 - Allows abstractions on top of it
 - ...
 
@@ -75,23 +75,18 @@ const { isPending, data, error } = useAsync(config, deps);
 
 Of course, the library has many other things that will cover all your needs.
 
-#### <ins>Promises, async/await & generators support</ins>
-
+#### <ins>Promises, async/await</ins>
 The `producer`, the core concept of the library can be of different forms:
 
-Either return a promise (thenable) to your state, use async/await syntax or go
-generators. All of these are supported by the library out of the box and
-no configuration is needed.
+It can be a sync function such as a variant of a reducer, or return a promise
+(thenable) to your state or use async/await syntax.
 
 ```typescript
-useState();
-useState(function getSomeData() {
+useAsync();
+useAsync(function getSomeData() {
   return fetchMyData();
 });
-useState(function* someGenerator() {
-  yield fetchMyData();
-});
-useState(async function getSomeData() {
+useAsync(async function getSomeData() {
   return await fetchMyData();
 });
 ```

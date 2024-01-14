@@ -7,12 +7,7 @@ import {
   RunIndicators,
   PromiseLike,
 } from "./types";
-import {
-  cloneProducerProps,
-  isFunction,
-  isGenerator,
-  isPromise,
-} from "./utils";
+import { cloneProducerProps, isFunction, isPromise } from "./utils";
 import { error as errorStatus, success } from "./enums";
 
 export function run<TData, TArgs extends unknown[], TError>(
@@ -42,22 +37,7 @@ export function run<TData, TArgs extends unknown[], TError>(
     return;
   }
 
-  if (isGenerator<TData>(executionValue)) {
-    let generatorResult;
-    try {
-      // generatorResult is either {done: boolean, value: TData} or a Promise<TData>
-      generatorResult = stepGenerator(executionValue, props, indicators);
-    } catch (e) {
-      onFail(e as TError);
-      return;
-    }
-    if (generatorResult.done) {
-      onSuccess(generatorResult.value);
-      return;
-    } else {
-      pendingPromise = generatorResult;
-    }
-  } else if (isPromise(executionValue)) {
+  if (isPromise(executionValue)) {
     pendingPromise = executionValue;
   } else {
     // final value
@@ -93,8 +73,7 @@ export function run<TData, TArgs extends unknown[], TError>(
       return;
     }
     if (
-      retryConfig &&
-      retryConfig.enabled &&
+      retryConfig?.enabled &&
       shouldRetry(indicators.index, retryConfig, error)
     ) {
       let backoff = getRetryBackoff(indicators.index, retryConfig, error);
@@ -143,91 +122,4 @@ function getRetryBackoff<TData, TArgs extends unknown[], TError>(
     );
   }
   return (backoff as number) || 0;
-}
-
-function stepGenerator<TData>(
-  generatorInstance: Generator<any, TData, any>,
-  props,
-  indicators
-): { done: true; value: TData } | Promise<TData> {
-  let generator = generatorInstance.next();
-
-  while (!generator.done && !isPromise(generator.value)) {
-    generator = generatorInstance.next(generator.value);
-  }
-
-  if (generator.done) {
-    return { done: true, value: generator.value };
-  } else {
-    return new Promise(function stepIntoGenerator(resolve, reject) {
-      const abortGenerator = stepInAsyncGenerator(
-        generatorInstance,
-        generator,
-        resolve,
-        reject
-      );
-
-      function abortFn() {
-        if (!indicators.done && !indicators.aborted) {
-          abortGenerator();
-        }
-      }
-
-      props.onAbort(abortFn);
-    });
-  }
-}
-
-function stepInAsyncGenerator(generatorInstance, generator, onDone, onReject) {
-  let aborted = false;
-
-  // we enter here only if startupValue is pending promise of the generator instance!
-  generator.value.then(step, onGeneratorCatch);
-
-  function onGeneratorResolve(resolveValue) {
-    if (aborted) {
-      return;
-    }
-    if (!generator.done) {
-      step();
-    } else {
-      onDone(resolveValue);
-    }
-  }
-
-  function onGeneratorCatch(e) {
-    if (aborted) {
-      return;
-    }
-    if (generator.done) {
-      onDone(e);
-    } else {
-      try {
-        generator = generatorInstance.throw(e);
-      } catch (newException) {
-        onReject(newException);
-      }
-      if (generator.done) {
-        onDone(generator.value);
-      } else {
-        step();
-      }
-    }
-  }
-
-  function step() {
-    if (aborted) {
-      return;
-    }
-    try {
-      generator = generatorInstance.next(generator.value);
-    } catch (e) {
-      onGeneratorCatch(e);
-    }
-    Promise.resolve(generator.value).then(onGeneratorResolve, onGeneratorCatch);
-  }
-
-  return function abort() {
-    aborted = true;
-  };
 }

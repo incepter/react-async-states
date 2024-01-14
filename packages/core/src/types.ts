@@ -290,19 +290,13 @@ export interface ProducerProps<
 
   emit(
     value: StateFunctionUpdater<TData, TArgs, TError> | TData,
-    status: "initial",
+    status: "initial"
   ): void;
-  emit(
-    value: null,
-    status: "pending",
-  ): void;
-  emit(
-    value: TError,
-    status: "error",
-  ): void;
+  emit(value: null, status: "pending"): void;
+  emit(value: TError, status: "error"): void;
   emit(
     value: StateFunctionUpdater<TData, TArgs, TError> | TData,
-    status?: "success",
+    status?: "success"
   ): void;
   getState: () => State<TData, TArgs, TError>;
 }
@@ -326,7 +320,7 @@ export type ProducerSavedProps<TData, TArgs extends unknown[]> = {
 
 export type Producer<TData, TArgs extends unknown[] = [], TError = Error> = (
   props: ProducerProps<TData, TArgs, TError>
-) => TData | Promise<TData> | Generator<any, TData, any>;
+) => TData | Promise<TData>;
 
 export type ProducerFunction<TData, TArgs extends unknown[], TError> = (
   props: ProducerProps<TData, TArgs, TError>,

@@ -74,7 +74,6 @@
     "state",
     "async",
     "promise",
-    "generator",
     "management",
     "async-state",
     "react-async-state",
