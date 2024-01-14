@@ -6,15 +6,18 @@ import { Badge, Form, Input, Select } from "@/components";
 import { getInputTypeForVariable } from "@/lib/mapping";
 
 import { useCurrentInstance, useIsMounted } from "@/hooks";
+import { AnyInstance } from "@/types/lib";
 
 const argsSource = createSource<unknown[]>("args-source", null, {
   initialValue: [{ _page: 1, _limit: 5 }],
 });
 
-export default function ProducerControlGroupInputs() {
+export default function ProducerControlGroupInputs({
+  instance,
+}: {
+  instance: AnyInstance;
+}) {
   const isMounted = useIsMounted();
-
-  const { instance: currentInstance } = useCurrentInstance();
 
   const {
     data: argsData,
@@ -36,24 +39,12 @@ export default function ProducerControlGroupInputs() {
         {!isMounted ? (
           <Skeleton className="h-8 animate-pulse leading-[inherit]" />
         ) : (
-          <Select
+          <Input
             disabled
             className="w-full"
             name="function"
-            value={currentInstance.fn?.name}
-          >
-            <Select.Item className="group" value={currentInstance.fn?.name!}>
-              <div className="flex items-center gap-2">
-                <Badge
-                  color="success"
-                  className="group-hover:bg-primary-contrast-text group-hover:text-primary"
-                >
-                  GET
-                </Badge>
-                <span>{currentInstance.fn?.name}</span>
-              </div>
-            </Select.Item>
-          </Select>
+            value={instance.fn?.name}
+          />
         )}
       </Form.Item>{" "}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(6rem,1fr))] gap-2">

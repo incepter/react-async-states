@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Ubuntu } from "next/font/google";
 
-import ControlPanel from "./components/ControlPanel";
-import ProducerRunner from "./components/ProducerRunner";
-import StateTimeline from "./components/StateTimeline";
+import Footer from "./components/Footer";
+import Header from "./components/Header";
+import Sider from "./components/Sider";
 import { Providers } from "./providers";
 import "@/styles/globals.css";
 
@@ -46,11 +46,13 @@ export default function RootLayout({
         <Providers>
           <div className="flex h-svh w-svw overflow-hidden">
             <div className="flex flex-1 flex-col overflow-auto">
-              <ProducerRunner />
-              {children}
-              <StateTimeline />
+              <Header />
+              <main className="flex-1 overflow-auto whitespace-pre-wrap p-4">
+                {children}
+              </main>
+              <Footer />
             </div>
-            <ControlPanel />
+            <Sider />
           </div>
         </Providers>
       </body>

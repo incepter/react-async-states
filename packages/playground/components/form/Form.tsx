@@ -12,7 +12,7 @@ function Item(props: ItemProps) {
 
   return (
     <div {...rest}>
-      <label className="mb-2 flex gap-1 overflow-hidden text-ellipsis whitespace-nowrap bg-neutral text-foreground-secondary">
+      <label className="mb-2 flex items-center gap-1 overflow-hidden text-ellipsis whitespace-nowrap bg-neutral text-foreground-secondary">
         <span
           title={label}
           className="overflow-hidden text-ellipsis whitespace-nowrap"

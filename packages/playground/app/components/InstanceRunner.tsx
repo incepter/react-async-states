@@ -1,20 +1,21 @@
-"use client";
-
 import qs from "querystring";
 
-import { Badge, Button, Input } from "@/components";
+import { Badge, Button } from "@/components";
 
-import { useCurrentInstance } from "@/hooks";
+import { AnyInstance } from "@/types/lib";
 
-export default function ProducerRunner() {
-  const { instance: currentInstance } = useCurrentInstance();
-
+export default function InstanceRunner({
+  instance,
+}: {
+  instance: AnyInstance;
+}) {
   function handleRunClick() {
-    currentInstance.actions.run({ _page: 1, _limit: 5 });
+    // TODO Args should be state
+    instance.actions.run({ _page: 1, _limit: 5 });
   }
 
   return (
-    <div className="flex items-stretch gap-2 border-b border-foreground-secondary/20 bg-neutral p-4 text-sm">
+    <div className="flex items-stretch gap-2">
       <div className="inline-flex flex-1 gap-2 overflow-hidden border border-foreground-secondary/20 px-2">
         <Badge color="success" className="self-center">
           GET

@@ -4,11 +4,15 @@ import Skeleton from "react-loading-skeleton";
 import { Form, Select } from "@/components";
 
 import { useCurrentInstance, useInstances, useIsMounted } from "@/hooks";
+import { AnyInstance } from "@/types/lib";
 
-export default function SourceControlGroupInputs() {
+export default function SourceControlGroupInputs({
+  instance,
+}: {
+  instance: AnyInstance;
+}) {
   const isMounted = useIsMounted();
   const { instances } = useInstances();
-  const { instance: currentInstance } = useCurrentInstance();
 
   function handleValueChange(value: string) {
     alert("Set current source to " + value);
@@ -24,7 +28,7 @@ export default function SourceControlGroupInputs() {
       ) : (
         <Select
           onValueChange={handleValueChange}
-          value={currentInstance.key}
+          value={instance.key}
           className="w-full"
           name="key"
         >

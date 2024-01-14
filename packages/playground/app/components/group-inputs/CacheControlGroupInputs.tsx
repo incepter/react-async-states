@@ -1,31 +1,33 @@
 import { Button, Form, Input, Switch } from "@/components";
 
-import { useCurrentInstance } from "@/hooks";
+import { AnyInstance } from "@/types/lib";
 
-export default function CacheControlGroupInputs() {
-  const { instance: currentInstance } = useCurrentInstance();
-
+export default function CacheControlGroupInputs({
+  instance,
+}: {
+  instance: AnyInstance;
+}) {
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value, type } = e.target;
-    currentInstance.actions.patchConfig({
+    instance.actions.patchConfig({
       cacheConfig: {
-        ...currentInstance.config.cacheConfig!,
+        ...instance.config.cacheConfig!,
         [name]: type === "number" ? +value : value,
       },
     });
   }
 
   function handleSwitchCheckedChange(name: string, checked: boolean) {
-    currentInstance.actions.patchConfig({
+    instance.actions.patchConfig({
       cacheConfig: {
-        ...currentInstance.config.cacheConfig!,
+        ...instance.config.cacheConfig!,
         [name]: checked,
       },
     });
   }
 
   function handleClearClick() {
-    currentInstance.actions.invalidateCache();
+    instance.actions.invalidateCache();
   }
 
   return (
@@ -42,14 +44,14 @@ export default function CacheControlGroupInputs() {
             step="100"
             name="timeout"
             onChange={handleInputChange}
-            defaultValue={currentInstance.config.cacheConfig.timeout as number}
+            defaultValue={instance.config.cacheConfig?.timeout as number}
           />
         </Form.Item>
       </div>
       <div className="flex items-center gap-2">
         <Switch
           name="auto"
-          defaultChecked={!!currentInstance.config.cacheConfig?.auto}
+          defaultChecked={!!instance.config.cacheConfig?.auto}
           onCheckedChange={(checked) => {
             handleSwitchCheckedChange("auto", checked);
           }}

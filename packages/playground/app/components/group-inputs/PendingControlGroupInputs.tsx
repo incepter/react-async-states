@@ -1,13 +1,15 @@
 import { Form, Input } from "@/components";
 
-import { useCurrentInstance } from "@/hooks";
+import { AnyInstance } from "@/types/lib";
 
-export default function PendingControlGroupInputs() {
-  const { instance: currentInstance } = useCurrentInstance();
-
+export default function PendingControlGroupInputs({
+  instance,
+}: {
+  instance: AnyInstance;
+}) {
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { type, name, value } = e.target;
-    currentInstance.actions.patchConfig({
+    instance.actions.patchConfig({
       [name]: type === "number" ? +value : value,
     });
   }
@@ -24,7 +26,7 @@ export default function PendingControlGroupInputs() {
           min="0"
           step="100"
           name="keepPendingForMs"
-          defaultValue={currentInstance.config.keepPendingForMs}
+          defaultValue={instance.config.keepPendingForMs}
           onChange={handleInputChange}
         />
       </Form.Item>
@@ -38,7 +40,7 @@ export default function PendingControlGroupInputs() {
           min="0"
           step="50"
           name="skipPendingDelayMs"
-          defaultValue={currentInstance.config.skipPendingDelayMs}
+          defaultValue={instance.config.skipPendingDelayMs}
           onChange={handleInputChange}
         />
       </Form.Item>

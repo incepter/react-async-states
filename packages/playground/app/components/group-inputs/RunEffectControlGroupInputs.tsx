@@ -2,7 +2,7 @@ import { RunEffect } from "react-async-states";
 
 import { Form, Input, Select } from "@/components";
 
-import { useCurrentInstance } from "@/hooks";
+import { AnyInstance } from "@/types/lib";
 
 const runEffectOptions = [
   {
@@ -19,9 +19,11 @@ const runEffectOptions = [
   },
 ];
 
-export default function RunEffectControlGroupInputs() {
-  const { instance: currentInstance } = useCurrentInstance();
-
+export default function RunEffectControlGroupInputs({
+  instance,
+}: {
+  instance: AnyInstance;
+}) {
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-[repeat(auto-fit,minmax(6rem,1fr))] gap-2">
@@ -31,12 +33,12 @@ export default function RunEffectControlGroupInputs() {
         >
           <Select
             onValueChange={(value) => {
-              currentInstance.actions.patchConfig({
+              instance.actions.patchConfig({
                 runEffect: value as RunEffect,
               });
             }}
             className="w-full"
-            defaultValue={currentInstance.config.runEffect}
+            defaultValue={instance.config.runEffect}
             name="runEffect"
             placeholder="Select effect..."
           >
@@ -58,11 +60,11 @@ export default function RunEffectControlGroupInputs() {
             step="100"
             name="runEffectDurationMs"
             onChange={(e) => {
-              currentInstance.actions.patchConfig({
+              instance.actions.patchConfig({
                 [e.target.name]: +e.target.value,
               });
             }}
-            defaultValue={currentInstance.config.runEffectDurationMs}
+            defaultValue={instance.config.runEffectDurationMs}
           />
         </Form.Item>
       </div>
