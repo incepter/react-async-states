@@ -50,11 +50,6 @@ interface DevtoolsInterface {
     props: ProducerSavedProps<TData, TArgs>
   ): void;
 
-  emitRunGenerator<TData, TArgs extends unknown[], TError>(
-    instance: StateInterface<TData, TArgs, TError>,
-    props: ProducerSavedProps<TData, TArgs>
-  ): void;
-
   emitReplaceState<TData, TArgs extends unknown[], TError>(
     instance: StateInterface<TData, TArgs, TError>,
     props: ProducerSavedProps<TData, TArgs>
@@ -128,7 +123,6 @@ function createDevtools(): DevtoolsInterface {
     emitRunSync,
     emitReplaceState,
     emitRunPromise,
-    emitRunGenerator,
     startUpdate,
     emitUpdate,
     emitDispose,
@@ -384,30 +378,6 @@ function createDevtools(): DevtoolsInterface {
     retainStateInstance(asyncState);
     let evt = {
       payload: { replaceState: true, type: "sync", props },
-      type: DevtoolsJournalEvent.run,
-    };
-    emitJournalEvent(asyncState, evt);
-    if (!connected) {
-      return;
-    }
-    emitPartialSync(asyncState.id, {
-      key: asyncState.key,
-      eventId: journalEventsId,
-      uniqueId: asyncState.id,
-
-      eventType: evt.type,
-      eventDate: Date.now(),
-      eventPayload: evt.payload,
-    });
-  }
-
-  function emitRunGenerator(asyncState: StateInterface<any, any, any>, props) {
-    if (isServer || asyncState.config.hideFromDevtools) {
-      return;
-    }
-    retainStateInstance(asyncState);
-    let evt = {
-      payload: { props, type: "generator" },
       type: DevtoolsJournalEvent.run,
     };
     emitJournalEvent(asyncState, evt);

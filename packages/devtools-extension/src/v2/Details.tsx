@@ -183,7 +183,7 @@ const MemoizedCache = React.memo(function MemoizedCache({
 
   let memoizedCache = React.useMemo(
     () => Object.assign({}, instance.cache),
-    [key]
+    [key, instance]
   );
   return <Json src={memoizedCache} name="Cache" level={3} />;
 });

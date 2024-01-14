@@ -129,7 +129,7 @@ export function ensureQueueIsScheduled<TData, TArgs extends unknown[], TError>(
     return;
   }
   let delay = instance.config.keepPendingForMs || 0;
-  let elapsedTime = Date.now() - instance.state.timestamp;
+  let elapsedTime = now() - instance.state.timestamp;
   let remainingTime = delay - elapsedTime;
 
   if (remainingTime > 0) {
@@ -163,13 +163,20 @@ export function flushUpdateQueue<TData, TArgs extends unknown[], TError>(
     // so we will only process the updates that we can't skip from the queue
     if (!canBailoutPendingStatus) {
       switch (current.kind) {
-        // there update came from setState(value, status)
+        // there update came from replaceState(newWholeState)
         case 0: {
           let { data, callbacks } = current;
-          replaceInstanceState(instance, data, false, callbacks);
+          // when the queue isn't empty, there is a caveat that might happen
+          // when the path setting the whole state is in the queue.
+          // ** It may lead to inconsistency with the timestamp
+          // to avoid this, the state object is recreated here.
+          let newState = { ...data } as typeof data;
+          newState.timestamp = now();
+          freeze(newState);
+          replaceInstanceState(instance, newState, false, callbacks);
           break;
         }
-        // there update came from replaceState(newWholeState)
+        // there update came from setState(value, status)
         case 1: {
           let { status, data } = current.data;
           setInstanceState(instance, data, status, current.callbacks);
@@ -207,7 +214,7 @@ export function scheduleDelayedPendingUpdate<
     // callback always sets the state with a pending status
     if (__DEV__) devtools.startUpdate(instance);
     let clonedState = shallowClone(newState);
-    clonedState.timestamp = Date.now();
+    clonedState.timestamp = now();
     instance.state = freeze(clonedState); // <-- status is pending!
     instance.pendingUpdate = null;
     instance.version += 1;

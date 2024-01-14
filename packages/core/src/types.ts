@@ -214,7 +214,7 @@ export interface StateInterface<TData, TArgs extends unknown[], TError> {
   events: InstanceEvents<TData, TArgs, TError> | null;
   eventsIndex: number | null;
   // dev properties
-  journal?: any[]; // for devtools, dev only
+  journal?: any[] | null; // for devtools, dev only
 }
 
 export interface RUNCProps<TData, TArgs extends unknown[], TError>
@@ -290,19 +290,13 @@ export interface ProducerProps<
 
   emit(
     value: StateFunctionUpdater<TData, TArgs, TError> | TData,
-    status: "initial",
+    status: "initial"
   ): void;
-  emit(
-    value: null,
-    status: "pending",
-  ): void;
-  emit(
-    value: TError,
-    status: "error",
-  ): void;
+  emit(value: null, status: "pending"): void;
+  emit(value: TError, status: "error"): void;
   emit(
     value: StateFunctionUpdater<TData, TArgs, TError> | TData,
-    status?: "success",
+    status?: "success"
   ): void;
   getState: () => State<TData, TArgs, TError>;
 }
@@ -326,7 +320,7 @@ export type ProducerSavedProps<TData, TArgs extends unknown[]> = {
 
 export type Producer<TData, TArgs extends unknown[] = [], TError = Error> = (
   props: ProducerProps<TData, TArgs, TError>
-) => TData | Promise<TData> | Generator<any, TData, any>;
+) => TData | Promise<TData>;
 
 export type ProducerFunction<TData, TArgs extends unknown[], TError> = (
   props: ProducerProps<TData, TArgs, TError>,
@@ -439,7 +433,7 @@ export type PendingUpdate = {
 
 export type SetStateUpdateQueue<TData, TArgs extends unknown[], TError> = {
   id?: ReturnType<typeof setTimeout>;
-  kind: 0; // instance.setState()
+  kind: 0; // instance.replaceState()
   data: State<TData, TArgs, TError>;
   next: UpdateQueue<TData, TArgs, TError> | null;
   callbacks?: ProducerCallbacks<TData, TArgs, TError>;
@@ -455,7 +449,7 @@ export type SetDataUpdateQueue<TData, TArgs extends unknown[], TError> = {
 
 export type ReplaceStateUpdateQueue<TData, TArgs extends unknown[], TError> = {
   id?: ReturnType<typeof setTimeout>;
-  kind: 1; // instance.replaceState()
+  kind: 1; // instance.setState()
   data: {
     status?: Status;
     data: TData | StateFunctionUpdater<TData, TArgs, TError>;

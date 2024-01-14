@@ -64,7 +64,7 @@ function scheduleDelayedRun<TData, TArgs extends unknown[], TError>(
     abortCallback = runInstanceImmediately(instance, clonedPayload, props);
   }, durationMs);
 
-  instance.pendingTimeout = { at: Date.now(), id: timeoutId };
+  instance.pendingTimeout = { at: now(), id: timeoutId };
 
   return function abortCleanup(reason?: any) {
     clearTimeout(timeoutId);
@@ -86,9 +86,9 @@ function runInstanceWithEffects<TData, TArgs extends unknown[], TError>(
     case "delay":
     case "debounce": {
       if (instance.pendingTimeout) {
-        let now = Date.now();
+        let rightNow = now();
         let deadline = instance.pendingTimeout.at + durationMs;
-        if (now < deadline) {
+        if (rightNow < deadline) {
           clearTimeout(instance.pendingTimeout.id);
         }
       }
@@ -96,9 +96,9 @@ function runInstanceWithEffects<TData, TArgs extends unknown[], TError>(
     }
     case "throttle": {
       if (instance.pendingTimeout) {
-        let now = Date.now();
+        let rightNow = now();
         let deadline = instance.pendingTimeout.at + durationMs;
-        if (now <= deadline) {
+        if (rightNow <= deadline) {
           return function noop() {
             // do nothing when throttled
           };
