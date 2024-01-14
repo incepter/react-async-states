@@ -322,14 +322,25 @@ export type PartialUseAsyncConfig<
 
 export type CleanupFn = AbortFn | (() => void) | undefined;
 
-interface BaseHooksReturn<
+export interface BaseHooksReturn<
   TData,
   TArgs extends unknown[],
   TError,
   S = State<TData, TArgs, TError>,
 > {
+  state: S;
   source: Source<TData, TArgs, TError>;
+  dataProps: ProducerSavedProps<TData, TArgs>;
+
   read(suspend?: boolean, throwError?: boolean): S;
+
+  isError: boolean;
+  isInitial: boolean;
+  isPending: boolean;
+  isSuccess: boolean;
+
+  data: TData | null;
+  error: TError | null;
 
   onChange(
     events:
@@ -360,8 +371,6 @@ export interface HookReturnInitial<TData, TArgs extends unknown[], TError, S>
 
 export interface HookReturnSuccess<TData, TArgs extends unknown[], TError, S>
   extends BaseHooksReturn<TData, TArgs, TError, S> {
-  state: S;
-
   isError: false;
   isInitial: false;
   isSuccess: true;
@@ -369,7 +378,6 @@ export interface HookReturnSuccess<TData, TArgs extends unknown[], TError, S>
 
   error: null;
   data: TData;
-  dataProps: ProducerSavedProps<TData, TArgs>;
 }
 
 export interface HookReturnError<TData, TArgs extends unknown[], TError, S>
@@ -477,15 +485,4 @@ export interface SubscriptionAlternate<
     didAddLastSuccessGetter: boolean;
     didWarnAboutLastSuccessUsage: boolean;
   };
-}
-
-// no suspending unless read is called in userland
-// will automatically refetch data after a state time is elapsed
-// will automatically refetch on window focus and stale data
-interface UseQueryReturn<TData, TArgs extends unknown[], TError>
-  extends BaseHooksReturn<TData, TArgs, TError> {
-  isPending: boolean;
-
-  data: TData | null;
-  error: TError | null;
 }

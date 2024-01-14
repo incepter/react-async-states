@@ -1,4 +1,4 @@
-import { assign } from "../../shared";
+import { __DEV__, assign } from "../../shared";
 import {
   createContext,
   createSource,
@@ -248,13 +248,15 @@ function requireAnExecContextInServer(
   let baseConfig = mixedConfig as BaseConfig<any, any, any>;
   // at this point, we have an object (not a source)
   if (!baseConfig.context) {
-    throw new Error(
-      "A context object is mandatory when working in the server " +
-        "to avoid leaks between requests. \nAdd the following up in the tree:\n" +
-        "import { Provider } from 'react-async-states';\n" +
-        "<Provider context={requestObject}>{yourChildrenTree}</Provider>;\n" +
-        "The request object should be unique to every request to perform isolation."
-    );
+    if (__DEV__) {
+      console.error(
+        "A context object is mandatory when working in the server " +
+          "to avoid leaks between requests. \nAdd the following up in the tree:\n" +
+          "import { Provider } from 'react-async-states';\n" +
+          "<Provider>{yourChildrenTree}</Provider>;\n"
+      );
+    }
+    throw new Error("A context object is mandatory when working in the server");
   }
 }
 
