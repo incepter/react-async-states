@@ -8,7 +8,7 @@ import {
   PromiseLike,
 } from "./types";
 import { cloneProducerProps, isFunction, isPromise } from "./utils";
-import { error as errorStatus, success } from "./enums";
+import { error as errorStatus, pending, success } from "./enums";
 
 export function run<TData, TArgs extends unknown[], TError>(
   producer: Producer<TData, TArgs, TError>,
@@ -49,7 +49,7 @@ export function run<TData, TArgs extends unknown[], TError>(
     TData,
     TError
   >;
-  pendingPromise.status = "pending";
+  pendingPromise.status = pending;
   return pendingPromise;
 
   function onSuccess(data: TData): TData {

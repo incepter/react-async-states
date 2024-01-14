@@ -214,7 +214,7 @@ export interface StateInterface<TData, TArgs extends unknown[], TError> {
   events: InstanceEvents<TData, TArgs, TError> | null;
   eventsIndex: number | null;
   // dev properties
-  journal?: any[]; // for devtools, dev only
+  journal?: any[] | null; // for devtools, dev only
 }
 
 export interface RUNCProps<TData, TArgs extends unknown[], TError>
