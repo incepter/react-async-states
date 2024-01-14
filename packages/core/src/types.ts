@@ -433,7 +433,7 @@ export type PendingUpdate = {
 
 export type SetStateUpdateQueue<TData, TArgs extends unknown[], TError> = {
   id?: ReturnType<typeof setTimeout>;
-  kind: 0; // instance.setState()
+  kind: 0; // instance.replaceState()
   data: State<TData, TArgs, TError>;
   next: UpdateQueue<TData, TArgs, TError> | null;
   callbacks?: ProducerCallbacks<TData, TArgs, TError>;
@@ -449,7 +449,7 @@ export type SetDataUpdateQueue<TData, TArgs extends unknown[], TError> = {
 
 export type ReplaceStateUpdateQueue<TData, TArgs extends unknown[], TError> = {
   id?: ReturnType<typeof setTimeout>;
-  kind: 1; // instance.replaceState()
+  kind: 1; // instance.setState()
   data: {
     status?: Status;
     data: TData | StateFunctionUpdater<TData, TArgs, TError>;
