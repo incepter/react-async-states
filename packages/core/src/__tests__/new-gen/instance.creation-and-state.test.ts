@@ -97,6 +97,33 @@ describe("AsyncState instance creation", () => {
     instance.actions.patchConfig({ initialValue: 16 });
     expect(instance.actions.getConfig().initialValue).toBe(16);
   });
+  it("should update given configuration function", () => {
+    let instance = new AsyncState("state-41", null, {
+      initialValue: 15,
+      skipPendingDelayMs: 300,
+      cacheConfig: { enabled: true },
+    });
+    expect(instance.actions.getConfig().initialValue).toBe(15);
+    let prevConfig;
+    instance.actions.patchConfig((prev) => {
+      prevConfig = prev;
+      return {
+        ...prev,
+        keepPendingForMs: 300,
+      };
+    });
+    expect(prevConfig).toEqual({
+      initialValue: 15,
+      skipPendingDelayMs: 300,
+      cacheConfig: { enabled: true },
+    });
+    expect(instance.actions.getConfig()).toEqual({
+      initialValue: 15,
+      keepPendingForMs: 300,
+      skipPendingDelayMs: 300,
+      cacheConfig: { enabled: true },
+    });
+  });
   it("should answer correctly for hasLane and delete lane", () => {
     let instance = new AsyncState("state-5", null);
     // expect(instance._source.removeLane()).toBe(false);

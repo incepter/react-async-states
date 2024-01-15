@@ -73,6 +73,18 @@ export interface BaseSource<TData, TArgs extends unknown[], TError> {
   patchConfig(
     partialConfig?: Partial<ProducerConfig<TData, TArgs, TError>>
   ): void;
+  patchConfig(
+    updater?: (
+      config: Partial<ProducerConfig<TData, TArgs, TError>>
+    ) => Partial<ProducerConfig<TData, TArgs, TError>>
+  ): void;
+  patchConfig(
+    updater?:
+      | Partial<ProducerConfig<TData, TArgs, TError>>
+      | ((
+          config: Partial<ProducerConfig<TData, TArgs, TError>>
+        ) => Partial<ProducerConfig<TData, TArgs, TError>>)
+  ): void;
 
   getConfig(): ProducerConfig<TData, TArgs, TError>;
 
