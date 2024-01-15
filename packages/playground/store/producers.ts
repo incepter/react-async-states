@@ -18,15 +18,6 @@ type Credentials = {
   password: string;
 };
 
-class APIError extends Error {
-  public data: unknown;
-
-  constructor(data: unknown) {
-    super();
-    this.data = data;
-  }
-}
-
 export const fetchUsers = async ({
   signal,
   args,
@@ -55,7 +46,7 @@ export const login = async ({
 }: ProducerProps<User, [Credentials], Promise<any>>) => {
   const [credentials] = args;
   const url = "https://dummyjson.com/auth/login";
-  console.log(credentials);
+
   const response = await fetch(url, {
     signal,
     cache: "no-store",

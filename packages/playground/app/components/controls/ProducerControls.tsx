@@ -15,6 +15,7 @@ export default function ProducerControls({
   const instanceMetadata = instance.payload as {
     method: "GET" | "POST";
     args: Record<string, unknown>;
+    hint?: string;
   };
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -62,6 +63,14 @@ export default function ProducerControls({
           );
         })}
       </div>
+      {instanceMetadata.hint && (
+        <div
+          className="text-foreground-secondary"
+          dangerouslySetInnerHTML={{
+            __html: instanceMetadata.hint,
+          }}
+        ></div>
+      )}
     </div>
   );
 }

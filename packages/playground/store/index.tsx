@@ -35,17 +35,19 @@ function buildInstances(
       fn: (props: AnyProducerProps) => Promise<any>;
       method: "GET" | "POST";
       args: Record<string, unknown>;
+      hint?: string;
     }
   >,
 ) {
   const instances: Record<string, AnyInstance> = {};
 
   for (const key in map) {
-    const mapData = map[key];
-    const instance = createSource(key, mapData.fn, defaultSourceConfig).inst;
+    const { fn, method, args, hint } = map[key];
+    const instance = createSource(key, fn, defaultSourceConfig).inst;
     instance.payload = {
-      args: mapData.args,
-      method: mapData.method,
+      args,
+      method,
+      hint,
     };
 
     instances[key] = instance;
@@ -71,6 +73,7 @@ const initialState = buildInstances({
       username: "",
       password: "",
     },
+    hint: "<p>Try these valid credentials: <b>kminchelle</b> / <b>0lelplR</b>.</p>",
   },
 });
 
