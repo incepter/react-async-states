@@ -19,11 +19,13 @@ const runEffectOptions = [
   },
 ];
 
-export default function RunEffectControlGroupInputs({
+export default function RunEffectPartialConfigControls({
   instance,
 }: {
   instance: AnyInstance;
 }) {
+  const instConfig = instance.config;
+
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-[repeat(auto-fit,minmax(6rem,1fr))] gap-2">
@@ -38,7 +40,7 @@ export default function RunEffectControlGroupInputs({
               });
             }}
             className="w-full"
-            defaultValue={instance.config.runEffect}
+            defaultValue={instConfig.runEffect}
             name="runEffect"
             placeholder="Select effect..."
           >
@@ -64,7 +66,7 @@ export default function RunEffectControlGroupInputs({
                 [e.target.name]: +e.target.value,
               });
             }}
-            defaultValue={instance.config.runEffectDurationMs}
+            defaultValue={instConfig.runEffectDurationMs}
           />
         </Form.Item>
       </div>

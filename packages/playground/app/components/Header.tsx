@@ -1,10 +1,10 @@
 "use client";
 
 import InstanceRunner from "./InstanceRunner";
-import { useCurrentInstance } from "@/hooks";
+import { useInstances } from "@/hooks";
 
 export default function Header() {
-  const { instance: currentInstance } = useCurrentInstance();
+  const { currentInstance } = useInstances();
 
   return (
     <div className="border-b border-foreground-secondary/20 bg-neutral p-4 text-sm">

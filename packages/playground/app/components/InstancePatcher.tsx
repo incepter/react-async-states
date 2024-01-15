@@ -6,20 +6,20 @@ import { clsxm } from "@/lib/utils";
 
 import ThemeToggleGroup from "./ThemeToggleGroup";
 import {
-  CacheControlGroupInputs,
-  PendingControlGroupInputs,
-  ProducerControlGroupInputs,
-  RunEffectControlGroupInputs,
-  SourceControlGroupInputs,
-} from "./group-inputs";
+  CachePartialConfigControls,
+  PendingPartialConfigControls,
+  ProducerControls,
+  RunEffectPartialConfigControls,
+  SourceControls,
+} from "./controls";
 import { AnyInstance } from "@/types/lib";
 
-interface ControlGroupProps extends CollapsibleProps {
+interface CollapsibleControlGroupProps extends CollapsibleProps {
   title: string;
   collapsable?: boolean;
 }
 
-function ControlGroup(props: ControlGroupProps) {
+function CollapsibleControlGroup(props: CollapsibleControlGroupProps) {
   const { title, children, className, collapsable, defaultOpen, ...rest } =
     props;
 
@@ -59,40 +59,42 @@ function ControlGroup(props: ControlGroupProps) {
 /*                               Main Component                               */
 /* -------------------------------------------------------------------------- */
 
-export default function InstanceConfigPatcher({
+export default function InstancePatcher({
   instance,
 }: {
   instance: AnyInstance;
 }) {
+  const instConfig = instance.config;
+
   return (
     <div>
       <ThemeToggleGroup />
 
-      <ControlGroup title="Source">
-        <SourceControlGroupInputs instance={instance} />
-      </ControlGroup>
+      <CollapsibleControlGroup title="Source">
+        <SourceControls instance={instance} />
+      </CollapsibleControlGroup>
 
-      <ControlGroup title="Producer">
-        <ProducerControlGroupInputs instance={instance} />
-      </ControlGroup>
+      <CollapsibleControlGroup title="Producer">
+        <ProducerControls instance={instance} />
+      </CollapsibleControlGroup>
 
-      <ControlGroup
+      <CollapsibleControlGroup
         collapsable
         title="Pending (ms)"
-        defaultOpen={!instance.config.skipPendingStatus}
+        defaultOpen={!instConfig.skipPendingStatus}
         onOpenChange={(open) => {
           instance.actions.patchConfig({
             skipPendingStatus: !open,
           });
         }}
       >
-        <PendingControlGroupInputs instance={instance} />
-      </ControlGroup>
+        <PendingPartialConfigControls instance={instance} />
+      </CollapsibleControlGroup>
 
-      <ControlGroup
+      <CollapsibleControlGroup
         collapsable
         title="Run effect"
-        defaultOpen={!!instance.config.runEffect}
+        defaultOpen={!!instConfig.runEffect}
         onOpenChange={(open) => {
           if (!open) {
             instance.actions.patchConfig({
@@ -101,23 +103,24 @@ export default function InstanceConfigPatcher({
           }
         }}
       >
-        <RunEffectControlGroupInputs instance={instance} />
-      </ControlGroup>
+        <RunEffectPartialConfigControls instance={instance} />
+      </CollapsibleControlGroup>
 
-      <ControlGroup
+      <CollapsibleControlGroup
         collapsable
         title="Cache"
-        defaultOpen={!!instance.config.cacheConfig?.enabled}
+        defaultOpen={!!instConfig.cacheConfig?.enabled}
         onOpenChange={(open) => {
           instance.actions.patchConfig({
             cacheConfig: {
+              ...instConfig.cacheConfig,
               enabled: open,
             },
           });
         }}
       >
-        <CacheControlGroupInputs instance={instance} />
-      </ControlGroup>
+        <CachePartialConfigControls instance={instance} />
+      </CollapsibleControlGroup>
     </div>
   );
 }

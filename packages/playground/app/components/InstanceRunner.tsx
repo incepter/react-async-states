@@ -9,28 +9,33 @@ export default function InstanceRunner({
 }: {
   instance: AnyInstance;
 }) {
+  const instanceMetadata = instance.payload as {
+    method: "GET" | "POST";
+    args: Record<string, unknown>;
+  };
+
   function handleRunClick() {
-    // TODO Args should be state
-    instance.actions.run({ _page: 1, _limit: 5 });
+    instance.actions.run(instanceMetadata.args);
   }
+
+  const stringify =
+    instanceMetadata.method === "GET" ? qs.stringify : JSON.stringify;
 
   return (
     <div className="flex items-stretch gap-2">
       <div className="inline-flex flex-1 gap-2 overflow-hidden border border-foreground-secondary/20 px-2">
-        <Badge color="success" className="self-center">
-          GET
+        <Badge
+          color={instanceMetadata.method === "GET" ? "success" : "warning"}
+          className="self-center"
+        >
+          {instanceMetadata.method}
         </Badge>
         <div className="flex items-center overflow-auto whitespace-nowrap">
           <code>
-            <span className="text-foreground-secondary">--params</span>{" "}
-            <span>{qs.stringify({ _page: 1, _limit: 5 })}</span>{" "}
-            <span className="text-foreground-secondary">--body</span>{" "}
-            <span>
-              {JSON.stringify({
-                username: "hello",
-                password: "pa$$word",
-              })}
-            </span>
+            <span className="text-foreground-secondary">
+              --{instanceMetadata.method === "GET" ? "params" : "body"}
+            </span>{" "}
+            <span>{stringify(instanceMetadata.args)}</span>
           </code>
         </div>
       </div>

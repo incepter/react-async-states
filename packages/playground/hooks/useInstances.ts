@@ -1,16 +1,13 @@
-import { useState } from "react";
+import { useContext } from "react";
+
+import { InstancesContext } from "@/store";
 
 export default function useInstances() {
-  const [instances] = useState({
-    users: {
-      key: "users",
-    },
-    addUser: {
-      key: "addUser",
-    },
-  });
+  const instancesCtx = useContext(InstancesContext);
 
-  return {
-    instances,
-  };
+  if (!instancesCtx) {
+    throw new Error("You forgot to wrap your app with `InstancesProvider`");
+  }
+
+  return instancesCtx;
 }

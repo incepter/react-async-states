@@ -8,12 +8,11 @@ import { setInstanceStateAndNotifySubscribers } from "@/lib/state";
 
 import { AnyInstance, AnyProducerConfig, AnyState } from "@/types/lib";
 
-import { RadiobuttonIcon } from "@radix-ui/react-icons";
-
 interface StateSnapshot {
   key: string;
   state: AnyState;
   config: AnyProducerConfig;
+  sourceKey: string;
 }
 
 export default function InstanceTracker({
@@ -30,6 +29,7 @@ export default function InstanceTracker({
         key: "stateSnapshot$" + randomKey(),
         state: newState,
         config: { ...instance.config },
+        sourceKey: instance.key,
       };
 
       setSnapshots((prev) => [snapshot, ...prev]);
@@ -61,20 +61,24 @@ export default function InstanceTracker({
         }
       }}
     >
-      {snapshots.map(({ key, state }) => (
+      {snapshots.map(({ key, sourceKey, state }) => (
         <ToggleGroup.Item
           value={key}
-          className="group flex flex-col items-center gap-2 p-4 duration-[500ms]"
+          className="group text-sm duration-[500ms]"
           key={key}
           onClick={() => setInstanceStateAndNotifySubscribers(instance, state)}
         >
-          <RadiobuttonIcon className="w-5 text-primary group-data-[state='off']:text-foreground-secondary" />
-          <span className="whitespace-nowrap text-sm text-foreground-secondary">
-            {new Date(state.timestamp).toLocaleTimeString()}
-          </span>
-          <Badge color={getColorForStateStatus(state.status)}>
-            {state.status}
-          </Badge>
+          <div className="border-b border-foreground-secondary/20 px-4 py-1 group-data-[state='off']:text-foreground-secondary">
+            {sourceKey}
+          </div>
+          <div className="flex flex-col items-center gap-2 p-4">
+            <span className="whitespace-nowrap text-foreground-secondary">
+              {new Date(state.timestamp).toLocaleTimeString()}
+            </span>
+            <Badge color={getColorForStateStatus(state.status)}>
+              {state.status}
+            </Badge>
+          </div>
         </ToggleGroup.Item>
       ))}
     </ToggleGroup>

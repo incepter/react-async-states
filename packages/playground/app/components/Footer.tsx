@@ -1,10 +1,10 @@
 "use client";
 
 import InstanceTracker from "./InstanceTracker";
-import { useCurrentInstance } from "@/hooks";
+import { useInstances } from "@/hooks";
 
 export default function StateTimeline() {
-  const { instance: currentInstance } = useCurrentInstance();
+  const { currentInstance } = useInstances();
 
   return (
     <div className="border-t border-foreground-secondary/20 bg-neutral">
