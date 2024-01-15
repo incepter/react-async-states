@@ -1,6 +1,5 @@
 import dts from "vite-plugin-dts";
 import { defineConfig } from "vite";
-import replace from "@rollup/plugin-replace";
 
 import react from "@vitejs/plugin-react";
 import vitePluginImp from "vite-plugin-imp";
@@ -22,6 +21,7 @@ export default defineConfig({
         "react-dom",
         "react-async-states",
         "async-states",
+        "react-json-view",
       ],
       output: {
         globals: {
@@ -30,6 +30,7 @@ export default defineConfig({
           "async-states": "AsyncStates",
           "react/jsx-runtime": "jsxRuntime",
           "react-async-states": "ReactAsyncStates",
+          "react-json-view": "ReactJsonView",
         },
       },
     },
