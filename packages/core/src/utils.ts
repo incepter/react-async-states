@@ -18,14 +18,6 @@ export function isPromise(candidate: any) {
   return !!candidate && isFunction(candidate.then);
 }
 
-export function isGenerator<TData = unknown>(
-  candidate: any
-): candidate is Generator<any, TData, any> {
-  return (
-    !!candidate && isFunction(candidate.next) && isFunction(candidate.throw)
-  );
-}
-
 export function isFunction(fn: any): fn is Function {
   return typeof fn === "function";
 }

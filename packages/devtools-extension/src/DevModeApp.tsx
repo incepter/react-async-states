@@ -1,4 +1,5 @@
 import * as React from "react";
+import "./index.css";
 import { createSource, useAsync } from "react-async-states";
 import { ProducerProps } from "async-states";
 

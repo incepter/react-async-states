@@ -141,10 +141,10 @@ importers:
         specifier: ^2.2.0
         version: 2.2.0(vite@3.2.7)
       async-states:
-        specifier: workspace:^2.0.0-beta-5
+        specifier: workspace:^2.0.0-beta-6
         version: link:../core
       react-async-states:
-        specifier: workspace:^2.0.0-beta-5
+        specifier: workspace:^2.0.0-beta-6
         version: link:../react-async-states
       rollup-plugin-copy:
         specifier: ^3.4.0
@@ -359,7 +359,7 @@ importers:
         specifier: 18.0.25
         version: 18.0.25
       async-states:
-        specifier: workspace:^2.0.0-beta-5
+        specifier: workspace:^2.0.0-beta-6
         version: link:../core
       babel-jest:
         specifier: ^29.3.1

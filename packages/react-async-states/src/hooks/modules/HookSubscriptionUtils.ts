@@ -97,15 +97,16 @@ function removeHookConfigToPatchToSource<
   // - events
   // and other properties that can be retrieved from hooks usage and others
   // so we are tearing them apart before merging
-  let output = { ...currentConfig };
-
-  delete output.lazy;
-  delete output.events;
-  delete output.source;
-  delete output.payload;
-  delete output.concurrent;
-  delete output.autoRunArgs;
-  delete output.subscriptionKey;
+  let {
+    lazy,
+    events,
+    source,
+    payload,
+    concurrent,
+    autoRunArgs,
+    subscriptionKey,
+    ...output
+  } = currentConfig;
 
   return output;
 }
@@ -156,7 +157,7 @@ export function __DEV__warnInDevAboutIncompatibleConfig(
     if (key) {
       console.error(
         `[Warning][async-states] Subscription in component ${subscription.at} ` +
-        `has a 'source' and 'key' as the same time, 'key' has no effect.`
+          `has a 'source' and 'key' as the same time, 'key' has no effect.`
       );
       return;
     }

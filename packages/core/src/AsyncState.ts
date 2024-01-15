@@ -63,7 +63,7 @@ export class AsyncState<TData, TArgs extends unknown[], TError>
   readonly ctx: LibraryContext | null;
 
   // used only in __DEV__ mode
-  journal?: any[];
+  journal?: any[] | null  = null;
 
   // this contains all methods, such as getState, setState and so on
   actions: Source<TData, TArgs, TError>;
@@ -72,29 +72,29 @@ export class AsyncState<TData, TArgs extends unknown[], TError>
   key: string;
   version: number = 0;
   config: ProducerConfig<TData, TArgs, TError>;
-  payload: Record<string, any> | null;
-  cache: Record<string, CachedState<TData, TArgs, TError>> | null;
+  payload: Record<string, any> | null = null;
+  cache: Record<string, CachedState<TData, TArgs, TError>> | null = null;
 
-  parent: StateInterface<TData, TArgs, TError> | null;
-  lanes: Record<string, StateInterface<TData, TArgs, TError>> | null;
+  parent: StateInterface<TData, TArgs, TError> | null = null;
+  lanes: Record<string, StateInterface<TData, TArgs, TError>> | null = null;
 
   state: State<TData, TArgs, TError>;
-  queue: UpdateQueue<TData, TArgs, TError> | null;
-  latestRun: RunTask<TData, TArgs, TError> | null;
+  queue: UpdateQueue<TData, TArgs, TError> | null = null;
+  latestRun: RunTask<TData, TArgs, TError> | null = null;
   lastSuccess: LastSuccessSavedState<TData, TArgs>;
 
-  promise: PromiseLike<TData, TError> | null;
-  currentAbort: AbortFn | null;
-  fn: Producer<TData, TArgs, TError> | null;
+  promise: PromiseLike<TData, TError> | null = null;
+  currentAbort: AbortFn | null = null;
+  fn: Producer<TData, TArgs, TError> | null = null;
 
-  pendingUpdate: PendingUpdate | null;
-  pendingTimeout: PendingTimeout | null;
+  pendingUpdate: PendingUpdate | null = null;
+  pendingTimeout: PendingTimeout | null = null;
 
-  subsIndex: number | null;
-  subscriptions: Record<number, StateSubscription<TData, TArgs, TError>> | null;
+  subsIndex: number | null = null;
+  subscriptions: Record<number, StateSubscription<TData, TArgs, TError>> | null = null;
 
-  eventsIndex: number | null;
-  events: InstanceEvents<TData, TArgs, TError> | null;
+  eventsIndex: number | null = null;
+  events: InstanceEvents<TData, TArgs, TError> | null = null;
 
   constructor(
     key: string,
@@ -149,21 +149,6 @@ export class AsyncState<TData, TArgs extends unknown[], TError>
     this.config = instanceConfig;
     this.actions = new StateSource(this);
 
-    this.lanes = null;
-    this.queue = null;
-    this.cache = null;
-    this.events = null;
-    this.parent = null;
-    this.promise = null;
-    this.payload = null;
-    this.latestRun = null;
-    this.subsIndex = null;
-    this.eventsIndex = null;
-    this.currentAbort = null;
-    this.subscriptions = null;
-    this.pendingUpdate = null;
-    this.pendingTimeout = null;
-
     // this function will loadCache if applied and also attempt
     // hydrated data if existing and also set the initial state
     // it was moved from here for simplicity and keep the constructor readable
@@ -184,63 +169,21 @@ export class StateSource<TData, TArgs extends unknown[], TError>
     this.inst = instance;
     this.key = instance.key;
     this.uniqueId = instance.id;
-
-    this.on = this.on.bind(this);
-    this.run = this.run.bind(this);
-    this.runp = this.runp.bind(this);
-    this.runc = this.runc.bind(this);
-    this.abort = this.abort.bind(this);
-    this.replay = this.replay.bind(this);
-    this.hasLane = this.hasLane.bind(this);
-    this.getState = this.getState.bind(this);
-    this.setData = this.setData.bind(this);
-    this.setState = this.setState.bind(this);
-    this.getConfig = this.getConfig.bind(this);
-    this.subscribe = this.subscribe.bind(this);
-    this.getPayload = this.getPayload.bind(this);
-    this.removeLane = this.removeLane.bind(this);
-    this.getVersion = this.getVersion.bind(this);
-    this.patchConfig = this.patchConfig.bind(this);
-    this.mergePayload = this.mergePayload.bind(this);
-    this.replaceCache = this.replaceCache.bind(this);
-    this.getLane = this.getLane.bind(this);
-    this.invalidateCache = this.invalidateCache.bind(this);
-    this.replaceProducer = this.replaceProducer.bind(this);
   }
 
-  getState(): State<TData, TArgs, TError> {
+  getState = (): State<TData, TArgs, TError> => {
     return this.inst.state;
-  }
+  };
 
-  replaceState(
+  replaceState = (
     newState: State<TData, TArgs, TError>,
     notify: boolean = true,
     callbacks?: ProducerCallbacks<TData, TArgs, TError>
-  ): void {
+  ): void => {
     replaceInstanceState(this.inst, newState, notify, callbacks);
-  }
+  };
 
-  setState(
-    noData: StateFunctionUpdater<TData, TArgs, TError> | TData,
-    status: "initial",
-    callbacks?: ProducerCallbacks<TData, TArgs, TError>
-  ): void;
-  setState(
-    noData: null,
-    status: "pending",
-    callbacks?: ProducerCallbacks<TData, TArgs, TError>
-  ): void;
-  setState(
-    error: TError,
-    status: "error",
-    callbacks?: ProducerCallbacks<TData, TArgs, TError>
-  ): void;
-  setState(
-    noData: StateFunctionUpdater<TData, TArgs, TError> | TData,
-    status?: "success",
-    callbacks?: ProducerCallbacks<TData, TArgs, TError>
-  ): void;
-  setState(
+  setState = (
     newValue:
       | TData
       | StateFunctionUpdater<TData, TArgs, TError>
@@ -248,38 +191,26 @@ export class StateSource<TData, TArgs extends unknown[], TError>
       | TError,
     status: Status = success,
     callbacks?: ProducerCallbacks<TData, TArgs, TError>
-  ): void {
+  ): void => {
     setInstanceState(this.inst, newValue, status, callbacks);
-  }
+  };
 
-  setData(newData: TData | ((prev: TData | null) => TData)): void {
+  setData = (newData: TData | ((prev: TData | null) => TData)): void => {
     setInstanceData(this.inst, newData);
-  }
+  };
 
-  on(
-    eventType: InstanceChangeEvent,
-    eventHandler: InstanceChangeEventHandlerType<TData, TArgs, TError>
-  ): () => void;
-  on(
-    eventType: InstanceDisposeEvent,
-    eventHandler: InstanceDisposeEventHandlerType<TData, TArgs, TError>
-  ): () => void;
-  on(
-    eventType: InstanceCacheChangeEvent,
-    eventHandler: InstanceCacheChangeEventHandlerType<TData, TArgs, TError>
-  ): () => void;
-  on(
+  on = (
     eventType: InstanceEventType,
     eventHandler: InstanceEventHandlerType<TData, TArgs, TError>
-  ): () => void {
+  ): (() => void) => {
     return subscribeToInstanceEvent(this.inst, eventType, eventHandler);
-  }
+  };
 
-  run(...args: TArgs) {
+  run = (...args: TArgs) => {
     return this.inst.actions.runc({ args });
-  }
+  };
 
-  runp(...args: TArgs) {
+  runp = (...args: TArgs) => {
     let instance = this.inst;
     return new Promise<State<TData, TArgs, TError>>(function runpInstance(
       resolve
@@ -292,21 +223,21 @@ export class StateSource<TData, TArgs extends unknown[], TError>
 
       runcInstance(instance, runcProps);
     });
-  }
+  };
 
-  runc(props?: RUNCProps<TData, TArgs, TError>) {
+  runc = (props?: RUNCProps<TData, TArgs, TError>) => {
     let instance = this.inst;
     return runcInstance(instance, props);
-  }
+  };
 
-  abort(reason: any = undefined) {
+  abort = (reason: any = undefined) => {
     let abortFn = this.inst.currentAbort;
     if (isFunction(abortFn)) {
       abortFn(reason);
     }
-  }
+  };
 
-  replay(): AbortFn {
+  replay = (): AbortFn => {
     let instance = this.inst;
     let latestRunTask = instance.latestRun;
     if (!latestRunTask) {
@@ -315,9 +246,9 @@ export class StateSource<TData, TArgs extends unknown[], TError>
     let { args, payload } = latestRunTask;
 
     return runInstanceImmediately(instance, payload, { args });
-  }
+  };
 
-  invalidateCache(cacheKey?: string) {
+  invalidateCache = (cacheKey?: string) => {
     let instance = this.inst;
     if (hasCacheEnabled(instance)) {
       const topLevelParent: StateInterface<TData, TArgs, TError> =
@@ -331,12 +262,12 @@ export class StateSource<TData, TArgs extends unknown[], TError>
 
       persistAndSpreadCache(instance);
     }
-  }
+  };
 
-  replaceCache(
+  replaceCache = (
     cacheKey: string,
     cache: CachedState<TData, TArgs, TError>
-  ): void {
+  ): void => {
     let instance = this.inst;
     if (!hasCacheEnabled(instance)) {
       return;
@@ -347,25 +278,25 @@ export class StateSource<TData, TArgs extends unknown[], TError>
     }
     topLevelParent.cache[cacheKey] = cache;
     spreadCacheChangeOnLanes(topLevelParent);
-  }
+  };
 
-  hasLane(laneKey: string): boolean {
+  hasLane = (laneKey: string): boolean => {
     let instance = this.inst;
     if (!instance.lanes) {
       return false;
     }
     return !!instance.lanes[laneKey];
-  }
+  };
 
-  removeLane(laneKey?: string): boolean {
+  removeLane = (laneKey?: string): boolean => {
     let instance = this.inst;
     if (!instance.lanes || !laneKey) {
       return false;
     }
     return delete instance.lanes[laneKey];
-  }
+  };
 
-  getLane(laneKey?: string): Source<TData, TArgs, TError> {
+  getLane = (laneKey?: string): Source<TData, TArgs, TError> => {
     if (!laneKey) {
       return this;
     }
@@ -388,61 +319,61 @@ export class StateSource<TData, TArgs extends unknown[], TError>
     instance.lanes[laneKey] = newLane;
 
     return newLane.actions;
-  }
+  };
 
-  getVersion(): number {
+  getVersion = (): number => {
     return this.inst.version;
-  }
+  };
 
-  getConfig(): ProducerConfig<TData, TArgs, TError> {
+  getConfig = (): ProducerConfig<TData, TArgs, TError> => {
     return this.inst.config;
-  }
+  };
 
-  patchConfig(partialConfig?: Partial<ProducerConfig<TData, TArgs, TError>>) {
+  patchConfig = (
+    partialConfig?: Partial<ProducerConfig<TData, TArgs, TError>>
+  ) => {
     Object.assign(this.inst.config, partialConfig);
-  }
+  };
 
-  getPayload(): Record<string, any> {
+  getPayload = (): Record<string, any> => {
     let instance = this.inst;
     if (!instance.payload) {
       instance.payload = {};
     }
     return instance.payload;
-  }
+  };
 
-  mergePayload(partialPayload?: Record<string, any>): void {
+  mergePayload = (partialPayload?: Record<string, any>): void => {
     let instance = this.inst;
     if (!instance.payload) {
       instance.payload = {};
     }
     instance.payload = Object.assign(instance.payload, partialPayload);
-  }
+  };
 
-  dispose() {
+  dispose = () => {
     return disposeInstance(this.inst);
-  }
+  };
 
-  replaceProducer(newProducer: Producer<TData, TArgs, TError> | null) {
+  replaceProducer = (newProducer: Producer<TData, TArgs, TError> | null) => {
     this.inst.fn = newProducer;
-  }
+  };
 
-  subscribe(cb: (s: State<TData, TArgs, TError>) => void): AbortFn;
-  subscribe(subProps: AsyncStateSubscribeProps<TData, TArgs, TError>): AbortFn;
-  subscribe(
+  subscribe = (
     argv:
       | ((s: State<TData, TArgs, TError>) => void)
       | AsyncStateSubscribeProps<TData, TArgs, TError>
-  ): AbortFn {
+  ): AbortFn => {
     return subscribeToInstance(this.inst, argv);
-  }
+  };
 
-  getAllLanes() {
+  getAllLanes = () => {
     let instance = this.inst;
     if (!instance.lanes) {
       return [];
     }
     return Object.values(instance.lanes).map((lane) => lane.actions);
-  }
+  };
 }
 
 export function getSource<TData, TArgs extends unknown[], TError>(

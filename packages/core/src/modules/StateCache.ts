@@ -124,7 +124,7 @@ export function saveCacheAfterSuccessfulUpdate<
     let cachedState = (topLevelParent.cache[runHash] = {
       deadline,
       state: state,
-      addedAt: Date.now(),
+      addedAt: now(),
     } as CachedState<TData, TArgs, TError>);
 
     // avoid infinity deadline timeouts
