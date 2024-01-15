@@ -2,7 +2,7 @@ import Skeleton from "react-loading-skeleton";
 
 import { Form, Input } from "@/components";
 
-// import { useIsMounted } from "@/hooks";
+import { useIsMounted } from "@/hooks";
 import { AnyInstance } from "@/types/lib";
 
 export default function ProducerControls({
@@ -10,7 +10,7 @@ export default function ProducerControls({
 }: {
   instance: AnyInstance;
 }) {
-  // const isMounted = useIsMounted();
+  const isMounted = useIsMounted();
 
   const instanceMetadata = instance.payload as {
     method: "GET" | "POST";
@@ -34,16 +34,16 @@ export default function ProducerControls({
         label="Function"
         link="https://incepter.github.io/react-async-states/docs/api/producer-function"
       >
-        {/* {!isMounted ? (
+        {!isMounted ? (
           <Skeleton className="h-8 animate-pulse leading-[inherit]" />
-        ) : ( */}
-        <Input
-          disabled
-          className="w-full"
-          name="function"
-          value={instance.fn?.name}
-        />
-        {/* )} */}
+        ) : (
+          <Input
+            disabled
+            className="w-full"
+            name="function"
+            value={instance.fn?.name}
+          />
+        )}
       </Form.Item>{" "}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(6rem,1fr))] gap-2">
         {Object.entries(instanceMetadata.args).map((arg, index) => {

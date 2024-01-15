@@ -3,7 +3,7 @@ import Skeleton from "react-loading-skeleton";
 
 import { Form, Select } from "@/components";
 
-import { useInstances } from "@/hooks";
+import { useInstances, useIsMounted } from "@/hooks";
 import { AnyInstance } from "@/types/lib";
 
 export default function SourceControls({
@@ -11,7 +11,7 @@ export default function SourceControls({
 }: {
   instance: AnyInstance;
 }) {
-  // const isMounted = useIsMounted();
+  const isMounted = useIsMounted();
   const { instances, setCurrentInstanceKey } = useInstances();
 
   function handleValueChange(value: string) {
@@ -23,22 +23,22 @@ export default function SourceControls({
       label="Key"
       link="https://incepter.github.io/react-async-states/docs/api/create-source#the-source"
     >
-      {/* {!isMounted ? (
+      {!isMounted ? (
         <Skeleton className="h-8 animate-pulse leading-[inherit]" />
-      ) : ( */}
-      <Select
-        onValueChange={handleValueChange}
-        value={instance.key}
-        className="w-full"
-        name="key"
-      >
-        {Object.values(instances).map(({ key }) => (
-          <Select.Item key={key} value={key}>
-            {key}
-          </Select.Item>
-        ))}
-      </Select>
-      {/* )} */}
+      ) : (
+        <Select
+          onValueChange={handleValueChange}
+          value={instance.key}
+          className="w-full"
+          name="key"
+        >
+          {Object.values(instances).map(({ key }) => (
+            <Select.Item key={key} value={key}>
+              {key}
+            </Select.Item>
+          ))}
+        </Select>
+      )}
     </Form.Item>
   );
 }
