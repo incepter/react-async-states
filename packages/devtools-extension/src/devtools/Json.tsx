@@ -1,5 +1,5 @@
 import * as React from "react";
-import ReactJson from "react-json-view";
+const ReactJson = require('react-json-view').default;
 
 const JsonView = React.memo(Json);
 

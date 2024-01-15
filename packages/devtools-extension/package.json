@@ -1,7 +1,7 @@
 {
   "sideEffects": false,
   "types": "dist/index",
-  "version": "2.0.0-beta-7",
+  "version": "2.0.0-beta-8",
   "main": "dist/index.umd.js",
   "name": "async-states-devtools",
   "module": "dist/index.development.mjs",
@@ -22,8 +22,8 @@
   },
   "peerDependencies": {
     "react-json-view": "^1.21.3",
-    "async-states": "^2.0.0-beta-7",
-    "react-async-states": "^2.0.0-beta-7"
+    "async-states": "^2.0.0-beta-8",
+    "react-async-states": "^2.0.0-beta-8"
   },
   "devDependencies": {
     "@rollup/plugin-replace": "^5.0.1",
@@ -31,8 +31,8 @@
     "@types/react": "^18.0.24",
     "@types/react-dom": "^18.0.8",
     "@vitejs/plugin-react": "^2.2.0",
-    "async-states": "workspace:^2.0.0-beta-7",
-    "react-async-states": "workspace:^2.0.0-beta-7",
+    "async-states": "workspace:^2.0.0-beta-8",
+    "react-async-states": "workspace:^2.0.0-beta-8",
     "rollup-plugin-copy": "^3.4.0",
     "typescript": "^4.6.4",
     "vite": "^3.2.3",
