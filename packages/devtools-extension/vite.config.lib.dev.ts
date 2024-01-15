@@ -2,7 +2,6 @@ import dts from "vite-plugin-dts";
 import { defineConfig } from "vite";
 
 import react from "@vitejs/plugin-react";
-import vitePluginImp from "vite-plugin-imp";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -17,20 +16,20 @@ export default defineConfig({
     rollupOptions: {
       external: [
         "react",
-        "react/jsx-runtime",
         "react-dom",
-        "react-async-states",
         "async-states",
         "react-json-view",
+        "react/jsx-runtime",
+        "react-async-states",
       ],
       output: {
         globals: {
           react: "React",
           "react-dom": "ReactDOM",
           "async-states": "AsyncStates",
+          "react-json-view": "ReactJson",
           "react/jsx-runtime": "jsxRuntime",
           "react-async-states": "ReactAsyncStates",
-          "react-json-view": "ReactJsonView",
         },
       },
     },
@@ -38,16 +37,7 @@ export default defineConfig({
 
   plugins: [
     dts(),
-    react(),
-    vitePluginImp({
-      libList: [
-        {
-          libName: "antd",
-          libDirectory: "lib",
-          style: (name) => `antd/es/${name}/style`,
-        },
-      ],
-    }),
+    react()
   ],
   css: {
     preprocessorOptions: {

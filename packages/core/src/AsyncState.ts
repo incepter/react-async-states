@@ -63,7 +63,7 @@ export class AsyncState<TData, TArgs extends unknown[], TError>
   readonly ctx: LibraryContext | null;
 
   // used only in __DEV__ mode
-  journal?: any[] | null  = null;
+  journal?: any[] | null = null;
 
   // this contains all methods, such as getState, setState and so on
   actions: Source<TData, TArgs, TError>;
@@ -91,7 +91,10 @@ export class AsyncState<TData, TArgs extends unknown[], TError>
   pendingTimeout: PendingTimeout | null = null;
 
   subsIndex: number | null = null;
-  subscriptions: Record<number, StateSubscription<TData, TArgs, TError>> | null = null;
+  subscriptions: Record<
+    number,
+    StateSubscription<TData, TArgs, TError>
+  > | null = null;
 
   eventsIndex: number | null = null;
   events: InstanceEvents<TData, TArgs, TError> | null = null;
@@ -330,9 +333,18 @@ export class StateSource<TData, TArgs extends unknown[], TError>
   };
 
   patchConfig = (
-    partialConfig?: Partial<ProducerConfig<TData, TArgs, TError>>
+    updater?:
+      | Partial<ProducerConfig<TData, TArgs, TError>>
+      | ((
+          config: Partial<ProducerConfig<TData, TArgs, TError>>
+        ) => Partial<ProducerConfig<TData, TArgs, TError>>)
   ) => {
-    Object.assign(this.inst.config, partialConfig);
+    let currentConfig = this.inst.config;
+    if (typeof updater === "function") {
+      this.inst.config = { ...currentConfig, ...updater(currentConfig) };
+    } else {
+      this.inst.config = { ...currentConfig, ...updater };
+    }
   };
 
   getPayload = (): Record<string, any> => {

@@ -14,13 +14,13 @@ export function Json({
 }) {
   return (
     <ReactJson
+      src={src}
       name={name}
       theme="solarized"
       collapsed={level}
+      enableClipboard={false}
       displayDataTypes={false}
       displayObjectSize={false}
-      enableClipboard={false}
-      src={src}
     />
   );
 }

@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import "./css-v2.css";
 import DevModeApp from "./DevModeApp";
 import { __DEV__ } from "./utils";
-import { autoConfigureDevtools, Devtools } from "./devtools";
+import { autoConfigureDevtools } from "./devtools";
 
 autoConfigureDevtools({ open: true });
 
