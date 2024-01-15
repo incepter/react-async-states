@@ -15,7 +15,7 @@ export default function ProducerControls({
   const instanceMetadata = instance.payload as {
     method: "GET" | "POST";
     args: Record<string, unknown>;
-    hint?: string;
+    validSample?: object;
   };
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -63,13 +63,13 @@ export default function ProducerControls({
           );
         })}
       </div>
-      {instanceMetadata.hint && (
-        <div
-          className="text-foreground-secondary"
-          dangerouslySetInnerHTML={{
-            __html: instanceMetadata.hint,
-          }}
-        ></div>
+      {instanceMetadata.validSample && (
+        <div className="space-y-2 text-foreground-secondary">
+          <div>Try this:</div>
+          <pre className="text-foreground-primary">
+            {JSON.stringify(instanceMetadata.validSample, null, 2)}
+          </pre>
+        </div>
       )}
     </div>
   );
