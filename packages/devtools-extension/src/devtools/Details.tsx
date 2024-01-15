@@ -3,7 +3,7 @@ import { AnyInstance } from "./NpmDevtools";
 import { State, useAsync, useData } from "react-async-states";
 import { useDevtoolsAgent } from "./Context";
 import { devtoolsSubscriptionKey } from "./constants";
-import JsonView, { Json } from "../_legacy/Json";
+import JsonView, { Json } from "./Json";
 import { Status } from "async-states";
 
 export function CurrentInstanceDetails_Internal() {
