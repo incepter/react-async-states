@@ -1,0 +1,83 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@layer base {
+  :root {
+    --color-foreground-primary: 222.2 47.4% 11.2%;
+    --color-foreground-secondary: 215.4 16.3% 46.9%;
+
+    --color-background-default: 210 40% 98%;
+
+    --color-neutral-default: 210 40% 96.1%;
+
+    --color-primary-default: 243.4 75.4% 58.6%;
+    --color-primary-light: 238.7 83.5% 66.7%;
+    --color-primary-dark: 244.5 57.9% 50.6%;
+    --color-primary-contrast-text: 0 0% 100%;
+
+    --color-error-default: 0 72.2% 50.6%;
+    --color-error-light: 0 84.2% 60.2%;
+    --color-error-dark: 0 73.7% 41.8%;
+    --color-error-contrast-text: 0 0% 100%;
+
+    --color-warning-default: 32.1 94.6% 43.7%;
+    --color-warning-light: 37.7 92.1% 50.2%;
+    --color-warning-dark: 26 90.5% 37.1%;
+    --color-warning-contrast-text: 0 0% 100%;
+
+    --color-info-default: 221.2 83.2% 53.3%;
+    --color-info-light: 217.2 91.2% 59.8%;
+    --color-info-dark: 224.3 76.3% 48%;
+    --color-info-contrast-text: 0 0% 100%;
+
+    --color-success-default: 142.1 76.2% 36.3%;
+    --color-success-light: 142.1 70.6% 45.3%;
+    --color-success-dark: 142.4 71.8% 29.2%;
+    --color-success-contrast-text: 0 0% 100%;
+  }
+
+  [data-theme="dark"] {
+    --color-foreground-primary: 210 40% 98%;
+    --color-foreground-secondary: 215 20.2% 65.1%;
+
+    --color-background-default: 222.2 47.4% 11.2%;
+
+    --color-neutral-default: 217.2 32.6% 17.5%;
+
+    --color-primary-default: 229.7 93.5% 81.8%;
+    --color-primary-light: 228 96.5% 88.8%;
+    --color-primary-dark: 234.5 89.5% 73.9%;
+    --color-primary-contrast-text: 0 0% 0%;
+
+    --color-error-default: 0 93.5% 81.8%;
+    --color-error-light: 0 96.3% 89.4%;
+    --color-error-dark: 0 90.6% 70.8%;
+    --color-error-contrast-text: 0 0% 0%;
+
+    --color-warning-default: 45.9 96.7% 64.5%;
+    --color-warning-light: 48 96.6% 76.7%;
+    --color-warning-dark: 43.3 96.4% 56.3%;
+    --color-warning-contrast-text: 0 0% 0%;
+
+    --color-info-default: 211.7 96.4% 78.4%;
+    --color-info-light: 213.3 96.9% 87.3%;
+    --color-info-dark: 213.1 93.9% 67.8%;
+    --color-info-contrast-text: 0 0% 0%;
+
+    --color-success-default: 141.7 76.6% 73.1%;
+    --color-success-light: 141 78.9% 85.1%;
+    --color-success-dark: 141.9 69.2% 58%;
+    --color-success-contrast-text: 0 0% 0%;
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground-primary;
+  }
+}

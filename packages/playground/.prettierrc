@@ -1,0 +1,19 @@
+{
+  "importOrder": [
+    "^next",
+    "^react",
+    "<THIRD_PARTY_MODULES>",
+    "^@/components(.*)$",
+    "^@/lib(.*)$",
+    "^./(.*)$",
+    "^.*icon.*$",
+    "^.*ui.*$",
+    "(.css|.scss|.less)$"
+  ],
+  "importOrderSeparation": true,
+  "importOrderSortSpecifiers": true,
+  "plugins": [
+    "@trivago/prettier-plugin-sort-imports",
+    "prettier-plugin-tailwindcss"
+  ]
+}

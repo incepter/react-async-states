@@ -1,0 +1,24 @@
+# system
+.DS_Store
+
+# git
+.git
+
+# editor
+.vscode
+.idea
+
+# build
+dist
+build
+
+# next.js
+tsconfig.tsbuildinfo
+.next
+
+# package managers
+node_modules
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+bun.lockb
