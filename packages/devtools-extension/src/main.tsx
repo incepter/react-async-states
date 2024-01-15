@@ -1,10 +1,9 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "./index.css";
 import "./css-v2.css";
 import DevModeApp from "./DevModeApp";
 import { __DEV__ } from "./utils";
-import { autoConfigureDevtools, Devtools } from "./v2";
+import { autoConfigureDevtools, Devtools } from "./devtools";
 
 autoConfigureDevtools({ open: true });
 
