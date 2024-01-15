@@ -1,5 +1,5 @@
 import * as React from "react";
-const ReactJson = require('react-json-view').default;
+import ReactJson from "react-json-view";
 
 const JsonView = React.memo(Json);
 
@@ -14,13 +14,13 @@ export function Json({
 }) {
   return (
     <ReactJson
+      src={src}
       name={name}
       theme="solarized"
       collapsed={level}
+      enableClipboard={false}
       displayDataTypes={false}
       displayObjectSize={false}
-      enableClipboard={false}
-      src={src}
     />
   );
 }
