@@ -68,7 +68,7 @@ export default function InstancePatcher({
 
   return (
     <div>
-      {/* <ThemeToggleGroup /> */}
+      <ThemeToggleGroup />
 
       <CollapsibleControlGroup title="Source">
         <SourceControls instance={instance} />
