@@ -1,3 +1,5 @@
+import { useAsync } from "react-async-states";
+
 import { Button, Form, Input, Switch } from "@/components";
 
 import { AnyInstance } from "@/types/lib";
@@ -7,7 +9,8 @@ export default function CachePartialConfigControls({
 }: {
   instance: AnyInstance;
 }) {
-  const instConfig = instance.config;
+  const { source } = useAsync(instance.actions, [instance]);
+  const instConfig = source.getConfig();
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value, type } = e.target;
