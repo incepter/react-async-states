@@ -1,17 +1,34 @@
-import Skeleton from "react-loading-skeleton";
+import { Button, Collapsible, Form, Input } from "@/components";
 
-import { Form, Input } from "@/components";
-
-import { useIsMounted } from "@/hooks";
 import { AnyInstance } from "@/types/lib";
+
+function CollapsibleProducerValidExample({ data }: { data: unknown }) {
+  const triggerText = "Toggle a valid example";
+
+  return (
+    <Collapsible className="border border-foreground-secondary/20 text-sm">
+      <Collapsible.Trigger asChild>
+        <Button className="w-full">{triggerText}</Button>
+      </Collapsible.Trigger>
+
+      <Collapsible.Content className="p-2">
+        <pre className="whitespace-pre-wrap">
+          {JSON.stringify(data, null, 2)}
+        </pre>
+      </Collapsible.Content>
+    </Collapsible>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*                               Main Component                               */
+/* -------------------------------------------------------------------------- */
 
 export default function ProducerControls({
   instance,
 }: {
   instance: AnyInstance;
 }) {
-  const isMounted = useIsMounted();
-
   const instanceMetadata = instance.payload as {
     method: "GET" | "POST";
     args: Record<string, unknown>;
@@ -35,17 +52,13 @@ export default function ProducerControls({
         label="Function"
         link="https://incepter.github.io/react-async-states/docs/api/producer-function"
       >
-        {!isMounted ? (
-          <Skeleton className="h-8 animate-pulse leading-[inherit]" />
-        ) : (
-          <Input
-            disabled
-            className="w-full"
-            name="function"
-            value={instance.fn?.name}
-          />
-        )}
-      </Form.Item>{" "}
+        <Input
+          disabled
+          className="w-full"
+          name="function"
+          value={instance.fn?.name}
+        />
+      </Form.Item>
       <div className="grid grid-cols-[repeat(auto-fit,minmax(6rem,1fr))] gap-2">
         {Object.entries(instanceMetadata.args).map((arg, index) => {
           const [key, value] = arg;
@@ -64,12 +77,7 @@ export default function ProducerControls({
         })}
       </div>
       {instanceMetadata.validSample && (
-        <div className="space-y-2 text-foreground-secondary">
-          <div>Try this:</div>
-          <pre className="text-foreground-primary">
-            {JSON.stringify(instanceMetadata.validSample, null, 2)}
-          </pre>
-        </div>
+        <CollapsibleProducerValidExample data={instanceMetadata.validSample} />
       )}
     </div>
   );
