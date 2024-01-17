@@ -10,6 +10,7 @@ export {
 } from "async-states";
 
 export { default as Provider } from "./provider/Provider";
+export { default as Hydration } from "./hooks/modules/HydrationComponent";
 
 export { createApplication } from "./application/Application";
 

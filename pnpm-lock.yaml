@@ -150,8 +150,8 @@ importers:
         specifier: ^3.4.0
         version: 3.5.0
       typescript:
-        specifier: ^4.6.4
-        version: 4.9.5
+        specifier: ^5.1.6
+        version: 5.3.3
       vite:
         specifier: ^3.2.3
         version: 3.2.7(@types/node@18.19.5)
@@ -298,7 +298,7 @@ importers:
         specifier: ^3.3.0
         version: 3.4.1
       typescript:
-        specifier: ^5
+        specifier: ^5.1.6
         version: 5.3.3
 
   packages/react-async-states:
@@ -13314,12 +13314,6 @@ packages:
     dependencies:
       is-typedarray: 1.0.0
     dev: false
-
-  /typescript@4.9.5:
-    resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
-    engines: {node: '>=4.2.0'}
-    hasBin: true
-    dev: true
 
   /typescript@5.3.3:
     resolution: {integrity: sha512-pXWcraxM0uxAS+tN0AG/BF2TyqmHO014Z070UsJ+pFvYuRSq8KH8DmWpnbXe0pEPDHXZV3FcAbJkijJ5oNEnWw==}

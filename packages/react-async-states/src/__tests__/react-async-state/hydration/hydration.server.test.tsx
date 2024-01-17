@@ -4,6 +4,7 @@ import Provider from "../../../provider/Provider";
 import { createContext, createSource } from "async-states";
 import { mockDateNow } from "../../utils/setup";
 import AsyncStateComponent from "../../utils/AsyncStateComponent";
+import HydrationComponent from "../../../hooks/modules/HydrationComponent";
 
 mockDateNow();
 jest.mock("../../../Provider/context", () => {
@@ -21,8 +22,9 @@ describe("should hydrate async states", () => {
     function Test() {
       return (
         <div data-testid="parent">
-          <Provider id="test" context={ctx}>
+          <Provider context={ctx}>
             <AsyncStateComponent config={src} />
+            <HydrationComponent target={[src]} />
           </Provider>
         </div>
       );
@@ -34,8 +36,9 @@ describe("should hydrate async states", () => {
         <Test />
       </React.StrictMode>
     );
+
     expect(screen.getByTestId("parent").innerHTML).toEqual(
-      '<script id="test">window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__counter":{"state":{"status":"initial","data":0,"timestamp":1487076708000,"props":{"args":[0],"payload":{}}},"latestRun":null,"payload":{}}})</script>'
+      '<script id="$$as-:r1:">window.__$$_HD=Object.assign(window.__$$_HD||{},{"counter":[{"status":"initial","data":0,"timestamp":1487076708000,"props":{"args":[0],"payload":{}}},null,null]})</script>'
     );
   });
   it("should perform basic Provider when status did succeed", async () => {
@@ -47,8 +50,9 @@ describe("should hydrate async states", () => {
     function Test() {
       return (
         <div data-testid="parent">
-          <Provider id="test" context={ctx}>
+          <Provider context={ctx}>
             <AsyncStateComponent config={src} />
+            <HydrationComponent target={[src]} />
           </Provider>
         </div>
       );
@@ -61,7 +65,7 @@ describe("should hydrate async states", () => {
       </React.StrictMode>
     );
     expect(screen.getByTestId("parent").innerHTML).toEqual(
-      '<script id="test">window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__state-1":{"state":{"status":"success","timestamp":1487076708000,"props":{"args":[42],"payload":{}},"data":42},"latestRun":null,"payload":{}}})</script>'
+      '<script id="$$as-:r1:">window.__$$_HD=Object.assign(window.__$$_HD||{},{"state-1":[{"status":"success","timestamp":1487076708000,"props":{"args":[42],"payload":{}},"data":42},null,null]})</script>'
     );
   });
   it("should exclude instance from Provider by key", async () => {
@@ -70,11 +74,7 @@ describe("should hydrate async states", () => {
     function Test() {
       return (
         <div data-testid="parent">
-          <Provider
-            id="test"
-            exclude={(key) => key === "counter2"}
-            context={ctx}
-          >
+          <Provider context={ctx}>
             <AsyncStateComponent
               config={{ key: "counter2", initialValue: 0 }}
             />
@@ -106,11 +106,7 @@ describe("should hydrate async states", () => {
     function Test() {
       return (
         <div data-testid="parent">
-          <Provider
-            id="test"
-            exclude={(key, state) => state.data === 99}
-            context={ctx}
-          >
+          <Provider context={ctx}>
             <AsyncStateComponent config={src} />
             <AsyncStateComponent config={src2} />
           </Provider>

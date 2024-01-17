@@ -16,13 +16,15 @@ export function initializeInstance<TData, TArgs extends unknown[], TError>(
   loadCache(instance);
 
   let maybeHydratedState = attemptHydratedState<TData, TArgs, TError>(
-    instance.key
+    instance.key,
+    instance.config
   );
 
   if (maybeHydratedState) {
-    instance.state = maybeHydratedState.state;
-    instance.payload = maybeHydratedState.payload;
-    instance.latestRun = maybeHydratedState.latestRun;
+    let [state, latestRun, payload] = maybeHydratedState;
+    instance.state = state;
+    instance.payload = payload;
+    instance.latestRun = latestRun;
 
     if (instance.state.status === success) {
       instance.lastSuccess = instance.state;
@@ -43,10 +45,10 @@ export function initializeInstance<TData, TArgs extends unknown[], TError>(
         props: savedInitialProps,
       };
 
-      if (maybeHydratedState.state.status === pending) {
+      if (state.status === pending) {
         let promise: Promise<TData> = new Promise(() => {});
         (promise as PromiseLike<TData, TError>).status = pending;
-        instance.promise = (promise as PromiseLike<TData, TError>);
+        instance.promise = promise as PromiseLike<TData, TError>;
       }
     }
   } else {

@@ -32,7 +32,7 @@ describe("should hydrate async states", () => {
     function Test() {
       return (
         <div data-testid="parent">
-          <Provider id="test" context={ctx}>
+          <Provider context={ctx}>
             <BootHydration data={hydrationScript} />
             <AsyncStateComponent config={{ key: "state-1" }} />
             <AsyncStateComponent config={{ key: "state-2" }} />
@@ -76,12 +76,12 @@ describe("should hydrate async states", () => {
     function Test() {
       return (
         <div data-testid="parent">
-          <Provider id="test" context={ctx}>
+          <Provider context={ctx}>
             <BootHydration data={hydrationScript} />
             <AsyncStateComponent config={{ key: "state-1" }} />
             <AsyncStateComponent config={{ key: "state-2" }} />
             <Wrapper>
-              <Provider id="test" context={ctx}>
+              <Provider context={ctx}>
                 <BootHydration data='window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__state-1":{"state":{"status":"success","data":43,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"payload":{}}})' />
               </Provider>
             </Wrapper>

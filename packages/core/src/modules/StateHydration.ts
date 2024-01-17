@@ -1,7 +1,8 @@
-import { HydrationData } from "../types";
+import { ProducerConfig, SourceHydration } from "../types";
 import { isServer, maybeWindow } from "../utils";
+import { initial } from "../enums";
 
-let HYDRATION_DATA_KEY = "__ASYNC_STATES_HYDRATION_DATA__";
+let HYDRATION_DATA_KEY = "__$$_HD";
 
 export const attemptHydratedState = isServer
   ? attemptHydratedStateServer
@@ -12,29 +13,40 @@ export function attemptHydratedStateServer<
   TData,
   TArgs extends unknown[],
   TError,
->(_key: string): HydrationData<TData, TArgs, TError> | null {
+>(
+  _key: string,
+  _config: ProducerConfig<TData, TArgs, TError>
+): SourceHydration<TData, TArgs, TError> | null {
   return null;
 }
 
 export function attemptHydratedStateDOM<TData, TArgs extends unknown[], TError>(
-  key: string
-): HydrationData<TData, TArgs, TError> | null {
-  if (!maybeWindow || !maybeWindow[HYDRATION_DATA_KEY]) {
+  key: string,
+  config: ProducerConfig<TData, TArgs, TError>
+): SourceHydration<TData, TArgs, TError> | null {
+  if (!maybeWindow?.[HYDRATION_DATA_KEY]) {
     return null;
   }
 
   let savedHydrationData = maybeWindow[HYDRATION_DATA_KEY];
-  let name = `__INSTANCE__${key}`;
-  let maybeState = savedHydrationData[name];
+  let maybeHydration = savedHydrationData[key];
 
-  if (!maybeState) {
+  if (!maybeHydration) {
     return null;
   }
 
-  delete savedHydrationData[name];
+  delete savedHydrationData[key];
   if (Object.keys(savedHydrationData).length === 0) {
     delete maybeWindow[HYDRATION_DATA_KEY];
   }
 
-  return maybeState as HydrationData<TData, TArgs, TError>;
+  let [state] = maybeHydration;
+  let { status, props } = state;
+  if (typeof state.data === "undefined") {
+    state.data = undefined;
+    if (status === initial && props.args[0] === null && !config.initialValue) {
+      props.args[0] = undefined;
+    }
+  }
+  return maybeHydration as SourceHydration<TData, TArgs, TError>;
 }
