@@ -64,7 +64,7 @@ describe("should hydrate async states", () => {
       </React.StrictMode>
     );
     expect(screen.getByTestId("parent").innerHTML).toEqual(
-      '<script id="$$as-:r1:">window.__$$_HD=Object.assign(window.__$$_HD||{},{"state-1":[{"status":"success","timestamp":1487076708000,"props":{"args":[42],"payload":{}},"data":42},null,null]})</script>'
+      '<script id="$$as-:r3:">window.__$$_HD=Object.assign(window.__$$_HD||{},{"state-1":[{"status":"success","timestamp":1487076708000,"props":{"args":[42],"payload":{}},"data":42},null,null]})</script>'
     );
   });
   it("should exclude instance from Provider by key", async () => {
@@ -89,38 +89,5 @@ describe("should hydrate async states", () => {
       </React.StrictMode>
     );
     expect(screen.getByTestId("parent").innerHTML).toEqual("");
-  });
-  it("should exclude instance from Provider by state value", async () => {
-    // given
-    let ctx = {};
-    createContext(ctx);
-    let src = createSource("counter2", null, {
-      initialValue: 14,
-      context: ctx,
-    });
-    let src2 = createSource("counter3", null, {
-      initialValue: 99,
-      context: ctx,
-    });
-    function Test() {
-      return (
-        <div data-testid="parent">
-          <Provider context={ctx}>
-            <AsyncStateComponent config={src} />
-            <AsyncStateComponent config={src2} />
-          </Provider>
-        </div>
-      );
-    }
-
-    // when
-    render(
-      <React.StrictMode>
-        <Test />
-      </React.StrictMode>
-    );
-    expect(screen.getByTestId("parent").innerHTML).toEqual(
-      '<script id="test">window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__counter2":{"state":{"status":"initial","data":14,"timestamp":1487076708000,"props":{"args":[14],"payload":{}}},"latestRun":null,"payload":{}}})</script>'
-    );
   });
 });

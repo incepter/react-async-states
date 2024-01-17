@@ -1,9 +1,8 @@
 import * as React from "react";
 import type { LibraryContext, SourceHydration } from "async-states";
-import { createContext, State } from "async-states";
+import { createContext, Source, State } from "async-states";
 import { Context, isServer } from "./context";
 import { isFunction } from "../shared";
-import { Source } from "async-states/src";
 
 export type ProviderProps = {
   context?: any;
