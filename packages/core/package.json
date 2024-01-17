@@ -7,7 +7,7 @@
   "version": "2.0.0-beta-10",
   "main": "dist/umd/index",
   "types": "dist/es/index",
-  "module": "dist/es/src/index",
+  "module": "dist/es/index",
   "description": "Core of async-states",
   "devDependencies": {
     "@babel/plugin-proposal-class-properties": "^7.18.6",
