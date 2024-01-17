@@ -34,7 +34,7 @@ describe("context in the server", () => {
           <Test />
         </React.StrictMode>
       );
-    }).toThrow("A context object is mandatory when working in the server");
+    }).toThrow("A Provider is mandatory in the server");
 
     console.error = originalConsoleError;
   });
@@ -142,7 +142,7 @@ describe("context in the server", () => {
           <Test />
         </React.StrictMode>
       );
-    }).toThrow("A key is required in the server to avoid hydration issues.");
+    }).toThrow("A key is required in the server");
 
     console.error = originalConsoleError;
   });

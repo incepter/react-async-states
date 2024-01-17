@@ -1,8 +1,8 @@
 import * as React from "react";
 import type { LibraryContext, SourceHydration } from "async-states";
-import { createContext, Source, State } from "async-states";
+import { createContext, requestContext, Source, State } from "async-states";
 import { Context, isServer } from "./context";
-import { isFunction } from "../shared";
+import { __DEV__, isFunction } from "../shared";
 
 export type ProviderProps = {
   context?: any;
@@ -50,6 +50,7 @@ export default function Provider({
       />
     ));
   }
+  React.useEffect(ensureOnDemandHydrationExistsInClient, []);
 
   // memoized children will unlock the React context children optimization:
   // if the children reference is the same as the previous render, it will
@@ -58,6 +59,36 @@ export default function Provider({
   return (
     <Context.Provider value={libraryContextObject}>{children}</Context.Provider>
   );
+}
+
+function ensureOnDemandHydrationExistsInClient() {
+  if (!window.__$$_H) {
+    window.__$$_H = function rehydrateExistingInstances(keys: string[]) {
+      if (!keys?.length) {
+        return;
+      }
+      let globalContext = requestContext(null);
+      keys.forEach((key) => {
+        let instance = globalContext.get(key);
+        let instanceHydration = window.__$$_HD?.[key];
+
+        if (!instance || !instanceHydration) {
+          return;
+        }
+
+        let [state, latestRun, payload] = instanceHydration;
+
+        instance.state = state;
+        instance.payload = payload;
+        instance.latestRun = latestRun;
+
+        let subscriptions = instance.subscriptions;
+        if (subscriptions) {
+          Object.values(subscriptions).forEach((sub) => sub.props.cb(state));
+        }
+      });
+    };
+  }
 }
 
 type HydrationProps = {
@@ -95,6 +126,8 @@ function HydrateRemainingContextInstances({
 
 declare global {
   interface Window {
+    // force rehydration
+    __$$_H?: (keys: string[]) => void;
     __$$_HD?: Record<string, SourceHydration<any, any, any>>;
   }
 }
@@ -170,13 +203,49 @@ function buildWindowAssignment(
   if (!sources.length) {
     return null;
   }
-  let data = sources.reduce((acc, curr) => {
-    let instance = curr.inst;
-    context.payload[instance.key] = instance.version;
-    acc[curr.key] = [instance.state, instance.latestRun, instance.payload];
-    return acc;
+  let needToRehydrate: string[] = [];
+  let data = sources.reduce((result, current) => {
+    let key = current.key;
+    let instance = context.get(key);
+
+    if (!instance) {
+      if (__DEV__) {
+        console.error(
+          `[async-states] source '${key}' doesn't exist` +
+            " in the context, this means that you tried to hydrate it " +
+            " before using it via hooks. Only hydrate a source after using it" +
+            " to avoid leaks and passing unused things to the client."
+        );
+      }
+      throw new Error("Cannot leak server global source");
+    }
+
+    let currentVersion = instance.version;
+    let previouslyHydratedVersion: number = context.payload[key];
+
+    if (
+      previouslyHydratedVersion !== undefined &&
+      previouslyHydratedVersion !== currentVersion
+    ) {
+      needToRehydrate.push(key);
+    }
+
+    context.payload[key] = instance.version;
+    result[key] = [instance.state, instance.latestRun, instance.payload];
+    return result;
   }, {});
 
   let hydrationAsString = JSON.stringify(data);
-  return `window.__$$_HD=Object.assign(window.__$$_HD||{},${hydrationAsString})`;
+  let hydration = `window.__$$_HD=Object.assign(window.__$$_HD||{},${hydrationAsString});`;
+
+  // need to rehydrate means that there are some instances that were hydrated
+  // but their version changed, so we'd need to rehydrate them again and
+  // notify their subscriptions if necessary.
+  if (!needToRehydrate.length) {
+    return hydration;
+  }
+  return (
+    hydration +
+    `window.__$$_H&&window.__$$_H(${JSON.stringify(needToRehydrate)});`
+  );
 }

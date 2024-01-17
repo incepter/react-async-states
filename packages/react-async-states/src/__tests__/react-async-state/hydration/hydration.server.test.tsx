@@ -37,7 +37,7 @@ describe("should hydrate async states", () => {
     );
 
     expect(screen.getByTestId("parent").innerHTML).toEqual(
-      '<script id="$$as-:r1:">window.__$$_HD=Object.assign(window.__$$_HD||{},{"counter":[{"status":"initial","data":0,"timestamp":1487076708000,"props":{"args":[0],"payload":{}}},null,null]})</script>'
+      '<script id="$$as-:r1:">window.__$$_HD=Object.assign(window.__$$_HD||{},{"counter":[{"status":"initial","data":0,"timestamp":1487076708000,"props":{"args":[0],"payload":{}}},null,null]});</script>'
     );
   });
   it("should perform basic Provider when status did succeed", async () => {
@@ -64,7 +64,7 @@ describe("should hydrate async states", () => {
       </React.StrictMode>
     );
     expect(screen.getByTestId("parent").innerHTML).toEqual(
-      '<script id="$$as-:r3:">window.__$$_HD=Object.assign(window.__$$_HD||{},{"state-1":[{"status":"success","timestamp":1487076708000,"props":{"args":[42],"payload":{}},"data":42},null,null]})</script>'
+      '<script id="$$as-:r3:">window.__$$_HD=Object.assign(window.__$$_HD||{},{"state-1":[{"status":"success","timestamp":1487076708000,"props":{"args":[42],"payload":{}},"data":42},null,null]});</script>'
     );
   });
   it("should exclude instance from Provider by key", async () => {
