@@ -42,4 +42,6 @@ export type {
   StateInterface,
   BaseSource,
   LibraryContext,
+  SourceHydration,
+  RunTask
 } from "./types";

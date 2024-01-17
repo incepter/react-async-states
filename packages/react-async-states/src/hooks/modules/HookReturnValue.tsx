@@ -1,3 +1,4 @@
+import * as React from "react";
 import {
   BaseHooksReturn,
   HookSubscription,
@@ -7,6 +8,7 @@ import {
 } from "../types";
 import { State, StateInterface } from "async-states";
 import { freeze } from "../../shared";
+import { HydrationComponent } from "../../provider/Provider";
 
 export function createLegacyReturn<TData, TArgs extends unknown[], TError, S>(
   subscription: HookSubscription<TData, TArgs, TError, S>,
@@ -46,8 +48,9 @@ export function createBaseReturn<TData, TArgs extends unknown[], TError, S>(
     currentState.status === "pending" ? currentState.prev : currentState;
 
   let status = currentState.status;
+  let source = subscription.instance.actions;
   return freeze({
-    source: subscription.instance.actions,
+    source,
 
     state: selectedState,
     dataProps: lastSuccess.props,
@@ -63,6 +66,8 @@ export function createBaseReturn<TData, TArgs extends unknown[], TError, S>(
     onChange: subscription.onChange,
     onSubscribe: subscription.onSubscribe,
     read: subscription.read.bind(null, config),
+
+    Hydrate: () => <HydrationComponent target={[source]} />,
   });
 }
 

@@ -1,13 +1,7 @@
 import { freeze } from "../helpers/core";
 import { LibraryContext, StateInterface } from "../types";
-import { version } from "../../package.json";
 import { __DEV__ } from "../utils";
 import devtools from "../devtools/Devtools";
-
-let libraryVersion = freeze({
-  version,
-  copyright: "Incepter",
-});
 
 let contexts = new WeakMap<Object, LibraryContext>();
 let globalContextKey = freeze({});
@@ -18,7 +12,7 @@ function createNewContext(arg: any): LibraryContext {
 
   let createdContext = freeze({
     ctx: arg,
-    version: libraryVersion,
+    payload: {},
 
     get(key: string) {
       return instances.get(key);

@@ -186,6 +186,12 @@ export interface PromiseLike<TData, TError> extends Promise<TData> {
   reason?: TError;
 }
 
+export type SourceHydration<TData, TArgs extends unknown[], TError> = [
+  State<TData, TArgs, TError>,
+  RunTask<TData, TArgs, TError> | null,
+  Record<string, any> | null,
+];
+
 export interface StateInterface<TData, TArgs extends unknown[], TError> {
   // identity
   key: string;
@@ -492,8 +498,11 @@ export type OnSettled<TData, TArgs extends unknown[], TError> = {
 
 export type LibraryContext = {
   ctx: any;
+  name?: string;
   terminate(): void;
-  version: { version: string; copyright: string };
+
+  // can be used by consumers
+  payload: Record<string, any>;
 
   remove(key: string): boolean;
   getAll(): StateInterface<any, any, any>[];

@@ -30,7 +30,7 @@ describe("global sources in the server", () => {
       // given
       function Test() {
         return (
-          <Provider id="test">
+          <Provider>
             <div data-testid="parent">
               <Component />
             </div>
@@ -68,7 +68,7 @@ describe("global sources in the server", () => {
       // given
       function Test() {
         return (
-          <Provider id="test">
+          <Provider>
             <div data-testid="parent">
               <Component />
             </div>
@@ -112,7 +112,7 @@ describe("global sources in the server", () => {
       // given
       function Test() {
         return (
-          <Provider id="test">
+          <Provider>
             <div data-testid="parent">
               <Component />
             </div>

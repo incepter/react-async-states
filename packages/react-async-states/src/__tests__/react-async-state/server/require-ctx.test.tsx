@@ -34,7 +34,7 @@ describe("context in the server", () => {
           <Test />
         </React.StrictMode>
       );
-    }).toThrow("A context object is mandatory when working in the server");
+    }).toThrow("A Provider is mandatory in the server");
 
     console.error = originalConsoleError;
   });
@@ -46,7 +46,7 @@ describe("context in the server", () => {
     function Test() {
       return (
         <div data-testid="parent">
-          <Provider id="test">
+          <Provider>
             <AsyncStateComponent config={{ key: "key-2" }} />
           </Provider>
         </div>
@@ -102,7 +102,7 @@ describe("context in the server", () => {
     function Test() {
       return (
         <div data-testid="parent">
-          <Provider id="test-test" context={ctx2}>
+          <Provider context={ctx2}>
             <AsyncStateComponent config={src} />
           </Provider>
         </div>
@@ -128,7 +128,7 @@ describe("context in the server", () => {
     function Test() {
       return (
         <div data-testid="parent">
-          <Provider id="test-test">
+          <Provider>
             <AsyncStateComponent config={{}} />
           </Provider>
         </div>
@@ -142,7 +142,7 @@ describe("context in the server", () => {
           <Test />
         </React.StrictMode>
       );
-    }).toThrow("A key is required in the server to avoid hydration issues.");
+    }).toThrow("A key is required in the server");
 
     console.error = originalConsoleError;
   });

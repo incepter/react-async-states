@@ -1,6 +1,7 @@
 "use client";
 
 import { ThemeProvider } from "next-themes";
+import { useServerInsertedHTML } from "next/navigation";
 
 import { Provider as AsyncStatesProvider } from "react-async-states";
 import { SkeletonTheme } from "react-loading-skeleton";
@@ -16,7 +17,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         baseColor="hsl(var(--color-foreground-secondary)/.2)"
         enableAnimation={false}
       >
-        <AsyncStatesProvider id="playground">
+        <AsyncStatesProvider serverInsertedHtmlHook={useServerInsertedHTML}>
           <InstancesProvider>{children}</InstancesProvider>
         </AsyncStatesProvider>
       </SkeletonTheme>

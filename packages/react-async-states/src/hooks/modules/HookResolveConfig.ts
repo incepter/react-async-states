@@ -256,7 +256,7 @@ function requireAnExecContextInServer(
           "<Provider>{yourChildrenTree}</Provider>;\n"
       );
     }
-    throw new Error("A context object is mandatory when working in the server");
+    throw new Error("A Provider is mandatory in the server");
   }
 }
 
@@ -264,5 +264,5 @@ function requireAKeyInTheServer() {
   if (!isServer) {
     return;
   }
-  throw new Error("A key is required in the server to avoid hydration issues.");
+  throw new Error("A key is required in the server");
 }

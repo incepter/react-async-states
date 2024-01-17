@@ -1,5 +1,5 @@
 import * as React from "react";
-import { render, fireEvent, screen } from "@testing-library/react";
+import { render, fireEvent, screen, act } from "@testing-library/react";
 import { getSource } from "async-states";
 import Provider from "../../../provider/Provider";
 import AsyncStateComponent from "../../utils/AsyncStateComponent";
@@ -15,7 +15,7 @@ jest.mock("../../../provider/context", () => {
 });
 
 function BootHydration({ data }: { data: string }) {
-  eval(data);
+  Promise.resolve().then(() => eval(data));
   return null;
   // return JSON.stringify(window.__ASYNC_STATES_HYDRATION_DATA__ ?? {}) as string
   // for some reason, <script> won't affect window
@@ -27,13 +27,12 @@ describe("should hydrate async states", () => {
     // given
     let ctx = {};
     let hydrationScript =
-      'window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__state-1":{"state":{"status":"success","data":42,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"payload":{}}})';
-
+      'window.__$$_HD=Object.assign(window.__$$_HD||{},{"state-1":[{"status":"success","timestamp":1487076708000,"props":{"args":[42],"payload":{}},"data":42},null,null]})';
+    eval(hydrationScript);
     function Test() {
       return (
         <div data-testid="parent">
-          <Provider id="test" context={ctx}>
-            <BootHydration data={hydrationScript} />
+          <Provider context={ctx}>
             <AsyncStateComponent config={{ key: "state-1" }} />
             <AsyncStateComponent config={{ key: "state-2" }} />
           </Provider>
@@ -57,9 +56,8 @@ describe("should hydrate async states", () => {
   });
   it("should rehydrate due to some streaming html event", async () => {
     // given
-    let ctx = {};
     let hydrationScript =
-      'window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__state-1":{"state":{"status":"success","data":42,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"payload":{}}})';
+      'window.__$$_HD=Object.assign(window.__$$_HD||{},{"state-2":[{"status":"success","timestamp":1487076708000,"props":{"args":[42],"payload":{}},"data":42},null,null]})';
 
     function Wrapper({ children }) {
       let [visible, setVisible] = React.useState(false);
@@ -73,19 +71,15 @@ describe("should hydrate async states", () => {
       );
     }
 
+    eval(hydrationScript);
     function Test() {
       return (
         <div data-testid="parent">
-          <Provider id="test" context={ctx}>
-            <BootHydration data={hydrationScript} />
-            <AsyncStateComponent config={{ key: "state-1" }} />
-            <AsyncStateComponent config={{ key: "state-2" }} />
-            <Wrapper>
-              <Provider id="test" context={ctx}>
-                <BootHydration data='window.__ASYNC_STATES_HYDRATION_DATA__ = Object.assign(window.__ASYNC_STATES_HYDRATION_DATA__ || {}, {"__INSTANCE__state-1":{"state":{"status":"success","data":43,"props":{"args":[42],"payload":{}},"timestamp":1487076708000},"payload":{}}})' />
-              </Provider>
-            </Wrapper>
-          </Provider>
+          <AsyncStateComponent config={{ key: "state-2" }} />
+          <AsyncStateComponent config={{ key: "state-3" }} />
+          <Wrapper>
+            <BootHydration data='window.__$$_HD=Object.assign(window.__$$_HD||{},{"state-2":[{"status":"success","timestamp":1487076708000,"props":{"args":[43],"payload":{}},"data":43},null,null]});window.__$$_H(["state-2"])' />
+          </Wrapper>
         </div>
       );
     }
@@ -96,11 +90,13 @@ describe("should hydrate async states", () => {
         <Test />
       </React.StrictMode>
     );
-    let src = getSource("state-1", ctx)!;
+    let src = getSource("state-2")!;
     expect(src.getState().status).toBe("success");
     expect(src.getState().data).toBe(42);
     fireEvent.click(screen.getByTestId("toggle"));
-    await flushPromises();
+    await act(async () => {
+      await flushPromises();
+    });
     expect(src.getState().data).toBe(43);
   });
 });

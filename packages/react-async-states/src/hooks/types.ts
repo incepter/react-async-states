@@ -1,3 +1,4 @@
+import * as React from "react";
 import {
   AbortFn,
   CacheConfig,
@@ -341,6 +342,8 @@ export interface BaseHooksReturn<
 
   data: TData | null;
   error: TError | null;
+
+  Hydrate: () => React.ReactNode;
 
   onChange(
     events:
