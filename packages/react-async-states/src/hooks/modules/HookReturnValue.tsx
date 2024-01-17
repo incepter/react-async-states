@@ -8,7 +8,7 @@ import {
 } from "../types";
 import { State, StateInterface } from "async-states";
 import { freeze } from "../../shared";
-import HydrationComponent from "./HydrationComponent";
+import { HydrationComponent } from "../../provider/Provider";
 
 export function createLegacyReturn<TData, TArgs extends unknown[], TError, S>(
   subscription: HookSubscription<TData, TArgs, TError, S>,

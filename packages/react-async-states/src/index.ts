@@ -9,14 +9,14 @@ export {
   terminateContext,
 } from "async-states";
 
-export { default as Provider } from "./provider/Provider";
-export { default as Hydration } from "./hooks/modules/HydrationComponent";
+export {
+  default as Provider,
+  HydrationComponent as Hydration,
+} from "./provider/Provider";
 
 export { createApplication } from "./application/Application";
 
-export type {
-  Api,
-} from "./application/types";
+export type { Api } from "./application/types";
 
 export type {
   State,

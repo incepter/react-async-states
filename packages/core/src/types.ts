@@ -498,8 +498,11 @@ export type OnSettled<TData, TArgs extends unknown[], TError> = {
 
 export type LibraryContext = {
   ctx: any;
+  name?: string;
   terminate(): void;
-  version: { version: string; copyright: string };
+
+  // can be used by consumers
+  payload: Record<string, any>;
 
   remove(key: string): boolean;
   getAll(): StateInterface<any, any, any>[];

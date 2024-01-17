@@ -7,11 +7,6 @@ export let maybeWindow = typeof window !== "undefined" ? window : undefined;
 export let isServer =
   typeof maybeWindow === "undefined" || "Deno" in maybeWindow;
 
-export type ProviderProps = {
-  context?: any;
-  children?: any;
-};
-
 export type InternalProviderDomProps = {
   id: string;
   context: LibraryContext;
