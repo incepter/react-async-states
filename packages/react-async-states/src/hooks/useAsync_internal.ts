@@ -21,14 +21,15 @@ export function useAsync_internal<TData, TArgs extends unknown[], TError, S>(
   // this process will yield the instance to subscribe to, along with
   // the combined config (options)
   let currentContext = React.useContext(Context);
+  let depsToUse = deps.concat(currentContext);
   let { instance, config } = React.useMemo(
     () => parseConfig(currentContext, options, overrides),
-    deps
+    depsToUse
   );
 
   // here, we will create a subscription from this component
   // to this state instance. refer to HookSubscription type.
-  let subscription = useRetainInstance(instance, config, deps);
+  let subscription = useRetainInstance(instance, config, depsToUse);
   if (__DEV__) {
     __DEV__warnInDevAboutIncompatibleConfig(subscription);
   }
@@ -38,7 +39,7 @@ export function useAsync_internal<TData, TArgs extends unknown[], TError, S>(
   // at the commit phase. It is important not to touch anything during
   // render and port everything to the commit phase.
   // a "null" alternate means that the render was bailed out.
-  let alternate = beginRender(subscription, config, deps);
+  let alternate = beginRender(subscription, config, depsToUse);
   // this first effect will flush the alternate's properties inside
   // the subscription, such as the current return, the parsed config...
   // it is important to perform this work every time the alternate changes.
@@ -48,7 +49,7 @@ export function useAsync_internal<TData, TArgs extends unknown[], TError, S>(
   // - subscribe to the state instance for changes
   // - invoke onSubscribe events
   // - run the state instance
-  React.useEffect(() => autoRunAndSubscribeEvents(subscription), deps);
+  React.useEffect(() => autoRunAndSubscribeEvents(subscription), depsToUse);
 
   // the alternate may be null when we render the first time or when we bail out
   // the render afterward.

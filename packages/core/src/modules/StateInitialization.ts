@@ -1,9 +1,4 @@
-import {
-  LastSuccessSavedState,
-  ProducerSavedProps,
-  StateInterface,
-  PromiseLike,
-} from "../types";
+import { ProducerSavedProps, PromiseLike, StateInterface } from "../types";
 import { loadCache } from "./StateCache";
 import { attemptHydratedState } from "./StateHydration";
 import { initial, pending, success } from "../enums";
@@ -15,10 +10,7 @@ export function initializeInstance<TData, TArgs extends unknown[], TError>(
 ) {
   loadCache(instance);
 
-  let maybeHydratedState = attemptHydratedState<TData, TArgs, TError>(
-    instance.key,
-    instance.config
-  );
+  let maybeHydratedState = attemptHydratedState<TData, TArgs, TError>(instance);
 
   if (maybeHydratedState) {
     let [state, latestRun, payload] = maybeHydratedState;
@@ -46,9 +38,13 @@ export function initializeInstance<TData, TArgs extends unknown[], TError>(
       };
 
       if (state.status === pending) {
-        let promise: Promise<TData> = new Promise(() => {});
-        (promise as PromiseLike<TData, TError>).status = pending;
-        instance.promise = promise as PromiseLike<TData, TError>;
+        let normalPromise: Promise<TData> = new Promise((resolve, reject) => {
+          instance.res = { res: resolve, rej: reject };
+        });
+        let promise = normalPromise as PromiseLike<TData, TError>;
+        promise.status = pending;
+        instance.promise = promise;
+        state.prev = instance.lastSuccess;
       }
     }
   } else {
@@ -69,6 +65,6 @@ export function initializeInstance<TData, TArgs extends unknown[], TError>(
     };
 
     instance.state = initialState;
-    instance.lastSuccess = initialState as LastSuccessSavedState<TData, TArgs>;
+    instance.lastSuccess = initialState;
   }
 }

@@ -22,7 +22,7 @@ export function setCurrentHookOverrides(
 
 // the goal of this function is to retrieve the following objects:
 // - a configuration object to use { key, producer, source, lazy ... }
-function cloneSourceTheServer<TData, TArgs extends unknown[], TError>(
+function cloneSourceInTheServer<TData, TArgs extends unknown[], TError>(
   globalSource: Source<TData, TArgs, TError>,
   context: object,
   useGlobalSourceState?: boolean
@@ -32,8 +32,8 @@ function cloneSourceTheServer<TData, TArgs extends unknown[], TError>(
   let newConfig = assign({}, config, { context });
 
   let source = createSource(key, fn, newConfig);
+  let newInstance = source.inst;
   if (useGlobalSourceState === true) {
-    let newInstance = source.inst;
     let globalInstance = globalSource.inst;
 
     // we will clone all relevant things: state, cache, lastRun
@@ -42,6 +42,7 @@ function cloneSourceTheServer<TData, TArgs extends unknown[], TError>(
     newInstance.latestRun = globalInstance.latestRun;
   }
 
+  newInstance.global = true;
   return source;
 }
 
@@ -73,7 +74,7 @@ export function parseConfig<
         if (isServer) {
           // requireAnExecContextInServer would throw if nullish
           let ctx = currentLibContext!.ctx;
-          instance = cloneSourceTheServer(options, ctx).inst;
+          instance = cloneSourceInTheServer(options, ctx).inst;
         } else {
           instance = options.inst;
         }
@@ -89,7 +90,7 @@ export function parseConfig<
           // requireAnExecContextInServer would throw if nullish
           let ctx = currentLibContext!.ctx;
           let useServerState = config.useServerState;
-          baseSource = cloneSourceTheServer(baseSource, ctx, useServerState);
+          baseSource = cloneSourceInTheServer(baseSource, ctx, useServerState);
         }
         let realSource = baseSource.getLane(config.lane);
         instance = realSource.inst;

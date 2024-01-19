@@ -78,6 +78,10 @@ export class AsyncState<TData, TArgs extends unknown[], TError>
   lastSuccess: LastSuccessSavedState<TData, TArgs>;
 
   promise: PromiseLike<TData, TError> | null = null;
+  res: {
+    res: (data: TData) => void;
+    rej: (error: TError) => void;
+  } | null;
   currentAbort: AbortFn | null = null;
   fn: Producer<TData, TArgs, TError> | null = null;
 
@@ -92,6 +96,7 @@ export class AsyncState<TData, TArgs extends unknown[], TError>
 
   eventsIndex: number | null = null;
   events: InstanceEvents<TData, TArgs, TError> | null = null;
+  global: boolean | null = null;
 
   constructor(
     key: string,

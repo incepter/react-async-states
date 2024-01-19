@@ -186,8 +186,15 @@ export interface PromiseLike<TData, TError> extends Promise<TData> {
   reason?: TError;
 }
 
+
+type HydratedState<TData, TArgs extends unknown[], TError> =
+  | InitialState<TData, TArgs>
+  | PendingState<TData, TArgs, TError>
+  | SuccessState<TData, TArgs>
+  | ErrorState<TData, TArgs, TError>;
+
 export type SourceHydration<TData, TArgs extends unknown[], TError> = [
-  State<TData, TArgs, TError>,
+  HydratedState<TData, TArgs, TError>,
   RunTask<TData, TArgs, TError> | null,
   Record<string, any> | null,
 ];
@@ -216,6 +223,11 @@ export interface StateInterface<TData, TArgs extends unknown[], TError> {
 
   // producer
   promise: PromiseLike<TData, TError> | null;
+  // force rejection or resolve from out of order html streaming
+  res: {
+    res: (data: TData) => void;
+    rej: (error: TError) => void;
+  } | null;
   fn: Producer<TData, TArgs, TError> | null;
   readonly ctx: LibraryContext | null;
 
@@ -233,6 +245,7 @@ export interface StateInterface<TData, TArgs extends unknown[], TError> {
   eventsIndex: number | null;
   // dev properties
   journal?: any[] | null; // for devtools, dev only
+  global: boolean | null;
 }
 
 export interface RUNCProps<TData, TArgs extends unknown[], TError>

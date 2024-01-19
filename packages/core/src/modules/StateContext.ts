@@ -10,7 +10,7 @@ let globalContext = createContext(globalContextKey);
 function createNewContext(arg: any): LibraryContext {
   let instances = new Map<string, StateInterface<any, any, any>>();
 
-  let createdContext = freeze({
+  let createdContext = {
     ctx: arg,
     payload: {},
 
@@ -29,7 +29,7 @@ function createNewContext(arg: any): LibraryContext {
     terminate() {
       instances = new Map<string, StateInterface<any, any, any>>();
     },
-  });
+  };
   if (__DEV__) devtools.captureContext(createdContext);
   return createdContext;
 }
@@ -88,12 +88,4 @@ export function terminateContext(arg: any): boolean {
   desiredContext.terminate();
   if (__DEV__) devtools.releaseContext(desiredContext);
   return contexts.delete(arg);
-}
-
-export function getContext(arg: any): LibraryContext | undefined {
-  if (arg === null) {
-    return globalContext;
-  }
-
-  return contexts.get(arg);
 }

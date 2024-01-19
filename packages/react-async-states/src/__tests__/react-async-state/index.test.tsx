@@ -78,7 +78,6 @@ describe("should run producer", () => {
           }}
         >
           {({ state, source }) => {
-            // console.log('hahahahaha', state);
             return (
               <div>
                 <Component

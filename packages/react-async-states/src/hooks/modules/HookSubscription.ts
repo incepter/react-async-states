@@ -129,7 +129,7 @@ export function createSubscription<TData, TArgs extends unknown[], TError, S>(
 }
 
 let suspendingPromises: WeakSet<Promise<any>> = new WeakSet<Promise<any>>();
-export function removePromiseFromSuspendersList(promise) {
+export function removePromiseFromSuspendersList(promise: Promise<any> | null) {
   if (promise) {
     suspendingPromises.delete(promise);
   }
@@ -157,7 +157,6 @@ function readSubscriptionInConcurrentMode<
     let instance = subscription.instance;
 
     let promise = instance.promise;
-    let update = subscription.update;
     let wasSuspending = !!promise && suspendingPromises.has(promise);
     let shouldRun = shouldRunSubscription(subscription, newConfig);
 

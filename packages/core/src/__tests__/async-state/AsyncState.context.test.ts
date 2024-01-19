@@ -1,6 +1,5 @@
 import {
   createContext,
-  getContext,
   terminateContext,
 } from "../../modules/StateContext";
 import { expect } from "@jest/globals";
@@ -89,11 +88,4 @@ describe("Create instances in different contexts", () => {
     terminateContext(undefined);
   });
 
-  it("getContext should return the actual context", () => {
-    let ctx = {};
-    let context = createContext(ctx);
-    let defaultContext = getContext(null);
-    expect(getContext(ctx)).toBe(context);
-    expect(defaultContext).not.toBe(context);
-  });
 });
