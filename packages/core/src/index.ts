@@ -43,5 +43,6 @@ export type {
   BaseSource,
   LibraryContext,
   SourceHydration,
-  RunTask
+  RunTask,
+  PromiseLike,
 } from "./types";

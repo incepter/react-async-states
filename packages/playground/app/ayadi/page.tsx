@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { Suspense } from "react";
-import { useAsync, useData } from "react-async-states";
+import {Suspense} from "react";
+import {useAsync, useData} from "react-async-states";
 
-import { ProducerProps } from "async-states";
+import {ProducerProps} from "async-states";
 
 let isServer = typeof window === "undefined" || "Deno" in window;
 
@@ -14,7 +14,7 @@ async function fetchUsers({
 }: ProducerProps<{ username: string }, [number, number], Error>) {
   let [value, delay] = args;
   // artificially delayed
-  await new Promise((res) => setTimeout(res, delay));
+  await new Promise((res) => setTimeout(res, delay/10));
   return await fetch(`https://jsonplaceholder.typicode.com/users/${value}`, {
     signal,
   }).then((res) => res.json());
@@ -29,7 +29,7 @@ function Comp({ value, delay = 2000, useA = false }) {
       key: `user-${value}`,
       producer: fetchUsers,
       autoRunArgs: [value, delay],
-      condition: isServer || value === 5,
+      condition: (isServer && value !== 5) || value === 5,
     },
     [value, delay],
   );

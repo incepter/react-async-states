@@ -1,17 +1,18 @@
 import {
   CleanupFn,
+  HookSubscribeEvents,
   HookSubscription,
   SubscribeEventProps,
   SubscriptionAlternate,
   UseAsyncChangeEventProps,
   UseAsyncStateEventFn,
-  HookSubscribeEvents,
 } from "../types";
 import { __DEV__, isArray } from "../../shared";
 import { selectWholeState } from "./HookReturnValue";
 import { AbortFn, State, StateInterface } from "async-states";
 import {
-  forceComponentUpdate, isRenderPhaseRun,
+  forceComponentUpdate,
+  isRenderPhaseRun,
   reconcileInstance,
   shouldRunSubscription,
 } from "./HookSubscriptionUtils";
@@ -40,7 +41,7 @@ export function commit<TData, TArgs extends unknown[], TError, S>(
   // occurred before commit
   let version = subscription.version;
   let currentInstance = subscription.instance;
-  removePromiseFromSuspendersList(currentInstance.promise);
+  removePromiseFromSuspendersList(currentInstance.promise, subscription);
 
   reconcileInstance(currentInstance, subscription.config);
 

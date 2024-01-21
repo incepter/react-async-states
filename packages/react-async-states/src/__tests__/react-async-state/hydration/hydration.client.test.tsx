@@ -1,10 +1,11 @@
 import * as React from "react";
-import { render, fireEvent, screen, act } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { getSource } from "async-states";
 import Provider from "../../../provider/Provider";
 import AsyncStateComponent from "../../utils/AsyncStateComponent";
 import { flushPromises } from "../../utils/test-utils";
 import { mockDateNow } from "../../utils/setup";
+import { createContext } from "async-states/src";
 
 mockDateNow();
 jest.mock("../../../provider/context", () => {
@@ -26,8 +27,9 @@ describe("should hydrate async states", () => {
   it("should perform basic Provider", async () => {
     // given
     let ctx = {};
+    createContext(ctx).name = "kkk";
     let hydrationScript =
-      'window.__$$_HD=Object.assign(window.__$$_HD||{},{"state-1":[{"status":"success","timestamp":1487076708000,"props":{"args":[42],"payload":{}},"data":42},null,null]})';
+      'window["__$$:r1:"]=Object.assign(window["__$$:r1:"]||{},{"state-1":[{"status":"success","timestamp":1487076708000,"props":{"args":[42],"payload":{}},"data":42},null,null]})';
     eval(hydrationScript);
     function Test() {
       return (
@@ -57,7 +59,7 @@ describe("should hydrate async states", () => {
   it("should rehydrate due to some streaming html event", async () => {
     // given
     let hydrationScript =
-      'window.__$$_HD=Object.assign(window.__$$_HD||{},{"state-2":[{"status":"success","timestamp":1487076708000,"props":{"args":[42],"payload":{}},"data":42},null,null]})';
+      'window.__$$=Object.assign(window.__$$||{},{"state-2":[{"status":"success","timestamp":1487076708000,"props":{"args":[42],"payload":{}},"data":42},null,null]})';
 
     function Wrapper({ children }) {
       let [visible, setVisible] = React.useState(false);
@@ -75,11 +77,13 @@ describe("should hydrate async states", () => {
     function Test() {
       return (
         <div data-testid="parent">
-          <AsyncStateComponent config={{ key: "state-2" }} />
-          <AsyncStateComponent config={{ key: "state-3" }} />
-          <Wrapper>
-            <BootHydration data='window.__$$_HD=Object.assign(window.__$$_HD||{},{"state-2":[{"status":"success","timestamp":1487076708000,"props":{"args":[43],"payload":{}},"data":43},null,null]});window.__$$_H(["state-2"])' />
-          </Wrapper>
+          <Provider context={null}>
+            <AsyncStateComponent config={{ key: "state-2" }} />
+            <AsyncStateComponent config={{ key: "state-3" }} />
+            <Wrapper>
+              <BootHydration data='window.__$$=Object.assign(window.__$$||{},{"state-2":[{"status":"success","timestamp":1487076708000,"props":{"args":[43],"payload":{}},"data":43},null,null]});window.__$$_H&&window.__$$_H()' />
+            </Wrapper>
+          </Provider>
         </div>
       );
     }

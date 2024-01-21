@@ -9,7 +9,7 @@ import {
 } from "../types";
 import { createLegacyReturn } from "./HookReturnValue";
 import { isFunction } from "../../shared";
-import { StateInterface } from "async-states";
+import { StateInterface, PromiseLike } from "async-states";
 import {
   __DEV__getCurrentlyRenderingComponentName,
   endRenderPhaseRun,
@@ -128,10 +128,19 @@ export function createSubscription<TData, TArgs extends unknown[], TError, S>(
   }
 }
 
-let suspendingPromises: WeakSet<Promise<any>> = new WeakSet<Promise<any>>();
-export function removePromiseFromSuspendersList(promise: Promise<any> | null) {
-  if (promise) {
-    suspendingPromises.delete(promise);
+let suspendingPromises: WeakMap<
+  Promise<any>,
+  HookSubscription<any, any, any, any>
+> = new WeakMap<Promise<any>>();
+export function removePromiseFromSuspendersList(
+  promise: PromiseLike<any, any> | null,
+  subscription: HookSubscription<any, any, any, any>
+) {
+  if (promise && promise.status !== "pending") {
+    let suspender = suspendingPromises.get(promise);
+    if (suspender === subscription) {
+      suspendingPromises.delete(promise);
+    }
   }
 }
 function readSubscriptionInConcurrentMode<
@@ -188,10 +197,19 @@ function readSubscriptionInConcurrentMode<
         notifyOtherInstanceSubscriptionsInMicrotask(subscription);
       }
     }
-
-    if (promise && promise.status === "pending") {
-      suspendingPromises.add(promise);
-      throw promise;
+    if (promise) {
+      // we add this promise to the suspenders list in either ways:
+      // - if pending, we will suspend, and we should only resolve from this path
+      // - if we aren't pending and did resolve, this path means that the deps
+      //   changed, so we are having a commit where we will remove the promise,
+      //   but we should only allow resolve from this one path, because
+      //   if the promise resolves outside react, before this path commits
+      //   and another path commits while not being "suspensey", it will
+      //   cause infinite updates
+      suspendingPromises.set(promise, subscription);
+      if (promise.status === "pending") {
+        throw promise;
+      }
     }
   }
 
