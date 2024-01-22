@@ -14,7 +14,7 @@ describe("AsyncState instance creation", () => {
       throw new Error("No globalThis");
     }
     bootHydration(
-      'window.__$$_HD=Object.assign(window.__$$_HD||{},{"state-1":[{"status":"success","timestamp":1487076708000,"props":{"args":[42],"payload":{}},"data":42},null,null]})',
+      'window.__$$=Object.assign(window.__$$_HD||{},{"state-1":[{"status":"success","timestamp":1487076708000,"props":{"args":[42],"payload":{}},"data":42},null,null]})'
     );
     let instance = new AsyncState("state-1", null);
     expect(instance.actions.getVersion()).toBe(0);
@@ -22,7 +22,7 @@ describe("AsyncState instance creation", () => {
     expect(instance.actions.getState().status).toBe("success");
     expect(instance.lastSuccess).toBe(instance.actions.getState());
     bootHydration(
-      'window.__$$_HD=Object.assign(window.__$$_HD||{},{"state-2":[{"status":"error","timestamp":1487076708000,"props":{"args":[42],"payload":{}},"data":42},null,null]})',
+      'window.__$$=Object.assign(window.__$$_HD||{},{"state-2":[{"status":"error","timestamp":1487076708000,"props":{"args":[42],"payload":{}},"data":42},null,null]})'
     );
     let instance2 = new AsyncState("state-2", null, { initialValue: 15 });
     expect(instance2.actions.getState().data).toBe(42);

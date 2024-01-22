@@ -77,7 +77,7 @@ export function completeRender<TData, TArgs extends unknown[], TError, S>(
     __DEV__unsetHookCallerName();
   }
 
-  let { config, alternate } = subscription;
+  let { alternate } = subscription;
   let usedSubscription = alternate || subscription;
   let usedReturn = usedSubscription.return;
   let usedConfig = usedSubscription.config;

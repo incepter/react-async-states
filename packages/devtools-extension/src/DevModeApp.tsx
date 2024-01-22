@@ -1,6 +1,7 @@
 import * as React from "react";
+import { Suspense } from "react";
 import "./index.css";
-import { createSource, useAsync } from "react-async-states";
+import { createSource, useAsync, useData } from "react-async-states";
 import { ProducerProps } from "async-states";
 
 let src = createSource<number>("test-2", null, { initialValue: 0 });
@@ -101,6 +102,42 @@ function Interval({ alias, delay }) {
   );
 }
 
+async function fetchUser({
+  signal,
+  args,
+}: ProducerProps<{ username: string }, [number, number], Error>) {
+  let [value, delay] = args;
+  // artificially delayed
+  await new Promise((res) => setTimeout(res, delay / 10));
+  return await fetch(`https://jsonplaceholder.typicode.com/users/${value}`, {
+    signal,
+  }).then((res) => res.json());
+}
+function Comp({ value, delay = 2000, useA = false }) {
+  let rerender = React.useState(0)[1];
+  console.log("COMPO render");
+  let {
+    data,
+    state: { status },
+  } = useData(
+    {
+      lazy: false,
+      producer: fetchUser,
+      key: `user-${value}`,
+      autoRunArgs: [value, delay],
+    },
+    [value, delay]
+  );
+  return (
+    <div>
+      <button onClick={() => rerender((prev) => prev + 1)}>rerender</button>
+      <span>
+        {value}-{data?.username}-{delay}-{status}
+      </span>
+    </div>
+  );
+}
+
 export default function DevModeAppExp() {
   return (
     <>
@@ -113,9 +150,29 @@ export default function DevModeAppExp() {
       <Conditional />
       <hr />
       <UserDetails />
+      <hr />
+      <Suspense fallback="Waiting...">
+        <Comp value={5} delay={5000} />
+      </Suspense>
+      <hr />
+      <Suspense fallback="Waiting...">
+        <Comp value={5} delay={5000} />
+      </Suspense>
+      <hr />
+      <Toto />
     </>
   );
 }
+
+let Toto = React.memo(function Toooto() {
+  console.log("toto render");
+  useAsync({
+    key: `user-5`,
+    initialValue: { username: "fake username -- will be rendered in client" },
+  });
+
+  return <span>user 5</span>;
+});
 
 type User = {
   id: number;

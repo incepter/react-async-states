@@ -23,7 +23,6 @@ export default function AsyncStateComponent<
     throw new Error("AsyncStateComponent supports only render props.");
   }
   let result = useAsync(config, dependencies);
-  // console.log('hoho', {...result, source: null})
   if (!children) {
     return null;
   }

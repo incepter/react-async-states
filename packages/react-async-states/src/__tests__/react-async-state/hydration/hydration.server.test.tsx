@@ -12,6 +12,8 @@ jest.mock("../../../Provider/context", () => {
     isServer: true,
   };
 });
+
+// in the server there is only one pass, so for these tests there is no "strict mode"
 describe("should hydrate async states", () => {
   it("should perform basic Provider", async () => {
     // given
@@ -30,14 +32,10 @@ describe("should hydrate async states", () => {
     }
 
     // when
-    render(
-      <React.StrictMode>
-        <Test />
-      </React.StrictMode>
-    );
+    render(<Test />);
 
     expect(screen.getByTestId("parent").innerHTML).toEqual(
-      '<script id="$$as-:r1:">window.__$$_HD=Object.assign(window.__$$_HD||{},{"counter":[{"status":"initial","data":0,"timestamp":1487076708000,"props":{"args":[0],"payload":{}}},null,null]});</script>'
+      '<script id="$$as-:r1:">var win=window;win["__$$"]=Object.assign(win["__$$"]||{},{"counter":[{"status":"initial","data":0,"timestamp":1487076708000,"props":{"args":[0],"payload":{}}},null,null]});win["__$$_H"]&&win["__$$_H"]();</script>'
     );
   });
   it("should perform basic Provider when status did succeed", async () => {
@@ -58,13 +56,9 @@ describe("should hydrate async states", () => {
     }
 
     // when
-    render(
-      <React.StrictMode>
-        <Test />
-      </React.StrictMode>
-    );
+    render(<Test />);
     expect(screen.getByTestId("parent").innerHTML).toEqual(
-      '<script id="$$as-:r3:">window.__$$_HD=Object.assign(window.__$$_HD||{},{"state-1":[{"status":"success","timestamp":1487076708000,"props":{"args":[42],"payload":{}},"data":42},null,null]});</script>'
+      '<script id="$$as-:r3:">var win=window;win["__$$"]=Object.assign(win["__$$"]||{},{"state-1":[{"status":"success","timestamp":1487076708000,"props":{"args":[42],"payload":{}},"data":42},null,null]});win["__$$_H"]&&win["__$$_H"]();</script>'
     );
   });
   it("should exclude instance from Provider by key", async () => {
@@ -83,11 +77,7 @@ describe("should hydrate async states", () => {
     }
 
     // when
-    render(
-      <React.StrictMode>
-        <Test />
-      </React.StrictMode>
-    );
+    render(<Test />);
     expect(screen.getByTestId("parent").innerHTML).toEqual("");
   });
 });
