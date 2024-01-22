@@ -40,6 +40,7 @@ function cloneSourceInTheServer<TData, TArgs extends unknown[], TError>(
     newInstance.state = globalInstance.state;
     newInstance.cache = globalInstance.cache;
     newInstance.latestRun = globalInstance.latestRun;
+    newInstance.lastSuccess = globalInstance.lastSuccess;
   }
 
   newInstance.global = true;
