@@ -111,6 +111,15 @@ function ensureOnDemandHydrationExistsInClient(
       instance.version += 1;
       instance.state = state;
       let promise = instance.promise;
+
+      // next, we may have already hydrated the "pending" state, in this case
+      // we put a never resolving promise and it probably did suspend a tree
+      // in this case, we will resolve/reject it imperatively because
+      // we keep track of this value.
+      // setting state won't resolve because if this is the first ever component
+      // render and mount, it won't run any effects and thus no subscribers.
+      // so, the only way is to inform react that the suspending promise did
+      // fulfill, via its resolve and reject functions.
       if (state.status === "success") {
         instance.lastSuccess = state;
         if (promise) {
