@@ -5,6 +5,7 @@ First fork the project and clone it locally.
 git clone <repo_url>
 cd react-async-states
 pnpm i -r
+pnpm prepare
 cd packages/react-async-states
 pnpm dev
 ```
