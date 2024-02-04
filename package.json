@@ -2,15 +2,19 @@
   "private": true,
   "scripts": {
     "build:core": "cd ./packages/core && pnpm build && cd ../..",
-    "publish:core": "cd ./packages/core && pnpm npm publish && cd ../..",
     "build:react": "cd ./packages/react-async-states && pnpm build && cd ../..",
-    "publish:react": "cd ./packages/react-async-states && pnpm npm publish && cd ../..",
     "build:devtools": "cd ./packages/devtools-extension && pnpm build && cd ../..",
-    "publish:devtools": "cd ./packages/devtools-extension && pnpm npm publish && cd ../..",
-    "build:all": "pnpm build:core && pnpm build:react && pnpm build:devtools",
-    "build": "pnpm build:all",
+
+    "prepare": "pnpm pnpm build:core && pnpm build:react",
+
+    "build": "pnpm pnpm build:core && pnpm build:react && pnpm build:devtools",
     "test": "cd ./packages/core && pnpm test && cd ../..&& cd ./packages/react-async-states && pnpm test",
-    "prepare:all": "pnpm test && pnpm build",
+
+    "prepare:all": "pnpm build && pnpm test",
+
+    "publish:core": "cd ./packages/core && pnpm npm publish && cd ../..",
+    "publish:react": "cd ./packages/react-async-states && pnpm npm publish && cd ../..",
+    "publish:devtools": "cd ./packages/devtools-extension && pnpm npm publish && cd ../..",
     "go:publish": "pnpm publish:core && pnpm publish:react && pnpm publish:devtools "
   }
 }
