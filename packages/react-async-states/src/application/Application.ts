@@ -11,7 +11,6 @@ import {
   Source,
 } from "async-states";
 import {
-  Api,
   App,
   AppShape,
   InferArgs,
@@ -114,16 +113,27 @@ function createApi<
 
   let source: Source<TData, TArgs, TError> | null = null;
 
-  function token() {
+  function token(): Source<TData, TArgs, TError> {
+    return getSource();
+  }
+  token.define = define;
+  token.useData = (useDataForApp<TData, TArgs, TError>).bind(null, getSource);
+  token.useAsync = (useAsyncForApp<TData, TArgs, TError>).bind(null, getSource);
+  Object.defineProperty(token, "source", {
+    get(): Source<TData, TArgs, TError> {
+      return getSource();
+    }
+  })
+
+  function getSource(): Source<TData, TArgs, TError> {
     if (!source) {
       let path = `app.${String(resourceName)}.${String(apiName)}`;
-      throw new Error(`Call ${path}.define(producer) before using ${path}`);
+      throw new Error(
+        `Call ${path}.define(producer, config?) before using ${path}`
+      );
     }
     return source;
   }
-  token.define = define;
-  token.useData = (useDataForApp<TData, TArgs, TError>).bind(null, token);
-  token.useAsync = (useAsyncForApp<TData, TArgs, TError>).bind(null, token);
 
   return token as TApp[TRes][typeof apiName];
 
@@ -147,11 +157,11 @@ function createApi<
 }
 
 function useDataForApp<TData, TArgs extends unknown[], TError>(
-  token: Api<TData, TArgs, TError>,
+  sourceGetter: () => Source<TData, TArgs, TError>,
   config?: UseConfig<TData, TArgs, TError>,
   deps?: any[]
 ) {
-  let source = token();
+  let source = sourceGetter();
 
   if (__DEV__) {
     __DEV__setHookCallerName(useCallerName(3));
@@ -161,11 +171,11 @@ function useDataForApp<TData, TArgs extends unknown[], TError>(
 }
 
 function useAsyncForApp<TData, TArgs extends unknown[], TError>(
-  token: Api<TData, TArgs, TError>,
+  sourceGetter: () => Source<TData, TArgs, TError>,
   config?: UseConfig<TData, TArgs, TError>,
   deps?: any[]
 ) {
-  let source = token();
+  let source = sourceGetter();
 
   if (__DEV__) {
     __DEV__setHookCallerName(useCallerName(3));

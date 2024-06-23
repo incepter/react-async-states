@@ -4,6 +4,7 @@ import { Producer, ProducerConfig, Source, State } from "async-states";
 
 export type Api<TData, TArgs extends unknown[] = [], TError = Error> = {
   (): Source<TData, TArgs, TError>;
+  source: Source<TData, TArgs, TError>;
   define(
     fn: Producer<TData, TArgs, TError>,
     config?: ProducerConfig<TData, TArgs, TError>

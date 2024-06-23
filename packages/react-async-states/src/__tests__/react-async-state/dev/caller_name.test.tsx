@@ -20,7 +20,7 @@ describe("caller name", () => {
     };
     let app = createApplication<Shape>();
     app.test.caller.define(() => 5);
-    let testSource = app.test.caller();
+    let testSource = app.test.caller.source;
 
     let rendersCount = 0;
     // the caller name should be Test
