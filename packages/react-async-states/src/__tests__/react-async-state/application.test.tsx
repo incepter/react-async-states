@@ -38,9 +38,9 @@ describe("createApplication abstraction tests", () => {
 
   it("should throw if used without being injected", () => {
     let errorMsg = (name: string) =>
-      `Call app.${name}.define(producer) before using app.${name}`;
+      `Call app.${name}.define(producer, config?) before using app.${name}`;
     let app = createApplication<AppShape>(undefined, {});
-    expect(() => app.users.search()).toThrow(errorMsg("users.search"));
+    expect(() => app.users.search.source).toThrow(errorMsg("users.search"));
     expect(() => app.users.search.useData()).toThrow("users.search");
     expect(() => app.users.search.useAsync()).toThrow("users.search");
     expect(() => app.auth.current.useAsync()).toThrow("auth.current");
@@ -56,11 +56,11 @@ describe("createApplication abstraction tests", () => {
     let app = createApplication<AppShape>(undefined, {});
 
     // should throw because it isn't injected yet
-    expect(() => app.users.search()).toThrow(
-      "Call app.users.search.define(producer) before using app.users.search"
+    expect(() => app.users.search.source).toThrow(
+      "Call app.users.search.define(producer, config?) before using app.users.search"
     );
     app.users.search.define(userSearch, { skipPendingDelayMs: 400 });
-    expect(app.users.search().getConfig()).toEqual({
+    expect(app.users.search.source.getConfig()).toEqual({
       context: {},
       skipPendingDelayMs: 400,
     });
@@ -69,7 +69,7 @@ describe("createApplication abstraction tests", () => {
     let app = createApplication<AppShape>(undefined, {});
 
     let src = app.users.search.define(userSearch)();
-    let src2 = app.users.search.define(userSearch)();
+    let src2 = app.users.search.define(userSearch).source;
     expect(src).toBe(src2);
   });
   it("should subscribe to a created api in component using use (auto run)", async () => {

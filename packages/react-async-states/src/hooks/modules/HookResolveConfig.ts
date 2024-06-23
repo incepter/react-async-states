@@ -20,8 +20,6 @@ export function setCurrentHookOverrides(
   currentOverrides = overrides;
 }
 
-// the goal of this function is to retrieve the following objects:
-// - a configuration object to use { key, producer, source, lazy ... }
 function cloneSourceInTheServer<TData, TArgs extends unknown[], TError>(
   globalSource: Source<TData, TArgs, TError>,
   context: object,
@@ -47,6 +45,8 @@ function cloneSourceInTheServer<TData, TArgs extends unknown[], TError>(
   return source;
 }
 
+// the goal of this function is to retrieve the following objects:
+// - a configuration object to use { key, producer, source, lazy ... }
 // - the state instance
 export function parseConfig<
   TData,

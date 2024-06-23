@@ -32,7 +32,7 @@ function Comp({ value, delay = 2000, useA = false }) {
       key: `user-${value}`,
       producer: fetchUsers,
       autoRunArgs: [value, delay],
-      condition: (isServer && value !== 5) || value === 5,
+      condition: isServer && value !== 5,
     },
     [value, delay],
   );
