@@ -424,6 +424,10 @@ export function disposeInstance<TData, TArgs extends unknown[], TError>(
   };
 
   replaceInstanceState(instance, newState);
+
+  // resetting the state may cause problems in the sense that lastSuccess.data
+  // stays alive, but is now un-synced
+  instance.lastSuccess = newState;
   if (__DEV__) devtools.emitDispose(instance);
 
   stopAlteringState(wasAltering);
