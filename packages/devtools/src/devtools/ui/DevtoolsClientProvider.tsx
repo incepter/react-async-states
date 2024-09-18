@@ -1,10 +1,10 @@
 import * as React from "react";
-import { NpmDevtoolsAgent, NpmLibraryDevtoolsClient } from "./NpmDevtools";
+import { NpmDevtoolsAgent, NpmLibraryDevtoolsClient } from "../NpmDevtoolsClient";
 
 export type DevtoolsContext = NpmDevtoolsAgent;
 export let devtoolsContext = React.createContext<DevtoolsContext | null>(null);
 
-export function DevtoolsAgentProvider({ children }) {
+export function DevtoolsClientProvider({ children }) {
   let [devtools] = React.useState(() => new NpmLibraryDevtoolsClient());
 
   React.useEffect(() => {

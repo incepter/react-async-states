@@ -3,7 +3,7 @@
   "scripts": {
     "build:core": "cd ./packages/core && pnpm build && cd ../..",
     "build:react": "cd ./packages/react-async-states && pnpm build && cd ../..",
-    "build:devtools": "cd ./packages/devtools-extension && pnpm build && cd ../..",
+    "build:devtools": "cd ./packages/devtools && pnpm build && cd ../..",
 
     "prepare": "pnpm pnpm build:core && pnpm build:react",
 
@@ -14,7 +14,7 @@
 
     "publish:core": "cd ./packages/core && pnpm npm publish && cd ../..",
     "publish:react": "cd ./packages/react-async-states && pnpm npm publish && cd ../..",
-    "publish:devtools": "cd ./packages/devtools-extension && pnpm npm publish && cd ../..",
+    "publish:devtools": "cd ./packages/devtools && pnpm npm publish && cd ../..",
     "go:publish": "pnpm publish:core && pnpm publish:react && pnpm publish:devtools "
   }
 }

@@ -110,7 +110,7 @@ importers:
         specifier: ^1.5.15
         version: 1.5.15(ts-node@10.9.2)(typescript@5.3.3)
 
-  packages/devtools-extension:
+  packages/devtools:
     dependencies:
       react:
         specifier: ^18.2.0

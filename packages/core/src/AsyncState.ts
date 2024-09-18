@@ -105,18 +105,6 @@ export class AsyncState<TData, TArgs extends unknown[], TError>
   ) {
     let instanceConfig: ProducerConfig<TData, TArgs, TError> =
       shallowClone(config);
-    if (__DEV__) {
-      // @ts-expect-error: getDeadline no longer exists
-      if (instanceConfig.cacheConfig?.getDeadline !== undefined) {
-        console.error(
-          "[Warning][async state] getDeadline is deprecated in" +
-            "favor of 'timeout' with the same signature, and supports now numbers. " +
-            "state with key " +
-            key +
-            " has a cacheConfig.getDeadline configured"
-        );
-      }
-    }
 
     // this means that the instance won't be stored in the LibraryContext
     // object, will be mostly used with anonymous instances
