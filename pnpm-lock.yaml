@@ -138,10 +138,10 @@ importers:
         specifier: ^2.2.0
         version: 2.2.0(vite@3.2.7)
       async-states:
-        specifier: workspace:^2.0.0-beta-13
+        specifier: workspace:^2.0.0
         version: link:../core
       react-async-states:
-        specifier: workspace:^2.0.0-beta-13
+        specifier: workspace:^2.0.0
         version: link:../react-async-states
       react-json-view:
         specifier: ^1.21.3
@@ -271,7 +271,7 @@ importers:
         specifier: ^18
         version: 18.2.18
       async-states:
-        specifier: workspace:^2.0.0-beta-13
+        specifier: workspace:^2.0.0
         version: link:../core
       autoprefixer:
         specifier: ^10.0.1
@@ -292,7 +292,7 @@ importers:
         specifier: ^0.5.10
         version: 0.5.11(@trivago/prettier-plugin-sort-imports@4.3.0)(prettier@3.1.1)
       react-async-states:
-        specifier: workspace:^2.0.0-beta-13
+        specifier: workspace:^2.0.0
         version: link:../react-async-states
       tailwindcss:
         specifier: ^3.3.0
@@ -359,7 +359,7 @@ importers:
         specifier: 18.0.25
         version: 18.0.25
       async-states:
-        specifier: workspace:^2.0.0-beta-13
+        specifier: workspace:^2.0.0
         version: link:../core
       babel-jest:
         specifier: ^29.3.1
