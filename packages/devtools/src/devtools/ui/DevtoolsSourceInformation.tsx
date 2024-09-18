@@ -1,9 +1,9 @@
 import * as React from "react";
-import { AnyInstance } from "./NpmDevtools";
+import { AnyInstance } from "../NpmDevtoolsClient";
 import { State, useAsync, useData } from "react-async-states";
-import { useDevtoolsAgent } from "./Context";
-import { devtoolsSubscriptionKey } from "./constants";
-import JsonView, { Json } from "./Json";
+import { useDevtoolsAgent } from "./DevtoolsClientProvider";
+import { devtoolsSubscriptionKey } from "../constants";
+import JsonView, { JsonViewer } from "./JsonViewer";
 import { Status } from "async-states";
 
 export function CurrentInstanceDetails_Internal() {
@@ -185,7 +185,7 @@ const MemoizedCache = React.memo(function MemoizedCache({
     () => Object.assign({}, instance.cache),
     [key, instance]
   );
-  return <Json src={memoizedCache} name="Cache" level={3} />;
+  return <JsonViewer src={memoizedCache} name="Cache" level={3} />;
 });
 
 const ChangeState = React.memo(function ChangeState({
@@ -301,7 +301,7 @@ const MemoizedJournal = React.memo(function ChangeState({
   instance: AnyInstance;
 }) {
   return (
-    <Json
+    <JsonViewer
       level={3}
       name="Journal"
       src={{ not: { implemented: { yet: false } } }}

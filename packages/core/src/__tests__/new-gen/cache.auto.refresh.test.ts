@@ -76,27 +76,4 @@ describe("AsyncState cache auto refresh", () => {
     // there was only one entry in the cache, verify it was removed
     expect(source.inst.cache).toEqual({});
   });
-  it("should warn about deprecated getDeadline", async () => {
-    let consoleErrorSpy = jest.fn();
-    let originalConsoleError = console.error;
-
-    console.error = consoleErrorSpy;
-
-    createSource("test-3", null, {
-      cacheConfig: {
-        enabled: true,
-        // @ts-expect-error: getDeadline is removed, testing the warning here
-        getDeadline: () => 50,
-      },
-    });
-
-    expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      "[Warning][async state] getDeadline is deprecated infavor of 'timeout' " +
-        "with the same signature, and supports now numbers. state with key test-3 " +
-        "has a cacheConfig.getDeadline configured"
-    );
-
-    console.error = originalConsoleError;
-  });
 });

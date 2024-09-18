@@ -1,6 +1,6 @@
 import * as React from "react";
-import { useDevtoolsAgent } from "./Context";
-import { NpmDevtoolsAgent, SingleInstanceInfo } from "./NpmDevtools";
+import { useDevtoolsAgent } from "./DevtoolsClientProvider";
+import { NpmDevtoolsAgent, SingleInstanceInfo } from "../NpmDevtoolsClient";
 import { useData } from "react-async-states";
 
 export function DevtoolsSideBar() {

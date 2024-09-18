@@ -215,10 +215,6 @@ function HydrationServer({
   );
 }
 
-let initRef = {
-  html: null,
-  init: false,
-};
 type HydrationClientRef = {
   init: boolean;
   html: string | null;
@@ -227,11 +223,24 @@ type HydrationClientRef = {
 function HydrationClient(_props: HydrationComponentProps) {
   let reactId = React.useId();
   let id = `${idPrefix}${reactId}`;
-  let existingHtml = React.useRef<HydrationClientRef>(initRef);
+  let existingHtml = React.useMemo<{ current: HydrationClientRef }>(
+    () => ({ current: { html: null, init: false } }),
+    []
+  );
 
+  // We are using the "init" property explicitly to be more precise:
+  // If we didn't compute, let's do it, or else, just pass.
+  // In the or else path, it may be difficult to distinguish between falsy
+  // values and we would end up using two values anyways. So, we better use
+  // an object to be more explicit and readable.
+  // For example, we could do:
+  // if (existingHTML.current === null) ...
+  // But there is no guarantee that the innerHTML computation will always yield
+  // non null values. To avoid all of that, let's stick to basic javascript.
   if (!existingHtml.current.init) {
     let container = document.getElementById(id);
-    existingHtml.current = { init: true, html: container?.innerHTML ?? null };
+    let containerInnerHTML = container?.innerHTML ?? null;
+    existingHtml.current = { init: true, html: containerInnerHTML };
   }
 
   let __html = existingHtml.current.html;
@@ -272,6 +281,22 @@ function buildWindowAssignment(
       context.payload[key] = version;
     }
 
+    // instance.global is true only and only if this instance was cloned
+    // from a server instance:
+    // ie: You have a global source object in the server, that you clone per
+    // request. When we perform this clone, we mark these sources as global:
+    // It was cloned from a globally accessible source.
+    // We do all of this because when hydrating, there are two types of states:
+    // Those we were global (not related to this render, but more of was
+    // created far away and a subscription is performed from this render),
+    // and those we are bound to the current Context in this particular render.
+    // When hydrating we distinguish between them so we won't leak source state
+    // and we properly assign the state to its instance.
+    // The script will later use __$$ for global context, and <context.name>
+    // for more granular contexts.
+    // When using the server, using a context is mandatory, but if your app
+    // is all global sources, then contextHydrationData will be basically empty
+    // and your global sources in the client will get hydrated correctly.
     if (instance.global) {
       if (!globalHydrationData) {
         globalHydrationData = {};
@@ -288,6 +313,7 @@ function buildWindowAssignment(
   if (!globalHydrationData && !contextHydrationData) {
     return null;
   }
+
   let hydrationData = ["var win=window;"];
   if (globalHydrationData) {
     let globalHydrationDataAsString = JSON.stringify(globalHydrationData);
@@ -295,11 +321,13 @@ function buildWindowAssignment(
       buildHydrationScriptContent("__$$", globalHydrationDataAsString)
     );
   }
+
   if (contextHydrationData) {
     let contextName = context.name;
     if (!contextName) {
       throw new Error("Hydrating context without name, this is a bug");
     }
+
     let contextHydrationDataAsString = JSON.stringify(contextHydrationData);
     hydrationData.push(
       buildHydrationScriptContent(contextName, contextHydrationDataAsString)

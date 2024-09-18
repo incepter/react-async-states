@@ -2,9 +2,9 @@ import * as React from "react";
 import ReactDOM from "react-dom";
 import ReactDOMClient from "react-dom/client";
 import { __DEV__ } from "../utils";
-import { DevtoolsSideBar } from "./Sidebar";
-import { CurrentInstanceDetails } from "./Details";
-import { DevtoolsLayout } from "./Layout";
+import { DevtoolsSideBar } from "./ui/DevtoolsSidebar";
+import { CurrentInstanceDetails } from "./ui/DevtoolsSourceInformation";
+import { DevtoolsLayout } from "./ui/DevtoolsLayout";
 import "../css-v2.css";
 
 let asyncStatesDevtoolsId = "async-states-devtools";

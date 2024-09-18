@@ -1,9 +1,9 @@
 import * as React from "react";
 import ReactJson from "react-json-view";
 
-const JsonView = React.memo(Json);
+const JsonView = React.memo(JsonViewer);
 
-export function Json({
+export function JsonViewer({
   name,
   src,
   level = 2,
