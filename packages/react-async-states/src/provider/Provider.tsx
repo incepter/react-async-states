@@ -215,10 +215,6 @@ function HydrationServer({
   );
 }
 
-let initRef = {
-  html: null,
-  init: false,
-};
 type HydrationClientRef = {
   init: boolean;
   html: string | null;
@@ -227,11 +223,24 @@ type HydrationClientRef = {
 function HydrationClient(_props: HydrationComponentProps) {
   let reactId = React.useId();
   let id = `${idPrefix}${reactId}`;
-  let existingHtml = React.useRef<HydrationClientRef>(initRef);
+  let existingHtml = React.useMemo<{ current: HydrationClientRef }>(
+    () => ({ current: { html: null, init: false } }),
+    []
+  );
 
+  // We are using the "init" property explicitly to be more precise:
+  // If we didn't compute, let's do it, or else, just pass.
+  // In the or else path, it may be difficult to distinguish between falsy
+  // values and we would end up using two values anyways. So, we better use
+  // an object to be more explicit and readable.
+  // For example, we could do:
+  // if (existingHTML.current === null) ...
+  // But there is no guarantee that the innerHTML computation will always yield
+  // non null values. To avoid all of that, let's stick to basic javascript.
   if (!existingHtml.current.init) {
     let container = document.getElementById(id);
-    existingHtml.current = { init: true, html: container?.innerHTML ?? null };
+    let containerInnerHTML = container?.innerHTML ?? null;
+    existingHtml.current = { init: true, html: containerInnerHTML };
   }
 
   let __html = existingHtml.current.html;
