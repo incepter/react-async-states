@@ -52,6 +52,7 @@ describe("caller name", () => {
     ).map((t) => t.props.key);
 
     expect(subscriptionKeys.length).toBe(3);
+
     subscriptionKeys.forEach((t) => {
       expect(t!.startsWith("Test-")).toBeTruthy();
     });
